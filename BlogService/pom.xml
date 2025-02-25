@@ -44,8 +44,6 @@
             <groupId>io.github.jakstepn</groupId>
             <artifactId>Common</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <systemPath>${basedir}/../Common/target/Common-1.0-SNAPSHOT.jar</systemPath>
-            <scope>system</scope>
         </dependency>
     </dependencies>
 

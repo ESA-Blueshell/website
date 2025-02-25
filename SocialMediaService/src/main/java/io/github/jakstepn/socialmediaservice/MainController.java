@@ -1,0 +1,12 @@
+package io.github.jakstepn.socialmediaservice;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class MainController {
+    @GetMapping("/")
+    public String SayHello() {
+        return "Social Media Service";
+    }
+}

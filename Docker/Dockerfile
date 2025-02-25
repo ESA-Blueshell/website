@@ -1,12 +1,13 @@
 # Use an official Maven image to build the application
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 
 # Set the working directory in the container
 WORKDIR /app
 
 # Copy the pom.xml and download the dependencies
+ARG SERVICE_NAME
 COPY ./pom.xml /app/parent/pom.xml
-COPY ./SocialMediaService/pom.xml /app/SocialMediaService/pom.xml
+COPY ./${SERVICE_NAME}/pom.xml /app/${SERVICE_NAME}/pom.xml
 COPY ./Common/target/Common-1.0-SNAPSHOT.jar /app/Common/target/Common-1.0-SNAPSHOT.jar
 
 COPY ./APIGateway/pom.xml /app/parent/APIGateway/pom.xml
@@ -27,20 +28,20 @@ RUN mvn install:install-file \
 RUN mvn install -f /app/parent/pom.xml
 
 # Copy the source code and build the application
-WORKDIR /app/SocialMediaService
+WORKDIR /app/${SERVICE_NAME}
 RUN mvn dependency:go-offline
-COPY ./SocialMediaService/src ./src
+COPY ./${SERVICE_NAME}/src ./src
 RUN mvn install -DskipTests
 
 # Use an official OpenJDK image to run the application
-FROM eclipse-temurin:17
+FROM eclipse-temurin:21-alpine
 
 # Set the working directory in the container
 WORKDIR /app
 
 # Copy the built jar file from the build stage
-COPY --from=build /app/SocialMediaService/target/*.jar app.jar
-COPY --from=build /app/Common/target/Common-1.0-SNAPSHOT.jar /Common/target/Common-1.0-SNAPSHOT.jar
+ARG SERVICE_NAME
+COPY --from=build /app/${SERVICE_NAME}/target/*.jar app.jar
 
 # Expose the port the application runs on
 EXPOSE 8080

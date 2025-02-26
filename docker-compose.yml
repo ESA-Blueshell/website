@@ -2,7 +2,7 @@ services:
   apigateway:
     build:
       context: .
-      dockerfile: ./Docker/Dockerfile
+      dockerfile: ./APIGateway/Dockerfile
       args:
         - SERVICE_NAME=APIGateway
     ports:
@@ -16,7 +16,7 @@ services:
   blogservice:
     build:
       context: .
-      dockerfile: ./Docker/Dockerfile
+      dockerfile: ./BlogService/Dockerfile
       args:
         - SERVICE_NAME=BlogService
     ports:
@@ -24,7 +24,7 @@ services:
   emailparser:
     build:
       context: .
-      dockerfile: ./Docker/Dockerfile
+      dockerfile: ./EmailParser/Dockerfile
       args:
         - SERVICE_NAME=EmailParser
     ports:
@@ -32,7 +32,7 @@ services:
   eventparser:
     build:
       context: .
-      dockerfile: ./Docker/Dockerfile
+      dockerfile: ./EventParser/Dockerfile
       args:
         - SERVICE_NAME=EventParser
     ports:
@@ -40,7 +40,7 @@ services:
   socialmediaservice:
     build:
       context: .
-      dockerfile: ./Docker/Dockerfile
+      dockerfile: ./SocialMediaService/Dockerfile
       args:
         - SERVICE_NAME=SocialMediaService
     ports:
@@ -48,7 +48,7 @@ services:
   telemetry:
     build:
       context: .
-      dockerfile: ./Docker/Dockerfile
+      dockerfile: ./Telemetry/Dockerfile
       args:
         - SERVICE_NAME=Telemetry
     ports:

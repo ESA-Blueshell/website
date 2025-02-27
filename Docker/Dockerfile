@@ -53,6 +53,7 @@ RUN mvn dependency:go-offline
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 ARG SERVICE_NAME
+ARG PORT
 
 # Copy the service POM, source code, and local Maven repository
 COPY ./${SERVICE_NAME}/pom.xml .
@@ -72,7 +73,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Expose the port the application runs on
-EXPOSE 8080
+EXPOSE ${PORT} 5005
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "app.jar"]

@@ -4,9 +4,10 @@ services:
       context: .
       dockerfile: ./APIGateway/Dockerfile
       args:
-        - SERVICE_NAME=APIGateway
+        - PORT=80
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "5005:5005"
     depends_on:
       - blogservice
       - emailparser
@@ -18,38 +19,43 @@ services:
       context: .
       dockerfile: ./BlogService/Dockerfile
       args:
-        - SERVICE_NAME=BlogService
+        - PORT=8081
     ports:
-      - "8081:8080"
+      - "8081:8081"
+      - "5006:5005"
   emailparser:
     build:
       context: .
       dockerfile: ./EmailParser/Dockerfile
       args:
-        - SERVICE_NAME=EmailParser
+        - PORT=8082
     ports:
-      - "8082:8080"
+      - "8082:8082"
+      - "5007:5005"
   eventparser:
     build:
       context: .
       dockerfile: ./EventParser/Dockerfile
       args:
-        - SERVICE_NAME=EventParser
+        - PORT=8083
     ports:
-      - "8083:8080"
+      - "8083:8083"
+      - "5008:5005"
   socialmediaservice:
     build:
       context: .
       dockerfile: ./SocialMediaService/Dockerfile
       args:
-        - SERVICE_NAME=SocialMediaService
+        - PORT=8084
     ports:
-      - "8084:8080"
+      - "8084:8084"
+      - "5009:5005"
   telemetry:
     build:
       context: .
       dockerfile: ./Telemetry/Dockerfile
       args:
-        - SERVICE_NAME=Telemetry
+        - PORT=8085
     ports:
-      - "8085:8080"
+      - "8085:8085"
+      - "5010:5005"

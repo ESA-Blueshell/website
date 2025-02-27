@@ -22,9 +22,34 @@ public class MainController {
 
     @RequestMapping("/blog")
     public ResponseEntity<String> blog() {
+        return testRequest("http://blogservice:8080/");
+    }
+
+    @RequestMapping("/email")
+    public ResponseEntity<String> email() {
+        return testRequest("http://emailparser:8080/");
+    }
+
+    @RequestMapping("/event")
+    public ResponseEntity<String> event() {
+        return testRequest("http://eventparser:8080/");
+    }
+
+    @RequestMapping("/social-media")
+    public ResponseEntity<String> socialMedia() {
+        return testRequest("http://socialmediaservice:8080/");
+    }
+
+    @RequestMapping("/telemetry")
+    public ResponseEntity<String> telemetry() {
+        return testRequest("http://telemetry:8080/");
+    }
+
+    private ResponseEntity<String> testRequest(String host)
+    {
         try {
             // URL of the localhost endpoint
-            URI uri = new URI("http://localhost:80/");
+            URI uri = new URI(host);
             URL url = uri.toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 

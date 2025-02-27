@@ -8,12 +8,19 @@ services:
     ports:
       - "80:80"
       - "5005:5005"
+    networks:
+      - global_network
     depends_on:
       - blogservice
       - emailparser
       - eventparser
       - socialmediaservice
       - telemetry
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   blogservice:
     build:
       context: .
@@ -21,8 +28,14 @@ services:
       args:
         - PORT=8081
     ports:
-      - "8081:8081"
       - "5006:5005"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   emailparser:
     build:
       context: .
@@ -30,8 +43,14 @@ services:
       args:
         - PORT=8082
     ports:
-      - "8082:8082"
       - "5007:5005"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   eventparser:
     build:
       context: .
@@ -39,8 +58,14 @@ services:
       args:
         - PORT=8083
     ports:
-      - "8083:8083"
       - "5008:5005"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   socialmediaservice:
     build:
       context: .
@@ -48,8 +73,14 @@ services:
       args:
         - PORT=8084
     ports:
-      - "8084:8084"
       - "5009:5005"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   telemetry:
     build:
       context: .
@@ -57,5 +88,15 @@ services:
       args:
         - PORT=8085
     ports:
-      - "8085:8085"
       - "5010:5005"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  global_network:
+    driver: bridge

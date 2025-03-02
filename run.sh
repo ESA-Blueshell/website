@@ -16,6 +16,6 @@ cd Docker || exit
 ./spread.sh
 
 cd ..
-docker-compose up --build -d
+docker compose up --build -d
 
 echo "Docker containers started"

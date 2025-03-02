@@ -58,7 +58,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>io.github.jakstepn.apigateway.ApiGatewayApplication</mainClass>
+					<mainClass>net.blueshell.apigateway.ApiGatewayApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>

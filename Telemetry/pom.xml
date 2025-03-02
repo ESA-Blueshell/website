@@ -51,7 +51,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId><configuration>
-				<mainClass>io.github.jakstepn.telemetry.TelemetryApplication</mainClass>
+				<mainClass>net.blueshell.telemetry.TelemetryApplication</mainClass>
 			</configuration>
 			</plugin>
 		</plugins>

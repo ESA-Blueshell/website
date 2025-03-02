@@ -53,7 +53,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>io.github.jakstepn.socialmediaservice.SocialMediaServiceApplication</mainClass>
+					<mainClass>net.blueshell.socialmediaservice.SocialMediaServiceApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>

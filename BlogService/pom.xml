@@ -53,7 +53,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>io.github.jakstepn.blogservice.BlogServiceApplication</mainClass>
+                    <mainClass>net.blueshell.blogservice.BlogServiceApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

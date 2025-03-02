@@ -1,12 +1,59 @@
+version: "3.8"
+
 services:
+  frontend:
+    build:
+      context: ./blueshell-frontend
+      dockerfile: Dockerfile-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./blueshell-frontend:/usr/app:rw"
+      - "/usr/app/node_modules"
+    depends_on:
+      - api
+    networks:
+      - global_network
+
+  api:
+    build:
+      context: ./blueshell-api
+      dockerfile: Dockerfile-dev
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./blueshell-api:/usr/app:rw"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/blueshell?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: blueshell
+    networks:
+      - global_network
+
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: blueshell
+      MYSQL_DATABASE: blueshell
+      MYSQL_USER: tim
+      MYSQL_PASSWORD: blueshell
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./data:/var/lib/mysql"
+    networks:
+      - global_network
+
   apigateway:
     build:
       context: .
       dockerfile: ./APIGateway/Dockerfile
       args:
-        - PORT=80
+        - PORT=8081
     ports:
-      - "80:80"
+      - "8081:8081"
       - "5005:5005"
     networks:
       - global_network
@@ -16,83 +63,89 @@ services:
       - eventparser
       - socialmediaservice
       - telemetry
+      - api
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   blogservice:
     build:
       context: .
       dockerfile: ./BlogService/Dockerfile
       args:
-        - PORT=8081
+        - PORT=8082
     ports:
       - "5006:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   emailparser:
     build:
       context: .
       dockerfile: ./EmailParser/Dockerfile
       args:
-        - PORT=8082
+        - PORT=8083
     ports:
       - "5007:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   eventparser:
     build:
       context: .
       dockerfile: ./EventParser/Dockerfile
       args:
-        - PORT=8083
+        - PORT=8084
     ports:
       - "5008:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083/"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   socialmediaservice:
     build:
       context: .
       dockerfile: ./SocialMediaService/Dockerfile
       args:
-        - PORT=8084
+        - PORT=8085
     ports:
       - "5009:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8084/"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   telemetry:
     build:
       context: .
       dockerfile: ./Telemetry/Dockerfile
       args:
-        - PORT=8085
+        - PORT=8086
     ports:
       - "5010:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8085/"]
       interval: 30s
       timeout: 10s
       retries: 5

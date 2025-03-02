@@ -53,7 +53,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>io.github.jakstepn.emailparser.EmailParserApplication</mainClass>
+					<mainClass>net.blueshell.emailparser.EmailParserApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>

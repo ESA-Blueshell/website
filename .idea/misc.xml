@@ -6,6 +6,7 @@
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/BlogService/pom.xml" />
+        <option value="$PROJECT_DIR$/blueshell-api/pom.xml" />
       </list>
     </option>
   </component>

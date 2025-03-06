@@ -8,7 +8,7 @@
 		<version>3.4.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>io.github.jakstepn</groupId>
+	<groupId>net.blueshell</groupId>
 	<artifactId>EventParser</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>EventParser</name>
@@ -41,7 +41,7 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.github.jakstepn</groupId>
+			<groupId>net.blueshell</groupId>
 			<artifactId>Common</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>

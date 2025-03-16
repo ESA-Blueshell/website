@@ -33,3 +33,5 @@ build/
 .vscode/
 
 Dockerfile
+blogservice-deployment.yaml
+blogservice-service.yaml

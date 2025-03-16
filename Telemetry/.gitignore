@@ -33,3 +33,5 @@ build/
 .vscode/
 
 Dockerfile
+telemetry-deployment.yaml
+telemetry-service.yaml

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   frontend:
     build:
@@ -51,9 +49,9 @@ services:
       context: .
       dockerfile: ./APIGateway/Dockerfile
       args:
-        - PORT=8081
+        - PORT=80
     ports:
-      - "8081:8081"
+      - "80:80"
       - "5005:5005"
     networks:
       - global_network
@@ -63,92 +61,92 @@ services:
       - eventparser
       - socialmediaservice
       - telemetry
-      - api
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+    image: apigateway:latest
   blogservice:
     build:
       context: .
       dockerfile: ./BlogService/Dockerfile
       args:
-        - PORT=8082
+        - PORT=8081
     ports:
       - "5006:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+    image: blogservice:latest
   emailparser:
     build:
       context: .
       dockerfile: ./EmailParser/Dockerfile
       args:
-        - PORT=8083
+        - PORT=8082
     ports:
       - "5007:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+    image: emailparser:latest
   eventparser:
     build:
       context: .
       dockerfile: ./EventParser/Dockerfile
       args:
-        - PORT=8084
+        - PORT=8083
     ports:
       - "5008:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+    image: eventparser:latest
   socialmediaservice:
     build:
       context: .
       dockerfile: ./SocialMediaService/Dockerfile
       args:
-        - PORT=8085
+        - PORT=8084
     ports:
       - "5009:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+    image: socialmediaservice:latest
   telemetry:
     build:
       context: .
       dockerfile: ./Telemetry/Dockerfile
       args:
-        - PORT=8086
+        - PORT=8085
     ports:
       - "5010:5005"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
+    image: telemetry:latest
 
 networks:
   global_network:

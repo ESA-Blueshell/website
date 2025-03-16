@@ -33,3 +33,5 @@ build/
 .vscode/
 
 Dockerfile
+eventparser-deployment.yaml
+eventparser-service.yaml

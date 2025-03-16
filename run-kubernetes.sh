@@ -1,5 +1,7 @@
 #!/bin/sh
 
+./Scripts/copym2.sh
+
 # Check for the -f flag
 FORCE=false
 while getopts "f" opt; do
@@ -20,6 +22,14 @@ else
 fi
 cd ..
 
-docker compose -f docker-compose-base.yml up --build -d
+minikube start
+eval $(minikube docker-env)
 
-echo "Docker containers started"
+docker compose -f docker-compose-base.yml build
+cd Scripts || exit
+./launch_kubernetes.sh
+cd ..
+
+echo "Kubernetes pods started"
+
+minikube dashboard

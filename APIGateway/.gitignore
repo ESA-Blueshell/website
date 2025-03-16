@@ -33,3 +33,5 @@ build/
 .vscode/
 
 Dockerfile
+apigateway-deployment.yaml
+apigateway-service.yaml

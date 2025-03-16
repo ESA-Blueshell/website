@@ -23,6 +23,11 @@ public class MainController {
         return communicationService.sendToBlogService("/", MessageType.GET, null, null);
     }
 
+    @RequestMapping("/blog/post")
+    public ResponseEntity<String> blogPost() {
+        return communicationService.sendToBlogService("/", MessageType.POST, "Some bodyy", null);
+    }
+
     @RequestMapping("/email")
     public ResponseEntity<String> email() {
         return communicationService.sendToEmailParserService("/", MessageType.GET, null, null);

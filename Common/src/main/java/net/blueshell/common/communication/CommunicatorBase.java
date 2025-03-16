@@ -2,9 +2,11 @@ package net.blueshell.common.communication;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,19 +18,29 @@ public class CommunicatorBase implements ICommunicator {
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
 
     @Override
-    public ResponseEntity<String> sendSync(String url, MessageType type, String body, HashMap<String, Object> parameters) {
+    public ResponseEntity<String> sendSync(String url, MessageType type,
+                                           String body, HashMap<String, Object> parameters) {
         try {
             // URL of the localhost endpoint
             URI uri = new URI(url);
             URL uriURL = uri.toURL();
             HttpURLConnection connection = (HttpURLConnection) uriURL.openConnection();
 
-            // Set the request method to GET
-            connection.setRequestMethod("GET");
+            connection.setRequestMethod(type.toString());
+            connection.setDoOutput(true);
+
+            if(body != null)
+            {
+                // Write the body to the output stream
+                try (OutputStream os = connection.getOutputStream()) {
+                    byte[] input = body.getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
+                }
+            }
 
             // Get the response code
             int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
+            logger.log(Level.INFO, "Response Code: " + responseCode);
 
             // Read the response
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -50,7 +62,9 @@ public class CommunicatorBase implements ICommunicator {
     }
 
     @Override
-    public ResponseEntity<String> sendAsync(String url, MessageType type, String body, HashMap<String, Object> parameters) {
+    public ResponseEntity<String> sendAsync(String url, MessageType type,
+                                            String body, HashMap<String, Object> parameters) {
+
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

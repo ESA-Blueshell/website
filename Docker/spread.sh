@@ -8,11 +8,11 @@ COMMON_DIR="$(cd "$(dirname "Common")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Read the content of the Dockerfile in the script's directory
-DOCKERFILE_TEMPLATE=$(<"$SCRIPT_DIR/Dockerfile.template")
-KUBERNETES_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/deployment.template")
-KUBERNETES_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/service.template")
-KUBERNETES_GATEWAY_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/gateway-service.template")
-KUBERNETES_GATEWAY_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/gateway-deployment.template")
+DOCKERFILE_TEMPLATE=$(<"$SCRIPT_DIR/dockerfile")
+KUBERNETES_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/deployment")
+KUBERNETES_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/service")
+KUBERNETES_GATEWAY_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/gateway-service")
+KUBERNETES_GATEWAY_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/gateway-deployment")
 
 # Check for the -f flag
 FORCE=false

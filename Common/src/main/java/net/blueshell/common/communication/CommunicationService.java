@@ -1,11 +1,12 @@
 package net.blueshell.common.communication;
 
-import net.blueshell.common.communication.apigateway.ApiGatewayCommunicator;
-import net.blueshell.common.communication.blog.BlogCommunicator;
-import net.blueshell.common.communication.emailparser.EmailParserCommunicator;
-import net.blueshell.common.communication.eventparser.EventParserCommunicator;
-import net.blueshell.common.communication.socialmedia.SocialMediaCommunicator;
-import net.blueshell.common.communication.telemetry.TelemetryCommunicator;
+import net.blueshell.common.communication.communicators.ApiGatewayCommunicator;
+import net.blueshell.common.communication.communicators.BlogCommunicator;
+import net.blueshell.common.communication.communicators.EmailParserCommunicator;
+import net.blueshell.common.communication.communicators.EventParserCommunicator;
+import net.blueshell.common.communication.communicators.SocialMediaCommunicator;
+import net.blueshell.common.communication.communicators.TelemetryCommunicator;
+import net.blueshell.common.communication.communicators.base.MessageType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;

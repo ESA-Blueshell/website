@@ -1,4 +1,4 @@
-package net.blueshell.common.communication;
+package net.blueshell.common.communication.communicators.base;
 
 public enum MessageType {
     GET,

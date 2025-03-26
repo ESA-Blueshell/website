@@ -1,7 +1,8 @@
-package net.blueshell.common.communication.blog;
+package net.blueshell.common.communication.communicators;
 
-import net.blueshell.common.communication.CommunicatorBase;
-import net.blueshell.common.communication.MessageType;
+import net.blueshell.common.communication.communicators.base.MessageType;
+import net.blueshell.common.communication.communicators.base.CommunicatorBase;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
@@ -10,6 +11,14 @@ public class BlogCommunicator extends CommunicatorBase {
 
     private final String blogUrl = "http://blogservice:8080";
 
+    public BlogCommunicator() {
+        super();
+    }
+
+    public BlogCommunicator(RabbitTemplate template) {
+        super(template);
+    }
+
     @Override
     public ResponseEntity<String> sendSync(String url, MessageType type,
                                            String body, HashMap<String, Object> parameters) {
@@ -17,8 +26,7 @@ public class BlogCommunicator extends CommunicatorBase {
     }
 
     @Override
-    public ResponseEntity<String> sendAsync(String url, MessageType type,
-                                            String body, HashMap<String, Object> parameters) {
-        return super.sendAsync(blogUrl + url, type, body, parameters);
+    public String getName() {
+        return "blog";
     }
 }

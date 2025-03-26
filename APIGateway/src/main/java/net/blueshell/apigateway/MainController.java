@@ -1,9 +1,8 @@
 package net.blueshell.apigateway;
 
-import net.blueshell.common.TestClass;
 import net.blueshell.common.communication.CommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
-import net.blueshell.common.communication.MessageType;
+import net.blueshell.common.communication.communicators.base.MessageType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +14,7 @@ public class MainController {
 
     @RequestMapping("/")
     public String home() {
-        return TestClass.Test + "test";
+        return "test gateway";
     }
 
     @RequestMapping("/blog")
@@ -41,6 +40,11 @@ public class MainController {
     @RequestMapping("/social-media")
     public ResponseEntity<String> socialMedia() {
         return communicationService.sendToSocialMediaService("/", MessageType.GET, null, null);
+    }
+
+    @RequestMapping("/social-media/queue")
+    public ResponseEntity<String> socialMediaQueue() {
+        return communicationService.sendToSocialMediaService("/queue", MessageType.GET, null, null);
     }
 
     @RequestMapping("/telemetry")

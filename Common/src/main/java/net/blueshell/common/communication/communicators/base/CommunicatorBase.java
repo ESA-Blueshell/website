@@ -1,4 +1,4 @@
-package net.blueshell.common.communication;
+package net.blueshell.common.communication.communicators.base;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,11 +11,23 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.blueshell.common.Constants;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
-public class CommunicatorBase implements ICommunicator {
+public abstract class CommunicatorBase implements ICommunicator {
+
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
+    private final RabbitTemplate template;
+
+    public CommunicatorBase() {
+        this.template = null;
+    }
+
+    public CommunicatorBase(RabbitTemplate template) {
+        this.template = template;
+    }
 
     @Override
     public ResponseEntity<String> sendSync(String url, MessageType type,
@@ -62,9 +74,27 @@ public class CommunicatorBase implements ICommunicator {
     }
 
     @Override
-    public ResponseEntity<String> sendAsync(String url, MessageType type,
-                                            String body, HashMap<String, Object> parameters) {
+    public String sendAsync(String targetName, String body) {
 
-        throw new UnsupportedOperationException("Not supported yet.");
+        try {
+            assert this.template != null;
+
+// TODO add routing
+//            this.template.convertAndSend(
+//                    Constants.QUEUE_EXCHANGE_NAME,
+//                    Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
+//                    body
+//            );
+
+            this.template.convertAndSend(Constants.SM_QUEUE_NAME, body);
+        }
+        catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            return "Could not send message to " + targetName;
+        }
+
+        return "Message sent to " + targetName;
     }
+
+    public abstract String getName();
 }

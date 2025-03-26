@@ -1,13 +1,22 @@
-package net.blueshell.common.communication.apigateway;
+package net.blueshell.common.communication.communicators;
 
-import net.blueshell.common.communication.CommunicatorBase;
-import net.blueshell.common.communication.MessageType;
+import net.blueshell.common.communication.communicators.base.MessageType;
+import net.blueshell.common.communication.communicators.base.CommunicatorBase;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
 
 public class ApiGatewayCommunicator extends CommunicatorBase {
     private final String apiGatewayUrl = "http://apigateway:80";
+
+    public ApiGatewayCommunicator() {
+        super();
+    }
+
+    public ApiGatewayCommunicator(RabbitTemplate template) {
+        super(template);
+    }
 
     @Override
     public ResponseEntity<String> sendSync(String url, MessageType type,
@@ -16,8 +25,7 @@ public class ApiGatewayCommunicator extends CommunicatorBase {
     }
 
     @Override
-    public ResponseEntity<String> sendAsync(String url, MessageType type,
-                                            String body, HashMap<String, Object> parameters) {
-        return super.sendAsync(apiGatewayUrl + url, type, body, parameters);
+    public String getName() {
+        return "apigateway";
     }
 }

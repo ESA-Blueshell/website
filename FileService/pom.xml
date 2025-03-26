@@ -6,13 +6,13 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.3</version>
-		<relativePath/>
+		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.blueshell</groupId>
-	<artifactId>APIGateway</artifactId>
+	<artifactId>FileService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>APIGateway</name>
-	<description>APIGateway</description>
+	<name>FileService</name>
+	<description>FileService</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -40,20 +40,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
-			<groupId>net.blueshell</groupId>
-			<artifactId>core-commons</artifactId>
+			<groupId>net.blueshell.commons</groupId>
+			<artifactId>common-core</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>net.blueshell</groupId>
-			<artifactId>core-commons</artifactId>
-			<version>1.0-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
-
-
 	</dependencies>
 
 	<build>
@@ -62,9 +53,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>net.blueshell.apigateway.ApiGatewayApplication</mainClass>
+					<mainClass>net.blueshell.fileService.Application</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
 </project>

@@ -1,0 +1,33 @@
+
+
+req_1:
+  type: 'Newsletter'
+  id: 3
+  url: 'esa-blueshell.nl/blogs/3'
+
+resp_1:
+    type: 'Newsletter'
+    id: 3
+    url: 'esa-blueshell.nl/telem/?url=blogs/3'
+
+
+
+types:
+  - Newsletter
+  - Events
+
+
+
+
+
+telem:
+  - id: something
+    target: esa-blueshell.nl/api/blogs/3
+    model: blog
+    source: facebook
+
+  - id: something
+    target: esa-blueshell.nl/api/events/3
+    model: event
+    source: instagram
+url: esa-blueshell.nl/telem/something

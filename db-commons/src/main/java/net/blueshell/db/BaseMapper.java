@@ -1,5 +1,6 @@
 package net.blueshell.db;
 
+import net.blueshell.common.dto.BaseDTO;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

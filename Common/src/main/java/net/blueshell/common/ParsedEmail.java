@@ -1,4 +1,4 @@
-package net.blueshell.common.DTO;
+package net.blueshell.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +15,5 @@ public class ParsedEmail {
     private String plainText;
     private String rawHTML;
     private List<Image> images;
-    private List<Event> events;
 }
 

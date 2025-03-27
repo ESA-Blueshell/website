@@ -1,6 +1,6 @@
 package net.blueshell.emailparser.controller;
 
-import net.blueshell.common.DTO.ParsedEmail;
+import net.blueshell.common.ParsedEmail;
 import net.blueshell.emailparser.service.EmailParsingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +14,9 @@ public class EmailParserController {
     @Autowired
     private EmailParsingService parsingService;
 
-    @GetMapping("/")
-    public String SayHello() {
-        return "Email Parser";
+    @GetMapping("/health")
+    public Boolean healthCheck() {
+        return true;
     }
 
     @PostMapping("/parse-email")

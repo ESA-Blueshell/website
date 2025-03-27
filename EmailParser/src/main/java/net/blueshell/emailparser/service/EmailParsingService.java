@@ -1,9 +1,9 @@
 package net.blueshell.emailparser.service;
 
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
-import net.blueshell.common.DTO.Event;
-import net.blueshell.common.DTO.Image;
-import net.blueshell.common.DTO.ParsedEmail;
+import net.blueshell.common.Event;
+import net.blueshell.common.Image;
+import net.blueshell.common.ParsedEmail;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,12 +27,11 @@ public class EmailParsingService {
             // String markdown = generateMarkdown(body); --> Too complex to transform atm - takes ages
 
             List<Image> images = extractImages(doc);
-            List<Event> events = extractEvents(doc);
 
             return ParsedEmail
                     .builder()
                     .plainText(plainText)
-                    .events(events)
+                    .rawHTML(content)
                     .images(images)
                     .build();
 
@@ -44,7 +43,6 @@ public class EmailParsingService {
             return ParsedEmail
                     .builder()
                     .plainText("")
-                    .events(new ArrayList<>())
                     .images(new ArrayList<>())
                     .build();
         }

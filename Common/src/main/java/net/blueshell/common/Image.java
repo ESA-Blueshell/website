@@ -1,4 +1,4 @@
-package net.blueshell.common.DTO;
+package net.blueshell.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,11 +7,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class Event {
+@AllArgsConstructor
+public class Image {
     private String title;
-    private String description;
-    private String location;
     private String url;
 }

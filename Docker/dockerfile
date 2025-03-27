@@ -1,71 +1,40 @@
-# Use an official Maven image to build the application
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-parent
-
-# Set the working directory in the container
+# Stage 1: Build parent and base modules
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Copy the local Maven files
-COPY ./${SERVICE_NAME}/.mvn .mvn
-COPY ./${SERVICE_NAME}/mvnw .
+# Copy all POM files first
+COPY pom.xml .
+COPY core-commons/pom.xml ./core-commons/
+COPY db-commons/pom.xml ./db-commons/
+COPY BlogService/pom.xml ./BlogService/
 
-# Copy the parent POM and module POMs
-COPY ./pom.xml /app/parent/pom.xml
-COPY ./core-commons/pom.xml /app/parent/core-commons/pom.xml
-COPY ./db-commons/pom.xml /app/parent/db-commons/pom.xml
-COPY ./APIGateway/pom.xml /app/parent/APIGateway/pom.xml
-COPY ./BlogService/pom.xml /app/parent/BlogService/pom.xml
-COPY ./EmailParser/pom.xml /app/parent/EmailParser/pom.xml
-COPY ./EventParser/pom.xml /app/parent/EventParser/pom.xml
-COPY ./SocialMediaService/pom.xml /app/parent/SocialMediaService/pom.xml
-COPY ./Telemetry/pom.xml /app/parent/Telemetry/pom.xml
+# Install parent POM and download dependencies
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B install -N -DskipTests
 
-# Download dependencies and build the parent project
-RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./parent/pom.xml -nsu
+# Build core-commons
+COPY core-commons/src ./core-commons/src
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B install -pl core-commons -am -DskipTests
 
-# Build core-commons module
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-common
+# Build db-commons
+COPY db-commons/src ./db-commons/src
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B install -pl db-commons -am -DskipTests
+
+# Stage 2: Build BlogService
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS service-builder
 WORKDIR /app
+COPY --from=builder /root/.m2 /root/.m2
+COPY . .
 
-# Copy Maven files and core-commons code
-COPY --from=build-parent /app/.mvn .mvn
-COPY --from=build-parent /app/mvnw .
-COPY ./core-commons/pom.xml ./core-commons/pom.xml
-COPY ./core-commons/src ./core-commons/src
+# Build BlogService with access to cached dependencies
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B package -pl BlogService -am -DskipTests
 
-# Install core-commons to Maven cache
-RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./core-commons/pom.xml -nsu -o
-
-# Build db-commons module
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-db-common
-WORKDIR /app
-
-# Copy Maven files and db-commons code
-COPY --from=build-parent /app/.mvn .mvn
-COPY --from=build-parent /app/mvnw .
-COPY ./db-commons/pom.xml ./db-commons/pom.xml
-COPY ./db-commons/src ./db-commons/src
-
-# Install db-commons to Maven cache
-RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./db-commons/pom.xml -nsu -o
-
-# Build the service (depends on core-commons and db-commons)
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
-WORKDIR /app
-ARG SERVICE_NAME
-ARG PORT
-
-# Copy service code and Maven files
-COPY ./${SERVICE_NAME}/pom.xml .
-COPY ./${SERVICE_NAME}/src ./src
-COPY --from=build-parent /app/.mvn .mvn
-COPY --from=build-parent /app/mvnw .
-
-# Build the service (Maven cache includes core-commons and db-commons)
-RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -o -nsu
-
-# Runtime stage
+# Final stage
 FROM eclipse-temurin:21-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-EXPOSE ${PORT} 5005
+COPY --from=service-builder /app/BlogService/target/*.jar app.jar
+EXPOSE 8080 5005
 ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "app.jar"]

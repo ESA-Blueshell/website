@@ -4,10 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>net.blueshell</groupId>
-        <artifactId>SOA</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.4</version>
+        <relativePath/>
     </parent>
+    <groupId>net.blueshell</groupId>
 
     <artifactId>core-commons</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -29,7 +31,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.32</version>
-            <scope>provided</scope>
         </dependency>
         <!-- MapStruct -->
         <dependency>
@@ -41,7 +42,6 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct-processor</artifactId>
             <version>1.6.3</version>
-            <scope>provided</scope>
         </dependency>
         <!-- Jakarta Validation -->
         <dependency>
@@ -55,7 +55,7 @@
             <artifactId>jakarta.annotation-api</artifactId>
             <version>3.0.0</version>
         </dependency>
-        <!-- Commons IO -->
+        <!-- core-commonss IO -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>

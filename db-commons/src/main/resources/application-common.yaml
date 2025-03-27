@@ -9,7 +9,7 @@ spring:
       minimum-idle: 10
       maximum-pool-size: 20
       idle-timeout: 300000
-      max-lifetime: 1800000 30 minutes
+      max-lifetime: 1800000 # 30 minutes
       connection-timeout: 30000
       connection-test-query: "SELECT 1"
 
@@ -22,7 +22,6 @@ spring:
       hibernate.format_sql: true
       hibernate.use_sql_comments: true
       hibernate.enable_lazy_load_no_trans: true
-
 
   flyway:
     enabled: true

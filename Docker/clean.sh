@@ -11,7 +11,7 @@ for DIR in "$PARENT_DIR"/*/; do
     # Skip if not a directory or if it is the script's directory
     [ -d "$DIR" ] || continue
     [ "$DIR" == "$SCRIPT_DIR/" ] && continue
-    [ "$(basename "$DIR")" == "Common" ] && continue
+    [ "$(basename "$DIR")" == "core-commons" ] && continue
     [ "$(basename "$DIR")" == "Docker" ] && continue
     [ "$(basename "$DIR")" == "Scripts" ] && continue
     [ "$(basename "$DIR")" == "telemetry-client" ] && continue

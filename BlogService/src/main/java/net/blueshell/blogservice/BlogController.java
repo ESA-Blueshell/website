@@ -1,12 +1,15 @@
 package net.blueshell.blogservice;
 
+import net.blueshell.db.BaseController;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class Controller extends BaseController {
+public class BlogController extends BaseController<BlogService, BlogMapper> {
 
-    public Controller(Object service, Object mapper) {
+    @Autowired
+    public BlogController(BlogService service, BlogMapper mapper) {
         super(service, mapper);
     }
 

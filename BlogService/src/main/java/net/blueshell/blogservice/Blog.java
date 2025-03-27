@@ -14,7 +14,7 @@ import java.util.UUID;
 @SQLDelete(sql = "UPDATE blogs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
-public class Blog implements BaseModel<Long> {
+public class Blog implements BaseModel<UUID> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

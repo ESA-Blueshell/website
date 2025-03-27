@@ -3,5 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/blueshell-api" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/blueshell-frontend" vcs="Git" />
   </component>
 </project>

@@ -44,6 +44,14 @@ services:
     networks:
       - global_network
 
+  rabbitmq:
+    image: rabbitmq:4.0.7-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - global_network
+
   apigateway:
     build:
       context: .
@@ -56,10 +64,10 @@ services:
     networks:
       - global_network
     depends_on:
+      - rabbitmq
       - blogservice
       - emailparser
       - eventparser
-      - socialmediaservice
       - telemetry
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
@@ -77,6 +85,8 @@ services:
       - "5006:5005"
     networks:
       - global_network
+    depends_on:
+      - rabbitmq
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
@@ -125,6 +135,9 @@ services:
       - "5009:5005"
     networks:
       - global_network
+    depends_on:
+      - rabbitmq
+      - apigateway
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s

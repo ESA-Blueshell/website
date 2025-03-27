@@ -10,9 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 @Data
-public class Event {
+public class Blog {
     private String id;
-    private String title;
-    private String content;
+    private String plainText;
+    private String rawHTML;
+
 }
 

@@ -42,8 +42,8 @@
 		</dependency>
 		<dependency>
 			<groupId>net.blueshell</groupId>
-			<artifactId>Common</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<artifactId>core-commons</artifactId>
+			<version>0.0.1</version>
 		</dependency>
         <dependency>
             <groupId>org.springframework.amqp</groupId>

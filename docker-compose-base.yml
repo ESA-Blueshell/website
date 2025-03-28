@@ -68,6 +68,7 @@ services:
       - blogservice
       - emailparser
       - eventparser
+      - fileservice
       - telemetry
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
@@ -125,6 +126,26 @@ services:
       timeout: 10s
       retries: 5
     image: eventparser:latest
+  fileservice:
+    build:
+      context: .
+      dockerfile: ./FileService/Dockerfile
+      args:
+        - PORT=8086
+    ports:
+      - "5011:5005"
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    image: blogservice:latest
+    volumes:
+      - "./files:/app/files"
   socialmediaservice:
     build:
       context: .

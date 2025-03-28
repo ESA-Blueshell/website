@@ -23,7 +23,7 @@ public class SocialMediaService {
 
     public void distributeEvent(Event event) {
         String link = telemetryClient.getTrackableEventURL(event.getId());
-        String content = "📅 " + event.getTitle() + "\n" + event.getContent() + "\n" + link;
+        String content = generateEventContent(event, link);
 
         post(content, link);
     }
@@ -33,4 +33,19 @@ public class SocialMediaService {
         socialMediaClient.postToX(content, link);
     }
 
+    private String generateEventContent(Event event, String link) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("📅 *").append(event.getTitle()).append("*\n");
+
+        if (event.getLocation() != null && !event.getLocation().isEmpty()) {
+            sb.append("📍 ").append(event.getLocation()).append("\n");
+        }
+
+        if (event.getDescription() != null && !event.getDescription().isEmpty()) {
+            sb.append("\n").append(event.getDescription()).append("\n");
+        }
+
+        sb.append("\n🔗 ").append(link);
+        return sb.toString();
+    }
 }

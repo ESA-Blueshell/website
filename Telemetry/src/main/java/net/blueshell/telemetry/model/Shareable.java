@@ -1,4 +1,4 @@
-package net.blueshell.common;
+package net.blueshell.telemetry.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,12 +7,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class Event {
+@AllArgsConstructor
+public class Shareable {
     private String id;
-    private String title;
-    private String description;
-    private String location;
     private String url;
+    private String type; // facebook, x, etc
+    private Integer facebookVisits;
+    private Integer xVisits;
 }

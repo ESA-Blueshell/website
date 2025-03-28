@@ -10,10 +10,16 @@
     </parent>
 
     <artifactId>db-commons</artifactId>
-    <version>${revision}</version>
+    <version>0.0.1</version>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/ESA-Blueshell/website</url>
+        </repository>
+    </distributionManagement>
     <properties>
         <revision>1.0-SNAPSHOT</revision>
-        <core.commons.version>1.0-SNAPSHOT</core.commons.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -2,8 +2,11 @@ name: Build and Deploy
 
 on:
   push:
+    branches:
+      - 'main'
     paths:
       - 'core-commons/**'
+      - 'db-commons/**'
 
 jobs:
   build-and-deploy:

@@ -1,0 +1,48 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'core-commons/**'
+      - 'db-commons/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          server-id: github
+          server-username: ${{ github.actor }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Unique Version
+        id: version
+        run: |
+          UNIQUE_VERSION="1.0.0-$(date -u +'%Y%m%d%H%M%S')"
+          echo "UNIQUE_VERSION=$UNIQUE_VERSION" >> $GITHUB_ENV
+
+      - name: Build & Deploy core-commons
+        if: contains(github.event.head_commit.modified, 'core-commons/') || contains(github.event.head_commit.added, 'core-commons/')
+        run: |
+          cd core-commons
+          mvn -B deploy -Drevision=${{ env.UNIQUE_VERSION }}
+
+      - name: Build & Deploy db-commons
+        if: contains(github.event.head_commit.modified, 'db-commons/') || contains(github.event.head_commit.modified, 'core-commons/')
+        run: |
+          cd db-commons
+          mvn -B deploy \
+            -Drevision=${{ env.UNIQUE_VERSION }} \
+            -Dcore.commons.version=${{ env.UNIQUE_VERSION }}

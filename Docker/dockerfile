@@ -11,6 +11,7 @@ COPY ./${SERVICE_NAME}/mvnw .
 # Copy the parent POM and module POMs
 COPY ./pom.xml /app/parent/pom.xml
 COPY ./core-commons/pom.xml /app/parent/core-commons/pom.xml
+COPY ./db-commons/pom.xml /app/parent/db-commons/pom.xml
 COPY ./APIGateway/pom.xml /app/parent/APIGateway/pom.xml
 COPY ./BlogService/pom.xml /app/parent/BlogService/pom.xml
 COPY ./EmailParser/pom.xml /app/parent/EmailParser/pom.xml
@@ -36,6 +37,22 @@ COPY ./core-commons/src ./core-commons/src
 # Build the core-commons module
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./core-commons/pom.xml -nsu -o
 
+# Use an official Maven image to build the db-commons module
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-db-commons
+WORKDIR /app
+
+# Copy the local Maven files from the previous stage
+COPY --from=build-core-commons /app/.mvn .mvn
+COPY --from=build-core-commons /app/mvnw .
+
+# Copy the core-commons module
+COPY ./db-commons/pom.xml ./db-commons/pom.xml
+COPY ./db-commons/src ./db-commons/src
+
+# Build the core-commons module
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./db-commons/pom.xml -nsu -o
+
+
 # Use an official Maven image to build the service
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
@@ -45,8 +62,8 @@ ARG PORT
 # Copy the service POM, source code, and local Maven repository
 COPY ./${SERVICE_NAME}/pom.xml .
 COPY ./${SERVICE_NAME}/src ./src
-COPY --from=build-core-commons /app/.mvn .mvn
-COPY --from=build-core-commons /app/mvnw .
+COPY --from=build-db-commons /app/.mvn .mvn
+COPY --from=build-db-commons /app/mvnw .
 
 # Build the service
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -o -nsu

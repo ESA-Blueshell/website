@@ -1,1 +1,4 @@
 Dockerfile
+
+src/main/resources/application-prod.yaml
+src/main/resources/application-dev.yaml

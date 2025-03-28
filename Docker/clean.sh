@@ -12,6 +12,7 @@ for DIR in "$PARENT_DIR"/*/; do
     [ -d "$DIR" ] || continue
     [ "$DIR" == "$SCRIPT_DIR/" ] && continue
     [ "$(basename "$DIR")" == "core-commons" ] && continue
+    [ "$(basename "$DIR")" == "db-commons" ] && continue
     [ "$(basename "$DIR")" == "Docker" ] && continue
     [ "$(basename "$DIR")" == "Scripts" ] && continue
     [ "$(basename "$DIR")" == "telemetry-client" ] && continue

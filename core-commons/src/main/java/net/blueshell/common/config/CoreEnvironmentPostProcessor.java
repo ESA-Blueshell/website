@@ -11,9 +11,9 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.List;
 
-public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor {
+public class CoreEnvironmentPostProcessor implements EnvironmentPostProcessor {
     private static final String[] CONFIG_FILES = {
-            "application-common.yaml",
+            "application-core.yaml",
     };
     private final YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
 

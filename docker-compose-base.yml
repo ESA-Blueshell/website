@@ -21,6 +21,8 @@ services:
       - db
     ports:
       - "8080:8080"
+    env_file:
+      - .db.env
     volumes:
       - "./blueshell-api:/usr/app:rw"
     environment:
@@ -41,8 +43,11 @@ services:
       - "3306:3306"
     volumes:
       - "./data:/var/lib/mysql"
+      - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
     networks:
       - global_network
+    env_file:
+      - .db.env
 
   rabbitmq:
     image: rabbitmq:4.0.7-management
@@ -88,11 +93,14 @@ services:
       - global_network
     depends_on:
       - rabbitmq
+      - db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
+    env_file:
+      - .db.env
     image: blogservice:latest
   emailparser:
     build:
@@ -138,14 +146,17 @@ services:
       - global_network
     depends_on:
       - rabbitmq
+      - db
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
-    image: blogservice:latest
+    image: fileservice:latest
     volumes:
       - "./files:/app/files"
+    env_file:
+      - .db.env
   socialmediaservice:
     build:
       context: .

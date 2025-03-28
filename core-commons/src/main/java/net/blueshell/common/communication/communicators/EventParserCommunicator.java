@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class EventParserCommunicator extends CommunicatorBase {
 
-    private final String eventParserUrl = "http://emailparser:8080";
+    private final String eventParserUrl = "http://eventparser:8080";
 
     public EventParserCommunicator() {
         super();

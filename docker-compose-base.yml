@@ -1,17 +1,17 @@
 services:
-  frontend:
-    build:
-      context: ./blueshell-frontend
-      dockerfile: Dockerfile-dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - "./blueshell-frontend:/usr/app:rw"
-      - "/usr/app/node_modules"
-    depends_on:
-      - api
-    networks:
-      - global_network
+#  frontend:
+#    build:
+#      context: ./blueshell-frontend
+#      dockerfile: Dockerfile-dev
+#    ports:
+#      - "3000:3000"
+#    volumes:
+#      - "./blueshell-frontend:/usr/app:rw"
+#      - "/usr/app/node_modules"
+#    depends_on:
+#      - api
+#    networks:
+#      - global_network
 
   api:
     build:

@@ -67,7 +67,7 @@ COPY --from=build-db-commons /app/.mvn .mvn
 COPY --from=build-db-commons /app/mvnw .
 
 # Build the service
-RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -o -nsu
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu
 
 # Use an official OpenJDK image to run the application
 FROM eclipse-temurin:21-alpine

@@ -2,7 +2,7 @@
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMMON_DIR="$(cd "$(dirname "Common")" && pwd)"
+COMMON_DIR="$(cd "$(dirname "core-commons")" && pwd)"
 
 # Get the parent directory
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
@@ -31,7 +31,7 @@ for DIR in "$PARENT_DIR"/*/; do
     # Skip if not a directory or if it is the script's directory
     [ -d "$DIR" ] || continue
     [ "$DIR" == "$SCRIPT_DIR/" ] && continue
-    [ "$(basename "$DIR")" == "Common" ] && continue
+    [ "$(basename "$DIR")" == "core-commons" ] && continue
     [ "$(basename "$DIR")" == "Docker" ] && continue
     [ "$(basename "$DIR")" == "Scripts" ] && continue
     [ "$(basename "$DIR")" == "telemetry-client" ] && continue

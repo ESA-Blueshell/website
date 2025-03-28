@@ -1,6 +1,5 @@
 package net.blueshell.blogservice.queue;
 
-import net.blueshell.common.Constants;
 import net.blueshell.blogservice.data.Map;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;

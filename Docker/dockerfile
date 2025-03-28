@@ -1,51 +1,64 @@
-# Stage 1: Build base modules
+# Stage 1: Base Builder - Set up common files and download dependencies
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS base-builder
 WORKDIR /app
 
-# 1. Copy all POM files
+# Copy the entire multi-module project structure, not just the POM files.
 COPY pom.xml .
-COPY core-commons/pom.xml ./core-commons/
-COPY db-commons/pom.xml ./db-commons/
-COPY APIGateway/pom.xml ./APIGateway/
-COPY BlogService/pom.xml ./BlogService/
-COPY EmailParser/pom.xml ./EmailParser/
-COPY EventParser/pom.xml ./EventParser/
-COPY SocialMediaService/pom.xml ./SocialMediaService/
-COPY Telemetry/pom.xml ./Telemetry/
+COPY core-commons/ ./core-commons/
+COPY db-commons/ ./db-commons/
+COPY APIGateway/ ./APIGateway/
+COPY BlogService/ ./BlogService/
+COPY EmailParser/ ./EmailParser/
+COPY EventParser/ ./EventParser/
+COPY SocialMediaService/ ./SocialMediaService/
+COPY Telemetry/ ./Telemetry/
 
-# 2. Download all dependencies first
+# Download all dependencies first (using cache)
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B dependency:go-offline
 
-# 3. Build core modules sequentially
-COPY core-commons/src ./core-commons/src
+# Stage 2: Core-Commons Builder - Build core-commons (depends on base-builder)
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS core-commons-builder
+WORKDIR /app
+
+# Copy the full project structure from the base-builder.
+COPY --from=base-builder /app .
+
+# Build the core-commons module (this will install it into the local repo)
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B install -pl core-commons -DskipTests
 
-COPY db-commons/src ./db-commons/src
+# Stage 3: DB-Commons Builder - Build db-commons (depends on core-commons)
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS db-commons-builder
+WORKDIR /app
+
+# Copy the full project structure from the base-builder.
+COPY --from=base-builder /app .
+
+# Build the db-commons module. The previously built core-commons artifact will be found in the local repo.
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B install -pl db-commons -DskipTests
 
-# Stage 2: Service builder template
+# Stage 4: Service Builder - Build the service module (depends on core- and db-commons)
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS service-builder
 WORKDIR /app
 ARG SERVICE_NAME
 
-# 1. Reuse source POM structure
+# Copy the full project structure from the base-builder.
 COPY --from=base-builder /app .
 
-# 2. Copy service-specific code
-COPY ${SERVICE_NAME}/pom.xml ./${SERVICE_NAME}/
-COPY ${SERVICE_NAME}/src ./${SERVICE_NAME}/src
-
-# 3. Build with shared cache
+# Build the specific service module; Maven will resolve dependencies from core-commons and db-commons.
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B package -pl ${SERVICE_NAME} -DskipTests
+
 # Final stage: Runtime image
 FROM eclipse-temurin:21-alpine
 WORKDIR /app
 ARG SERVICE_NAME
 ENV PORT=${PORT}
+
+# Copy the built service JAR into the runtime image.
 COPY --from=service-builder /app/${SERVICE_NAME}/target/*.jar app.jar
+
 EXPOSE ${PORT} 5005
 ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "app.jar"]

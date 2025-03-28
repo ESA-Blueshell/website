@@ -43,14 +43,6 @@
 			<artifactId>core-commons</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>net.blueshell</groupId>
-			<artifactId>core-commons</artifactId>
-			<version>1.0-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
-
-
 	</dependencies>
 
 	<build>

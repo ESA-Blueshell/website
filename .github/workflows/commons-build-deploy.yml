@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [ main ]
+#    branches: [ main ]
     paths:
       - 'core-commons/**'
       - 'db-commons/**'

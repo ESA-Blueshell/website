@@ -1,13 +1,13 @@
-package net.blueshell.blogservice;
+package net.blueshell.emailparser;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class BlogServiceApplicationTests {
+class EmailParserApplicationTests {
 
-    @Test
-    void contextLoads() {
-    }
+	@Test
+	void contextLoads() {
+	}
 
 }

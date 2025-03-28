@@ -16,6 +16,7 @@ COPY ./APIGateway/pom.xml /app/parent/APIGateway/pom.xml
 COPY ./BlogService/pom.xml /app/parent/BlogService/pom.xml
 COPY ./EmailParser/pom.xml /app/parent/EmailParser/pom.xml
 COPY ./EventParser/pom.xml /app/parent/EventParser/pom.xml
+COPY ./FileService/pom.xml /app/parent/FileService/pom.xml
 COPY ./SocialMediaService/pom.xml /app/parent/SocialMediaService/pom.xml
 COPY ./Telemetry/pom.xml /app/parent/Telemetry/pom.xml
 

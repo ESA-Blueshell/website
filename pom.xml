@@ -15,6 +15,7 @@
         <module>BlogService</module>
         <module>EmailParser</module>
         <module>EventParser</module>
+        <module>FileService</module>
         <module>SocialMediaService</module>
         <module>Telemetry</module>
     </modules>

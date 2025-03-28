@@ -36,9 +36,6 @@
             <version>5.25.0</version>
             <scope>compile</scope>
         </dependency>
-    </dependencies>
-
-    <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

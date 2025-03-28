@@ -86,7 +86,7 @@ public abstract class CommunicatorBase implements ICommunicator {
 //                    body
 //            );
 
-            this.template.convertAndSend(Constants.SM_QUEUE_NAME, body);
+            this.template.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
         }
         catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());

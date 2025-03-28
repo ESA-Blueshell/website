@@ -1,6 +1,7 @@
 package net.blueshell.emailparser.controller;
 
 import net.blueshell.common.ParsedEmail;
+import net.blueshell.emailparser.data.Map;
 import net.blueshell.emailparser.service.EmailParsingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,5 +23,16 @@ public class EmailParserController {
     @PostMapping("/parse-email")
     public ParsedEmail parsedEmail(@RequestBody String newsletterHTML) {
         return parsingService.parseHTML(newsletterHTML);
+    }
+
+    @GetMapping("/queue")
+    public String addQueue() {
+
+        StringBuilder sb = new StringBuilder().append("EmailParser ").append("\n");
+        for (java.util.Map.Entry<String, String> entry : Map.hashMap.entrySet()) {
+            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+
+        return sb.toString();
     }
 }

@@ -1,8 +1,7 @@
 package net.blueshell.common.communication.communicators.base;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import net.blueshell.common.communication.communicators.serializers.ISerializer;
+import net.blueshell.common.communication.communicators.serializers.JsonSerializer;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -22,19 +21,16 @@ public class CommunicatorBase implements ICommunicator {
 
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
     private final RabbitTemplate rabbitTemplate;
 
     public CommunicatorBase() {
         this.rabbitTemplate = null;
         this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
     }
 
     public CommunicatorBase(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -43,7 +39,8 @@ public class CommunicatorBase implements ICommunicator {
                                           Class<T> responseType) {
         try {
             // Convert request object to JSON string
-            String jsonRequest = objectMapper.writeValueAsString(body);
+            JsonSerializer serializer = new JsonSerializer();
+            String jsonRequest = serializer.serialize(body);
 
             // Set headers
             HttpHeaders headers = new HttpHeaders();
@@ -65,21 +62,8 @@ public class CommunicatorBase implements ICommunicator {
             ResponseEntity<String> response = restTemplate.exchange(finalUrl, method, entity, String.class);
             String responseBody = response.getBody();
 
-            // Convert response JSON string to response object
-            try {
-                T mappedResponseBody = objectMapper.readValue(responseBody, responseType);
-                HttpStatusCode responseCode = response.getStatusCode();
-                return new ResponseEntity<>(mappedResponseBody, responseCode);
-            } catch (JsonParseException ex) {
-                logger.log(Level.SEVERE, ex.getMessage());
+            return getResponseObject(responseBody, responseType, response, serializer);
 
-                if(responseType == String.class) {
-                    HttpStatusCode responseCode = response.getStatusCode();
-                    return new ResponseEntity<>((T)responseBody, responseCode);
-                }
-
-                return new ResponseEntity<>(null, HttpStatusCode.valueOf(500));
-            }
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
             return null;
@@ -91,7 +75,10 @@ public class CommunicatorBase implements ICommunicator {
 
         try {
             assert rabbitTemplate != null;
-            rabbitTemplate.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
+            String serializedBody = new JsonSerializer().serialize(body);
+            rabbitTemplate.convertAndSend(Constants.EXCHANGE,
+                    Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
+                    serializedBody);
         }
         catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
@@ -103,5 +90,18 @@ public class CommunicatorBase implements ICommunicator {
 
     protected String formatUrl(String name, int port) {
         return String.format(urlFormat, name, port);
+    }
+
+    private <T, T1> ResponseEntity<T> getResponseObject(String responseBody, Class<T> responseType,
+                                                        ResponseEntity<T1> response, ISerializer serializer)
+    {
+        try {
+            // Convert response JSON string to response object
+            return new ResponseEntity<>(serializer.deserialize(responseBody, responseType),
+                    response.getStatusCode());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            return new ResponseEntity<>(response.getStatusCode());
+        }
     }
 }

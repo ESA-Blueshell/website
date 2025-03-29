@@ -36,3 +36,4 @@ build/
 .DS_Store
 .m2
 /data
+files/

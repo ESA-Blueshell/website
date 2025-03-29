@@ -15,11 +15,12 @@ import org.springframework.web.bind.annotation.*;
 public class SocialMediaController {
     private final static ICommunicationService communicationService = new CommunicationService();
     private final IAsyncCommunicationService asyncCommunicationService;
-    @Autowired
 
+    @Autowired
     public SocialMediaController(RabbitTemplate template) {
         this.asyncCommunicationService = new AsyncCommunicationService(template);
     }
+
     @GetMapping
     public ResponseEntity<String> getSocialMedia() {
         return communicationService.sendToSocialMediaService("/", HttpMethod.GET, String.class);

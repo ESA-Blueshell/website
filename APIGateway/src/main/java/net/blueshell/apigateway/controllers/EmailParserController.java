@@ -1,6 +1,5 @@
 package net.blueshell.apigateway.controllers;
 
-import net.blueshell.common.Image;
 import net.blueshell.common.ParsedEmail;
 import net.blueshell.common.communication.AsyncCommunicationService;
 import net.blueshell.common.communication.CommunicationService;
@@ -13,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/email")
@@ -29,15 +26,15 @@ public class EmailParserController {
 
     @GetMapping
     public String addToEmailQueue() {
-        return asyncCommunicationService.sendToEmailParserService("ApiGateway message");
+        ParsedEmail email = new ParsedEmail();
+        email.setPlainText("This is a test parsed email to EmailParser");
+        email.setRawHTML("<html><body><h1>This is a test email</h1></body></html>");
+
+        return asyncCommunicationService.sendToEmailParserService(email);
     }
 
     @GetMapping("/queue")
     public ResponseEntity<String> getEmailQueue() {
-        ParsedEmail email = new ParsedEmail();
-        email.setPlainText("This is a test parsed email");
-        email.setRawHTML("<html><body><h1>This is a test email</h1></body></html>");
-
-        return communicationService.sendToEmailParserService("/queue", HttpMethod.GET, email, String.class);
+        return communicationService.sendToEmailParserService("/queue", HttpMethod.GET, String.class);
     }
 }

@@ -1,12 +1,10 @@
 package net.blueshell.common.communication.communicators.base;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.HashMap;
@@ -40,8 +38,8 @@ public class CommunicatorBase implements ICommunicator {
     }
 
     @Override
-    public <T> ResponseEntity<T> sendSync(String url, MessageType type,
-                                          T body, HashMap<String, Object> parameters,
+    public <T, T1> ResponseEntity<T> sendSync(String url, HttpMethod method,
+                                          T1 body, HashMap<String, Object> parameters,
                                           Class<T> responseType) {
         try {
             // Convert request object to JSON string
@@ -56,17 +54,32 @@ public class CommunicatorBase implements ICommunicator {
 
             // Add parameters to the URL
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
-            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                builder.queryParam(entry.getKey(), entry.getValue());
+            if(parameters != null) {
+                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                    builder.queryParam(entry.getKey(), entry.getValue());
+                }
             }
             String finalUrl = builder.toUriString();
 
             // Send request and receive response
-            ResponseEntity<String> response = restTemplate.exchange(finalUrl, HttpMethod.POST, entity, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(finalUrl, method, entity, String.class);
+            String responseBody = response.getBody();
 
             // Convert response JSON string to response object
-            return new ResponseEntity<>(objectMapper.readValue(response.getBody(), responseType), response.getStatusCode());
+            try {
+                T mappedResponseBody = objectMapper.readValue(responseBody, responseType);
+                HttpStatusCode responseCode = response.getStatusCode();
+                return new ResponseEntity<>(mappedResponseBody, responseCode);
+            } catch (JsonParseException ex) {
+                logger.log(Level.SEVERE, ex.getMessage());
 
+                if(responseType == String.class) {
+                    HttpStatusCode responseCode = response.getStatusCode();
+                    return new ResponseEntity<>((T)responseBody, responseCode);
+                }
+
+                return new ResponseEntity<>(null, HttpStatusCode.valueOf(500));
+            }
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
             return null;

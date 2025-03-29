@@ -4,16 +4,14 @@ import net.blueshell.common.communication.AsyncCommunicationService;
 import net.blueshell.common.communication.CommunicationService;
 import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
-import net.blueshell.common.communication.communicators.base.MessageType;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@RestController("social-media")
+@RestController
+@RequestMapping("/social-media")
 public class SocialMediaController {
     private final static ICommunicationService communicationService = new CommunicationService();
     private final IAsyncCommunicationService asyncCommunicationService;
@@ -22,14 +20,14 @@ public class SocialMediaController {
     public SocialMediaController(RabbitTemplate template) {
         this.asyncCommunicationService = new AsyncCommunicationService(template);
     }
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<String> getSocialMedia() {
-        return communicationService.sendToSocialMediaService("/", MessageType.GET, String.class);
+        return communicationService.sendToSocialMediaService("/", HttpMethod.GET, String.class);
     }
 
     @GetMapping("/queue")
     public ResponseEntity<String> getSocialMediaQueue() {
-        return communicationService.sendToSocialMediaService("/queue", MessageType.GET, String.class);
+        return communicationService.sendToSocialMediaService("/queue", HttpMethod.GET, String.class);
     }
 
     @PostMapping("/queue")

@@ -5,6 +5,7 @@ import net.blueshell.common.communication.CommunicationService;
 import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
 import net.blueshell.common.communication.communicators.ApiGatewayCommunicator;
+import net.blueshell.common.communication.communicators.base.ICommunicator;
 import net.blueshell.common.communication.communicators.base.MessageType;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +18,12 @@ public class MainController {
 
     private final static ICommunicationService communicationService = new CommunicationService();
     private final static IAsyncCommunicationService asyncCommunicationService = new AsyncCommunicationService();
-    private final RabbitTemplate template;
+    private final ICommunicator asyncCommunicator;
 
     @Autowired
     public MainController(RabbitTemplate template) {
         System.out.println("Blog Service Started");
-        this.template = template;
+        this.asyncCommunicator = new ApiGatewayCommunicator(template);
     }
 
     @RequestMapping("/")
@@ -37,41 +38,41 @@ public class MainController {
 
     @RequestMapping("/blog/post")
     public ResponseEntity<String> blogPost() {
-        return communicationService.sendToBlogService("/", MessageType.POST, "Some bodyy", null);
+        return communicationService.sendToBlogService("/", MessageType.POST, "Some bodyy");
     }
 
     @RequestMapping("/email")
     public String email() {
-        return asyncCommunicationService.sendToEmailParserService(new ApiGatewayCommunicator(template), "ApiGateway message");
+        return asyncCommunicationService.sendToEmailParserService(asyncCommunicator, "ApiGateway message");
     }
 
     @RequestMapping("/email/queue")
     public ResponseEntity<String> emailQueue() {
-        return communicationService.sendToEmailParserService("/queue", MessageType.GET, null, null);
+        return communicationService.sendToEmailParserService("/queue", MessageType.GET);
     }
 
     @RequestMapping("/event")
     public String event() {
-        return asyncCommunicationService.sendToEventParserService(new ApiGatewayCommunicator(template), "ApiGateway message");
+        return asyncCommunicationService.sendToEventParserService(asyncCommunicator, "ApiGateway message");
     }
 
     @RequestMapping("/event/queue")
     public ResponseEntity<String> eventQueue() {
-        return communicationService.sendToEventParserService("/queue", MessageType.GET, null, null);
+        return communicationService.sendToEventParserService("/queue", MessageType.GET);
     }
 
     @RequestMapping("/social-media")
     public ResponseEntity<String> socialMedia() {
-        return communicationService.sendToSocialMediaService("/", MessageType.GET, null, null);
+        return communicationService.sendToSocialMediaService("/", MessageType.GET);
     }
 
     @RequestMapping("/social-media/queue")
     public ResponseEntity<String> socialMediaQueue() {
-        return communicationService.sendToSocialMediaService("/queue", MessageType.GET, null, null);
+        return communicationService.sendToSocialMediaService("/queue", MessageType.GET);
     }
 
     @RequestMapping("/telemetry")
     public ResponseEntity<String> telemetry() {
-        return communicationService.sendToTelemetryService("/", MessageType.GET, null, null);
+        return communicationService.sendToTelemetryService("/", MessageType.GET);
     }
 }

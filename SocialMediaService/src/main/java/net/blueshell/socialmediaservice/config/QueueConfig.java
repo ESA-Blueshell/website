@@ -1,6 +1,7 @@
 package net.blueshell.socialmediaservice.config;
 
 import net.blueshell.common.Constants;
+import net.blueshell.common.communication.communicators.SocialMediaCommunicator;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -13,7 +14,7 @@ public class QueueConfig {
 
     @Bean
     Queue queue() {
-        return new Queue("socialmedia", false);
+        return new Queue(SocialMediaCommunicator.name, false);
     }
 
     @Bean
@@ -23,6 +24,7 @@ public class QueueConfig {
 
     @Bean
     Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with( Constants.QUEUE_ROUTE_PREFIX + ".socialmedia");
+        return BindingBuilder.bind(queue).to(exchange)
+                .with( Constants.QUEUE_ROUTE_PREFIX + "." + SocialMediaCommunicator.name);
     }
 }

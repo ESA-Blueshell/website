@@ -9,7 +9,8 @@ import java.util.HashMap;
 
 public class EventParserCommunicator extends CommunicatorBase {
 
-    private final String eventParserUrl = "http://eventparser:8080";
+    public static final String name = "eventparser";
+    private final String eventParserUrl = formatUrl(name, 8080);
 
     public EventParserCommunicator() {
         super();
@@ -23,10 +24,5 @@ public class EventParserCommunicator extends CommunicatorBase {
     public ResponseEntity<String> sendSync(String url, MessageType type,
                                            String body, HashMap<String, Object> parameters) {
         return super.sendSync(eventParserUrl + url, type, body, parameters);
-    }
-
-    @Override
-    public String getName() {
-        return "eventparser";
     }
 }

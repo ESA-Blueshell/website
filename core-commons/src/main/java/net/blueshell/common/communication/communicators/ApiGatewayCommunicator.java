@@ -8,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import java.util.HashMap;
 
 public class ApiGatewayCommunicator extends CommunicatorBase {
-    private final String apiGatewayUrl = "http://apigateway:80";
+
+    public static final String name = "apigateway";
+    private final String apiGatewayUrl = formatUrl(name, 80);
 
     public ApiGatewayCommunicator() {
         super();
@@ -22,10 +24,5 @@ public class ApiGatewayCommunicator extends CommunicatorBase {
     public ResponseEntity<String> sendSync(String url, MessageType type,
                                            String body, HashMap<String, Object> parameters) {
         return super.sendSync(apiGatewayUrl + url, type, body, parameters);
-    }
-
-    @Override
-    public String getName() {
-        return "apigateway";
     }
 }

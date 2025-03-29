@@ -9,7 +9,8 @@ import java.util.HashMap;
 
 public class BlogCommunicator extends CommunicatorBase {
 
-    private final String blogUrl = "http://blogservice:8080";
+    public static final String name = "blog";
+    private final String blogUrl = formatUrl(name, 8080);
 
     public BlogCommunicator() {
         super();
@@ -25,8 +26,4 @@ public class BlogCommunicator extends CommunicatorBase {
         return super.sendSync(blogUrl + url, type, body, parameters);
     }
 
-    @Override
-    public String getName() {
-        return "blog";
-    }
 }

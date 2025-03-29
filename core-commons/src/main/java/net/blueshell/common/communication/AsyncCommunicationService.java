@@ -7,31 +7,31 @@ public class AsyncCommunicationService implements IAsyncCommunicationService {
 
     @Override
     public String sendToAPIGateway(CommunicatorBase source, String body) {
-        return source.sendAsync(new ApiGatewayCommunicator().getName(), body);
+        return source.sendAsync(ApiGatewayCommunicator.name, body);
     }
 
     @Override
     public String sendToBlogService(CommunicatorBase source, String body) {
-        return source.sendAsync(new BlogCommunicator().getName(), body);
+        return source.sendAsync(BlogCommunicator.name, body);
     }
 
     @Override
     public String sendToEmailParserService(CommunicatorBase source, String body) {
-        return source.sendAsync(new EmailParserCommunicator().getName(), body);
+        return source.sendAsync(EmailParserCommunicator.name, body);
     }
 
     @Override
     public String sendToEventParserService(CommunicatorBase source, String body) {
-        return source.sendAsync(new EventParserCommunicator().getName(), body);
+        return source.sendAsync(EventParserCommunicator.name, body);
     }
 
     @Override
     public String sendToSocialMediaService(CommunicatorBase source, String body) {
-        return source.sendAsync(new SocialMediaCommunicator().getName(), body);
+        return source.sendAsync(SocialMediaCommunicator.name, body);
     }
 
     @Override
     public String sendToTelemetryService(CommunicatorBase source, String body) {
-        return source.sendAsync(new TelemetryCommunicator().getName(), body);
+        return source.sendAsync(TelemetryCommunicator.name, body);
     }
 }

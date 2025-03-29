@@ -9,7 +9,8 @@ import java.util.HashMap;
 
 public class TelemetryCommunicator extends CommunicatorBase {
 
-    private final String telemetryUrl = "http://telemetry:8080";
+    public static final String name = "telemetry";
+    private final String telemetryUrl = urlFormat.formatted(name, 8080);
 
     public TelemetryCommunicator() {
         super();
@@ -23,10 +24,5 @@ public class TelemetryCommunicator extends CommunicatorBase {
     public ResponseEntity<String> sendSync(String url, MessageType type,
                                            String body, HashMap<String, Object> parameters) {
         return super.sendSync(telemetryUrl + url, type, body, parameters);
-    }
-
-    @Override
-    public String getName() {
-        return "telemetry";
     }
 }

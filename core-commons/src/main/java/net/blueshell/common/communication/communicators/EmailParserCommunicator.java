@@ -9,7 +9,8 @@ import java.util.HashMap;
 
 public class EmailParserCommunicator extends CommunicatorBase {
 
-    private final String emailParserUrl = "http://emailparser:8080";
+    public static final String name = "emailparser";
+    private final String emailParserUrl = formatUrl(name, 8080);
 
     public EmailParserCommunicator() {
         super();
@@ -23,10 +24,5 @@ public class EmailParserCommunicator extends CommunicatorBase {
     public ResponseEntity<String> sendSync(String url, MessageType type,
                                            String body, HashMap<String, Object> parameters) {
         return super.sendSync(emailParserUrl + url, type, body, parameters);
-    }
-
-    @Override
-    public String getName() {
-        return "emailparser";
     }
 }

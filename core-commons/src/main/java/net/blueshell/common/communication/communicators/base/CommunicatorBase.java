@@ -18,6 +18,9 @@ import org.springframework.http.HttpStatus;
 
 public abstract class CommunicatorBase implements ICommunicator {
 
+    public static final String name = null;
+    protected final String urlFormat = "http://%s:%s";
+
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
     private final RabbitTemplate template;
 
@@ -78,14 +81,6 @@ public abstract class CommunicatorBase implements ICommunicator {
 
         try {
             assert this.template != null;
-
-// TODO add routing
-//            this.template.convertAndSend(
-//                    Constants.QUEUE_EXCHANGE_NAME,
-//                    Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
-//                    body
-//            );
-
             this.template.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
         }
         catch (Exception e) {
@@ -96,5 +91,7 @@ public abstract class CommunicatorBase implements ICommunicator {
         return "Message sent to " + targetName;
     }
 
-    public abstract String getName();
+    protected String formatUrl(String name, int port) {
+        return String.format(urlFormat, name, port);
+    }
 }

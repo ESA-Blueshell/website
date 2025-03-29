@@ -12,14 +12,6 @@ public class ApiGatewayCommunicator extends CommunicatorBase {
     public static final String name = "apigateway";
     private final String apiGatewayUrl = formatUrl(name, 80);
 
-    public ApiGatewayCommunicator() {
-        super();
-    }
-
-    public ApiGatewayCommunicator(RabbitTemplate template) {
-        super(template);
-    }
-
     @Override
     public <T> ResponseEntity<T> sendSync(String url, MessageType type,
                                           T body, HashMap<String, Object> parameters,

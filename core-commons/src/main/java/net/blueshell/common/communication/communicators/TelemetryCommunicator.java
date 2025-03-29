@@ -12,14 +12,6 @@ public class TelemetryCommunicator extends CommunicatorBase {
     public static final String name = "telemetry";
     private final String telemetryUrl = urlFormat.formatted(name, 8080);
 
-    public TelemetryCommunicator() {
-        super();
-    }
-
-    public TelemetryCommunicator(RabbitTemplate template) {
-        super(template);
-    }
-
     public <T> ResponseEntity<T> sendSync(String url, MessageType type,
                                           T body, HashMap<String, Object> parameters,
                                           Class<T> responseType) {

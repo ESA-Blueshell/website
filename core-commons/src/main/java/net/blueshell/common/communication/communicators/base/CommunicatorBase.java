@@ -1,6 +1,7 @@
 package net.blueshell.common.communication.communicators.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -14,27 +15,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.blueshell.common.Constants;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.client.RestTemplate;
 
-public abstract class CommunicatorBase implements ICommunicator {
+public class CommunicatorBase implements ICommunicator {
 
     public static final String name = null;
     protected final String urlFormat = "http://%s:%s";
 
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
-    private final RabbitTemplate template;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final RabbitTemplate rabbitTemplate;
 
     public CommunicatorBase() {
-        this.template = null;
+        this.rabbitTemplate = null;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
 
-    public CommunicatorBase(RabbitTemplate template) {
-        this.template = template;
+    public CommunicatorBase(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
@@ -69,15 +69,16 @@ public abstract class CommunicatorBase implements ICommunicator {
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
+            return null;
         }
     }
 
     @Override
-    public String sendAsync(String targetName, String body) {
+    public <T> String sendAsync(String targetName, T body) {
 
         try {
-            assert this.template != null;
-            this.template.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
+            assert rabbitTemplate != null;
+            rabbitTemplate.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
         }
         catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());

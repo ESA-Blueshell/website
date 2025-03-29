@@ -1,12 +1,12 @@
 package net.blueshell.common.communication;
 
-import net.blueshell.common.communication.communicators.base.ICommunicator;
+import net.blueshell.common.communication.communicators.*;
 
 public interface IAsyncCommunicationService {
-    String sendToAPIGateway(ICommunicator source, String body);
-    String sendToBlogService(ICommunicator source, String body);
-    String sendToEmailParserService(ICommunicator source, String body);
-    String sendToEventParserService(ICommunicator source, String body);
-    String sendToSocialMediaService(ICommunicator source, String body);
-    String sendToTelemetryService(ICommunicator source, String body);
+    public <T> String sendToAPIGateway(T body);
+    public <T> String sendToBlogService(T body);
+    public <T> String sendToEmailParserService(T body);
+    public <T> String sendToEventParserService(T body);
+    public <T> String sendToSocialMediaService(T body);
+    public <T> String sendToTelemetryService(T body);
 }

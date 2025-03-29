@@ -12,14 +12,6 @@ public class BlogCommunicator extends CommunicatorBase {
     public static final String name = "blog";
     private final String blogUrl = formatUrl(name, 8080);
 
-    public BlogCommunicator() {
-        super();
-    }
-
-    public BlogCommunicator(RabbitTemplate template) {
-        super(template);
-    }
-
     public <T> ResponseEntity<T> sendSync(String url, MessageType type,
                                           T body, HashMap<String, Object> parameters,
                                           Class<T> responseType) {

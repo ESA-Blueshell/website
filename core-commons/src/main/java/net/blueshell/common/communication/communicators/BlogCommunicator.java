@@ -20,10 +20,10 @@ public class BlogCommunicator extends CommunicatorBase {
         super(template);
     }
 
-    @Override
-    public ResponseEntity<String> sendSync(String url, MessageType type,
-                                           String body, HashMap<String, Object> parameters) {
-        return super.sendSync(blogUrl + url, type, body, parameters);
+    public <T> ResponseEntity<T> sendSync(String url, MessageType type,
+                                          T body, HashMap<String, Object> parameters,
+                                          Class<T> responseType) {
+        return super.sendSync(blogUrl + url, type, body, parameters, responseType);
     }
 
 }

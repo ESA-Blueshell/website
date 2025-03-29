@@ -7,36 +7,30 @@ import java.util.HashMap;
 
 public interface ICommunicationService {
 
-    ResponseEntity<String> sendToAPIGateway(String url, MessageType type);
-    ResponseEntity<String> sendToBlogService(String url, MessageType type);
-    ResponseEntity<String> sendToEmailParserService(String url, MessageType type);
-    ResponseEntity<String> sendToEventParserService(String url, MessageType type);
-    ResponseEntity<String> sendToSocialMediaService(String url, MessageType type);
-    ResponseEntity<String> sendToTelemetryService(String url, MessageType type);
+    <T> ResponseEntity<T> sendToAPIGateway(String url, MessageType type, Class<T> responseType);
+    <T> ResponseEntity<T> sendToBlogService(String url, MessageType type, Class<T> responseType);
+    <T> ResponseEntity<T> sendToEmailParserService(String url, MessageType type, Class<T> responseType);
+    <T> ResponseEntity<T> sendToEventParserService(String url, MessageType type, Class<T> responseType);
+    <T> ResponseEntity<T> sendToSocialMediaService(String url, MessageType type, Class<T> responseType);
+    <T> ResponseEntity<T> sendToTelemetryService(String url, MessageType type, Class<T> responseType);
 
-    ResponseEntity<String> sendToAPIGateway(String url, MessageType type,
-                                            String body);
-    ResponseEntity<String> sendToBlogService(String url, MessageType type,
-                                             String body);
-    ResponseEntity<String> sendToEmailParserService(String url, MessageType type,
-                                                    String body);
-    ResponseEntity<String> sendToEventParserService(String url, MessageType type,
-                                                    String body);
-    ResponseEntity<String> sendToSocialMediaService(String url, MessageType type,
-                                                    String body);
-    ResponseEntity<String> sendToTelemetryService(String url, MessageType type,
-                                                  String body);
+    <T> ResponseEntity<T> sendToAPIGateway(String url, MessageType type, T body, Class<T> responseType);
+    <T> ResponseEntity<T> sendToBlogService(String url, MessageType type, T body, Class<T> responseType);
+    <T> ResponseEntity<T> sendToEmailParserService(String url, MessageType type, T body, Class<T> responseType);
+    <T> ResponseEntity<T> sendToEventParserService(String url, MessageType type, T body, Class<T> responseType);
+    <T> ResponseEntity<T> sendToSocialMediaService(String url, MessageType type, T body, Class<T> responseType);
+    <T> ResponseEntity<T> sendToTelemetryService(String url, MessageType type, T body, Class<T> responseType);
 
-    ResponseEntity<String> sendToAPIGateway(String url, MessageType type,
-                                            String body, HashMap<String, Object> parameters);
-    ResponseEntity<String> sendToBlogService(String url, MessageType type,
-                                             String body, HashMap<String, Object> parameters);
-    ResponseEntity<String> sendToEmailParserService(String url, MessageType type,
-                                                    String body, HashMap<String, Object> parameters);
-    ResponseEntity<String> sendToEventParserService(String url, MessageType type,
-                                                    String body, HashMap<String, Object> parameters);
-    ResponseEntity<String> sendToSocialMediaService(String url, MessageType type,
-                                                    String body, HashMap<String, Object> parameters);
-    ResponseEntity<String> sendToTelemetryService(String url, MessageType type,
-                                                  String body, HashMap<String, Object> parameters);
+    <T> ResponseEntity<T> sendToAPIGateway(String url, MessageType type, T body,
+                                           HashMap<String, Object> parameters, Class<T> responseType);
+    <T> ResponseEntity<T> sendToBlogService(String url, MessageType type, T body,
+                                            HashMap<String, Object> parameters, Class<T> responseType);
+    <T> ResponseEntity<T> sendToEmailParserService(String url, MessageType type, T body,
+                                                   HashMap<String, Object> parameters, Class<T> responseType);
+    <T> ResponseEntity<T> sendToEventParserService(String url, MessageType type, T body,
+                                                   HashMap<String, Object> parameters, Class<T> responseType);
+    <T> ResponseEntity<T> sendToSocialMediaService(String url, MessageType type, T body,
+                                                   HashMap<String, Object> parameters, Class<T> responseType);
+    <T> ResponseEntity<T> sendToTelemetryService(String url, MessageType type, T body,
+                                                 HashMap<String, Object> parameters, Class<T> responseType);
 }

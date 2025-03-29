@@ -21,8 +21,9 @@ public class ApiGatewayCommunicator extends CommunicatorBase {
     }
 
     @Override
-    public ResponseEntity<String> sendSync(String url, MessageType type,
-                                           String body, HashMap<String, Object> parameters) {
-        return super.sendSync(apiGatewayUrl + url, type, body, parameters);
+    public <T> ResponseEntity<T> sendSync(String url, MessageType type,
+                                          T body, HashMap<String, Object> parameters,
+                                          Class<T> responseType) {
+        return super.sendSync(apiGatewayUrl + url, type, body, parameters, responseType);
     }
 }

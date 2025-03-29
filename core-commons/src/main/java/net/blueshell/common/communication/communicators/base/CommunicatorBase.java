@@ -1,20 +1,21 @@
 package net.blueshell.common.communication.communicators.base;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.blueshell.common.Constants;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestTemplate;
 
 public abstract class CommunicatorBase implements ICommunicator {
 
@@ -23,57 +24,52 @@ public abstract class CommunicatorBase implements ICommunicator {
 
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
     private final RabbitTemplate template;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     public CommunicatorBase() {
         this.template = null;
+        this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
     public CommunicatorBase(RabbitTemplate template) {
         this.template = template;
+        this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
-    public ResponseEntity<String> sendSync(String url, MessageType type,
-                                           String body, HashMap<String, Object> parameters) {
+    public <T> ResponseEntity<T> sendSync(String url, MessageType type,
+                                          T body, HashMap<String, Object> parameters,
+                                          Class<T> responseType) {
         try {
-            // URL of the localhost endpoint
-            URI uri = new URI(url);
-            URL uriURL = uri.toURL();
-            HttpURLConnection connection = (HttpURLConnection) uriURL.openConnection();
+            // Convert request object to JSON string
+            String jsonRequest = objectMapper.writeValueAsString(body);
 
-            connection.setRequestMethod(type.toString());
-            connection.setDoOutput(true);
+            // Set headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            if(body != null)
-            {
-                // Write the body to the output stream
-                try (OutputStream os = connection.getOutputStream()) {
-                    byte[] input = body.getBytes(StandardCharsets.UTF_8);
-                    os.write(input, 0, input.length);
-                }
+            // Create HttpEntity
+            HttpEntity<String> entity = new HttpEntity<>(jsonRequest, headers);
+
+            // Add parameters to the URL
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                builder.queryParam(entry.getKey(), entry.getValue());
             }
+            String finalUrl = builder.toUriString();
 
-            // Get the response code
-            int responseCode = connection.getResponseCode();
-            logger.log(Level.INFO, "Response Code: " + responseCode);
+            // Send request and receive response
+            ResponseEntity<String> response = restTemplate.exchange(finalUrl, HttpMethod.POST, entity, String.class);
 
-            // Read the response
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-            // Print the response
-            return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+            // Convert response JSON string to response object
+            return new ResponseEntity<>(objectMapper.readValue(response.getBody(), responseType), response.getStatusCode());
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
         }
-        return new ResponseEntity<>("Could not send request!", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Override

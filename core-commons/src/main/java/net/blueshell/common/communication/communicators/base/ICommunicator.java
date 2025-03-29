@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import java.util.HashMap;
 
 public interface ICommunicator {
-    ResponseEntity<String> sendSync(String url, MessageType type, String body, HashMap<String, Object> parameters);
+    <T> ResponseEntity<T> sendSync(String url, MessageType type,
+                                          T body, HashMap<String, Object> parameters,
+                                          Class<T> responseType);
     String sendAsync(String routeTarget, String body);
 }

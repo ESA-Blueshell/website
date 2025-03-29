@@ -13,98 +13,116 @@ import java.util.HashMap;
 
 public class CommunicationService implements ICommunicationService {
     @Override
-    public ResponseEntity<String> sendToAPIGateway(String url, MessageType type) {
-        return sendToAPIGateway(url, type, null, null);
+    public <T> ResponseEntity<T> sendToAPIGateway(String url, MessageType type,
+                                                  Class<T> responseType) {
+        return sendToAPIGateway(url, type, null, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToBlogService(String url, MessageType type) {
-        return sendToBlogService(url, type, null, null);
+    public <T> ResponseEntity<T> sendToBlogService(String url, MessageType type,
+                                                   Class<T> responseType) {
+        return sendToBlogService(url, type, null, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToEmailParserService(String url, MessageType type) {
-        return sendToEmailParserService(url, type, null, null);
+    public <T> ResponseEntity<T> sendToEmailParserService(String url, MessageType type,
+                                                          Class<T> responseType) {
+        return sendToEmailParserService(url, type, null, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToEventParserService(String url, MessageType type) {
-        return sendToEventParserService(url, type, null, null);
+    public <T> ResponseEntity<T> sendToEventParserService(String url, MessageType type,
+                                                          Class<T> responseType) {
+        return sendToEventParserService(url, type, null, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToSocialMediaService(String url, MessageType type) {
-        return sendToSocialMediaService(url, type, null, null);
+    public <T> ResponseEntity<T> sendToSocialMediaService(String url, MessageType type,
+                                                          Class<T> responseType) {
+        return sendToSocialMediaService(url, type, null, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToTelemetryService(String url, MessageType type) {
-        return sendToTelemetryService(url, type, null, null);
+    public <T> ResponseEntity<T> sendToTelemetryService(String url, MessageType type,
+                                                        Class<T> responseType) {
+        return sendToTelemetryService(url, type, null, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToAPIGateway(String url, MessageType type, String body) {
-        return sendToAPIGateway(url, type, body, null);
+    public <T> ResponseEntity<T> sendToAPIGateway(String url, MessageType type, T body,
+                                                  Class<T> responseType) {
+        return sendToAPIGateway(url, type, body, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToBlogService(String url, MessageType type, String body) {
-        return sendToBlogService(url, type, body, null);
+    public <T> ResponseEntity<T> sendToBlogService(String url, MessageType type, T body,
+                                                   Class<T> responseType) {
+        return sendToBlogService(url, type, body, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToEmailParserService(String url, MessageType type, String body) {
-        return sendToEmailParserService(url, type, body, null);
+    public <T> ResponseEntity<T> sendToEmailParserService(String url, MessageType type, T body,
+                                                          Class<T> responseType) {
+        return sendToEmailParserService(url, type, body, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToEventParserService(String url, MessageType type, String body) {
-        return sendToEventParserService(url, type, body, null);
+    public <T> ResponseEntity<T> sendToEventParserService(String url, MessageType type, T body,
+                                                          Class<T> responseType) {
+        return sendToEventParserService(url, type, body, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToSocialMediaService(String url, MessageType type, String body) {
-        return sendToSocialMediaService(url, type, body, null);
+    public <T> ResponseEntity<T> sendToSocialMediaService(String url, MessageType type, T body,
+                                                          Class<T> responseType) {
+        return sendToSocialMediaService(url, type, body, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToTelemetryService(String url, MessageType type, String body) {
-        return sendToTelemetryService(url, type, body, null);
+    public <T> ResponseEntity<T> sendToTelemetryService(String url, MessageType type, T body,
+                                                        Class<T> responseType) {
+        return sendToTelemetryService(url, type, body, null, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToAPIGateway(String url, MessageType type,
-                                                   String body, HashMap<String, Object> parameters) {
-       return new ApiGatewayCommunicator().sendSync(url, type, body, parameters);
+    public <T> ResponseEntity<T> sendToAPIGateway(String url, MessageType type,
+                                                  T body, HashMap<String, Object> parameters,
+                                                  Class<T> responseType) {
+        return new ApiGatewayCommunicator().sendSync(url, type, body, parameters, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToBlogService(String url, MessageType type,
-                                  String body, HashMap<String, Object> parameters) {
-        return new BlogCommunicator().sendSync(url, type, body, parameters);
+    public <T> ResponseEntity<T> sendToBlogService(String url, MessageType type,
+                                                   T body, HashMap<String, Object> parameters,
+                                                   Class<T> responseType) {
+        return new BlogCommunicator().sendSync(url, type, body, parameters, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToEmailParserService(String url, MessageType type,
-                                         String body, HashMap<String, Object> parameters) {
-        return new EmailParserCommunicator().sendSync(url, type, body, parameters);
+    public <T> ResponseEntity<T> sendToEmailParserService(String url, MessageType type,
+                                                          T body, HashMap<String, Object> parameters,
+                                                          Class<T> responseType) {
+        return new EmailParserCommunicator().sendSync(url, type, body, parameters, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToEventParserService(String url, MessageType type,
-                                         String body, HashMap<String, Object> parameters) {
-        return new EventParserCommunicator().sendSync(url, type, body, parameters);
+    public <T> ResponseEntity<T> sendToEventParserService(String url, MessageType type,
+                                                          T body, HashMap<String, Object> parameters,
+                                                          Class<T> responseType) {
+        return new EventParserCommunicator().sendSync(url, type, body, parameters, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToSocialMediaService(String url, MessageType type,
-                                         String body, HashMap<String, Object> parameters) {
-        return new SocialMediaCommunicator().sendSync(url, type, body, parameters);
+    public <T> ResponseEntity<T> sendToSocialMediaService(String url, MessageType type,
+                                                          T body, HashMap<String, Object> parameters,
+                                                          Class<T> responseType) {
+        return new SocialMediaCommunicator().sendSync(url, type, body, parameters, responseType);
     }
 
     @Override
-    public ResponseEntity<String> sendToTelemetryService(String url, MessageType type,
-                                       String body, HashMap<String, Object> parameters) {
-        return new TelemetryCommunicator().sendSync(url, type, body, parameters);
+    public <T> ResponseEntity<T> sendToTelemetryService(String url, MessageType type,
+                                                        T body, HashMap<String, Object> parameters,
+                                                        Class<T> responseType) {
+        return new TelemetryCommunicator().sendSync(url, type, body, parameters, responseType);
     }
 }

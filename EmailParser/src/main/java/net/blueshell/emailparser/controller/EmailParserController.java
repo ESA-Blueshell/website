@@ -4,6 +4,8 @@ import net.blueshell.common.ParsedEmail;
 import net.blueshell.emailparser.data.Map;
 import net.blueshell.emailparser.service.EmailParsingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,13 +28,13 @@ public class EmailParserController {
     }
 
     @GetMapping("/queue")
-    public String addQueue() {
+    public ResponseEntity<String> addQueue() {
 
         StringBuilder sb = new StringBuilder().append("EmailParser ").append("\n");
         for (java.util.Map.Entry<String, String> entry : Map.hashMap.entrySet()) {
             sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
         }
 
-        return sb.toString();
+        return new ResponseEntity<>(sb.toString(), HttpStatusCode.valueOf(200));
     }
 }

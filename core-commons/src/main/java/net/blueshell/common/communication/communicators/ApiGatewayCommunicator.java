@@ -1,31 +1,20 @@
 package net.blueshell.common.communication.communicators;
 
-import net.blueshell.common.communication.communicators.base.MessageType;
 import net.blueshell.common.communication.communicators.base.CommunicatorBase;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
 
 public class ApiGatewayCommunicator extends CommunicatorBase {
-    private final String apiGatewayUrl = "http://apigateway:80";
 
-    public ApiGatewayCommunicator() {
-        super();
-    }
-
-    public ApiGatewayCommunicator(RabbitTemplate template) {
-        super(template);
-    }
+    public static final String name = "apigateway";
+    private final String apiGatewayUrl = formatUrl(name, 80);
 
     @Override
-    public ResponseEntity<String> sendSync(String url, MessageType type,
-                                           String body, HashMap<String, Object> parameters) {
-        return super.sendSync(apiGatewayUrl + url, type, body, parameters);
-    }
-
-    @Override
-    public String getName() {
-        return "apigateway";
+    public <T, T1> ResponseEntity<T> sendSync(String url, HttpMethod method,
+                                          T1 body, HashMap<String, Object> parameters,
+                                          Class<T> responseType) {
+        return super.sendSync(apiGatewayUrl + url, method, body, parameters, responseType);
     }
 }

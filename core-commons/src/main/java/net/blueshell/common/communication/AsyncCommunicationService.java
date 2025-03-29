@@ -2,36 +2,44 @@ package net.blueshell.common.communication;
 
 import net.blueshell.common.communication.communicators.*;
 import net.blueshell.common.communication.communicators.base.CommunicatorBase;
+import net.blueshell.common.communication.communicators.base.ICommunicator;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 public class AsyncCommunicationService implements IAsyncCommunicationService {
 
-    @Override
-    public String sendToAPIGateway(CommunicatorBase source, String body) {
-        return source.sendAsync(new ApiGatewayCommunicator().getName(), body);
+    private final CommunicatorBase communicator;
+
+    public AsyncCommunicationService(RabbitTemplate rabbitTemplate) {
+        communicator = new CommunicatorBase(rabbitTemplate);
     }
 
     @Override
-    public String sendToBlogService(CommunicatorBase source, String body) {
-        return source.sendAsync(new BlogCommunicator().getName(), body);
+    public <T> String sendToAPIGateway(T body) {
+        return communicator.sendAsync(ApiGatewayCommunicator.name, body);
     }
 
     @Override
-    public String sendToEmailParserService(CommunicatorBase source, String body) {
-        return source.sendAsync(new EmailParserCommunicator().getName(), body);
+    public <T> String sendToBlogService(T body) {
+        return communicator.sendAsync(BlogCommunicator.name, body);
     }
 
     @Override
-    public String sendToEventParserService(CommunicatorBase source, String body) {
-        return source.sendAsync(new EventParserCommunicator().getName(), body);
+    public <T> String sendToEmailParserService(T body) {
+        return communicator.sendAsync(EmailParserCommunicator.name, body);
     }
 
     @Override
-    public String sendToSocialMediaService(CommunicatorBase source, String body) {
-        return source.sendAsync(new SocialMediaCommunicator().getName(), body);
+    public <T> String sendToEventParserService(T body) {
+        return communicator.sendAsync(EventParserCommunicator.name, body);
     }
 
     @Override
-    public String sendToTelemetryService(CommunicatorBase source, String body) {
-        return source.sendAsync(new TelemetryCommunicator().getName(), body);
+    public <T> String sendToSocialMediaService(T body) {
+        return communicator.sendAsync(SocialMediaCommunicator.name, body);
+    }
+
+    @Override
+    public <T> String sendToTelemetryService(T body) {
+        return communicator.sendAsync(TelemetryCommunicator.name, body);
     }
 }

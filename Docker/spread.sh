@@ -35,6 +35,7 @@ for DIR in "$PARENT_DIR"/*/; do
     [ "$(basename "$DIR")" == "db-commons" ] && continue
     [ "$(basename "$DIR")" == "Docker" ] && continue
     [ "$(basename "$DIR")" == "Scripts" ] && continue
+    [ "$(basename "$DIR")" == "files" ] && continue
     [ "$(basename "$DIR")" == "telemetry-client" ] && continue
     [ "$(basename "$DIR")" == "blueshell-api" ] && continue
     [ "$(basename "$DIR")" == "blueshell-frontend" ] && continue

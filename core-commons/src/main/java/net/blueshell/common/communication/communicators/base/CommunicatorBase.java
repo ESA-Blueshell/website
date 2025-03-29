@@ -1,92 +1,97 @@
 package net.blueshell.common.communication.communicators.base;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.http.*;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.blueshell.common.Constants;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestTemplate;
 
-public abstract class CommunicatorBase implements ICommunicator {
+public class CommunicatorBase implements ICommunicator {
+
+    public static final String name = null;
+    protected final String urlFormat = "http://%s:%s";
 
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
-    private final RabbitTemplate template;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    private final RabbitTemplate rabbitTemplate;
 
     public CommunicatorBase() {
-        this.template = null;
+        this.rabbitTemplate = null;
+        this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
-    public CommunicatorBase(RabbitTemplate template) {
-        this.template = template;
+    public CommunicatorBase(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
-    public ResponseEntity<String> sendSync(String url, MessageType type,
-                                           String body, HashMap<String, Object> parameters) {
+    public <T, T1> ResponseEntity<T> sendSync(String url, HttpMethod method,
+                                          T1 body, HashMap<String, Object> parameters,
+                                          Class<T> responseType) {
         try {
-            // URL of the localhost endpoint
-            URI uri = new URI(url);
-            URL uriURL = uri.toURL();
-            HttpURLConnection connection = (HttpURLConnection) uriURL.openConnection();
+            // Convert request object to JSON string
+            String jsonRequest = objectMapper.writeValueAsString(body);
 
-            connection.setRequestMethod(type.toString());
-            connection.setDoOutput(true);
+            // Set headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            if(body != null)
-            {
-                // Write the body to the output stream
-                try (OutputStream os = connection.getOutputStream()) {
-                    byte[] input = body.getBytes(StandardCharsets.UTF_8);
-                    os.write(input, 0, input.length);
+            // Create HttpEntity
+            HttpEntity<String> entity = new HttpEntity<>(jsonRequest, headers);
+
+            // Add parameters to the URL
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+            if(parameters != null) {
+                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                    builder.queryParam(entry.getKey(), entry.getValue());
                 }
             }
+            String finalUrl = builder.toUriString();
 
-            // Get the response code
-            int responseCode = connection.getResponseCode();
-            logger.log(Level.INFO, "Response Code: " + responseCode);
+            // Send request and receive response
+            ResponseEntity<String> response = restTemplate.exchange(finalUrl, method, entity, String.class);
+            String responseBody = response.getBody();
 
-            // Read the response
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
+            // Convert response JSON string to response object
+            try {
+                T mappedResponseBody = objectMapper.readValue(responseBody, responseType);
+                HttpStatusCode responseCode = response.getStatusCode();
+                return new ResponseEntity<>(mappedResponseBody, responseCode);
+            } catch (JsonParseException ex) {
+                logger.log(Level.SEVERE, ex.getMessage());
 
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+                if(responseType == String.class) {
+                    HttpStatusCode responseCode = response.getStatusCode();
+                    return new ResponseEntity<>((T)responseBody, responseCode);
+                }
+
+                return new ResponseEntity<>(null, HttpStatusCode.valueOf(500));
             }
-            in.close();
-
-            // Print the response
-            return new ResponseEntity<>(response.toString(), HttpStatus.OK);
-
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
+            return null;
         }
-        return new ResponseEntity<>("Could not send request!", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Override
-    public String sendAsync(String targetName, String body) {
+    public <T> String sendAsync(String targetName, T body) {
 
         try {
-            assert this.template != null;
-
-// TODO add routing
-//            this.template.convertAndSend(
-//                    Constants.QUEUE_EXCHANGE_NAME,
-//                    Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
-//                    body
-//            );
-
-            this.template.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
+            assert rabbitTemplate != null;
+            rabbitTemplate.convertAndSend(Constants.EXCHANGE, Constants.QUEUE_ROUTE_PREFIX + "." + targetName, body);
         }
         catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
@@ -96,5 +101,7 @@ public abstract class CommunicatorBase implements ICommunicator {
         return "Message sent to " + targetName;
     }
 
-    public abstract String getName();
+    protected String formatUrl(String name, int port) {
+        return String.format(urlFormat, name, port);
+    }
 }

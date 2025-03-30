@@ -20,15 +20,19 @@ public class CommunicatorBase implements ICommunicator {
     protected final String urlFormat = "http://%s:%s";
 
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
+    private final ISerializer serializer;
     private final RestTemplate restTemplate;
     private final RabbitTemplate rabbitTemplate;
 
     public CommunicatorBase() {
+        this.serializer = new JsonSerializer();
         this.rabbitTemplate = null;
         this.restTemplate = new RestTemplate();
     }
 
-    public CommunicatorBase(RabbitTemplate rabbitTemplate) {
+    public CommunicatorBase(RabbitTemplate rabbitTemplate,
+                            ISerializer serializer) {
+        this.serializer = serializer;
         this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = new RestTemplate();
     }
@@ -39,7 +43,6 @@ public class CommunicatorBase implements ICommunicator {
                                           Class<T> responseType) {
         try {
             // Convert request object to JSON string
-            JsonSerializer serializer = new JsonSerializer();
             String jsonRequest = serializer.serialize(body);
 
             // Set headers

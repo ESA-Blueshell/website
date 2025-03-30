@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/event")
 public class EventParserController {
-    private final static ICommunicationService communicationService = new CommunicationService();
+    private final ICommunicationService communicationService;
     private final IAsyncCommunicationService asyncCommunicationService;
 
-    @Autowired
-    public EventParserController(RabbitTemplate template) {
-        this.asyncCommunicationService = new AsyncCommunicationService(template);
+    public EventParserController(IAsyncCommunicationService asyncCommunicationService,
+                          ICommunicationService communicationService) {
+
+        this.asyncCommunicationService = asyncCommunicationService;
+        this.communicationService = communicationService;
     }
 
     @GetMapping

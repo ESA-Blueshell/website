@@ -12,11 +12,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/blog")
 public class BlogController {
-    private final static ICommunicationService communicationService = new CommunicationService();
+    private final ICommunicationService communicationService;
     private final IAsyncCommunicationService asyncCommunicationService;
 
-    public BlogController(RabbitTemplate rabbitTemplate) {
-        this.asyncCommunicationService = new AsyncCommunicationService(rabbitTemplate);
+    public BlogController(IAsyncCommunicationService asyncCommunicationService,
+                          ICommunicationService communicationService) {
+
+        this.asyncCommunicationService = asyncCommunicationService;
+        this.communicationService = communicationService;
     }
 
     @GetMapping

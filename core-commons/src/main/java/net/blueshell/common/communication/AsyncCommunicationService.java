@@ -3,14 +3,15 @@ package net.blueshell.common.communication;
 import net.blueshell.common.communication.communicators.*;
 import net.blueshell.common.communication.communicators.base.CommunicatorBase;
 import net.blueshell.common.communication.communicators.base.ICommunicator;
+import net.blueshell.common.communication.communicators.serializers.ISerializer;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 public class AsyncCommunicationService implements IAsyncCommunicationService {
 
-    private final CommunicatorBase communicator;
+    private final ICommunicator communicator;
 
-    public AsyncCommunicationService(RabbitTemplate rabbitTemplate) {
-        communicator = new CommunicatorBase(rabbitTemplate);
+    public AsyncCommunicationService(ICommunicator communicator) {
+        this.communicator = communicator;
     }
 
     @Override

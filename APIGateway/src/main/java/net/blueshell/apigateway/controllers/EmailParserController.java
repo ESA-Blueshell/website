@@ -16,12 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/email")
 public class EmailParserController {
-    private final static ICommunicationService communicationService = new CommunicationService();
+    private final ICommunicationService communicationService;
     private final IAsyncCommunicationService asyncCommunicationService;
 
-    @Autowired
-    public EmailParserController(RabbitTemplate template) {
-        this.asyncCommunicationService = new AsyncCommunicationService(template);
+    public EmailParserController(IAsyncCommunicationService asyncCommunicationService,
+                          ICommunicationService communicationService) {
+
+        this.asyncCommunicationService = asyncCommunicationService;
+        this.communicationService = communicationService;
     }
 
     @GetMapping

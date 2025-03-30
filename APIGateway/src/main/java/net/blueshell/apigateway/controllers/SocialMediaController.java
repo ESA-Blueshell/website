@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/social-media")
 public class SocialMediaController {
-    private final static ICommunicationService communicationService = new CommunicationService();
+    private final ICommunicationService communicationService;
     private final IAsyncCommunicationService asyncCommunicationService;
 
-    @Autowired
-    public SocialMediaController(RabbitTemplate template) {
-        this.asyncCommunicationService = new AsyncCommunicationService(template);
+    public SocialMediaController(IAsyncCommunicationService asyncCommunicationService,
+                          ICommunicationService communicationService) {
+
+        this.asyncCommunicationService = asyncCommunicationService;
+        this.communicationService = communicationService;
     }
 
     @GetMapping

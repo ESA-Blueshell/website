@@ -15,18 +15,17 @@ services:
 
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile-dev
+      context: .
+      dockerfile: ./api/Dockerfile
+      args:
+        - PORT=8080
     depends_on:
       - db
+      - rabbitmq
     ports:
       - "8080:8080"
     volumes:
       - "./api:/usr/app:rw"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/blueshell?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: blueshell
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080/api/contributionPeriods" ]
       interval: 30s
@@ -39,7 +38,7 @@ services:
       - Docker/env/.db.env
 
   db:
-    image: mysql:latest
+    image: mariadb:10.11.10
     ports:
       - "3306:3306"
     volumes:
@@ -50,6 +49,7 @@ services:
     restart: unless-stopped
     env_file:
       - Docker/env/.db.env
+    command: --log-bin-trust-function-creators=1
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 30s

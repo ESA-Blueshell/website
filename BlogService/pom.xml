@@ -42,11 +42,6 @@
         </dependency>
         <dependency>
             <groupId>net.blueshell</groupId>
-            <artifactId>core-commons</artifactId>
-            <version>0.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.blueshell</groupId>
             <artifactId>db-commons</artifactId>
             <version>0.0.1</version>
         </dependency>

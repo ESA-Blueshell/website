@@ -11,6 +11,7 @@
     <modules>
         <module>core-commons</module>
         <module>db-commons</module>
+        <module>api</module>
         <module>APIGateway</module>
         <module>BlogService</module>
         <module>EmailParser</module>

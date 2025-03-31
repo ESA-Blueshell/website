@@ -21,8 +21,6 @@ services:
       - db
     ports:
       - "8080:8080"
-    env_file:
-      - .db.env
     volumes:
       - "./blueshell-api:/usr/app:rw"
     environment:
@@ -31,14 +29,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: blueshell
     networks:
       - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.db.env
 
   db:
     image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: blueshell
-      MYSQL_DATABASE: blueshell
-      MYSQL_USER: tim
-      MYSQL_PASSWORD: blueshell
     ports:
       - "3306:3306"
     volumes:
@@ -46,8 +42,9 @@ services:
       - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
     networks:
       - global_network
+    restart: unless-stopped
     env_file:
-      - .db.env
+      - Docker/env/.db.env
 
   rabbitmq:
     image: rabbitmq:4.0.7-management
@@ -56,15 +53,18 @@ services:
       - "15672:15672"
     networks:
       - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.rabbitmq.env
 
   apigateway:
     build:
       context: .
       dockerfile: ./APIGateway/Dockerfile
       args:
-        - PORT=80
+        - PORT=1024
     ports:
-      - "80:80"
+      - "1024:80"
       - "5005:5005"
     networks:
       - global_network
@@ -81,6 +81,10 @@ services:
       timeout: 10s
       retries: 5
     image: apigateway:latest
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
   blogservice:
     build:
       context: .
@@ -99,8 +103,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    restart: unless-stopped
     env_file:
-      - .db.env
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
     image: blogservice:latest
   emailparser:
     build:
@@ -118,6 +125,10 @@ services:
       timeout: 10s
       retries: 5
     image: emailparser:latest
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
   eventparser:
     build:
       context: .
@@ -134,6 +145,10 @@ services:
       timeout: 10s
       retries: 5
     image: eventparser:latest
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
   fileservice:
     build:
       context: .
@@ -155,8 +170,11 @@ services:
     image: fileservice:latest
     volumes:
       - "./files:/app/files"
+    restart: unless-stopped
     env_file:
-      - .db.env
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
   socialmediaservice:
     build:
       context: .
@@ -176,6 +194,10 @@ services:
       timeout: 10s
       retries: 5
     image: socialmediaservice:latest
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
   telemetry:
     build:
       context: .
@@ -192,7 +214,11 @@ services:
       timeout: 10s
       retries: 5
     image: telemetry:latest
-
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
 networks:
   global_network:
     driver: bridge

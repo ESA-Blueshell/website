@@ -1,6 +1,10 @@
 spring:
   mvc:
     dispatch-options-request: true
-
+  rabbitmq:
+    host: rabbitmq
+    port: ${RABBITMQ_NODE_PORT}
+    username: ${RABBITMQ_DEFAULT_USER}
+    password: ${RABBITMQ_DEFAULT_PASS}
 app:
   url: ${APP_URL}

@@ -75,6 +75,8 @@ services:
       - Docker/env/.db.env
       - Docker/env/.rabbitmq.env
       - Docker/env/.app.env
+    environment:
+      - spring_profiles_active=dev
   apigateway:
     build:
       context: .

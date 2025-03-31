@@ -61,8 +61,6 @@ services:
     build:
       context: .
       dockerfile: ./APIGateway/Dockerfile
-      args:
-        - PORT=1024
     ports:
       - "1024:80"
       - "5005:5005"
@@ -75,13 +73,7 @@ services:
       - eventparser
       - fileservice
       - telemetry
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     image: apigateway:latest
-    restart: unless-stopped
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
@@ -89,8 +81,6 @@ services:
     build:
       context: .
       dockerfile: ./BlogService/Dockerfile
-      args:
-        - PORT=8081
     ports:
       - "5006:5005"
     networks:
@@ -98,12 +88,6 @@ services:
     depends_on:
       - rabbitmq
       - db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: unless-stopped
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
@@ -133,19 +117,11 @@ services:
     build:
       context: .
       dockerfile: ./EventParser/Dockerfile
-      args:
-        - PORT=8083
     ports:
       - "5008:5005"
     networks:
       - global_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     image: eventparser:latest
-    restart: unless-stopped
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
@@ -153,8 +129,6 @@ services:
     build:
       context: .
       dockerfile: ./FileService/Dockerfile
-      args:
-        - PORT=8086
     ports:
       - "5011:5005"
     networks:
@@ -162,15 +136,9 @@ services:
     depends_on:
       - rabbitmq
       - db
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     image: fileservice:latest
     volumes:
       - "./files:/app/files"
-    restart: unless-stopped
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
@@ -179,8 +147,6 @@ services:
     build:
       context: .
       dockerfile: ./SocialMediaService/Dockerfile
-      args:
-        - PORT=8084
     ports:
       - "5009:5005"
     networks:
@@ -188,13 +154,7 @@ services:
     depends_on:
       - rabbitmq
       - apigateway
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     image: socialmediaservice:latest
-    restart: unless-stopped
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
@@ -202,19 +162,11 @@ services:
     build:
       context: .
       dockerfile: ./Telemetry/Dockerfile
-      args:
-        - PORT=8085
     ports:
       - "5010:5005"
     networks:
       - global_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     image: telemetry:latest
-    restart: unless-stopped
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env

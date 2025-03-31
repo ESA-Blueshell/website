@@ -15,7 +15,7 @@ public class MainController {
     @Autowired
     private TelemetryService telemetryService;
 
-    @GetMapping("/health")
+    @GetMapping("/")
     public Boolean checkHealth() {
         return true;
     }

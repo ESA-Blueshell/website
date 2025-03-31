@@ -27,6 +27,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/blueshell?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: blueshell
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:8080/api/contributionPeriods" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - global_network
     restart: unless-stopped
@@ -45,6 +50,11 @@ services:
     restart: unless-stopped
     env_file:
       - Docker/env/.db.env
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u$MYSQL_USER -p$MYSQL_PASSWORD || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:4.0.7-management
@@ -56,6 +66,11 @@ services:
     restart: unless-stopped
     env_file:
       - Docker/env/.rabbitmq.env
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmqctl status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   apigateway:
     build:
@@ -76,7 +91,7 @@ services:
       - fileservice
       - telemetry
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -99,7 +114,7 @@ services:
       - rabbitmq
       - db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -120,7 +135,7 @@ services:
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -140,7 +155,7 @@ services:
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -163,7 +178,7 @@ services:
       - rabbitmq
       - db
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -189,7 +204,7 @@ services:
       - rabbitmq
       - apigateway
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -209,7 +224,7 @@ services:
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5

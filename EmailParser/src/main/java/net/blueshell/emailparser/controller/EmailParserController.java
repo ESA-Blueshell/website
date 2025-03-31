@@ -17,7 +17,7 @@ public class EmailParserController {
     @Autowired
     private EmailParsingService parsingService;
 
-    @GetMapping("/health")
+    @GetMapping("/")
     public Boolean healthCheck() {
         return true;
     }

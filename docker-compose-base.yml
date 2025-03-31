@@ -13,29 +13,6 @@ services:
 #    networks:
 #      - global_network
 
-  api:
-    build:
-      context: .
-      dockerfile: ./api/Dockerfile
-      args:
-        - PORT=8080
-    depends_on:
-      - db
-      - rabbitmq
-    ports:
-      - "8080:8080"
-    volumes:
-      - "./api:/usr/app:rw"
-    healthcheck:
-      test: [ "CMD", "curl", "http://localhost:8080/api/contributionPeriods" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - global_network
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.db.env
 
   db:
     image: mariadb:10.11.10
@@ -56,6 +33,9 @@ services:
       timeout: 10s
       retries: 5
 
+
+
+
   rabbitmq:
     image: rabbitmq:4.0.7-management
     ports:
@@ -71,7 +51,30 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
+  api:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+      args:
+        - PORT=8080
+    depends_on:
+      - db
+      - rabbitmq
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:8080/api/contributionPeriods" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    image: api:latest
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.rabbitmq.env
+      - Docker/env/.app.env
   apigateway:
     build:
       context: .

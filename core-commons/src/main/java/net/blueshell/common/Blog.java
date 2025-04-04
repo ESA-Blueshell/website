@@ -14,6 +14,5 @@ public class Blog {
     private String id;
     private String plainText;
     private String rawHTML;
-
 }
 

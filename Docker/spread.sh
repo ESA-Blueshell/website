@@ -37,8 +37,7 @@ for DIR in "$PARENT_DIR"/*/; do
     [ "$(basename "$DIR")" == "Scripts" ] && continue
     [ "$(basename "$DIR")" == "files" ] && continue
     [ "$(basename "$DIR")" == "telemetry-client" ] && continue
-    [ "$(basename "$DIR")" == "blueshell-api" ] && continue
-    [ "$(basename "$DIR")" == "blueshell-frontend" ] && continue
+    [ "$(basename "$DIR")" == "frontend" ] && continue
 
     # Get the name of the directory
     SERVICE_NAME=$(basename "$DIR")

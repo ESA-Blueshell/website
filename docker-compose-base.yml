@@ -1,40 +1,21 @@
 services:
-#  frontend:
-#    build:
-#      context: ./blueshell-frontend
-#      dockerfile: Dockerfile-dev
-#    ports:
-#      - "3000:3000"
-#    volumes:
-#      - "./blueshell-frontend:/usr/app:rw"
-#      - "/usr/app/node_modules"
-#    depends_on:
-#      - api
-#    networks:
-#      - global_network
+  #  frontend:
+  #    build:
+  #      context: ./blueshell-frontend
+  #      dockerfile: Dockerfile-dev
+  #    ports:
+  #      - "3000:3000"
+  #    volumes:
+  #      - "./blueshell-frontend:/usr/app:rw"
+  #      - "/usr/app/node_modules"
+  #    depends_on:
+  #      - api
+  #    networks:
+  #      - global_network
 
-  api:
-    build:
-      context: ./blueshell-api
-      dockerfile: Dockerfile-dev
-    depends_on:
-      - db
-    ports:
-      - "8080:8080"
-    volumes:
-      - "./blueshell-api:/usr/app:rw"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/blueshell?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: blueshell
-    networks:
-      - global_network
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.db.env
 
   db:
-    image: mysql:latest
+    image: mariadb:10.11.10
     ports:
       - "3306:3306"
     volumes:
@@ -45,6 +26,15 @@ services:
     restart: unless-stopped
     env_file:
       - Docker/env/.db.env
+    command: --log-bin-trust-function-creators=1
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+
 
   rabbitmq:
     image: rabbitmq:4.0.7-management
@@ -56,7 +46,37 @@ services:
     restart: unless-stopped
     env_file:
       - Docker/env/.rabbitmq.env
-
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmqctl status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  api:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+      args:
+        - PORT=8080
+    depends_on:
+      - db
+      - rabbitmq
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/contributionPeriods" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    image: api:latest
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.rabbitmq.env
+      - Docker/env/.app.env
+    environment:
+      - spring_profiles_active=dev
   apigateway:
     build:
       context: .
@@ -76,7 +96,7 @@ services:
       - fileservice
       - telemetry
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -99,7 +119,7 @@ services:
       - rabbitmq
       - db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -120,7 +140,7 @@ services:
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -140,7 +160,7 @@ services:
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -163,7 +183,7 @@ services:
       - rabbitmq
       - db
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -189,7 +209,7 @@ services:
       - rabbitmq
       - apigateway
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -209,7 +229,7 @@ services:
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5

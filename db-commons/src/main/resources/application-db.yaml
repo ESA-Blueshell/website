@@ -3,8 +3,8 @@ spring:
     host: db
     username: root
     password: ${MYSQL_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.name}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.name}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     hikari:
       minimum-idle: 10
       maximum-pool-size: 20

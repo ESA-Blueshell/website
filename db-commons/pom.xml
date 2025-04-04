@@ -20,9 +20,6 @@
     </distributionManagement>
     <properties>
         <revision>1.0-SNAPSHOT</revision>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
         <dependency>
@@ -65,11 +62,11 @@
             <artifactId>flyway-mysql</artifactId>
             <version>11.3.4</version>
         </dependency>
-        <!-- MySQL Driver -->
+        <!-- MariaDB Driver -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.15</version>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.3.2</version>
         </dependency>
         <!-- Database -->
         <dependency>

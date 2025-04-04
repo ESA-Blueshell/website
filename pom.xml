@@ -8,9 +8,11 @@
     <artifactId>SOA</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
     <modules>
         <module>core-commons</module>
         <module>db-commons</module>
+        <module>api</module>
         <module>APIGateway</module>
         <module>BlogService</module>
         <module>EmailParser</module>
@@ -21,8 +23,10 @@
     </modules>
 
     <properties>
+        <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring-boot.version>3.4.3</spring-boot.version>
     </properties>
 </project>

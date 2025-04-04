@@ -20,9 +20,6 @@
     </distributionManagement>
     <properties>
         <revision>1.0-SNAPSHOT</revision>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
         <dependency>
@@ -126,6 +123,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.4.3</version>
                 <configuration>
                     <mainClass>net.blueshell.api.ApiApplication</mainClass>
                     <jvmArguments>

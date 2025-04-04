@@ -12,6 +12,7 @@ COPY ./${SERVICE_NAME}/mvnw .
 COPY ./pom.xml /app/parent/pom.xml
 COPY ./core-commons/pom.xml /app/parent/core-commons/pom.xml
 COPY ./db-commons/pom.xml /app/parent/db-commons/pom.xml
+COPY ./api/pom.xml /app/parent/api/pom.xml
 COPY ./APIGateway/pom.xml /app/parent/APIGateway/pom.xml
 COPY ./BlogService/pom.xml /app/parent/BlogService/pom.xml
 COPY ./EmailParser/pom.xml /app/parent/EmailParser/pom.xml

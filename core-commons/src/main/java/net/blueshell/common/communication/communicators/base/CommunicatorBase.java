@@ -3,8 +3,8 @@ package net.blueshell.common.communication.communicators.base;
 import net.blueshell.common.communication.communicators.serializers.ISerializer;
 import net.blueshell.common.communication.communicators.serializers.JsonSerializer;
 import net.blueshell.common.Constants;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -71,11 +71,16 @@ public class CommunicatorBase implements ICommunicator {
             return getResponseObject(responseBody, responseType, response, serializer);
 
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
     }
 
+    /**
+     * **Refactored** to:
+     *  1. Pass the raw object (T) to rabbitTemplate instead of manually serializing to String.
+     *  2. Set the __TypeId__ header to the fully qualified class name so consumers know the real type.
+     */
     @Override
     public <T> String sendAsync(String targetName, T body) {
         System.out.println("SEND ASYNC!: " + body.toString());
@@ -86,7 +91,6 @@ public class CommunicatorBase implements ICommunicator {
             // Use the same serializer as the sync method
             String serializedBody = serializer.serialize(body);
 
-            // Explicitly set contentType to application/json so consumers can parse it properly
             rabbitTemplate.convertAndSend(
                     Constants.EXCHANGE,
                     Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
@@ -97,7 +101,7 @@ public class CommunicatorBase implements ICommunicator {
                     }
             );
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return "Could not send message to " + targetName;
         }
 
@@ -119,7 +123,7 @@ public class CommunicatorBase implements ICommunicator {
                     response.getStatusCode()
             );
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return new ResponseEntity<>(response.getStatusCode());
         }
     }

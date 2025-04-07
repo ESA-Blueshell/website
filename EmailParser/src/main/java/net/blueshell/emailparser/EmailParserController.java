@@ -18,16 +18,16 @@ import java.util.logging.Logger;
 public class EmailParserController {
 
     private static final Logger logger = Logger.getLogger(EmailParserController.class.getName());
-    private final EmailParsingService parsingService;
+    private final EmailMapper emailMapper;
     private final ICommunicationService communicationService;
     private final IAsyncCommunicationService asyncCommunicationService;
 
     public EmailParserController(IAsyncCommunicationService asyncCommunicationService,
                                  ICommunicationService communicationService,
-                                 EmailParsingService parsingService) {
+                                 EmailMapper emailMapper) {
         this.asyncCommunicationService = asyncCommunicationService;
         this.communicationService = communicationService;
-        this.parsingService = parsingService;
+        this.emailMapper = emailMapper;
     }
 
     @GetMapping("/")
@@ -38,7 +38,7 @@ public class EmailParserController {
     @PostMapping("/parse-email")
     public BlogDTO parseEmail(EmailDTO emailDTO) {
         System.out.println("Synchronously Received '" + emailDTO.getHtml() + "'");
-        BlogDTO blogDTO = parsingService.parseHTML(emailDTO.getHtml());
+        BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);
 //        communicationService.sendToBlogService()
         return blogDTO;
     }
@@ -46,7 +46,7 @@ public class EmailParserController {
     @RabbitListener(queues = EmailParserCommunicator.name)
     public void asyncParseEmail(EmailDTO emailDTO) {
         System.out.println("Synchronously Received '" + emailDTO + "'");
-        BlogDTO blogDTO = parsingService.parseHTML(emailDTO.getHtml());
+        BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);
         asyncCommunicationService.sendToBlogService(blogDTO);
     }
 

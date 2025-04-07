@@ -7,11 +7,8 @@ import net.blueshell.common.Image;
 import java.sql.Timestamp;
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class SocialDTO extends BaseDTO {
     private String id;
     private String title;

@@ -10,7 +10,6 @@ public class RabbitConfig {
 
     @Bean
     public MessageConverter jsonMessageConverter() {
-        // Convert incoming messages to/from JSON.
         return new Jackson2JsonMessageConverter();
     }
 }

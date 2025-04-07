@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+
 @RestController
 @RequestMapping("/email")
 public class EmailParserController {
@@ -26,6 +29,7 @@ public class EmailParserController {
     public String addToEmailQueue() {
         EmailDTO email = new EmailDTO();
         email.setHtml("<html><body><h1>This is a test email</h1></body></html>");
+        email.setPublishedAt(Timestamp.from(Instant.now()));
         System.out.println("Sending mail to email parser service asynchronously");
 
         return asyncCommunicationService.sendToEmailParserService(email);

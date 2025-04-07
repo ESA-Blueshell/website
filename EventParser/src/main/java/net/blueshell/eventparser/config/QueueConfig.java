@@ -14,7 +14,7 @@ public class QueueConfig {
 
     @Bean
     Queue queue() {
-        return new Queue(EventParserCommunicator.name, false);
+        return new Queue(EventParserCommunicator.name, true);
     }
 
     @Bean

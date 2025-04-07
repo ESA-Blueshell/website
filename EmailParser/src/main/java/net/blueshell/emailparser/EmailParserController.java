@@ -48,17 +48,5 @@ public class EmailParserController {
         System.out.println("Synchronously Received '" + emailDTO + "'");
         BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);
         asyncCommunicationService.sendToBlogService(blogDTO);
-        asyncCommunicationService.sendToEventParserService(blogDTO);
-    }
-
-    @GetMapping("/queue")
-    public ResponseEntity<String> addQueue() {
-
-        StringBuilder sb = new StringBuilder().append("EmailParser ").append("\n");
-//        for (java.util.Map.Entry<String, String> entry : Map.hashMap.entrySet()) {
-//            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-//        }
-
-        return new ResponseEntity<>(sb.toString(), HttpStatusCode.valueOf(200));
     }
 }

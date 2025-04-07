@@ -1,14 +1,10 @@
 package net.blueshell.telemetry;
 
-import net.blueshell.common.Blog;
-import net.blueshell.common.Event;
 import net.blueshell.telemetry.model.MetricResponse;
 import net.blueshell.telemetry.service.TelemetryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 public class MainController {

@@ -48,6 +48,7 @@ public class EmailParserController {
         System.out.println("Synchronously Received '" + emailDTO + "'");
         BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);
         asyncCommunicationService.sendToBlogService(blogDTO);
+        asyncCommunicationService.sendToEventParserService(blogDTO);
     }
 
     @GetMapping("/queue")

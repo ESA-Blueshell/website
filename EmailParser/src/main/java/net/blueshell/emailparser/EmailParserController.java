@@ -45,7 +45,7 @@ public class EmailParserController {
 
     @RabbitListener(queues = EmailParserCommunicator.name)
     public void asyncParseEmail(EmailDTO emailDTO) {
-        System.out.println("Synchronously Received '" + emailDTO.getHtml() + "'");
+        System.out.println("Synchronously Received '" + emailDTO + "'");
         BlogDTO blogDTO = parsingService.parseHTML(emailDTO.getHtml());
         asyncCommunicationService.sendToBlogService(blogDTO);
     }

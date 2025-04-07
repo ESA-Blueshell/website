@@ -1,7 +1,7 @@
-package net.blueshell.eventparser.config;
+package net.blueshell.fileservice.config;
 
 import net.blueshell.common.Constants;
-import net.blueshell.common.communication.communicators.EventParserCommunicator;
+import net.blueshell.common.communication.communicators.FileCommunicator;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -14,7 +14,7 @@ public class QueueConfig {
 
     @Bean
     Queue queue() {
-        return new Queue(EventParserCommunicator.name, true);
+        return new Queue(FileCommunicator.name, true);
     }
 
     @Bean
@@ -25,6 +25,6 @@ public class QueueConfig {
     @Bean
     Binding binding(Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange)
-                .with( Constants.QUEUE_ROUTE_PREFIX + "." + EventParserCommunicator.name);
+                .with( Constants.QUEUE_ROUTE_PREFIX + "." + FileCommunicator.name);
     }
 }

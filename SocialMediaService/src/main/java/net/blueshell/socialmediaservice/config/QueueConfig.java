@@ -14,7 +14,7 @@ public class QueueConfig {
 
     @Bean
     Queue queue() {
-        return new Queue(SocialMediaCommunicator.name, false);
+        return new Queue(SocialMediaCommunicator.name, true);
     }
 
     @Bean

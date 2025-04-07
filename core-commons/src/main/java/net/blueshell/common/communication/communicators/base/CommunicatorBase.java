@@ -9,6 +9,7 @@ import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -96,7 +97,7 @@ public class CommunicatorBase implements ICommunicator {
                     Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
                     serializedBody,
                     message -> {
-                        message.getMessageProperties().setContentType(MessageProperties.CONTENT_TYPE_JSON);
+                        message.getMessageProperties().setContentType(MessageProperties.CONTENT_TYPE_TEXT_PLAIN);
                         return message;
                     }
             );

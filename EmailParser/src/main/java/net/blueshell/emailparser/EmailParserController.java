@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.logging.Logger;
 
 @RestController
@@ -45,8 +47,14 @@ public class EmailParserController {
 
     @RabbitListener(queues = EmailParserCommunicator.name)
     public void asyncParseEmail(EmailDTO emailDTO) {
-        System.out.println("Synchronously Received '" + emailDTO + "'");
-        BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);
-        asyncCommunicationService.sendToBlogService(blogDTO);
+//        System.out.println("Synchronously Received '" + emailDTO + "'");
+//        BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);
+//        asyncCommunicationService.sendToBlogService(blogDTO);
+        BlogDTO dto = new BlogDTO();
+        dto.setHtml("<html><body><h1>This is a test email</h1></body></html>");
+        dto.setPublishedAt(Timestamp.from(Instant.now()));
+        System.out.println("Sending blog to email parser service asynchronously");
+
+        asyncCommunicationService.sendToBlogService(dto);
     }
 }

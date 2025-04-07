@@ -3,13 +3,9 @@ package net.blueshell.blogservice;
 import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
 import net.blueshell.common.communication.communicators.BlogCommunicator;
-import net.blueshell.common.communication.communicators.EmailParserCommunicator;
 import net.blueshell.common.dto.BlogDTO;
-import net.blueshell.common.dto.EmailDTO;
-import net.blueshell.db.BaseController;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,18 +33,18 @@ public class BlogController {
         return "Blog Service";
     }
 
-//    @RabbitListener(queues = BlogCommunicator.name)
-//    public void asyncCreateBlog(String blogDTO) {
-//        System.out.println("blogDTO:" + blogDTO);
-//    }
-
     @RabbitListener(queues = BlogCommunicator.name)
-    public void asyncCreateBlog(BlogDTO blogDTO) {
+    public void asyncCreateBlog(String blogDTO) {
         System.out.println("blogDTO:" + blogDTO);
-//        Blog blog = blogMapper.fromDTO(blogDTO);
-//        blogService.create(blog);
-//        System.out.println("Created blog: " + blog.getId());
     }
+
+//    @RabbitListener(queues = BlogCommunicator.name)
+//    public void asyncCreateBlog(BlogDTO blogDTO) {
+//        System.out.println("blogDTO:" + blogDTO);
+////        Blog blog = blogMapper.fromDTO(blogDTO);
+////        blogService.create(blog);
+////        System.out.println("Created blog: " + blog.getId());
+//    }
 
     @GetMapping("/blogs")
     public List<BlogDTO> findAll() {

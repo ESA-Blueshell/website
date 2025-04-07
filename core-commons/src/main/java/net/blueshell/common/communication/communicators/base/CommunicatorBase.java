@@ -2,17 +2,16 @@ package net.blueshell.common.communication.communicators.base;
 
 import net.blueshell.common.communication.communicators.serializers.ISerializer;
 import net.blueshell.common.communication.communicators.serializers.JsonSerializer;
+import net.blueshell.common.Constants;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.blueshell.common.Constants;
-import org.springframework.web.client.RestTemplate;
 
 public class CommunicatorBase implements ICommunicator {
 
@@ -30,17 +29,18 @@ public class CommunicatorBase implements ICommunicator {
         this.restTemplate = new RestTemplate();
     }
 
-    public CommunicatorBase(RabbitTemplate rabbitTemplate,
-                            ISerializer serializer) {
+    public CommunicatorBase(RabbitTemplate rabbitTemplate, ISerializer serializer) {
         this.serializer = serializer;
         this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = new RestTemplate();
     }
 
     @Override
-    public <T, T1> ResponseEntity<T> sendSync(String url, HttpMethod method,
-                                          T1 body, HashMap<String, Object> parameters,
-                                          Class<T> responseType) {
+    public <T, T1> ResponseEntity<T> sendSync(
+            String url, HttpMethod method,
+            T1 body, HashMap<String, Object> parameters,
+            Class<T> responseType
+    ) {
         try {
             // Convert request object to JSON string
             String jsonRequest = serializer.serialize(body);
@@ -53,8 +53,8 @@ public class CommunicatorBase implements ICommunicator {
             HttpEntity<String> entity = new HttpEntity<>(jsonRequest, headers);
 
             // Add parameters to the URL
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
-            if(parameters != null) {
+            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url);
+            if (parameters != null) {
                 for (Map.Entry<String, Object> entry : parameters.entrySet()) {
                     builder.queryParam(entry.getKey(), entry.getValue());
                 }
@@ -62,29 +62,39 @@ public class CommunicatorBase implements ICommunicator {
             String finalUrl = builder.toUriString();
 
             // Send request and receive response
-            ResponseEntity<String> response = restTemplate.exchange(finalUrl, method, entity, String.class);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(finalUrl, method, entity, String.class);
+
             String responseBody = response.getBody();
 
             return getResponseObject(responseBody, responseType, response, serializer);
 
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
     }
 
+    /**
+     * **Refactored** to:
+     *  1. Pass the raw object (T) to rabbitTemplate instead of manually serializing to String.
+     *  2. Set the __TypeId__ header to the fully qualified class name so consumers know the real type.
+     */
     @Override
-    public <T> String sendAsync(String targetName, T body) {
-
+    public <T> String sendAsync(String targetName, T dto) {
+        System.out.println("SEND ASYNC!: " + dto.toString());
         try {
-            assert rabbitTemplate != null;
-            String serializedBody = new JsonSerializer().serialize(body);
-            rabbitTemplate.convertAndSend(Constants.EXCHANGE,
+            if (rabbitTemplate == null) {
+                throw new IllegalStateException("RabbitTemplate is not initialized.");
+            }
+
+            rabbitTemplate.convertAndSend(
+                    Constants.EXCHANGE,
                     Constants.QUEUE_ROUTE_PREFIX + "." + targetName,
-                    serializedBody);
-        }
-        catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+                    dto
+            );
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return "Could not send message to " + targetName;
         }
 
@@ -95,15 +105,18 @@ public class CommunicatorBase implements ICommunicator {
         return String.format(urlFormat, name, port);
     }
 
-    private <T, T1> ResponseEntity<T> getResponseObject(String responseBody, Class<T> responseType,
-                                                        ResponseEntity<T1> response, ISerializer serializer)
-    {
+    private <T, T1> ResponseEntity<T> getResponseObject(
+            String responseBody, Class<T> responseType,
+            ResponseEntity<T1> response, ISerializer serializer
+    ) {
         try {
             // Convert response JSON string to response object
-            return new ResponseEntity<>(serializer.deserialize(responseBody, responseType),
-                    response.getStatusCode());
+            return new ResponseEntity<>(
+                    serializer.deserialize(responseBody, responseType),
+                    response.getStatusCode()
+            );
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return new ResponseEntity<>(response.getStatusCode());
         }
     }

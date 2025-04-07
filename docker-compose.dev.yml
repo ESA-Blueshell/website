@@ -1,0 +1,375 @@
+services:
+  ################################################################
+  # Database (MariaDB) - same as your existing setup
+  ################################################################
+  db:
+    image: mariadb:10.11.10
+    container_name: db
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./data:/var/lib/mysql"
+      - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.db.env
+    command: --log-bin-trust-function-creators=1
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # RabbitMQ - same as your existing setup
+  ################################################################
+  rabbitmq:
+    image: rabbitmq:4.0.7-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.rabbitmq.env
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmqctl status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # Frontend (React/Node or similar)
+  # Uses a simple dev Dockerfile or the official node image.
+  # This example *mounts* your local code in ./frontend.
+  ################################################################
+  frontend:
+    container_name: frontend-dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev   # Or use official Node if you prefer
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./frontend:/usr/app"
+      - /usr/app/node_modules
+    networks:
+      - global_network
+    depends_on:
+      - api   # or whichever service your frontend calls first
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # "api" microservice in dev mode
+  ################################################################
+  api:
+    container_name: api-dev
+    build:
+      context: .                   # Entire repo (so it can see parent POM, etc.)
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app                     # Mount the entire repo for live reload
+      - maven-repo:/root/.m2       # Named volume for Maven cache
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl api -am -DskipTests && \
+       cd api && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8080:8080"                # Application port
+      - "5012:5005"                # Remote debug on 5012 externally -> 5005 in container
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.rabbitmq.env
+      - Docker/env/.app.env
+    depends_on:
+      - db
+      - rabbitmq
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/contributionPeriods" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # APIGateway microservice in dev mode
+  ################################################################
+  apigateway:
+    container_name: apigateway-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl APIGateway -am -DskipTests && \
+       cd APIGateway && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "1024:80"                  # The gateway might run on 80 internally. 
+      - "5005:5005"                # Debug
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    depends_on:
+      - rabbitmq
+      - blogservice
+      - emailparser
+      - eventparser
+      - fileservice
+      - telemetry
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # BlogService microservice in dev mode
+  ################################################################
+  blogservice:
+    container_name: blogservice-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl BlogService -am -DskipTests && \
+       cd BlogService && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8081:8080"
+      - "5006:5005"
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # EmailParser microservice
+  ################################################################
+  emailparser:
+    container_name: emailparser-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl EmailParser -am -DskipTests && \
+       cd EmailParser && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8082:8080"
+      - "5007:5005"
+    networks:
+      - global_network
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # EventParser microservice
+  ################################################################
+  eventparser:
+    container_name: eventparser-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl EventParser -am -DskipTests && \
+       cd EventParser && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8083:8080"
+      - "5008:5005"
+    networks:
+      - global_network
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # FileService microservice
+  ################################################################
+  fileservice:
+    container_name: fileservice-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+      - "./files:/app/files"     # If you store uploaded files locally
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl FileService -am -DskipTests && \
+       cd FileService && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8086:8080"
+      - "5011:5005"
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # SocialMediaService microservice
+  ################################################################
+  socialmediaservice:
+    container_name: socialmediaservice-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl SocialMediaService -am -DskipTests && \
+       cd SocialMediaService && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8084:8080"
+      - "5009:5005"
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - apigateway
+    env_file:
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # Telemetry microservice
+  ################################################################
+  telemetry:
+    container_name: telemetry-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl Telemetry -am -DskipTests && \
+       cd Telemetry && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8085:8080"
+      - "5010:5005"
+    networks:
+      - global_network
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  global_network:
+    driver: bridge
+
+volumes:
+  # Named volume to cache Maven dependencies
+  maven-repo:

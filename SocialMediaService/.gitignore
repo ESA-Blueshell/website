@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-Dockerfile
-socialmediaservice-deployment.yaml
-socialmediaservice-service.yaml

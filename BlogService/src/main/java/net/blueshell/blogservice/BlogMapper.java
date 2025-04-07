@@ -1,8 +1,10 @@
 package net.blueshell.blogservice;
 
+import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.db.BaseMapper;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import java.sql.Timestamp;
@@ -11,6 +13,8 @@ import java.time.Instant;
 @Mapper(componentModel = "spring")
 public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
 
+    @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     public abstract Blog fromDTO(BlogDTO dto);
 
     @AfterMapping

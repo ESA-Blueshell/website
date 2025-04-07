@@ -1,18 +1,22 @@
 services:
-  #  frontend:
-  #    build:
-  #      context: ./blueshell-frontend
-  #      dockerfile: Dockerfile-dev
-  #    ports:
-  #      - "3000:3000"
-  #    volumes:
-  #      - "./blueshell-frontend:/usr/app:rw"
-  #      - "/usr/app/node_modules"
-  #    depends_on:
-  #      - api
-  #    networks:
-  #      - global_network
-
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./frontend:/usr/app:rw"
+      - "/usr/app/node_modules"
+    depends_on:
+      - api
+    networks:
+      - global_network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   db:
     image: mariadb:10.11.10
@@ -33,9 +37,6 @@ services:
       timeout: 10s
       retries: 5
 
-
-
-
   rabbitmq:
     image: rabbitmq:4.0.7-management
     ports:
@@ -54,7 +55,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: ./api/Dockerfile
+      dockerfile: ./api/Dockerfile-build
       args:
         - PORT=8080
     depends_on:
@@ -67,6 +68,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: api:latest
     networks:
       - global_network
@@ -80,7 +82,7 @@ services:
   apigateway:
     build:
       context: .
-      dockerfile: ./APIGateway/Dockerfile
+      dockerfile: ./APIGateway/Dockerfile-build
       args:
         - PORT=1024
     ports:
@@ -100,6 +102,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: apigateway:latest
     restart: unless-stopped
     env_file:
@@ -108,7 +111,7 @@ services:
   blogservice:
     build:
       context: .
-      dockerfile: ./BlogService/Dockerfile
+      dockerfile: ./BlogService/Dockerfile-build
       args:
         - PORT=8081
     ports:
@@ -123,6 +126,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
     env_file:
       - Docker/env/.db.env
@@ -132,7 +136,7 @@ services:
   emailparser:
     build:
       context: .
-      dockerfile: ./EmailParser/Dockerfile
+      dockerfile: ./EmailParser/Dockerfile-build
       args:
         - PORT=8082
     ports:
@@ -144,6 +148,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: emailparser:latest
     restart: unless-stopped
     env_file:
@@ -152,7 +157,7 @@ services:
   eventparser:
     build:
       context: .
-      dockerfile: ./EventParser/Dockerfile
+      dockerfile: ./EventParser/Dockerfile-build
       args:
         - PORT=8083
     ports:
@@ -164,6 +169,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: eventparser:latest
     restart: unless-stopped
     env_file:
@@ -172,7 +178,7 @@ services:
   fileservice:
     build:
       context: .
-      dockerfile: ./FileService/Dockerfile
+      dockerfile: ./FileService/Dockerfile-build
       args:
         - PORT=8086
     ports:
@@ -187,6 +193,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: fileservice:latest
     volumes:
       - "./files:/app/files"
@@ -198,7 +205,7 @@ services:
   socialmediaservice:
     build:
       context: .
-      dockerfile: ./SocialMediaService/Dockerfile
+      dockerfile: ./SocialMediaService/Dockerfile-build
       args:
         - PORT=8084
     ports:
@@ -213,6 +220,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: socialmediaservice:latest
     restart: unless-stopped
     env_file:
@@ -221,7 +229,7 @@ services:
   telemetry:
     build:
       context: .
-      dockerfile: ./Telemetry/Dockerfile
+      dockerfile: ./Telemetry/Dockerfile-build
       args:
         - PORT=8085
     ports:
@@ -233,6 +241,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     image: telemetry:latest
     restart: unless-stopped
     env_file:

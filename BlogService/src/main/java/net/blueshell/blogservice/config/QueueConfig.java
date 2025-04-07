@@ -14,7 +14,7 @@ public class QueueConfig {
 
     @Bean
     Queue queue() {
-        return new Queue(BlogCommunicator.name, false);
+        return new Queue(BlogCommunicator.name, true);
     }
 
     @Bean

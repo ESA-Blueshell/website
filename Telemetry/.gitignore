@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-Dockerfile
-telemetry-deployment.yaml
-telemetry-service.yaml

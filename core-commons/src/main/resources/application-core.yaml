@@ -8,3 +8,7 @@ spring:
     password: ${RABBITMQ_DEFAULT_PASS}
 app:
   url: ${APP_URL}
+
+services:
+  blogs:
+    url: "http://blogservice"

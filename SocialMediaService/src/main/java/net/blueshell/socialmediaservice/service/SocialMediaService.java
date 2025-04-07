@@ -1,6 +1,6 @@
 package net.blueshell.socialmediaservice.service;
 
-import net.blueshell.common.Blog;
+import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.Event;
 import net.blueshell.socialmediaservice.client.SocialMediaClient;
 import net.blueshell.socialmediaservice.client.TelemetryClient;
@@ -14,8 +14,8 @@ public class SocialMediaService {
     @Autowired
     private SocialMediaClient socialMediaClient;
 
-    public void distributeBlog(Blog blog) {
-        String link = telemetryClient.getTrackableBlogURL(blog.getId());
+    public void distributeBlog(BlogDTO blogDTO) {
+        String link = telemetryClient.getTrackableBlogURL(blogDTO.getId());
         String content = "Check out our new blog post:\n" + link;
 
         post(content, link);

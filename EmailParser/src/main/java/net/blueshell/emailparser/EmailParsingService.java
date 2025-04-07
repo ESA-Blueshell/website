@@ -1,9 +1,9 @@
-package net.blueshell.emailparser.service;
+package net.blueshell.emailparser;
 
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import net.blueshell.common.Event;
 import net.blueshell.common.Image;
-import net.blueshell.common.ParsedEmail;
+import net.blueshell.common.dto.BlogDTO;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Service
 public class EmailParsingService {
-    public ParsedEmail parseHTML(String content) {
+    public BlogDTO parseHTML(String content) {
         try {
             if (content == null || content.trim().isEmpty()) {
                 throw new IllegalArgumentException("Newsletter content is empty or null.");
@@ -28,10 +28,10 @@ public class EmailParsingService {
 
             List<Image> images = extractImages(doc);
 
-            return ParsedEmail
+            return BlogDTO
                     .builder()
-                    .plainText(plainText)
-                    .rawHTML(content)
+                    .text(plainText)
+                    .html(content)
                     .images(images)
                     .build();
 
@@ -40,9 +40,9 @@ public class EmailParsingService {
             e.printStackTrace();
 
             // Return an empty ParsedEmail object or throw a custom exception if needed
-            return ParsedEmail
+            return BlogDTO
                     .builder()
-                    .plainText("")
+                    .text("")
                     .images(new ArrayList<>())
                     .build();
         }

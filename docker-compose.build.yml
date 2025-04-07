@@ -1,18 +1,22 @@
 services:
-  #  frontend:
-  #    build:
-  #      context: ./blueshell-frontend
-  #      dockerfile: Dockerfile-dev
-  #    ports:
-  #      - "3000:3000"
-  #    volumes:
-  #      - "./blueshell-frontend:/usr/app:rw"
-  #      - "/usr/app/node_modules"
-  #    depends_on:
-  #      - api
-  #    networks:
-  #      - global_network
-
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./frontend:/usr/app:rw"
+      - "/usr/app/node_modules"
+    depends_on:
+      - api
+    networks:
+      - global_network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   db:
     image: mariadb:10.11.10
@@ -33,9 +37,6 @@ services:
       timeout: 10s
       retries: 5
 
-
-
-
   rabbitmq:
     image: rabbitmq:4.0.7-management
     ports:
@@ -54,7 +55,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: ./api/Dockerfile
+      dockerfile: ./api/Dockerfile-build
       args:
         - PORT=8080
     depends_on:
@@ -80,7 +81,7 @@ services:
   apigateway:
     build:
       context: .
-      dockerfile: ./APIGateway/Dockerfile
+      dockerfile: ./APIGateway/Dockerfile-build
       args:
         - PORT=1024
     ports:
@@ -108,7 +109,7 @@ services:
   blogservice:
     build:
       context: .
-      dockerfile: ./BlogService/Dockerfile
+      dockerfile: ./BlogService/Dockerfile-build
       args:
         - PORT=8081
     ports:
@@ -119,7 +120,7 @@ services:
       - rabbitmq
       - db
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget --no-verbose --tries=1 --spider http://localhost:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -132,7 +133,7 @@ services:
   emailparser:
     build:
       context: .
-      dockerfile: ./EmailParser/Dockerfile
+      dockerfile: ./EmailParser/Dockerfile-build
       args:
         - PORT=8082
     ports:
@@ -152,7 +153,7 @@ services:
   eventparser:
     build:
       context: .
-      dockerfile: ./EventParser/Dockerfile
+      dockerfile: ./EventParser/Dockerfile-build
       args:
         - PORT=8083
     ports:
@@ -172,7 +173,7 @@ services:
   fileservice:
     build:
       context: .
-      dockerfile: ./FileService/Dockerfile
+      dockerfile: ./FileService/Dockerfile-build
       args:
         - PORT=8086
     ports:
@@ -198,7 +199,7 @@ services:
   socialmediaservice:
     build:
       context: .
-      dockerfile: ./SocialMediaService/Dockerfile
+      dockerfile: ./SocialMediaService/Dockerfile-build
       args:
         - PORT=8084
     ports:
@@ -221,7 +222,7 @@ services:
   telemetry:
     build:
       context: .
-      dockerfile: ./Telemetry/Dockerfile
+      dockerfile: ./Telemetry/Dockerfile-build
       args:
         - PORT=8085
     ports:

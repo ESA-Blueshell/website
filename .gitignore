@@ -37,3 +37,14 @@ build/
 .m2
 /data
 files/
+
+**/Dockerfile*
+
+**/*-deployment.yaml
+**/*-service.yaml
+/core-commons/src/main/java/net/blueshell/common/dto/BlogDTO.java
+/api/api-deployment.yaml
+/api/api-service.yaml
+/api/Dockerfile
+/api/Dockerfile-build
+/api/Dockerfile-dev

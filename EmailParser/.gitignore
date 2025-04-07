@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-Dockerfile
-emailparser-deployment.yaml
-emailparser-service.yaml

@@ -1,13 +1,15 @@
 package net.blueshell.db;
 
 import net.blueshell.common.dto.BaseDTO;
+import net.blueshell.common.dto.FileDTO;
 import org.springframework.data.domain.Page;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class BaseMapper<T, DTO extends BaseDTO> {
+public abstract class BaseMapper<T, DTO> {
     public abstract DTO toDTO(T t);
 
     public abstract T fromDTO(DTO dto);

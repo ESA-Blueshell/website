@@ -33,4 +33,8 @@ public interface ICommunicationService {
                                                        HashMap<String, Object> parameters, Class<T> responseType);
     <T, T1> ResponseEntity<T> sendToTelemetryService(String url, HttpMethod method, T1 body,
                                                      HashMap<String, Object> parameters, Class<T> responseType);
+
+    <T, T1> ResponseEntity<T> sendToFileService(String url, HttpMethod method,
+                                                T1 body, HashMap<String, Object> parameters,
+                                                Class<T> responseType);
 }

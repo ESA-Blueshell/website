@@ -3,8 +3,11 @@ package net.blueshell.emailparser;
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import net.blueshell.common.Event;
 import net.blueshell.common.Image;
+import net.blueshell.common.communication.CommunicationService;
+import net.blueshell.common.communication.ICommunicationService;
 import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.dto.EmailDTO;
+import net.blueshell.common.dto.FileDTO;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,6 +15,8 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,6 +25,9 @@ import java.util.Map;
 
 @Mapper(componentModel = "spring")
 public abstract class EmailMapper {
+
+    @Autowired
+    private CommunicationService communicationService;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "title", ignore = true)
@@ -40,11 +48,11 @@ public abstract class EmailMapper {
             String markdown = generateMarkdown(content);
             Document doc = Jsoup.parse(content);
             String plainText = doc.select("body").text();
-            List<Image> images = extractImages(doc);
+//            List<Image> images = extractImages(doc);
 
             blogDTO.setMarkdown(markdown);
             blogDTO.setHtml(content);
-            blogDTO.setImages(images);
+//            blogDTO.setImages(images);
             blogDTO.setText(plainText);
 
         }
@@ -55,20 +63,20 @@ public abstract class EmailMapper {
         return converter.convert(content);
     }
 
-    private List<Image> extractImages(Document doc) {
-        List<Image> images = new ArrayList<>();
+    private List<FileDTO> extractImages(Document doc) {
+        List<FileDTO> files = new ArrayList<>();
         for (Element img : doc.select("img")) {
             String src = img.attr("src");
             String alt = img.attr("alt");
             if (src.isEmpty()) {
                 continue;
             }
-            Image image = Image.builder()
-                    .url(src)
-                    .title(alt)
-                    .build();
-            images.add(image);
+            FileDTO fileDTO = new FileDTO();
+            fileDTO.setUrl(src);
+            fileDTO.setFileName(alt);
+            files.add(fileDTO);
         }
-        return images;
+        return files;
+//        return communicationService.sendToFileService("/files", HttpMethod.PUT, String.class);
     }
 }

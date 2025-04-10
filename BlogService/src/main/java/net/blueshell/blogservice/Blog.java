@@ -17,15 +17,22 @@ import java.util.UUID;
 public class Blog implements BaseModel<UUID> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    private String title;
 
     private String text;
 
     private String html;
 
+    private String markdown;
+
+    @Column(name = "published_at")
+    private Timestamp publishedAt;
+
     @Column(name = "created_at")
-    private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
+    private Timestamp createdAt;
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;

@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-Dockerfile
-blogservice-deployment.yaml
-blogservice-service.yaml

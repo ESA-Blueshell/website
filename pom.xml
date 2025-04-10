@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.blueshell</groupId>
-    <artifactId>SOA</artifactId>
+    <artifactId>blueshell-website</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 

@@ -1,6 +1,6 @@
 package net.blueshell.socialmediaservice;
 
-import net.blueshell.common.Blog;
+import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.Event;
 import net.blueshell.socialmediaservice.data.Map;
 import net.blueshell.socialmediaservice.service.SocialMediaService;
@@ -23,8 +23,8 @@ public class MainController {
 
     //TODO: remove - debug purposes only
     @PostMapping("/distribute-blog")
-    public ResponseEntity<Void> distributeBlog(@RequestBody Blog blog) {
-        socialMediaService.distributeBlog(blog);
+    public ResponseEntity<Void> distributeBlog(@RequestBody BlogDTO blogDTO) {
+        socialMediaService.distributeBlog(blogDTO);
         return ResponseEntity.ok().build();
     }
 

@@ -26,12 +26,12 @@ jobs:
       # 3. Build Docker images
       - name: Build Docker containers
         run: |
-          docker compose -f docker-compose-base.yml build
+          docker compose -f docker-compose.build.yml build
 
       # 4. Start containers in the background
       - name: Start containers
         run: |
-          docker compose -f docker-compose-base.yml up -d
+          docker compose -f docker-compose.build.yml up -d
 
       # 5. Verify containers are healthy
       - name: Verify container health
@@ -41,7 +41,7 @@ jobs:
           SLEEP_INTERVAL=10
           
           # Get the IDs of all containers started by this Compose file
-          CONTAINERS=$(docker compose -f docker-compose-base.yml ps -q)
+          CONTAINERS=$(docker compose -f docker-compose.build.yml ps -q)
           if [ -z "$CONTAINERS" ]; then
             echo "No containers found. Is your compose file up?"
             exit 1
@@ -71,7 +71,7 @@ jobs:
           echo "All containers passed individual health checks."
           
           # Optional final check: verifies all are *still* healthy in one go
-          if test -z "$(docker compose -f docker-compose-base.yml ps -q | xargs docker inspect -f '{{ .State.Health.Status}}' | grep -v '^healthy$')"; then
+          if test -z "$(docker compose -f docker-compose.build.yml ps -q | xargs docker inspect -f '{{ .State.Health.Status}}' | grep -v '^healthy$')"; then
             echo "All containers healthy!"
           else
             echo "Some container(s) reported unhealthy status."

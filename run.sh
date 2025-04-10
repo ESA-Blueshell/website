@@ -20,6 +20,6 @@ else
 fi
 cd ..
 
-docker compose -f docker-compose-base.yml up --build -d
+docker compose -f docker-compose.build.yml up --build -d
 
 echo "Docker containers started"

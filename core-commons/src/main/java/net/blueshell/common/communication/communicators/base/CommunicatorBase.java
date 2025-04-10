@@ -15,10 +15,6 @@ import net.blueshell.common.Constants;
 import org.springframework.web.client.RestTemplate;
 
 public class CommunicatorBase implements ICommunicator {
-
-    public static final String name = null;
-    protected final String urlFormat = "http://%s:%s";
-
     private static final Logger logger = Logger.getLogger(CommunicatorBase.class.getName());
     private final ISerializer serializer;
     private final RestTemplate restTemplate;
@@ -89,10 +85,6 @@ public class CommunicatorBase implements ICommunicator {
         }
 
         return "Message sent to " + targetName;
-    }
-
-    protected String formatUrl(String name, int port) {
-        return String.format(urlFormat, name, port);
     }
 
     private <T, T1> ResponseEntity<T> getResponseObject(String responseBody, Class<T> responseType,

@@ -1,0 +1,121 @@
+openapi: 3.0.0
+info:
+  title: Blueshell API
+  description: API documentation for Blueshell services.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local server
+paths:
+  /api-gateway:
+    get:
+      summary: Send a GET request to the API Gateway
+      operationId: sendToAPIGateway
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The URL to send the request to.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /blog-service:
+    post:
+      summary: Send a POST request to the Blog Service
+      operationId: sendToBlogService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /email-parser-service:
+    post:
+      summary: Send a POST request to the Email Parser Service
+      operationId: sendToEmailParserService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /event-parser-service:
+    post:
+      summary: Send a POST request to the Event Parser Service
+      operationId: sendToEventParserService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /social-media-service:
+    post:
+      summary: Send a POST request to the Social Media Service
+      operationId: sendToSocialMediaService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /telemetry-service:
+    post:
+      summary: Send a POST request to the Telemetry Service
+      operationId: sendToTelemetryService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  schemas:
+    Response:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          type: object

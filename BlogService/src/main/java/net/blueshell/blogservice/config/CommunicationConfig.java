@@ -14,22 +14,21 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CommunicationConfig {
-
-    @Bean
-    public ICommunicationService communicationService() {
-        return new CommunicationService();
-    }
-
-    @Bean
-    public ISerializer serializer() {
-        return new JsonSerializer();
-    }
-
     @Bean
     public ICommunicator baseCommunicator(RabbitTemplate rabbitTemplate,
                                           ISerializer serializer) {
 
         return new CommunicatorBase(rabbitTemplate, serializer);
+    }
+
+    @Bean
+    public ICommunicationService communicationService(ICommunicator communicator) {
+        return new CommunicationService(communicator);
+    }
+
+    @Bean
+    public ISerializer serializer() {
+        return new JsonSerializer();
     }
 
     @Bean

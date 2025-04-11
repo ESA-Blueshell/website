@@ -1,18 +1,14 @@
 package net.blueshell.apigateway.controllers;
 
-import net.blueshell.common.communication.AsyncCommunicationService;
-import net.blueshell.common.communication.CommunicationService;
 import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/social-media")
-public class SocialMediaController {
+@RequestMapping("/socialmedia")
+public class SocialMediaController extends SwaggerController {
     private final ICommunicationService communicationService;
     private final IAsyncCommunicationService asyncCommunicationService;
 
@@ -24,8 +20,8 @@ public class SocialMediaController {
     }
 
     @GetMapping
-    public ResponseEntity<String> getSocialMedia() {
-        return communicationService.sendToSocialMediaService("/", HttpMethod.GET, String.class);
+    public ResponseEntity<Boolean> getSocialMedia() {
+        return communicationService.sendToSocialMediaService("/", HttpMethod.GET, Boolean.class);
     }
 
     @GetMapping("/queue")
@@ -36,5 +32,10 @@ public class SocialMediaController {
     @PostMapping("/queue")
     public String addToSocialMediaQueue(@RequestBody String body) {
         return asyncCommunicationService.sendToSocialMediaService(body);
+    }
+
+    @Override
+    protected Object sendSwaggerRequestToService() {
+        return communicationService.sendToSocialMediaService(SWAGGER_SERVICE_URL, HttpMethod.GET, Object.class);
     }
 }

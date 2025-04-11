@@ -16,8 +16,8 @@ import org.springframework.context.annotation.Configuration;
 public class CommunicationConfig {
 
     @Bean
-    public ICommunicationService communicationService() {
-        return new CommunicationService();
+    public ICommunicationService communicationService(ICommunicator communicator) {
+        return new CommunicationService(communicator);
     }
 
     @Bean
@@ -34,7 +34,6 @@ public class CommunicationConfig {
 
     @Bean
     public IAsyncCommunicationService asyncCommunicationService(ICommunicator communicator) {
-
         return new AsyncCommunicationService(communicator);
     }
 }

@@ -4,22 +4,30 @@ import lombok.Getter;
 
 @Getter
 public enum Communicators {
-    APIGATEWAY("apigateway", 80),
-    BLOG("blog", 8080),
-    EMAILPARSER("emailparser", 8080),
-    EVENTPARSER("emailparser", 8080),
-    SOCIALMEDIA("socialmedia", 8080),
-    TELEMETRY("telemetry", 8080);
+    APIGATEWAY(80),
+    BLOG(8080),
+    EMAILPARSER(8080),
+    EVENTPARSER(8080),
+    SOCIALMEDIA(8080),
+    TELEMETRY(8080);
 
-    private final String name;
+    public static final String APIGATEWAY_NAME = "apigateway";
+    public static final String BLOG_NAME = "blogservice";
+    public static final String EMAILPARSER_NAME = "emailparser";
+    public static final String EVENTPARSER_NAME = "eventparser";
+    public static final String SOCIALMEDIA_NAME = "socialmediaservice";
+    public static final String TELEMETRY_NAME = "telemetry";
+
     private final int port;
 
-    Communicators(String name, int port) {
-        this.name = name;
+    Communicators(int port) {
         this.port = port;
     }
 
-    public String getUrl(String path) {
-        return "http://" + name + ":" + port + path;
-    }
+    public static final String APIGATEWAY_URL = "http://" + APIGATEWAY_NAME + ":" + APIGATEWAY.getPort();
+    public static final String BLOG_URL = "http://" + BLOG_NAME + ":" + BLOG.getPort();
+    public static final String EMAILPARSER_URL = "http://" + EMAILPARSER_NAME + ":" + EMAILPARSER.getPort();
+    public static final String EVENTPARSER_URL = "http://" + EVENTPARSER_NAME + ":" + EVENTPARSER.getPort();
+    public static final String SOCIALMEDIA_URL = "http://" + SOCIALMEDIA_NAME + ":" + SOCIALMEDIA.getPort();
+    public static final String TELEMETRY_URL = "http://" + TELEMETRY_NAME + ":" + TELEMETRY.getPort();
 }

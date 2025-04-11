@@ -90,41 +90,41 @@ public class CommunicationService implements ICommunicationService {
     public <T, T1> ResponseEntity<T> sendToAPIGateway(String url, HttpMethod method,
                                                   T1 body, HashMap<String, Object> parameters,
                                                   Class<T> responseType) {
-        return communicator.sendSync(Communicators.APIGATEWAY.getUrl(url), method, body, parameters, responseType);
+        return communicator.sendSync(Communicators.APIGATEWAY_URL + url, method, body, parameters, responseType);
     }
 
     @Override
     public <T, T1> ResponseEntity<T> sendToBlogService(String url, HttpMethod method,
                                                    T1 body, HashMap<String, Object> parameters,
                                                    Class<T> responseType) {
-        return communicator.sendSync(Communicators.BLOG.getUrl(url), method, body, parameters, responseType);
+        return communicator.sendSync(Communicators.BLOG_URL + url, method, body, parameters, responseType);
     }
 
     @Override
     public <T, T1> ResponseEntity<T> sendToEmailParserService(String url, HttpMethod method,
                                                           T1 body, HashMap<String, Object> parameters,
                                                           Class<T> responseType) {
-        return communicator.sendSync(Communicators.EMAILPARSER.getUrl(url), method, body, parameters, responseType);
+        return communicator.sendSync(Communicators.EMAILPARSER_URL + url, method, body, parameters, responseType);
     }
 
     @Override
     public <T, T1> ResponseEntity<T> sendToEventParserService(String url, HttpMethod method,
                                                           T1 body, HashMap<String, Object> parameters,
                                                           Class<T> responseType) {
-        return communicator.sendSync(Communicators.EVENTPARSER.getUrl(url), method, body, parameters, responseType);
+        return communicator.sendSync(Communicators.EVENTPARSER_URL + url, method, body, parameters, responseType);
     }
 
     @Override
     public <T, T1> ResponseEntity<T> sendToSocialMediaService(String url, HttpMethod method,
                                                           T1 body, HashMap<String, Object> parameters,
                                                           Class<T> responseType) {
-        return communicator.sendSync(Communicators.SOCIALMEDIA.getUrl(url), method, body, parameters, responseType);
+        return communicator.sendSync(Communicators.SOCIALMEDIA_URL + url, method, body, parameters, responseType);
     }
 
     @Override
     public <T, T1> ResponseEntity<T> sendToTelemetryService(String url, HttpMethod method,
                                                         T1 body, HashMap<String, Object> parameters,
                                                         Class<T> responseType) {
-        return communicator.sendSync(Communicators.TELEMETRY.getUrl(url), method, body, parameters, responseType);
+        return communicator.sendSync(Communicators.TELEMETRY_URL + url, method, body, parameters, responseType);
     }
 }

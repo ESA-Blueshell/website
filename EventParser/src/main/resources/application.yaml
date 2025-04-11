@@ -1,3 +1,7 @@
 spring:
   application:
     name: EventParser
+
+springdoc:
+  api-docs:
+    enabled: true

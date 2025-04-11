@@ -2,18 +2,14 @@ package net.blueshell.emailparser;
 
 import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
-import net.blueshell.common.communication.communicators.EmailParserCommunicator;
+import net.blueshell.common.communication.communicators.Communicators;
 import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.dto.EmailDTO;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.logging.Logger;
 
 @RestController
@@ -45,7 +41,7 @@ public class EmailParserController {
         return blogDTO;
     }
 
-    @RabbitListener(queues = EmailParserCommunicator.name)
+    @RabbitListener(queues = Communicators.EMAILPARSER_NAME)
     public void asyncParseEmail(EmailDTO emailDTO) {
         System.out.println("Synchronously Received '" + emailDTO + "'");
         BlogDTO blogDTO = emailMapper.toBlogDTO(emailDTO);

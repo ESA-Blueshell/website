@@ -4,3 +4,32 @@ server:
 spring:
   application:
     name: APIGateway
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway Service
+
+      - url: /blogservice/v3/api-docs
+        name: Blog Service
+
+      - url: /emailparser/v3/api-docs
+        name: Email Parser Service
+
+      - url: /eventparser/v3/api-docs
+        name: EventParser Service
+
+      - url: /file/v3/api-docs
+        name: File Service
+
+      - url: /socialmedia/v3/api-docs
+        name: Social Media Service
+
+      - url: /telemetry/v3/api-docs
+        name: Telemetry Service

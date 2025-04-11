@@ -2,7 +2,7 @@ package net.blueshell.blogservice;
 
 import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
-import net.blueshell.common.communication.communicators.BlogCommunicator;
+import net.blueshell.common.communication.communicators.Communicators;
 import net.blueshell.common.dto.BlogDTO;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class BlogController {
         return "Blog Service";
     }
 
-    @RabbitListener(queues = BlogCommunicator.name)
+    @RabbitListener(queues = Communicators.BLOG_NAME)
     public void asyncCreateBlog(BlogDTO blogDTO) {
         Blog blog = blogMapper.fromDTO(blogDTO);
         blogService.create(blog);

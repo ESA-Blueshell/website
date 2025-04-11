@@ -110,6 +110,12 @@ public class CommunicatorBase implements ICommunicator {
             ResponseEntity<T1> response, ISerializer serializer
     ) {
         try {
+            
+            if(responseType == String.class ||
+                responseType == Boolean.class) {
+                return new ResponseEntity<>(responseType.cast(responseBody), response.getStatusCode());
+            }
+            
             // Convert response JSON string to response object
             return new ResponseEntity<>(
                     serializer.deserialize(responseBody, responseType),

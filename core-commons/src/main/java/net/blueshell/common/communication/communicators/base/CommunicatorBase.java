@@ -42,33 +42,15 @@ public class CommunicatorBase implements ICommunicator {
             Class<T> responseType
     ) {
         try {
-            // Convert request object to JSON string
-            String jsonRequest = serializer.serialize(body);
+            HttpEntity<T1> entity = new HttpEntity<>(body);
 
-            // Set headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Create HttpEntity
-            HttpEntity<String> entity = new HttpEntity<>(jsonRequest, headers);
-
-            // Add parameters to the URL
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url);
             if (parameters != null) {
-                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                    builder.queryParam(entry.getKey(), entry.getValue());
-                }
+                parameters.forEach(builder::queryParam);
             }
             String finalUrl = builder.toUriString();
 
-            // Send request and receive response
-            ResponseEntity<String> response =
-                    restTemplate.exchange(finalUrl, method, entity, String.class);
-
-            String responseBody = response.getBody();
-
-            return getResponseObject(responseBody, responseType, response, serializer);
-
+            return restTemplate.exchange(finalUrl, method, entity, responseType);
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
@@ -82,7 +64,6 @@ public class CommunicatorBase implements ICommunicator {
      */
     @Override
     public <T> String sendAsync(String targetName, T dto) {
-        System.out.println("SEND ASYNC!: " + dto.toString());
         try {
             if (rabbitTemplate == null) {
                 throw new IllegalStateException("RabbitTemplate is not initialized.");
@@ -103,27 +84,5 @@ public class CommunicatorBase implements ICommunicator {
 
     protected String formatUrl(String name, int port) {
         return String.format(urlFormat, name, port);
-    }
-
-    private <T, T1> ResponseEntity<T> getResponseObject(
-            String responseBody, Class<T> responseType,
-            ResponseEntity<T1> response, ISerializer serializer
-    ) {
-        try {
-            
-            if(responseType == String.class ||
-                responseType == Boolean.class) {
-                return new ResponseEntity<>(responseType.cast(responseBody), response.getStatusCode());
-            }
-            
-            // Convert response JSON string to response object
-            return new ResponseEntity<>(
-                    serializer.deserialize(responseBody, responseType),
-                    response.getStatusCode()
-            );
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            return new ResponseEntity<>(response.getStatusCode());
-        }
     }
 }

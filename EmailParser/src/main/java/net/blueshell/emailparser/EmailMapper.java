@@ -4,6 +4,7 @@ import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import net.blueshell.common.Event;
 import net.blueshell.common.Image;
 import net.blueshell.common.communication.CommunicationService;
+import net.blueshell.common.communication.IAsyncCommunicationService;
 import net.blueshell.common.communication.ICommunicationService;
 import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.dto.EmailDTO;
@@ -27,7 +28,8 @@ import java.util.Map;
 public abstract class EmailMapper {
 
     @Autowired
-    private CommunicationService communicationService;
+    private ICommunicationService communicationService;
+
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "title", ignore = true)
@@ -45,22 +47,27 @@ public abstract class EmailMapper {
     protected void afterToBlogDTO(EmailDTO emailDTO, @MappingTarget BlogDTO blogDTO) {
         String content = emailDTO.getHtml();
         if (content != null && !content.trim().isEmpty()) {
-            String markdown = generateMarkdown(content);
             Document doc = Jsoup.parse(content);
             String plainText = doc.select("body").text();
-//            List<Image> images = extractImages(doc);
+            String title = extractTitle(content);
 
-            blogDTO.setMarkdown(markdown);
+            blogDTO.setTitle(title);
             blogDTO.setHtml(content);
-//            blogDTO.setImages(images);
             blogDTO.setText(plainText);
-
         }
     }
 
     private String generateMarkdown(String content) {
         FlexmarkHtmlConverter converter = FlexmarkHtmlConverter.builder().build();
         return converter.convert(content);
+    }
+
+    private String extractTitle(String html) {
+        Document doc = Jsoup.parse(html);
+        // Use the CSS selector "h1.default-heading1" to find the title element.
+        Element titleElement = doc.selectFirst("h1.default-heading1");
+        // If the element is found, return its trimmed text; otherwise, return an empty string or null.
+        return titleElement != null ? titleElement.text().trim() : "";
     }
 
     private List<FileDTO> extractImages(Document doc) {

@@ -29,6 +29,3 @@ spring:
 
   mvc:
     dispatch-options-request: true
-
-app:
-  url: ${APP_URL}

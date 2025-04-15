@@ -23,7 +23,6 @@ public class CorsConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of(frontendUrl));
-        System.out.println("CORS CONFIG FOR FRONTEND URL: " + frontendUrl);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Auth-Token"));
         configuration.setExposedHeaders(List.of("X-Auth-Token"));

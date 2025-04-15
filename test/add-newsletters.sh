@@ -26,6 +26,7 @@ for file in newsletters/Blueshell\ Newsletter*.html; do
 
   # Create a JSON payload file. The filename includes the date to avoid overwriting.
   json_file="./payloads/newsletter_payload_${year}-${month}-${day}.json"
+  mkdir -p './payloads'
   cat <<EOF > "$json_file"
 {
   "type": "EmailDTO",

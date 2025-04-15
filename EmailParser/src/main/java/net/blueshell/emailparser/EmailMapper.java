@@ -1,11 +1,6 @@
 package net.blueshell.emailparser;
 
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
-import net.blueshell.common.Event;
-import net.blueshell.common.Image;
-import net.blueshell.common.communication.CommunicationService;
-import net.blueshell.common.communication.IAsyncCommunicationService;
-import net.blueshell.common.communication.ICommunicationService;
 import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.dto.EmailDTO;
 import net.blueshell.common.dto.FileDTO;
@@ -17,16 +12,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public abstract class EmailMapper {
-
-    @Autowired
-    private ICommunicationService communicationService;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "title", ignore = true)
@@ -92,7 +83,5 @@ public abstract class EmailMapper {
             files.add(fileDTO);
         }
         return files;
-        // Alternatively, send these to your file service:
-        // return communicationService.sendToFileService("/files", HttpMethod.PUT, String.class);
     }
 }

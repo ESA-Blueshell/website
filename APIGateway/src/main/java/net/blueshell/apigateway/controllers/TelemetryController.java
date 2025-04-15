@@ -1,28 +1,22 @@
 package net.blueshell.apigateway.controllers;
 
-import net.blueshell.common.communication.ICommunicationService;
+import net.blueshell.common.communicator.TelemetryCommunicator;
+import net.blueshell.common.dto.TelemetryDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/telemetry")
-public class TelemetryController extends SwaggerController {
-    private final ICommunicationService communicationService;
+public class TelemetryController {
 
-    public TelemetryController(ICommunicationService communicationService) {
-        this.communicationService = communicationService;
-    }
+    @Autowired
+    private TelemetryCommunicator communicator;
 
     @GetMapping
-    public ResponseEntity<String> getTelemetry() {
-        return communicationService.sendToTelemetryService("/", HttpMethod.GET, String.class);
-    }
-
-    @Override
-    protected Object sendSwaggerRequestToService() {
-        return communicationService.sendToTelemetryService(SWAGGER_SERVICE_URL, HttpMethod.GET, Object.class);
+    public TelemetryDTO getTelemetry() {
+        return communicator.sendSync("/", HttpMethod.GET, TelemetryDTO.class);
     }
 }

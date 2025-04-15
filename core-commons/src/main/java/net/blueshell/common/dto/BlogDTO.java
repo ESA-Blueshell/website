@@ -12,6 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class BlogDTO extends BaseDTO {
     private String id;
+    private String url;
     private String title;
     private String text;
     private String html;

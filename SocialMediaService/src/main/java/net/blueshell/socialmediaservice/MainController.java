@@ -1,7 +1,6 @@
 package net.blueshell.socialmediaservice;
 
-import net.blueshell.common.dto.BlogDTO;
-import net.blueshell.common.Event;
+import net.blueshell.common.dto.SocialDTO;
 import net.blueshell.socialmediaservice.data.Map;
 import net.blueshell.socialmediaservice.service.SocialMediaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,17 +20,9 @@ public class MainController {
         return true;
     }
 
-    //TODO: remove - debug purposes only
-    @PostMapping("/distribute-blog")
-    public ResponseEntity<Void> distributeBlog(@RequestBody BlogDTO blogDTO) {
-        socialMediaService.distributeBlog(blogDTO);
-        return ResponseEntity.ok().build();
-    }
-
-    //TODO: remove - debug purposes only
-    @PostMapping("/distribute-event")
-    public ResponseEntity<Void> distributeEvent(@RequestBody Event event) {
-        socialMediaService.distributeEvent(event);
+    @PostMapping("/distribute")
+    public ResponseEntity<Void> distributeEvent(@RequestBody SocialDTO dto) {
+        socialMediaService.distribute(dto);
         return ResponseEntity.ok().build();
     }
 

@@ -1,7 +1,8 @@
 package net.blueshell.socialmediaservice.service;
 
-import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.Event;
+import net.blueshell.common.dto.SocialDTO;
+import net.blueshell.common.enums.PlatformType;
 import net.blueshell.socialmediaservice.client.SocialMediaClient;
 import net.blueshell.socialmediaservice.client.TelemetryClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,23 +15,11 @@ public class SocialMediaService {
     @Autowired
     private SocialMediaClient socialMediaClient;
 
-    public void distributeBlog(BlogDTO blogDTO) {
-        String link = telemetryClient.getTrackableBlogURL(blogDTO.getId());
-        String content = "Check out our new blog post:\n" + link;
-
-        post(content, link);
-    };
-
-    public void distributeEvent(Event event) {
-        String link = telemetryClient.getTrackableEventURL(event.getId());
-        String content = generateEventContent(event, link);
-
-        post(content, link);
-    }
-
-    private void post(String content, String link) {
-        socialMediaClient.postToFacebook(content, link);
-        socialMediaClient.postToX(content, link);
+    public void distribute(SocialDTO dto) {
+        for (PlatformType platform : dto.getPlatforms()) {
+            String trackableURL = telemetryClient.getTrackableURL(platform, dto.getUrl());
+            socialMediaClient.post(dto, platform, trackableURL);
+        }
     }
 
     private String generateEventContent(Event event, String link) {

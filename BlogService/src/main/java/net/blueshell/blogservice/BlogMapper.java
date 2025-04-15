@@ -6,12 +6,16 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 
 @Mapper(componentModel = "spring")
 public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -24,5 +28,11 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
         }
     }
 
+    @Mapping(target = "url", ignore = true)
     public abstract BlogDTO toDTO(Blog blog);
+
+    @AfterMapping
+    protected void afterToDTO(BlogDTO dto, @MappingTarget Blog blog) {
+        dto.setUrl(frontendUrl + "/blogs/" + blog.getId());
+    }
 }

@@ -1,43 +1,35 @@
 package net.blueshell.apigateway.controllers;
 
-import net.blueshell.common.communication.IAsyncCommunicationService;
-import net.blueshell.common.communication.ICommunicationService;
+import net.blueshell.common.communicator.BlogCommunicator;
 import net.blueshell.common.dto.BlogDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/blogs")
 public class BlogController {
-    private final ICommunicationService communicationService;
-    private final IAsyncCommunicationService asyncCommunicationService;
 
-    public BlogController(IAsyncCommunicationService asyncCommunicationService,
-                          ICommunicationService communicationService) {
-
-        this.asyncCommunicationService = asyncCommunicationService;
-        this.communicationService = communicationService;
-    }
+    @Autowired
+    private BlogCommunicator communicator;
 
     @GetMapping("/{id}")
-    public ResponseEntity<String> getBlog(@PathVariable("id") String id) {
-        return communicationService.sendToBlogService("/blogs/" + id, HttpMethod.GET, String.class);
+    public BlogDTO getBlog(@PathVariable("id") String id) {
+        return communicator.sendSync("/blogs/" + id, HttpMethod.GET, BlogDTO.class);
     }
 
     @GetMapping("")
-    public ResponseEntity<String> getBlogs() {
-        return communicationService.sendToBlogService("/blogs", HttpMethod.GET, String.class);
+    public String getBlogs() {
+        return communicator.sendSync("/blogs", HttpMethod.GET, String.class);
     }
 
 
     @GetMapping("/queue")
-    public ResponseEntity<String> getBlogQueue() {
-        return communicationService.sendToBlogService("/queue", HttpMethod.GET, String.class);
+    public String getBlogQueue() {
+        return communicator.sendSync("/queue", HttpMethod.GET, String.class);
     }
 
     @GetMapping("/new")
@@ -47,6 +39,6 @@ public class BlogController {
         dto.setPublishedAt(Timestamp.from(Instant.now()));
         System.out.println("Sending blog to email parser service asynchronously");
 
-        return asyncCommunicationService.sendToBlogService(dto);
+        return communicator.sendAsync(dto);
     }
 }

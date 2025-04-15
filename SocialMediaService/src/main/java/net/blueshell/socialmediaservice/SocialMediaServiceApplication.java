@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 @OpenAPIDefinition(
 		servers = {
@@ -12,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 )
 
 @SpringBootApplication
+@ComponentScan(basePackages = {"net.blueshell.socialmediaservice", "net.blueshell.common"})
 public class SocialMediaServiceApplication {
 
 	public static void main(String[] args) {

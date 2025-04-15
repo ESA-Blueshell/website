@@ -6,5 +6,32 @@ spring:
     port: ${RABBITMQ_NODE_PORT}
     username: ${RABBITMQ_DEFAULT_USER}
     password: ${RABBITMQ_DEFAULT_PASS}
+
 app:
   url: ${APP_URL}
+
+frontend:
+  url: ${FRONTEND_URL}
+
+communicators:
+  apiGateway:
+    port: 80
+    name: apigateway
+  blogService:
+    port: 8080
+    name: blogservice
+  emailParser:
+    port: 8080
+    name: emailparser
+  eventParser:
+    port: 8080
+    name: eventparser
+  fileService:
+    port: 8080
+    name: fileservice
+  socialMediaService:
+    port: 8080
+    name: socialmediaservice
+  telemetryService:
+    port: 8080
+    name: telemetry

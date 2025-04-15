@@ -1,63 +1,26 @@
 package net.blueshell.telemetry.service;
 
-import net.blueshell.telemetry.data.MockDB;
-import net.blueshell.telemetry.model.MetricResponse;
-import net.blueshell.telemetry.model.Shareable;
+import net.blueshell.common.enums.PlatformType;
+import net.blueshell.db.BaseModelService;
+import net.blueshell.telemetry.model.Telemetry;
+import net.blueshell.telemetry.repository.TelemetryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-@Service
-public class TelemetryService {
+@org.springframework.stereotype.Service
+public class TelemetryService extends BaseModelService<Telemetry, UUID, TelemetryRepository> {
 
     @Autowired
-    MockDB mockDB = new MockDB();
-
-    // TODO: Fetch actual data from DB
-    public MetricResponse getTotalMetrics(int days, String type) {
-        // Dummy response for now
-        return MetricResponse.builder()
-                .type(type)
-                .timespan(days)
-                .facebookViews(314)
-                .xViews(127)
-                .build();
+    public TelemetryService(TelemetryRepository repository) {
+        super(repository);
     }
 
-    // TODO: Fetch actual data from DB
-    public MetricResponse getMetricsForId(int days, String id) {
-        Shareable shareable = mockDB.findById(id);
-        return MetricResponse.builder()
-                .xViews(shareable.getXVisits())
-                .facebookViews(shareable.getFacebookVisits())
-                .timespan(days)
-                .type(shareable.getType())
-                .build();
-    }
-
-    public String trackAndExchangeURL(String id, String src) {
-        Shareable shareable = mockDB.findById(id);
-        trackVisit(id, src);
-        return shareable.getUrl();
-    }
-
-    public String createShareable(String url, String type) {
-        String id = UUID.randomUUID().toString();
-
-        Shareable shareable = Shareable.builder()
-                .id(id)
-                .url(url)
-                .facebookVisits(0)
-                .xVisits(0)
-                .build();
-
-        mockDB.save(shareable);
-        return id;
-    }
-
-    private void trackVisit(String id, String type) {
-        //TODO: Track in DB
-        mockDB.incrementVisit(id, type);
+    @Transactional
+    public Telemetry createTelemetry(PlatformType platform, String url) {
+        Telemetry telemetry = new Telemetry(platform, url);
+        create(telemetry);
+        return telemetry;
     }
 }

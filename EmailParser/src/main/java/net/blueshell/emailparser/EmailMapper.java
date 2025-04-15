@@ -20,16 +20,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Mapper(componentModel = "spring")
 public abstract class EmailMapper {
 
     @Autowired
     private ICommunicationService communicationService;
-
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "title", ignore = true)
@@ -48,11 +45,21 @@ public abstract class EmailMapper {
         String content = emailDTO.getHtml();
         if (content != null && !content.trim().isEmpty()) {
             Document doc = Jsoup.parse(content);
+
+            // Remove unwanted elements: any divs containing an unsubscribe link
+            // (adjust the selector as needed if the structure differs).
+            doc.select("div:has(a:contains(Unsubscribe))").remove();
+
+            // Extract plain text from the updated document.
             String plainText = doc.select("body").text();
-            String title = extractTitle(content);
+            String title = extractTitle(doc);
+
+            // Minify HTML: remove extra whitespace between HTML tags,
+            // replacing ">\s+<" with "><". This preserves necessary spacing within text nodes.
+            String minifiedHtml = doc.html().replaceAll(">\\s+<", "><").trim();
 
             blogDTO.setTitle(title);
-            blogDTO.setHtml(content);
+            blogDTO.setHtml(minifiedHtml);
             blogDTO.setText(plainText);
         }
     }
@@ -62,11 +69,12 @@ public abstract class EmailMapper {
         return converter.convert(content);
     }
 
-    private String extractTitle(String html) {
-        Document doc = Jsoup.parse(html);
-        // Use the CSS selector "h1.default-heading1" to find the title element.
+    /**
+     * Extracts the title using the "h1.default-heading1" selector.
+     * Uses the parsed Document to avoid re-parsing.
+     */
+    private String extractTitle(Document doc) {
         Element titleElement = doc.selectFirst("h1.default-heading1");
-        // If the element is found, return its trimmed text; otherwise, return an empty string or null.
         return titleElement != null ? titleElement.text().trim() : "";
     }
 
@@ -84,6 +92,7 @@ public abstract class EmailMapper {
             files.add(fileDTO);
         }
         return files;
-//        return communicationService.sendToFileService("/files", HttpMethod.PUT, String.class);
+        // Alternatively, send these to your file service:
+        // return communicationService.sendToFileService("/files", HttpMethod.PUT, String.class);
     }
 }

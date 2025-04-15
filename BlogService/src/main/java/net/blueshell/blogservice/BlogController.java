@@ -7,9 +7,11 @@ import net.blueshell.common.dto.BlogDTO;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 public class BlogController {
@@ -42,5 +44,10 @@ public class BlogController {
     @GetMapping("/blogs")
     public List<BlogDTO> findAll() {
         return blogMapper.toDTOs(blogService.findAll());
+    }
+
+    @GetMapping("/blogs/{id}")
+    public BlogDTO findById(@PathVariable UUID id) {
+        return blogMapper.toDTO(blogService.findById(id));
     }
 }

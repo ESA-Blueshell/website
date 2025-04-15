@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/blogs")
@@ -24,7 +25,7 @@ public class BlogController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<String> getBlog(@PathVariable("id") Long id) {
+    public ResponseEntity<String> getBlog(@PathVariable("id") String id) {
         return communicationService.sendToBlogService("/blogs/" + id, HttpMethod.GET, String.class);
     }
 

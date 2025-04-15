@@ -1,5 +1,12 @@
 package net.blueshell.socialmediaservice.client;
 
+import com.github.scribejava.apis.TwitterApi;
+import com.github.scribejava.core.builder.ServiceBuilder;
+import com.github.scribejava.core.model.OAuth1AccessToken;
+import com.github.scribejava.core.model.OAuthRequest;
+import com.github.scribejava.core.model.Response;
+import com.github.scribejava.core.model.Verb;
+import com.github.scribejava.core.oauth.OAuth10aService;
 import net.blueshell.common.dto.SocialDTO;
 import net.blueshell.common.enums.PlatformType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +25,28 @@ public class SocialMediaClient {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${facebook.page.id")
-    private String facebookPageID;
-    @Value("${facebook.access.token")
-    private String facebookAccessToken;
     private final String FACEBOOK_API_TEMPLATE = "https://graph.facebook.com/%s/feed?access_token=%s";
 
-    public void postToFacebook(SocialDTO dto, String trackableURL) {
+    @Value("${facebook.page.id}")
+    private String facebookPageID;
+
+    @Value("${facebook.access.token}")
+    private String facebookAccessToken;
+
+    @Value("${x.api.key}")
+    private String twitterApiKey;
+
+    @Value("${x.api.secret}")
+    private String twitterApiSecret;
+
+    @Value("${x.access.token}")
+    private String twitterAccessToken;
+
+    @Value("${x.access.secret}")
+    private String twitterAccessTokenSecret;
+
+    public void postToFacebook(SocialDTO dto, String link) {
+        System.out.println("Posting to Facebook: " + dto.getText());
         String url = String.format(
                 FACEBOOK_API_TEMPLATE,
                 facebookPageID,
@@ -36,7 +58,7 @@ public class SocialMediaClient {
 
         Map<String, String> payload = Map.of(
                 "message", dto.getText(),
-                "link", trackableURL
+                "link", link
         );
 
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(payload, header);
@@ -45,16 +67,29 @@ public class SocialMediaClient {
         System.out.println("Facebook post response: " + res.getBody());
     }
 
-    public void postToTwitter(SocialDTO dto, String trackableURL) {
-        // TODO
-    }
+    public void postToTwitter(SocialDTO dto, String link) {
+        System.out.println("Posting to X: " + dto.getText());
+        try {
+            OAuth10aService service = new ServiceBuilder(twitterApiKey)
+                    .apiSecret(twitterApiSecret)
+                    .build(TwitterApi.instance());
 
-    public void postToLinkedin(SocialDTO dto, String trackableURL) {
-        // TODO
-    }
+            OAuth1AccessToken accessToken = new OAuth1AccessToken(twitterAccessToken, twitterAccessTokenSecret);
 
-    public void postToInstagram(SocialDTO dto, String trackableURL) {
-        // TODO
+            String tweet = dto.getText() + " " + link;
+
+            OAuthRequest request = new OAuthRequest(Verb.POST, "https://api.twitter.com/1.1/statuses/update.json");
+            request.addParameter("status", tweet);
+
+            service.signRequest(accessToken, request);
+
+            Response response = service.execute(request);
+
+            System.out.println("Twitter/X post response: " + response.getCode());
+            System.out.println(response.getBody());
+        } catch (Exception e) {
+            System.err.println("Failed to post to X: " + e.getMessage());
+        }
     }
 
     public void post(SocialDTO dto, PlatformType platform, String trackableURL) {
@@ -65,12 +100,7 @@ public class SocialMediaClient {
             case TWITTER:
                 postToTwitter(dto, trackableURL);
                 return;
-            case LINKEDIN:
-                postToLinkedin(dto, trackableURL);
-                return;
-            case INSTAGRAM:
-                postToInstagram(dto, trackableURL);
-                return;
+            case LINKEDIN, INSTAGRAM:
             default:
                 throw new IllegalArgumentException("Unsupported platform: " + platform);
         }

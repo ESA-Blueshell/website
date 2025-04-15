@@ -6,7 +6,9 @@ import net.blueshell.common.enums.PlatformType;
 import net.blueshell.socialmediaservice.client.SocialMediaClient;
 import net.blueshell.socialmediaservice.client.TelemetryClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class SocialMediaService {

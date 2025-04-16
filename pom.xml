@@ -22,7 +22,7 @@
         <module>api</module>
         <module>api-gateway</module>
         <module>blog-service</module>
-        <module>BlogParser</module>
+        <module>blog-parser</module>
         <module>email-parser</module>
         <module>event-parser</module>
         <module>file-service</module>

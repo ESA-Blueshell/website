@@ -1,55 +1,61 @@
 server:
-  port: 80
+  port: 8080
+
 spring:
   main:
     web-application-type: reactive
+
   application:
     name: ApiGateway
+
   cloud:
     gateway:
+      discovery:
+        locator:
+          enabled: true  # Dynamically build routes using Eureka's registry
       routes:
         - id: api-route
-          uri: lb://api
+          uri: lb://API
           predicates:
             - Path=/api/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
         - id: blog-parser-route
-          uri: lb://blog-parser
+          uri: lb://BlogParser
           predicates:
             - Path=/blog-parser/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
         - id: blog-service-route
-          uri: lb://blog-service
+          uri: lb://BlogService
           predicates:
             - Path=/blogs/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
         - id: email-parser-route
-          uri: lb://email-parser
+          uri: lb://EmailParser
           predicates:
             - Path=/email-parser/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
         - id: event-parser-route
-          uri: lb://event-parser
+          uri: lb://EventParser
           predicates:
             - Path=/event-parser/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
         - id: file-service-route
-          uri: lb://file-service
+          uri: lb://FileService
           predicates:
             - Path=/files/**
           filters:
@@ -57,19 +63,19 @@ spring:
 #            - name: IdentityPropagationFilter
 
         - id: social-media-service-route
-          uri: lb://social-media-service
+          uri: lb://SocialMediaService
           predicates:
             - Path=/social-media/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
         - id: telemetry-service-route
-          uri: lb://telemetry-service
+          uri: lb://TelemetryService
           predicates:
             - Path=/telemetry/**
-          filters:
-            - RemoveRequestHeader=Authorization
+#          filters:
+#            - RemoveRequestHeader=Authorization
 #            - name: IdentityPropagationFilter
 
 springdoc:

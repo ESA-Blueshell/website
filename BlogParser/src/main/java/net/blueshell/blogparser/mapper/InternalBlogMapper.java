@@ -3,6 +3,7 @@ import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.dto.InternalBlogDTO;
 import net.blueshell.db.BaseMapper;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public abstract class InternalBlogMapper extends BaseMapper<InternalBlogDTO, BlogDTO> {

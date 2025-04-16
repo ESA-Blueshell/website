@@ -2,7 +2,6 @@ package net.blueshell.common.dto;
 
 
 import lombok.*;
-import net.blueshell.common.Image;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -16,7 +15,6 @@ public class InternalBlogDTO extends BaseDTO {
     private String text;
     private String html;
     private String markdown;
-    private List<Image> images;
     private Timestamp publishedAt;
 }
 

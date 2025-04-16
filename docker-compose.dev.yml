@@ -245,7 +245,7 @@ services:
     ]
     ports:
       - "8082:8080"
-      - "5007:5005"
+      - "5008:5005"
     networks:
       - global_network
     env_file:
@@ -279,7 +279,7 @@ services:
     ]
     ports:
       - "8083:8080"
-      - "5008:5005"
+      - "5014:5005"
     networks:
       - global_network
     env_file:

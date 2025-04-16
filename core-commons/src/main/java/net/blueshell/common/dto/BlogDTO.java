@@ -2,10 +2,8 @@ package net.blueshell.common.dto;
 
 
 import lombok.*;
-import net.blueshell.common.Image;
 
 import java.sql.Timestamp;
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

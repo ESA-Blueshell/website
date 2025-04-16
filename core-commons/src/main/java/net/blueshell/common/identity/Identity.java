@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-public abstract class Identity implements Serializable {
+public class Identity implements Serializable {
     Long userId;
     String username;
     Set<Role> roles;

@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class BlogController {
@@ -27,7 +29,17 @@ public class BlogController {
     }
 
     @GetMapping("/blogs")
-    public List<BlogDTO> findAll() {
+    public List<BlogDTO> findAll(HttpServletRequest request) {
+        Enumeration<String> headerNames = request.getHeaderNames();
+        StringBuilder sb = new StringBuilder("Request Headers:\n");
+
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            sb.append(headerName).append(": ").append(request.getHeader(headerName)).append("\n");
+        }
+
+        System.out.println("headers: " + sb);
+
         List<InternalBlogDTO> internalBlogs = blogCommunicator.sendSync("/blogs", HttpMethod.GET, List.class);
         return mapper.fromInternals(internalBlogs);
     }

@@ -1,5 +1,6 @@
 package net.blueshell.blogservice.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.blueshell.blogservice.model.Blog;
 import net.blueshell.blogservice.mapper.BlogMapper;
 import net.blueshell.blogservice.service.BlogService;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,7 +34,16 @@ public class BlogController {
     }
 
     @GetMapping("/blogs")
-    public List<InternalBlogDTO> findAll() {
+    public List<InternalBlogDTO> findAll(HttpServletRequest request) {
+        Enumeration<String> headerNames = request.getHeaderNames();
+        StringBuilder sb = new StringBuilder("Request Headers:\n");
+
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            sb.append(headerName).append(": ").append(request.getHeader(headerName)).append("\n");
+        }
+
+        System.out.println("headers: " + sb);
         return blogMapper.toDTOs(blogService.findAll());
     }
 

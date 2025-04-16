@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 public class FileServiceApplication {
 
 	public static void main(String[] args) {
+		System.setProperty("server.servlet.context-path", "/files");
 		SpringApplication.run(FileServiceApplication.class, args);
 	}
 

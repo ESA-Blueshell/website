@@ -18,65 +18,47 @@ spring:
           uri: lb://API
           predicates:
             - Path=/api/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
 
         - id: blog-parser-route
           uri: lb://BlogParser
           predicates:
             - Path=/blog-parser/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
 
         - id: blog-service-route
           uri: lb://BlogService
           predicates:
             - Path=/blogs/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
+
 
         - id: email-parser-route
           uri: lb://EmailParser
           predicates:
             - Path=/email-parser/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
+
 
         - id: event-parser-route
           uri: lb://EventParser
           predicates:
             - Path=/event-parser/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
+
 
         - id: file-service-route
           uri: lb://FileService
           predicates:
             - Path=/files/**
-          filters:
-            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
+
 
         - id: social-media-service-route
           uri: lb://SocialMediaService
           predicates:
             - Path=/social-media/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
+
 
         - id: telemetry-service-route
           uri: lb://TelemetryService
           predicates:
             - Path=/telemetry/**
-#          filters:
-#            - RemoveRequestHeader=Authorization
-#            - name: IdentityPropagationFilter
+
 
 springdoc:
   api-docs:

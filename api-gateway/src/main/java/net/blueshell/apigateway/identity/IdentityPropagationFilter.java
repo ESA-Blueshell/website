@@ -1,62 +1,61 @@
-//package net.blueshell.apigateway.identity;
-//
-//import jakarta.ws.rs.core.HttpHeaders;
-//import net.blueshell.common.communicator.ApiCommunicator;
-//import net.blueshell.common.identity.Identity;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-//import org.springframework.cloud.gateway.filter.GlobalFilter;
-//import org.springframework.core.Ordered;
-//import org.springframework.http.HttpMethod;
-//import org.springframework.stereotype.Component;
-//import org.springframework.web.server.ServerWebExchange;
-//import reactor.core.publisher.Mono;
-//
-//// In your gateway module
-//@Component
-//public class IdentityPropagationFilter implements GlobalFilter, Ordered {
-//
-//    private final ApiCommunicator apiCommunicator;
-//
-//    @Autowired
-//    public IdentityPropagationFilter(ApiCommunicator apiCommunicator) {
-//        this.apiCommunicator = apiCommunicator;
-//    }
-//
-//
-//    @Override
-//    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-//        // 1) Extract Authorization header
-//        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//            // If there's no token, we treat the user as anonymous
-//            return chain.filter(exchange);
-//        }
-//
-//        Identity identity = apiCommunicator.sendSync("identity", HttpMethod.GET, Identity.class);
-//
-//        // 2) Call identity service to validate token or get user info
-//        return webClient.get()
-//                .uri("/auth/validate?token={token}", authHeader.substring(7))
-//                .retrieve()
-//                .bodyToMono(UserInfo.class)
-//                .flatMap(userInfo -> {
-//                    // 3) Attach user info as headers to forward to downstream
-//                    ServerHttpRequest mutatedRequest = exchange.getRequest()
-//                            .mutate()
-//                            // we can add a custom header (or multiple)
-//                            .header("X-User-Id", String.valueOf(userInfo.getUserId()))
-//                            .header("X-User-Name", userInfo.getUsername())
-//                            .header("X-User-Roles", String.join(",", userInfo.getRoles()))
-//                            .build();
-//
-//                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
-//                });
-//    }
-//
-//    @Override
-//    public int getOrder() {
-//        // Priority for your filter (lower means higher priority)
-//        return 0;
-//    }
-//}
+package net.blueshell.apigateway.identity;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import net.blueshell.common.enums.Role;
+import net.blueshell.common.identity.Identity;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+@Component
+public class IdentityPropagationFilter implements GlobalFilter, Ordered {
+
+    private final WebClient webClient;
+
+    public IdentityPropagationFilter(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder
+                .baseUrl("http://API/api/identity") // Eureka service ID
+                .build();
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return chain.filter(exchange);
+        }
+
+        String token = authHeader.substring(7);
+
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.queryParam("token", token).build())
+                .retrieve()
+                .bodyToMono(Identity.class)
+                .onErrorResume(e -> Mono.empty())
+                .flatMap(identity -> {
+                    if (identity == null) {
+                        return chain.filter(exchange);
+                    }
+
+                    ServerHttpRequest mutatedRequest = exchange
+                            .getRequest()
+                            .mutate()
+                            .header("X-User-Id", String.valueOf(identity.getUserId()))
+                            .header("X-User-Name", identity.getUsername())
+                            .header("X-User-Roles", String.join(",", identity.getRoles().stream().map(Role::toString).toList()))
+                            .build();
+
+                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                });
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+}

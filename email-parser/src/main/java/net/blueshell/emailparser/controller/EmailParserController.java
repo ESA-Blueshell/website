@@ -27,12 +27,7 @@ public class EmailParserController {
         this.blogCommunicator = blogCommunicator;
     }
 
-    @GetMapping("/")
-    public Boolean healthCheck() {
-        return true;
-    }
-
-    @PostMapping("/parse-email")
+    @PostMapping("/parse")
     public InternalBlogDTO parseEmail(@Valid @RequestBody EmailDTO emailDTO) {
         System.out.println("Synchronously Received '" + emailDTO.getHtml() + "'");
         InternalBlogDTO internalBlogDTO = emailMapper.toBlogDTO(emailDTO);

@@ -29,9 +29,6 @@ services:
   rabbitmq:
     image: rabbitmq:4.0.7-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     networks:
       - global_network
     restart: unless-stopped
@@ -88,9 +85,6 @@ services:
        cd api && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8088:8080"                # Application port
-      - "5012:5005"                # Remote debug on 5012 externally -> 5005 in container
     networks:
       - global_network
     restart: unless-stopped
@@ -101,8 +95,9 @@ services:
     depends_on:
       - db
       - rabbitmq
+      - eureka-server
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -127,8 +122,7 @@ services:
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
-      - "8080:8080"                  # The gateway might run on 80 internally.
-      - "5005:5005"                # Debug
+      - "8080:8080"
     networks:
       - global_network
     restart: unless-stopped
@@ -168,21 +162,19 @@ services:
        cd blog-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8087:8080"
-      - "5007:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
       - db
+      - eureka-server
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/blog-parser/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -206,14 +198,12 @@ services:
        cd blog-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8081:8080"
-      - "5013:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
       - db
+      - eureka-server
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
@@ -244,17 +234,17 @@ services:
        cd email-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8082:8080"
-      - "5008:5005"
     networks:
       - global_network
+    depends_on:
+      - eureka-server
+      - rabbitmq
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/email-parser/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -278,9 +268,9 @@ services:
        cd event-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8083:8080"
-      - "5014:5005"
+    depends_on:
+      - eureka-server
+      - rabbitmq
     networks:
       - global_network
     env_file:
@@ -288,7 +278,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/event-parser/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -312,9 +302,6 @@ services:
        cd eureka-server && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8761:8761"
-      - "5016:5005"
     networks:
       - global_network
     env_file:
@@ -346,21 +333,19 @@ services:
        cd file-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8086:8080"
-      - "5011:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
       - db
+      - eureka-server
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/files/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -384,20 +369,18 @@ services:
        cd social-media-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8084:8080"
-      - "5009:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
       - api-gateway
+      - eureka-server
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/social-media/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -414,6 +397,9 @@ services:
     volumes:
       - .:/app
       - maven-repo:/root/.m2
+    depends_on:
+      - eureka-server
+      - rabbitmq
     command: [
       "sh",
       "-c",
@@ -421,9 +407,6 @@ services:
        cd telemetry-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8085:8080"
-      - "5010:5005"
     networks:
       - global_network
     env_file:
@@ -432,7 +415,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/telemetry/health" ]
       interval: 30s
       timeout: 10s
       retries: 5

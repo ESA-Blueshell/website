@@ -17,6 +17,7 @@ import org.springframework.context.annotation.ComponentScan;
 public class EmailParserApplication {
 
 	public static void main(String[] args) {
+		System.setProperty("server.servlet.context-path", "/email-parser");
 		SpringApplication.run(EmailParserApplication.class, args);
 	}
 }

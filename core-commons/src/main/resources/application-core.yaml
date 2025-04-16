@@ -1,5 +1,5 @@
 server:
-  port: 8761
+  port: 8080
 
 spring:
   mvc:
@@ -50,7 +50,7 @@ eureka:
   instance:
     prefer-ip-address: true
     hostname: eureka-server
-    non-secure-port: 8761
+    non-secure-port: 8080
   client:
     serviceUrl:
       defaultZone: http://eureka-server:8761/eureka

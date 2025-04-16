@@ -9,6 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 public class BlogParserApplication {
 
     public static void main(String[] args) {
+        System.setProperty("server.servlet.context-path", "/blog-parser");
         SpringApplication.run(BlogParserApplication.class, args);
     }
 }

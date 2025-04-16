@@ -37,7 +37,7 @@ EOF
 
   echo "Sending payload for $filename (publishedAt: $published_at)..."
   # Send the JSON payload to the /parse-email endpoint using curl.
-  curl -X POST http://localhost:8082/parse-email \
+  curl -X POST http://localhost:8080/email-parser/parse \
     -H "Content-Type: application/json" \
     -d @"$json_file" | jq .
 done

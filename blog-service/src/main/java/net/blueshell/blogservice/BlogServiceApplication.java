@@ -15,8 +15,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BlogServiceApplication {
 
     public static void main(String[] args) {
-        System.setProperty("server.servlet.context-path", "/blogs");
         SpringApplication.run(BlogServiceApplication.class, args);
     }
-
 }

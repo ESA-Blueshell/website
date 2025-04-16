@@ -4,12 +4,12 @@ package net.blueshell.common.dto;
 import lombok.*;
 
 import java.sql.Timestamp;
-import java.util.List;
+import java.util.UUID;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class InternalBlogDTO extends BaseDTO {
-    private String id;
+    private UUID id;
     private String url;
     private String title;
     private String text;

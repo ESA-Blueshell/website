@@ -8,7 +8,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class ApiGatewayCommunicator extends BaseCommunicator {
     public ApiGatewayCommunicator(
-            @Value("${communicators.apiGateway.port}") String name,
+            @Value("${communicators.apiGateway.name}") String name,
             @Value("${communicators.apiGateway.port}") int port,
             RabbitTemplate rabbitTemplate,
             RestTemplate restTemplate) {

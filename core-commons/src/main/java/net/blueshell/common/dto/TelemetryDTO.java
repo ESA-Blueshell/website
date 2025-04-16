@@ -14,8 +14,7 @@ import java.util.List;
 public class TelemetryDTO extends BaseDTO {
     private String id;
     private String url;
-    private PlatformType text;
-    private Integer views;
+    private PlatformType platform;
     private Timestamp createdAt;
 }
 

@@ -14,9 +14,15 @@ frontend:
   url: ${FRONTEND_URL}
 
 communicators:
+  api:
+    port: 8080
+    name: api
   apiGateway:
-    port: 80
+    port: 8080
     name: apigateway
+  blogParser:
+    port: 8080
+    name: blogparser
   blogService:
     port: 8080
     name: blogservice
@@ -35,3 +41,10 @@ communicators:
   telemetryService:
     port: 8080
     name: telemetry
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true

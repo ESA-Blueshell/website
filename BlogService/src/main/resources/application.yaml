@@ -1,6 +1,6 @@
 spring:
   application:
-    name: BlogService
+    name: blog-service
 
 springdoc:
   api-docs:

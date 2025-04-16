@@ -1,6 +1,6 @@
 spring:
   application:
-    name: FileService
+    name: file-service
 
 storage:
   location: ./files

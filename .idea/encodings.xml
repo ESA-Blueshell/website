@@ -2,6 +2,7 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/APIGateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/BlogParser/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/BlogService/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/EmailParser/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/EventParser/src/main/java" charset="UTF-8" />
@@ -14,6 +15,8 @@
     <file url="file://$PROJECT_DIR$/core-commons/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/db-commons/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/db-commons/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/eureka-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/eureka-server/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>

@@ -38,8 +38,8 @@ for DIR in "$PARENT_DIR"/*/; do
        "$(basename "$DIR")" == "Scripts" || \
        "$(basename "$DIR")" == "files" || \
        "$(basename "$DIR")" == "telemetry-client" || \
-       "$(basename "$DIR")" == "frontend" ]] && continue
-       "$(basename "$DIR")" == "dist" ]] && continue
+       "$(basename "$DIR")" == "frontend" || \
+        "$(basename "$DIR")" == "dist" ]] && continue
 
     SERVICE_NAME=$(basename "$DIR")
     SERVICE_NAME_LOWER=$(basename "$SERVICE_NAME" | tr '[:upper:]' '[:lower:]')

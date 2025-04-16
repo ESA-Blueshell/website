@@ -1,7 +1,6 @@
 package net.blueshell.common.dto;
 
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import lombok.*;
 import net.blueshell.common.Image;
 
@@ -12,12 +11,8 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class BlogDTO extends BaseDTO {
     private String id;
-    private String url;
     private String title;
-    private String text;
     private String html;
-    private String markdown;
-    private List<Image> images;
     private Timestamp publishedAt;
 }
 

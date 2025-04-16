@@ -1,6 +1,6 @@
 spring:
   application:
-    name: EventParser
+    name: event-parser
 
 springdoc:
   api-docs:

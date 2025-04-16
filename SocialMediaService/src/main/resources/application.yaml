@@ -1,6 +1,6 @@
 spring:
   application:
-    name: SocialMediaService
+    name: social-media-service
 
 springdoc:
   api-docs:

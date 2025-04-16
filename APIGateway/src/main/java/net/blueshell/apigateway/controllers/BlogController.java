@@ -1,7 +1,7 @@
 package net.blueshell.apigateway.controllers;
 
 import net.blueshell.common.communicator.BlogCommunicator;
-import net.blueshell.common.dto.BlogDTO;
+import net.blueshell.common.dto.InternalBlogDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +17,8 @@ public class BlogController {
     private BlogCommunicator communicator;
 
     @GetMapping("/{id}")
-    public BlogDTO getBlog(@PathVariable("id") String id) {
-        return communicator.sendSync("/blogs/" + id, HttpMethod.GET, BlogDTO.class);
+    public InternalBlogDTO getBlog(@PathVariable("id") String id) {
+        return communicator.sendSync("/blogs/" + id, HttpMethod.GET, InternalBlogDTO.class);
     }
 
     @GetMapping("")
@@ -34,7 +34,7 @@ public class BlogController {
 
     @GetMapping("/new")
     public String addToBlogQueue() {
-        BlogDTO dto = new BlogDTO();
+        InternalBlogDTO dto = new InternalBlogDTO();
         dto.setHtml("<html><body><h1>This is a test email</h1></body></html>");
         dto.setPublishedAt(Timestamp.from(Instant.now()));
         System.out.println("Sending blog to email parser service asynchronously");

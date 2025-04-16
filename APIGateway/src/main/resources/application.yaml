@@ -3,7 +3,73 @@ server:
 
 spring:
   application:
-    name: APIGateway
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: api-route
+          uri: lb://api
+          predicates:
+            - Path=/api/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: blog-parser-route
+          uri: lb://blog-parser
+          predicates:
+            - Path=/blog-parser/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: blog-service-route
+          uri: lb://blog-service
+          predicates:
+            - Path=/blogs/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: email-parser-route
+          uri: lb://email-parser
+          predicates:
+            - Path=/email-parser/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: event-parser-route
+          uri: lb://event-parser
+          predicates:
+            - Path=/event-parser/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: file-service-route
+          uri: lb://file-service
+          predicates:
+            - Path=/files/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: social-media-service-route
+          uri: lb://social-media-service
+          predicates:
+            - Path=/social-media/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
+
+        - id: telemetry-service-route
+          uri: lb://telemetry-service
+          predicates:
+            - Path=/telemetry/**
+          filters:
+            - RemoveRequestHeader=Authorization
+#            - name: IdentityPropagationFilter
 
 springdoc:
   api-docs:

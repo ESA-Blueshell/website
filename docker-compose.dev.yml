@@ -89,7 +89,7 @@ services:
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
-      - "8080:8080"                # Application port
+      - "8088:8080"                # Application port
       - "5012:5005"                # Remote debug on 5012 externally -> 5005 in container
     networks:
       - global_network
@@ -102,7 +102,7 @@ services:
       - db
       - rabbitmq
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/contributionPeriods" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -111,8 +111,8 @@ services:
   ################################################################
   # APIGateway microservice in dev mode
   ################################################################
-  apigateway:
-    container_name: apigateway-dev
+  api-gateway:
+    container_name: api-gateway-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -127,7 +127,7 @@ services:
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
-      - "1024:80"                  # The gateway might run on 80 internally. 
+      - "8080:8080"                  # The gateway might run on 80 internally.
       - "5005:5005"                # Debug
     networks:
       - global_network
@@ -137,11 +137,11 @@ services:
       - Docker/env/.rabbitmq.env
     depends_on:
       - rabbitmq
-      - blogservice
-      - emailparser
-      - eventparser
-      - fileservice
-      - telemetry
+      - blog-service
+      - email-parser
+      - event-parser
+      - file-service
+      - telemetry-service
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/apiGateway" ]
       interval: 30s
@@ -152,8 +152,8 @@ services:
   ################################################################
   # BlogService microservice in dev mode
   ################################################################
-  blogservice:
-    container_name: blogservice-dev
+  blog-parser:
+    container_name: blog-parser-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -163,13 +163,13 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl BlogService -am -DskipTests && \
-       cd BlogService && \
+      "mvn install -pl BlogParser -am -DskipTests && \
+       cd BlogParser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
-      - "8081:8080"
-      - "5006:5005"
+      - "8087:8080"
+      - "5007:5005"
     networks:
       - global_network
     depends_on:
@@ -188,10 +188,48 @@ services:
       start_period: 30s
 
   ################################################################
+  # BlogService microservice in dev mode
+  ################################################################
+  blog-service:
+    container_name: blog-service-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl BlogService -am -DskipTests && \
+       cd BlogService && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8081:8080"
+      - "5013:5005"
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
   # EmailParser microservice
   ################################################################
-  emailparser:
-    container_name: emailparser-dev
+  email-parser:
+    container_name: email-parser-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -215,7 +253,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -224,8 +262,8 @@ services:
   ################################################################
   # EventParser microservice
   ################################################################
-  eventparser:
-    container_name: eventparser-dev
+  event-parser:
+    container_name: event-parser-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -249,7 +287,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -258,8 +296,8 @@ services:
   ################################################################
   # FileService microservice
   ################################################################
-  fileservice:
-    container_name: fileservice-dev
+  file-service:
+    container_name: file-service-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -288,7 +326,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -297,8 +335,8 @@ services:
   ################################################################
   # SocialMediaService microservice
   ################################################################
-  socialmediaservice:
-    container_name: socialmediaservice-dev
+  social-media-service:
+    container_name: social-media-service-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -319,13 +357,13 @@ services:
       - global_network
     depends_on:
       - rabbitmq
-      - apigateway
+      - api-gateway
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -334,8 +372,8 @@ services:
   ################################################################
   # Telemetry microservice
   ################################################################
-  telemetry:
-    container_name: telemetry-dev
+  telemetry-service:
+    container_name: telemetry-service-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -360,7 +398,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5

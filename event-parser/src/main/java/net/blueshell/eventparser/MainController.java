@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MainController {
 
-    @GetMapping("/")
-    public String SayHello() {
-        return "Event Parser";
+    @GetMapping("/health")
+    public boolean healthCheck() {
+        return true;
     }
 
     @GetMapping("/queue")
@@ -22,6 +22,4 @@ public class MainController {
 
         return sb.toString();
     }
-
-
 }

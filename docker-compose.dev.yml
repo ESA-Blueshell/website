@@ -122,8 +122,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl APIGateway -am -DskipTests && \
-       cd APIGateway && \
+      "mvn install -pl api-gateway -am -DskipTests && \
+       cd api-gateway && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -163,8 +163,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl BlogParser -am -DskipTests && \
-       cd BlogParser && \
+      "mvn install -pl blog-parser -am -DskipTests && \
+       cd blog-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -201,8 +201,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl BlogService -am -DskipTests && \
-       cd BlogService && \
+      "mvn install -pl blog-service -am -DskipTests && \
+       cd blog-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -239,8 +239,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl EmailParser -am -DskipTests && \
-       cd EmailParser && \
+      "mvn install -pl email-parser -am -DskipTests && \
+       cd email-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -273,8 +273,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl EventParser -am -DskipTests && \
-       cd EventParser && \
+      "mvn install -pl event-parser -am -DskipTests && \
+       cd event-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -288,6 +288,39 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # EventParser microservice
+  ################################################################
+  eureka-server:
+    container_name: eureka-server-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl eureka-server -am -DskipTests && \
+       cd eureka-server && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8761:8761"
+      - "5016:5005"
+    networks:
+      - global_network
+    env_file:
+      - Docker/env/.app.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -308,8 +341,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl FileService -am -DskipTests && \
-       cd FileService && \
+      "mvn install -pl file-service -am -DskipTests && \
+       cd file-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -346,8 +379,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl SocialMediaService -am -DskipTests && \
-       cd SocialMediaService && \
+      "mvn install -pl social-media-service -am -DskipTests && \
+       cd social-media-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
@@ -383,8 +416,8 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl Telemetry -am -DskipTests && \
-       cd Telemetry && \
+      "mvn install -pl telemetry-service -am -DskipTests && \
+       cd telemetry-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:

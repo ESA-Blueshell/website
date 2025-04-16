@@ -1,12 +1,20 @@
 package net.blueshell.blogparser.mapper;
+
 import net.blueshell.common.dto.BlogDTO;
 import net.blueshell.common.dto.InternalBlogDTO;
-import net.blueshell.db.BaseMapper;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
-public abstract class InternalBlogMapper extends BaseMapper<InternalBlogDTO, BlogDTO> {
+public abstract class InternalBlogMapper {
 
-    public abstract BlogDTO fromDTO(InternalBlogDTO dto);
+    public abstract BlogDTO fromInternal(InternalBlogDTO dto);
+
+    public List<BlogDTO> fromInternals(List<InternalBlogDTO> list) {
+        if (list == null) {
+            return null;
+        }
+        return list.stream().map(this::fromInternal).toList();
+    }
 }

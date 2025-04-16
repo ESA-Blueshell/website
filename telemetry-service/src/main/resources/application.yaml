@@ -1,6 +1,6 @@
 spring:
   application:
-    name: telemetry-service
+    name: TelemetryService
 
 springdoc:
   api-docs:

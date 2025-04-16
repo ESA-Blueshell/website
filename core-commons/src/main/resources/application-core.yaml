@@ -7,6 +7,7 @@ spring:
     username: ${RABBITMQ_DEFAULT_USER}
     password: ${RABBITMQ_DEFAULT_PASS}
 
+
 app:
   url: ${APP_URL}
 

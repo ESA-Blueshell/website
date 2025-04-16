@@ -1,4 +1,4 @@
-package net.blueshell.eventparser;
+package net.blueshell.eventparser.controller;
 
 import org.springframework.stereotype.Controller;
 

@@ -1,10 +1,7 @@
-package net.blueshell.db;
+package net.blueshell.common;
 
-import net.blueshell.common.dto.BaseDTO;
-import net.blueshell.common.dto.FileDTO;
 import org.springframework.data.domain.Page;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

@@ -15,7 +15,7 @@ public class MainController {
     @Autowired
     private SocialMediaService socialMediaService;
 
-    @GetMapping("/")
+    @GetMapping("/health")
     public Boolean checkHealth() {
         return true;
     }

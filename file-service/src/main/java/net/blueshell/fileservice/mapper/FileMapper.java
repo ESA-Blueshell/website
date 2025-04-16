@@ -2,7 +2,7 @@ package net.blueshell.fileservice.mapper;
 
 import jakarta.ws.rs.BadRequestException;
 import net.blueshell.common.dto.FileDTO;
-import net.blueshell.db.BaseMapper;
+import net.blueshell.common.BaseMapper;
 import net.blueshell.fileservice.service.FileService;
 import net.blueshell.fileservice.model.File;
 import org.apache.tika.mime.MimeTypeException;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;

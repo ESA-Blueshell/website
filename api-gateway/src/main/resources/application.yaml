@@ -1,9 +1,10 @@
 server:
   port: 80
-
 spring:
+  main:
+    web-application-type: reactive
   application:
-    name: api-gateway
+    name: ApiGateway
   cloud:
     gateway:
       routes:

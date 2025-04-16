@@ -28,7 +28,7 @@
         <module>file-service</module>
         <module>social-media-service</module>
         <module>telemetry-service</module>
-<!--        <module>eureka-server</module>-->
+        <module>eureka-server</module>
     </modules>
 
     <properties>

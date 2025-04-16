@@ -2,7 +2,7 @@ package net.blueshell.telemetry.mapping;
 
 import net.blueshell.common.dto.RedirectDTO;
 import net.blueshell.common.dto.TelemetryDTO;
-import net.blueshell.db.BaseMapper;
+import net.blueshell.common.BaseMapper;
 import net.blueshell.telemetry.model.Redirect;
 import net.blueshell.telemetry.model.Telemetry;
 import org.mapstruct.Mapper;

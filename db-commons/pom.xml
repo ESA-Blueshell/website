@@ -30,10 +30,6 @@
         <!-- Spring Data - versions managed by Spring Boot BOM -->
         <dependency>
             <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-commons</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-jpa</artifactId>
         </dependency>
 

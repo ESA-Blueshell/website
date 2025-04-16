@@ -29,12 +29,12 @@ public class BlogController {
     @GetMapping("/blogs")
     public List<BlogDTO> findAll() {
         List<InternalBlogDTO> internalBlogs = blogCommunicator.sendSync("/blogs", HttpMethod.GET, List.class);
-        return mapper.toDTOs(internalBlogs);
+        return mapper.fromInternals(internalBlogs);
     }
 
     @GetMapping("/blogs/{id}")
     public BlogDTO findById(@PathVariable UUID id) {
         InternalBlogDTO internalBlog = blogCommunicator.sendSync("/blogs/" + id, HttpMethod.GET, InternalBlogDTO.class);
-        return mapper.toDTO(internalBlog);
+        return mapper.fromInternal(internalBlog);
     }
 }

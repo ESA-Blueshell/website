@@ -2,7 +2,7 @@ package net.blueshell.blogservice.mapper;
 
 import net.blueshell.blogservice.model.Blog;
 import net.blueshell.common.dto.InternalBlogDTO;
-import net.blueshell.common.BaseMapper;
+import net.blueshell.common.mapper.BaseMapper;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+blueshell:
+  security:
+    enabled: true
+
 spring:
   mvc:
     dispatch-options-request: true

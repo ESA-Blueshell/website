@@ -38,8 +38,6 @@ public class BlogController {
             sb.append(headerName).append(": ").append(request.getHeader(headerName)).append("\n");
         }
 
-        System.out.println("headers: " + sb);
-
         List<InternalBlogDTO> internalBlogs = blogCommunicator.sendSync("/blogs", HttpMethod.GET, List.class);
         return mapper.fromInternals(internalBlogs);
     }

@@ -29,7 +29,6 @@ public class EmailParserController {
 
     @PostMapping("/parse")
     public InternalBlogDTO parseEmail(@Valid @RequestBody EmailDTO emailDTO) {
-        System.out.println("Synchronously Received '" + emailDTO.getHtml() + "'");
         InternalBlogDTO internalBlogDTO = emailMapper.toBlogDTO(emailDTO);
         blogCommunicator.sendAsync(internalBlogDTO);
         return internalBlogDTO;
@@ -37,7 +36,6 @@ public class EmailParserController {
 
     @RabbitListener(queues = "${communicators.emailParser.name}")
     public void asyncParseEmail(EmailDTO emailDTO) {
-        System.out.println("Synchronously Received '" + emailDTO + "'");
         InternalBlogDTO internalBlogDTO = emailMapper.toBlogDTO(emailDTO);
         blogCommunicator.sendAsync(internalBlogDTO);
     }

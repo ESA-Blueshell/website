@@ -6,13 +6,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public enum Role {
-    GUEST("GUEST"),
+    ANONYMOUS("ANONYMOUS"),
+    GUEST("GUEST", ANONYMOUS),
     COMPANY("COMPANY"),
     MEMBER("MEMBER", GUEST),
     VEGAN("VEGAN"),
     COMMITTEE("COMMITTEE", MEMBER),
     BOARD("BOARD", COMMITTEE),
-    ADMIN("ADMIN", BOARD),
+    TREASURER("TREASURER", BOARD),
+    ADMIN("ADMIN", TREASURER),
+    SYSTEM("SYSTEM", ADMIN),
     ;
 
     @Getter

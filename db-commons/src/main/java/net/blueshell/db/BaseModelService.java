@@ -3,6 +3,7 @@ package net.blueshell.db;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import net.blueshell.common.exception.ResourceNotFoundException;
+import net.blueshell.common.identity.UserDetailsProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -10,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public abstract class BaseModelService<T extends BaseModel<ID>, ID, R extends BaseRepository<T,ID>> {
+public abstract class BaseModelService<T extends BaseModel<ID>, ID, R extends BaseRepository<T,ID>> extends UserDetailsProvider {
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -24,6 +25,7 @@ public abstract class BaseModelService<T extends BaseModel<ID>, ID, R extends Ba
     public void create(T entity) {
         preCreate(entity);
         repository.saveAndFlush(entity);
+        entityManager.refresh(entity);
         postCreate(entity);
     }
 

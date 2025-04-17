@@ -1,7 +1,7 @@
 package net.blueshell.telemetry.mapping;
 
 import net.blueshell.common.dto.TelemetryDTO;
-import net.blueshell.common.BaseMapper;
+import net.blueshell.common.mapper.BaseMapper;
 import net.blueshell.telemetry.model.Telemetry;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

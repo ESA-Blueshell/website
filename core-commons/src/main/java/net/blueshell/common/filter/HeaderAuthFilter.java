@@ -1,0 +1,75 @@
+package net.blueshell.common.filter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import net.blueshell.common.enums.Role;
+import net.blueshell.common.identity.SharedUserDetails;
+import org.springframework.core.Ordered;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Reads X-User-Id, X-User-Name and X-User-Roles (comma‑sep) headers
+ * and, if present, constructs a UserDetailsDTO + authorities and
+ * injects it into the SecurityContext.
+ */
+@Component
+public class HeaderAuthFilter extends OncePerRequestFilter {
+
+    public static final String HEADER_ID = "X-User-Id";
+    public static final String HEADER_NAME = "X-User-Name";
+    public static final String HEADER_ROLES = "X-User-Roles";
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain chain) throws ServletException, IOException {
+        String idHeader = request.getHeader(HEADER_ID);
+        String nameHeader = request.getHeader(HEADER_NAME);
+        String rolesHeader = request.getHeader(HEADER_ROLES);
+
+        if (idHeader != null && nameHeader != null && rolesHeader != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+            Long id = Long.valueOf(idHeader);
+            String username = nameHeader;
+            Set<Role> roles = Arrays.stream(rolesHeader.split(",")).map(Role::valueOf).collect(Collectors.toSet());
+
+            // build your DTO
+            SharedUserDetails user = new SharedUserDetails();
+            user.setId(id);
+            user.setUsername(username);
+            user.setRoles(roles);
+
+            // flatten inherited roles into GrantedAuthority
+            List<SimpleGrantedAuthority> authorities = roles.stream().map(r -> new SimpleGrantedAuthority(r.toString()))
+                    .collect(Collectors.toList());
+
+            Authentication auth = new UsernamePasswordAuthenticationToken(user, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            SharedUserDetails anonUser = new SharedUserDetails();
+            anonUser.setRoles(Collections.singleton(Role.ANONYMOUS));
+            anonUser.setUsername("anonymous");
+            anonUser.setId(0L);
+
+            List<SimpleGrantedAuthority> anonAuth = List.of(new SimpleGrantedAuthority(Role.ANONYMOUS.toString()));
+            AnonymousAuthenticationToken anonymousToken = new AnonymousAuthenticationToken("coolBeans", anonUser, anonAuth);
+            SecurityContextHolder.getContext().setAuthentication(anonymousToken);
+        }
+
+        chain.doFilter(request, response);
+    }
+}

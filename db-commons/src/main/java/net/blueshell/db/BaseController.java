@@ -1,6 +1,8 @@
 package net.blueshell.db;
 
-public abstract class BaseController<S, M> {
+import net.blueshell.common.identity.UserDetailsProvider;
+
+public abstract class BaseController<S, M> extends UserDetailsProvider {
 
     protected final S service;
     protected final M mapper;

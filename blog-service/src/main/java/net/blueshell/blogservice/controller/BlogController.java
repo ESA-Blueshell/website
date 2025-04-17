@@ -1,10 +1,12 @@
 package net.blueshell.blogservice.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.blogservice.model.Blog;
 import net.blueshell.blogservice.mapper.BlogMapper;
 import net.blueshell.blogservice.service.BlogService;
 import net.blueshell.common.dto.InternalBlogDTO;
+import net.blueshell.common.identity.UserDetailsProvider;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,8 +17,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
-public class BlogController {
+public class BlogController extends UserDetailsProvider {
 
 
     private final BlogMapper blogMapper;
@@ -34,16 +37,8 @@ public class BlogController {
     }
 
     @GetMapping("/blogs")
-    public List<InternalBlogDTO> findAll(HttpServletRequest request) {
-        Enumeration<String> headerNames = request.getHeaderNames();
-        StringBuilder sb = new StringBuilder("Request Headers:\n");
-
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            sb.append(headerName).append(": ").append(request.getHeader(headerName)).append("\n");
-        }
-
-        System.out.println("headers: " + sb);
+    public List<InternalBlogDTO> findAll() {
+        log.info("Principal: {}", getPrincipal());
         return blogMapper.toDTOs(blogService.findAll());
     }
 

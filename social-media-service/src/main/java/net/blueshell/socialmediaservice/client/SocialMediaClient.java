@@ -46,7 +46,6 @@ public class SocialMediaClient {
     private String twitterAccessTokenSecret;
 
     public void postToFacebook(SocialDTO dto, String link) {
-        System.out.println("Posting to Facebook: " + dto.getText());
         String url = String.format(
                 FACEBOOK_API_TEMPLATE,
                 facebookPageID,
@@ -63,12 +62,9 @@ public class SocialMediaClient {
 
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(payload, header);
         ResponseEntity<String> res = restTemplate.postForEntity(url, entity, String.class);
-
-        System.out.println("Facebook post response: " + res.getBody());
     }
 
     public void postToTwitter(SocialDTO dto, String link) {
-        System.out.println("Posting to X: " + dto.getText());
         try {
             OAuth10aService service = new ServiceBuilder(twitterApiKey)
                     .apiSecret(twitterApiSecret)
@@ -84,9 +80,6 @@ public class SocialMediaClient {
             service.signRequest(accessToken, request);
 
             Response response = service.execute(request);
-
-            System.out.println("Twitter/X post response: " + response.getCode());
-            System.out.println(response.getBody());
         } catch (Exception e) {
             System.err.println("Failed to post to X: " + e.getMessage());
         }

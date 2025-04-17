@@ -2,7 +2,7 @@ package net.blueshell.fileservice.mapper;
 
 import jakarta.ws.rs.BadRequestException;
 import net.blueshell.common.dto.FileDTO;
-import net.blueshell.common.BaseMapper;
+import net.blueshell.common.mapper.BaseMapper;
 import net.blueshell.fileservice.service.FileService;
 import net.blueshell.fileservice.model.File;
 import org.apache.tika.mime.MimeTypeException;

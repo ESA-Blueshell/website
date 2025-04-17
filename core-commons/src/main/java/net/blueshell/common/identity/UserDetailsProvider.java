@@ -1,17 +1,17 @@
 package net.blueshell.common.identity;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.common.enums.Role;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.HashSet;
-import java.util.Set;
-
-public abstract class IdentityProvider {
-    protected Identity getIdentity() {
+@Slf4j
+public abstract class UserDetailsProvider {
+    protected SharedUserDetails getPrincipal() {
         Object obj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (obj instanceof Identity) {
-            return (Identity) obj;
+        log.info("principal: {}", obj);
+        if (obj instanceof SharedUserDetails) {
+            return (SharedUserDetails) obj;
         }
         return null;
     }
@@ -23,13 +23,5 @@ public abstract class IdentityProvider {
         }
         return authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(role.toString()));
-    }
-
-
-    protected Set<Role> getRoles() {
-        if (getIdentity() == null) {
-            return new HashSet<>();
-        }
-        return getIdentity().getRoles();
     }
 }

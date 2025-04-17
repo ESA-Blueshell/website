@@ -29,9 +29,6 @@ services:
   rabbitmq:
     image: rabbitmq:4.0.7-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     networks:
       - global_network
     restart: unless-stopped
@@ -88,9 +85,6 @@ services:
        cd api && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8080:8080"                # Application port
-      - "5012:5005"                # Remote debug on 5012 externally -> 5005 in container
     networks:
       - global_network
     restart: unless-stopped
@@ -101,8 +95,9 @@ services:
     depends_on:
       - db
       - rabbitmq
+      - eureka-server
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/contributionPeriods" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -111,8 +106,8 @@ services:
   ################################################################
   # APIGateway microservice in dev mode
   ################################################################
-  apigateway:
-    container_name: apigateway-dev
+  api-gateway:
+    container_name: api-gateway-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -122,13 +117,12 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl APIGateway -am -DskipTests && \
-       cd APIGateway && \
+      "mvn install -pl api-gateway -am -DskipTests && \
+       cd api-gateway && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     ports:
-      - "1024:80"                  # The gateway might run on 80 internally. 
-      - "5005:5005"                # Debug
+      - "8080:8080"
     networks:
       - global_network
     restart: unless-stopped
@@ -137,13 +131,14 @@ services:
       - Docker/env/.rabbitmq.env
     depends_on:
       - rabbitmq
-      - blogservice
-      - emailparser
-      - eventparser
-      - fileservice
-      - telemetry
+      - blog-service
+      - email-parser
+      - event-parser
+      - file-service
+      - telemetry-service
+      - eureka-server
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/apiGateway" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -152,8 +147,8 @@ services:
   ################################################################
   # BlogService microservice in dev mode
   ################################################################
-  blogservice:
-    container_name: blogservice-dev
+  blog-parser:
+    container_name: blog-parser-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -163,25 +158,59 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl BlogService -am -DskipTests && \
-       cd BlogService && \
+      "mvn install -pl blog-parser -am -DskipTests && \
+       cd blog-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8081:8080"
-      - "5006:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
       - db
+      - eureka-server
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/blog-parser/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # BlogService microservice in dev mode
+  ################################################################
+  blog-service:
+    container_name: blog-service-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl blog-service -am -DskipTests && \
+       cd blog-service && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+      - eureka-server
+    env_file:
+      - Docker/env/.db.env
+      - Docker/env/.app.env
+      - Docker/env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -190,8 +219,8 @@ services:
   ################################################################
   # EmailParser microservice
   ################################################################
-  emailparser:
-    container_name: emailparser-dev
+  email-parser:
+    container_name: email-parser-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -201,21 +230,21 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl EmailParser -am -DskipTests && \
-       cd EmailParser && \
+      "mvn install -pl email-parser -am -DskipTests && \
+       cd email-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8082:8080"
-      - "5007:5005"
     networks:
       - global_network
+    depends_on:
+      - eureka-server
+      - rabbitmq
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/email-parser/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -224,8 +253,8 @@ services:
   ################################################################
   # EventParser microservice
   ################################################################
-  eventparser:
-    container_name: eventparser-dev
+  event-parser:
+    container_name: event-parser-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -235,13 +264,13 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl EventParser -am -DskipTests && \
-       cd EventParser && \
+      "mvn install -pl event-parser -am -DskipTests && \
+       cd event-parser && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8083:8080"
-      - "5008:5005"
+    depends_on:
+      - eureka-server
+      - rabbitmq
     networks:
       - global_network
     env_file:
@@ -249,7 +278,37 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/event-parser/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ################################################################
+  # EventParser microservice
+  ################################################################
+  eureka-server:
+    container_name: eureka-server-dev
+    build:
+      context: .
+      dockerfile: Docker/dockerfile-dev
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl eureka-server -am -DskipTests && \
+       cd eureka-server && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    env_file:
+      - Docker/env/.app.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -258,8 +317,8 @@ services:
   ################################################################
   # FileService microservice
   ################################################################
-  fileservice:
-    container_name: fileservice-dev
+  file-service:
+    container_name: file-service-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -270,25 +329,23 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl FileService -am -DskipTests && \
-       cd FileService && \
+      "mvn install -pl file-service -am -DskipTests && \
+       cd file-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8086:8080"
-      - "5011:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
       - db
+      - eureka-server
     env_file:
       - Docker/env/.db.env
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/files/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -297,8 +354,8 @@ services:
   ################################################################
   # SocialMediaService microservice
   ################################################################
-  socialmediaservice:
-    container_name: socialmediaservice-dev
+  social-media-service:
+    container_name: social-media-service-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
@@ -308,24 +365,22 @@ services:
     command: [
       "sh",
       "-c",
-      "mvn install -pl SocialMediaService -am -DskipTests && \
-       cd SocialMediaService && \
+      "mvn install -pl social-media-service -am -DskipTests && \
+       cd social-media-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8084:8080"
-      - "5009:5005"
     networks:
       - global_network
     depends_on:
       - rabbitmq
-      - apigateway
+      - api-gateway
+      - eureka-server
     env_file:
       - Docker/env/.app.env
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/social-media/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -334,24 +389,24 @@ services:
   ################################################################
   # Telemetry microservice
   ################################################################
-  telemetry:
-    container_name: telemetry-dev
+  telemetry-service:
+    container_name: telemetry-service-dev
     build:
       context: .
       dockerfile: Docker/dockerfile-dev
     volumes:
       - .:/app
       - maven-repo:/root/.m2
+    depends_on:
+      - eureka-server
+      - rabbitmq
     command: [
       "sh",
       "-c",
-      "mvn install -pl Telemetry -am -DskipTests && \
-       cd Telemetry && \
+      "mvn install -pl telemetry-service -am -DskipTests && \
+       cd telemetry-service && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
-    ports:
-      - "8085:8080"
-      - "5010:5005"
     networks:
       - global_network
     env_file:
@@ -360,7 +415,7 @@ services:
       - Docker/env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/telemetry/health" ]
       interval: 30s
       timeout: 10s
       retries: 5

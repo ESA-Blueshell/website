@@ -2,7 +2,6 @@ package net.blueshell.common.dto;
 
 
 import lombok.*;
-import net.blueshell.common.Image;
 import net.blueshell.common.enums.PlatformType;
 
 import java.sql.Timestamp;
@@ -15,7 +14,6 @@ public class SocialDTO extends BaseDTO {
     private String title;
     private String text;
     private String url;
-    private Image image;
     private PlatformType[] platforms;
 }
 

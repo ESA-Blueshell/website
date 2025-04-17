@@ -1,5 +1,5 @@
 # Use an official Maven image to build the application
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-parent
+FROM maven:3.9.9-eclipse-temurin-24-alpine AS build-parent
 
 # Set the working directory in the container
 WORKDIR /app
@@ -25,7 +25,7 @@ COPY ./Telemetry/pom.xml /app/parent/Telemetry/pom.xml
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./parent/pom.xml -nsu
 
 # Use an official Maven image to build the core-commons module
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-core-commons
+FROM maven:3.9.9-eclipse-temurin-24-alpine AS build-core-commons
 WORKDIR /app
 
 # Copy the local Maven files from the previous stage
@@ -40,7 +40,7 @@ COPY ./core-commons/src ./core-commons/src
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./core-commons/pom.xml -nsu -o
 
 # Use an official Maven image to build the db-commons module
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-db-commons
+FROM maven:3.9.9-eclipse-temurin-24-alpine AS build-db-commons
 WORKDIR /app
 
 # Copy the local Maven files from the previous stage
@@ -56,7 +56,7 @@ RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./db
 
 
 # Use an official Maven image to build the service
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
+FROM maven:3.9.9-eclipse-temurin-24-alpine AS build
 WORKDIR /app
 ARG SERVICE_NAME
 ARG PORT
@@ -71,7 +71,7 @@ COPY --from=build-db-commons /app/mvnw .
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu
 
 # Use an official OpenJDK image to run the application
-FROM eclipse-temurin:21-alpine
+FROM eclipse-temurin:24-alpine
 
 # Set the working directory in the container
 WORKDIR /app

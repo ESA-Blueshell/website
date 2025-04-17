@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   mvc:
     dispatch-options-request: true
@@ -7,6 +10,7 @@ spring:
     username: ${RABBITMQ_DEFAULT_USER}
     password: ${RABBITMQ_DEFAULT_PASS}
 
+
 app:
   url: ${APP_URL}
 
@@ -14,9 +18,15 @@ frontend:
   url: ${FRONTEND_URL}
 
 communicators:
+  api:
+    port: 8080
+    name: api
   apiGateway:
-    port: 80
+    port: 8080
     name: apigateway
+  blogParser:
+    port: 8080
+    name: blogparser
   blogService:
     port: 8080
     name: blogservice
@@ -35,3 +45,14 @@ communicators:
   telemetryService:
     port: 8080
     name: telemetry
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    hostname: eureka-server
+    non-secure-port: 8080
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true

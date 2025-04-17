@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: TelemetryService
+
+springdoc:
+  api-docs:
+    enabled: true

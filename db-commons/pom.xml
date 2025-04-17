@@ -27,41 +27,36 @@
             <artifactId>core-commons</artifactId>
             <version>0.0.1</version>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-commons</artifactId>
-            <version>3.4.3</version>
-            <scope>compile</scope>
-        </dependency>
+        <!-- Spring Data - versions managed by Spring Boot BOM -->
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-jpa</artifactId>
-            <version>3.4.3</version>
-            <scope>compile</scope>
         </dependency>
+
+        <!-- Jakarta Persistence - version managed by Spring Boot BOM -->
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.2.0</version>
-            <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.18.2</version>
-            <scope>compile</scope>
-        </dependency>
+
         <!-- Flyway -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
             <version>11.3.4</version>
         </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
             <version>11.3.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+
         <!-- MariaDB Driver -->
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
@@ -72,7 +67,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-            <version>3.4.3</version>
         </dependency>
     </dependencies>
 </project>

@@ -1,0 +1,90 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    web-application-type: reactive
+
+  application:
+    name: ApiGateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true  # Dynamically build routes using Eureka's registry
+      routes:
+        - id: api-route
+          uri: lb://API
+          predicates:
+            - Path=/api/**
+
+        - id: blog-parser-route
+          uri: lb://BlogParser
+          predicates:
+            - Path=/blog-parser/**
+
+        - id: blog-service-route
+          uri: lb://BlogService
+          predicates:
+            - Path=/blogs/**
+
+
+        - id: email-parser-route
+          uri: lb://EmailParser
+          predicates:
+            - Path=/email-parser/**
+
+
+        - id: event-parser-route
+          uri: lb://EventParser
+          predicates:
+            - Path=/event-parser/**
+
+
+        - id: file-service-route
+          uri: lb://FileService
+          predicates:
+            - Path=/files/**
+
+
+        - id: social-media-service-route
+          uri: lb://SocialMediaService
+          predicates:
+            - Path=/social-media/**
+
+
+        - id: telemetry-service-route
+          uri: lb://TelemetryService
+          predicates:
+            - Path=/telemetry/**
+
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway Service
+
+      - url: /blogservice/v3/api-docs
+        name: Blog Service
+
+      - url: /emailparser/v3/api-docs
+        name: Email Parser Service
+
+      - url: /eventparser/v3/api-docs
+        name: EventParser Service
+
+      - url: /file/v3/api-docs
+        name: File Service
+
+      - url: /socialmedia/v3/api-docs
+        name: Social Media Service
+
+      - url: /telemetry/v3/api-docs
+        name: Telemetry Service

@@ -2,6 +2,7 @@
 To launch all applications run
 `./run.sh [-f]`. Flag `-f` is optional and forces the update of the current Dockerfile in respective service folders.
 
+To run in dev mode run `./run-dev.sh`.
 ### Requirements
 - Docker
 - Java 21
@@ -24,7 +25,7 @@ the cluster (deployments, pods, services). The proxy is running in the current t
 1. Kubernetes deployment must be running.
 2. Kubernetes service (LoadBalancer) must be pending (should be by default).
 3. Create a tunnel to the LoadBalancer with `minikube tunnel`.
-4. The APIGateway can be reached through the URL `http://localhost:80`.
+4. The APIGateway can be reached through the URL `http://localhost:8080`.
 
 NOTE: Docker must be running.
 
@@ -44,9 +45,9 @@ To debug a specific module container like (_APIGateway_) open IntelliJ:
 NOTE: Container with the module you would like to debug must be running.
 
 #### Debug ports
-If invalid look in docker-compose-base.yml for the port mapped to 5005.
+If invalid look in docker-compose.build.yml for the port mapped to 5005.
 - APIGateway: 5005
-- BlogService: 5006
+- blog-service: 5006
 - EmailParser: 5007
 - EventParser: 5008
 - SocialMediaService: 5009

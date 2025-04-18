@@ -1,6 +1,5 @@
-package net.blueshell.common.config;
+package net.blueshell.common.identity;
 
-import net.blueshell.common.filter.HeaderAuthFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -15,12 +14,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnClass(name = "org.springframework.web.filter.OncePerRequestFilter")
 @ConditionalOnProperty(prefix = "blueshell.security", name = "enabled", havingValue = "true", matchIfMissing = true)
-public class HeaderAuthAutoConfig {
+public class IdentityFilterAutoConfig {
 
     @Bean
-    public FilterRegistrationBean<HeaderAuthFilter> headerAuthenticationFilter() {
-        FilterRegistrationBean<HeaderAuthFilter> reg = new FilterRegistrationBean<>();
-        reg.setFilter(new HeaderAuthFilter());
+    public FilterRegistrationBean<IdentityFilter> headerAuthenticationFilter() {
+        FilterRegistrationBean<IdentityFilter> reg = new FilterRegistrationBean<>();
+        reg.setFilter(new IdentityFilter());
         reg.addUrlPatterns("/*");
         return reg;
     }

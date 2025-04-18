@@ -2,7 +2,7 @@ package net.blueshell.apigateway.identity;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import net.blueshell.common.enums.Role;
-import net.blueshell.common.identity.SharedUserDetails;
+import net.blueshell.common.identity.Identity;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -12,16 +12,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.SignalType;
 
 @Component
-public class UserDetailsFilter implements GlobalFilter, Ordered {
+public class ApiIdentityFilter implements GlobalFilter, Ordered {
 
     private final WebClient webClient;
 
-    public UserDetailsFilter(WebClient.Builder webClientBuilder) {
+    public ApiIdentityFilter(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
-                .baseUrl("http://API/api/user-details")
+                .baseUrl("lb://API/api/auth/identity")
                 .build();
     }
 
@@ -36,23 +35,23 @@ public class UserDetailsFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String token = authHeader.substring(7);
-
         return webClient.get()
-                .uri(uri -> uri.queryParam("token", token).build())
+                // TODO: Figure out why I must include a query param for this to work consistently
+                .uri(uri -> uri.queryParam("token", "why is this needed?").build())
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
                 .retrieve()
                 // if 403 ⇒ error path
                 .onStatus(HttpStatus.FORBIDDEN::equals,
                         resp -> Mono.error(new PermissionDeniedException("User details forbidden")))
-                .bodyToMono(SharedUserDetails.class)
+                .bodyToMono(Identity.class)
                 // if we get a user, mutate the headers
-                .flatMap(userDetails -> {
+                .flatMap(identity -> {
                     ServerHttpRequest mutated = exchange.getRequest().mutate()
-                            .header("X-User-Id", String.valueOf(userDetails.getId()))
-                            .header("X-User-Name", userDetails.getUsername())
+                            .header("X-User-Id", String.valueOf(identity.getId()))
+                            .header("X-User-Name", identity.getUsername())
                             .header("X-User-Roles",
                                     String.join(",",
-                                            userDetails.getRoles()
+                                            identity.getRoles()
                                                     .stream()
                                                     .map(Role::toString)
                                                     .toList()))

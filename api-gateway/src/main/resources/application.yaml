@@ -23,8 +23,6 @@ spring:
           uri: lb://API
           predicates:
             - Path=/api/**
-          filters:
-            - RemoveRequestHeader=Authorization
 
         - id: blog-parser-route
           uri: lb://BlogParser

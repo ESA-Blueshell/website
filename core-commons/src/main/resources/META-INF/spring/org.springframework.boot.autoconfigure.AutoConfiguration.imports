@@ -1,1 +1,1 @@
-net.blueshell.common.config.HeaderAuthAutoConfig
+net.blueshell.common.identity.IdentityFilterAutoConfig

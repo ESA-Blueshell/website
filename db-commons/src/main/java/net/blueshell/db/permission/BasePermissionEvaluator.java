@@ -1,6 +1,6 @@
 package net.blueshell.db.permission;
 
-import net.blueshell.common.identity.UserDetailsProvider;
+import net.blueshell.common.identity.IdentityProvider;
 import net.blueshell.db.BaseModel;
 import net.blueshell.db.BaseModelService;
 import org.springframework.core.GenericTypeResolver;
@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-public abstract class BasePermissionEvaluator<T extends BaseModel<ID>, ID, S extends BaseModelService<T, ID, ?>> extends UserDetailsProvider {
+public abstract class BasePermissionEvaluator<T extends BaseModel<ID>, ID, S extends BaseModelService<T, ID, ?>> extends IdentityProvider {
 
     protected final S service;
     protected final Map<String, BiFunction<T, Authentication, Boolean>> permissionsMap = new HashMap<>() {

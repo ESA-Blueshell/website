@@ -14,7 +14,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync
-@EnableFeignClients(basePackages = "net.blueshell.common.client")
 @ComponentScan(basePackages = {"net.blueshell.apigateway", "net.blueshell.common"})
 public class ApiGatewayApplication {
 	public static void main(String[] args) {

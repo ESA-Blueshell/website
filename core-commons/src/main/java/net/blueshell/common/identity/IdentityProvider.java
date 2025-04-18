@@ -6,12 +6,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @Slf4j
-public abstract class UserDetailsProvider {
-    protected SharedUserDetails getPrincipal() {
+public abstract class IdentityProvider {
+    protected Identity getPrincipal() {
         Object obj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("principal: {}", obj);
-        if (obj instanceof SharedUserDetails) {
-            return (SharedUserDetails) obj;
+        if (obj instanceof Identity) {
+            return (Identity) obj;
         }
         return null;
     }

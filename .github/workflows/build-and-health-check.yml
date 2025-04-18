@@ -17,23 +17,13 @@ jobs:
           submodules: recursive
           persist-credentials: true
 
-      # 2. Prepare Dockerfiles or environment by running spread.sh
-      - name: Run spread script
+      # 2. Run script
+      - name: Deploy services
         run: |
-          chmod +x Docker/spread.sh
-          ./Docker/spread.sh
+          chmod +x run.sh
+          ./run.sh -f
 
-      # 3. Build Docker images
-      - name: Build Docker containers
-        run: |
-          docker compose -f docker-compose.build.yml build
-
-      # 4. Start containers in the background
-      - name: Start containers
-        run: |
-          docker compose -f docker-compose.build.yml up -d
-
-      # 5. Verify containers are healthy
+      # 3. Verify containers are healthy
       - name: Verify container health
         run: |
           # Increase TIMEOUT as needed (in seconds)

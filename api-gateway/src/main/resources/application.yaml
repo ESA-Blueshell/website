@@ -73,27 +73,33 @@ springdoc:
   api-docs:
     enabled: true
   swagger-ui:
-    enabled: true
     path: /swagger-ui.html
     config-url: /v3/api-docs/swagger-config
+    disable-swagger-default-url: true
     urls:
-      - url: /v3/api-docs
-        name: API Gateway Service
+      - name: API Gateway
+        url: /v3/api-docs
 
-      - url: /blogservice/v3/api-docs
-        name: Blog Service
+      - name: API Service
+        url: /api/v3/api-docs
 
-      - url: /emailparser/v3/api-docs
-        name: Email Parser Service
+      - name: Blog Parser Service
+        url: /blog-parser/v3/api-docs
 
-      - url: /eventparser/v3/api-docs
-        name: EventParser Service
+      - name: Blog Service
+        url: /blogs/v3/api-docs
 
-      - url: /file/v3/api-docs
-        name: File Service
+      - name: Email Parser Service
+        url: /email-parser/v3/api-docs
 
-      - url: /socialmedia/v3/api-docs
-        name: Social Media Service
+      - name: Event Parser Service
+        url: /event-parser/v3/api-docs
 
-      - url: /telemetry/v3/api-docs
-        name: Telemetry Service
+      - name: File Service
+        url: /files/v3/api-docs
+
+      - name: Social Media Service
+        url: /social-media/v3/api-docs
+
+      - name: Telemetry Service
+        url: /telemetry/v3/api-docs

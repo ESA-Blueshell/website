@@ -12,8 +12,11 @@ import java.util.HashMap;
 @Component
 public class TelemetryClient {
 
-    @Autowired
-    private TelemetryCommunicator telemetryCommunicator;
+    private final TelemetryCommunicator telemetryCommunicator;
+
+    public TelemetryClient(TelemetryCommunicator telemetryCommunicator) {
+        this.telemetryCommunicator = telemetryCommunicator;
+    }
 
     public String getTrackableURL(PlatformType platform, String url) {
         HashMap<String, Object> params = new HashMap<>();

@@ -22,8 +22,8 @@ import java.util.Map;
 
 @Component
 public class SocialMediaClient {
-    @Autowired
-    private RestTemplate restTemplate;
+    
+    private final RestTemplate restTemplate;
 
     private final String FACEBOOK_API_TEMPLATE = "https://graph.facebook.com/%s/feed?access_token=%s";
 
@@ -44,6 +44,10 @@ public class SocialMediaClient {
 
     @Value("${x.access.secret}")
     private String twitterAccessTokenSecret;
+
+    public SocialMediaClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     public void postToFacebook(SocialDTO dto, String link) {
         String url = String.format(

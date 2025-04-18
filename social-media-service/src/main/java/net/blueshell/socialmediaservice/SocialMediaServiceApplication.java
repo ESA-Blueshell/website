@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @OpenAPIDefinition(
 		servers = {
-				@Server(url = "http://localhost:1024/socialmedia")
+				@Server(url = "${app.url}/social-media")
 		}
 )
 

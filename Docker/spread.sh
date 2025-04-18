@@ -39,6 +39,7 @@ for DIR in "$PARENT_DIR"/*/; do
        "$(basename "$DIR")" == "files" || \
        "$(basename "$DIR")" == "telemetry-client" || \
        "$(basename "$DIR")" == "frontend" || \
+       "$(basename "$DIR")" == "test" || \
         "$(basename "$DIR")" == "dist" ]] && continue
 
     SERVICE_NAME=$(basename "$DIR")

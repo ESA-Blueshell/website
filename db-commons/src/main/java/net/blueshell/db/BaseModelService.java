@@ -63,7 +63,7 @@ public abstract class BaseModelService<T extends BaseModel<ID>, ID, R extends Ba
      * Fetch an entity by its ID
      */
     @Transactional(readOnly = true)
-    public T findById(ID id) {
+    public T    findById(ID id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + id));
     }
 

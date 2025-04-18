@@ -5,3 +5,17 @@ spring:
 springdoc:
   api-docs:
     enabled: true
+
+facebook:
+  page:
+    id: page
+  access:
+    token: 1234
+
+x:
+  api:
+    key: smth
+    secret: smth
+  access:
+    token: smth
+    secret: smth

@@ -1,9 +1,7 @@
 package net.blueshell.apigateway.identity;
 
-import lombok.extern.slf4j.Slf4j;
 import net.blueshell.common.enums.Role;
 import net.blueshell.common.identity.Identity;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -16,10 +14,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-@Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class ApiIdentityFilter implements GlobalFilter {
+public class ApiIdentityFilter implements GlobalFilter, Ordered {
 
     private final WebClient webClient;
 
@@ -55,18 +52,18 @@ public class ApiIdentityFilter implements GlobalFilter {
                                                     .map(Role::toString)
                                                     .toList()))
                             .build();
-                    log.info("mutated: {}", mutated.getHeaders());
                     return chain.filter(exchange.mutate().request(mutated).build());
                 })
                 .onErrorResume(PermissionDeniedException.class, e -> {
-                    log.info("permission denied");
                     exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                     return exchange.getResponse().setComplete();
                 })
-                .onErrorResume(e -> {
-                    log.info("next filter");
-                    return chain.filter(exchange);
-                });
+                .onErrorResume(e -> chain.filter(exchange)); // fail‑open for any other error
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
     private static class PermissionDeniedException extends RuntimeException {

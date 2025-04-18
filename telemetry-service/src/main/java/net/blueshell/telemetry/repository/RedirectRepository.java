@@ -15,14 +15,14 @@ import java.util.UUID;
 @Repository
 public interface RedirectRepository extends BaseRepository<Redirect, UUID> {
 
-    @Query("SELECT n FROM Telemetry n ORDER BY n.createdAt DESC")
+    @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
     @Override
     Page<Redirect> findAll(@NotNull Pageable pageable);
 
-    @Query("SELECT n FROM Telemetry n ORDER BY n.createdAt DESC")
+    @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
     @Override
     List<Redirect> findAll();
 
     @Query("SELECT e FROM Redirect e WHERE e.createdAt >= :from AND e.createdAt <= :to ORDER BY e.createdAt DESC")
-    List<Redirect> findCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+    List<Redirect>  findCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

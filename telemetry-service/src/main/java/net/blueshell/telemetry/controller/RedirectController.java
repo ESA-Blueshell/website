@@ -1,6 +1,5 @@
 package net.blueshell.telemetry.controller;
 
-import jakarta.ws.rs.PathParam;
 import net.blueshell.common.dto.RedirectDTO;
 import net.blueshell.db.BaseController;
 import net.blueshell.telemetry.mapping.RedirectMapper;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -25,8 +25,8 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     }
 
     @RequestMapping("/redirect")
-    public String redirect(@PathParam("id") UUID telemetryId) {
-        return service.createRedirect(telemetryId);
+    public String redirect(@RequestParam("id") String telemetryId) {
+        return service.createRedirect(UUID.fromString(telemetryId));
     }
 
     @GetMapping("/redirects")
@@ -36,8 +36,20 @@ public class RedirectController extends BaseController<RedirectService, Redirect
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             @RequestParam(required = false) OffsetDateTime to
     ) {
-        List<Redirect> redirects = service.findCreatedAtBetween(from, to);
+        List<Redirect> redirects;
+        if(from != null || to != null) {
+             redirects = service.findCreatedAtBetween(from, to);
+        } else {
+            redirects = service.findAll();
+        }
+
         return mapper.toDTOs(redirects);
     }
+
+    @GetMapping("/redirects/dashboard")
+    public ModelAndView getDashboard() {
+        return new ModelAndView("index");
+    }
+
 }
 

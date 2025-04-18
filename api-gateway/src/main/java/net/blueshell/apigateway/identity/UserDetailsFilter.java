@@ -1,28 +1,27 @@
 package net.blueshell.apigateway.identity;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import net.blueshell.common.enums.Role;
-import net.blueshell.common.identity.Identity;
+import net.blueshell.common.identity.SharedUserDetails;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
-public class ApiIdentityFilter implements GlobalFilter, Ordered {
+public class UserDetailsFilter implements GlobalFilter, Ordered {
 
     private final WebClient webClient;
 
-    public ApiIdentityFilter(WebClient.Builder builder) {
-        this.webClient = builder
-                .baseUrl("lb://API/api/auth/identity")
+    public UserDetailsFilter(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder
+                .baseUrl("http://API/api/user-details")
                 .build();
     }
 
@@ -32,23 +31,29 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
 
-        if (authHeader == null) {
+        // no bearer ⇒ just forward
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return chain.filter(exchange);
         }
 
+        String token = authHeader.substring(7);
+
         return webClient.get()
-                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .uri(uri -> uri.queryParam("token", token).build())
                 .retrieve()
+                // if 403 ⇒ error path
                 .onStatus(HttpStatus.FORBIDDEN::equals,
-                        resp -> Mono.error(new PermissionDeniedException("Token expired")))
-                .bodyToMono(Identity.class)
-                .flatMap(user -> {
+                        resp -> Mono.error(new PermissionDeniedException("User details forbidden")))
+                .bodyToMono(SharedUserDetails.class)
+                // if we get a user, mutate the headers
+                .flatMap(userDetails -> {
                     ServerHttpRequest mutated = exchange.getRequest().mutate()
-                            .header("X-User-Id",   String.valueOf(user.getId()))
-                            .header("X-User-Name", user.getUsername())
+                            .header("X-User-Id", String.valueOf(userDetails.getId()))
+                            .header("X-User-Name", userDetails.getUsername())
                             .header("X-User-Roles",
                                     String.join(",",
-                                            user.getRoles().stream()
+                                            userDetails.getRoles()
+                                                    .stream()
                                                     .map(Role::toString)
                                                     .toList()))
                             .build();
@@ -58,14 +63,17 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                     exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                     return exchange.getResponse().setComplete();
                 })
-                .onErrorResume(e -> chain.filter(exchange)); // fail‑open for any other error
+                .onErrorResume(e -> chain.filter(exchange));
     }
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
+        return 0;
     }
 
+    /**
+     * Simple marker exception to indicate Permission Denied from user‐details service.
+     */
     private static class PermissionDeniedException extends RuntimeException {
         public PermissionDeniedException(String msg) {
             super(msg);

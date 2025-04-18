@@ -1,8 +1,8 @@
 package net.blueshell.db;
 
-import net.blueshell.common.identity.IdentityProvider;
+import net.blueshell.common.identity.UserDetailsProvider;
 
-public abstract class AdvancedController<S, AM, SM>  extends IdentityProvider {
+public abstract class AdvancedController<S, AM, SM>  extends UserDetailsProvider {
 
     protected final S service;
     protected final AM advancedMapper;

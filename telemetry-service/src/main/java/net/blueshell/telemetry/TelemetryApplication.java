@@ -14,8 +14,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class TelemetryApplication {
+
     public static void main(String[] args) {
         System.setProperty("server.servlet.context-path", "/telemetry");
         SpringApplication.run(TelemetryApplication.class, args);
     }
+
 }

@@ -1,9 +1,8 @@
 server:
   port: 8080
 
-
-identity:
-  provider:
+blueshell:
+  security:
     enabled: false
 
 

@@ -7,10 +7,7 @@ import net.blueshell.db.BaseController;
 import net.blueshell.telemetry.mapping.TelemetryMapper;
 import net.blueshell.telemetry.model.Telemetry;
 import net.blueshell.telemetry.service.TelemetryService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -21,7 +18,7 @@ public class TelemetryController extends BaseController<TelemetryService, Teleme
         super(service, mapper);
     }
 
-    @GetMapping("/telemetry/{id}")
+    @GetMapping("/{id}")
     public TelemetryDTO getTelemetry(
             @PathVariable UUID id
     ) {
@@ -29,7 +26,7 @@ public class TelemetryController extends BaseController<TelemetryService, Teleme
         return mapper.toDTO(telemetry);
     }
 
-    @PostMapping("/telemetry")
+    @PostMapping
     public TelemetryDTO createTelemetry(
             @PathParam("platform") PlatformType platform,
             @PathParam("url") String url

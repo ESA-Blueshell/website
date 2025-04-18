@@ -46,3 +46,8 @@ files/
 /api/Dockerfile
 /api/Dockerfile-build
 /api/Dockerfile-dev
+
+!./script/mariadb-deployment.yaml
+!./script/rabbitmq-deployment.yaml
+!./script/mariadb-service.yaml
+!./script/rabbitmq-service.yaml

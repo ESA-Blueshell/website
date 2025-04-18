@@ -25,7 +25,7 @@ cd ..
 minikube start
 eval $(minikube docker-env)
 
-docker compose -f docker-compose-base.yml build
+docker compose -f docker-compose.build.yml build
 cd Scripts || exit
 ./launch_kubernetes.sh
 cd ..

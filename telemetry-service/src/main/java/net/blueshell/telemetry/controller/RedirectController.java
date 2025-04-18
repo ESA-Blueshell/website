@@ -7,10 +7,7 @@ import net.blueshell.telemetry.model.Redirect;
 import net.blueshell.telemetry.service.RedirectService;
 import net.blueshell.telemetry.service.TelemetryService;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.OffsetDateTime;
@@ -24,9 +21,14 @@ public class RedirectController extends BaseController<RedirectService, Redirect
         super(service, mapper);
     }
 
-    @RequestMapping("/redirect")
-    public String redirect(@RequestParam("id") String telemetryId) {
+    @PostMapping("/redirect")
+    public String addRedirect(@RequestParam("id") String telemetryId) {
         return service.createRedirect(UUID.fromString(telemetryId));
+    }
+
+    @DeleteMapping("/redirect")
+    public void deleteRedirect(@RequestParam("id") String telemetryId) {
+        service.deleteById(UUID.fromString(telemetryId));
     }
 
     @GetMapping("/redirects")

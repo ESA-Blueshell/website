@@ -1,5 +1,5 @@
 # Use an official Maven image to build the application
-FROM maven:3.9.9-eclipse-temurin-24-alpine AS build-parent
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-parent
 
 # Set the working directory in the container
 WORKDIR /app
@@ -13,19 +13,21 @@ COPY ./pom.xml /app/parent/pom.xml
 COPY ./core-commons/pom.xml /app/parent/core-commons/pom.xml
 COPY ./db-commons/pom.xml /app/parent/db-commons/pom.xml
 COPY ./api/pom.xml /app/parent/api/pom.xml
-COPY ./APIGateway/pom.xml /app/parent/APIGateway/pom.xml
-COPY ./BlogService/pom.xml /app/parent/BlogService/pom.xml
-COPY ./EmailParser/pom.xml /app/parent/EmailParser/pom.xml
-COPY ./EventParser/pom.xml /app/parent/EventParser/pom.xml
-COPY ./FileService/pom.xml /app/parent/FileService/pom.xml
-COPY ./SocialMediaService/pom.xml /app/parent/SocialMediaService/pom.xml
-COPY ./Telemetry/pom.xml /app/parent/Telemetry/pom.xml
+COPY ./api-gateway/pom.xml /app/parent/api-gateway/pom.xml
+COPY ./blog-parser/pom.xml /app/parent/blog-parser/pom.xml
+COPY ./blog-service/pom.xml /app/parent/blog-service/pom.xml
+COPY ./email-parser/pom.xml /app/parent/email-parser/pom.xml
+COPY ./event-parser/pom.xml /app/parent/event-parser/pom.xml
+COPY ./eureka-server/pom.xml /app/parent/eureka-server/pom.xml
+COPY ./file-service/pom.xml /app/parent/file-service/pom.xml
+COPY ./social-media-service/pom.xml /app/parent/social-media-service/pom.xml
+COPY ./telemetry-service/pom.xml /app/parent/telemetry-service/pom.xml
 
 # Download dependencies and build the parent project
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./parent/pom.xml -nsu
 
 # Use an official Maven image to build the core-commons module
-FROM maven:3.9.9-eclipse-temurin-24-alpine AS build-core-commons
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-core-commons
 WORKDIR /app
 
 # Copy the local Maven files from the previous stage
@@ -40,7 +42,7 @@ COPY ./core-commons/src ./core-commons/src
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./core-commons/pom.xml -nsu -o
 
 # Use an official Maven image to build the db-commons module
-FROM maven:3.9.9-eclipse-temurin-24-alpine AS build-db-commons
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-db-commons
 WORKDIR /app
 
 # Copy the local Maven files from the previous stage
@@ -56,7 +58,7 @@ RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./db
 
 
 # Use an official Maven image to build the service
-FROM maven:3.9.9-eclipse-temurin-24-alpine AS build
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 ARG SERVICE_NAME
 ARG PORT
@@ -71,7 +73,7 @@ COPY --from=build-db-commons /app/mvnw .
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu
 
 # Use an official OpenJDK image to run the application
-FROM eclipse-temurin:24-alpine
+FROM eclipse-temurin:21-alpine
 
 # Set the working directory in the container
 WORKDIR /app

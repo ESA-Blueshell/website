@@ -8,10 +8,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-@OpenAPIDefinition(
-		servers = {@Server(url= "/")}
-)
-
 @SpringBootApplication
 @EnableAsync
 @ComponentScan(basePackages = {"net.blueshell.apigateway", "net.blueshell.common"})

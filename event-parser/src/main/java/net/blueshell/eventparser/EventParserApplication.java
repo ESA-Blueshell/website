@@ -6,12 +6,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
-@OpenAPIDefinition(
-		servers = {
-				@Server(url = "http://localhost:1024/eventparser")
-		}
-)
-
 @SpringBootApplication
 @ComponentScan(basePackages = {"net.blueshell.eventparser", "net.blueshell.common"})
 public class EventParserApplication {

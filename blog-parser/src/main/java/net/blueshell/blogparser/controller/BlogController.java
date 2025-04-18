@@ -18,7 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class BlogController {
 
-
     private final BlogCommunicator blogCommunicator;
     private final InternalBlogMapper mapper;
 

@@ -64,6 +64,10 @@ spring:
           predicates:
             - Path=/telemetry/**
 
+        - id: telemetry-ws-route
+          uri: lb:ws://TelemetryService          # <‑‑ Eureka service‑id
+          predicates:
+            - Path=/telemetry/ws/**                 # /notifications ➜ /
 
 springdoc:
   api-docs:

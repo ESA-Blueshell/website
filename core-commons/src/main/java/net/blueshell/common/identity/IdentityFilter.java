@@ -1,12 +1,11 @@
-package net.blueshell.common.filter;
+package net.blueshell.common.identity;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.common.enums.Role;
-import net.blueshell.common.identity.SharedUserDetails;
-import org.springframework.core.Ordered;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,15 +22,22 @@ import java.util.stream.Collectors;
 
 /**
  * Reads X-User-Id, X-User-Name and X-User-Roles (comma‑sep) headers
- * and, if present, constructs a UserDetailsDTO + authorities and
+ * and, if present, constructs a Identity and
  * injects it into the SecurityContext.
  */
 @Component
-public class HeaderAuthFilter extends OncePerRequestFilter {
+public class IdentityFilter extends OncePerRequestFilter {
 
     public static final String HEADER_ID = "X-User-Id";
     public static final String HEADER_NAME = "X-User-Name";
     public static final String HEADER_ROLES = "X-User-Roles";
+
+    private static final AntPathRequestMatcher IDENTITY = new AntPathRequestMatcher("/auth/identity");
+
+    @Override
+    protected boolean shouldNotFilter(@NotNull HttpServletRequest request) {
+        return IDENTITY.matches(request);
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain chain) throws ServletException, IOException {
@@ -46,7 +52,7 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
             Set<Role> roles = Arrays.stream(rolesHeader.split(",")).map(Role::valueOf).collect(Collectors.toSet());
 
             // build your DTO
-            SharedUserDetails user = new SharedUserDetails();
+            Identity user = new Identity();
             user.setId(id);
             user.setUsername(username);
             user.setRoles(roles);
@@ -60,7 +66,7 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            SharedUserDetails anonUser = new SharedUserDetails();
+            Identity anonUser = new Identity();
             anonUser.setRoles(Collections.singleton(Role.ANONYMOUS));
             anonUser.setUsername("anonymous");
             anonUser.setId(0L);

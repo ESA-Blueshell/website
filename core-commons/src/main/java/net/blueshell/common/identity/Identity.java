@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
-public class SharedUserDetails implements Serializable {
+public class Identity implements Serializable {
     Long id;
     String username;
     Set<Role> roles = new HashSet<>();

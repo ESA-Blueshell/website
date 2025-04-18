@@ -1,13 +1,13 @@
 package net.blueshell.common.mapper;
 
-import net.blueshell.common.identity.UserDetailsProvider;
+import net.blueshell.common.identity.IdentityProvider;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class BaseMapper<T, DTO> extends UserDetailsProvider {
+public abstract class BaseMapper<T, DTO> extends IdentityProvider {
     public abstract DTO toDTO(T t);
 
     public abstract T fromDTO(DTO dto);

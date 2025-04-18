@@ -1,0 +1,150 @@
+openapi: 3.1.0
+servers:
+- url: http://localhost:1024/telemetry
+paths:
+  /redirect:
+    post:
+      tags:
+      - redirect-controller
+      operationId: addRedirect
+      parameters:
+      - name: id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+    delete:
+      tags:
+      - redirect-controller
+      operationId: deleteRedirect
+      parameters:
+      - name: id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+  /:
+    post:
+      tags:
+      - telemetry-controller
+      operationId: createTelemetry
+      parameters:
+      - name: platform
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - FACEBOOK
+          - LINKEDIN
+          - TWITTER
+          - INSTAGRAM
+      - name: url
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TelemetryDTO'
+  /{id}:
+    get:
+      tags:
+      - telemetry-controller
+      operationId: getTelemetry
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TelemetryDTO'
+  /redirects:
+    get:
+      tags:
+      - redirect-controller
+      operationId: getRedirects
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RedirectDTO'
+  /health:
+    get:
+      tags:
+      - main-controller
+      operationId: checkHealth
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: boolean
+components:
+  schemas:
+    TelemetryDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        platform:
+          type: string
+          enum:
+          - FACEBOOK
+          - LINKEDIN
+          - TWITTER
+          - INSTAGRAM
+        createdAt:
+          type: string
+          format: date-time
+    RedirectDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        created:
+          type: string
+          format: date-time
+        telemetry:
+          $ref: '#/components/schemas/TelemetryDTO'

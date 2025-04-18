@@ -1,0 +1,1857 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://172.18.0.9:8080/api
+  description: Generated server url
+paths:
+  /users/{userId}:
+    get:
+      tags:
+      - user-controller
+      operationId: getById
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+    put:
+      tags:
+      - user-controller
+      operationId: update
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancedUserDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+    delete:
+      tags:
+      - user-controller
+      operationId: delete
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+  /users/{userId}/roles:
+    put:
+      tags:
+      - user-controller
+      operationId: toggleRole
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: role
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - ANONYMOUS
+          - GUEST
+          - COMPANY
+          - MEMBER
+          - VEGAN
+          - COMMITTEE
+          - BOARD
+          - TREASURER
+          - ADMIN
+          - SYSTEM
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+  /users/{userId}/membership/toggle:
+    put:
+      tags:
+      - user-controller
+      operationId: toggleMembership
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: role
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - ANONYMOUS
+          - GUEST
+          - COMPANY
+          - MEMBER
+          - VEGAN
+          - COMMITTEE
+          - BOARD
+          - TREASURER
+          - ADMIN
+          - SYSTEM
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+  /users/{id}/membership:
+    put:
+      tags:
+      - user-controller
+      operationId: updateMembership
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: isMember
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+  /sponsors/{id}:
+    get:
+      tags:
+      - sponsor-controller
+      operationId: getSponsorById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SponsorDTO'
+    put:
+      tags:
+      - sponsor-controller
+      operationId: createOrUpdateSponsor
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SponsorDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+    delete:
+      tags:
+      - sponsor-controller
+      operationId: deleteSponsorById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+  /news/{id}:
+    get:
+      tags:
+      - news-controller
+      operationId: getNewsById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NewsDTO'
+    put:
+      tags:
+      - news-controller
+      operationId: createOrUpdateNews
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NewsDTO'
+    delete:
+      tags:
+      - news-controller
+      operationId: deleteNewsById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+  /memberships/{id}:
+    get:
+      tags:
+      - membership-controller
+      operationId: getMembershipById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MembershipDTO'
+    put:
+      tags:
+      - membership-controller
+      operationId: updateMembership_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MembershipDTO'
+  /events/{eventId}:
+    put:
+      tags:
+      - event-controller
+      operationId: updateEvent
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EventDTO'
+    delete:
+      tags:
+      - event-controller
+      operationId: deleteEventById
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+  /events/{eventId}/signups:
+    put:
+      tags:
+      - event-sign-up-controller
+      operationId: updateSignUp
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: accessToken
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventSignUpDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EventSignUpDTO'
+  /contributions/{id}/paid:
+    put:
+      tags:
+      - contribution-controller
+      operationId: paid
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: paid
+        in: query
+        required: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ContributionDTO'
+  /contributionPeriods/{periodId}/contributions/remind:
+    put:
+      tags:
+      - contribution-controller
+      operationId: sendContributionReminder
+      parameters:
+      - name: periodId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+  /contributionPeriods/{id}:
+    put:
+      tags:
+      - contribution-period-controller
+      operationId: updateContributionPeriod
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContributionPeriodDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ContributionPeriodDTO'
+    delete:
+      tags:
+      - contribution-period-controller
+      operationId: deleteContributionPeriod
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+  /committees/{committeeId}:
+    put:
+      tags:
+      - committee-controller
+      operationId: updateCommittee
+      parameters:
+      - name: committeeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancedCommitteeDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/EmailDTO'
+                - $ref: '#/components/schemas/EventDTO'
+                - $ref: '#/components/schemas/InternalBlogDTO'
+                - $ref: '#/components/schemas/SocialDTO'
+    delete:
+      tags:
+      - committee-controller
+      operationId: deleteCommitteeById
+      parameters:
+      - name: committeeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+  /users:
+    get:
+      tags:
+      - user-controller
+      operationId: getAll
+      parameters:
+      - name: isMember
+        in: query
+        required: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdvancedUserDTO'
+    post:
+      tags:
+      - user-controller
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancedUserDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+  /users/reset:
+    post:
+      tags:
+      - user-controller
+      operationId: resetPassword
+      parameters:
+      - name: username
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+  /users/password:
+    post:
+      tags:
+      - user-controller
+      operationId: setPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+  /users/activate:
+    post:
+      tags:
+      - user-controller
+      operationId: activate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+  /sponsors:
+    get:
+      tags:
+      - sponsor-controller
+      operationId: getSponsors
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sponsor'
+    post:
+      tags:
+      - sponsor-controller
+      operationId: createSponsor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SponsorDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SponsorDTO'
+  /news:
+    get:
+      tags:
+      - news-controller
+      operationId: getNews
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NewsDTO'
+    post:
+      tags:
+      - news-controller
+      operationId: createNews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NewsDTO'
+  /memberships:
+    get:
+      tags:
+      - membership-controller
+      operationId: getMemberships
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MembershipDTO'
+    post:
+      tags:
+      - membership-controller
+      operationId: createMembership
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MembershipDTO'
+  /events:
+    get:
+      tags:
+      - event-controller
+      operationId: getEvents
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDTO'
+    post:
+      tags:
+      - event-controller
+      operationId: createEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EventDTO'
+  /events/{id}/signups:
+    get:
+      tags:
+      - event-sign-up-controller
+      operationId: getAllSignUps
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  parallel:
+                    type: boolean
+    post:
+      tags:
+      - event-sign-up-controller
+      operationId: createSignup
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventSignUpDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EventSignUpDTO'
+  /contributions:
+    get:
+      tags:
+      - contribution-controller
+      operationId: getAll_1
+      parameters:
+      - name: contributionPeriodId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  parallel:
+                    type: boolean
+    post:
+      tags:
+      - contribution-controller
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContributionDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ContributionDTO'
+  /contributionPeriods:
+    get:
+      tags:
+      - contribution-period-controller
+      operationId: getContributionPeriods
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContributionPeriodDTO'
+    post:
+      tags:
+      - contribution-period-controller
+      operationId: createContributionPeriod
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContributionPeriodDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ContributionPeriodDTO'
+  /committees:
+    get:
+      tags:
+      - committee-controller
+      operationId: getCommittees
+      parameters:
+      - name: isMember
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  oneOf:
+                  - $ref: '#/components/schemas/EmailDTO'
+                  - $ref: '#/components/schemas/EventDTO'
+                  - $ref: '#/components/schemas/InternalBlogDTO'
+                  - $ref: '#/components/schemas/SocialDTO'
+    post:
+      tags:
+      - committee-controller
+      operationId: createCommittee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancedCommitteeDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedCommitteeDTO'
+  /auth:
+    post:
+      tags:
+      - jwt-auth-controller
+      operationId: createAuthenticationToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JwtRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JwtResponse'
+  /users/{userId}/profilePicture:
+    get:
+      tags:
+      - file-controller
+      operationId: downloadProfilePicture
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /users/brevo:
+    get:
+      tags:
+      - user-controller
+      operationId: getFromBrevo
+      parameters:
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvancedUserDTO'
+  /newsPageable:
+    get:
+      tags:
+      - news-controller
+      operationId: newsPageable
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageNewsDTO'
+  /memberships/{membershipId}/signature:
+    get:
+      tags:
+      - file-controller
+      operationId: downloadSignature
+      parameters:
+      - name: membershipId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /health:
+    get:
+      tags:
+      - main-controller
+      operationId: healthCheck
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: boolean
+  /events/{id}:
+    get:
+      tags:
+      - event-controller
+      operationId: getEventById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EventDTO'
+  /events/{eventId}/banner:
+    get:
+      tags:
+      - file-controller
+      operationId: downloadBanner
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /events/upcoming:
+    get:
+      tags:
+      - event-controller
+      operationId: getUpcomingEvents
+      parameters:
+      - name: editable
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDTO'
+  /events/signups:
+    get:
+      tags:
+      - event-sign-up-controller
+      operationId: getMySignUps
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventSignUpDTO'
+  /events/signups/byAccessToken/{accessToken}:
+    get:
+      tags:
+      - event-sign-up-controller
+      operationId: getSignUpByAccessToken
+      parameters:
+      - name: accessToken
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EventSignUpDTO'
+  /events/past:
+    get:
+      tags:
+      - event-controller
+      operationId: getPastEvents
+      parameters:
+      - name: editable
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  parallel:
+                    type: boolean
+  /events/pageable:
+    get:
+      tags:
+      - event-controller
+      operationId: getEventsPageable
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageEventDTO'
+  /eventPictures/{eventPictureId}:
+    get:
+      tags:
+      - file-controller
+      operationId: downloadEventPicture
+      parameters:
+      - name: eventPictureId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /download/{filename}:
+    get:
+      tags:
+      - file-controller
+      operationId: downloadFile
+      parameters:
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /contributionPeriods/{periodId}/contributions:
+    get:
+      tags:
+      - contribution-controller
+      operationId: getContributionsByPeriodId
+      parameters:
+      - name: periodId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContributionDTO'
+  /auth/identity:
+    get:
+      tags:
+      - jwt-auth-controller
+      operationId: getIdentity
+      parameters:
+      - name: token
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Identity'
+  /events/signups/{eventSignupId}:
+    delete:
+      tags:
+      - event-sign-up-controller
+      operationId: deleteSignup
+      parameters:
+      - name: eventSignupId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: accessToken
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+  /contributions/{id}:
+    delete:
+      tags:
+      - contribution-controller
+      operationId: delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    AdvancedUserDTO:
+      allOf:
+      - $ref: '#/components/schemas/SimpleUserDTO'
+      - type: object
+        properties:
+          initials:
+            type: string
+          roles:
+            type: array
+            items:
+              type: string
+              enum:
+              - ANONYMOUS
+              - GUEST
+              - COMPANY
+              - MEMBER
+              - VEGAN
+              - COMMITTEE
+              - BOARD
+              - TREASURER
+              - ADMIN
+              - SYSTEM
+            uniqueItems: true
+          dateOfBirth:
+            type: string
+            format: date-time
+          phoneNumber:
+            type: string
+          postalCode:
+            type: string
+          address:
+            type: string
+          city:
+            type: string
+          country:
+            type: string
+          nationality:
+            type: string
+          signature:
+            $ref: '#/components/schemas/FileDTO'
+          membership:
+            $ref: '#/components/schemas/MembershipDTO'
+          newsletter:
+            type: boolean
+          photoConsent:
+            type: boolean
+          ehbo:
+            type: boolean
+          bhv:
+            type: boolean
+          enabled:
+            type: boolean
+          incasso:
+            type: boolean
+          createdAt:
+            type: string
+            format: date-time
+          gender:
+            type: string
+          study:
+            type: string
+          studentNumber:
+            type: string
+          type:
+            type: string
+      discriminator:
+        propertyName: type
+      required:
+      - type
+    FileDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        url:
+          type: string
+        uploaderId:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        mediaType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+        fileType:
+          type: string
+          enum:
+          - DOCUMENT
+          - SIGNATURE
+          - PROFILE_PICTURE
+          - EVENT_BANNER
+          - EVENT_PICTURE
+          - SPONSOR_PICTURE
+        base64Content:
+          type: string
+    MembershipDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        memberType:
+          type: string
+          enum:
+          - ALUMNI
+          - HONORARY
+          - REGULAR
+          - NONE
+        date:
+          type: string
+          format: date-time
+        city:
+          type: string
+        country:
+          type: string
+        signature:
+          $ref: '#/components/schemas/FileDTO'
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+    SponsorDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+    NewsDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        creatorId:
+          type: string
+          minLength: 1
+        creatorUsername:
+          type: string
+        lastEditorId:
+          type: string
+          minLength: 1
+        lastEditorUsername:
+          type: string
+        newsType:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          maxLength: 200
+          minLength: 0
+        content:
+          type: string
+          minLength: 1
+        postedAt:
+          type: string
+    EventDTO:
+      allOf:
+      - $ref: '#/components/schemas/BaseDTO'
+      - type: object
+        properties:
+          banner:
+            $ref: '#/components/schemas/FileDTO'
+          id:
+            type: integer
+            format: int64
+          committeeId:
+            type: integer
+            format: int64
+          committee:
+            $ref: '#/components/schemas/CommitteeDTO'
+          title:
+            type: string
+            maxLength: 200
+            minLength: 0
+          description:
+            type: string
+            minLength: 1
+          location:
+            type: string
+          startTime:
+            type: string
+            minLength: 1
+          endTime:
+            type: string
+            minLength: 1
+          memberPrice:
+            type: string
+          publicPrice:
+            type: string
+          visible:
+            type: boolean
+          membersOnly:
+            type: boolean
+          signUp:
+            type: boolean
+          signUpForm:
+            type: array
+            items:
+              $ref: '#/components/schemas/SignUpFormDTO'
+    EventSignUpDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        eventId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        discord:
+          type: string
+        email:
+          type: string
+        formAnswers:
+          type: array
+          items:
+            type: object
+    ContributionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        contributionPeriodId:
+          type: integer
+          format: int64
+        paid:
+          type: boolean
+        remindedAt:
+          type: string
+          format: date-time
+    ContributionPeriodDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        halfYearFee:
+          type: number
+          format: double
+        fullYearFee:
+          type: number
+          format: double
+        alumniFee:
+          type: number
+          format: double
+        listId:
+          type: integer
+          format: int64
+    AdvancedCommitteeDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          maxLength: 100
+          minLength: 0
+        description:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitteeMemberDTO'
+    CommitteeMemberDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        role:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        user:
+          oneOf:
+          - $ref: '#/components/schemas/SimpleUserDTO'
+          - $ref: '#/components/schemas/AdvancedUserDTO'
+        committeeId:
+          type: integer
+          format: int64
+    SimpleUserDTO:
+      type: object
+      discriminator:
+        propertyName: type
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        discord:
+          type: string
+        firstName:
+          type: string
+        prefix:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        type:
+          type: string
+      required:
+      - type
+    BaseDTO:
+      type: object
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          type: string
+      required:
+      - type
+    CommitteeDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+    EmailDTO:
+      allOf:
+      - $ref: '#/components/schemas/BaseDTO'
+      - type: object
+        properties:
+          publishedAt:
+            type: string
+            format: date-time
+          html:
+            type: string
+            minLength: 1
+      required:
+      - html
+      - publishedAt
+    InternalBlogDTO:
+      allOf:
+      - $ref: '#/components/schemas/BaseDTO'
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          url:
+            type: string
+          title:
+            type: string
+          text:
+            type: string
+          html:
+            type: string
+          markdown:
+            type: string
+          publishedAt:
+            type: string
+            format: date-time
+    SignUpFormDTO:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          minLength: 1
+        options:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    SocialDTO:
+      allOf:
+      - $ref: '#/components/schemas/BaseDTO'
+      - type: object
+        properties:
+          id:
+            type: string
+          title:
+            type: string
+          text:
+            type: string
+          url:
+            type: string
+          platforms:
+            type: array
+            items:
+              type: string
+              enum:
+              - FACEBOOK
+              - LINKEDIN
+              - TWITTER
+              - INSTAGRAM
+    PasswordResetRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+    ActivationRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        resetType:
+          type: string
+          enum:
+          - USER_ACTIVATION
+          - MEMBER_ACTIVATION
+          - PASSWORD_RESET
+          minLength: 1
+        username:
+          type: string
+        password:
+          type: string
+    JwtRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    JwtResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        expiration:
+          type: integer
+          format: int64
+        roles:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+    Sponsor:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        picture:
+          type: integer
+          format: int64
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageNewsDTO:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        numberOfElements:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewsDTO'
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
+        pageSize:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: '#/components/schemas/SortObject'
+    SortObject:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+        empty:
+          type: boolean
+    PageEventDTO:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        numberOfElements:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventDTO'
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        empty:
+          type: boolean
+    Identity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - ANONYMOUS
+            - GUEST
+            - COMPANY
+            - MEMBER
+            - VEGAN
+            - COMMITTEE
+            - BOARD
+            - TREASURER
+            - ADMIN
+            - SYSTEM
+          uniqueItems: true

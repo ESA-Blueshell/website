@@ -1,0 +1,12 @@
+apiVersion: v1
+data:
+  MYSQL_DATABASE: blueshell
+  MYSQL_HOST: db
+  MYSQL_PASSWORD: blueshell
+  MYSQL_PORT: "3306"
+  MYSQL_ROOT_PASSWORD: blueshell
+  MYSQL_USER: tim
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: db-env

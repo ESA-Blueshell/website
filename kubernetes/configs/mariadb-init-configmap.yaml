@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-initdb
+data:
+  01_init.sql: |
+    CREATE DATABASE IF NOT EXISTS BlogService;
+    CREATE DATABASE IF NOT EXISTS FileService;
+    CREATE DATABASE IF NOT EXISTS SocialMediaService;
+    CREATE DATABASE IF NOT EXISTS TelemetryService;
+    CREATE DATABASE IF NOT EXISTS API;

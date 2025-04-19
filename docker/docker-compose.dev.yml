@@ -1,0 +1,388 @@
+services:
+  db:
+    image: mariadb:10.11.10
+    container_name: db
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./data:/var/lib/mysql"
+      - "./env/init.sql:/docker-entrypoint-initdb.d/init.sql"
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - env/.db.env
+    command: --log-bin-trust-function-creators=1
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:4.0.7-management
+    container_name: rabbitmq
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - env/.rabbitmq.env
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmqctl status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    container_name: frontend-dev
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - "../frontend:/usr/app"
+      - /usr/app/node_modules
+    networks:
+      - global_network
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  api:
+    container_name: api-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl api -am -DskipTests && \
+       cd api && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - env/.db.env
+      - env/.rabbitmq.env
+      - env/.app.env
+    depends_on:
+      - db
+      - rabbitmq
+      - eureka-server
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  api-gateway:
+    container_name: api-gateway-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl api-gateway -am -DskipTests && \
+       cd api-gateway && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    ports:
+      - "8080:8080"
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - env/.app.env
+      - env/.rabbitmq.env
+    depends_on:
+      - rabbitmq
+      - blog-service
+      - email-parser
+      - event-parser
+      - file-service
+      - telemetry-service
+      - eureka-server
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  blog-parser:
+    container_name: blog-parser-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl blog-parser -am -DskipTests && \
+       cd blog-parser && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+      - eureka-server
+    env_file:
+      - env/.db.env
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/blog-parser/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  blog-service:
+    container_name: blog-service-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl blog-service -am -DskipTests && \
+       cd blog-service && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+      - eureka-server
+    env_file:
+      - env/.db.env
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/blogs/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  email-parser:
+    container_name: email-parser-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl email-parser -am -DskipTests && \
+       cd email-parser && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    depends_on:
+      - eureka-server
+      - rabbitmq
+    env_file:
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/email-parser/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  event-parser:
+    container_name: event-parser-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl event-parser -am -DskipTests && \
+       cd event-parser && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    depends_on:
+      - eureka-server
+      - rabbitmq
+    networks:
+      - global_network
+    env_file:
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/event-parser/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  eureka-server:
+    container_name: eureka-server-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl eureka-server -am -DskipTests && \
+       cd eureka-server && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    env_file:
+      - env/.app.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  file-service:
+    container_name: file-service-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+      - "./files:/app/files"
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl file-service -am -DskipTests && \
+       cd file-service && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - db
+      - eureka-server
+    env_file:
+      - env/.db.env
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/files/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  social-media-service:
+    container_name: social-media-service-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl social-media-service -am -DskipTests && \
+       cd social-media-service && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    depends_on:
+      - rabbitmq
+      - api-gateway
+      - eureka-server
+    env_file:
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/social-media/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  telemetry-service:
+    container_name: telemetry-service-dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    volumes:
+      - ../:/app
+      - maven-repo:/root/.m2
+    depends_on:
+      - eureka-server
+      - rabbitmq
+    command: [
+      "sh",
+      "-c",
+      "mvn install -pl telemetry-service -am -DskipTests && \
+       cd telemetry-service && \
+       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
+    ]
+    networks:
+      - global_network
+    env_file:
+      - env/.db.env
+      - env/.app.env
+      - env/.rabbitmq.env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/telemetry/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  global_network:
+    driver: bridge
+
+volumes:
+  maven-repo:

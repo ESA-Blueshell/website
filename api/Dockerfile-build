@@ -1,0 +1,34 @@
+# Use an official Maven image to build the application
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
+
+# Set the working directory in the container
+WORKDIR /app
+
+ARG SERVICE_NAME
+ARG PORT
+
+# Copy the local Maven files
+COPY ./.mvn .mvn
+COPY ./mvnw .
+
+# Copy the POM and source code
+COPY ./pom.xml .
+COPY ./src ./src
+
+# Build the base-service.yaml
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu
+
+# Use an official OpenJDK image to run the application
+FROM eclipse-temurin:21-alpine
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the built jar file from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose the port the application runs on
+EXPOSE ${PORT} 5005
+
+# Run the application
+ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-Dspring.profiles.active=build", "-jar", "app.jar"]

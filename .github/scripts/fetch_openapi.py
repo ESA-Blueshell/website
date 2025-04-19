@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Grabs OpenAPI specs from every running micro‑service and:
-  * writes one `<service>.yaml` per service
+Grabs OpenAPI specs from every running micro‑service.yaml and:
+  * writes one `<service.yaml>.yaml` per service.yaml
   * writes one `combined.yaml` that merges paths + components
 """
 from pathlib import Path
@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import copy, requests, yaml
 
 ##########################################################################
-# 1) Tell the script where each service lives
+# 1) Tell the script where each service.yaml lives
 ##########################################################################
 SERVICES = {
     "gateway": "http://localhost:8080",

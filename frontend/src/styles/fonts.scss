@@ -1,0 +1,24 @@
+@font-face {
+  font-family: 'Fugaz One';
+  src: url('@/assets/fonts/BarlowSemiFugazOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow Semi Condensed';
+  src: url('@/assets/fonts/BarlowSemiCondensed-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow Semi Condensed';
+  src: url('@/assets/fonts/BarlowSemiCondensed-SemiBold.ttf') format('truetype');
+  font-weight: bold;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Blueshell';
+  src: local("Blueshell"), url('@/assets/fonts/Blueshell.woff2') format('woff2'), url('@/assets/fonts/Blueshell.ttf') format('truetype');
+  font-display: swap;
+}

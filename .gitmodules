@@ -1,6 +1,0 @@
-[submodule "api"]
-	path = api
-	url = git@github.com:ESA-Blueshell/api.git
-[submodule "frontend"]
-	path = frontend
-	url = git@github.com:ESA-Blueshell/frontend.git

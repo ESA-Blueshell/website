@@ -1,0 +1,194 @@
+@use '@/styles/settings' as settings;
+@use '@/styles/colors' as colors;
+@use "sass:map";
+
+$accent: rgb(var(--v-theme-accent));
+
+.v-btn {
+  letter-spacing: 0;
+  transition-property: all;
+  transition-duration: 0.15s;
+  transition-delay: 0ms;
+}
+
+.v-theme--dark.v-application {
+  background-color: #1E1E1E;
+}
+
+.v-theme--dark.v-toolbar.v-sheet {
+  background-color: #1E1E1E;
+}
+
+.v-snackbar__wrapper.v-theme--dark.v-snackbar--variant-elevated {
+  background-color: rgb(var(--v-theme-wallpaper));
+  outline: 1px $accent solid;
+  color: white;
+}
+
+.v-toolbar {
+  transition: none;
+}
+
+.v-btn.v-theme--dark:not(.v-btn--variant-outlined) {
+  border: 1px transparent solid;
+}
+
+.v-btn--variant-outlined {
+  border: 1px $accent solid;
+}
+
+/*
+CSS MOMENT
+
+CSS MOMENT
+*/
+:is(:hover,[aria-expanded="true"],[aria-current="page"]).v-btn.v-theme--dark:not(.bg-primary):not(.v-btn--icon):not(.v-btn--rounded) {
+  border: 1px $accent solid;
+}
+
+:is(.v-list-item--nav,.v-menu__content) .v-list-item.v-theme--dark:not(.v-btn--variant-outlined) {
+  border: 1px transparent solid;
+}
+
+:is(.v-list-item--nav,.v-menu__content) :is(:hover,[aria-expanded="true"],[aria-current="page"]).v-list-item.v-theme--dark {
+  border: 1px $accent solid;
+}
+
+.v-list-item--active {
+  border: 1px $accent solid;
+}
+
+/*
+CSS MOMENT
+
+CSS MOMENT
+*/
+:is(.v-list--nav,.v-menu__content) :is(:hover,[aria-expanded="true"],[aria-current="page"]).v-list-item.v-theme--dark:is(.v-list-item__title,.v-list-item__icon,.v-list-item--link) {
+  color: white;
+}
+
+
+//TODO: dit met settings.scss oplossen
+.v-application .text-h1, .v-application h1 {
+  font-family: "Fugaz One", sans-serif !important;
+  text-transform: uppercase;
+  font-size: 90px;
+}
+
+.v-application .text-h2, .v-application h2 {
+  font-family: "Fugaz One", sans-serif !important;
+  text-transform: uppercase;
+  font-size: 38px;
+}
+
+.v-application .text-h3, .v-application h3 {
+  font-family: "Barlow Semi Condensed", sans-serif !important;
+  font-size: 26px
+}
+
+.v-application .v-btn {
+  font-family: "Fugaz One", sans-serif !important;
+  text-transform: uppercase;
+}
+
+.v-application .text-h4, .v-application h4, .v-application .text-h5, .v-application h5, .v-application .text-h6, .v-application h6 {
+  font-family: "Barlow Semi Condensed", sans-serif !important;
+  font-weight: bold;
+}
+
+.v-application .subtitle-1, .v-application .subtitle-2, .v-application .text-body-1, .v-application .text-body-2, .v-application .caption, .v-application .overline,
+.text-subtitle-1, .text-subtitle-2, .v-list-item__content {
+  font-family: "Barlow Semi Condensed", sans-serif !important;
+}
+
+
+.v-overlay .text-h4 {
+  font-family: "Fugaz One", sans-serif !important;
+}
+
+
+.v-application {
+  font-family: "Barlow Semi Condensed", sans-serif;
+
+  p {
+    margin-bottom: 16px;
+  }
+
+  ol, ul {
+    padding-left: 24px;
+  }
+}
+
+a.text-decoration-none {
+  color: colors.$primary-1;
+}
+
+a:visited.text-decoration-none {
+  color: colors.$primary-2;
+}
+
+.v-application.v-theme--dark {
+  ul:not(.v-pagination__list) li {
+    list-style-image: url('@/assets/svgs/listitemdark.svg')
+  }
+
+  p, li {
+    color: white;
+  }
+
+  .v-divider {
+    border-color: $accent;
+  }
+}
+
+
+.v-application:not(.v-theme--dark) {
+  ul:not(.v-pagination__list) li {
+    list-style-image: url('@/assets/svgs/listitemlight.svg')
+  }
+}
+
+
+.v-field--variant-filled .v-field__outline::before, .v-field--variant-underlined .v-field__outline::before {
+  border-color: $accent;
+  opacity: 1;
+}
+
+
+.rounded-b {
+  border-bottom-left-radius: settings.$border-radius-root !important;
+  border-bottom-right-radius: settings.$border-radius-root !important;
+}
+
+.v-list {
+  border-radius: settings.$border-radius-root !important;
+}
+
+.v-list > :nth-child(1 of .v-list-item) {
+  border-top-left-radius: settings.$border-radius-root !important;
+  border-top-right-radius: settings.$border-radius-root !important;
+}
+
+.v-list > :nth-last-child(1 of .v-list-item) {
+  border-bottom-left-radius: settings.$border-radius-root !important;
+  border-bottom-right-radius: settings.$border-radius-root !important;
+}
+
+.v-divider {
+  opacity: 1;
+}
+
+.v-row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+@media #{map.get(settings.$display-breakpoints, 'xs')} {
+  .v-container {
+    padding: 8px;
+  }
+}
+
+.v-input__details {
+  align-items: flex-start;
+}

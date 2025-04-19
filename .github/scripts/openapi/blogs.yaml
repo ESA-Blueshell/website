@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://172.18.0.10:8080/blogs
+  description: Generated server url
+paths:
+  /{id}:
+    get:
+      tags:
+      - blog-controller
+      operationId: findById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InternalBlogDTO'
+  /health:
+    get:
+      tags:
+      - main-controller
+      operationId: healthCheck
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: boolean
+  /:
+    get:
+      tags:
+      - blog-controller
+      operationId: findAll
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InternalBlogDTO'
+components:
+  schemas:
+    InternalBlogDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        title:
+          type: string
+        text:
+          type: string
+        html:
+          type: string
+        markdown:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time

@@ -9,6 +9,6 @@ export default defineConfig({
     tailwindcss(),],
   build: {
     emptyOutDir: true,
-    outDir: '../telemetry-service/src/main/resources/static',
+    outDir: '../telemetry-base-service.yaml/src/main/resources/static',
   },
 })

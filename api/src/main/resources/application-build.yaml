@@ -1,0 +1,36 @@
+spring:
+  jpa:
+    show-sql: false
+
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+mollie:
+  apiKey: test_EW5SkU475DVnWexzgVsHybuyqAsWwn
+
+brevo:
+  apiKey: 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
+  templates:
+    userActivationId: 1
+    memberActivationId: 5
+    eventSignupId: 2
+    passwordResetId: 3
+    contributionId: 4
+    contributionReminderId: 6
+  folders:
+    contributionPeriodsId: 3
+
+google:
+  calendar:
+    id: "59840329e14af98285f729ca46f1cf7686e870da56ec8e9211c85b32905489c4@group.calendar.google.com"
+    clientId: "110149005534859541837"
+    clientEmail: "my-calendar-service-account@refined-grammar-365813.iam.gserviceaccount.com"
+    privateKeyPkcs8: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDqESLKguJV/Y7l\n9QJLAkXLbwrkxQI99ErDh8oyism4IwY4g+Q/OMgfGTBaVp8YOFT/QapuVbchy4BF\nwNPhDAa74ce7MGZ7s9XPSsYoP9q5P23daj0cqJSlzX10QihC6rkNSD+00PBAYRaR\nKixwaCH9tphpAsCCX8NNtPG8pJhmso1LarAFe/QgmoWSwiMxQTkK4xA803VCo7bK\nV3Styl+kA5aFzljUcrUfpu/EJ/k7PC17+qD+hrXerfkUpqjumj1hMPAccjhPTx8t\ncs9uA8tK/UONo8XKZLtjmp3FerZBgOjAybwYl+TJmb9zhwklUNkAwfVsgvwROGG/\n2LRYbVsJAgMBAAECggEAIFG+Z+UGTeZQHrt5FhSvFhsej3O5JAcryETjK/MS+Fx0\nWvBcifLpWwtA1xsie5cnpq6RUwvTLhTp1iJ9Kb6zMqpxyDczfL2E9nWg1+Tn6sVH\nLRf4GTwZI620jA191AOSCrNLrJ1fAcdbdNmJv6ROm+LkYjeRj6RGajU5CG8CZhza\nGzvJUdm6R019Earg72LlGgTI6fz89b16fIW10sCfLxkQ8/P6Cet0Cld8Du4nHgo7\nOlJF/rKE7l1XefAqgc3rdx6wIzF/MaF+0b6flgDS2xUHTigHUJaYDZgwKqfms1+J\nmpKjW7MuZDBYUQTeHCsMJkoYj1A1av86+DcbXf6Q2wKBgQD7L5zzGNhoVCv+4ADr\nBF+mkcNK0Q65sodGuSQVLvXfkTpmtZ1t2JnUo73xVZtmreKCwooVAiRj93FmWA5l\nslE6gSva7Tg3OG4at51/H4VbMoFkKMSFex0PiCdv1vy+gfBICKMqRd9qH0KnH/ZD\nJBdXmDgvICcnNUT7uPQ5IJnIiwKBgQDujYg2zE/EQUG6X/E5eBqkhRM4x4n53DoP\ncDTshYlNhcXEWBabyM/7GLJecNM/q+OGgdEjcP6faVRU7yiwV03a9i0KJ59KPRy0\nr3dTRzdt8/cDJuX4i1n3VrnLBTiYdwI+0uC1rPxJlz9NlgSbhZMP9NIijxUP/k8z\nQLg4LXXJOwKBgQD6rhjnr4sCC8bglbO02GeRN/V77EnS364L0eeF0JkHJsvvBx93\nKezT/xooCPSPM8hUEUx3DO0+awtcRVMRATX5ukIHOimZSpLvzQG8hbu0OSJS0DDY\nufZVst8QybDxe4JOkXgtTxBZu5rsaYR+mz1EaSDhPyh0A8C1q27ouHVhYwKBgEjW\n6G+rBPQs5M/uua5NkP0JMSxWKTgk2YmbPl22DI2iOhfQud6Je4/1I4mYs7guWQPa\nIazLtMOiGsDwYaEulzQzlN8T6Bx3+orlRO8lwLQPGS5aM0An9KmETqjCCFztgb8D\nDuAKWOJzjz22f+Oo7pWhsIQi4lCG21IQAfANWXi/AoGBAI5eBMetWA1ZqKLq0YEM\nLQXAWDwrfxBiPc8KwM6vNbdaKvhEJ58SdqGsc+6qH1J5mX/ke52o1Qxtq2XaQ6/j\nugk4pMwWfofWwYLlxlhquv6S7y0OGh1ISxMtWgWHyptdhlCepige2mH6modcRsP0\nnOgIKDt4i//zpAuShfuWw1pB\n-----END PRIVATE KEY-----\n"
+    privateKeyId: "c600fa1b93e625e2124fcfb0ae168d3d68e5c849"
+
+logging:
+  level:
+    web: DEBUG

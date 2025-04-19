@@ -19,4 +19,25 @@ spec:
           image: ${SERVICE_NAME}:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 80
+            - containerPort: 8080
+          env:
+            - name: RABBITMQ_NODE_PORT
+              value: "5672"
+            - name: RABBITMQ_DEFAULT_USER
+              value: "theuser"
+            - name: RABBITMQ_DEFAULT_PASS
+              value: "thepassword"
+            - name: MYSQL_ROOT_PASSWORD
+              value: "blueshell"
+            - name: MARIADB_ALLOW_EMPTY_ROOT_PASSWORD
+              value: "0"
+            - name: MYSQL_DATABASE
+              value: "blueshell"
+            - name: MYSQL_HOST
+              value: "db"
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_USER
+              value: "tim"
+            - name: MYSQL_PASSWORD
+              value: "blueshell"

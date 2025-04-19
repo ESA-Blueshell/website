@@ -8,8 +8,8 @@ kubectl apply -f ../file-service/file-service-deployment.yaml
 kubectl apply -f ../social-media-service/social-media-service-deployment.yaml
 kubectl apply -f ../telemetry-service/telemetry-service-deployment.yaml
 
-kubectl apply -f ../script/mariadb-deployment
-kubectl apply -f ../script/rabbitmq-deployment
+kubectl apply -f ../script/mariadb-deployment.yaml
+kubectl apply -f ../script/rabbitmq-deployment.yaml
 
 kubectl apply -f ../api-gateway/api-gateway-service.yaml
 kubectl apply -f ../blog-parser/blog-parser-service.yaml

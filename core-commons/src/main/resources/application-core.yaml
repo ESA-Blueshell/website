@@ -60,4 +60,10 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka
     register-with-eureka: true
     fetch-registry: true
-    registry-fetch-interval-seconds: 5
+    registry-fetch-interval-seconds: 60
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

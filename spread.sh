@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Read the content of the Dockerfile templates
 DOCKERFILE_BUILD_TEMPLATE=$(<"$SCRIPT_DIR/docker/Dockerfile-build")
 DOCKERFILE_DEV_TEMPLATE=$(<"$SCRIPT_DIR/docker/Dockerfile-dev")
-KUBERNETES_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/kubernetes/deployment.yaml")
-KUBERNETES_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/kubernetes/service.yaml")
+KUBERNETES_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/kubernetes/base-deployment.yaml")
+KUBERNETES_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/kubernetes/base-service.yaml")
 KUBERNETES_GATEWAY_SERVICE_TEMPLATE=$(<"$SCRIPT_DIR/kubernetes/gateway-service.yaml")
 KUBERNETES_GATEWAY_DEPLOY_TEMPLATE=$(<"$SCRIPT_DIR/kubernetes/gateway-deployment.yaml")
 

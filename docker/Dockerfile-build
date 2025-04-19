@@ -57,19 +57,19 @@ COPY ./db-commons/src ./db-commons/src
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./db-commons/pom.xml -nsu -o
 
 
-# Use an official Maven image to build the service.yaml
+# Use an official Maven image to build the base-service.yaml
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 ARG SERVICE_NAME
 ARG PORT
 
-# Copy the service.yaml POM, source code, and local Maven repository
+# Copy the base-service.yaml POM, source code, and local Maven repository
 COPY ./${SERVICE_NAME}/pom.xml .
 COPY ./${SERVICE_NAME}/src ./src
 COPY --from=build-db-commons /app/.mvn .mvn
 COPY --from=build-db-commons /app/mvnw .
 
-# Build the service.yaml
+# Build the base-service.yaml
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu
 
 # Use an official OpenJDK image to run the application
@@ -85,4 +85,4 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE ${PORT} 5005
 
 # Run the application
-ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:build}", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-Dspring.profiles.active=build", "-jar", "app.jar"]

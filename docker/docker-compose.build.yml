@@ -146,7 +146,7 @@ services:
 
   blog-service:
     image: blog-service:latest
-    container_name: blog-service.yaml
+    container_name: blog-base-service.yaml
     build:
       context: ..
       dockerfile: blog-service/Dockerfile-build
@@ -210,7 +210,7 @@ services:
 
   file-service:
     image: file-service:latest
-    container_name: file-service.yaml
+    container_name: file-base-service.yaml
     build:
       context: ..
       dockerfile: file-service/Dockerfile-build
@@ -234,7 +234,7 @@ services:
 
   social-media-service:
     image: social-media-service:latest
-    container_name: social-media-service.yaml
+    container_name: social-media-base-service.yaml
     build:
       context: ..
       dockerfile: social-media-service/Dockerfile-build
@@ -255,7 +255,7 @@ services:
 
   telemetry-service:
     image: telemetry-service:latest
-    container_name: telemetry-service.yaml
+    container_name: telemetry-base-service.yaml
     build:
       context: ..
       dockerfile: telemetry-service/Dockerfile-build

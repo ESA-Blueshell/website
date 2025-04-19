@@ -38,16 +38,14 @@ build/
 files/
 
 **/Dockerfile*
+!docker/**/Dockerfile*
 
 **/*-deployment.yaml
 **/*-service.yaml
-/api/api-deployment.yaml
-/api/api-service.yaml
-/api/Dockerfile
-/api/Dockerfile-build
-/api/Dockerfile-dev
+!kubernetes/**/*.yaml
 
-!./script/mariadb-deployment.yaml
-!./script/rabbitmq-deployment.yaml
-!./script/mariadb-service.yaml
-!./script/rabbitmq-service.yaml
+files
+data
+/env/.app.env
+/env/.db.env
+/env/.rabbitmq.env

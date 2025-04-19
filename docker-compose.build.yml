@@ -1,11 +1,4 @@
-###############################################################################
-#                      Infrastructure ‒ shared for all stacks                 #
-###############################################################################
-
 services:
-  ########################################################################
-  # Database (MariaDB)
-  ########################################################################
   db:
     image: mariadb:10.11.10
     container_name: db
@@ -13,311 +6,86 @@ services:
       - "3306:3306"
     volumes:
       - "./data:/var/lib/mysql"
-      - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
-    networks: [global_network]
+      - "./env/init.sql:/docker-entrypoint-initdb.d/init.sql"
+    networks: [ global_network ]
     restart: unless-stopped
     env_file:
-      - Docker/env/.db.env
+      - env/.db.env
     command: --log-bin-trust-function-creators=1
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
 
-  ########################################################################
-  # RabbitMQ
-  ########################################################################
-  rabbitmq:
-    image: rabbitmq:4.0.7-management
-    container_name: rabbitmq
-    networks: [global_network]
+  nginx:
+    build:
+      context: nginx
+      dockerfile: nginx/Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - global_network
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_certs:/etc/nginx/ssl:rw
     restart: unless-stopped
-    env_file:
-      - Docker/env/.rabbitmq.env
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmqctl status || exit 1"]
+      test: [ "CMD-SHELL", "service nginx status || exit 1" ]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 3
+      start_period: 5s
 
-  ###############################################################################
-  #                            External‐facing tier                             #
-  ###############################################################################
-
-  ########################################################################
-  # Front‑end (React / Vite / Next ‑ whatever you ship)
-  ########################################################################
   frontend:
     container_name: frontend
+    image: frontend:latest
     build:
-      context: ./frontend
-      dockerfile: Dockerfile-dev
+      context: frontend
+      dockerfile: frontend/Dockerfile-build
     ports:
       - "3000:3000"
-    networks: [global_network]
-    depends_on: [api-gateway]
+    networks: [ global_network ]
+    depends_on: [ api-gateway, nginx ]
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:3000"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider",
+              "http://localhost:3000" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
 
-  ########################################################################
-  # API‑Gateway
-  ########################################################################
-  api-gateway:
-    container_name: api-gateway
-    build:
-      context: .
-      dockerfile: ./api-gateway/Dockerfile-build    # keeps your build images
-      args: [PORT=8080]
-    ports:
-      - "8080:8080"                                # same as dev
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on:
-      - rabbitmq
-      - blog-service
-      - email-parser
-      - event-parser
-      - file-service
-      - telemetry-service
-      - eureka-server
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ###############################################################################
-  #                       Core micro‑services (JVM)                             #
-  ###############################################################################
-
-  ########################################################################
-  # API
-  ########################################################################
   api:
     container_name: api
+    image: api:latest
     build:
-      context: .
-      dockerfile: ./api/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
+      context: ../deploy
+      dockerfile: api/Dockerfile-build
+      args: [ PORT=8080 ]
+    networks: [ global_network ]
     restart: unless-stopped
-    env_file:
-      - Docker/env/.db.env
-      - Docker/env/.rabbitmq.env
-      - Docker/env/.app.env
-    depends_on: [db, rabbitmq, eureka-server]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # Eureka Service Registry
-  ########################################################################
-  eureka-server:
-    container_name: eureka-server
-    build:
-      context: .
-      dockerfile: ./eureka-server/Dockerfile-build
-      args: [PORT=8761]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.app.env
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8761/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # Blog‑parser
-  ########################################################################
-  blog-parser:
-    container_name: blog-parser
-    build:
-      context: .
-      dockerfile: ./blog-parser/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.db.env
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [rabbitmq, db, eureka-server]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/blog-parser/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # Blog‑service
-  ########################################################################
-  blog-service:
-    container_name: blog-service
-    build:
-      context: .
-      dockerfile: ./blog-service/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.db.env
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [rabbitmq, db, eureka-server]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/blogs/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # Email‑parser
-  ########################################################################
-  email-parser:
-    container_name: email-parser
-    build:
-      context: .
-      dockerfile: ./email-parser/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [eureka-server, rabbitmq]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/email-parser/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # Event‑parser
-  ########################################################################
-  event-parser:
-    container_name: event-parser
-    build:
-      context: .
-      dockerfile: ./event-parser/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [eureka-server, rabbitmq]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/event-parser/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # File‑service
-  ########################################################################
-  file-service:
-    container_name: file-service
-    build:
-      context: .
-      dockerfile: ./file-service/Dockerfile-build
-      args: [PORT=8080]
     volumes:
-      - "./files:/app/files"
-    networks: [global_network]
-    restart: unless-stopped
+      - "./storage/api:/home/storage"
     env_file:
-      - Docker/env/.db.env
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [rabbitmq, db, eureka-server]
+      - env/.db.env
+      - env/.rabbitmq.env
+      - env/.app.env
+    depends_on: [ db, rabbitmq, eureka-server ]
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/files/health"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider",
+              "http://localhost:8080/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
 
-  ########################################################################
-  # Social‑media‑service
-  ########################################################################
-  social-media-service:
-    container_name: social-media-service
-    build:
-      context: .
-      dockerfile: ./social-media-service/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [rabbitmq, api-gateway, eureka-server]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/social-media/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-  ########################################################################
-  # Telemetry
-  ########################################################################
-  telemetry-service:
-    container_name: telemetry-service
-    build:
-      context: .
-      dockerfile: ./telemetry-service/Dockerfile-build
-      args: [PORT=8080]
-    networks: [global_network]
-    restart: unless-stopped
-    env_file:
-      - Docker/env/.db.env
-      - Docker/env/.app.env
-      - Docker/env/.rabbitmq.env
-    depends_on: [eureka-server, rabbitmq]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/telemetry/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
-###############################################################################
-#                                Networks & Volumes                           #
-###############################################################################
 networks:
   global_network:
     driver: bridge
+
+volumes:
+  nginx_certs:
+    driver: local

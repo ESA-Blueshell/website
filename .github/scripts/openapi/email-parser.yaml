@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://172.18.0.5:8080/email-parser
+  description: Generated server url
+paths:
+  /parse:
+    post:
+      tags:
+      - email-parser-controller
+      operationId: parseEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailDTO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InternalBlogDTO'
+  /health:
+    get:
+      tags:
+      - main-controller
+      operationId: healthCheck
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: boolean
+components:
+  schemas:
+    EmailDTO:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        html:
+          type: string
+          minLength: 1
+      required:
+      - html
+      - publishedAt
+    InternalBlogDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        title:
+          type: string
+        text:
+          type: string
+        html:
+          type: string
+        markdown:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time

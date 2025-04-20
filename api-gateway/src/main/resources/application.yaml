@@ -21,7 +21,7 @@ spring:
         - id: api-route
           uri: lb://API
           predicates:
-            - Path=/api/**
+            - Path=/download/**,/eventPictures/**,/events/**,/memberships/**,/users/**,/auth/**,/contributionPeriods/**,/contributions/**,/sponsors/**,/committees/**
 
         - id: blog-parser-route
           uri: lb://BlogParser

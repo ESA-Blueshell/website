@@ -28,7 +28,7 @@ public class GatewaySecurityConfig {
                     var config = new org.springframework.web.cors.CorsConfiguration();
                     config.setAllowedOriginPatterns(List.of(frontendUrl));
                     config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Auth-Token"));
+                    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Auth-Token", "X-User-Id", "X-User-Roles", "X-User-Name"));
                     config.setExposedHeaders(List.of("X-Auth-Token"));
                     config.setAllowCredentials(true);
                     return config;
@@ -37,7 +37,6 @@ public class GatewaySecurityConfig {
                         .anyExchange().permitAll()
                 );
 
-        log.info("API Gateway Security configured with CSRF and CORS for frontend URL: {}", frontendUrl);
         return http.build();
     }
 }

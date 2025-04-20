@@ -1,6 +1,7 @@
 package net.blueshell.apigateway.identity;
 
 import jakarta.ws.rs.core.HttpHeaders;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.common.enums.Role;
 import net.blueshell.common.identity.Identity;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -13,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class ApiIdentityFilter implements GlobalFilter, Ordered {
 
@@ -20,7 +22,7 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
 
     public ApiIdentityFilter(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
-                .baseUrl("lb://API/api/auth/identity")
+                .baseUrl("lb://API/auth/identity")
                 .build();
     }
 
@@ -29,6 +31,7 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
         String authHeader = exchange.getRequest()
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
+        log.info("ApiIdentityFilter with headers: {}", authHeader);
 
         // no bearer ⇒ just forward
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -46,6 +49,7 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                 .bodyToMono(Identity.class)
                 // if we get a user, mutate the headers
                 .flatMap(identity -> {
+                    log.info("IdentityFilter with identity: {}", identity);
                     ServerHttpRequest mutated = exchange.getRequest().mutate()
                             .header("X-User-Id", String.valueOf(identity.getId()))
                             .header("X-User-Name", identity.getUsername())
@@ -56,6 +60,7 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                                                     .map(Role::toString)
                                                     .toList()))
                             .build();
+                    log.info("Mutated headers: {}", mutated.getHeaders());
                     return chain.filter(exchange.mutate().request(mutated).build());
                 })
                 .onErrorResume(PermissionDeniedException.class, e -> {

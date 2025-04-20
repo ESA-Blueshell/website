@@ -34,7 +34,9 @@ services:
       start_period: 30s
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: nginx
     ports:
       - "80:80"
@@ -44,30 +46,9 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - nginx_certs:/etc/nginx/ssl:rw
-      - ./nginx/html:/usr/share/nginx/html:ro
-    entrypoint:
-      - sh
-      - -c
-      - |
-        # 1) install openssl
-        apk add --no-cache openssl
-        
-        # 2) ensure cert directory exists
-        mkdir -p /etc/nginx/ssl
-        
-        # 3) generate cert only if missing
-        if [ ! -f /etc/nginx/ssl/fullchain.pem ] || [ ! -f /etc/nginx/ssl/privkey.pem ]; then
-          openssl req -x509 -nodes -newkey rsa:2048 \
-            -keyout /etc/nginx/ssl/privkey.pem \
-            -out /etc/nginx/ssl/fullchain.pem \
-            -days 365 \
-            -subj "/CN=localhost"
-        fi
-        
-        # 4) hand off to nginx
-        exec nginx -g 'daemon off;'
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/ || exit 1"]
+      test: [ "CMD-SHELL", "service nginx status || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3

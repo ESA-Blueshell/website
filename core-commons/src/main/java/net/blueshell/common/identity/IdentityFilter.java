@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.common.enums.Role;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  * injects it into the SecurityContext.
  */
 @Component
+@Slf4j
 public class IdentityFilter extends OncePerRequestFilter {
 
     public static final String HEADER_ID = "X-User-Id";
@@ -35,6 +37,7 @@ public class IdentityFilter extends OncePerRequestFilter {
         String idHeader = request.getHeader(HEADER_ID);
         String nameHeader = request.getHeader(HEADER_NAME);
         String rolesHeader = request.getHeader(HEADER_ROLES);
+        log.info("IdentityFilter with headers: {}", idHeader);
 
         if (idHeader != null && nameHeader != null && rolesHeader != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {

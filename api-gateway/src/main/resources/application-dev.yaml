@@ -1,3 +1,4 @@
 logging:
   level:
     web: DEBUG
+    org.springframework.cloud.gateway: TRACE

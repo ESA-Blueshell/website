@@ -38,10 +38,8 @@ build/
 files/
 
 **/Dockerfile*
+!docker/**/Dockerfile*
+
 **/*-deployment.yaml
 **/*-service.yaml
-
-!kubernetes/mariadb-deployment.yaml
-!kubernetes/rabbitmq-deployment.yaml
-!kubernetes/mariadb-service.yaml
-!kubernetes/rabbitmq-service.yaml
+!kubernetes/**/*.yaml

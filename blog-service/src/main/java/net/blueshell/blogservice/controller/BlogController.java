@@ -34,13 +34,13 @@ public class BlogController extends IdentityProvider {
         blogService.create(blog);
     }
 
-    @GetMapping
+    @GetMapping("/blogs")
     public List<InternalBlogDTO> findAll() {
         log.info("Principal: {}", getPrincipal());
         return blogMapper.toDTOs(blogService.findAll());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/blogs/{id}")
     public InternalBlogDTO findById(@PathVariable UUID id) {
         return blogMapper.toDTO(blogService.findById(id));
     }

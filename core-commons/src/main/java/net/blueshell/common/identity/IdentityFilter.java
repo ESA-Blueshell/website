@@ -37,7 +37,6 @@ public class IdentityFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(@NotNull HttpServletRequest request) {
-        // don't run this filter on /auth/identity
         return USER_DETAILS.matches(request);
     }
 

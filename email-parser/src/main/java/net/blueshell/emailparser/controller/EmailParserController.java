@@ -26,7 +26,7 @@ public class EmailParserController {
         this.blogCommunicator = blogCommunicator;
     }
 
-    @PostMapping("/parse")
+    @PostMapping("/email")
     public InternalBlogDTO parseEmail(@Valid @RequestBody EmailDTO emailDTO) {
         InternalBlogDTO internalBlogDTO = emailMapper.toBlogDTO(emailDTO);
         blogCommunicator.sendAsync(internalBlogDTO);

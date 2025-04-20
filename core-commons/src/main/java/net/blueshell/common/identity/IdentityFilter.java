@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.jetbrains.annotations.NotNull;
@@ -32,12 +33,21 @@ public class IdentityFilter extends OncePerRequestFilter {
     public static final String HEADER_NAME = "X-User-Name";
     public static final String HEADER_ROLES = "X-User-Roles";
 
+    private static final AntPathRequestMatcher USER_DETAILS = new AntPathRequestMatcher("/auth/identity");
+
+    @Override
+    protected boolean shouldNotFilter(@NotNull HttpServletRequest request) {
+        // don't run this filter on /auth/identity
+        return USER_DETAILS.matches(request);
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain chain) throws ServletException, IOException {
         String idHeader = request.getHeader(HEADER_ID);
         String nameHeader = request.getHeader(HEADER_NAME);
         String rolesHeader = request.getHeader(HEADER_ROLES);
-        log.info("IdentityFilter with headers: {}", idHeader);
+        log.info("IdentityFilter with request type: {}", request.getMethod());
+        log.info("IDentity filter request path: {}", request.getRequestURI());
 
         if (idHeader != null && nameHeader != null && rolesHeader != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -57,6 +67,7 @@ public class IdentityFilter extends OncePerRequestFilter {
 
             Authentication auth = new UsernamePasswordAuthenticationToken(user, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(auth);
+            log.info("IdentityFilter identity successfully authenticated");
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -68,6 +79,7 @@ public class IdentityFilter extends OncePerRequestFilter {
             List<SimpleGrantedAuthority> anonAuth = List.of(new SimpleGrantedAuthority(Role.ANONYMOUS.toString()));
             AnonymousAuthenticationToken anonymousToken = new AnonymousAuthenticationToken("coolBeans", anonUser, anonAuth);
             SecurityContextHolder.getContext().setAuthentication(anonymousToken);
+            log.info("IdentityFilter anonymously authenticated");
         }
 
         chain.doFilter(request, response);

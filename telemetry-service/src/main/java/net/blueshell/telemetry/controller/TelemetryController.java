@@ -18,7 +18,7 @@ public class TelemetryController extends BaseController<TelemetryService, Teleme
         super(service, mapper);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/telemetry/{id}")
     public TelemetryDTO getTelemetry(
             @PathVariable UUID id
     ) {
@@ -26,7 +26,7 @@ public class TelemetryController extends BaseController<TelemetryService, Teleme
         return mapper.toDTO(telemetry);
     }
 
-    @PostMapping
+    @PostMapping("/telemetry")
     public TelemetryDTO createTelemetry(
             @PathParam("platform") PlatformType platform,
             @PathParam("url") String url

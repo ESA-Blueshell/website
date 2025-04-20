@@ -33,30 +33,20 @@ spring:
           predicates:
             - Path=/blogs/**
 
-
         - id: email-parser-route
           uri: lb://EmailParser
           predicates:
-            - Path=/email-parser/**
-
+            - Path=/email
 
         - id: event-parser-route
           uri: lb://EventParser
           predicates:
             - Path=/event-parser/**
 
-
         - id: file-service-route
           uri: lb://FileService
           predicates:
             - Path=/files/**
-
-
-        - id: social-media-service-route
-          uri: lb://SocialMediaService
-          predicates:
-            - Path=/social-media/**
-
 
         - id: telemetry-service-route
           uri: lb://TelemetryService

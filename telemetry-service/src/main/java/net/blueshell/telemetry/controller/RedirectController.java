@@ -17,21 +17,21 @@ import java.util.UUID;
 @RestController
 public class RedirectController extends BaseController<RedirectService, RedirectMapper> {
 
-    protected RedirectController(RedirectService service, RedirectMapper mapper, TelemetryService telemetryService) {
+    protected RedirectController(RedirectService service, RedirectMapper mapper) {
         super(service, mapper);
     }
 
-    @PostMapping("/redirect")
+    @PostMapping("/telemetry/redirect")
     public String addRedirect(@RequestParam("id") String telemetryId) {
         return service.createRedirect(UUID.fromString(telemetryId));
     }
 
-    @DeleteMapping("/redirect")
+    @DeleteMapping("/telemetry/redirect")
     public void deleteRedirect(@RequestParam("id") String telemetryId) {
         service.deleteById(UUID.fromString(telemetryId));
     }
 
-    @GetMapping("/redirects")
+    @GetMapping("/telemetry/redirects")
     public List<RedirectDTO> getRedirects(
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             @RequestParam(required = false) OffsetDateTime from,
@@ -48,10 +48,9 @@ public class RedirectController extends BaseController<RedirectService, Redirect
         return mapper.toDTOs(redirects);
     }
 
-    @GetMapping("/redirects/dashboard")
+    @GetMapping("/telemetry/redirects/dashboard")
     public ModelAndView getDashboard() {
         return new ModelAndView("index");
     }
-
 }
 

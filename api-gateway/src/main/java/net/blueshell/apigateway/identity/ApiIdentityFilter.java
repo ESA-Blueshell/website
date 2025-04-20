@@ -39,17 +39,12 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
         }
 
         return webClient.get()
-                // TODO: Figure out why I must include a query param for this to work consistently
-                .uri(uri -> uri.queryParam("token", "why is this needed?").build())
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
                 .retrieve()
-                // if 403 ⇒ error path
-                .onStatus(HttpStatus.FORBIDDEN::equals,
-                        resp -> Mono.error(new PermissionDeniedException("User details forbidden")))
                 .bodyToMono(Identity.class)
                 // if we get a user, mutate the headers
                 .flatMap(identity -> {
-                    log.info("IdentityFilter with identity: {}", identity);
+                    log.info("ApiIdentityFilter with identity: {}", identity);
                     ServerHttpRequest mutated = exchange.getRequest().mutate()
                             .header("X-User-Id", String.valueOf(identity.getId()))
                             .header("X-User-Name", identity.getUsername())
@@ -62,12 +57,7 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                             .build();
                     log.info("Mutated headers: {}", mutated.getHeaders());
                     return chain.filter(exchange.mutate().request(mutated).build());
-                })
-                .onErrorResume(PermissionDeniedException.class, e -> {
-                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                    return exchange.getResponse().setComplete();
-                })
-                .onErrorResume(e -> chain.filter(exchange));
+                });
     }
 
     @Override

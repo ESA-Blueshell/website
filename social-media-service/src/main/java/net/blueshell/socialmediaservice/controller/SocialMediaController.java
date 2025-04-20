@@ -18,11 +18,6 @@ public class SocialMediaController {
         this.socialMediaService = socialMediaService;
     }
 
-    @GetMapping("/health")
-    public Boolean checkHealth() {
-        return true;
-    }
-
     @RabbitListener(queues = "${communicators.socialMediaService.name}")
     public void asyncPublishPosts(SocialDTO socialDTO) {
         logger.info("Received async Social DTO: " + socialDTO.getId());

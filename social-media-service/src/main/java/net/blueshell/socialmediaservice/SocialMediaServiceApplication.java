@@ -9,7 +9,6 @@ import org.springframework.context.annotation.ComponentScan;
 public class SocialMediaServiceApplication {
 
 	public static void main(String[] args) {
-		System.setProperty("server.servlet.context-path", "/social-media");
 		SpringApplication.run(SocialMediaServiceApplication.class, args);
 	}
 

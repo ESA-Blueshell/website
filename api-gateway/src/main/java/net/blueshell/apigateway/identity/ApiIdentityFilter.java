@@ -31,7 +31,6 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
         String authHeader = exchange.getRequest()
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
-        log.info("ApiIdentityFilter with headers: {}", authHeader);
 
         // no bearer ⇒ just forward
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -44,7 +43,6 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                 .bodyToMono(Identity.class)
                 // if we get a user, mutate the headers
                 .flatMap(identity -> {
-                    log.info("ApiIdentityFilter with identity: {}", identity);
                     ServerHttpRequest mutated = exchange.getRequest().mutate()
                             .header("X-User-Id", String.valueOf(identity.getId()))
                             .header("X-User-Name", identity.getUsername())
@@ -55,7 +53,6 @@ public class ApiIdentityFilter implements GlobalFilter, Ordered {
                                                     .map(Role::toString)
                                                     .toList()))
                             .build();
-                    log.info("Mutated headers: {}", mutated.getHeaders());
                     return chain.filter(exchange.mutate().request(mutated).build());
                 });
     }

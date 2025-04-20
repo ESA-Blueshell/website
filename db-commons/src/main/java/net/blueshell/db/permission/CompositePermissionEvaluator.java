@@ -25,8 +25,6 @@ public class CompositePermissionEvaluator extends IdentityProvider implements Pe
 
     @Override
     public boolean hasPermission(Authentication auth, Object target, Object perm) {
-        log.info("HasPermission for: {}", target);
-        log.info("With principal: {}", getPrincipal());
         if (target == null || perm == null) return false;
         Class<?> domainClass = ClassUtils.getUserClass(target.getClass());
         return evaluators.stream()
@@ -38,8 +36,6 @@ public class CompositePermissionEvaluator extends IdentityProvider implements Pe
 
     @Override
     public boolean hasPermission(Authentication auth, Serializable targetId, String targetType, Object perm) {
-        log.info("HasPermission id for: {}", targetType);
-        log.info("With principal: {}", getPrincipal());
         if (targetId == null || targetType == null || perm == null) return false;
 
         return evaluators.stream()

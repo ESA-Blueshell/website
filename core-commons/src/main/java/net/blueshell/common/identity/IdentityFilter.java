@@ -45,8 +45,6 @@ public class IdentityFilter extends OncePerRequestFilter {
         String idHeader = request.getHeader(HEADER_ID);
         String nameHeader = request.getHeader(HEADER_NAME);
         String rolesHeader = request.getHeader(HEADER_ROLES);
-        log.info("IdentityFilter with request type: {}", request.getMethod());
-        log.info("IDentity filter request path: {}", request.getRequestURI());
 
         if (idHeader != null && nameHeader != null && rolesHeader != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -66,7 +64,6 @@ public class IdentityFilter extends OncePerRequestFilter {
 
             Authentication auth = new UsernamePasswordAuthenticationToken(user, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(auth);
-            log.info("IdentityFilter identity successfully authenticated");
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -78,7 +75,6 @@ public class IdentityFilter extends OncePerRequestFilter {
             List<SimpleGrantedAuthority> anonAuth = List.of(new SimpleGrantedAuthority(Role.ANONYMOUS.toString()));
             AnonymousAuthenticationToken anonymousToken = new AnonymousAuthenticationToken("coolBeans", anonUser, anonAuth);
             SecurityContextHolder.getContext().setAuthentication(anonymousToken);
-            log.info("IdentityFilter anonymously authenticated");
         }
 
         chain.doFilter(request, response);

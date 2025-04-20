@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public abstract class IdentityProvider {
     protected Identity getPrincipal() {
         Object obj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("principal: {}", obj);
         if (obj instanceof Identity) {
             return (Identity) obj;
         }

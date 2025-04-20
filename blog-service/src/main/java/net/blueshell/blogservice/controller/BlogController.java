@@ -36,7 +36,6 @@ public class BlogController extends IdentityProvider {
 
     @GetMapping("/blogs")
     public List<InternalBlogDTO> findAll() {
-        log.info("Principal: {}", getPrincipal());
         return blogMapper.toDTOs(blogService.findAll());
     }
 

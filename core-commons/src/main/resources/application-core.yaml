@@ -2,7 +2,7 @@ server:
   port: 8080
 
 blueshell:
-  security:
+  identity:
     enabled: true
 
 spring:

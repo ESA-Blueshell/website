@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnClass(name = "org.springframework.web.filter.OncePerRequestFilter")
-@ConditionalOnProperty(prefix = "blueshell.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "blueshell.identity", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class IdentityFilterAutoConfig {
 
     @Bean

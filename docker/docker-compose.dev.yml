@@ -64,6 +64,7 @@ services:
     volumes:
       - ../:/app
       - maven-repo:/root/.m2
+      - "./storage/api:/home/storage"
     command: [
       "sh",
       "-c",
@@ -290,7 +291,7 @@ services:
     volumes:
       - ../:/app
       - maven-repo:/root/.m2
-      - "./files:/app/files"
+      - "./storage/file-service:/home/storage"
     command: [
       "sh",
       "-c",

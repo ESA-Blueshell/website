@@ -2,9 +2,8 @@ server:
   port: 8080
 
 blueshell:
-  security:
-    enabled: false
-
+  identity:
+    enabled: true
 
 spring:
   main:
@@ -17,7 +16,7 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: true  # Dynamically build routes using Eureka's registry
+          enabled: true
       routes:
         - id: api-route
           uri: lb://API
@@ -65,9 +64,9 @@ spring:
             - Path=/telemetry/**
 
         - id: telemetry-ws-route
-          uri: lb:ws://TelemetryService          # <‑‑ Eureka service‑id
+          uri: lb:ws://TelemetryService
           predicates:
-            - Path=/telemetry/ws/**                 # /notifications ➜ /
+            - Path=/telemetry/ws/**
 
 springdoc:
   api-docs:

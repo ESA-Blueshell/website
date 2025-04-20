@@ -33,6 +33,46 @@ services:
       retries: 5
       start_period: 30s
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - global_network
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_certs:/etc/nginx/ssl:rw
+      - ./nginx/html:/usr/share/nginx/html:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        # 1) install openssl
+        apk add --no-cache openssl
+        
+        # 2) ensure cert directory exists
+        mkdir -p /etc/nginx/ssl
+        
+        # 3) generate cert only if missing
+        if [ ! -f /etc/nginx/ssl/fullchain.pem ] || [ ! -f /etc/nginx/ssl/privkey.pem ]; then
+          openssl req -x509 -nodes -newkey rsa:2048 \
+            -keyout /etc/nginx/ssl/privkey.pem \
+            -out /etc/nginx/ssl/fullchain.pem \
+            -days 365 \
+            -subj "/CN=localhost"
+        fi
+        
+        # 4) hand off to nginx
+        exec nginx -g 'daemon off;'
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
   frontend:
     container_name: frontend
     image: frontend:latest
@@ -42,7 +82,7 @@ services:
     ports:
       - "3000:3000"
     networks: [ global_network ]
-    depends_on: [ api-gateway ]
+    depends_on: [ api-gateway, nginx ]
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider",
               "http://localhost:3000" ]
@@ -73,6 +113,7 @@ services:
       - file-service
       - telemetry-service
       - eureka-server
+      - nginx
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider",
               "http://localhost:8080/health" ]
@@ -90,6 +131,8 @@ services:
       args: [ PORT=8080 ]
     networks: [ global_network ]
     restart: unless-stopped
+    volumes:
+      - "./storage/api:/home/storage"
     env_file:
       - env/.db.env
       - env/.rabbitmq.env
@@ -216,7 +259,7 @@ services:
       dockerfile: file-service/Dockerfile-build
       args: [ PORT=8080 ]
     volumes:
-      - "./files:/app/files"
+      - "./storage/file-service:/home/storage"
     networks: [ global_network ]
     restart: unless-stopped
     env_file:
@@ -278,3 +321,7 @@ services:
 networks:
   global_network:
     driver: bridge
+
+volumes:
+  nginx_certs:
+    driver: local

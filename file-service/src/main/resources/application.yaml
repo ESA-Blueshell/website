@@ -3,4 +3,4 @@ spring:
     name: FileService
 
 storage:
-  location: ./files
+  location: /home/storage

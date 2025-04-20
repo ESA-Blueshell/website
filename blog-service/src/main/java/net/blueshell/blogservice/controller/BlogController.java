@@ -28,6 +28,7 @@ public class BlogController extends IdentityProvider {
         this.blogMapper = blogMapper;
         this.blogService = blogService;
     }
+
     @RabbitListener(queues = "${communicators.blogService.name}")
     public void asyncCreateBlog(InternalBlogDTO internalBlogDTO) {
         Blog blog = blogMapper.fromDTO(internalBlogDTO);

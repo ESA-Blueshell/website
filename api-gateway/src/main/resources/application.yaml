@@ -26,11 +26,6 @@ spring:
         - id: blog-parser-route
           uri: lb://BlogParser
           predicates:
-            - Path=/blog-parser/**
-
-        - id: blog-service-route
-          uri: lb://BlogService
-          predicates:
             - Path=/blogs/**
 
         - id: email-parser-route

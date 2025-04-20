@@ -2,7 +2,6 @@ package net.blueshell.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import net.blueshell.common.dto.event.EventDTO;
 
 import java.io.Serializable;
 

@@ -25,14 +25,14 @@ public class FileController extends BaseController<FileService, FileRepository> 
         this.fileMapper = fileMapper;
     }
 
-    @GetMapping("/{filename:.+}")
+    @GetMapping("/files/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
         File file = service.findByName(filename);
         return service.prepareFileResponse(file);
     }
 
-    @PostMapping
+    @PostMapping("/files")
     public List<FileDTO> uploadFile(List<FileDTO> dtos) {
         List<File> files = fileMapper.fromDTOs(dtos);
         return fileMapper.toDTOs(files);

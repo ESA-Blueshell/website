@@ -1,4 +1,4 @@
-package net.blueshell.common.dto.event;
+package net.blueshell.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class CommitteeDTO {
+public class SimpleCommitteeDTO extends BaseDTO {
 
     @JsonProperty("id")
     private Long id;

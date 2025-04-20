@@ -1,4 +1,4 @@
-package net.blueshell.common.dto.event;
+package net.blueshell.common.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class SignUpFormDTO {
+public class FormQuestionDTO {
     @NotBlank
     private String prompt;
     @NotBlank

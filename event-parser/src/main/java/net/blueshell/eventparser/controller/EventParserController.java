@@ -2,9 +2,11 @@ package net.blueshell.eventparser.controller;
 
 import jakarta.validation.Valid;
 import net.blueshell.common.communicator.SocialMediaCommunicator;
+import net.blueshell.common.dto.InternalBlogDTO;
 import net.blueshell.common.dto.SocialDTO;
-import net.blueshell.common.dto.event.EventDTO;
+import net.blueshell.common.dto.EventDTO;
 import net.blueshell.eventparser.mapper.EventMapper;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,4 +36,10 @@ public class EventParserController {
         return socialDTO;
     }
 
+    @RabbitListener(queues = "${communicators.eventParser.name}")
+    public void asyncParseEvent(EventDTO eventDTO) {
+        SocialDTO socialDTO = eventMapper.toSocialDto(eventDTO);
+        logger.info("Sending Social DTO: " + socialDTO.getId() + " to Social Media Service.");
+        socialMediaCommunicator.sendAsync(socialDTO);
+    }
 }

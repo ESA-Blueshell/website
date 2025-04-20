@@ -1,6 +1,7 @@
 package net.blueshell.db.permission;
 
 import lombok.extern.slf4j.Slf4j;
+import net.blueshell.common.identity.IdentityProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
@@ -13,7 +14,7 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-public class CompositePermissionEvaluator implements PermissionEvaluator {
+public class CompositePermissionEvaluator extends IdentityProvider implements PermissionEvaluator {
 
     private final List<BasePermissionEvaluator<?, ?, ?>> evaluators;
 
@@ -24,6 +25,8 @@ public class CompositePermissionEvaluator implements PermissionEvaluator {
 
     @Override
     public boolean hasPermission(Authentication auth, Object target, Object perm) {
+        log.info("HasPermission for: {}", target);
+        log.info("With principal: {}", getPrincipal());
         if (target == null || perm == null) return false;
         Class<?> domainClass = ClassUtils.getUserClass(target.getClass());
         return evaluators.stream()
@@ -35,6 +38,8 @@ public class CompositePermissionEvaluator implements PermissionEvaluator {
 
     @Override
     public boolean hasPermission(Authentication auth, Serializable targetId, String targetType, Object perm) {
+        log.info("HasPermission id for: {}", targetType);
+        log.info("With principal: {}", getPrincipal());
         if (targetId == null || targetType == null || perm == null) return false;
 
         return evaluators.stream()

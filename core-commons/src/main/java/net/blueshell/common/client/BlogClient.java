@@ -13,6 +13,7 @@ import java.util.UUID;
  */
 @FeignClient(
         name = "BlogService",
+        contextId = "blogClient",
         path = "/blogs"
 )
 public interface BlogClient {

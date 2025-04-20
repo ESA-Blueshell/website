@@ -7,7 +7,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Stream;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "eventSignUpClient"
+)
 public interface EventSignUpClient {
 
     @GetMapping("/events/signups")

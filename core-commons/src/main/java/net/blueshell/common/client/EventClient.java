@@ -11,32 +11,36 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "eventClient",
+        path="/events"
+)
 public interface EventClient {
 
-    @PostMapping("/events")
+    @PostMapping
     EventDTO createEvent(@RequestBody EventDTO eventDTO) throws Exception;
 
-    @GetMapping("/events/{id}")
+    @GetMapping("/{id}")
     EventDTO getEventById(@PathVariable("id") Long id);
 
-    @GetMapping("/events")
+    @GetMapping
     List<EventDTO> getEvents(@RequestParam(value = "from", required = false) OffsetDateTime from,
                              @RequestParam(value = "to", required = false) OffsetDateTime to);
 
-    @GetMapping("/events/upcoming")
+    @GetMapping("/upcoming")
     List<EventDTO> getUpcomingEvents(@RequestParam(value = "editable", defaultValue = "false") boolean editable);
 
-    @GetMapping("/events/past")
+    @GetMapping("/past")
     Stream<EventDTO> getPastEvents(@RequestParam(value = "editable", defaultValue = "false") boolean editable);
 
-    @GetMapping("/events/pageable")
+    @GetMapping("/pageable")
     Page<EventDTO> getEventsPageable(@SpringQueryMap Pageable pageable);
 
-    @PutMapping("/events/{eventId}")
+    @PutMapping("/{eventId}")
     EventDTO updateEvent(@PathVariable("eventId") Long eventId,
                          @RequestBody EventDTO dto) throws Exception;
 
-    @DeleteMapping("/events/{eventId}")
+    @DeleteMapping("/{eventId}")
     void deleteEventById(@PathVariable("eventId") Long eventId) throws Exception;
 }

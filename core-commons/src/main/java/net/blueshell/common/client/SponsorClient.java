@@ -6,22 +6,26 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "sponsorClient",
+        path="/sponsors"
+)
 public interface SponsorClient {
 
-    @GetMapping("/sponsors")
+    @GetMapping
     List<SponsorDTO> getSponsors();
 
-    @PostMapping("/sponsors")
+    @PostMapping
     SponsorDTO createSponsor(@RequestBody SponsorDTO dto);
 
-    @PutMapping("/sponsors/{id}")
+    @PutMapping("/{id}")
     SponsorDTO createOrUpdateSponsor(@PathVariable("id") Long id,
                                      @RequestBody SponsorDTO dto);
 
-    @GetMapping("/sponsors/{id}")
+    @GetMapping("/{id}")
     SponsorDTO getSponsorById(@PathVariable("id") Long id);
 
-    @DeleteMapping("/sponsors/{id}")
+    @DeleteMapping("/{id}")
     void deleteSponsorById(@PathVariable("id") Long id);
 }

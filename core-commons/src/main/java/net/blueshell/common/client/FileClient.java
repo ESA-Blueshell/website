@@ -5,7 +5,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "fileClient"
+)
 public interface FileClient {
 
     @GetMapping("/download/{filename:.+}")

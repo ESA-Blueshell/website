@@ -6,19 +6,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "membershipClient",
+        path="/memberships"
+)
 public interface MembershipClient {
 
-    @GetMapping("/memberships")
+    @GetMapping
     List<MembershipDTO> getMemberships();
 
-    @PostMapping("/memberships")
+    @PostMapping
     MembershipDTO createMembership(@RequestBody MembershipDTO dto);
 
-    @PutMapping("/memberships/{id}")
+    @PutMapping("/{id}")
     MembershipDTO updateMembership(@PathVariable("id") Long id,
                                    @RequestBody MembershipDTO dto);
 
-    @GetMapping("/memberships/{id}")
+    @GetMapping("/{id}")
     MembershipDTO getMembershipById(@PathVariable("id") Long id);
 }

@@ -7,19 +7,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "committeeClient",
+        path="/committees"
+)
 public interface CommitteeClient {
 
-    @GetMapping("/committees")
+    @GetMapping
     List<? extends BaseDTO> getCommittees(@RequestParam(value = "isMember", required = false) Boolean isMember);
 
-    @PostMapping("/committees")
+    @PostMapping
     AdvancedCommitteeDTO createCommittee(@RequestBody AdvancedCommitteeDTO dto);
 
-    @PutMapping("/committees/{committeeId}")
+    @PutMapping("/{committeeId}")
     BaseDTO updateCommittee(@PathVariable("committeeId") Long id,
                             @RequestBody AdvancedCommitteeDTO dto);
 
-    @DeleteMapping("/committees/{committeeId}")
+    @DeleteMapping("/{committeeId}")
     void deleteCommittee(@PathVariable("committeeId") Long id);
 }

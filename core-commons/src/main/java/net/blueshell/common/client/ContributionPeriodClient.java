@@ -6,19 +6,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "contributionPeriodClient",
+        path="/contributionPeriods"
+)
 public interface ContributionPeriodClient {
 
-    @GetMapping("/contributionPeriods")
+    @GetMapping
     List<ContributionPeriodDTO> getContributionPeriods();
 
-    @PostMapping("/contributionPeriods")
+    @PostMapping
     ContributionPeriodDTO createContributionPeriod(@RequestBody ContributionPeriodDTO dto) throws Exception;
 
-    @PutMapping("/contributionPeriods/{id}")
+    @PutMapping("/{id}")
     ContributionPeriodDTO updateContributionPeriod(@PathVariable("id") Long id,
                                                    @RequestBody ContributionPeriodDTO dto);
 
-    @DeleteMapping("/contributionPeriods/{id}")
+    @DeleteMapping("/{id}")
     void deleteContributionPeriod(@PathVariable("id") Long id);
 }

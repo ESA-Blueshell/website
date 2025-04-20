@@ -9,25 +9,29 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "API")
+@FeignClient(
+        name = "API",
+        contextId = "newsClient",
+        path="/news"
+)
 public interface NewsClient {
 
-    @GetMapping("/newsPageable")
+    @GetMapping("Pageable")
     Page<NewsDTO> newsPageable(@SpringQueryMap Pageable pageable);
 
-    @GetMapping("/news")
+    @GetMapping
     List<NewsDTO> getNews();
 
-    @PostMapping("/news")
+    @PostMapping
     NewsDTO createNews(@RequestBody NewsDTO newsDTO);
 
-    @PutMapping("/news/{id}")
+    @PutMapping("/{id}")
     NewsDTO createOrUpdateNews(@PathVariable("id") Long id,
                                @RequestBody NewsDTO newsDTO);
 
-    @GetMapping("/news/{id}")
+    @GetMapping("/{id}")
     NewsDTO getNewsById(@PathVariable("id") String id);
 
-    @DeleteMapping("/news/{id}")
+    @DeleteMapping("/{id}")
     void deleteNewsById(@PathVariable("id") String id);
 }

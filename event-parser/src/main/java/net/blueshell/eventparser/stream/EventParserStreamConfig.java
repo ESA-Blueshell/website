@@ -23,11 +23,10 @@ public class EventParserStreamConfig {
     }
 
     @Bean
-    public Consumer<EventDTO> asyncParseEvent() {
+    public Consumer<EventDTO> parseEvent() {
         return eventDTO -> {
-            SocialDTO socialDTO = eventMapper.toSocialDto(eventDTO);
-            log.info("Sending Social DTO: {} to Social Media Service.", socialDTO.getId());
-            streamBridge.send("social-out-0", socialDTO);
+            SocialDTO socialDto = eventMapper.toSocialDto(eventDTO);
+            streamBridge.send("social.events", socialDto);
         };
     }
 }

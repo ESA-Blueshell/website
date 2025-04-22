@@ -29,9 +29,9 @@ public class EmailParserController {
     }
 
     @PostMapping("/email")
-    public InternalBlogDTO parseEmail(@Valid @RequestBody EmailDTO emailDTO) {
+    public InternalBlogDTO asyncParseEmail(@Valid @RequestBody EmailDTO emailDTO) {
         InternalBlogDTO internalBlogDTO = emailMapper.toBlogDTO(emailDTO);
-        streamBridge.send("blog-out-0", internalBlogDTO);
+        streamBridge.send("blog.internal", internalBlogDTO);
         return internalBlogDTO;
     }
 }

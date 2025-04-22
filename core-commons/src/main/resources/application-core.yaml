@@ -22,21 +22,63 @@ spring:
                 username: ${RABBITMQ_DEFAULT_USER}
                 password: ${RABBITMQ_DEFAULT_PASS}
 
-      bindings:
-        asyncParseEmail-in-0:
-          binder: rabbit
-          destination: email-queue
-          group: email-parser
 
-        blog-out-0:
+      bindings:
+        # ┌──────────────────────────────────────────────────────┐
+        # │ 1) Email Parser Service                             │
+        # └──────────────────────────────────────────────────────┘
+        parseEmail-in-0:
           binder: rabbit
-          destination: blog-topic
+          destination: email.raw
+          group:      email‑parser
           content-type: application/json
 
-        asyncCreateBlog-in-0:
+        parseEmail-out-0:
           binder: rabbit
-          destination: blog-topic
-          group: blog-service
+          destination: blog.internal
+          content-type: application/json
+
+        # ┌──────────────────────────────────────────────────────┐
+        # │ 2) Blog Service                                     │
+        # └──────────────────────────────────────────────────────┘
+        handleBlog-in-0:
+          binder: rabbit
+          destination: blog.internal
+          group:      blog‑service
+          content-type: application/json
+
+        handleBlog-out-0:
+          binder: rabbit
+          destination: social.blogs
+          content-type: application/json
+
+        # ┌──────────────────────────────────────────────────────┐
+        # │ 3) Event Parser Service                             │
+        # └──────────────────────────────────────────────────────┘
+        parseEvent-in-0:
+          binder: rabbit
+          destination: event.raw
+          group:      event‑parser
+          content-type: application/json
+
+        parseEvent-out-0:
+          binder: rabbit
+          destination: social.events
+          content-type: application/json
+
+        # ┌──────────────────────────────────────────────────────┐
+        # │ 4) Social Media Service                             │
+        # └──────────────────────────────────────────────────────┘
+        distributeSocial-in-0:
+          binder: rabbit
+          destination: social.events
+          group:      social‑media‑service
+          content-type: application/json
+
+        distributeSocial-in-1:
+          binder: rabbit
+          destination: social.blogs
+          group: social‑media‑service
           content-type: application/json
 
 app:

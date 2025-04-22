@@ -20,10 +20,10 @@ public class EmailParserStreamConfig {
     }
 
     @Bean
-    public Consumer<EmailDTO> asyncParseEmail() {
+    public Consumer<EmailDTO> parseEmail() {
         return emailDTO -> {
             InternalBlogDTO blogDto = emailMapper.toBlogDTO(emailDTO);
-            streamBridge.send("blog-out-0", blogDto);
+            streamBridge.send("blog.internal", blogDto);
         };
     }
 }

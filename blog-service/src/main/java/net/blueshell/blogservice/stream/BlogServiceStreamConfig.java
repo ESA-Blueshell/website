@@ -2,10 +2,12 @@ package net.blueshell.blogservice.stream;
 
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import net.blueshell.blogservice.mapper.SocialMapper;
 import net.blueshell.blogservice.model.Blog;
 import net.blueshell.common.dto.InternalBlogDTO;
 import net.blueshell.blogservice.mapper.BlogMapper;
 import net.blueshell.blogservice.service.BlogService;
+import net.blueshell.common.dto.SocialDTO;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,13 +26,14 @@ public class BlogServiceStreamConfig {
         this.streamBridge = streamBridge;
     }
 
+
     @Bean
-    public Consumer<InternalBlogDTO> asyncCreateBlog() {
+    public Consumer<InternalBlogDTO> handleBlog(SocialMapper socialMapper) {
         return internalBlogDTO -> {
             Blog blog = blogMapper.fromDTO(internalBlogDTO);
             blogService.create(blog);
-            InternalBlogDTO blogDTO = blogMapper.toDTO(blog);
-            streamBridge.send("blog-out-0", blogDTO);
+            SocialDTO socialDto = socialMapper.toSocialDTO(blog);
+            streamBridge.send("social.blogs", socialDto);
         };
     }
 }

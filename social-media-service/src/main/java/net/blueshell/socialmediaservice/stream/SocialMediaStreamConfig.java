@@ -20,9 +20,9 @@ public class SocialMediaStreamConfig {
     }
 
     @Bean
-    public Consumer<SocialDTO> asyncParseEvent() {
+    public Consumer<SocialDTO> distributeSocial() {
         return socialDTO -> {
-            log.info("Publishing socialDTO: {} to Social Media.", socialDTO.getId());
+            log.info("Distributing SocialDTO id={} to channels", socialDTO.getId());
             socialMediaService.distribute(socialDTO);
         };
     }

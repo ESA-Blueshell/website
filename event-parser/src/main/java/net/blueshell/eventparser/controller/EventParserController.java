@@ -28,8 +28,7 @@ public class EventParserController {
     @PostMapping("/parse")
     public SocialDTO parseEvent(@Valid @RequestBody EventDTO eventDTO) {
         SocialDTO socialDTO = eventMapper.toSocialDto(eventDTO);
-        logger.info("Sending Social DTO: " + socialDTO.getId() + " to Social Media Service.");
-        streamBridge.send("social-out-0", socialDTO);
+        streamBridge.send("social.events", socialDTO);
         return socialDTO;
     }
 }

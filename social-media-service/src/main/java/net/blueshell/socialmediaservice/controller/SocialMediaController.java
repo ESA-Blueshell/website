@@ -17,10 +17,4 @@ public class SocialMediaController {
     public SocialMediaController(SocialMediaService socialMediaService) {
         this.socialMediaService = socialMediaService;
     }
-
-    @RabbitListener(queues = "${communicators.socialMediaService.name}")
-    public void asyncPublishPosts(SocialDTO socialDTO) {
-        logger.info("Received async Social DTO: " + socialDTO.getId());
-        socialMediaService.distribute(socialDTO);
-    }
 }

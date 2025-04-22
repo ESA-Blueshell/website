@@ -1,9 +1,10 @@
 package net.blueshell.socialmediaservice.service;
 
+import net.blueshell.common.client.TelemetryClient;
 import net.blueshell.common.dto.SocialDTO;
+import net.blueshell.common.dto.TelemetryDTO;
 import net.blueshell.common.enums.PlatformType;
 import net.blueshell.socialmediaservice.client.SocialMediaClient;
-import net.blueshell.socialmediaservice.client.TelemetryClient;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,8 +20,8 @@ public class SocialMediaService {
 
     public void distribute(SocialDTO dto) {
         for (PlatformType platform : dto.getPlatforms()) {
-            String trackableURL = telemetryClient.getTrackableURL(platform, dto.getUrl());
-            socialMediaClient.post(dto, platform, trackableURL);
+            TelemetryDTO telemetry = telemetryClient.createTelemetry(platform, dto.getUrl());
+            socialMediaClient.post(dto, platform, telemetry.getUrl());
         }
     }
 

@@ -1,23 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
-    <file url="file://$PROJECT_DIR$/api-gateway/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/api/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/blog-parser/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/blog-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/blueshell-api/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/core-commons/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/core-commons/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/db-commons/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/db-commons/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/email-parser/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/eureka-server/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/eureka-server/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/event-parser/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/file-service/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/social-media-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-client/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-comm/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-core/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-core/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-db/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-db/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-dto/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-identity/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-mapper/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-repo/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-security/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/commons-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/functions/blog-parser/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/functions/email-parser/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/functions/event-parser/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/functions/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/api-gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/blog-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/file-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/social-media-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/telemetry-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/telemetry-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/standalone/eureka-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/standalone/eureka-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/standalone/src/main/java" charset="UTF-8" />
   </component>
 </project>

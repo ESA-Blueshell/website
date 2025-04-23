@@ -1,0 +1,5 @@
+@forward 'vuetify/settings' with (
+  $border-radius-root: 10px,
+  $chip-border-radius: 5px,
+  $list-padding: 0,
+);

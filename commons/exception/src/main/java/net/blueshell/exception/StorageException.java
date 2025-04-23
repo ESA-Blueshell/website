@@ -1,4 +1,4 @@
-package net.blueshell;
+package net.blueshell.exception;
 
 public class StorageException extends RuntimeException {
 

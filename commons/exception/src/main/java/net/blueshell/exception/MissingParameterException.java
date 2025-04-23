@@ -1,4 +1,4 @@
-package net.blueshell;
+package net.blueshell.exception;
 
 /**
  * Exception thrown when a required parameter is missing in the request.

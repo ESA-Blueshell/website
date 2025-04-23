@@ -3,7 +3,7 @@ package net.blueshell.dto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.common.enums.MemberType;
+import net.blueshell.enums.MemberType;
 
 import java.util.Date;
 

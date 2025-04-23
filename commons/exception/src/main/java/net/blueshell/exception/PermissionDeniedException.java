@@ -1,4 +1,4 @@
-package net.blueshell;
+package net.blueshell.exception;
 
 /**
  * Exception thrown when a user does not have the necessary permissions to perform an action.

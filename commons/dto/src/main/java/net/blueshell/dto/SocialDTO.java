@@ -2,7 +2,7 @@ package net.blueshell.dto;
 
 
 import lombok.*;
-import net.blueshell.common.enums.PlatformType;
+import net.blueshell.enums.PlatformType;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

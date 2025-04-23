@@ -1,6 +1,6 @@
 package net.blueshell.client;
 
-import net.blueshell.common.dto.ContributionPeriodDTO;
+import net.blueshell.dto.ContributionPeriodDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 

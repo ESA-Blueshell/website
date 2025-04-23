@@ -3,7 +3,7 @@ package net.blueshell.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.common.enums.PlatformType;
+import net.blueshell.enums.PlatformType;
 
 import java.sql.Timestamp;
 

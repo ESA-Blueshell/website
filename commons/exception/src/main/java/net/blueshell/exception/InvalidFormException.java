@@ -1,4 +1,4 @@
-package net.blueshell;
+package net.blueshell.exception;
 
 /**
  * Exception thrown when the provided form data is invalid.

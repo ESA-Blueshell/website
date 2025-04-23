@@ -2,7 +2,7 @@ package net.blueshell.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.common.enums.FileType;
+import net.blueshell.enums.FileType;
 
 import java.sql.Timestamp;
 

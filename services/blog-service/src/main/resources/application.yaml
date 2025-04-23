@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: BlogService
+
+springdoc:
+  api-docs:
+    enabled: true

@@ -1,14 +1,11 @@
 package net.blueshell.emailparser.controller;
 
-import java.util.function.Consumer;
 import jakarta.validation.Valid;
 import net.blueshell.common.dto.InternalBlogDTO;
 import net.blueshell.common.dto.EmailDTO;
 import net.blueshell.emailparser.mapper.EmailMapper;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;

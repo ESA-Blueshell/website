@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: FileService
+
+storage:
+  location: /home/storage

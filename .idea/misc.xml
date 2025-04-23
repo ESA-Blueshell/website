@@ -11,7 +11,15 @@
         <option value="$PROJECT_DIR$/BlogParser/pom.xml" />
         <option value="$PROJECT_DIR$/eureka-server/pom.xml" />
         <option value="$PROJECT_DIR$/commons/pom.xml" />
+        <option value="$PROJECT_DIR$/services/api/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/commons/client/pom.xml" />
+        <option value="$PROJECT_DIR$/commons/repo/pom.xml" />
+        <option value="$PROJECT_DIR$/commons/service/pom.xml" />
+      </set>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_23" default="true" project-jdk-name="corretto-23" project-jdk-type="JavaSDK">

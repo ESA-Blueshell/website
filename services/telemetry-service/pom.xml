@@ -16,7 +16,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.blueshell</groupId>
-			<artifactId>commons-core</artifactId>
+			<artifactId>core</artifactId>
 			<version>0.0.1</version>
 		</dependency>
 		<dependency>
@@ -32,7 +32,7 @@
 		</dependency>
         <dependency>
             <groupId>net.blueshell</groupId>
-            <artifactId>commons-db</artifactId>
+            <artifactId>db</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
         </dependency>

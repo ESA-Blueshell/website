@@ -5,7 +5,6 @@ import net.blueshell.db.BaseController;
 import net.blueshell.telemetry.mapping.RedirectMapper;
 import net.blueshell.telemetry.model.Redirect;
 import net.blueshell.telemetry.service.RedirectService;
-import net.blueshell.telemetry.service.TelemetryService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;

@@ -1,0 +1,88 @@
+# Use an official Maven image to build the application
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-parent
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the local Maven files
+COPY ./${SERVICE_NAME}/.mvn .mvn
+COPY ./${SERVICE_NAME}/mvnw .
+
+# Copy the parent POM and module POMs
+COPY ./pom.xml /app/parent/pom.xml
+COPY ./core-commons/pom.xml /app/parent/core-commons/pom.xml
+COPY ./db-commons/pom.xml /app/parent/db-commons/pom.xml
+COPY ./api/pom.xml /app/parent/api/pom.xml
+COPY ./api-gateway/pom.xml /app/parent/api-gateway/pom.xml
+COPY ./blog-parser/pom.xml /app/parent/blog-parser/pom.xml
+COPY ./blog-service/pom.xml /app/parent/blog-service/pom.xml
+COPY ./email-parser/pom.xml /app/parent/email-parser/pom.xml
+COPY ./event-parser/pom.xml /app/parent/event-parser/pom.xml
+COPY ./eureka-server/pom.xml /app/parent/eureka-server/pom.xml
+COPY ./file-service/pom.xml /app/parent/file-service/pom.xml
+COPY ./social-media-service/pom.xml /app/parent/social-media-service/pom.xml
+COPY ./telemetry-service/pom.xml /app/parent/telemetry-service/pom.xml
+
+# Download dependencies and build the parent project
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./parent/pom.xml -nsu
+
+# Use an official Maven image to build the core-commons module
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-core-commons
+WORKDIR /app
+
+# Copy the local Maven files from the previous stage
+COPY --from=build-parent /app/.mvn .mvn
+COPY --from=build-parent /app/mvnw .
+
+# Copy the core-commons module
+COPY ./core-commons/pom.xml ./core-commons/pom.xml
+COPY ./core-commons/src ./core-commons/src
+
+# Build the core-commons module
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./core-commons/pom.xml -nsu -o
+
+# Use an official Maven image to build the db-commons module
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build-db-commons
+WORKDIR /app
+
+# Copy the local Maven files from the previous stage
+COPY --from=build-core-commons /app/.mvn .mvn
+COPY --from=build-core-commons /app/mvnw .
+
+# Copy the core-commons module
+COPY ./db-commons/pom.xml ./db-commons/pom.xml
+COPY ./db-commons/src ./db-commons/src
+
+# Build the core-commons module
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -f ./db-commons/pom.xml -nsu -o
+
+
+# Use an official Maven image to build the base-service.yaml
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
+WORKDIR /app
+ARG SERVICE_NAME
+ARG PORT
+
+# Copy the base-service.yaml POM, source code, and local Maven repository
+COPY ./${SERVICE_NAME}/pom.xml .
+COPY ./${SERVICE_NAME}/src ./src
+COPY --from=build-db-commons /app/.mvn .mvn
+COPY --from=build-db-commons /app/mvnw .
+
+# Build the base-service.yaml
+RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu
+
+# Use an official OpenJDK image to run the application
+FROM eclipse-temurin:21-alpine
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the built jar file from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose the port the application runs on
+EXPOSE ${PORT} 5005
+
+# Run the application
+ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-Dspring.profiles.active=build", "-jar", "app.jar"]

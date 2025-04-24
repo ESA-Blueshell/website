@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4.0.7-management
+          ports:
+            - containerPort: 5672
+          envFrom:
+            - configMapRef:
+                name: app-env
+            - configMapRef:
+                name: db-env
+            - configMapRef:
+                name: rabbit-env

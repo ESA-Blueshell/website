@@ -2,7 +2,7 @@ package net.blueshell.identity;
 
 
 import lombok.Data;
-import net.blueshell.common.enums.Role;
+import net.blueshell.enums.Role;
 
 import java.io.Serializable;
 import java.util.HashSet;

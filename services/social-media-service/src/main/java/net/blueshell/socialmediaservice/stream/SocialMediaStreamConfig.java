@@ -1,7 +1,7 @@
 package net.blueshell.socialmediaservice.stream;
 
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.common.dto.SocialDTO;
+import net.blueshell.dto.SocialDTO;
 import net.blueshell.socialmediaservice.service.SocialMediaService;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;

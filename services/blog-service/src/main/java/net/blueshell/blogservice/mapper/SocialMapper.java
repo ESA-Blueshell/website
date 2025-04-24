@@ -1,9 +1,9 @@
 package net.blueshell.blogservice.mapper;
 
 import net.blueshell.blogservice.model.Blog;
-import net.blueshell.common.dto.InternalBlogDTO;
-import net.blueshell.common.dto.SocialDTO;
-import net.blueshell.common.enums.PlatformType;
+import net.blueshell.dto.InternalBlogDTO;
+import net.blueshell.dto.SocialDTO;
+import net.blueshell.enums.PlatformType;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -16,8 +16,6 @@ public abstract class SocialMapper {
     @Value("${frontend.url}")
     private String frontendUrl;
 
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
     public abstract SocialDTO toSocialDTO(Blog blog);
 
     @AfterMapping
@@ -25,7 +23,7 @@ public abstract class SocialMapper {
         dto.setUrl(frontendUrl + "/blogs" + blog.getId());
         dto.setTitle(blog.getTitle());
         dto.setText(dto.getText());
-        PlatformType[] platforms = {PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM};
+        PlatformType[] platforms = {PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM, PlatformType.LINKEDIN};
         dto.setPlatforms(platforms);
     }
 }

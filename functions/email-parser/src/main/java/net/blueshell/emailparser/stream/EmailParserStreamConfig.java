@@ -1,8 +1,8 @@
 package net.blueshell.emailparser.stream;
 
 import java.util.function.Consumer;
-import net.blueshell.common.dto.EmailDTO;
-import net.blueshell.common.dto.InternalBlogDTO;
+import net.blueshell.dto.EmailDTO;
+import net.blueshell.dto.InternalBlogDTO;
 import net.blueshell.emailparser.mapper.EmailMapper;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;

@@ -1,8 +1,8 @@
 package net.blueshell.emailparser.controller;
 
 import jakarta.validation.Valid;
-import net.blueshell.common.dto.InternalBlogDTO;
-import net.blueshell.common.dto.EmailDTO;
+import net.blueshell.dto.InternalBlogDTO;
+import net.blueshell.dto.EmailDTO;
 import net.blueshell.emailparser.mapper.EmailMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;

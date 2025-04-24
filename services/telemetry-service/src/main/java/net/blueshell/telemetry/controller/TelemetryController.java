@@ -1,8 +1,8 @@
 package net.blueshell.telemetry.controller;
 
 import jakarta.ws.rs.PathParam;
-import net.blueshell.common.dto.TelemetryDTO;
-import net.blueshell.common.enums.PlatformType;
+import net.blueshell.dto.TelemetryDTO;
+import net.blueshell.enums.PlatformType;
 import net.blueshell.db.BaseController;
 import net.blueshell.telemetry.mapping.TelemetryMapper;
 import net.blueshell.telemetry.model.Telemetry;

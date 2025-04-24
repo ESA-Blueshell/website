@@ -2,8 +2,8 @@ package net.blueshell.apigateway.identity;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.common.enums.Role;
-import net.blueshell.common.identity.Identity;
+import net.blueshell.enums.Role;
+import net.blueshell.identity.Identity;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;

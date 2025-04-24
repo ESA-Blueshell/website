@@ -1,8 +1,8 @@
 package net.blueshell.blogservice.mapper;
 
 import net.blueshell.blogservice.model.Blog;
-import net.blueshell.common.dto.InternalBlogDTO;
-import net.blueshell.common.mapper.BaseMapper;
+import net.blueshell.dto.InternalBlogDTO;
+import net.blueshell.mapper.BaseMapper;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -18,8 +18,6 @@ public abstract class BlogMapper extends BaseMapper<Blog, InternalBlogDTO> {
     @Value("${frontend.url}")
     private String frontendUrl;
 
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
     public abstract Blog fromDTO(InternalBlogDTO dto);
 
     @AfterMapping

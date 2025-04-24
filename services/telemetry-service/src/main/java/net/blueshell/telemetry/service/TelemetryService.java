@@ -1,6 +1,6 @@
 package net.blueshell.telemetry.service;
 
-import net.blueshell.common.enums.PlatformType;
+import net.blueshell.enums.PlatformType;
 import net.blueshell.db.BaseModelService;
 import net.blueshell.telemetry.model.Telemetry;
 import net.blueshell.telemetry.repository.TelemetryRepository;

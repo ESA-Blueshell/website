@@ -17,4 +17,13 @@
         <module>email-parser</module>
         <module>event-parser</module>
     </modules>
+
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-function-web -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-function-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

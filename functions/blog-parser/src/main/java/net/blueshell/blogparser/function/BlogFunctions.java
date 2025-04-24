@@ -1,9 +1,9 @@
 package net.blueshell.blogparser.function;
 
-import net.blueshell.common.client.BlogClient;
 import net.blueshell.blogparser.mapper.InternalBlogMapper;
-import net.blueshell.common.dto.BlogDTO;
-import net.blueshell.common.dto.InternalBlogDTO;
+import net.blueshell.client.BlogClient;
+import net.blueshell.dto.BlogDTO;
+import net.blueshell.dto.InternalBlogDTO;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

@@ -2,8 +2,8 @@ package net.blueshell.db;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import net.blueshell.common.exception.ResourceNotFoundException;
-import net.blueshell.common.identity.IdentityProvider;
+import net.blueshell.exception.ResourceNotFoundException;
+import net.blueshell.identity.IdentityProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

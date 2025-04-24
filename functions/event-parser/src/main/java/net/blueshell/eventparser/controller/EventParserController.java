@@ -1,8 +1,8 @@
 package net.blueshell.eventparser.controller;
 
 import jakarta.validation.Valid;
-import net.blueshell.common.dto.SocialDTO;
-import net.blueshell.common.dto.EventDTO;
+import net.blueshell.dto.SocialDTO;
+import net.blueshell.dto.EventDTO;
 import net.blueshell.eventparser.mapper.EventMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;

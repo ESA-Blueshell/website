@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import net.blueshell.db.BaseModel;
-import net.blueshell.common.enums.FileType;
+import net.blueshell.enums.FileType;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 

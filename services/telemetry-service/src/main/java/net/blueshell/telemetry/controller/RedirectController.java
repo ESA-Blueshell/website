@@ -1,6 +1,6 @@
 package net.blueshell.telemetry.controller;
 
-import net.blueshell.common.dto.RedirectDTO;
+import net.blueshell.dto.RedirectDTO;
 import net.blueshell.db.BaseController;
 import net.blueshell.telemetry.mapping.RedirectMapper;
 import net.blueshell.telemetry.model.Redirect;

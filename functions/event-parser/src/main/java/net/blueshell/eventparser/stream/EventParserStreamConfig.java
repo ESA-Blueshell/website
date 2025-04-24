@@ -3,8 +3,8 @@ package net.blueshell.eventparser.stream;
 import java.util.function.Consumer;
 
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.common.dto.EventDTO;
-import net.blueshell.common.dto.SocialDTO;
+import net.blueshell.dto.EventDTO;
+import net.blueshell.dto.SocialDTO;
 import net.blueshell.eventparser.mapper.EventMapper;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;

@@ -1,6 +1,6 @@
 package net.blueshell.db;
 
-import net.blueshell.common.identity.IdentityProvider;
+import net.blueshell.identity.IdentityProvider;
 
 public abstract class BaseController<S, M> extends IdentityProvider {
 

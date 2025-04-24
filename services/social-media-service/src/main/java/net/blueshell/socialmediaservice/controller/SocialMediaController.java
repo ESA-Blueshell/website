@@ -1,6 +1,6 @@
 package net.blueshell.socialmediaservice.controller;
 
-import net.blueshell.common.dto.SocialDTO;
+import net.blueshell.dto.SocialDTO;
 import net.blueshell.socialmediaservice.service.SocialMediaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

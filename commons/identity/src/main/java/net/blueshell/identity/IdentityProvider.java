@@ -1,11 +1,9 @@
 package net.blueshell.identity;
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.common.enums.Role;
+import net.blueshell.enums.Role;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-@Slf4j
 public abstract class IdentityProvider {
     protected Identity getPrincipal() {
         Object obj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();

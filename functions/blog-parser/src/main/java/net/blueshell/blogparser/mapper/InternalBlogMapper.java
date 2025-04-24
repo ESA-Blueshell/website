@@ -1,7 +1,7 @@
 package net.blueshell.blogparser.mapper;
 
-import net.blueshell.common.dto.BlogDTO;
-import net.blueshell.common.dto.InternalBlogDTO;
+import net.blueshell.dto.BlogDTO;
+import net.blueshell.dto.InternalBlogDTO;
 import org.mapstruct.Mapper;
 
 import java.util.List;

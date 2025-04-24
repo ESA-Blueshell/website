@@ -3,7 +3,7 @@ package net.blueshell.telemetry.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import net.blueshell.common.enums.PlatformType;
+import net.blueshell.enums.PlatformType;
 import net.blueshell.db.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;

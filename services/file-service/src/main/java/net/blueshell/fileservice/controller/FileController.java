@@ -1,6 +1,6 @@
 package net.blueshell.fileservice.controller;
 
-import net.blueshell.common.dto.FileDTO;
+import net.blueshell.dto.FileDTO;
 import net.blueshell.db.BaseController;
 import net.blueshell.fileservice.mapper.FileMapper;
 import net.blueshell.fileservice.service.FileService;

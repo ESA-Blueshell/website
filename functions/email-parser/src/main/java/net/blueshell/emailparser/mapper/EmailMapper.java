@@ -1,9 +1,9 @@
 package net.blueshell.emailparser.mapper;
 
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
-import net.blueshell.common.dto.InternalBlogDTO;
-import net.blueshell.common.dto.EmailDTO;
-import net.blueshell.common.dto.FileDTO;
+import net.blueshell.dto.InternalBlogDTO;
+import net.blueshell.dto.EmailDTO;
+import net.blueshell.dto.FileDTO;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

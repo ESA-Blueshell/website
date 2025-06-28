@@ -1,6 +1,7 @@
 spring:
   mvc:
     dispatch-options-request: true
+
   cloud:
     stream:
       default-binder: rabbit
@@ -15,7 +16,6 @@ spring:
                 username: ${RABBITMQ_DEFAULT_USER}
                 password: ${RABBITMQ_DEFAULT_PASS}
 
-
       bindings:
         # ┌──────────────────────────────────────────────────────┐
         # │ 1) Email Parser Service                             │
@@ -23,7 +23,7 @@ spring:
         parseEmail-in-0:
           binder: rabbit
           destination: email.raw
-          group:      email‑parser
+          group:      email-parser
           content-type: application/json
 
         parseEmail-out-0:
@@ -37,7 +37,7 @@ spring:
         handleBlog-in-0:
           binder: rabbit
           destination: blog.internal
-          group:      blog‑service
+          group:      blog-service
           content-type: application/json
 
         handleBlog-out-0:
@@ -51,7 +51,7 @@ spring:
         parseEvent-in-0:
           binder: rabbit
           destination: event.raw
-          group:      event‑parser
+          group:      event-parser
           content-type: application/json
 
         parseEvent-out-0:
@@ -65,27 +65,21 @@ spring:
         distributeSocial-in-0:
           binder: rabbit
           destination: social.post
-          group:      social‑media‑service
+          group:      social-media-service
           content-type: application/json
+
+    # ─── Kubernetes Discovery Configuration ─────────────────────
+    kubernetes:
+      discovery:
+        enabled: true
+        # If your services are spread across namespaces, set this to true:
+        all-namespaces: false
 
 app:
   url: ${APP_URL}
 
 frontend:
   url: ${FRONTEND_URL}
-
-
-eureka:
-  instance:
-    prefer-ip-address: true
-    hostname: eureka-server
-    non-secure-port: 8080
-  client:
-    serviceUrl:
-      defaultZone: http://eureka-server:8761/eureka
-    register-with-eureka: true
-    fetch-registry: true
-    registry-fetch-interval-seconds: 60
 
 logging:
   level:

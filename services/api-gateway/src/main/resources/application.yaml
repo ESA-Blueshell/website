@@ -19,37 +19,37 @@ spring:
           enabled: true
       routes:
         - id: api-route
-          uri: lb://API
+          uri: lb://api
           predicates:
             - Path=/download/**,/eventPictures/**,/events/**,/memberships/**,/users/**,/auth/**,/contributionPeriods/**,/contributions/**,/sponsors/**,/committees/**
 
         - id: blog-parser-route
-          uri: lb://BlogParser
+          uri: lb://blog-parser
           predicates:
             - Path=/blogs/**
 
         - id: email-parser-route
-          uri: lb://EmailParser
+          uri: lb://email-parser
           predicates:
             - Path=/email
 
         - id: event-parser-route
-          uri: lb://EventParser
+          uri: lb://event-parser
           predicates:
             - Path=/event-parser/**
 
         - id: file-service-route
-          uri: lb://FileService
+          uri: lb://file-service
           predicates:
             - Path=/files/**
 
         - id: telemetry-service-route
-          uri: lb://TelemetryService
+          uri: lb://telemetry-service
           predicates:
             - Path=/telemetry/**
 
         - id: telemetry-ws-route
-          uri: lb:ws://TelemetryService
+          uri: lb:ws://telemetry-service
           predicates:
             - Path=/telemetry/ws/**
 

@@ -19,6 +19,7 @@
         <option value="$PROJECT_DIR$/commons/client/pom.xml" />
         <option value="$PROJECT_DIR$/commons/repo/pom.xml" />
         <option value="$PROJECT_DIR$/commons/service/pom.xml" />
+        <option value="$PROJECT_DIR$/standalone/pom.xml" />
       </set>
     </option>
   </component>

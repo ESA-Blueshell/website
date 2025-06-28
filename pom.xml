@@ -23,7 +23,6 @@
     <modules>
         <module>commons</module>
         <module>services</module>
-        <module>standalone</module>
         <module>functions</module>
     </modules>
 
@@ -72,6 +71,11 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-kubernetes-discoveryclient</artifactId>
+                <version>3.2.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

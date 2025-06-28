@@ -49,7 +49,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - "../frontend:/usr/app"
+      - "./frontend:/usr/app"
       - /usr/app/node_modules
     networks:
       - global_network
@@ -68,7 +68,7 @@ services:
       context: api
       dockerfile: Dockerfile-dev
     volumes:
-      - ../:/app
+      - ./:/app
       - maven-repo:/root/.m2
       - "./storage/api:/home/storage"
     command: [

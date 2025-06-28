@@ -12,8 +12,10 @@ COPY ./.mvn .mvn
 COPY ./mvnw .
 
 # Copy the POM and source code
-COPY ./pom.xml .
-COPY ./src ./src
+COPY ./.mvn .mvn
+COPY ./mvnw .
+COPY ./api/pom.xml ./api
+COPY ./api/src ./api/src
 
 # Build the base-service.yaml
 RUN --mount=type=cache,target=/root/.m2,rw ./mvnw -B install -DskipTests -nsu

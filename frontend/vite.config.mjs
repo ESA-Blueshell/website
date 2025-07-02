@@ -11,7 +11,11 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `
+          @use "@/styles/fonts" as *;
           @use "@/styles/settings" as *;
+          @use "@/styles/housestyle" as *;
+          @use "@/styles/colors" as *;
+          // now pull in the Vuetify Sass API:
           @use "vuetify/styles" as *;
         `,
         sassOptions: {

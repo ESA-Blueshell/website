@@ -6,7 +6,7 @@ import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.mapper.EventMapper;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.User;
-import net.blueshell.api.service.*;
+import net.blueshell.api.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,11 +49,15 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @GetMapping("/events")
     public List<EventDTO> getEvents(
+            @RequestParam(name = "from", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @RequestParam(required = false) OffsetDateTime from,
+            OffsetDateTime from,
+            @RequestParam(name = "to", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @RequestParam(required = false) OffsetDateTime to) {
-        List<Event> events = service.findStartTimeBetween(from.toLocalDateTime(), to.toLocalDateTime());
+            OffsetDateTime to) {
+        List<Event> events = service.findStartTimeBetween(
+                from != null ? from.toLocalDateTime() : null,
+                to != null ? to.toLocalDateTime() : null);
         return mapper.toDTOs(events);
     }
 

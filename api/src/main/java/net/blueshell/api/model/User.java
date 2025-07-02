@@ -193,7 +193,7 @@ public class User implements UserDetails, BaseModel<Long> {
             return set;
         }
         for (CommitteeMember cm : getCommitteeMembers()) {
-            set.add(cm.getCommitteeId());
+            set.add(cm.getCommittee().getId());
         }
         return set;
     }

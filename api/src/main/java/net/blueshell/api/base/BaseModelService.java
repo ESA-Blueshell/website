@@ -41,8 +41,6 @@ public abstract class BaseModelService<
 
     protected final R repository;
     private final ApplicationEventPublisher eventPublisher;
-    @PersistenceContext
-    private EntityManager entityManager;
 
     protected BaseModelService(R repository, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
@@ -66,7 +64,6 @@ public abstract class BaseModelService<
     @Transactional
     public void create(T entity) {
         repository.saveAndFlush(entity);
-        entityManager.refresh(entity);
         publish(new EntityCreatedEvent<>(entity));
     }
 

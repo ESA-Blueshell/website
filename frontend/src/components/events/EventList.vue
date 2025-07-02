@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, onMounted, computed} from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import {useStore} from 'vuex'
 import {useRoute} from 'vue-router'
 import EventListItem from '@/components/events/EventListItem.vue'
@@ -11,6 +11,7 @@ import EventSignUpService from '@/services/EventSignUpService'
 // Types
 import type EventModel from '@/models/EventModel.ts'
 import type {EventSignUpModel} from '@/models'
+import {DateTime} from "luxon";
 
 // Track loaded events: null => not loaded yet, [] => loaded but empty
 const events = ref<EventModel[] | null>(null)
@@ -30,8 +31,8 @@ const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 
 onMounted(async () => {
-  const [ fetchedEvents, signups ] = await Promise.all([
-    eventService.getUpcomingEvents(),
+  const [fetchedEvents, signups] = await Promise.all([
+    eventService.getEvents(DateTime.local().startOf('day').toISO(), undefined),
     isLoggedIn.value
       ? signUpService.getSignups()
       : Promise.resolve([]),
@@ -66,29 +67,20 @@ onMounted(async () => {
 
     <!-- Otherwise, we have events -->
     <v-list v-if="events.length > 0">
-      <event-list-item
-        v-for="event in events"
+      <template
+        v-for="(event, i) in events"
         :key="event.id"
-        :event="event"
-        :sign-up="eventSignups[event.id as number]"
-        style="scroll-margin-top: 64px;"
-      />
+      >
+        <event-list-item
+          :event="event"
+          :sign-up="eventSignups[event.id]"
+          class="event-list-item"
+        />
+        <!-- only show divider when there's another item after -->
+        <v-divider v-if="i < events.length - 1"/>
+      </template>
     </v-list>
   </v-expand-transition>
 </template>
-<style scoped>
-.list-item-buffer {
-  /* Spacing around your list items */
-  padding: 8px 0;
-}
-
-.form-border {
-  border-width: 1px;
-  border-color: rgb(var(--v-theme-accent));
-  border-style: solid;
-}
-
-.form {
-  padding: 16px;
-}
+<style lang="scss" scoped>
 </style>

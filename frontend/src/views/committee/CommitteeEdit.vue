@@ -110,7 +110,7 @@ const committeeService = new CommitteeService();
 const localCommittee = ref<CommitteeModel>({
   ...props.committee,
   members: props.committee?.members ? [...props.committee.members.map(m => ({ ...m }))] : [],
-  type: 'committee'
+  type: 'AdvancedCommitteeDTO'
 });
 
 // Fetch members on mount
@@ -122,7 +122,7 @@ const addMember = () => {
   localCommittee.value.members.push({
     role: '',
     user: {} as SimpleUserModel,
-    type: 'committeeMember',
+    type: 'CommitteeMemberDTO',
     committeeId: localCommittee.value.id
   });
 };

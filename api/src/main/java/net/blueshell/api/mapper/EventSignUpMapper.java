@@ -1,6 +1,7 @@
 package net.blueshell.api.mapper;
 
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.EventSignUpDTO;
 import net.blueshell.api.model.EventSignUp;
@@ -15,6 +16,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Mapper(componentModel = "spring")
 public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSignUpDTO> {
 

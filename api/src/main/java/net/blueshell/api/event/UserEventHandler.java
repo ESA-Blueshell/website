@@ -1,5 +1,6 @@
 package net.blueshell.api.event;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.EntityCreatedEvent;
 import net.blueshell.api.common.event.EntityUpdatedEvent;
@@ -12,6 +13,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import sendinblue.ApiException;
 
+@Slf4j
 @Component
 public class UserEventHandler {
 
@@ -39,6 +41,8 @@ public class UserEventHandler {
     public void onUserUpdated(EntityUpdatedEvent<User> evt) {
         User u = evt.entity();
         if (!u.hasRole(Role.MEMBER)) {
+            log.warn("User {} has no role {}", u, Role.MEMBER);
+            log.warn("DELETING COMMITTERE MEMBERSHIPS");
             u.getCommitteeMembers().forEach(committeeMembers::delete);
         }
     }

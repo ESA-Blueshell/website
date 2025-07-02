@@ -16,7 +16,6 @@ export default class BaseService {
 
   protected authHeader() {
     const login = this.store.getters.getLogin;
-    console.log(login);
     return login ? { headers: { Authorization: `Bearer ${login.token}` } } : {};
   }
 

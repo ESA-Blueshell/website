@@ -14,7 +14,10 @@ import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Mapper(componentModel = "spring")
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
@@ -62,7 +65,15 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
         }
     }
 
+    @Mapping(target = "startTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getStartTime()))")
+    @Mapping(target = "endTime",   expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getEndTime()))")
     public abstract EventDTO toDTO(Event event);
+
+    static String toIso(LocalDateTime t) {
+        return t == null ? null
+                : t.atZone(ZoneId.systemDefault())
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
 
     @AfterMapping
     public void afterToDTO(Event event, @MappingTarget EventDTO dto) {

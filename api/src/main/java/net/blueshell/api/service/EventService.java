@@ -1,5 +1,6 @@
 package net.blueshell.api.service;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.File;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 public class EventService extends BaseModelService<Event, Long, EventRepository> {
 
     @Autowired
@@ -28,6 +30,7 @@ public class EventService extends BaseModelService<Event, Long, EventRepository>
     }
 
     public List<Event> findStartTimeBetween(LocalDateTime from, LocalDateTime to) {
+        log.info("FROM: " + from + " TO: " + to);
         return repository.findStartTimeBetween(from, to);
     }
 }

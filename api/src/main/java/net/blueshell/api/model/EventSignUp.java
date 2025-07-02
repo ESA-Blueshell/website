@@ -25,19 +25,19 @@ public class EventSignUp implements BaseModel<Long> {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "event_id")
+    @JoinColumn(name = "event_id", insertable = false, updatable = false)
     @JsonIgnore
     private Event event;
 
-    @Column(name = "event_id", insertable = false, updatable = false)
+    @Column(name = "event_id")
     private Long eventId;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     @JsonIgnore
     private User user;
 
-    @Column(name = "user_id", insertable = false, updatable = false)
+    @Column(name = "user_id")
     private Long userId;
 
     @OneToOne
@@ -54,10 +54,4 @@ public class EventSignUp implements BaseModel<Long> {
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
-
-    @JsonProperty("event")
-    @JsonIgnore
-    public Long getEventId() {
-        return getEvent() == null ? null : getEvent().getId();
-    }
 }

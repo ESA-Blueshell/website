@@ -15,7 +15,7 @@
         <p class="text-h4 font-weight-light">
           Upcoming events
         </p>
-        <upcoming-events-list />
+        <event-list />
       </div>
       <div
         class="mx-auto my-5"
@@ -44,6 +44,6 @@ import Calendar from "@/components/Calendar.vue"
 import EventList from "@/components/events/EventList.vue";
 
 export default {
-  components: {UpcomingEventsList: EventList, TopBanner: TopBanner, Calendar: Calendar}
+  components: {EventList, TopBanner: TopBanner, Calendar: Calendar}
 }
 </script>

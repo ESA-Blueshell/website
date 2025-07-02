@@ -2,8 +2,10 @@ package net.blueshell.api.controller;
 
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.dto.AdvancedCommitteeDTO;
 import net.blueshell.api.dto.BaseDTO;
 import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 public class CommitteeController extends AdvancedController<CommitteeService, AdvancedCommitteeMapper, SimpleCommitteeMapper> {
 
@@ -38,7 +41,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
-    public BlogDTO.AdvancedCommitteeDTO createCommittee(@Valid @RequestBody BlogDTO.AdvancedCommitteeDTO advancedCommitteeDTO) {
+    public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
         Committee committee = advancedMapper.fromDTO(advancedCommitteeDTO);
         service.create(committee);
         return advancedMapper.toDTO(committee);
@@ -48,17 +51,13 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     @PutMapping(value = "/committees/{committeeId}")
     public BaseDTO updateCommittee(
             @PathVariable("committeeId") Long committeeId,
-            @Valid @RequestBody BlogDTO.AdvancedCommitteeDTO advancedCommitteeDTO) {
-        Committee oldCommittee = service.findById(committeeId);
-
-        if (!oldCommittee.hasMember(getPrincipal()) && !hasAuthority(Role.BOARD)) {
-            throw new NotFoundException();
-        }
-
-        advancedCommitteeDTO.setId(committeeId);
-        Committee newCommittee = advancedMapper.fromDTO(advancedCommitteeDTO);
-        service.update(newCommittee);
-        return advancedMapper.toDTO(newCommittee);
+            @Valid @RequestBody AdvancedCommitteeDTO dto) {
+        dto.setId(committeeId);
+        log.info("committee members in dto: {}", dto);
+        var committee = advancedMapper.fromDTO(dto);
+        log.info("Committee members: {}", committee.getMembers());
+        service.update(committee);
+        return advancedMapper.toDTO(committee);
     }
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'delete')")

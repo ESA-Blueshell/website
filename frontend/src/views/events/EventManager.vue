@@ -1,7 +1,7 @@
 <template>
   <!-- Render a loading indicator (or whatever you prefer) until data is fetched -->
   <v-main v-if="isLoaded">
-    <top-banner title="EventModel Manager" />
+    <top-banner title="EventModel Manager"/>
 
     <div
       class="mx-auto my-10"
@@ -63,27 +63,30 @@
     v-else
     class="text-center mt-8"
   >
-    <v-progress-circular indeterminate />
+    <v-progress-circular indeterminate/>
     <!-- or you can just show some text: "Loading events..." -->
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
+import {computed, onMounted, ref} from 'vue'
+import {useStore} from 'vuex'
 import TopBanner from '@/components/banners/TopBanner.vue'
 import EventManageList from '@/components/events/EventManageList.vue'
-import { EventService, CommitteeService } from '@/services'
-import { $require } from '@/plugins/require'
-import type { EventModel, CommitteeModel } from "@/models";
-import { useDisplay } from "vuetify";
+import {CommitteeService, EventService} from '@/services'
+import {$require} from '@/plugins/require'
+import type {CommitteeModel, EventModel} from "@/models";
+import {DateTime} from 'luxon';
 
 // Local “groupBy” helper if you don't have a built-in one
-function groupById<T extends { id: string | number }>(items: T[]): Record<string | number, T> {
+function groupBy<T, K extends keyof T & (string | number)>(
+  items: T[],
+  key: K                      // which property is the id?
+): Record<T[K], T> {
   return items.reduce((acc, item) => {
-    acc[item.id] = item
+    acc[item[key]] = item
     return acc
-  }, {} as Record<string | number, T>)
+  }, {} as Record<T[K], T>)
 }
 
 // Reactive references for data
@@ -109,15 +112,18 @@ onMounted(async () => {
     const committeeService = new CommitteeService()
 
     const [upcoming, past, committees] = await Promise.all([
-      eventService.getUpcomingEvents(true),
-      eventService.getPastEvents(true),
+      eventService.getEvents(DateTime.local().startOf('day').toISO(), undefined),
+      eventService.getEvents(
+        DateTime.local().minus({months: 1}).startOf('day').toISO(),
+        DateTime.local().startOf('day').toISO(),
+      ),
       committeeService.getCommittees(false),
     ])
 
     events.value = upcoming
     pastEvents.value = past
 
-    idToCommittee.value = groupById(committees)
+    idToCommittee.value = groupBy(committees, 'id')
     if (committees.length === 0) {
       noCommittees.value = true
     }

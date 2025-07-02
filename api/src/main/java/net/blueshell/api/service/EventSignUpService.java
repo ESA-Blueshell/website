@@ -1,5 +1,6 @@
 package net.blueshell.api.service;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
 import net.blueshell.api.model.Event;
@@ -14,6 +15,7 @@ import sendinblue.ApiException;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class EventSignUpService extends BaseModelService<EventSignUp, Long, EventSignUpRepository> {
 
@@ -44,25 +46,23 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
     }
 
     @Transactional
-    public EventSignUp createSignUp(Long eventId, EventSignUp signUp) throws ApiException {
-        Event event = eventService.findById(eventId);
-        signUp.setEvent(event);
+    public void createSignUp(EventSignUp signUp) throws ApiException {
         if (signUp.getGuest() != null) {
             emailService.sendEventSignUpEmail(signUp);
         }
-        create(signUp);
-        return signUp;
+        log.warn("Event Signup: " + signUp);
+        self().create(signUp);
     }
 
     @Transactional(readOnly = true)
     public void deleteSignUp(Long eventSignupId, String accessToken) {
         EventSignUp signUp;
         if (accessToken == null) {
-            signUp = findById(eventSignupId);
+            signUp = self().findById(eventSignupId);
         } else {
             signUp = findByGuestAccessToken(accessToken);
         }
-        delete(signUp.getId());
+        self().delete(signUp.getId());
     }
 
     public List<EventSignUp> findByUserId(Long userId) {

@@ -48,4 +48,3 @@ files
 data
 /env/.app.env
 /env/.db.env
-/env/.rabbitmq.env

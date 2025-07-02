@@ -2,6 +2,7 @@ package net.blueshell.api.controller;
 
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventSignUpDTO;
 import net.blueshell.api.mapper.EventSignUpMapper;
@@ -17,6 +18,7 @@ import sendinblue.ApiException;
 import java.util.List;
 import java.util.stream.Stream;
 
+@Slf4j
 @RestController
 public class EventSignUpController extends BaseController<EventSignUpService, EventSignUpMapper> {
     @Autowired
@@ -58,9 +60,11 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     public EventSignUpDTO createSignup(@PathVariable("id") Long eventId,
                                        @Valid @RequestBody EventSignUpDTO dto) throws ApiException {
         dto.setEventId(eventId);
-        EventSignUp eventSignUp = mapper.fromDTO(dto);
-        EventSignUp signUp = service.createSignUp(eventId, eventSignUp);
-        return mapper.toDTO(signUp);
+        log.warn("Event Id: {}", eventId);
+        log.warn("DTO: {}", dto);
+        var eventSignUp = mapper.fromDTO(dto);
+        service.createSignUp(eventSignUp);
+        return mapper.toDTO(eventSignUp);
     }
 
     @PutMapping(value = "/events/{eventId}/signups")

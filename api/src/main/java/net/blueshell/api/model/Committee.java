@@ -1,6 +1,5 @@
 package net.blueshell.api.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
@@ -29,32 +28,25 @@ public class Committee implements BaseModel<Long> {
     @Column(name = "description")
     private String description;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "committee", orphanRemoval = true)
-    private Set<CommitteeMember> members;
+    @OneToMany(
+            mappedBy = "committee",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private Set<CommitteeMember> members = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
-            name = "committee_member",
+            name = "committee_members",
             joinColumns = @JoinColumn(name = "committee_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private Set<net.blueshell.api.model.User> users;
+    private Set<User> users;
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
 
     public Committee() {
-    }
-
-    @JsonProperty("members")
-    public Set<Long> getMemberIds() {
-        Set<Long> set = new HashSet<>();
-        if (getMembers() != null) {
-            for (CommitteeMember cm : getMembers()) {
-                set.add(cm.getUserId());
-            }
-        }
-        return set;
     }
 
     @Override
@@ -72,6 +64,6 @@ public class Committee implements BaseModel<Long> {
     }
 
     public boolean hasMember(User user) {
-        return getMembers().stream().anyMatch(cm -> cm.getUserId().equals(user.getId()));
+        return getMembers().stream().anyMatch(cm -> cm.getUser().getId().equals(user.getId()));
     }
 }

@@ -25,9 +25,15 @@ public class CommitteeMember implements BaseModel<Long> {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(name = "user_id", updatable = false, insertable = false)
+    private Long userId;
+
     @ManyToOne
-    @JoinColumn(name = "committee_id", nullable = false)
+    @JoinColumn(name = "committee_id")
     private Committee committee;
+
+    @Column(name = "committee_id", updatable = false, insertable = false)
+    private Long committeeId;
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
@@ -38,30 +44,33 @@ public class CommitteeMember implements BaseModel<Long> {
     public CommitteeMember() {
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CommitteeMember that)) return false;
-        return Objects.equals(id, that.id);
+        if (!(o instanceof CommitteeMember other)) return false;
+
+        // Persisted entities: compare primary key
+        if (id != null && other.id != null) {
+            return id.equals(other.id);
+        }
+
+        // Transient entities: compare the natural/business key
+        return Objects.equals(user, other.user) &&
+                Objects.equals(committee, other.committee);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, getUserId(), getCommitteeId(), role);
+        // Persisted entities: use the PK
+        if (id != null) return 31 + id.hashCode();
+
+        // Transient entities: use the business key
+        return Objects.hash(user, committee);
     }
 
     @Override
     public String toString() {
         return String.format("CommitteeMember={id: %d, userId: %d, committeeId: %d, role: %s}",
-                id, getUserId(), getCommitteeId(), role);
-    }
-
-    public Long getUserId() {
-        return user != null ? user.getId() : null;
-    }
-
-    public Long getCommitteeId() {
-        return committee != null ? committee.getId() : null;
+                id, getUser() != null ? getUser().getId() : null, getCommittee() != null ? getCommittee().getId() : null, role);
     }
 }

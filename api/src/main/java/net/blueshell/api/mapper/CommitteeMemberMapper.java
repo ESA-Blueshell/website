@@ -4,6 +4,7 @@ import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.CommitteeMemberDTO;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.service.CommitteeService;
 import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
     protected SimpleUserMapper simpleUserMapper;
     @Autowired
     protected UserService userService;
+    @Autowired
+    private CommitteeService committeeService;
 
 
     @Mapping(target = "user", ignore = true)
@@ -27,14 +30,15 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
         }
     }
 
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "committee", ignore = true)
+
+    @Mapping(target = "user",      ignore = true)
+    @Mapping(target = "committee", ignore = true) // parent sets this
     @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "role", source = "dto.role")
     public abstract CommitteeMember fromDTO(CommitteeMemberDTO dto);
 
     @AfterMapping
-    protected void afterFromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember member) {
+    protected void afterFromDTO(CommitteeMemberDTO dto,
+                                @MappingTarget CommitteeMember member) {
         if (dto.getUser() != null) {
             member.setUser(userService.findById(dto.getUser().getId()));
         }

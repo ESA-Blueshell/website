@@ -1,7 +1,16 @@
-import {marked} from 'marked'
+import { marked } from 'marked'
+import * as emoji from 'node-emoji'
 import DOMPurify from 'dompurify'
 
 export default function $markdownToHtml(text: string): string {
-  const md: string = marked.parse(text, {async: false})
-  return DOMPurify.sanitize(md)
+  const withEmoji = emoji.emojify(text)
+
+
+  const html = marked.parse(withEmoji, {
+    gfm: true,
+    breaks: true,
+    async: false
+  })
+
+  return DOMPurify.sanitize(html)
 }

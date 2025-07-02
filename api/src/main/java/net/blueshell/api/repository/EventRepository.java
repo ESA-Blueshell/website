@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -33,8 +34,15 @@ public interface EventRepository extends BaseRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.startTime >= CURRENT_DATE ORDER BY e.startTime DESC")
     List<Event> findUpcoming();
 
-    @Query("SELECT e FROM Event e WHERE e.startTime >= :from AND e.startTime <= :to ORDER BY e.startTime DESC")
-    List<Event> findStartTimeBetween(LocalDateTime from, LocalDateTime to);
+    @Query("""
+       SELECT  e
+       FROM    Event e
+       WHERE   (:from IS NULL OR e.startTime >= :from)
+         AND   (:to   IS NULL OR e.startTime <= :to)
+       ORDER BY e.startTime DESC
+       """)
+    List<Event> findStartTimeBetween(@Param("from") LocalDateTime from,
+                                     @Param("to")   LocalDateTime to);
 
     Optional<Event> findByEventPictures(Set<EventPicture> eventPicture);
 }

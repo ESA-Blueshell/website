@@ -11,7 +11,7 @@ export default interface EventSignUpModel extends BaseModel {
 }
 
 export const defaultEventSignUp: EventSignUpModel = {
-  id: 0,
+  id: undefined,
   type: 'EventSignUpDTO',
   eventId: undefined,
   fullName: '',

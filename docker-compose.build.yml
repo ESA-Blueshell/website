@@ -68,7 +68,7 @@ services:
     networks: [ global_network ]
     restart: unless-stopped
     volumes:
-      - "./storage/api:/home/storage"
+      - "./storage:/home/storage"
     env_file:
       - env/.db.env
       - env/.rabbitmq.env

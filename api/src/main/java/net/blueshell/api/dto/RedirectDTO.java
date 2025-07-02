@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 @EqualsAndHashCode(callSuper = true)
 public class RedirectDTO extends BaseDTO {
     private String id;
-    private Timestamp created;
+    private Timestamp createdAt;
     private TelemetryDTO telemetry;
 }
 

@@ -14,7 +14,6 @@ import sendinblue.ApiException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/contributionPeriods")
 public class ContributionPeriodController extends BaseController<ContributionPeriodService, ContributionPeriodMapper> {
 
     @Autowired
@@ -29,15 +28,15 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PostMapping
+    @PostMapping("/contributionPeriods")
     public ContributionPeriodDTO createContributionPeriod(@Valid @RequestBody ContributionPeriodDTO dto) throws ApiException {
         ContributionPeriod contributionPeriod = mapper.fromDTO(dto);
-        service.createContributionPeriod(contributionPeriod);
+        service.create(contributionPeriod);
         return mapper.toDTO(contributionPeriod);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PutMapping("/{id}")
+    @PutMapping("/contributionPeriods/{id}")
     public ContributionPeriodDTO updateContributionPeriod(@PathVariable("id") Long id,
                                                                           @Valid @RequestBody ContributionPeriodDTO dto) {
         dto.setId(id);
@@ -47,9 +46,9 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/contributionPeriods/{id}")
     public void deleteContributionPeriod(@PathVariable("id") Long id) {
         ContributionPeriod contributionPeriod = service.findById(id);
-        service.deleteContributionPeriod(contributionPeriod);
+        service.delete(contributionPeriod);
     }
 }

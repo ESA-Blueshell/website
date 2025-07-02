@@ -5,7 +5,7 @@ import jakarta.ws.rs.NotFoundException;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.dto.BaseDTO;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.AdvancedCommitteeDTO;
+import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Committee;
@@ -38,9 +38,9 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
-    public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
+    public BlogDTO.AdvancedCommitteeDTO createCommittee(@Valid @RequestBody BlogDTO.AdvancedCommitteeDTO advancedCommitteeDTO) {
         Committee committee = advancedMapper.fromDTO(advancedCommitteeDTO);
-        service.createCommittee(committee);
+        service.create(committee);
         return advancedMapper.toDTO(committee);
     }
 
@@ -48,7 +48,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     @PutMapping(value = "/committees/{committeeId}")
     public BaseDTO updateCommittee(
             @PathVariable("committeeId") Long committeeId,
-            @Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
+            @Valid @RequestBody BlogDTO.AdvancedCommitteeDTO advancedCommitteeDTO) {
         Committee oldCommittee = service.findById(committeeId);
 
         if (!oldCommittee.hasMember(getPrincipal()) && !hasAuthority(Role.BOARD)) {
@@ -64,6 +64,6 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'delete')")
     @DeleteMapping(value = "/committees/{committeeId}")
     public void deleteCommitteeById(@PathVariable("committeeId") Long committeeId) {
-        service.deleteById(committeeId);
+        service.delete(committeeId);
     }
 }

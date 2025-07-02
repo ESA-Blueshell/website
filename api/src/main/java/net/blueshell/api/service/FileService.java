@@ -11,6 +11,7 @@ import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
@@ -34,8 +35,8 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
     private String appUrl;
 
     @Autowired
-    public FileService(FileRepository fileRepository, StorageConfig properties) {
-        super(fileRepository);
+    public FileService(FileRepository fileRepository, ApplicationEventPublisher events, StorageConfig properties) {
+        super(fileRepository, events);
         this.rootLocation = Paths.get(properties.getLocation());
     }
 

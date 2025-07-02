@@ -3,7 +3,6 @@ package net.blueshell.api.service.brevo;
 import net.blueshell.api.mapper.BrevoContactMapper;
 import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import sendinblue.ApiClient;
@@ -20,13 +19,16 @@ import java.util.Map;
 @Service
 public class ContactService {
 
-    @Autowired
-    private BrevoContactMapper brevoContactMapper;
+    private final BrevoContactMapper contactMapper;
 
     @Value("${brevo.apiKey}")
     private String apiKey;
     @Value("${brevo.folders.contributionPeriodsId}")
     private Long contributionPeriodsFolder;
+
+    public ContactService(BrevoContactMapper contactMapper) {
+        this.contactMapper = contactMapper;
+    }
 
     private ContactsApi getContactsApi() {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
@@ -42,11 +44,11 @@ public class ContactService {
         // Create a new User instance (or use an existing one) and map attributes.
         User user = new User();
         Map<String, Object> attributes = (Map<String, Object>) details.getAttributes();
-        brevoContactMapper.attributesToUser(attributes, user);
+        contactMapper.attributesToUser(attributes, user);
         return user;
     }
 
-    public User getUpdate(User user) throws ApiException {
+    public User getUpdate(User user) {
         if (user.getContactId() != null) {
             return user;
         }
@@ -60,7 +62,7 @@ public class ContactService {
         return user;
     }
 
-    public void updateContact(User user) throws ApiException {
+    public void sync(User user) throws ApiException {
         user = getUpdate(user);
         if (user.getContactId() != null) {
             sendUpdate(user);
@@ -74,7 +76,7 @@ public class ContactService {
         CreateContact createContact = new CreateContact();
         createContact.setEmail(user.getEmail());
         // Use the mapper to create the attributes map (null values are filtered out).
-        Map<String, Object> attributes = brevoContactMapper.userToAttributes(user);
+        Map<String, Object> attributes = contactMapper.userToAttributes(user);
         createContact.setAttributes(attributes);
         CreateUpdateContactModel response = api.createContact(createContact);
         user.setContactId(response.getId());
@@ -84,11 +86,11 @@ public class ContactService {
         ContactsApi api = getContactsApi();
         UpdateContact updateContact = new UpdateContact();
         // Again, use the mapper so that only non-null attributes are updated.
-        updateContact.setAttributes(brevoContactMapper.userToAttributes(user));
+        updateContact.setAttributes(contactMapper.userToAttributes(user));
         api.updateContact(user.getContactId().toString(), updateContact);
     }
 
-    public void createContributionPeriodList(ContributionPeriod contributionPeriod) throws ApiException {
+    public Long createList(ContributionPeriod contributionPeriod) throws ApiException {
         ContactsApi api = getContactsApi();
         CreateList createList = new CreateList();
         String periodName = String.format("Contribution Paid %d - %d",
@@ -96,10 +98,10 @@ public class ContactService {
         createList.name(periodName);
         createList.setFolderId(contributionPeriodsFolder);
         CreateModel createModel = api.createList(createList);
-        contributionPeriod.setListId(createModel.getId());
+        return createModel.getId();
     }
 
-    public void addToContributionPeriodList(ContributionPeriod contributionPeriod, User user) throws ApiException {
+    public void addToList(ContributionPeriod contributionPeriod, User user) throws ApiException {
         ContactsApi api = getContactsApi();
         List<Long> ids = new ArrayList<>();
         ids.add(user.getContactId());
@@ -108,7 +110,7 @@ public class ContactService {
         api.addContactToList(contributionPeriod.getListId(), contactEmails);
     }
 
-    public void removeFromContributionPeriodList(ContributionPeriod contributionPeriod, User user) throws ApiException {
+    public void removeFromList(ContributionPeriod contributionPeriod, User user) throws ApiException {
         ContactsApi api = getContactsApi();
         List<Long> ids = new ArrayList<>();
         ids.add(user.getContactId());

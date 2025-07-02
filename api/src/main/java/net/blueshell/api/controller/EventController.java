@@ -24,7 +24,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @RestController
-@RequestMapping("/events")
+@RequestMapping
 public class EventController extends BaseController<EventService, EventMapper> {
 
     private final EventSignUpService eventSignUpService;
@@ -42,14 +42,14 @@ public class EventController extends BaseController<EventService, EventMapper> {
     }
 
     @PreAuthorize("hasAuthority('COMMITTEE') && hasPermission(#eventDTO.committeeId, 'Committee', 'createEvent')")
-    @PostMapping
+    @PostMapping("/events")
     public EventDTO createEvent(@Valid @RequestBody EventDTO eventDTO) throws IOException {
         Event event = mapper.fromDTO(eventDTO);
-        service.createEvent(event);
+        service.create(event);
         return mapper.toDTO(event);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/events/{id}")
     @PreAuthorize("hasPermission(#id, 'Event', 'read')")
     public EventDTO getEventById(
             @PathVariable("id") Long id) {
@@ -58,7 +58,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
     }
 
 
-    @GetMapping
+    @GetMapping("/events")
     public List<EventDTO> getEvents(
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             @RequestParam(required = false) OffsetDateTime from,
@@ -75,7 +75,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
         return mapper.toDTOs(events);
     }
 
-    @GetMapping("/past")
+    @GetMapping("/events/past")
     public Stream<EventDTO> getPastEvents(@RequestParam(required = false, defaultValue = "false") boolean editable) {
         Identity authedUser = getPrincipal();
         List<Event> events = service.findAll();
@@ -99,24 +99,24 @@ public class EventController extends BaseController<EventService, EventMapper> {
         return mapper.toDTOs(filteredEvents);
     }
 
-    @GetMapping("/pageable")
+    @GetMapping("/events/pageable")
     public Page<EventDTO> getEventsPageable(Pageable pageable) {
         Page<Event> events = service.findAll(pageable);
         return mapper.toDTOs(events);
     }
 
     @PreAuthorize("hasPermission(#eventId, 'Event', 'delete')")
-    @DeleteMapping("/{eventId}")
+    @DeleteMapping("/events/{eventId}")
     public void deleteEventById(@PathVariable("eventId") Long eventId) throws IOException {
-        service.deleteEvent(eventId);
+        service.delete(eventId);
     }
 
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
-    @PutMapping("/{eventId}")
+    @PutMapping("/events/{eventId}")
     public EventDTO updateEvent(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventDTO dto) throws IOException {
         Event event = mapper.fromDTO(dto);
         event.setId(eventId);
-        Event updatedEvent = service.updateEvent(event);
-        return mapper.toDTO(updatedEvent);
+        service.update(event);
+        return mapper.toDTO(event);
     }
 }

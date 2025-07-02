@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/sponsors")
+@RequestMapping
 public class SponsorController extends BaseController<SponsorService, SponsorMapper> {
 
     private static SponsorService service;
@@ -23,13 +23,13 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @GetMapping()
+    @GetMapping("/sponsors")
     public List<Sponsor> getSponsors() {
         return service.findAll();
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PostMapping()
+    @PostMapping("/sponsors")
     public SponsorDTO createSponsor(@Valid @RequestBody SponsorDTO dto) {
         Sponsor sponsor = mapper.fromDTO(dto);
         service.create(sponsor);
@@ -37,7 +37,7 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PutMapping(value = "/{id}")
+    @PutMapping(value = "/sponsors/{id}")
     public Object createOrUpdateSponsor(@PathVariable("id") Long id, @RequestBody SponsorDTO dto) {
         service.findById(id);
         Sponsor sponsor = mapper.fromDTO(dto);
@@ -52,14 +52,14 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @GetMapping(value = "/{id}")
+    @GetMapping(value = "/sponsors/{id}")
     public SponsorDTO getSponsorById(@PathVariable("id") Long id) {
         return mapper.toDTO(service.findById(id));
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @DeleteMapping(value = "/{id}")
+    @DeleteMapping(value = "/sponsors/{id}")
     public void deleteSponsorById(@PathVariable("id") Long id) {
-        service.deleteById(id);
+        service.delete(id);
     }
 }

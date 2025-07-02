@@ -5,16 +5,18 @@ import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.Telemetry;
 import net.blueshell.api.repository.TelemetryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-@org.springframework.stereotype.Service
+@Service
 public class TelemetryService extends BaseModelService<Telemetry, UUID, TelemetryRepository> {
 
     @Autowired
-    public TelemetryService(TelemetryRepository repository) {
-        super(repository);
+    public TelemetryService(TelemetryRepository repository, ApplicationEventPublisher events) {
+        super(repository, events);
     }
 
     @Transactional

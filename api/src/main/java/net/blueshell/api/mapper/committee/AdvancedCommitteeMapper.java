@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.committee;
 
 
-import net.blueshell.api.dto.AdvancedCommitteeDTO;
+import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.CommitteeMemberMapper;
 import net.blueshell.api.model.Committee;
 import net.blueshell.api.model.CommitteeMember;
@@ -20,7 +20,7 @@ import java.util.List;
         componentModel = "spring",
         uses = {CommitteeMemberMapper.class}
 )
-public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, AdvancedCommitteeDTO> {
+public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, BlogDTO.AdvancedCommitteeDTO> {
 
     @Autowired
     protected CommitteeMemberMapper memberMapper;
@@ -29,10 +29,10 @@ public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, Adva
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "memberIds", ignore = true)
     @Mapping(target = "users", ignore = true)
-    public abstract Committee fromDTO(AdvancedCommitteeDTO dto);
+    public abstract Committee fromDTO(BlogDTO.AdvancedCommitteeDTO dto);
 
     @AfterMapping
-    protected void afterFromDTO(AdvancedCommitteeDTO dto,
+    protected void afterFromDTO(BlogDTO.AdvancedCommitteeDTO dto,
                                 @MappingTarget Committee committee) {
         if (dto.getMembers() != null) {
             List<CommitteeMember> members = memberMapper.fromDTOs(dto.getMembers());
@@ -42,11 +42,11 @@ public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, Adva
     }
 
     @Mapping(target = "members", ignore = true)
-    public abstract AdvancedCommitteeDTO toDTO(Committee committee);
+    public abstract BlogDTO.AdvancedCommitteeDTO toDTO(Committee committee);
 
     @AfterMapping
     protected void afterToDTO(Committee committee,
-                              @MappingTarget AdvancedCommitteeDTO dto) {
+                              @MappingTarget BlogDTO.AdvancedCommitteeDTO dto) {
         if (committee.getMembers() != null) {
             dto.setMembers(
                     memberMapper.toDTOs(new ArrayList<>(committee.getMembers()))

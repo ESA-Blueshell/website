@@ -5,6 +5,7 @@ import net.blueshell.api.model.Guest;
 import net.blueshell.api.repository.GuestRepository;
 import net.blueshell.api.base.BaseModelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class GuestService extends BaseModelService<Guest, Long, GuestRepository> {
 
     @Autowired
-    public GuestService(GuestRepository repository) {
-        super(repository);
+    public GuestService(GuestRepository repository, ApplicationEventPublisher events) {
+        super(repository, events);
     }
 
     @Transactional(readOnly = true)

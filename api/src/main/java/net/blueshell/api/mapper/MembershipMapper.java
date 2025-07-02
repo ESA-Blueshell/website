@@ -23,7 +23,6 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     private UserService userService;
 
     @Mapping(target = "signature", ignore = true)
-    @Mapping(target = "startDate", ignore = true)
     public abstract MembershipDTO toDTO(Membership membership);
 
     @Mapping(target = "user", ignore = true)

@@ -20,7 +20,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @GetMapping()
+    @GetMapping("/memberships")
     public List<MembershipDTO> getMemberships() {
         return mapper.toDTOs(service.findAll());
     }

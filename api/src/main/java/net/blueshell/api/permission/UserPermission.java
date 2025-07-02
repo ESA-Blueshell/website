@@ -1,7 +1,6 @@
 package net.blueshell.api.permission;
 
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
@@ -24,7 +23,7 @@ public class UserPermission extends BasePermissionEvaluator<User, Long, UserServ
             return false;
         }
         User user = (User) object;
-        Identity principal = getPrincipal();
+        var principal = getPrincipal();
         return switch (permission) {
             case "read", "write", "delete" -> principal.hasRole(Role.BOARD) || principal.getId() == user.getId();
             case "changeRole", "getBrevo" -> principal.hasRole(Role.BOARD);

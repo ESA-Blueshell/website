@@ -49,7 +49,7 @@ services:
     ports:
       - "3000:3000"
     networks: [ global_network ]
-    depends_on: [ api-gateway, nginx ]
+    depends_on: [ nginx ]
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider",
               "http://localhost:3000" ]
@@ -67,6 +67,8 @@ services:
       args: [ PORT=8080 ]
     networks: [ global_network ]
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     volumes:
       - "./storage:/home/storage"
     env_file:

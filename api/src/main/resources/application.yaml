@@ -1,4 +1,7 @@
 spring:
+  main:
+    web-application-type: servlet
+
   application:
     name: BlueshellAPI
     db: blueshell
@@ -21,11 +24,12 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: false
+    open-in-view: false
     properties:
-      hibernate.dialect: org.hibernate.dialect.MySQLDialect
       hibernate.format_sql: true
       hibernate.use_sql_comments: true
       hibernate.enable_lazy_load_no_trans: true
+      hibernate.transaction.jta.platform: org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform
 
   flyway:
     enabled: true

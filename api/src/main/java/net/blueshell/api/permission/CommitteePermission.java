@@ -1,9 +1,9 @@
 package net.blueshell.api.permission;
 
-import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.Committee;
+import net.blueshell.api.model.User;
 import net.blueshell.api.service.CommitteeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -22,7 +22,7 @@ public class CommitteePermission extends BasePermissionEvaluator<Committee, Long
         if (authentication == null || targetDomainObject == null || permission == null) {
             return false;
         }
-        Identity principal = getPrincipal();
+        var principal = getPrincipal();
         Committee committee = (Committee) targetDomainObject;
         return switch (permission) {
             case "read" -> true;

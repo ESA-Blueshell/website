@@ -160,6 +160,9 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         User user = self().findById(id);
 
         if (Boolean.TRUE.equals(isMember)) {
+            if (user.hasRole(Role.MEMBER)) {
+                return user;
+            }
             user.addRole(Role.MEMBER);
             if (user.getMembership() == null) {
                 Membership membership = new Membership();

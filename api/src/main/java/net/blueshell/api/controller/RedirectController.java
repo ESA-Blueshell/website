@@ -27,7 +27,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
 
     @DeleteMapping("/telemetry/redirect")
     public void deleteRedirect(@RequestParam("id") String telemetryId) {
-        service.deleteById(UUID.fromString(telemetryId));
+        service.delete(UUID.fromString(telemetryId));
     }
 
     @GetMapping("/telemetry/redirects")

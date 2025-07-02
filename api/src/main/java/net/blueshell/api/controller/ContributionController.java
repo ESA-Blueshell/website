@@ -26,9 +26,9 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributions")
-    public ContributionDTO create(@Valid @RequestBody ContributionDTO dto) throws ApiException {
+    public ContributionDTO create(@Valid @RequestBody ContributionDTO dto) {
         Contribution contribution = mapper.fromDTO(dto);
-        service.createContribution(contribution);
+        service.create(contribution);
         return mapper.toDTO(contribution);
     }
 
@@ -36,7 +36,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PutMapping("/contributions/{id}/paid")
     public ContributionDTO paid(
             @ApiParam(name = "Id of the contribution") @PathVariable("id") Long id,
-            @ApiParam(name = "Whether the contribution is paid") @PathParam("paid") boolean paid) throws ApiException {
+            @ApiParam(name = "Whether the contribution is paid") @PathParam("paid") boolean paid) {
         Contribution contribution = service.findById(id);
         contribution.setPaid(paid);
         service.update(contribution);
@@ -52,21 +52,21 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributions/{id}")
-    public void delete(@ApiParam(name = "Id of the contribution") @PathVariable("id") Long id) throws ApiException {
+    public void delete(@ApiParam(name = "Id of the contribution") @PathVariable("id") Long id) {
         Contribution contribution = service.findById(id);
-        service.deleteContribution(contribution);
+        service.delete(contribution);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("contributionPeriods/{periodId}/contributions/remind")
-    public void sendContributionReminder(@PathVariable("periodId") Long periodId) throws ApiException {
+    public void sendContributionReminder(@PathVariable("periodId") Long periodId) {
         List<Contribution> unpaidContributions = service.findByContributionPeriodIdAndPaid(periodId, false);
         service.sendReminder(unpaidContributions);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
-    public List<ContributionDTO> getContributionsByPeriodId(@PathVariable("periodId") Long periodId) throws ApiException {
+    public List<ContributionDTO> getContributionsByPeriodId(@PathVariable("periodId") Long periodId) {
         List<Contribution> contributions = service.findByContributionPeriodId(periodId);
         return mapper.toDTOs(contributions);
     }

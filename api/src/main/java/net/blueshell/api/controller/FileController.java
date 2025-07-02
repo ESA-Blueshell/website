@@ -49,6 +49,12 @@ public class FileController extends BaseController<FileService, FileRepository> 
         return service.prepareFileResponse(file);
     }
 
+    @PostMapping("/files")
+    public List<FileDTO> uploadFile(List<FileDTO> dtos) {
+        List<File> files = fileMapper.fromDTOs(dtos);
+        return fileMapper.toDTOs(files);
+    }
+
     @GetMapping("/eventPictures/{eventPictureId}")
     @ResponseBody
     @PreAuthorize("hasAuthority('MEMBER')")
@@ -79,11 +85,5 @@ public class FileController extends BaseController<FileService, FileRepository> 
     public ResponseEntity<Resource> downloadProfilePicture(@PathVariable Long userId) {
         User user = userService.findById(userId);
         return service.prepareFileResponse(user.getProfilePicture());
-    }
-
-    @PostMapping("/files")
-    public List<FileDTO> uploadFile(List<FileDTO> dtos) {
-        List<File> files = fileMapper.fromDTOs(dtos);
-        return fileMapper.toDTOs(files);
     }
 }

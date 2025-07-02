@@ -7,6 +7,7 @@ import net.blueshell.api.repository.RedirectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -20,9 +21,9 @@ public class RedirectService extends BaseModelService<Redirect, UUID, RedirectRe
     Logger logger = LoggerFactory.getLogger(RedirectService.class);
 
     @Autowired
-    public RedirectService(RedirectRepository repository, TelemetryService telemetryService,
+    public RedirectService(RedirectRepository repository, ApplicationEventPublisher events, TelemetryService telemetryService,
                            WebSocketMessageService webSocketMessageService) {
-        super(repository);
+        super(repository, events);
         this.telemetryService = telemetryService;
         this.webSocketMessageService = webSocketMessageService;
     }

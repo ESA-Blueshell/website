@@ -5,6 +5,7 @@ import net.blueshell.api.model.*;
 import net.blueshell.api.repository.MemberRepository;
 import net.blueshell.api.base.BaseModelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class MembershipService extends BaseModelService<Membership, Long, MemberRepository> {
 
     @Autowired
-    public MembershipService(MemberRepository repository) {
-        super(repository);
+    public MembershipService(MemberRepository repository, ApplicationEventPublisher events) {
+        super(repository, events);
     }
 
     @Transactional(readOnly = true)

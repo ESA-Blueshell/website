@@ -7,6 +7,7 @@ import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.brevo.EmailService;
 import net.blueshell.api.base.BaseModelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sendinblue.ApiException;
@@ -20,12 +21,10 @@ public class ContributionService extends BaseModelService<Contribution, Long, Co
 
     private final ContributionPeriodService periodService;
     private final EmailService emailService;
-    private final ContactService contactService;
 
     @Autowired
-    public ContributionService(ContributionRepository repository, ContactService contactService, EmailService emailService, ContributionPeriodService periodService) {
-        super(repository);
-        this.contactService = contactService;
+    public ContributionService(ContributionRepository repository, ApplicationEventPublisher events, EmailService emailService, ContributionPeriodService periodService) {
+        super(repository, events);
         this.emailService = emailService;
         this.periodService = periodService;
     }
@@ -34,23 +33,6 @@ public class ContributionService extends BaseModelService<Contribution, Long, Co
     public List<Contribution> findByContributionPeriodId(Long contributionPeriodId) {
         ContributionPeriod contributionPeriod = periodService.findById(contributionPeriodId);
         return repository.findByContributionPeriod(contributionPeriod);
-    }
-
-    @Transactional
-    public void deleteByContributionPeriod(ContributionPeriod contributionPeriod) {
-        repository.deleteByContributionPeriod(contributionPeriod);
-    }
-
-    @Transactional
-    public void createContribution(Contribution contribution) throws ApiException {
-        create(contribution); // May fail so do this before any other steps
-        contactService.addToContributionPeriodList(contribution.getContributionPeriod(), contribution.getUser());
-    }
-
-    @Transactional
-    public void deleteContribution(Contribution contribution) throws ApiException {
-        deleteById(contribution.getId()); // May fail so do this before any other steps
-        contactService.removeFromContributionPeriodList(contribution.getContributionPeriod(), contribution.getUser());
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +46,6 @@ public class ContributionService extends BaseModelService<Contribution, Long, Co
         emailService.sendContributionReminders(unpaidContributions);
         Timestamp remindedAt = Timestamp.from(Instant.now());
         unpaidContributions.forEach(contribution -> contribution.setRemindedAt(remindedAt));
-        updateAll(unpaidContributions);
+        self().updateAll(unpaidContributions);
     }
 }

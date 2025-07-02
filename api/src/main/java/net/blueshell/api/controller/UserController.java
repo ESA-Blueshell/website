@@ -23,7 +23,7 @@ import sendinblue.ApiException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping
 public class UserController extends AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper> {
 
     private final RequestMapper requestMapper;
@@ -41,7 +41,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return advancedMapper.toDTO(user);
     }
 
-    @PutMapping(value = "/{userId}")
+    @PutMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     public AdvancedUserDTO update(@PathVariable("userId") Long userId,
                                   @Validated(Update.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
@@ -51,12 +51,12 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return advancedMapper.toDTO(user);
     }
 
-    @PostMapping(value = "/reset")
+    @PostMapping(value = "/users/reset")
     public void resetPassword(@RequestParam("username") String username) throws ApiException {
         service.resetPassword(username);
     }
 
-    @PostMapping(value = "/activate")
+    @PostMapping(value = "/users/activate")
     @PreAuthorize("hasPermission(#request, 'User', 'activate')")
     public void activate(@Valid @RequestBody ActivationRequest request) {
         User user = service.findByResetKey(request.getToken());
@@ -64,7 +64,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         service.update(user);
     }
 
-    @PostMapping(value = "/password")
+    @PostMapping(value = "/users/password")
     @PreAuthorize("hasPermission(#request, 'User', 'password')")
     public void setPassword(@Valid @RequestBody PasswordResetRequest request) {
         User user = service.findByResetKey(request.getToken());
@@ -72,7 +72,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         service.update(user);
     }
 
-    @GetMapping
+    @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
     public List<AdvancedUserDTO> getAll(@PathParam("isMember") boolean isMember) {
         List<User> users;
@@ -84,14 +84,14 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return advancedMapper.toDTOs(users);
     }
 
-    @GetMapping(value = "/{userId}")
+    @GetMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     public AdvancedUserDTO getById(@PathVariable("userId") Long userId) {
         User user = service.findById(userId);
         return advancedMapper.toDTO(user);
     }
 
-    @PutMapping(value = "/{id}/membership")
+    @PutMapping(value = "/users/{id}/membership")
     @PreAuthorize("hasAuthority('BOARD')")
     public AdvancedUserDTO updateMembership(@PathVariable("id") Long userId,
                                             @RequestParam(defaultValue = "isMember") Boolean isMember) {
@@ -99,13 +99,13 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return advancedMapper.toDTO(user);
     }
 
-    @DeleteMapping(value = "/{userId}")
+    @DeleteMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     public void delete(@PathVariable("userId") Long userId) {
         service.delete(userId);
     }
 
-    @PutMapping(value = "/{userId}/roles")
+    @PutMapping(value = "/users/{userId}/roles")
     @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
     public AdvancedUserDTO toggleRole(@PathVariable("userId") Long userId,
                                       @RequestParam(value = "role", required = true) Role role) {
@@ -113,15 +113,14 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return advancedMapper.toDTO(user);
     }
 
-    @PutMapping(value = "/{userId}/membership/toggle")
+    @PutMapping(value = "/users/{userId}/membership/toggle")
     @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
-    public AdvancedUserDTO toggleMembership(@PathVariable("userId") Long userId,
-                                      @RequestParam(value = "role", required = true) Role role) {
-        User user = service.toggleRole(userId, role);
+    public AdvancedUserDTO toggleMembership(@PathVariable("userId") Long userId) {
+        User user = service.toggleRole(userId, Role.MEMBER);
         return advancedMapper.toDTO(user);
     }
 
-    @GetMapping(value = "/brevo")
+    @GetMapping(value = "/users/brevo")
     @PreAuthorize("hasPermission(#email, 'User', 'getBrevo')")
     public AdvancedUserDTO getFromBrevo(@RequestParam String email) throws NoSuchFieldException, ApiException, IllegalAccessException {
         User user = service.getFromBrevo(email);

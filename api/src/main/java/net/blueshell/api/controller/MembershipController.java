@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/memberships")
+@RequestMapping
 public class MembershipController extends BaseController<MembershipService, MembershipMapper> {
 
     public MembershipController(MembershipService service, MembershipMapper mapper) {
@@ -26,7 +26,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PostMapping()
+    @PostMapping("/memberships")
     public MembershipDTO createMembership(@Valid @RequestBody MembershipDTO dto) {
         Membership membership = mapper.fromDTO(dto);
         service.create(membership);
@@ -34,7 +34,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PutMapping(value = "/{id}")
+    @PutMapping(value = "/memberships/{id}")
     public MembershipDTO updateMembership(@PathVariable("id") Long id, @RequestBody MembershipDTO dto) {
         service.findById(id);
         Membership membership = mapper.fromDTO(dto);
@@ -43,7 +43,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @GetMapping(value = "/{id}")
+    @GetMapping(value = "/memberships/{id}")
     public MembershipDTO getMembershipById(@PathVariable("id") Long id) {
         return mapper.toDTO(service.findById(id));
     }

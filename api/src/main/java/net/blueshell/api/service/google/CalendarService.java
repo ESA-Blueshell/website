@@ -67,13 +67,10 @@ public class CalendarService {
         htmlParser = Parser.builder(options).build();
         htmlRenderer = HtmlRenderer.builder(options).build();
         this.calendarId = calendarId;
-        // uncomment to convert soft-breaks to hard breaks
-//        options.set(HtmlRenderer.SOFT_BREAK, "");
-//        options.set(HtmlRenderer.HARD_BREAK, "");
     }
 
 
-    public void addToGoogleCalendar(Event event) throws IOException {
+    public void add(Event event) throws IOException {
         var googleEvent = toGoogleEvent(event);
         googleEvent = service.events()
                 .insert(calendarId, googleEvent)
@@ -81,14 +78,14 @@ public class CalendarService {
         event.setGoogleId(googleEvent.getId());
     }
 
-    public void updateGoogleCalendar(Event event) throws IOException {
+    public void update(Event event) throws IOException {
         var googleEvent = toGoogleEvent(event);
         service.events()
                 .update(calendarId, event.getGoogleId(), googleEvent)
                 .execute();
     }
 
-    public void removeFromGoogleCalendar(Event event) throws IOException {
+    public void remove(Event event) throws IOException {
         service.events()
                 .delete(calendarId, event.getGoogleId())
                 .execute();

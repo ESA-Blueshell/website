@@ -58,6 +58,7 @@ public abstract class RequestMapper {
     @Mapping(target = "inheritedRoles", ignore = true)
     @Mapping(target = "roleStrings", ignore = true)
     @Mapping(target = "authorities", ignore = true)
+    @Mapping(target = "creatorId", ignore = true)
     public abstract void fromRequest(ActivationRequest request, @MappingTarget User user);
 
     @AfterMapping
@@ -114,6 +115,7 @@ public abstract class RequestMapper {
     @Mapping(target = "inheritedRoles", ignore = true)
     @Mapping(target = "roleStrings", ignore = true)
     @Mapping(target = "authorities", ignore = true)
+    @Mapping(target = "creatorId", ignore = true)
     public abstract void fromRequest(PasswordResetRequest request, @MappingTarget User user);
 
     @AfterMapping

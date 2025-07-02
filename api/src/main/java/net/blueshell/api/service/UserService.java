@@ -17,6 +17,7 @@ import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.brevo.EmailService;
 import net.blueshell.api.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -39,17 +40,16 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     private static final int MEMBER_ACTIVATION_KEY_LENGTH = 25;
     private static final long MEMBER_ACTIVATION_VALID_SECONDS = 3600L * 24 * 365 * 100; // 100 years
 
-    private final EmailService emailService;
-    private final ContactService contactService;
-    private final MembershipService membershipService;
+
+    private final EmailService emails;
+    private final ContactService contacts;
     private final RequestMapper requestMapper;
 
     @Autowired
-    public UserService(UserRepository repository, EmailService emailService, ContactService contactService, MembershipService membershipService, RequestMapper requestMapper) {
-        super(repository);
-        this.emailService = emailService;
-        this.contactService = contactService;
-        this.membershipService = membershipService;
+    public UserService(UserRepository repository, ApplicationEventPublisher events, EmailService emails, ContactService contacts, RequestMapper requestMapper) {
+        super(repository, events);
+        this.emails = emails;
+        this.contacts = contacts;
         this.requestMapper = requestMapper;
     }
 
@@ -87,8 +87,8 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     @Transactional
-    public User createUser(User user) throws ApiException {
-        contactService.updateContact(user);
+    public void createUser(User user) throws ApiException {
+        contacts.sync(user);
 
         if (hasAuthority(Role.BOARD)) {
             sendMemberActivationEmail(user);
@@ -97,31 +97,30 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         }
 
         if (user.hasRole(Role.MEMBER)) {
-            emailService.sendContributionEmail(user);
+            emails.sendContributionEmail(user);
         }
 
-        repository.save(user);
-        return user;
+        self().create(user);
     }
 
     @Transactional
     public void updateUser(User user) throws ApiException {
-        contactService.updateContact(user);
-        repository.save(user);
+        contacts.sync(user);
+        self().update(user);
     }
 
     private void sendUserActivationEmail(User user) throws ApiException {
         user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(USER_ACTIVATION_VALID_SECONDS)));
         user.setResetType(ResetType.USER_ACTIVATION);
-        emailService.sendUserActivationEmail(user);
+        emails.sendUserActivationEmail(user);
     }
 
     private void sendMemberActivationEmail(User user) throws ApiException {
         user.setResetKey(Util.getRandomCapitalString(MEMBER_ACTIVATION_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(MEMBER_ACTIVATION_VALID_SECONDS)));
         user.setResetType(ResetType.MEMBER_ACTIVATION);
-        emailService.sendMemberActivationEmail(user);
+        emails.sendMemberActivationEmail(user);
     }
 
     @Transactional
@@ -131,9 +130,9 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         user.setResetKey(Util.getRandomCapitalString(PASSWORD_RESET_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(PASSWORD_RESET_VALID_SECONDS)));
         user.setResetType(ResetType.PASSWORD_RESET);
-        emailService.sendPasswordResetEmail(user);
+        emails.sendPasswordResetEmail(user);
 
-        repository.save(user);
+        self().update(user);
     }
 
     @Transactional
@@ -145,22 +144,22 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
             user = findByUsername(request.getUsername());
         }
         requestMapper.fromRequest(request, user);
-        repository.save(user);
+        self().update(user);
     }
 
     @Transactional
     public void setPassword(PasswordResetRequest request) {
         User user = findByUsername(request.getUsername());
         requestMapper.fromRequest(request, user);
-        repository.save(user);
+        self().update(user);
     }
 
 
     @Transactional
     public User updateMembership(Long id, Boolean isMember) {
-        User user = findById(id);
+        User user = self().findById(id);
 
-        if (isMember) {
+        if (Boolean.TRUE.equals(isMember)) {
             user.addRole(Role.MEMBER);
             if (user.getMembership() == null) {
                 Membership membership = new Membership();
@@ -175,45 +174,32 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
             }
         }
 
-        repository.save(user);
-
+        self().update(user);
         return user;
     }
 
     @Transactional
-    public void delete(User user) {
-        user.setDeletedAt(Timestamp.from(Instant.now()));
-        repository.save(user);
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        User user = findById(id);
-        delete(user);
-    }
-
-    @Transactional
     public User toggleRole(Long id, Role role) {
-        User user = findById(id);
+        User user = self().findById(id);
 
         if (user.hasRole(role)) {
             user.removeRole(role);
         } else {
             user.addRole(role);
         }
-        repository.save(user);
+        self().update(user);
         return user;
     }
 
-    public User getFromBrevo(@NotBlank String email) throws NoSuchFieldException, ApiException, IllegalAccessException {
-        return contactService.getUserFromBrevo(email);
+    public User getFromBrevo(@NotBlank String email) throws ApiException {
+        return contacts.getUserFromBrevo(email);
     }
 
     @Transactional
     public void addRole(User user, Role role) {
         if (!user.hasRole(role)) {
             user.addRole(role);
-            repository.save(user);
+            self().update(user);
         }
     }
 
@@ -221,7 +207,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     public void removeRole(User user, Role role) {
         if (user.hasRole(role)) {
             user.removeRole(role);
-            repository.save(user);
+            self().update(user);
         }
     }
 

@@ -1,12 +1,13 @@
 package net.blueshell.api.service;
 
+import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.repository.EventSignUpRepository;
 import net.blueshell.api.service.brevo.EmailService;
-import net.blueshell.api.base.BaseModelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sendinblue.ApiException;
@@ -21,9 +22,10 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
 
     @Autowired
     public EventSignUpService(EventSignUpRepository repository,
+                              ApplicationEventPublisher events,
                               EventService eventService,
                               EmailService emailService) {
-        super(repository);
+        super(repository, events);
         this.eventService = eventService;
         this.emailService = emailService;
     }
@@ -60,7 +62,7 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
         } else {
             signUp = findByGuestAccessToken(accessToken);
         }
-        deleteById(signUp.getId());
+        delete(signUp.getId());
     }
 
     public List<EventSignUp> findByUserId(Long userId) {

@@ -1,8 +1,8 @@
 package net.blueshell.api.repository;
 
 import jakarta.validation.constraints.NotNull;
-import net.blueshell.api.model.Blog;
 import net.blueshell.api.base.BaseRepository;
+import net.blueshell.api.model.Blog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -14,10 +14,12 @@ import java.util.UUID;
 @Repository
 public interface BlogRepository extends BaseRepository<Blog, UUID> {
 
+    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Blog n ORDER BY n.publishedAt DESC")
     @Override
-    Page<Blog> findAll(@NotNull Pageable pageable);
+    Page<Blog> findAll(@org.jetbrains.annotations.NotNull @NotNull Pageable pageable);
 
+    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Blog n ORDER BY n.publishedAt DESC")
     @Override
     List<Blog> findAll();

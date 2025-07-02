@@ -15,9 +15,6 @@ import java.util.List;
 @RequestMapping
 public class SponsorController extends BaseController<SponsorService, SponsorMapper> {
 
-    private static SponsorService service;
-    private static SponsorMapper mapper;
-
     public SponsorController(SponsorService service, SponsorMapper mapper) {
         super(service, mapper);
     }

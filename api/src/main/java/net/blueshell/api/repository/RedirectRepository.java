@@ -15,14 +15,16 @@ import java.util.UUID;
 @Repository
 public interface RedirectRepository extends BaseRepository<Redirect, UUID> {
 
+    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
     @Override
-    Page<Redirect> findAll(@NotNull Pageable pageable);
+    Page<Redirect> findAll(@org.jetbrains.annotations.NotNull @NotNull Pageable pageable);
 
+    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
     @Override
     List<Redirect> findAll();
 
     @Query("SELECT e FROM Redirect e WHERE e.createdAt >= :from AND e.createdAt <= :to ORDER BY e.createdAt DESC")
-    List<Redirect>  findCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+    List<Redirect> findCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

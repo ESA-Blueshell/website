@@ -1,7 +1,8 @@
 package net.blueshell.api.dto;
 
 
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.PlatformType;
 
 @Data

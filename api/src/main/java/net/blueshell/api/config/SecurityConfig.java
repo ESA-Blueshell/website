@@ -2,8 +2,8 @@ package net.blueshell.api.config;
 
 import net.blueshell.api.auth.JwtAuthFilter;
 import net.blueshell.api.auth.JwtAuthenticationEntryPoint;
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.base.CompositePermissionEvaluator;
+import net.blueshell.api.common.enums.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -65,7 +65,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.POST, "/auth").permitAll()        // login
-                        .requestMatchers(HttpMethod.GET,  "/auth/identity").permitAll() // token→identity
+                        .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll() // token→identity
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));

@@ -25,7 +25,9 @@ public class UserEventHandler {
         this.committeeMembers = committeeMembers;
     }
 
-    /** send e-mail only if the transaction COMMITTED successfully */
+    /**
+     * send e-mail only if the transaction COMMITTED successfully
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onUserCreated(EntityCreatedEvent<User> evt) throws ApiException {
         User u = evt.entity();
@@ -41,7 +43,9 @@ public class UserEventHandler {
         }
     }
 
-    /** clean-up if the outer transaction rolls back */
+    /**
+     * clean-up if the outer transaction rolls back
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
     public void onFailure(EntityCreatedEvent<User> evt) {
         User u = evt.entity();

@@ -4,7 +4,7 @@ ALTER DATABASE API
 
 ALTER TABLE boards
     CONVERT TO CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
+        COLLATE utf8mb4_unicode_ci;
 
 ALTER TABLE board_documents
     CONVERT TO CHARACTER SET utf8mb4

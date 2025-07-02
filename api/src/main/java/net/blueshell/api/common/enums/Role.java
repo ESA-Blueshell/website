@@ -41,7 +41,7 @@ public enum Role {
         while (!unexplored.isEmpty()) {
             Role currentRole = unexplored.remove();
             res.add(currentRole);
-            unexplored.addAll(Arrays.stream(currentRole.inheritedRoles).filter(role -> !res.contains(role)).collect(Collectors.toList()));
+            unexplored.addAll(Arrays.stream(currentRole.inheritedRoles).filter(role -> !res.contains(role)).toList());
         }
         return res;
     }

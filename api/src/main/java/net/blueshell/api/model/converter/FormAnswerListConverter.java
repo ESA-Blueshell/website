@@ -4,13 +4,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+
 import java.util.Collections;
 import java.util.List;
 
 @Converter
 public class FormAnswerListConverter implements AttributeConverter<List<Object>, String> {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final TypeReference<List<Object>> TYPE_REF = new TypeReference<>() {};
+    private static final TypeReference<List<Object>> TYPE_REF = new TypeReference<>() {
+    };
 
     @Override
     public String convertToDatabaseColumn(List<Object> attribute) {

@@ -1,7 +1,8 @@
 package net.blueshell.api.dto;
 
 
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.sql.Timestamp;
 import java.util.UUID;

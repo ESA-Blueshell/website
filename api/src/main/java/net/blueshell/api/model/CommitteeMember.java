@@ -61,7 +61,7 @@ public class CommitteeMember implements BaseModel<Long> {
         return user != null ? user.getId() : null;
     }
 
-    public Long getCommitteeId(){
+    public Long getCommitteeId() {
         return committee != null ? committee.getId() : null;
     }
 }

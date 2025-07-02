@@ -1,9 +1,9 @@
 package net.blueshell.api.mapper;
 
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
-import net.blueshell.api.dto.InternalBlogDTO;
 import net.blueshell.api.dto.EmailDTO;
 import net.blueshell.api.dto.FileDTO;
+import net.blueshell.api.dto.InternalBlogDTO;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

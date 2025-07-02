@@ -1,8 +1,8 @@
 package net.blueshell.api.mapper;
 
-import net.blueshell.api.model.Blog;
-import net.blueshell.api.dto.InternalBlogDTO;
 import net.blueshell.api.base.BaseMapper;
+import net.blueshell.api.dto.InternalBlogDTO;
+import net.blueshell.api.model.Blog;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

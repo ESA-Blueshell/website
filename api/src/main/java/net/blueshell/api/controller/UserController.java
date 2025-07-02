@@ -108,7 +108,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PutMapping(value = "/users/{userId}/roles")
     @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
     public AdvancedUserDTO toggleRole(@PathVariable("userId") Long userId,
-                                      @RequestParam(value = "role", required = true) Role role) {
+                                      @RequestParam(value = "role") Role role) {
         User user = service.toggleRole(userId, role);
         return advancedMapper.toDTO(user);
     }
@@ -122,7 +122,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping(value = "/users/brevo")
     @PreAuthorize("hasPermission(#email, 'User', 'getBrevo')")
-    public AdvancedUserDTO getFromBrevo(@RequestParam String email) throws NoSuchFieldException, ApiException, IllegalAccessException {
+    public AdvancedUserDTO getFromBrevo(@RequestParam String email) throws ApiException {
         User user = service.getFromBrevo(email);
         return advancedMapper.toDTO(user);
     }

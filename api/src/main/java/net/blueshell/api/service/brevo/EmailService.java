@@ -84,7 +84,7 @@ public class EmailService {
     public void sendContributionEmail(User user) throws ApiException {
         List<ContributionPeriod> contributionPeriods = contributionPeriodRepository.findCurrentOrLatestContributionPeriod();
         if (!contributionPeriods.isEmpty()) {
-            ContributionPeriod contributionPeriod = contributionPeriods.get(0);
+            ContributionPeriod contributionPeriod = contributionPeriods.getFirst();
             Properties params = getParams(contributionPeriod);
             sendEmail(Collections.singletonList(user.getEmail()), this.contributionTemplateId, params);
         }

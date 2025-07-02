@@ -15,7 +15,7 @@ import java.util.Objects;
 @Data
 @SQLDelete(sql = "UPDATE event_feedback SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class EventFeedback  implements BaseModel<Long> {
+public class EventFeedback implements BaseModel<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

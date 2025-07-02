@@ -5,4 +5,5 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @Configuration
 @EnableAspectJAutoProxy(exposeProxy = true)
-public class AopConfig { }
+public class AopConfig {
+}

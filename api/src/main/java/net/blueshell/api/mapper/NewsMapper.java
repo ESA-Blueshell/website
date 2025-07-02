@@ -1,10 +1,10 @@
 package net.blueshell.api.mapper;
 
+import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.NewsDTO;
 import net.blueshell.api.model.News;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.base.BaseMapper;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

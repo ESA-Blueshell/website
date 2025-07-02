@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper;
 
-import net.blueshell.api.model.User;
 import net.blueshell.api.auth.Identity;
+import net.blueshell.api.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

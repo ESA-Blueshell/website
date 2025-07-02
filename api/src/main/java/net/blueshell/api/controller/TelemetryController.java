@@ -1,13 +1,16 @@
 package net.blueshell.api.controller;
 
 import jakarta.ws.rs.PathParam;
-import net.blueshell.api.dto.TelemetryDTO;
-import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.base.BaseController;
+import net.blueshell.api.common.enums.PlatformType;
+import net.blueshell.api.dto.TelemetryDTO;
 import net.blueshell.api.mapper.TelemetryMapper;
 import net.blueshell.api.model.Telemetry;
 import net.blueshell.api.service.TelemetryService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 

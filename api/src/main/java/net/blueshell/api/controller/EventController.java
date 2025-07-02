@@ -1,13 +1,12 @@
 package net.blueshell.api.controller;
 
 import jakarta.validation.Valid;
-
+import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.mapper.EventMapper;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.service.*;
-import net.blueshell.api.auth.Identity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +14,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
@@ -27,23 +25,14 @@ import java.util.stream.Stream;
 @RequestMapping
 public class EventController extends BaseController<EventService, EventMapper> {
 
-    private final EventSignUpService eventSignUpService;
-    private final GuestService guestService;
-    private final UserService userService;
-    private final FileService fileService;
-
     @Autowired
-    public EventController(EventService service, EventMapper mapper, EventSignUpService eventSignUpService, GuestService guestService, UserService userService, FileService fileService) {
+    public EventController(EventService service, EventMapper mapper) {
         super(service, mapper);
-        this.eventSignUpService = eventSignUpService;
-        this.guestService = guestService;
-        this.userService = userService;
-        this.fileService = fileService;
     }
 
     @PreAuthorize("hasAuthority('COMMITTEE') && hasPermission(#eventDTO.committeeId, 'Committee', 'createEvent')")
     @PostMapping("/events")
-    public EventDTO createEvent(@Valid @RequestBody EventDTO eventDTO) throws IOException {
+    public EventDTO createEvent(@Valid @RequestBody EventDTO eventDTO) {
         Event event = mapper.fromDTO(eventDTO);
         service.create(event);
         return mapper.toDTO(event);
@@ -88,7 +77,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
                 return true;
 //                return event.canEdit(authedUser) && event.getStartTime().isBefore(LocalDateTime.now());
             }
-            return event.isVisible() && event.getStartTime().isBefore(LocalDateTime.now());
+            return event.getStartTime().isBefore(LocalDateTime.now());
         };
 
         Stream<Event> filteredEvents = events.stream()
@@ -107,13 +96,13 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @PreAuthorize("hasPermission(#eventId, 'Event', 'delete')")
     @DeleteMapping("/events/{eventId}")
-    public void deleteEventById(@PathVariable("eventId") Long eventId) throws IOException {
+    public void deleteEventById(@PathVariable("eventId") Long eventId) {
         service.delete(eventId);
     }
 
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
     @PutMapping("/events/{eventId}")
-    public EventDTO updateEvent(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventDTO dto) throws IOException {
+    public EventDTO updateEvent(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventDTO dto) {
         Event event = mapper.fromDTO(dto);
         event.setId(eventId);
         service.update(event);

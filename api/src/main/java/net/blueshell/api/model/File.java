@@ -17,7 +17,7 @@ import java.util.Objects;
 @SQLDelete(sql = "UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
-public class File  implements BaseModel<Long> {
+public class File implements BaseModel<Long> {
 
     @Getter
     @Setter

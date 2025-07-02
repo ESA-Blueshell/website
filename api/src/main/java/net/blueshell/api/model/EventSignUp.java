@@ -18,7 +18,7 @@ import java.util.List;
 @Data
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class EventSignUp  implements BaseModel<Long> {
+public class EventSignUp implements BaseModel<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +29,7 @@ public class EventSignUp  implements BaseModel<Long> {
     @JsonIgnore
     private Event event;
 
-    @Column(name = "event_id", insertable=false, updatable=false)
+    @Column(name = "event_id", insertable = false, updatable = false)
     private Long eventId;
 
     @ManyToOne
@@ -37,7 +37,7 @@ public class EventSignUp  implements BaseModel<Long> {
     @JsonIgnore
     private User user;
 
-    @Column(name = "user_id", insertable=false, updatable=false)
+    @Column(name = "user_id", insertable = false, updatable = false)
     private Long userId;
 
     @OneToOne

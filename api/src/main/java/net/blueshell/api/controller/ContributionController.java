@@ -11,7 +11,6 @@ import net.blueshell.api.service.ContributionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import sendinblue.ApiException;
 
 import java.util.List;
 import java.util.stream.Stream;

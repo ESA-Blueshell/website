@@ -1,11 +1,7 @@
 package net.blueshell.api.event;
 
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.EntityCreatedEvent;
-import net.blueshell.api.common.event.EntityDeletedEvent;
-import net.blueshell.api.model.CommitteeMember;
 import net.blueshell.api.model.ContributionPeriod;
-import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;

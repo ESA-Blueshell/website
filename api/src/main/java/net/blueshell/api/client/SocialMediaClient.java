@@ -7,8 +7,8 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
-import net.blueshell.api.dto.SocialDTO;
 import net.blueshell.api.common.enums.PlatformType;
+import net.blueshell.api.dto.SocialDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,10 +21,10 @@ import java.util.Map;
 
 @Component
 public class SocialMediaClient {
-    
+
     private final RestTemplate restTemplate;
 
-    private final String FACEBOOK_API_TEMPLATE = "https://graph.facebook.com/%s/feed?access_token=%s";
+    private static final String FACEBOOK_API_TEMPLATE = "https://graph.facebook.com/%s/feed?access_token=%s";
 
     @Value("${facebook.page.id}")
     private String facebookPageID;

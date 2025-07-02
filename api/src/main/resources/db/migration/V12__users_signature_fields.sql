@@ -1,5 +1,5 @@
 ALTER TABLE users
-    ADD COLUMN signature_id BIGINT,
+    ADD COLUMN signature_id   BIGINT,
     ADD COLUMN signature_date DATE,
     ADD COLUMN signature_city VARCHAR(255);
 

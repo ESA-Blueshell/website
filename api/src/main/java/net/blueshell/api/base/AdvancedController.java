@@ -1,6 +1,6 @@
 package net.blueshell.api.base;
 
-public abstract class AdvancedController<S, AM, SM>  extends IdentityProvider {
+public abstract class AdvancedController<S, AM, SM> extends IdentityProvider {
 
     protected final S service;
     protected final AM advancedMapper;

@@ -28,12 +28,12 @@ FROM signatures s
 
 -- Insert data into members using the captured file IDs
 INSERT INTO memberships (user_id,
-                     start_date,
-                     end_date,
-                     type,
-                     city,
-                     incasso,
-                     signature_id)
+                         start_date,
+                         end_date,
+                         type,
+                         city,
+                         incasso,
+                         signature_id)
 SELECT s.user_id as user_id,
        s.date    AS start_date,
        NULL      AS end_date,
@@ -54,7 +54,9 @@ SELECT u.id                 AS user_id,
        NULL                 AS city,
        u.incasso            AS incasso,
        NULL                 AS signature_id
-FROM users u WHERE u.member_since <= CURRENT_TIME AND u.id NOT IN (SELECT user_id FROM memberships);
+FROM users u
+WHERE u.member_since <= CURRENT_TIME
+  AND u.id NOT IN (SELECT user_id FROM memberships);
 
 
 -- Cleanup temporary table

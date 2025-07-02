@@ -29,7 +29,7 @@ public class FormQuestionListConverter implements AttributeConverter<List<FormQu
             return new ArrayList<>();
         }
         try {
-            return objectMapper.readValue(dbData, new TypeReference<List<FormQuestion>>() {
+            return objectMapper.readValue(dbData, new TypeReference<>() {
             });
         } catch (Exception e) {
             throw new RuntimeException("JSON conversion error", e);

@@ -1,8 +1,8 @@
 package net.blueshell.api.permission;
 
+import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.EventSignUp;
-import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.service.EventSignUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -28,7 +28,8 @@ public class EventSignUpPermission extends BasePermissionEvaluator<EventSignUp, 
         }
 
         return switch (permission) {
-            case "read" -> hasAuthority(Role.BOARD) || signUp.getUser().equals(getPrincipal()) || signUp.getEvent().getCommittee().hasMember(getPrincipal());
+            case "read" ->
+                    hasAuthority(Role.BOARD) || signUp.getUser().equals(getPrincipal()) || signUp.getEvent().getCommittee().hasMember(getPrincipal());
             case "write", "delete" -> hasAuthority(Role.BOARD) || signUp.getUser().equals(getPrincipal());
             default -> false;
         };

@@ -1,9 +1,8 @@
 package net.blueshell.api.service;
 
-import net.blueshell.api.dto.SocialDTO;
-import net.blueshell.api.dto.TelemetryDTO;
-import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.client.SocialMediaClient;
+import net.blueshell.api.common.enums.PlatformType;
+import net.blueshell.api.dto.SocialDTO;
 import net.blueshell.api.model.Telemetry;
 import org.springframework.stereotype.Service;
 

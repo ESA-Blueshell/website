@@ -2,11 +2,11 @@ package net.blueshell.api.config;
 
 import net.blueshell.api.auth.JwtAuthFilter;
 import net.blueshell.api.auth.JwtAuthenticationEntryPoint;
-import net.blueshell.api.base.CompositePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.permission.CompositePermissionEvaluator;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
@@ -19,8 +19,12 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl.fromHierarchy;
 
@@ -38,65 +42,67 @@ public class SecurityConfig {
 
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
+        return cfg.getAuthenticationManager();
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthFilter> jwtFilterRegistration(JwtAuthFilter f) {
+        return new FilterRegistrationBean<>(f);
     }
 
     @Bean
     public RoleHierarchy roleHierarchy() {
-        String hierarchyString = (String) Arrays.stream(Role.values())
+        String hierarchy = Arrays.stream(Role.values())
                 .sorted((a, b) -> b.getAuthorities().size() - a.getAuthorities().size())
                 .map(Role::getName)
                 .reduce((a, b) -> a + " > " + b)
-                .orElse("");
-        return fromHierarchy(hierarchyString);
+                .orElse("").toString();
+        return fromHierarchy(hierarchy);
     }
 
-    // 1) Chain for /auth/**
     @Bean
-    @Order(1)
-    public SecurityFilterChain authSecurityChain(HttpSecurity http) throws Exception {
-        http
-                // only apply this chain to /auth/**
-                .securityMatcher("/auth/**")
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of("http://localhost:3000"));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        cfg.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
+        src.registerCorsConfiguration("/**", cfg);
+        return src;
+    }
+
+
+    @Bean
+    public SecurityFilterChain authChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // run your JWT filter here
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers(HttpMethod.POST, "/auth").permitAll()        // login
-                        .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll() // token→identity
-                        .anyRequest().authenticated()
-                )
+                        .requestMatchers(HttpMethod.POST, "/auth").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/events/**",
+                                "/download/**",
+                                "/committees/**",
+                                "/contributionPeriods",
+                                "/health").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/events/signups/*/guest",
+                                "/users").permitAll()
+                        .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();
     }
 
-    // 2) Chain for everything else
     @Bean
-    @Order(2)
-    public SecurityFilterChain apiSecurityChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/**")
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(a -> a
-                        .requestMatchers(HttpMethod.GET,
-                                "/events/**", "/download/**", "/committees**", "/contributionPeriods", "/health"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/events/signups/*/guest", "/users"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                );
-        return http.build();
-    }
-
-
-    @Bean
-    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(CompositePermissionEvaluator permissionEvaluator) {
-        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
-        handler.setPermissionEvaluator(permissionEvaluator);
-        return handler;
+    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(
+            CompositePermissionEvaluator evaluator) {
+        DefaultMethodSecurityExpressionHandler h = new DefaultMethodSecurityExpressionHandler();
+        h.setPermissionEvaluator(evaluator);
+        return h;
     }
 }

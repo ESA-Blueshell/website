@@ -2,11 +2,11 @@ package net.blueshell.api.controller;
 
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
-import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventSignUpDTO;
 import net.blueshell.api.mapper.EventSignUpMapper;
 import net.blueshell.api.model.EventSignUp;
+import net.blueshell.api.model.User;
 import net.blueshell.api.service.EventSignUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,7 +29,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     @GetMapping(value = "/events/signups")
     @PreAuthorize("principal != null")
     public List<EventSignUpDTO> getMySignUps() {
-        Identity user = getPrincipal();
+        User user = getPrincipal();
         if (user == null) {
             throw new NotFoundException();
         }

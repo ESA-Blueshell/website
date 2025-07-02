@@ -85,7 +85,6 @@ public abstract class BaseModelService<
             throw new ResourceNotFoundException("Entity not found with id: " + id);
         }
         repository.saveAndFlush(entity);
-        entityManager.refresh(entity);
         publish(new EntityUpdatedEvent<>(entity));
     }
 

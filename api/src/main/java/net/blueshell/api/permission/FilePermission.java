@@ -1,6 +1,5 @@
 package net.blueshell.api.permission;
 
-import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.Event;
@@ -32,7 +31,7 @@ public class FilePermission extends BasePermissionEvaluator<File, Long, FileServ
             return false;
         }
         File file = (File) targetDomainObject;
-        Identity principal = getPrincipal();
+        var principal = getPrincipal();
 
         if (principal.hasRole(Role.BOARD)) {
             return true;
@@ -45,7 +44,7 @@ public class FilePermission extends BasePermissionEvaluator<File, Long, FileServ
         };
     }
 
-    private boolean handleReadPermission(File file, Identity principal) {
+    private boolean handleReadPermission(File file, User principal) {
         return switch (file.getFileType()) {
             case SIGNATURE -> {
                 User user = userService.findBySignature(file);
@@ -60,7 +59,7 @@ public class FilePermission extends BasePermissionEvaluator<File, Long, FileServ
         };
     }
 
-    private boolean handleDeletePermission(File file, Identity principal) {
+    private boolean handleDeletePermission(File file, User principal) {
         return switch (file.getFileType()) {
 //            case EVENT_PICTURE -> {
 //                Event event = eventService.findByPicture(file);

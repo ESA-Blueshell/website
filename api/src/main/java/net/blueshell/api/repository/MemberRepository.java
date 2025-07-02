@@ -10,4 +10,6 @@ import java.util.Optional;
 @Repository
 public interface MemberRepository extends BaseRepository<Membership, Long> {
     Optional<Membership> findBySignature(File signature);
+
+    boolean existsByUserId(Long userId);
 }

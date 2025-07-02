@@ -10,7 +10,7 @@
 
       <router-link to="/">
         <img
-          src="assets/topbarlogo.png"
+          src="@/assets/topbarlogo.png"
           alt="Blueshell logo"
           style="max-height: 64px;width: 100%"
           class="mr-2"
@@ -406,7 +406,7 @@
         autoplay
       >
         <source
-          src="assets/blueshellanthem.mp3"
+          src="@/assets/blueshellanthem.mp3"
           type="audio/mpeg"
         >
       </audio>

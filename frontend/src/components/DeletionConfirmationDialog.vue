@@ -30,7 +30,7 @@ import {computed, defineComponent} from 'vue';
 import DOMPurify from "dompurify";
 
 export default defineComponent({
-  name: 'DeleteConfirmationDialog',
+  name: 'DeletionConfirmationDialog',
   props: {
     modelValue: Boolean,
     title: String,

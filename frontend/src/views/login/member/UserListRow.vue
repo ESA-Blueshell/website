@@ -241,7 +241,9 @@ export default {
         };
         userChanged(changedUser);
         showStartModal.value = false;
-      } finally {
+      } catch (e) {
+
+      }finally {
         isSubmitting.value = false;
       }
     };

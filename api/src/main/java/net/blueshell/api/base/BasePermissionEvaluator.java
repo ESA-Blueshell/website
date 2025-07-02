@@ -27,7 +27,7 @@ public abstract class BasePermissionEvaluator<T extends BaseModel<ID>, ID, S ext
         return castedType;
     }
 
-    boolean supports(Class<?> domainClass) {
+    public boolean supports(Class<?> domainClass) {
         return domainType.isAssignableFrom(domainClass);
     }
 

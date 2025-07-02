@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.controller.request.JwtRequest;
 import net.blueshell.api.controller.response.JwtResponse;
-import net.blueshell.api.mapper.IdentityMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,8 +19,6 @@ public class JWTAuthController extends JWTAuthBase {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
-    private final IdentityMapper mapper;
-
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
@@ -29,11 +26,10 @@ public class JWTAuthController extends JWTAuthBase {
     public JWTAuthController(
             AuthenticationManager authenticationManager,
             JwtTokenUtil jwtTokenUtil,
-            UserService userService, IdentityMapper mapper) {
+            UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
-        this.mapper = mapper;
     }
 
     @PostMapping
@@ -59,13 +55,5 @@ public class JWTAuthController extends JWTAuthBase {
     private void authenticate(String username, String password) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password));
-    }
-
-
-    @GetMapping("/identity")
-    public Identity getIdentity() {
-        User user = getPrincipal();
-        if (user == null) return null;
-        return mapper.fromUser(user);
     }
 }

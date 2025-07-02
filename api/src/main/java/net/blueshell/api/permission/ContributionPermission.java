@@ -1,6 +1,5 @@
 package net.blueshell.api.permission;
 
-import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.Contribution;
@@ -24,7 +23,7 @@ public class ContributionPermission extends BasePermissionEvaluator<Contribution
             return false;
         }
         Contribution contribution = (Contribution) object;
-        Identity principal = getPrincipal();
+        var principal = getPrincipal();
         return switch (permission) {
             case "read", "write" ->
                     principal.hasRole(Role.BOARD) || Objects.equals(principal.getId(), contribution.getUserId());

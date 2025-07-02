@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import net.blueshell.api.model.User;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,22 +22,12 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    /**
-     * Only run this filter on `/auth/identity`
-     */
-    private static final PathPatternRequestMatcher USER_DETAILS =
-            PathPatternRequestMatcher.withDefaults().matcher("/auth/identity");  // ← builder API
     private final JwtTokenUtil jwtTokenUtil;
     private final UserDetailsService userDetailsService;
 
     public JwtAuthFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
-    }
-
-    @Override
-    protected boolean shouldNotFilter(@NotNull HttpServletRequest request) {
-        return !USER_DETAILS.matches(request);
     }
 
     @Override
@@ -59,7 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String username = jwtTokenUtil.getUsernameFromToken(token);
         if (username != null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            User userDetails = (User) userDetailsService.loadUserByUsername(username);
             if (Boolean.TRUE.equals(jwtTokenUtil.validateToken(token, userDetails))) {
                 var auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());

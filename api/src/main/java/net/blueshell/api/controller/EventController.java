@@ -1,11 +1,11 @@
 package net.blueshell.api.controller;
 
 import jakarta.validation.Valid;
-import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.mapper.EventMapper;
 import net.blueshell.api.model.Event;
+import net.blueshell.api.model.User;
 import net.blueshell.api.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -66,7 +66,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @GetMapping("/events/past")
     public Stream<EventDTO> getPastEvents(@RequestParam(required = false, defaultValue = "false") boolean editable) {
-        Identity authedUser = getPrincipal();
+        User authedUser = getPrincipal();
         List<Event> events = service.findAll();
 
         Predicate<Event> predicate = event -> {

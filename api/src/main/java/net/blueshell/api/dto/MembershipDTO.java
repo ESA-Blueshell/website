@@ -1,9 +1,10 @@
 package net.blueshell.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.MemberType;
+import net.blueshell.api.validation.membership.NoExistingMembershipForUserId;
 
 import java.util.Date;
 
@@ -13,7 +14,8 @@ public class MembershipDTO extends BaseDTO {
 
     private Long id;
 
-    @NotBlank
+    @NotNull
+    @NoExistingMembershipForUserId
     private Long userId;
 
     private MemberType memberType;

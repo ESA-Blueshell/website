@@ -9,7 +9,7 @@ SET form_answers_temp =
             END;
 
 ALTER TABLE event_signups
-DROP COLUMN form_answers;
+    DROP COLUMN form_answers;
 
 ALTER TABLE event_signups
     CHANGE COLUMN form_answers_temp form_answers JSON;

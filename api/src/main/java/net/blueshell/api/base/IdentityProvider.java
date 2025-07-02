@@ -1,7 +1,7 @@
 package net.blueshell.api.base;
 
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.auth.Identity;
+import net.blueshell.api.common.enums.Role;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 

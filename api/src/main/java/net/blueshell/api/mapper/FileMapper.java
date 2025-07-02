@@ -1,10 +1,10 @@
 package net.blueshell.api.mapper;
 
 import jakarta.ws.rs.BadRequestException;
-import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.service.FileService;
+import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.model.File;
+import net.blueshell.api.service.FileService;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.mapstruct.*;
@@ -35,7 +35,9 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     @Value("${app.url}")
     private String appUrl;
 
-    /** Constructs the final download URL that will serve the stored file. */
+    /**
+     * Constructs the final download URL that will serve the stored file.
+     */
     public String getDownloadURI(Path filePath) {
         return UriComponentsBuilder
                 .fromUriString(appUrl)

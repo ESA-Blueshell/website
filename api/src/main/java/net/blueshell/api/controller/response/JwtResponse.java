@@ -3,11 +3,13 @@ package net.blueshell.api.controller.response;
 import lombok.Getter;
 import net.blueshell.api.dto.BaseDTO;
 
+import java.io.Serial;
 import java.util.Set;
 
 @Getter
 public class JwtResponse extends BaseDTO {
 
+    @Serial
     private static final long serialVersionUID = -8091879091924046844L;
     private final String token;
     private final long userId;

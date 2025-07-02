@@ -1,9 +1,9 @@
 package net.blueshell.api.permission;
 
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.model.Contribution;
 import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BasePermissionEvaluator;
+import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.model.Contribution;
 import net.blueshell.api.service.ContributionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -26,7 +26,8 @@ public class ContributionPermission extends BasePermissionEvaluator<Contribution
         Contribution contribution = (Contribution) object;
         Identity principal = getPrincipal();
         return switch (permission) {
-            case "read", "write" -> principal.hasRole(Role.BOARD) || Objects.equals(principal.getId(), contribution.getUserId());
+            case "read", "write" ->
+                    principal.hasRole(Role.BOARD) || Objects.equals(principal.getId(), contribution.getUserId());
             default -> false;
         };
     }

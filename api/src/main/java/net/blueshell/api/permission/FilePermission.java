@@ -1,11 +1,11 @@
 package net.blueshell.api.permission;
 
+import net.blueshell.api.auth.Identity;
+import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
-import net.blueshell.api.auth.Identity;
-import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.service.EventService;
 import net.blueshell.api.service.FileService;
 import net.blueshell.api.service.UserService;
@@ -57,7 +57,6 @@ public class FilePermission extends BasePermissionEvaluator<File, Long, FileServ
             }
             case EVENT_PICTURE -> principal.hasRole(Role.MEMBER);
             case PROFILE_PICTURE, DOCUMENT, SPONSOR_PICTURE -> true;
-            default -> false;
         };
     }
 

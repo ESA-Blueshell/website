@@ -18,7 +18,7 @@ public class BoardMember implements BaseModel<Long> {
     private Long id;
 
     @JoinColumn(name = "board_id")
-    @OneToOne
+    @ManyToOne
     private Board board;
 
     @JoinColumn(name = "user_id")

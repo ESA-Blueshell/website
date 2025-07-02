@@ -7,9 +7,7 @@ import net.blueshell.api.common.event.EntityDeletedEvent;
 import net.blueshell.api.common.event.EntityUpdatedEvent;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
 import org.springframework.aop.framework.AopContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,16 +34,15 @@ import java.util.List;
  * extra logic (validation, auditing, events, etc.).</p>
  */
 public abstract class BaseModelService<
-        T  extends BaseModel<ID>,
+        T extends BaseModel<ID>,
         ID,
-        R  extends BaseRepository<T, ID>>
+        R extends BaseRepository<T, ID>>
         extends IdentityProvider {
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     protected final R repository;
     private final ApplicationEventPublisher eventPublisher;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     protected BaseModelService(R repository, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;

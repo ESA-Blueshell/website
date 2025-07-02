@@ -1,11 +1,11 @@
 package net.blueshell.api.mapper;
 
+import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.service.CommitteeService;
-import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.service.FileService;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;

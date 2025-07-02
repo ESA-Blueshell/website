@@ -11,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-/* updated import — note the servlet sub-package */
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -22,6 +21,11 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    /**
+     * Only run this filter on `/auth/identity`
+     */
+    private static final PathPatternRequestMatcher USER_DETAILS =
+            PathPatternRequestMatcher.withDefaults().matcher("/auth/identity");  // ← builder API
     private final JwtTokenUtil jwtTokenUtil;
     private final UserDetailsService userDetailsService;
 
@@ -29,10 +33,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
     }
-
-    /** Only run this filter on `/auth/identity` */
-    private static final PathPatternRequestMatcher USER_DETAILS =
-            PathPatternRequestMatcher.withDefaults().matcher("/auth/identity");  // ← builder API
 
     @Override
     protected boolean shouldNotFilter(@NotNull HttpServletRequest request) {

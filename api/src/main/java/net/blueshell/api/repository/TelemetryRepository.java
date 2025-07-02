@@ -14,10 +14,12 @@ import java.util.UUID;
 @Repository
 public interface TelemetryRepository extends BaseRepository<Telemetry, UUID> {
 
+    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Telemetry n ORDER BY n.createdAt DESC")
     @Override
-    Page<Telemetry> findAll(@NotNull Pageable pageable);
+    Page<Telemetry> findAll(@org.jetbrains.annotations.NotNull @NotNull Pageable pageable);
 
+    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Telemetry n ORDER BY n.createdAt DESC")
     @Override
     List<Telemetry> findAll();

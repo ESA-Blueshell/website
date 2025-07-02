@@ -1,9 +1,9 @@
 package net.blueshell.api.controller;
 
+import net.blueshell.api.base.BaseController;
+import net.blueshell.api.dto.RedirectDTO;
 import net.blueshell.api.mapper.RedirectMapper;
 import net.blueshell.api.model.Redirect;
-import net.blueshell.api.dto.RedirectDTO;
-import net.blueshell.api.base.BaseController;
 import net.blueshell.api.service.RedirectService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +38,8 @@ public class RedirectController extends BaseController<RedirectService, Redirect
             @RequestParam(required = false) OffsetDateTime to
     ) {
         List<Redirect> redirects;
-        if(from != null || to != null) {
-             redirects = service.findCreatedAtBetween(from, to);
+        if (from != null || to != null) {
+            redirects = service.findCreatedAtBetween(from, to);
         } else {
             redirects = service.findAll();
         }

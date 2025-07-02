@@ -1,9 +1,9 @@
 package net.blueshell.api.permission;
 
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.model.Event;
 import net.blueshell.api.auth.Identity;
 import net.blueshell.api.base.BasePermissionEvaluator;
+import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.model.Event;
 import net.blueshell.api.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -25,9 +25,9 @@ public class EventPermission extends BasePermissionEvaluator<Event, Long, EventS
         Event event = (Event) targetDomainObject;
         Identity principal = getPrincipal();
         return switch (permission) {
-            case "read" ->
-                    event.isVisible() || hasAuthority(Role.BOARD) || event.getCommittee().hasMember(principal);
-            case "write", "delete", "seeSignUps" -> hasAuthority(Role.BOARD) || event.getCommittee().hasMember(principal);
+            case "read" -> event.isVisible() || hasAuthority(Role.BOARD) || event.getCommittee().hasMember(principal);
+            case "write", "delete", "seeSignUps" ->
+                    hasAuthority(Role.BOARD) || event.getCommittee().hasMember(principal);
             case "signUp" -> canSignUp(event);
             default -> false;
         };

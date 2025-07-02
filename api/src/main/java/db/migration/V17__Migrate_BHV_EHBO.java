@@ -6,6 +6,7 @@ import org.flywaydb.core.api.migration.Context;
 import java.sql.Connection;
 import java.sql.Statement;
 
+@SuppressWarnings("unused")
 public class V17__Migrate_BHV_EHBO extends BaseJavaMigration {
     public void migrate(Context context) throws Exception {
         Connection connection = context.getConnection();

@@ -12,7 +12,10 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "events")

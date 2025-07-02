@@ -17,7 +17,7 @@ import java.util.Set;
 @Table(name = "contribution_periods")
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class ContributionPeriod  implements BaseModel<Long> {
+public class ContributionPeriod implements BaseModel<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

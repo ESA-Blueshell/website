@@ -36,7 +36,7 @@ public class Committee implements BaseModel<Long> {
     @ManyToMany
     @JoinTable(
             name = "committee_member",
-            joinColumns =  @JoinColumn(name = "committee_id"),
+            joinColumns = @JoinColumn(name = "committee_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private Set<User> users;

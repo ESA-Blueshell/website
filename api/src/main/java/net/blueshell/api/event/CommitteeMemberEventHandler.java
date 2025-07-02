@@ -27,7 +27,7 @@ public class CommitteeMemberEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onCommitteeMemberDeleted(EntityDeletedEvent<CommitteeMember> evt) {
         var c = evt.entity();
-        var u =  c.getUser();
+        var u = c.getUser();
         if (u.getCommitteeMembers().isEmpty()) {
             users.removeRole(c.getUser(), Role.COMMITTEE);
         }

@@ -1,7 +1,6 @@
 package net.blueshell.api.base;
 
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.IdentityProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;

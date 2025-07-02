@@ -3,8 +3,8 @@ package net.blueshell.api.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.common.enums.PlatformType;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 

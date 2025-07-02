@@ -9,7 +9,6 @@ import net.blueshell.api.service.ContributionPeriodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import sendinblue.ApiException;
 
 import java.util.List;
 
@@ -29,7 +28,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
-    public ContributionPeriodDTO createContributionPeriod(@Valid @RequestBody ContributionPeriodDTO dto) throws ApiException {
+    public ContributionPeriodDTO createContributionPeriod(@Valid @RequestBody ContributionPeriodDTO dto) {
         ContributionPeriod contributionPeriod = mapper.fromDTO(dto);
         service.create(contributionPeriod);
         return mapper.toDTO(contributionPeriod);
@@ -38,7 +37,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("/contributionPeriods/{id}")
     public ContributionPeriodDTO updateContributionPeriod(@PathVariable("id") Long id,
-                                                                          @Valid @RequestBody ContributionPeriodDTO dto) {
+                                                          @Valid @RequestBody ContributionPeriodDTO dto) {
         dto.setId(id);
         ContributionPeriod contributionPeriod = mapper.fromDTO(dto);
         service.update(contributionPeriod);

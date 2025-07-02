@@ -7,19 +7,6 @@ public class Util {
 
     private static final Random random = new SecureRandom();
 
-    public static String getCallerMethod(int stackFramePosition) {
-        var stackFrames = Thread.currentThread().getStackTrace();
-        var caller = "Could not find caller?";
-        if (stackFrames != null && stackFrames.length > stackFramePosition) {
-            caller = stackFrames[stackFramePosition].toString();
-        }
-        return caller;
-    }
-
-    public static boolean isNullOrEmpty(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
     public static String getRandomCapitalString(int length) {
         StringBuilder randKey = new StringBuilder();
 

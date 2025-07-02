@@ -8,8 +8,8 @@ import net.blueshell.api.mapper.NewsMapper;
 import net.blueshell.api.model.News;
 import net.blueshell.api.service.NewsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,8 +68,7 @@ public class NewsController extends BaseController<NewsService, NewsMapper> {
             news.setId(id);
             service.update(news);
             return mapper.toDTO(news);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             if (hasAuthority(Role.BOARD)) {
                 News news = mapper.fromDTO(newsDTO);
                 service.create(news);

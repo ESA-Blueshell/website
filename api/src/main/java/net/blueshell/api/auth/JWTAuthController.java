@@ -7,7 +7,6 @@ import net.blueshell.api.controller.response.JwtResponse;
 import net.blueshell.api.mapper.IdentityMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.auth.Identity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
-public class JWTAuthController extends JWTAuthBase{
+public class JWTAuthController extends JWTAuthBase {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;

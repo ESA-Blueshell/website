@@ -10,6 +10,7 @@ import net.blueshell.api.service.NewsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -85,6 +86,7 @@ public class NewsController extends BaseController<NewsService, NewsMapper> {
 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteNewsById(@PathVariable Long id) {
         service.delete(id);
     }

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -100,6 +101,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @PreAuthorize("hasPermission(#eventId, 'Event', 'delete')")
     @DeleteMapping("/events/{eventId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventById(@PathVariable("eventId") Long eventId) {
         service.delete(eventId);
     }

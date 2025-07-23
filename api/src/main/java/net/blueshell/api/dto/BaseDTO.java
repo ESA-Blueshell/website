@@ -11,7 +11,7 @@ import java.io.Serializable;
         property = "type"
 )
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = InternalBlogDTO.class, name = "BlogDTO"),
+        @JsonSubTypes.Type(value = BlogDTO.class, name = "BlogDTO"),
         @JsonSubTypes.Type(value = EmailDTO.class, name = "EmailDTO"),
         @JsonSubTypes.Type(value = EventDTO.class, name = "EventDTO"),
         @JsonSubTypes.Type(value = SocialDTO.class, name = "SocialDTO"),

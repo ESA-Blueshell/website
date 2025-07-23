@@ -161,7 +161,6 @@ public abstract class BaseModelService<
      */
     @Transactional
     public void delete(ID id) {
-        repository.deleteById(id);
         T entity = self().findById(id);
         self().delete(entity);
     }

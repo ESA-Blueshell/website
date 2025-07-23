@@ -15,6 +15,7 @@ import net.blueshell.api.service.UserService;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -101,6 +102,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @DeleteMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("userId") Long userId) {
         service.delete(userId);
     }

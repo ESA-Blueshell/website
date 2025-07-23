@@ -68,16 +68,15 @@ services:
       context: api
       dockerfile: Dockerfile-dev
     volumes:
-      - ./:/app
+      - ./api:/app
       - maven-repo:/root/.m2
-      - "./storage/api:/home/storage"
+      - "./storage:/home/storage"
     ports:
       - "8080:8080"
     command: [
       "sh",
       "-c",
-      "mvn install -pl api -am -DskipTests && \
-       cd api && \
+      "mvn install -am -DskipTests && \
        mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
     ]
     networks:

@@ -6,6 +6,7 @@ import net.blueshell.api.mapper.RedirectMapper;
 import net.blueshell.api.model.Redirect;
 import net.blueshell.api.service.RedirectService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -26,6 +27,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     }
 
     @DeleteMapping("/telemetry/redirect")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRedirect(@RequestParam("id") String telemetryId) {
         service.delete(UUID.fromString(telemetryId));
     }

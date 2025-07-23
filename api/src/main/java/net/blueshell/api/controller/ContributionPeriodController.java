@@ -7,6 +7,7 @@ import net.blueshell.api.mapper.ContributionPeriodMapper;
 import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.service.ContributionPeriodService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,6 +47,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributionPeriods/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteContributionPeriod(@PathVariable("id") Long id) {
         ContributionPeriod contributionPeriod = service.findById(id);
         service.delete(contributionPeriod);

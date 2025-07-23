@@ -1,6 +1,6 @@
 CREATE TABLE blogs
 (
-    id           BINARY(16)   NOT NULL,
+    id           VARCHAR(36)   NOT NULL,
     title        VARCHAR(255) NULL,
     text         MEDIUMTEXT   NULL,
     html         MEDIUMTEXT   NULL,

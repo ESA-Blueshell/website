@@ -1,6 +1,12 @@
 FROM maven:3.9.9-eclipse-temurin-21-alpine
 WORKDIR /app
 
+COPY . .
+
+RUN mvn clean
+
+RUN mvn install -am -DskipTests
+
 EXPOSE ${PORT} 5005
 
-CMD ["sh", "-c", "echo 'Use docker-compose to run this container'"]
+CMD ["sh", "-c", "mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]

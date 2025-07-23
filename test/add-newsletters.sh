@@ -29,7 +29,7 @@ for file in newsletters/Blueshell\ Newsletter*.html; do
   mkdir -p './payloads'
   cat <<EOF > "$json_file"
 {
-  "type": "EmailDTO",
+  "type": "BlogDTO",
   "publishedAt": "$published_at",
   "html": $newsletter_html
 }
@@ -37,7 +37,7 @@ EOF
 
   echo "Sending payload for $filename (publishedAt: $published_at)..."
   # Send the JSON payload to the /parse-email endpoint using curl.
-  curl --insecure -X POST https://localhost/api/email \
+  curl --insecure -X POST https://localhost/api/blog \
     -H "Content-Type: application/json" \
     -d @"$json_file" | jq .
 done

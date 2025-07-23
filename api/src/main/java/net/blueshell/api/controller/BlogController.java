@@ -1,39 +1,50 @@
 package net.blueshell.api.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.IdentityProvider;
-import net.blueshell.api.dto.InternalBlogDTO;
+import net.blueshell.api.base.BaseController;
+import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.BlogMapper;
 import net.blueshell.api.service.BlogService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @RestController
-public class BlogController extends IdentityProvider {
-
-
-    private final BlogMapper blogMapper;
-    private final BlogService blogService;
+public class BlogController extends BaseController<BlogService, BlogMapper> {
 
     @Autowired
     public BlogController(BlogService blogService, BlogMapper blogMapper) {
-        this.blogMapper = blogMapper;
-        this.blogService = blogService;
+        super(blogService, blogMapper);
+    }
+
+    @PostMapping("/blogs")
+    @PreAuthorize("hasAuthority('BOARD')")
+    public BlogDTO create(@Valid @RequestBody BlogDTO dto) {
+        var blog = mapper.fromDTO(dto);
+        service.create(blog);
+        return mapper.toDTO(blog);
     }
 
     @GetMapping("/blogs")
-    public List<InternalBlogDTO> findAll() {
-        return blogMapper.toDTOs(blogService.findAll());
+    public List<BlogDTO> findAll() {
+        return mapper.toDTOs(service.findAll());
     }
 
     @GetMapping("/blogs/{id}")
-    public InternalBlogDTO findById(@PathVariable UUID id) {
-        return blogMapper.toDTO(blogService.findById(id));
+    public BlogDTO findById(@PathVariable UUID id) {
+        return mapper.toDTO(service.findById(id));
+    }
+
+    @DeleteMapping("/blogs/{id}")
+    @PreAuthorize("hasAuthority('BOARD')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteById(@PathVariable UUID id) {
+        service.delete(id);
     }
 }

@@ -13,6 +13,7 @@ import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Committee;
 import net.blueshell.api.service.CommitteeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +29,8 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     }
 
     @GetMapping("/committees")
-    public List<? extends BaseDTO> getCommittees(@RequestParam(required = false) boolean isMember) {
-        if (getPrincipal() != null && hasAuthority(Role.BOARD)) {
+    public List<? extends BaseDTO> getCommittees(@RequestParam(required = false, defaultValue = "false") boolean isMember) {
+        if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll());
         } else if (isMember) {
             List<Committee> committees = service.findALlByUserId(getPrincipal().getId());
@@ -62,6 +63,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'delete')")
     @DeleteMapping(value = "/committees/{committeeId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCommitteeById(@PathVariable("committeeId") Long committeeId) {
         service.delete(committeeId);
     }

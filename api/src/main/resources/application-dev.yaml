@@ -33,6 +33,6 @@ google:
 
 logging:
   level:
-    org.springframework.security: debug
-    org.springframework.expression: debug
+    org.springframework.security: error
+    org.springframework.expression: error
     org.springframework.web: debug

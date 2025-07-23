@@ -6,6 +6,7 @@ import net.blueshell.api.dto.SponsorDTO;
 import net.blueshell.api.mapper.SponsorMapper;
 import net.blueshell.api.model.Sponsor;
 import net.blueshell.api.service.SponsorService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,6 +57,7 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping(value = "/sponsors/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSponsorById(@PathVariable("id") Long id) {
         service.delete(id);
     }

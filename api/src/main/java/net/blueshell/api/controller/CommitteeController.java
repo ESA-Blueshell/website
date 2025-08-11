@@ -54,9 +54,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
             @PathVariable("committeeId") Long committeeId,
             @Valid @RequestBody AdvancedCommitteeDTO dto) {
         dto.setId(committeeId);
-        log.info("committee members in dto: {}", dto);
         var committee = advancedMapper.fromDTO(dto);
-        log.info("Committee members: {}", committee.getMembers());
         service.update(committee);
         return advancedMapper.toDTO(committee);
     }

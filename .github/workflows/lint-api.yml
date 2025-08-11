@@ -1,0 +1,61 @@
+name: Lint API
+
+on:
+  push:
+    paths:
+      - 'api/**'
+  pull_request:
+    paths:
+      - 'api/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Install Maven
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y maven
+
+      - name: Show Maven version
+        run: mvn -v
+
+      - name: Compile
+        run: mvn -B --no-transfer-progress -DskipTests=true -DskipITs=true clean compile
+
+      - name: Run linters
+        run: mvn -B --no-transfer-progress -DskipTests=true -DskipITs=true -P lint clean verify
+        working-directory: api
+
+      - name: Upload lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-lint-reports
+          path: |
+            api/target/checkstyle-result.xml
+            api/target/pmd.xml
+            api/target/spotbugsXml.xml
+            api/target/spotbugsXml.html
+          if-no-files-found: warn

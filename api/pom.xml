@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.blueshell</groupId>
@@ -14,7 +12,6 @@
     <name>api</name>
     <description>The API for the Blueshell Esports website</description>
 
-    <!--  =====  VERSIONS & COMMON SETTINGS  ===== -->
     <properties>
         <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
@@ -23,19 +20,23 @@
         <kotlin.version>1.9.22</kotlin.version>
         <maven.compiler.version>3.14.0</maven.compiler.version>
         <maven.surefire.version>3.5.3</maven.surefire.version>
-        <!-- library versions used explicitly below -->
+
+        <!-- Lint plugins -->
+        <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
+        <pmd.plugin.version>3.22.0</pmd.plugin.version>
+        <spotbugs.plugin.version>4.8.6.5</spotbugs.plugin.version>
+        <spotbugs.tool.version>4.8.6</spotbugs.tool.version>
+
+        <!-- libs -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.32</lombok.version>
 
-        <!-- testing additions -->
         <rest-assured.version>5.5.5</rest-assured.version>
         <db-rider.version>1.44.0</db-rider.version>
     </properties>
 
-    <!--  =====  DEPENDENCY MANAGEMENT  ===== -->
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Boot BOM (keeps core / starter versions aligned) -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -46,9 +47,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <!--  =====  DEPENDENCIES  ===== -->
     <dependencies>
-
         <!-- Spring Boot starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -133,20 +132,20 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Kotlin support -->
+        <!-- Kotlin -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
 
-        <!-- Database / Flyway -->
+        <!-- DB / Flyway -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
 
-        <!-- Jakarta API stubs (compile-only) -->
+        <!-- Jakarta (provided) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -166,13 +165,13 @@
             <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
 
-        <!--  Validation -->
+        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Misc utilities -->
+        <!-- Misc -->
         <dependency>
             <groupId>com.vladsch.flexmark</groupId>
             <artifactId>flexmark-all</artifactId>
@@ -204,7 +203,7 @@
             <version>8.3.1</version>
         </dependency>
 
-        <!-- Retrying events -->
+        <!-- Retry / AOP -->
         <dependency>
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>
@@ -214,13 +213,11 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
-        <!-- Spring Data -->
+        <!-- Spring Data / Jakarta Persistence -->
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-jpa</artifactId>
         </dependency>
-
-        <!-- Jakarta Persistence -->
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
@@ -244,7 +241,7 @@
             <version>3.3.2</version>
         </dependency>
 
-        <!-- Test dependencies -->
+        <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
@@ -255,8 +252,6 @@
             <artifactId>mariadb</artifactId>
             <scope>test</scope>
         </dependency>
-
-
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>spring-mock-mvc</artifactId>
@@ -265,11 +260,9 @@
         </dependency>
     </dependencies>
 
-    <!--  =====  BUILD / PLUGINS  ===== -->
     <build>
         <plugins>
-
-            <!-- Spring Boot launcher -->
+            <!-- Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -288,9 +281,7 @@
                 <configuration>
                     <parameters>true</parameters>
                     <release>${maven.compiler.release}</release>
-                    <generatedSourcesDirectory>
-                        ${project.build.directory}/generated-sources/annotations
-                    </generatedSourcesDirectory>
+                    <generatedSourcesDirectory>${project.build.directory}/generated-sources/annotations</generatedSourcesDirectory>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.mapstruct</groupId>
@@ -313,7 +304,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Kotlin compiler -->
+            <!-- Kotlin -->
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -328,22 +319,19 @@
                         </goals>
                         <configuration>
                             <sourceDirs>
-                                <source>
-                                    ${project.build.directory}/generated-sources/annotations
-                                </source>
+                                <source>${project.build.directory}/generated-sources/annotations</source>
                             </sourceDirs>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- Surefire -->
+            <!-- Unit tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.version}</version>
                 <executions>
-                    <!-- Run unit tests during verify as well -->
                     <execution>
                         <id>unit-tests-on-verify</id>
                         <phase>verify</phase>
@@ -354,7 +342,7 @@
                 </executions>
             </plugin>
 
-            <!-- Optional: run `CalendarQuickstart` directly -->
+            <!-- Exec (optional) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -364,7 +352,7 @@
                 </configuration>
             </plugin>
 
-            <!-- IDE helper: mark generated directory as a source root -->
+            <!-- Build helper -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -378,16 +366,14 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>
-                                    ${project.build.directory}/generated-sources/annotations
-                                </source>
+                                <source>${project.build.directory}/generated-sources/annotations</source>
                             </sources>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <!--  =====  TESTS  ===== -->
+            <!-- Integration tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -408,4 +394,110 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- ===================== -->
+    <!--   PROFILES: LINTING   -->
+    <!-- ===================== -->
+    <profiles>
+        <profile>
+            <id>lint</id>
+            <build>
+                <plugins>
+                    <!-- Checkstyle -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>${checkstyle.plugin.version}</version>
+                        <configuration>
+                            <consoleOutput>true</consoleOutput>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <failOnViolation>true</failOnViolation>
+                            <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+                            <outputFileFormat>xml</outputFileFormat>
+                            <sourceDirectories>
+                                <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                                <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>
+                            </sourceDirectories>
+                            <excludes>**/target/generated-sources/**</excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>checkstyle-report</id>
+                                <phase>verify</phase>
+                                <goals><goal>checkstyle</goal></goals>
+                            </execution>
+                            <execution>
+                                <id>checkstyle-verify</id>
+                                <phase>verify</phase>
+                                <goals><goal>check</goal></goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- PMD -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <version>${pmd.plugin.version}</version>
+                        <configuration>
+                            <printFailingErrors>true</printFailingErrors>
+                            <failOnViolation>true</failOnViolation>
+                            <targetJdk>${java.version}</targetJdk>
+                            <rulesets>
+                                <ruleset>category/java/bestpractices.xml</ruleset>
+                                <ruleset>category/java/errorprone.xml</ruleset>
+                                <ruleset>category/java/performance.xml</ruleset>
+                                <ruleset>category/java/codestyle.xml</ruleset>
+                                <ruleset>category/java/design.xml</ruleset>
+                            </rulesets>
+                            <excludeRoots>
+                                <excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
+                                <excludeRoot>${project.build.directory}/generated-sources/annotations</excludeRoot>
+                                <excludeRoot>${project.build.directory}/generated-sources/kapt</excludeRoot>
+                                <excludeRoot>${project.build.directory}/generated-sources/kaptKotlin</excludeRoot>
+                            </excludeRoots>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pmd-report</id>
+                                <phase>verify</phase>
+                                <goals><goal>pmd</goal></goals>
+                            </execution>
+                            <execution>
+                                <id>pmd-check</id>
+                                <phase>verify</phase>
+                                <goals><goal>check</goal></goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- SpotBugs -->
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>${spotbugs.plugin.version}</version>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <failOnError>true</failOnError>
+                            <xmlOutput>true</xmlOutput>
+                            <includeTests>true</includeTests>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>spotbugs-report</id>
+                                <phase>verify</phase>
+                                <goals><goal>spotbugs</goal></goals>
+                            </execution>
+                            <execution>
+                                <id>spotbugs-check</id>
+                                <phase>verify</phase>
+                                <goals><goal>check</goal></goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

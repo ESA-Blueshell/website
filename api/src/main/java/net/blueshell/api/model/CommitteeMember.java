@@ -22,14 +22,14 @@ public class CommitteeMember implements BaseModel<Long> {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", updatable = false, insertable = false)
     private User user;
 
-    @Column(name = "user_id", updatable = false, insertable = false)
+    @Column(name = "user_id")
     private Long userId;
 
     @ManyToOne
-    @JoinColumn(name = "committee_id")
+    @JoinColumn(name = "committee_id", updatable = false, insertable = false)
     private Committee committee;
 
     @Column(name = "committee_id", updatable = false, insertable = false)

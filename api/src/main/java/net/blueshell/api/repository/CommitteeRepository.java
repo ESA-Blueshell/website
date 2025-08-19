@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface CommitteeRepository extends BaseRepository<Committee, Long> {
-    List<Committee> findAllByUsersIdEquals(Long userId);
+    List<Committee> findALlByMembersUserIdEquals(Long userId);
 }

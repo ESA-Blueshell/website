@@ -19,7 +19,6 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
     @Autowired
     private CommitteeService committeeService;
 
-
     @Mapping(target = "user", ignore = true)
     public abstract CommitteeMemberDTO toDTO(CommitteeMember member);
 
@@ -34,4 +33,12 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
     @Mapping(target = "committee", ignore = true) // parent sets this
     @Mapping(target = "deletedAt", ignore = true)
     public abstract CommitteeMember fromDTO(CommitteeMemberDTO dto);
+
+    @AfterMapping
+    protected void afterFromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember entity) {
+        if (dto.getUserId() != null) {
+            var user = userService.findById(dto.getUserId());
+            entity.setUser(user);
+        }
+    }
 }

@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "committees")
@@ -35,14 +36,6 @@ public class Committee implements BaseModel<Long> {
             fetch = FetchType.LAZY)
     private Set<CommitteeMember> members = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "committee_members",
-            joinColumns = @JoinColumn(name = "committee_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> users;
-
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
 
@@ -66,4 +59,9 @@ public class Committee implements BaseModel<Long> {
     public boolean hasMember(User user) {
         return getMembers().stream().anyMatch(cm -> cm.getUser().getId().equals(user.getId()));
     }
+
+     public Set<User> getUsers() {
+         return members == null ? Set.of() :
+             members.stream().map(CommitteeMember::getUser).filter(Objects::nonNull).collect(Collectors.toSet());
+     }
 }

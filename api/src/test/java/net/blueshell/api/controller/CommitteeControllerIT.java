@@ -72,7 +72,7 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.members", hasSize(2)))
                 .andExpect(jsonPath("$.members[*].role",
                         containsInAnyOrder("Chair", "Member")))
-                .andExpect(jsonPath("$.members[*].userId",
+                .andExpect(jsonPath("$.members[*].user.id",
                         containsInAnyOrder(1, 2)));
     }
 
@@ -156,7 +156,7 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.description").value("Updated description text"))
                 .andExpect(jsonPath("$.members", hasSize(1)))
                 .andExpect(jsonPath("$.members[0].role").value("Lead"))
-                .andExpect(jsonPath("$.members[0].userId").value(3));
+                .andExpect(jsonPath("$.members[0].user.id").value(3));
     }
 
     @Test

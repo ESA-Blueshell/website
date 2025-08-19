@@ -18,22 +18,18 @@ public class CommitteeMember implements BaseModel<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", updatable = false, insertable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false) // allow Hibernate to write FK
     private User user;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", updatable = false, insertable = false)
     private Long userId;
 
-    @ManyToOne
-    @JoinColumn(name = "committee_id", updatable = false, insertable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "committee_id", nullable = false) // allow Hibernate to write FK
     private Committee committee;
-
-    @Column(name = "committee_id", updatable = false, insertable = false)
-    private Long committeeId;
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;

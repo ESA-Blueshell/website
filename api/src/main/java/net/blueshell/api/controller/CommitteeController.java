@@ -40,6 +40,20 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
         return simpleMapper.toDTOs(service.findAll());
     }
 
+    @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
+    @GetMapping("/committees/{committeeId}")
+    public BaseDTO getCommitteeById(
+            @PathVariable("committeeId") Long committeeId
+    ) {
+        Committee committee = service.findById(committeeId);
+        if (hasAuthority(Role.BOARD) || committee.hasMember(getPrincipal())) {
+            return advancedMapper.toDTO(committee);
+        }
+
+        return simpleMapper.toDTO(committee);
+    }
+
+
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
     public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {

@@ -18,6 +18,6 @@ public class CommitteeService extends BaseModelService<Committee, Long, Committe
     }
 
     public List<Committee> findALlByUserId(Long id) {
-        return repository.findAllByUsersIdEquals(id);
+        return repository.findALlByMembersUserIdEquals(id);
     }
 }

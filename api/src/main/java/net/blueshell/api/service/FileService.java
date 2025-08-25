@@ -35,8 +35,8 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
     private String appUrl;
 
     @Autowired
-    public FileService(FileRepository fileRepository, ApplicationEventPublisher events, StorageConfig properties) {
-        super(fileRepository, events);
+    public FileService(FileRepository fileRepository,  StorageConfig properties) {
+        super(fileRepository);
         this.rootLocation = Paths.get(properties.getLocation());
     }
 

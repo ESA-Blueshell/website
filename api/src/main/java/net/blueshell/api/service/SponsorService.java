@@ -14,7 +14,7 @@ public class SponsorService extends BaseModelService<Sponsor, Long, SponsorRepos
 
     @Autowired
     public SponsorService(SponsorRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 
     public Sponsor findByPicture(File picture) {

@@ -27,6 +27,7 @@ import sendinblue.ApiException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -46,8 +47,8 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     private final RequestMapper requestMapper;
 
     @Autowired
-    public UserService(UserRepository repository, ApplicationEventPublisher events, EmailService emails, ContactService contacts, RequestMapper requestMapper) {
-        super(repository, events);
+    public UserService(UserRepository repository,  EmailService emails, ContactService contacts, RequestMapper requestMapper) {
+        super(repository);
         this.emails = emails;
         this.contacts = contacts;
         this.requestMapper = requestMapper;
@@ -200,6 +201,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
 
     @Transactional
     public void addRole(User user, Role role) {
+        System.out.println("Add role: in user service" + role);
         if (!user.hasRole(role)) {
             user.addRole(role);
             self().update(user);
@@ -220,5 +222,24 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
 
     public User findByProfilePicture(File profilePicture) {
         return repository.findByProfilePicture(profilePicture).orElseThrow(() -> new NotFoundException("User not found for profile picture: " + profilePicture.getName()));
+    }
+
+    @Transactional
+    public void synchronizeRole(Role role) {
+        List<User> toRemoveRole = new ArrayList<>();
+        List<User> toAddRole = new ArrayList<>();
+        switch (role) {
+            case COMMITTEE -> {
+                toRemoveRole = repository.findUsersWithRoleWithoutActiveCommittees();
+                toAddRole = repository.findUsersWithoutRoleWithActiveCommittees();
+            }
+            case MEMBER -> {
+                toRemoveRole = repository.findUsersWithRoleWithoutActiveMembership();
+                toAddRole = repository.findUsersWithoutRoleWithActiveMembership();
+            }
+        }
+
+        toRemoveRole.forEach(u -> removeRole(u, role));
+        toAddRole.forEach(u -> addRole(u, role));
     }
 }

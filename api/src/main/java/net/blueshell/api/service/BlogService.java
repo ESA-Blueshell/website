@@ -14,6 +14,6 @@ public class BlogService extends BaseModelService<Blog, UUID, BlogRepository> {
 
     @Autowired
     public BlogService(BlogRepository blogRepository, ApplicationEventPublisher events) {
-        super(blogRepository, events);
+        super(blogRepository);
     }
 }

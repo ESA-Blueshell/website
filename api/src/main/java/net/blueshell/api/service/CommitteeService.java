@@ -14,10 +14,10 @@ public class CommitteeService extends BaseModelService<Committee, Long, Committe
 
     @Autowired
     public CommitteeService(CommitteeRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 
-    public List<Committee> findALlByUserId(Long id) {
+    public List<Committee> findAllByUserId(Long id) {
         return repository.findALlByMembersUserIdEquals(id);
     }
 }

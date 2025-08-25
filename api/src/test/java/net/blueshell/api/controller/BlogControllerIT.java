@@ -4,9 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.BlogDTO;
+import net.blueshell.api.model.User;
 import net.blueshell.api.service.BlogService;
 import net.blueshell.api.testsupport.UserTestSupport;
+import net.blueshell.api.controller.request.JwtRequest;
+import net.blueshell.api.controller.response.JwtResponse;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,8 +21,10 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,10 +57,18 @@ class BlogControllerIT extends UserTestSupport {
             "html", "<div><span>cool story bro"
     );
 
+    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
+
+    @BeforeEach
+    void setup() {
+        userMap.put(Role.MEMBER, createUserWithRole(Role.MEMBER));
+        userMap.put(Role.BOARD, createUserWithRole(Role.BOARD));
+    }
+
     @Test
     void postsAreCreatedCorrectly() throws Exception {
         mvc.perform(post("/blogs")
-                        .with(bearer(Role.BOARD))
+                        .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
                 .andExpect(status().isOk())
@@ -64,7 +80,7 @@ class BlogControllerIT extends UserTestSupport {
     @Test
     void fetchingBlogsWorks() throws Exception {
         mvc.perform(post("/blogs")
-                        .with(bearer(Role.BOARD))
+                        .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
                 .andExpect(status().isOk())
@@ -72,7 +88,7 @@ class BlogControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
                 .andReturn();
 
-        mvc.perform(get("/blogs").with(bearer(Role.BOARD)))
+        mvc.perform(get("/blogs").with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
     }
@@ -83,7 +99,7 @@ class BlogControllerIT extends UserTestSupport {
     @Test
     void fetchingBlogsByIdWorks() throws Exception {
         MvcResult result = mvc.perform(post("/blogs")
-                        .with(bearer(Role.BOARD))
+                        .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
                 .andExpect(status().isOk())
@@ -93,7 +109,7 @@ class BlogControllerIT extends UserTestSupport {
 
         BlogDTO dto = mapper.readValue(result.getResponse().getContentAsByteArray(), BlogDTO.class);
 
-        mvc.perform(get("/blogs/{id}", dto.getId()).with(bearer(Role.BOARD)))
+        mvc.perform(get("/blogs/{id}", dto.getId()).with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(dto.getId().toString()))
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")));
@@ -102,7 +118,7 @@ class BlogControllerIT extends UserTestSupport {
     @Test
     void deletingBlogsRemovesThem() throws Exception {
         MvcResult result = mvc.perform(post("/blogs")
-                        .with(bearer(Role.BOARD))
+                        .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
                 .andExpect(status().isOk())
@@ -113,14 +129,14 @@ class BlogControllerIT extends UserTestSupport {
         BlogDTO dto = mapper.readValue(result.getResponse().getContentAsByteArray(), BlogDTO.class);
 
         log.info("Blog count?: {}", blogService.findAll());
-        mvc.perform(delete("/blogs/{id}", dto.getId()).with(bearer(Role.BOARD)))
+        mvc.perform(delete("/blogs/{id}", dto.getId()).with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().isNoContent());
 
-        mvc.perform(get("/blogs").with(bearer(Role.BOARD)))
+        mvc.perform(get("/blogs").with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
 
-        mvc.perform(get("/blogs/{id}", dto.getId()).with(bearer(Role.BOARD)))
+        mvc.perform(get("/blogs/{id}", dto.getId()).with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().isNotFound());
     }
 }

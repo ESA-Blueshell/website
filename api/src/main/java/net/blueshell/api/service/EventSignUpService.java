@@ -24,10 +24,9 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
 
     @Autowired
     public EventSignUpService(EventSignUpRepository repository,
-                              ApplicationEventPublisher events,
                               EventService eventService,
                               EmailService emailService) {
-        super(repository, events);
+        super(repository);
         this.eventService = eventService;
         this.emailService = emailService;
     }

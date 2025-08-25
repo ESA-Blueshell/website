@@ -11,6 +11,6 @@ import org.springframework.stereotype.Service;
 public class ContributionPeriodService extends BaseModelService<ContributionPeriod, Long, ContributionPeriodRepository> {
     @Autowired
     public ContributionPeriodService(ContributionPeriodRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 }

@@ -124,22 +124,23 @@ public class User implements UserDetails, BaseModel<Long> {
     private String nationality;
 
     @OneToOne
-    @JoinColumn(name = "profile_picture")
+    @JoinColumn(name = "profile_picture", insertable = false, updatable = false)
     @JsonIgnore
     private File profilePicture;
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<CommitteeMember> committeeMembers;
 
     @JoinTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
-    @ElementCollection(targetClass = Role.class)
+    @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
     private Set<Role> roles;
+
 
     @Column(name = "ehbo")
     private boolean ehbo = false;
@@ -233,6 +234,10 @@ public class User implements UserDetails, BaseModel<Long> {
     }
 
     public boolean hasRole(Role role) {
+        return getRoles().stream().anyMatch(r -> r.equals(role));
+    }
+
+    public boolean hasAuthority(Role role) {
         return getInheritedRoles().stream().anyMatch(r -> r.matchesRole(role));
     }
 
@@ -252,14 +257,21 @@ public class User implements UserDetails, BaseModel<Long> {
     }
 
     public void addRole(Role role) {
-        if (getRoles() == null) {
-            setRoles(new HashSet<>());
+        var roles = getRoles();
+        if (roles == null) {
+            roles = new HashSet<>();
         }
-        getRoles().add(role);
+        roles.add(role);
+        setRoles(roles);
     }
 
     public void removeRole(Role role) {
-        getRoles().remove(role);
+        var roles = getRoles();
+        if (roles == null) {
+            return;
+        }
+        roles.remove(role);
+        setRoles(roles);
     }
 
     public void setEmail(String email) {

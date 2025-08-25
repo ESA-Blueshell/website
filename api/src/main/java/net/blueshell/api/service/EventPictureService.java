@@ -12,6 +12,6 @@ public class EventPictureService extends BaseModelService<EventPicture, Long, Ev
 
     @Autowired
     public EventPictureService(EventPictureRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 }

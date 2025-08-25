@@ -14,7 +14,7 @@ public class GuestService extends BaseModelService<Guest, Long, GuestRepository>
 
     @Autowired
     public GuestService(GuestRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 
     @Transactional(readOnly = true)

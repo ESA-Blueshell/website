@@ -22,9 +22,9 @@ public class RedirectService extends BaseModelService<Redirect, UUID, RedirectRe
     final Logger logger = LoggerFactory.getLogger(RedirectService.class);
 
     @Autowired
-    public RedirectService(RedirectRepository repository, ApplicationEventPublisher events, TelemetryService telemetryService,
+    public RedirectService(RedirectRepository repository,  TelemetryService telemetryService,
                            WebSocketMessageService webSocketMessageService) {
-        super(repository, events);
+        super(repository);
         this.telemetryService = telemetryService;
         this.webSocketMessageService = webSocketMessageService;
     }

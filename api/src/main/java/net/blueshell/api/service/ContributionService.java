@@ -21,8 +21,8 @@ public class ContributionService extends BaseModelService<Contribution, Long, Co
     private final EmailService emailService;
 
     @Autowired
-    public ContributionService(ContributionRepository repository, ApplicationEventPublisher events, EmailService emailService, ContributionPeriodService periodService) {
-        super(repository, events);
+    public ContributionService(ContributionRepository repository,  EmailService emailService, ContributionPeriodService periodService) {
+        super(repository);
         this.emailService = emailService;
         this.periodService = periodService;
     }

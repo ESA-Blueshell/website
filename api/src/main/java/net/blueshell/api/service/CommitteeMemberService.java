@@ -9,8 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class CommitteeMemberService extends BaseModelService<CommitteeMember, Long, CommitteeMemberRepository> {
 
-    public CommitteeMemberService(CommitteeMemberRepository repository,
-                                  ApplicationEventPublisher events) {
-        super(repository, events);
+    public CommitteeMemberService(CommitteeMemberRepository repository) {
+        super(repository);
     }
 }

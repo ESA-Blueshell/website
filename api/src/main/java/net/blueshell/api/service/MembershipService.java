@@ -15,7 +15,7 @@ public class MembershipService extends BaseModelService<Membership, Long, Member
 
     @Autowired
     public MembershipService(MemberRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 
     @Transactional(readOnly = true)

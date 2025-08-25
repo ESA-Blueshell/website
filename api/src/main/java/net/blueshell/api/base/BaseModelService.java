@@ -1,13 +1,7 @@
 package net.blueshell.api.base;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import net.blueshell.api.common.event.EntityCreatedEvent;
-import net.blueshell.api.common.event.EntityDeletedEvent;
-import net.blueshell.api.common.event.EntityUpdatedEvent;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
 import org.springframework.aop.framework.AopContext;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -40,11 +34,9 @@ public abstract class BaseModelService<
         extends IdentityProvider {
 
     protected final R repository;
-    private final ApplicationEventPublisher eventPublisher;
 
-    protected BaseModelService(R repository, ApplicationEventPublisher eventPublisher) {
+    protected BaseModelService(R repository) {
         this.repository = repository;
-        this.eventPublisher = eventPublisher;
     }
 
     @SuppressWarnings("unchecked")
@@ -64,7 +56,6 @@ public abstract class BaseModelService<
     @Transactional
     public void create(T entity) {
         repository.saveAndFlush(entity);
-        publish(new EntityCreatedEvent<>(entity));
     }
 
     /* -----------------------------------------------------------------
@@ -82,7 +73,6 @@ public abstract class BaseModelService<
             throw new ResourceNotFoundException("Entity not found with id: " + id);
         }
         repository.saveAndFlush(entity);
-        publish(new EntityUpdatedEvent<>(entity));
     }
 
     /**
@@ -171,10 +161,5 @@ public abstract class BaseModelService<
     @Transactional
     public void delete(T entity) {
         repository.delete(entity);
-        publish(new EntityDeletedEvent<>(entity));       // NEW
-    }
-
-    protected void publish(Object evt) {
-        eventPublisher.publishEvent(evt);
     }
 }

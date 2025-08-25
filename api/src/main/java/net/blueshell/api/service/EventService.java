@@ -18,7 +18,7 @@ public class EventService extends BaseModelService<Event, Long, EventRepository>
 
     @Autowired
     public EventService(EventRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 
     public List<Event> findUpcoming() {

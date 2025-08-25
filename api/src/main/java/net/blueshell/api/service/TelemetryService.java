@@ -16,7 +16,7 @@ public class TelemetryService extends BaseModelService<Telemetry, UUID, Telemetr
 
     @Autowired
     public TelemetryService(TelemetryRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 
     @Transactional

@@ -1,13 +1,11 @@
 package net.blueshell.api.controller;
 
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.AdvancedCommitteeDTO;
 import net.blueshell.api.dto.BaseDTO;
-import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Committee;
@@ -28,13 +26,20 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
         super(service, advancedCommitteeMapper, simpleCommitteeMapper);
     }
 
-    @GetMapping("/committees")
-    public List<? extends BaseDTO> getCommittees(@RequestParam(required = false, defaultValue = "false") boolean isMember) {
+    @GetMapping("/committeeMembers/committees")
+    public List<? extends BaseDTO> getCommitteesByUserId() {
         if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll());
-        } else if (isMember) {
-            List<Committee> committees = service.findALlByUserId(getPrincipal().getId());
-            return advancedMapper.toDTOs(committees);
+        }
+
+        List<Committee> committees = service.findAllByUserId(getPrincipal().getId());
+        return advancedMapper.toDTOs(committees);
+    }
+
+    @GetMapping("/committees")
+    public List<? extends BaseDTO> getCommittees() {
+        if (hasAuthority(Role.BOARD)) {
+            return advancedMapper.toDTOs(service.findAll());
         }
 
         return simpleMapper.toDTOs(service.findAll());
@@ -52,7 +57,6 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
         return simpleMapper.toDTO(committee);
     }
-
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")

@@ -12,6 +12,6 @@ public class NewsService extends BaseModelService<News, Long, NewsRepository> {
 
     @Autowired
     public NewsService(NewsRepository repository, ApplicationEventPublisher events) {
-        super(repository, events);
+        super(repository);
     }
 }

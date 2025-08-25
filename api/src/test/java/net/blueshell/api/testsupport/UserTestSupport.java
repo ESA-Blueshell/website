@@ -47,10 +47,7 @@ public abstract class UserTestSupport {
      */
     protected User createUserWithRole(Role role) {
         String username = role.name().toLowerCase() + "_" + UUID.randomUUID().toString().substring(0, 8);
-        User user = new User(username,
-                passwordEncoder.encode(DEFAULT_PASSWORD),
-                "Test", "User",
-                username + "@example.com");
+        User user = new User(username, passwordEncoder.encode(DEFAULT_PASSWORD), "Test", "User", username + "@example.com");
         user.setEnabled(true);
         user.addRole(role);
         return userRepository.save(user);
@@ -63,17 +60,17 @@ public abstract class UserTestSupport {
         User user = createUserWithRole(role);
         JwtRequest requestBody = new JwtRequest(user.getUsername(), DEFAULT_PASSWORD);
 
-        MvcResult result = mvc.perform(post("/auth")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(requestBody)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isNotEmpty())
-                .andReturn();
+        MvcResult result = mvc.perform(post("/auth").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(requestBody))).andExpect(status().isOk()).andExpect(jsonPath("$.token").isNotEmpty()).andReturn();
 
-        JwtResponse response = mapper.readValue(
-                result.getResponse().getContentAsByteArray(),
-                JwtResponse.class
-        );
+        JwtResponse response = mapper.readValue(result.getResponse().getContentAsByteArray(), JwtResponse.class);
+        return response.getToken();
+    }
+
+
+    protected String tokenForUser(User user) throws Exception {
+        JwtRequest requestBody = new JwtRequest(user.getUsername(), DEFAULT_PASSWORD);
+        MvcResult result = mvc.perform(post("/auth").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(requestBody))).andExpect(status().isOk()).andExpect(jsonPath("$.token").isNotEmpty()).andReturn();
+        JwtResponse response = mapper.readValue(result.getResponse().getContentAsByteArray(), JwtResponse.class);
         return response.getToken();
     }
 
@@ -88,14 +85,24 @@ public abstract class UserTestSupport {
         };
     }
 
+    protected RequestPostProcessor bearer(User user) throws Exception {
+        String token = tokenForUser(user);
+        return request -> {
+            request.addHeader("Authorization", "Bearer " + token);
+            return request;
+        };
+    }
+
     /**
      * Set the SecurityContext to a user with the given role for non-MVC tests.
      */
     protected void setAuthenticationWithRole(Role role) {
         User user = createUserWithRole(role);
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                user, null, user.getAuthorities()
-        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    protected User refreshUser(User user) {
+        return userRepository.findById(user.getId()).orElseThrow();
     }
 }

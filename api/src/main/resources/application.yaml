@@ -38,6 +38,16 @@ spring:
   mvc:
     dispatch-options-request: true
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  info:
+    title: Blueshell API
+    description: The API for the Blueshell Esports website
+    version: 1.0.0
+
 blueshell:
   identity:
     enabled: true

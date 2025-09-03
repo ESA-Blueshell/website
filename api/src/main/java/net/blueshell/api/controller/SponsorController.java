@@ -22,8 +22,8 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/sponsors")
-    public List<Sponsor> getSponsors() {
-        return service.findAll();
+    public List<SponsorDTO> getSponsors() {
+        return mapper.toDTOs(service.findAll());
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

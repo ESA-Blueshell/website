@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.MembershipDTO;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping
+@Tag(name = "Memberships")
 public class MembershipController extends BaseController<MembershipService, MembershipMapper> {
 
     public MembershipController(MembershipService service, MembershipMapper mapper) {

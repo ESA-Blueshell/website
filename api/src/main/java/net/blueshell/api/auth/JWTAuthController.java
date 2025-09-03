@@ -1,5 +1,6 @@
 package net.blueshell.api.auth;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.controller.request.JwtRequest;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@Tag(name = "Authentication")
 public class JWTAuthController extends JWTAuthBase {
 
     private final AuthenticationManager authenticationManager;
@@ -37,11 +38,9 @@ public class JWTAuthController extends JWTAuthBase {
     }
 
 
-    @PostMapping
+    @PostMapping("/auth")
     public JwtResponse createAuthenticationToken(
             @Valid @RequestBody JwtRequest authenticationRequest) {
-        log.debug("Creating authentication token for user {} with pw: {}", authenticationRequest.getUsername(), authenticationRequest.getPassword());
-        log.debug("encoded password: {}", encoder.encode(authenticationRequest.getPassword()));
         authenticate(
                 authenticationRequest.getUsername(),
                 authenticationRequest.getPassword()

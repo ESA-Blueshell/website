@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Slf4j
 @RestController
+@Tag(name = "Blogs")
 public class BlogController extends BaseController<BlogService, BlogMapper> {
 
     @Autowired

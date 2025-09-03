@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 @RestController
+@Tag(name = "EventSignUps")
 public class EventSignUpController extends BaseController<EventSignUpService, EventSignUpMapper> {
     @Autowired
     public EventSignUpController(

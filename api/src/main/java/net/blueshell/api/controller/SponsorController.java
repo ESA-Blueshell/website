@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.SponsorDTO;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping
+@Tag(name = "Sponsors")
 public class SponsorController extends BaseController<SponsorService, SponsorMapper> {
 
     public SponsorController(SponsorService service, SponsorMapper mapper) {

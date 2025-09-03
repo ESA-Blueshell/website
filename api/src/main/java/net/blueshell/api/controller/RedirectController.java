@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.RedirectDTO;
 import net.blueshell.api.mapper.RedirectMapper;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@Tag(name = "Redirects")
 public class RedirectController extends BaseController<RedirectService, RedirectMapper> {
 
     protected RedirectController(RedirectService service, RedirectMapper mapper) {

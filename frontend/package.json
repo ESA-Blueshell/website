@@ -6,9 +6,10 @@
   "scripts": {
     "build": "vite build",
     "typescheck": "vue-tsc --noEmit",
-    "dev": "tsc && vite --host",
+    "dev": "vite --host",
     "lint": "eslint  --fix",
-    "preview": "tsc && vite preview"
+    "preview": "tsc && vite preview",
+    "generate:client": "openapi-ts"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -23,7 +24,6 @@
     "luxon": "^3.5.0",
     "marked": "^16.0.0",
     "node-emoji": "^2.2.0",
-    "openapi-client-axios": "^7.7.0",
     "roboto-fontface": "^0.10.0",
     "serve": "^14.2.4",
     "showdown": "^2.1.0",
@@ -44,7 +44,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.22.0",
-    "openapi-typescript-codegen": "^0.29.0",
+    "@hey-api/client-axios": "0.9.1",
+    "@hey-api/openapi-ts": "0.82.3",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@types/luxon": "^3.4.2",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
@@ -55,7 +56,7 @@
     "eslint-plugin-vue": "^10.0.0",
     "eslint-plugin-vuetify": "^2.5.2",
     "sass": "^1.86.0",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "vite": "^7.0.0",
     "vite-plugin-vuetify": "^2.1.0",
     "vue-tsc": "^3.0.1",

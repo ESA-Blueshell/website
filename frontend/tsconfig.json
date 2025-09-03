@@ -10,8 +10,8 @@
     "skipLibCheck": true,
 
     "jsx": "preserve",
+    "noUncheckedIndexedAccess": true,
 
-    "moduleResolution": "Node",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

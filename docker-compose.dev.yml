@@ -50,6 +50,7 @@ services:
       - "3000:3000"
     volumes:
       - "./frontend:/usr/app"
+      - "./api/openapi.json:/usr/api/openapi.json"
       - /usr/app/node_modules
     networks:
       - global_network

@@ -70,6 +70,7 @@
 <script>
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
+import {createAuthenticationToken} from "@/lib/index.js";
 
 export default {
   components: {TopBanner: TopBanner},
@@ -96,6 +97,7 @@ export default {
       // Check if form is valid (meaning username and password are not empty)
       if (this.$refs.form.validate()) {
         this.loading = true
+        createAuthenticationToken()
         // Send authenticate request
         this.$http.post('auth', {username: this.username, password: this.password})
           .then(response => {

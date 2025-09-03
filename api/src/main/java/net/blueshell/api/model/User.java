@@ -141,7 +141,6 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column(name = "authority")
     private Set<Role> roles;
 
-
     @Column(name = "ehbo")
     private boolean ehbo = false;
 

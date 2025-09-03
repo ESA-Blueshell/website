@@ -26,7 +26,6 @@ public class CommitteeMemberEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postInsert(PostInsertEvent<CommitteeMember> evt) {
         var c = evt.getSource();
-        log.debug("postInsert {}", c);
         users.addRole(c.getUser(), Role.COMMITTEE);
     }
 
@@ -34,7 +33,6 @@ public class CommitteeMemberEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postUpdate(PostUpdateEvent<CommitteeMember> evt) {
         var c = evt.getSource();
-        log.debug("postUpdate {}", c);
         users.addRole(c.getUser(), Role.COMMITTEE);
     }
 
@@ -43,7 +41,6 @@ public class CommitteeMemberEventListener {
     public void postDelete(PostDeleteEvent<CommitteeMember> evt) {
         var c = evt.getSource();
         var u = c.getUser();
-        log.debug("postDelete {}", c);
         if (u.getCommitteeMembers().isEmpty()) {
             users.removeRole(c.getUser(), Role.COMMITTEE);
         }

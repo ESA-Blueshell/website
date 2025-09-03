@@ -35,7 +35,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         this.requestMapper = requestMapper;
     }
 
-    @PostMapping
+    @PostMapping("/users")
     public AdvancedUserDTO create(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
         User user = advancedMapper.fromDTO(dto);
         service.createUser(user);

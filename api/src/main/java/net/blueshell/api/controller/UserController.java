@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.AdvancedController;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping
+@Tag(name = "Users")
 public class UserController extends AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper> {
 
     private final RequestMapper requestMapper;
@@ -112,13 +114,6 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     public AdvancedUserDTO toggleRole(@PathVariable("userId") Long userId,
                                       @RequestParam(value = "role") Role role) {
         User user = service.toggleRole(userId, role);
-        return advancedMapper.toDTO(user);
-    }
-
-    @PutMapping(value = "/users/{userId}/membership/toggle")
-    @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
-    public AdvancedUserDTO toggleMembership(@PathVariable("userId") Long userId) {
-        User user = service.toggleRole(userId, Role.MEMBER);
         return advancedMapper.toDTO(user);
     }
 

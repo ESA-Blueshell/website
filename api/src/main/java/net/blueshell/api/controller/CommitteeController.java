@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.AdvancedController;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
+@Tag(name = "Committees")
 public class CommitteeController extends AdvancedController<CommitteeService, AdvancedCommitteeMapper, SimpleCommitteeMapper> {
 
     @Autowired

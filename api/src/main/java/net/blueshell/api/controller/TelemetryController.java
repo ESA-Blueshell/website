@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.common.enums.PlatformType;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
+@Tag(name = "Telemetries")
 public class TelemetryController extends BaseController<TelemetryService, TelemetryMapper> {
 
     protected TelemetryController(TelemetryService service, TelemetryMapper mapper) {

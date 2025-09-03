@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.mapper.FileMapper;
@@ -23,6 +24,7 @@ import java.util.List;
  */
 
 @Controller
+@Tag(name = "Files")
 public class FileController extends BaseController<FileService, FileRepository> {
 
     private final FileMapper fileMapper;

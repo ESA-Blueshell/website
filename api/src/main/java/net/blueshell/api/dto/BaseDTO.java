@@ -10,11 +10,5 @@ import java.io.Serializable;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type"
 )
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = BlogDTO.class, name = "BlogDTO"),
-        @JsonSubTypes.Type(value = EmailDTO.class, name = "EmailDTO"),
-        @JsonSubTypes.Type(value = EventDTO.class, name = "EventDTO"),
-        @JsonSubTypes.Type(value = SocialDTO.class, name = "SocialDTO"),
-})
 public abstract class BaseDTO implements Serializable {
 }

@@ -11,7 +11,6 @@ export type AdvancedUserDto = SimpleUserDto & {
     country: string;
     nationality: string;
     signature: FileDto;
-    membership?: MembershipDto;
     newsletter: boolean;
     photoConsent: boolean;
     ehbo: boolean;
@@ -37,6 +36,12 @@ export type FileDto = {
     base64Content?: string;
 };
 
+export type SponsorDto = {
+    id?: number;
+    name: string;
+    description: string;
+};
+
 export type MembershipDto = {
     id?: number;
     userId: number;
@@ -47,12 +52,6 @@ export type MembershipDto = {
     signature?: FileDto;
     startDate?: string;
     endDate?: string;
-};
-
-export type SponsorDto = {
-    id?: number;
-    name: string;
-    description: string;
 };
 
 export type EventDto = {
@@ -228,7 +227,7 @@ export type SortObject = {
     sorted?: boolean;
 };
 
-export type DeleteData = {
+export type DeleteUserData = {
     body?: never;
     path: {
         userId: number;
@@ -237,16 +236,16 @@ export type DeleteData = {
     url: '/users/{userId}';
 };
 
-export type DeleteResponses = {
+export type DeleteUserResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteResponse = DeleteResponses[keyof DeleteResponses];
+export type DeleteUserResponse = DeleteUserResponses[keyof DeleteUserResponses];
 
-export type GetByIdData = {
+export type FindUserByIdData = {
     body?: never;
     path: {
         userId: number;
@@ -255,16 +254,16 @@ export type GetByIdData = {
     url: '/users/{userId}';
 };
 
-export type GetByIdResponses = {
+export type FindUserByIdResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type GetByIdResponse = GetByIdResponses[keyof GetByIdResponses];
+export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
 
-export type UpdateData = {
+export type UpdateUserData = {
     body: AdvancedUserDto;
     path: {
         userId: number;
@@ -273,16 +272,16 @@ export type UpdateData = {
     url: '/users/{userId}';
 };
 
-export type UpdateResponses = {
+export type UpdateUserResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type UpdateResponse = UpdateResponses[keyof UpdateResponses];
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
-export type ToggleRoleData = {
+export type ToggleUserRoleData = {
     body?: never;
     path: {
         userId: number;
@@ -293,16 +292,16 @@ export type ToggleRoleData = {
     url: '/users/{userId}/roles';
 };
 
-export type ToggleRoleResponses = {
+export type ToggleUserRoleResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type ToggleRoleResponse = ToggleRoleResponses[keyof ToggleRoleResponses];
+export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
 
-export type UpdateMembershipData = {
+export type UpdateUserMembershipData = {
     body?: never;
     path: {
         id: number;
@@ -313,14 +312,14 @@ export type UpdateMembershipData = {
     url: '/users/{id}/membership';
 };
 
-export type UpdateMembershipResponses = {
+export type UpdateUserMembershipResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+export type UpdateUserMembershipResponse = UpdateUserMembershipResponses[keyof UpdateUserMembershipResponses];
 
 export type DeleteSponsorByIdData = {
     body?: never;
@@ -396,7 +395,7 @@ export type GetMembershipByIdResponses = {
 
 export type GetMembershipByIdResponse = GetMembershipByIdResponses[keyof GetMembershipByIdResponses];
 
-export type UpdateMembership1Data = {
+export type UpdateMembershipData = {
     body: MembershipDto;
     path: {
         id: number;
@@ -405,14 +404,14 @@ export type UpdateMembership1Data = {
     url: '/memberships/{id}';
 };
 
-export type UpdateMembership1Responses = {
+export type UpdateMembershipResponses = {
     /**
      * OK
      */
     200: MembershipDto;
 };
 
-export type UpdateMembership1Response = UpdateMembership1Responses[keyof UpdateMembership1Responses];
+export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
 
 export type DeleteEventByIdData = {
     body?: never;
@@ -596,7 +595,7 @@ export type UpdateCommitteeResponses = {
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
 
-export type GetAllData = {
+export type FindAllUsersData = {
     body?: never;
     path?: never;
     query: {
@@ -605,30 +604,30 @@ export type GetAllData = {
     url: '/users';
 };
 
-export type GetAllResponses = {
+export type FindAllUsersResponses = {
     /**
      * OK
      */
     200: Array<AdvancedUserDto>;
 };
 
-export type GetAllResponse = GetAllResponses[keyof GetAllResponses];
+export type FindAllUsersResponse = FindAllUsersResponses[keyof FindAllUsersResponses];
 
-export type CreateData = {
+export type CreateUserData = {
     body: AdvancedUserDto;
     path?: never;
     query?: never;
     url: '/users';
 };
 
-export type CreateResponses = {
+export type CreateUserResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type CreateResponse = CreateResponses[keyof CreateResponses];
+export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
 
 export type ResetPasswordData = {
     body?: never;
@@ -660,14 +659,14 @@ export type SetPasswordResponses = {
     200: unknown;
 };
 
-export type ActivateData = {
+export type ActivateUserData = {
     body: ActivationRequest;
     path?: never;
     query?: never;
     url: '/users/activate';
 };
 
-export type ActivateResponses = {
+export type ActivateUserResponses = {
     /**
      * OK
      */
@@ -866,7 +865,7 @@ export type CreateSignupResponses = {
 
 export type CreateSignupResponse = CreateSignupResponses[keyof CreateSignupResponses];
 
-export type GetAll1Data = {
+export type GetAllData = {
     body?: never;
     path?: never;
     query?: {
@@ -875,7 +874,7 @@ export type GetAll1Data = {
     url: '/contributions';
 };
 
-export type GetAll1Responses = {
+export type GetAllResponses = {
     /**
      * OK
      */
@@ -884,23 +883,23 @@ export type GetAll1Responses = {
     };
 };
 
-export type GetAll1Response = GetAll1Responses[keyof GetAll1Responses];
+export type GetAllResponse = GetAllResponses[keyof GetAllResponses];
 
-export type Create1Data = {
+export type CreateData = {
     body: ContributionDto;
     path?: never;
     query?: never;
     url: '/contributions';
 };
 
-export type Create1Responses = {
+export type CreateResponses = {
     /**
      * OK
      */
     200: ContributionDto;
 };
 
-export type Create1Response = Create1Responses[keyof Create1Responses];
+export type CreateResponse = CreateResponses[keyof CreateResponses];
 
 export type GetContributionPeriodsData = {
     body?: never;
@@ -982,21 +981,21 @@ export type FindAllResponses = {
 
 export type FindAllResponse = FindAllResponses[keyof FindAllResponses];
 
-export type Create2Data = {
+export type Create1Data = {
     body: BlogDto;
     path?: never;
     query?: never;
     url: '/blogs';
 };
 
-export type Create2Responses = {
+export type Create1Responses = {
     /**
      * OK
      */
     200: BlogDto;
 };
 
-export type Create2Response = Create2Responses[keyof Create2Responses];
+export type Create1Response = Create1Responses[keyof Create1Responses];
 
 export type AuthenticateData = {
     body: JwtRequest;
@@ -1032,7 +1031,7 @@ export type DownloadProfilePictureResponses = {
 
 export type DownloadProfilePictureResponse = DownloadProfilePictureResponses[keyof DownloadProfilePictureResponses];
 
-export type GetFromBrevoData = {
+export type GetUserFromBrevoData = {
     body?: never;
     path?: never;
     query: {
@@ -1041,14 +1040,14 @@ export type GetFromBrevoData = {
     url: '/users/brevo';
 };
 
-export type GetFromBrevoResponses = {
+export type GetUserFromBrevoResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type GetFromBrevoResponse = GetFromBrevoResponses[keyof GetFromBrevoResponses];
+export type GetUserFromBrevoResponse = GetUserFromBrevoResponses[keyof GetUserFromBrevoResponses];
 
 export type GetUpcomingEventsData = {
     body?: never;
@@ -1373,7 +1372,7 @@ export type DeleteSignupResponses = {
 
 export type DeleteSignupResponse = DeleteSignupResponses[keyof DeleteSignupResponses];
 
-export type Delete1Data = {
+export type DeleteData = {
     body?: never;
     path: {
         id: number;
@@ -1382,14 +1381,14 @@ export type Delete1Data = {
     url: '/contributions/{id}';
 };
 
-export type Delete1Responses = {
+export type DeleteResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type Delete1Response = Delete1Responses[keyof Delete1Responses];
+export type DeleteResponse = DeleteResponses[keyof DeleteResponses];
 
 export type ClientOptions = {
     baseURL: 'http://localhost:8080' | (string & {});

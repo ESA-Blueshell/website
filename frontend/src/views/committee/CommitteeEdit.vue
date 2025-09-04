@@ -37,7 +37,7 @@
         <v-col cols="8">
           <v-autocomplete
             v-if="members"
-            v-model="member.user"
+            v-model="member.user.id"
             :item-title="user => user.discord ? `${user.fullName} (${user.discord})` : user.fullName"
             :items="members"
             :rules="[
@@ -86,6 +86,7 @@ import { ref, onMounted } from 'vue';
 import type { VForm } from 'vuetify/components';
 import type {CommitteeModel, CommitteeMemberModel, SimpleUserModel} from '@/models';
 import { UserService, CommitteeService } from '@/services';
+import type {SimpleUserDto} from "@/lib";
 
 const props = defineProps<{
   committee: {
@@ -101,7 +102,7 @@ const emit = defineEmits<{
 }>();
 
 const valid = ref(false);
-const members = ref<SimpleUserModel[]>([]);
+const members = ref<SimpleUserDto[]>([]);
 const form = ref<VForm | null>(null);
 const userService = new UserService();
 const committeeService = new CommitteeService();
@@ -121,7 +122,7 @@ onMounted(async () => {
 const addMember = () => {
   localCommittee.value.members.push({
     role: '',
-    user: {} as SimpleUserModel,
+    userId: 0,
     type: 'CommitteeMemberDTO',
     committeeId: localCommittee.value.id
   });

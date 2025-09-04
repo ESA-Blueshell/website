@@ -1,9 +1,9 @@
 <template>
+  <!-- :rules="[requiredRule]" -->
   <v-autocomplete
     v-model="selectedNationality"
     :items="nationalityOptions"
     label="Select a Nationality"
-    :rules="[requiredRule]"
     outlined
     dense
     return-object
@@ -28,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { countries, getEmojiFlag, type TCountryCode, languages } from 'countries-list';
+import {ref, watch} from 'vue';
+import {countries, getEmojiFlag, type TCountryCode} from 'countries-list';
 
 // Define the props and emits for v-model binding
 const props = defineProps<{ modelValue?: string }>();

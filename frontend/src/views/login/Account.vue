@@ -20,12 +20,12 @@
           for events that have it enabled, either by clicking the sign-up checkbox or filling in the sign-up form. (no
           more google forms baybee)
         </p>
-        <p v-if="$store.getters.isActive">
+        <p v-if="store.getters.isActive">
           With the event manager, you can create and edit an upcoming event for one of the committees you're in. Once an
           event is created it will have to be approved by board {{ $store.getters.isBoard ? '(yes, you)' : '' }} before
           it will go public.
         </p>
-        <p v-if="$store.getters.isBoard">
+        <p v-if="store.getters.isBoard">
           Using the committee manager you can manage the committees in the association (duh). You can crate a committee,
           give it a description and add any members to it.
         </p>
@@ -36,83 +36,89 @@
             editing
           />
         </div>
-
-
-        <!--    TODO: make this beautiful. Maybe use skeleton loading elements?-->
         <v-progress-circular v-else/>
       </div>
     </div>
   </v-main>
 </template>
 
-<script>
-
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useStore } from 'vuex';
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import {VPhoneInput} from "v-phone-input";
-import {ref} from "vue";
 import {DateTime} from 'luxon';
 import UserEdit from "@/components/UserEdit.vue";
-import { UserService } from "@/services/index.js";
+import {findUserById, updateUser} from "@/lib/index.js";
+import client from "@/plugins/client.js";
 
-export default {
-  name: "Account",
-  components: {UserEdit, VPhoneInput, TopBanner: TopBanner},
-  setup() {
-    const phone = ref('');
-    return {phone};
-  },
-  data: () => ({
-    user: null,
-    valid: true,
-    submitting: false,
-    userService: new UserService(),
-  }),
-  mounted() {
-    const login = this.$store.getters.getLogin
+// Reactive data
+const user = ref(null);
+const valid = ref(true);
+const submitting = ref(false);
+const phone = ref('');
+const form = ref(null);
 
-    this.userService.getUser(login.userId)
-      .then(user => {
-        this.user = user;
-        if (user.dateOfBirth) {
-          this.user.dateOfBirth = DateTime.fromISO(user.dateOfBirth);
-        }
-      })
+// Store access
+const store = useStore();
 
-    this.$http.get(`users/${login.userId}`, {headers: {'Authorization': `Bearer ${login.token}`}})
-      .then(response => {
-        this.user = response.data
-        if (this.user.dateOfBirth) {
-          this.user.dateOfBirth = DateTime.fromISO(this.user.dateOfBirth).toISODate();
-        }
-      })
-  },
-  methods: {
-    copyObject(obj) {
-      return Object.assign({}, obj);
-    },
-    async save() {
-      const {valid} = await this.$refs.form.validate()
+// Lifecycle hook
+onMounted(async () => {
+  const login = store.getters.getLogin;
 
-      if (!valid) {
-        return;
+  try {
+    const response = await findUserById({
+      client,
+      path: {
+        userId: login.userId
       }
+    });
 
-      this.submitting = true
-      //Send new user object to backend
-      const login = this.$store.getters.getLogin
-      this.$http.put(`users/${login.userId}`, this.user, {headers: {'Authorization': `Bearer ${login.token}`}})
-        .then(() => this.submitting = false)
-        .catch(e => {
-          if (e.response?.status === 400) {
-            this.$store.commit('setStatusSnackbarMessage', e.response.data)
-          } else {
-            $handleNetworkError(e)
-          }
-        })
-    },
+    user.value = response.data;
+    if (user.value.dateOfBirth) {
+      user.value.dateOfBirth = DateTime.fromISO(user.value.dateOfBirth).toISODate();
+    }
+  } catch (e) {
+    $handleNetworkError(e);
   }
-}
+});
+
+// Methods
+const copyObject = (obj) => {
+  return Object.assign({}, obj);
+};
+
+const save = async () => {
+  const { valid: isValid } = await form.value.validate();
+
+  if (!isValid) {
+    return;
+  }
+
+  submitting.value = true;
+
+  try {
+    // Send new user object to backend
+    const login = store.getters.getLogin;
+    await updateUser({
+      client,
+      path: {
+        userId: login.userId
+      },
+      body: user.value
+    });
+
+    submitting.value = false;
+  } catch (e) {
+    submitting.value = false;
+    if (e.response?.status === 400) {
+      store.commit('setStatusSnackbarMessage', e.response.data);
+    } else {
+      $handleNetworkError(e);
+    }
+  }
+};
 </script>
 
 <style scoped>

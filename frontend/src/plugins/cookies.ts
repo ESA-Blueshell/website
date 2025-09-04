@@ -4,8 +4,8 @@ export function writeJsonCookie(
   {
     maxAge = 60 * 60 * 24 * 30,
     sameSite = 'Lax',
-    secure   = window.location.protocol === 'https:',
-    path     = '/',
+    secure = window.location.protocol === 'https:',
+    path = '/',
   } = {}
 ) {
   const encoded = encodeURIComponent(JSON.stringify(value));

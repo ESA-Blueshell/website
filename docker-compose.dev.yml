@@ -54,6 +54,8 @@ services:
       - /usr/app/node_modules
     networks:
       - global_network
+    env_file:
+      - ./env/.app.env
     depends_on:
       - api
     healthcheck:

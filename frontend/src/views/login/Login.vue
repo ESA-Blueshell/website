@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Login" />
+    <top-banner title="Login"/>
 
     <div class="mx-3">
       <v-form
@@ -11,7 +11,7 @@
         @submit.prevent
       >
         <v-text-field
-          ref="username"
+          ref="usernameField"
           v-model="username"
           :rules="usernameRules"
           label="Username"
@@ -30,7 +30,7 @@
           @click:append="showPass = !showPass"
         />
         <v-row>
-          <v-spacer />
+          <v-spacer/>
           <v-col cols="auto">
             <v-btn
               variant="text"
@@ -51,7 +51,7 @@
               Create Account
             </v-btn>
           </v-col>
-          <v-spacer />
+          <v-spacer/>
           <v-col cols="auto">
             <v-btn
               :disabled="!valid"
@@ -67,58 +67,84 @@
   </v-main>
 </template>
 
-<script>
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
-import {createAuthenticationToken} from "@/lib/index.js";
+<script setup lang="ts">
+import {onMounted, ref} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {useStore} from 'vuex'
+import TopBanner from '@/components/banners/TopBanner.vue'
+import {$handleNetworkError} from '@/plugins/handleNetworkError.js'
+import {authenticate} from '@/lib/sdk.gen'
+import type {JwtRequest, JwtResponse} from '@/lib/types.gen'
+import type {State} from '@/plugins/store'
 
-export default {
-  components: {TopBanner: TopBanner},
-  data: () => ({
-    valid: false,
-    loading: false,
-    showPass: false,
-    username: '',
-    password: '',
-    usernameRules: [
-      v => !!v || 'Username is required',
-    ],
-    passwordRules: [
-      v => !!v || 'Password is required',
-    ],
-  }),
-  mounted() {
-    if (!this.$store.getters.tokenExpired) {
-      this.$router.push('/account')
-    }
-  },
-  methods: {
-    login() {
-      // Check if form is valid (meaning username and password are not empty)
-      if (this.$refs.form.validate()) {
-        this.loading = true
-        createAuthenticationToken()
-        // Send authenticate request
-        this.$http.post('auth', {username: this.username, password: this.password})
-          .then(response => {
-            // Store response
-            this.$store.commit('setLogin', response.data)
-            // Go to redirect page or home page
-            this.$router.push(this.$route.query.redirect || '/')
-          })
-          .catch(e => {
-            // Show Incorrect login snackbar
-            if (e.response?.status === 401) {
-              this.$store.commit('setStatusSnackbarMessage', 'Incorrect login credentials. Please double check your username and password.')
-            } else {
-              $handleNetworkError(e)
-            }
-          })
-          .finally(() => {
-            this.loading = false
-          })
+const router = useRouter()
+const route = useRoute()
+const store = useStore<State>()
+
+const form = ref<any>(null)
+const usernameField = ref<any>(null)
+const username = ref<string>('')
+const password = ref<string>('')
+const valid = ref<boolean>(false)
+const loading = ref<boolean>(false)
+const showPass = ref<boolean>(false)
+
+const usernameRules = [
+  (v: string) => !!v || 'Username is required',
+]
+
+const passwordRules = [
+  (v: string) => !!v || 'Password is required',
+]
+
+onMounted(() => {
+  if (!store.getters.tokenExpired) {
+    router.push('/account')
+  }
+})
+
+const login = async () => {
+  // Check if form is valid (meaning username and password are not empty)
+  if (form.value && form.value.validate()) {
+    loading.value = true
+
+    try {
+      const requestBody: JwtRequest = {
+        username: username.value,
+        password: password.value
       }
-    },
+
+      const response = await authenticate<true>({
+        body: requestBody,
+        throwOnError: true
+      })
+
+      // Type the response data as JwtResponse
+      const jwtResponse = response.data as JwtResponse
+
+      // Store response (convert JwtResponse to Login type expected by store)
+      const loginData = {
+        userId: jwtResponse.userId!,
+        username: jwtResponse.username!,
+        roles: jwtResponse.roles!,
+        token: jwtResponse.token!,
+        expiration: jwtResponse.expiration!
+      }
+
+      store.commit('setLogin', loginData)
+
+      // Go to redirect page or home page
+      await router.push(route.query.redirect?.toString() || '/')
+    } catch (e: any) {
+      // Show Incorrect login snackbar
+      if (e.response?.status === 401) {
+        store.commit('setStatusSnackbarMessage', 'Incorrect login credentials. Please double check your username and password.')
+      } else {
+        $handleNetworkError(e)
+      }
+    } finally {
+      loading.value = false
+    }
   }
 }
 </script>

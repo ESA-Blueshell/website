@@ -12,7 +12,7 @@ mollie:
   apiKey: test_EW5SkU475DVnWexzgVsHybuyqAsWwn
 
 brevo:
-  apiKey: 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
+  apiKey: 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
   templates:
     userActivationId: 1
     memberActivationId: 5

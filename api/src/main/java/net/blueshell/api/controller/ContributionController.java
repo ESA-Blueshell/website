@@ -28,7 +28,7 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributions")
-    public ContributionDTO create(@Valid @RequestBody ContributionDTO dto) {
+    public ContributionDTO createContribution(@Valid @RequestBody ContributionDTO dto) {
         Contribution contribution = mapper.fromDTO(dto);
         service.create(contribution);
         return mapper.toDTO(contribution);
@@ -36,7 +36,7 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("/contributions/{id}/paid")
-    public ContributionDTO paid(
+    public ContributionDTO setContributionPaid(
             @ApiParam(name = "Id of the contribution") @PathVariable("id") Long id,
             @ApiParam(name = "Whether the contribution is paid") @PathParam("paid") boolean paid) {
         Contribution contribution = service.findById(id);
@@ -47,7 +47,7 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributions")
-    public Stream<ContributionDTO> getAll(@RequestParam(required = false) Long contributionPeriodId) {
+    public Stream<ContributionDTO> findContributions(@RequestParam(required = false) Long contributionPeriodId) {
         List<Contribution> contributions = service.findByContributionPeriodId(contributionPeriodId);
         return mapper.toDTOs(contributions.stream());
     }
@@ -55,7 +55,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@ApiParam(name = "Id of the contribution") @PathVariable("id") Long id) {
+    public void deleteContribution(@ApiParam(name = "Id of the contribution") @PathVariable("id") Long id) {
         Contribution contribution = service.findById(id);
         service.delete(contribution);
     }
@@ -69,7 +69,7 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
-    public List<ContributionDTO> getContributionsByPeriodId(@PathVariable("periodId") Long periodId) {
+    public List<ContributionDTO> findContributionsByPeriodId(@PathVariable("periodId") Long periodId) {
         List<Contribution> contributions = service.findByContributionPeriodId(periodId);
         return mapper.toDTOs(contributions);
     }

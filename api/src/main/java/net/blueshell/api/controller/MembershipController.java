@@ -23,7 +23,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
-    public List<MembershipDTO> getMemberships() {
+    public List<MembershipDTO> findMemberships() {
         return mapper.toDTOs(service.findAll());
     }
 
@@ -46,7 +46,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping(value = "/memberships/{id}")
-    public MembershipDTO getMembershipById(@PathVariable("id") Long id) {
+    public MembershipDTO findMembershipById(@PathVariable("id") Long id) {
         return mapper.toDTO(service.findById(id));
     }
 }

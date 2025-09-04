@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="CommitteeModel Manager"/>
+    <top-banner title="Committee Manager"/>
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -23,13 +23,12 @@
           >
             <committee-edit
               class="form"
-              :committee="{}"
-              @close="getCommittees();creatingCommittee=false;creatingLoading=false;"
-              @submitting="creatingLoading=true"
+              :committee="{} as AdvancedCommitteeDto"
+              @close="handleCreateClose"
+              @submitting="creatingLoading = true"
             />
           </div>
         </v-expand-transition>
-
 
         <v-dialog
           width="auto"
@@ -38,15 +37,15 @@
           <template #activator="{ props: dialog }">
             <v-list :lines="'two'">
               <div
-                v-for="(committee,i) in committees"
-                :key="committee.name"
+                v-for="(committee, i) in committees"
+                :key="committee.id || committee.name"
               >
-                <v-list-item :key="committee.name">
+                <v-list-item>
                   <v-list-item-title class="text-h6">
                     {{ committee.name }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    {{ committee.members.length }} membership{{ committee.members.length === 1 ? '' : 's' }}
+                    {{ committee.members?.length || 0 }} membership{{ (committee.members?.length || 0) === 1 ? '' : 's' }}
                   </v-list-item-subtitle>
 
                   <template #append>
@@ -54,13 +53,13 @@
                       location="left"
                       text="Edit committee"
                     >
-                      <template #activator="{ tooltip }">
+                      <template #activator="{ props: tooltip }">
                         <v-btn
                           v-bind="tooltip"
                           :loading="submittingId === committee.id"
                           icon="mdi-pencil"
                           variant="plain"
-                          @click="editingCommitteeId= (editingCommitteeId===committee.id ? null : committee.id)"
+                          @click="toggleEditingCommittee(committee.id)"
                         />
                       </template>
                     </v-tooltip>
@@ -81,7 +80,7 @@
                   </template>
                 </v-list-item>
 
-                <v-expand-transition :key="committee.name">
+                <v-expand-transition>
                   <div
                     v-if="editingCommitteeId === committee.id"
                     class="form-border mx-auto rounded-b"
@@ -89,26 +88,25 @@
                     <committee-edit
                       :committee="committee"
                       class="form"
-                      @close="editingCommitteeId=null;submittingId=null"
-                      @submitting="submittingId=committee.id"
+                      @close="handleEditClose"
+                      @submitting="submittingId = committee.id"
                     />
                   </div>
                 </v-expand-transition>
 
                 <v-divider
                   v-if="i < committees.length - 1 && editingCommitteeId !== committee.id"
-                  :key="i"
+                  :key="`divider-${i}`"
                 />
               </div>
             </v-list>
           </template>
 
-
           <v-card>
             <v-card-title>
               <span class="text-h6">
                 Are you sure you want to delete this committee:
-                {{ committeeToDelete ? committeeToDelete.name : '' }}
+                {{ committeeToDelete?.name || '' }}
               </span>
             </v-card-title>
             <v-card-text>
@@ -118,7 +116,7 @@
               <v-spacer/>
               <v-btn
                 variant="text"
-                @click="committeeToDelete=null"
+                @click="committeeToDelete = null"
               >
                 No
               </v-btn>
@@ -133,7 +131,6 @@
           </v-card>
         </v-dialog>
 
-
         <v-img
           v-if="noCommittees"
           :src="$require('@/assets/noCommittees.jpg')"
@@ -143,57 +140,117 @@
   </v-main>
 </template>
 
-<script>
-import TopBanner from "@/components/banners/TopBanner.vue";
-import CommitteeEdit from "@/views/committee/CommitteeEdit.vue";
-import {$require} from "@/plugins/require.js";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
+import TopBanner from '@/components/banners/TopBanner.vue'
+import CommitteeEdit from '@/views/committee/CommitteeEdit.vue'
+import { $require } from '@/plugins/require.js'
+import { $handleNetworkError } from '@/plugins/handleNetworkError.js'
+import {
+  findCommittees,
+  deleteCommitteeById,
+  type AdvancedCommitteeDto
+} from '@/lib'
 
-export default {
-  name: "CommitteeManager",
-  components: {CommitteeEdit, TopBanner: TopBanner},
-  data: () => ({
-    committees: [],
-    committeeToDelete: null,
-    editingCommitteeId: null,
-    submittingId: null,
-    creatingCommittee: false,
-    creatingLoading: false,
-    noCommittees: false,
-  }),
-  mounted() {
-    // Get the user's committees
-    this.getCommittees()
+import client from "@/plugins/client.ts"
+
+interface Data {
+  committees: AdvancedCommitteeDto[]
+  committeeToDelete: AdvancedCommitteeDto | null
+  editingCommitteeId: number | null
+  submittingId: number | null
+  creatingCommittee: boolean
+  creatingLoading: boolean
+  noCommittees: boolean
+}
+
+export default defineComponent({
+  name: 'CommitteeManager',
+  components: {
+    CommitteeEdit,
+    TopBanner
+  },
+  data(): Data {
+    return {
+      committees: [],
+      committeeToDelete: null,
+      editingCommitteeId: null,
+      submittingId: null,
+      creatingCommittee: false,
+      creatingLoading: false,
+      noCommittees: false
+    }
+  },
+  mounted(): void {
+    this.fetchCommittees()
   },
   methods: {
     $require,
-    getCommittees() {
-      this.$http.get('committees?fullCommittees=true', {headers: {'Authorization': `Bearer ${this.$store.getters.getLogin.token}`}})
-        .then(response => {
-          if (response.data.length > 0) {
-            this.committees = response.data
-          } else {
-            this.noCommittees = true
-          }
-        })
-        .catch(e => $handleNetworkError(e))
+
+    async fetchCommittees(): Promise<void> {
+      try {
+        const response = await findCommittees(client)
+        const committeesData = response.data
+
+        if (committeesData && committeesData.length > 0) {
+          // Type assertion to ensure proper typing
+          this.committees = committeesData.filter(
+            (committee): committee is AdvancedCommitteeDto =>
+              committee && typeof committee === 'object' && 'name' in committee
+          )
+        } else {
+          this.noCommittees = true
+        }
+      } catch (error: unknown) {
+        $handleNetworkError(error)
+      }
     },
-    deleteCommittee() {
-      this.$http.delete('committees/' + this.committeeToDelete.id, {headers: {'Authorization': `Bearer ${this.$store.getters.getLogin.token}`}})
-        .then(response => {
-          if (response.status === 200) {
-            this.committees = this.committees.filter(committee => committee.id !== this.committeeToDelete.id)
-            this.committeeToDelete = null
-          }
+
+    async deleteCommittee(): Promise<void> {
+      if (!this.committeeToDelete?.id) {
+        return
+      }
+
+      try {
+        await deleteCommitteeById({
+          path: {
+            committeeId: this.committeeToDelete.id
+          },
+          client
         })
-        .catch(e => $handleNetworkError(e))
+
+        // Remove the committee from local state
+        this.committees = this.committees.filter(
+          committee => committee.id !== this.committeeToDelete?.id
+        )
+        this.committeeToDelete = null
+      } catch (error: unknown) {
+        $handleNetworkError(error)
+      }
     },
-  },
-}
+
+    toggleEditingCommittee(committeeId: number | undefined): void {
+      if (!committeeId) return
+
+      this.editingCommitteeId = this.editingCommitteeId === committeeId ? null : committeeId
+    },
+
+    handleCreateClose(): void {
+      this.fetchCommittees()
+      this.creatingCommittee = false
+      this.creatingLoading = false
+    },
+
+    handleEditClose(): void {
+      this.editingCommitteeId = null
+      this.submittingId = null
+      this.fetchCommittees()
+    }
+  }
+})
 </script>
 
 <style scoped>
-
 .form-border {
   border-width: 1px;
   border-color: rgb(var(--v-theme-accent));

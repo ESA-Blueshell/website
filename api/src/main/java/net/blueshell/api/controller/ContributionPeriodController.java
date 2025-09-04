@@ -25,7 +25,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     }
 
     @GetMapping("/contributionPeriods")
-    public List<ContributionPeriodDTO> getContributionPeriods() {
+    public List<ContributionPeriodDTO> findContributionPeriods() {
         return mapper.toDTOs(service.findAll());
     }
 

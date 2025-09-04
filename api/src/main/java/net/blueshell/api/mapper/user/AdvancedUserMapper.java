@@ -23,10 +23,6 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-    @Autowired
-    private MembershipMapper membershipMapper;
-    @Autowired
-    private MembershipService membershipService;
 
     public static void applyCreationFields(AdvancedUserDTO dto, User user) {
         applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
@@ -54,13 +50,6 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
     public abstract AdvancedUserDTO toDTO(User user);
-
-    @AfterMapping
-    protected void afterToDto(User user, @MappingTarget AdvancedUserDTO dto) {
-        if (user.getMembership() != null) {
-            dto.setMembership(membershipMapper.toDTO(user.getMembership()));
-        }
-    }
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "initials", ignore = true)
@@ -91,28 +80,12 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
             // If creating a account for the first time, set the password. Otherwise create a random one
             if (dto.getPassword() != null && !hasAuthority(Role.BOARD)) {
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
-            } else {
+            } else if (dto.getPassword() == null && dto.getId() == null && hasAuthority(Role.BOARD)) {
                 user.setPassword(passwordEncoder.encode(generatePassword()));
             }
 
             if (hasAuthority(Role.BOARD)) {
                 user.setCreatorId(getPrincipal().getId());
-            }
-
-            if (dto.getMembership() != null && user.getMembership() != null) {
-                dto.setId(user.getMembership().getId());
-                Membership membership = membershipMapper.fromDTO(dto.getMembership());
-                membership.setUser(user);
-                membershipService.update(membership);
-                user.setMembership(membership);
-            }
-
-            if (dto.getMembership() != null && user.getMembership() == null) {
-                Membership membership = membershipMapper.fromDTO(dto.getMembership());
-                membership.setUser(user);
-                membershipService.create(membership);
-                user.addRole(Role.MEMBER);
-                user.setConsentPrivacy(true);
             }
         }
     }

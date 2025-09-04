@@ -95,9 +95,6 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     @NotNull(groups = {Member.class})
     private FileDTO signature;
 
-    @Valid
-    private MembershipDTO membership;
-
     @JsonProperty
     @NotNull(groups = {Member.class, Update.class})
     private boolean newsletter;

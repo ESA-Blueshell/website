@@ -1,3 +1,4 @@
+
 <template>
   <div>
     <v-form
@@ -126,13 +127,6 @@
             label="Gender"
           />
         </v-col>
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.study"
-            cols="4"
-            label="Study"
-          />
-        </v-col>
       </v-row>
       <v-row>
         <nationality-select
@@ -140,12 +134,6 @@
           cols="4"
         />
         <country-select v-model="userData.country" />
-      </v-row>
-      <v-row>
-        <v-col cols="6">
-          <MemberTypeSelect v-model="userData.memberType" />
-        </v-col>
-        <v-col cols="6" />
       </v-row>
       <!-- Last Row: Checkboxes and Save Button -->
       <v-row
@@ -216,152 +204,143 @@
   </div>
 </template>
 
-<script lang="ts">
-import {ref, onMounted} from 'vue';
-import {VPhoneInput} from 'v-phone-input';
-import {DateTime} from 'luxon';
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
+import { VPhoneInput } from 'v-phone-input';
+import { DateTime } from 'luxon';
 import store from '@/plugins/store';
-import {type AdvancedUserModel} from "@/models";
-import UserService from "@/services/UserService";
-import type {VForm} from "vuetify/components";
-import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
-import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
-import NationalitySelect from "@/components/select/NationalitySelect.vue";
-import CountrySelect from "@/components/select/CountrySelect.vue";
+import { type AdvancedUserModel } from '@/models';
+import {createUser, updateUser} from '@/lib/sdk.gen';
+import type { VForm } from 'vuetify/components';
+import { type CountryCode, parsePhoneNumber, type PhoneNumber } from 'libphonenumber-js/max';
+import MemberTypeSelect from '@/components/select/MemberTypeSelect.vue';
+import NationalitySelect from '@/components/select/NationalitySelect.vue';
+import CountrySelect from '@/components/select/CountrySelect.vue';
 
-export default {
-  name: 'UserEdit',
-  components: {CountrySelect, NationalitySelect, MemberTypeSelect, VPhoneInput},
-  props: {
-    editing: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    creating: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    modelValue: {
-      type: Object as () => AdvancedUserModel,
-      default: null,
-    },
-    user: {
-      type: Object as () => AdvancedUserModel,
-      required: false,
-      default: () => ({
-        type: 'advanced',
-        prefix: '',
-        initials: '',
-        lastName: '',
-        email: '',
-        address: '',
-        city: '',
-        postalCode: '',
-        phoneNumber: '',
-        studentNumber: '',
-        dateOfBirth: '',
-        bhv: false,
-        ehbo: false,
-        discord: '',
-        newsletter: false,
-        photoConsent: false,
-      }),
-    },
-  },
-  emits: ['user-changed'],
-  setup(props, {emit}) {
-    const roles = store.getters.getLogin?.roles;
-    const disableEdit = !roles || !(roles.includes('BOARD') || roles.includes('ADMIN'));
-    const userService = new UserService();
-    const userData = ref(props.user as AdvancedUserModel);
-    const country = ref<CountryCode>('NL'); // Default country code
+interface Props {
+  editing?: boolean;
+  creating?: boolean;
+  modelValue?: AdvancedUserModel;
+  user?: AdvancedUserModel;
+}
 
-    const valid = ref(true);
-    const submitting = ref(false);
-    const form = ref<VForm>();
+interface Emits {
+  (e: 'user-changed', user: AdvancedUserModel): void;
+}
 
-    const initialsRules = [(v: string) => !!v || 'Initials are required'];
-    const firstNameRules = [(v: string) => !!v || 'First name is required'];
-    const lastNameRules = [(v: string) => !!v || 'Surname is required'];
-    const dateOfBirthRules = [(v: string) => !!v || 'Date of birth is required'];
-    const discordRules = [(v: string) => !!v || 'Discord Username is required'];
-    const postalCodeRules = [(v: string) => !!v || 'Postal code is required'];
-    const cityRules = [(v: string) => !!v || 'Place of residence is required'];
-    const emailRules = [
-      (v: string | undefined) => !!v || 'Email is required',
-      (v: string | undefined) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v || '') || 'Enter a valid e-mail address',
-      (v: string | undefined) => !/student/i.test(v || '') || 'You may not use your student email to sign up',
-    ];
-    const phoneNumberRules = [
-      (v: string) => {
-        if (!v) return true;
-        try {
-          const phoneNumber: PhoneNumber = parsePhoneNumber(v, country.value);
-          if (!phoneNumber.isValid()) {
-            return true
-          }
-          // The v-phone input has a very nice error message built in for all countries. But it can't recognize
-          // mobile phone numbers. Therefore, we only fail on this rule when the numbe ris a valid non-mobile number
-          return phoneNumber.getType() === 'MOBILE' || 'Enter a mobile phone number';
-        } catch {
-          return true
-        }
-      },
-    ];
+const props = withDefaults(defineProps<Props>(), {
+  editing: false,
+  creating: false,
+  modelValue: undefined,
+  user: () => ({
+    type: 'advanced',
+    prefix: '',
+    initials: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    phoneNumber: '',
+    studentNumber: '',
+    dateOfBirth: '',
+    bhv: false,
+    ehbo: false,
+    discord: '',
+    newsletter: false,
+    photoConsent: false,
+  } as AdvancedUserModel),
+});
 
-    const updateCountry = (newCountry: string) => {
-      country.value = newCountry as CountryCode;
-    };
+const emit = defineEmits<Emits>();
 
-    onMounted(() => {
-      if (userData.value.dateOfBirth) {
-        userData.value.dateOfBirth = DateTime.fromISO(userData.value.dateOfBirth).toISODate() as string;
+// Computed properties
+const roles = computed(() => store.getters.getLogin?.roles);
+const disableEdit = computed(() => !roles.value || !(roles.value.includes('BOARD') || roles.value.includes('ADMIN')));
+
+// Reactive state
+const userData = ref<AdvancedUserModel>(props.user);
+const country = ref<CountryCode>('NL');
+const valid = ref<boolean>(true);
+const submitting = ref<boolean>(false);
+const form = ref<VForm>();
+
+// Validation rules
+const initialsRules = [(v: string) => !!v || 'Initials are required'];
+const firstNameRules = [(v: string) => !!v || 'First name is required'];
+const lastNameRules = [(v: string) => !!v || 'Surname is required'];
+const dateOfBirthRules = [(v: string) => !!v || 'Date of birth is required'];
+const discordRules = [(v: string) => !!v || 'Discord Username is required'];
+const postalCodeRules = [(v: string) => !!v || 'Postal code is required'];
+const cityRules = [(v: string) => !!v || 'Place of residence is required'];
+
+const emailRules = [
+  (v: string | undefined) => !!v || 'Email is required',
+  (v: string | undefined) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v || '') || 'Enter a valid e-mail address',
+  (v: string | undefined) => !/student/i.test(v || '') || 'You may not use your student email to sign up',
+];
+
+const phoneNumberRules = [
+  (v: string) => {
+    if (!v) return true;
+    try {
+      const phoneNumber: PhoneNumber = parsePhoneNumber(v, country.value);
+      if (!phoneNumber.isValid()) {
+        return true;
       }
-    });
-
-    const save = async () => {
-      const result = await form.value?.validate();
-      if (!result || !result.valid) return;
-
-      submitting.value = true;
-
-      try {
-        if (userData.value?.id) {
-          userData.value = await userService.updateUser(userData.value.id, userData.value);
-        } else {
-          userData.value = await userService.createUser(userData.value);
-        }
-        submitting.value = false;
-        emit('user-changed', userData.value);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e: unknown) {
-        submitting.value = false;
-      }
-    };
-
-    return {
-      disableEdit,
-      userData,
-      valid,
-      submitting,
-      form,
-      initialsRules,
-      firstNameRules,
-      lastNameRules,
-      dateOfBirthRules,
-      discordRules,
-      postalCodeRules,
-      cityRules,
-      emailRules,
-      phoneNumberRules,
-      save,
-      country,
-      updateCountry,
-    };
+      // The v-phone input has a very nice error message built in for all countries. But it can't recognize
+      // mobile phone numbers. Therefore, we only fail on this rule when the number is a valid non-mobile number
+      return phoneNumber.getType() === 'MOBILE' || 'Enter a mobile phone number';
+    } catch {
+      return true;
+    }
   },
+];
+
+// Methods
+const updateCountry = (newCountry: string): void => {
+  country.value = newCountry as CountryCode;
 };
+
+const save = async (): Promise<void> => {
+  const result = await form.value?.validate();
+  if (!result || !result.valid) return;
+
+  submitting.value = true;
+
+  try {
+    let response;
+    if (userData.value?.id) {
+      // Update existing user - the auth token is now automatically included
+      response = await updateUser({
+        path: { userId: userData.value.id },
+        body: userData.value,
+      });
+    } else {
+      // Create new user - the auth token is now automatically included
+      response = await createUser({
+        body: userData.value,
+      });
+    }
+
+    if (response.data) {
+      userData.value = response.data as AdvancedUserModel;
+      emit('user-changed', userData.value);
+    }
+  } catch (error: unknown) {
+    console.error('Failed to save user:', error);
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  if (userData.value.dateOfBirth) {
+    userData.value.dateOfBirth = DateTime.fromISO(userData.value.dateOfBirth).toISODate() as string;
+  }
+});
 </script>
 
 <style scoped>

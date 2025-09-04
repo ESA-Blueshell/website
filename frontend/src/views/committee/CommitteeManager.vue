@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="CommitteeModel Manager" />
+    <top-banner title="CommitteeModel Manager"/>
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -21,8 +21,9 @@
             class="form-border mx-auto rounded-b"
             style="border-top-width: 0"
           >
-            <edit-committee
+            <committee-edit
               class="form"
+              :committee="{}"
               @close="getCommittees();creatingCommittee=false;creatingLoading=false;"
               @submitting="creatingLoading=true"
             />
@@ -85,7 +86,7 @@
                     v-if="editingCommitteeId === committee.id"
                     class="form-border mx-auto rounded-b"
                   >
-                    <edit-committee
+                    <committee-edit
                       :committee="committee"
                       class="form"
                       @close="editingCommitteeId=null;submittingId=null"
@@ -114,7 +115,7 @@
               There will be no undo
             </v-card-text>
             <v-card-actions>
-              <v-spacer />
+              <v-spacer/>
               <v-btn
                 variant="text"
                 @click="committeeToDelete=null"
@@ -150,7 +151,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 
 export default {
   name: "CommitteeManager",
-  components: {EditCommittee: CommitteeEdit, TopBanner: TopBanner},
+  components: {CommitteeEdit, TopBanner: TopBanner},
   data: () => ({
     committees: [],
     committeeToDelete: null,

@@ -38,7 +38,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping("/users")
-    public AdvancedUserDTO create(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
+    public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
         User user = advancedMapper.fromDTO(dto);
         service.createUser(user);
         return advancedMapper.toDTO(user);
@@ -46,7 +46,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @PutMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
-    public AdvancedUserDTO update(@PathVariable("userId") Long userId,
+    public AdvancedUserDTO updateUser(@PathVariable("userId") Long userId,
                                   @Validated(Update.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
         dto.setId(userId);
         User user = advancedMapper.fromDTO(dto);
@@ -61,7 +61,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @PostMapping(value = "/users/activate")
     @PreAuthorize("hasPermission(#request, 'User', 'activate')")
-    public void activate(@Valid @RequestBody ActivationRequest request) {
+    public void activateUser(@Valid @RequestBody ActivationRequest request) {
         User user = service.findByResetKey(request.getToken());
         requestMapper.fromRequest(request, user);
         service.update(user);
@@ -77,7 +77,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
-    public List<AdvancedUserDTO> getAll(@PathParam("isMember") boolean isMember) {
+    public List<AdvancedUserDTO> findAllUsers(@PathParam("isMember") boolean isMember) {
         List<User> users;
         if (isMember) {
             users = service.findByMembershipNotNull();
@@ -89,14 +89,14 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
-    public AdvancedUserDTO getById(@PathVariable("userId") Long userId) {
+    public AdvancedUserDTO findUserById(@PathVariable("userId") Long userId) {
         User user = service.findById(userId);
         return advancedMapper.toDTO(user);
     }
 
     @PutMapping(value = "/users/{id}/membership")
     @PreAuthorize("hasAuthority('BOARD')")
-    public AdvancedUserDTO updateMembership(@PathVariable("id") Long userId,
+    public AdvancedUserDTO updateUserMembership(@PathVariable("id") Long userId,
                                             @RequestParam(defaultValue = "isMember") Boolean isMember) {
         User user = service.updateMembership(userId, isMember);
         return advancedMapper.toDTO(user);
@@ -105,13 +105,13 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @DeleteMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable("userId") Long userId) {
+    public void deleteUser(@PathVariable("userId") Long userId) {
         service.delete(userId);
     }
 
     @PutMapping(value = "/users/{userId}/roles")
     @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
-    public AdvancedUserDTO toggleRole(@PathVariable("userId") Long userId,
+    public AdvancedUserDTO toggleUserRole(@PathVariable("userId") Long userId,
                                       @RequestParam(value = "role") Role role) {
         User user = service.toggleRole(userId, role);
         return advancedMapper.toDTO(user);
@@ -119,7 +119,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping(value = "/users/brevo")
     @PreAuthorize("hasPermission(#email, 'User', 'getBrevo')")
-    public AdvancedUserDTO getFromBrevo(@RequestParam String email) throws ApiException {
+    public AdvancedUserDTO getUserFromBrevo(@RequestParam String email) throws ApiException {
         User user = service.getFromBrevo(email);
         return advancedMapper.toDTO(user);
     }

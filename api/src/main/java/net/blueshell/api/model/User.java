@@ -162,6 +162,7 @@ public class User implements UserDetails, BaseModel<Long> {
     @OneToOne
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
     @JsonIgnore
+    @ToString.Exclude
     private User creator;
 
     @Column(name = "creator_id")

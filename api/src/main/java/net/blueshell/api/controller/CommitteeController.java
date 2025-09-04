@@ -29,7 +29,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     }
 
     @GetMapping("/committeeMembers/committees")
-    public List<? extends BaseDTO> getCommitteesByUserId() {
+    public List<? extends BaseDTO> findCommitteesForCurrentUser() {
         if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll());
         }
@@ -39,7 +39,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     }
 
     @GetMapping("/committees")
-    public List<? extends BaseDTO> getCommittees() {
+    public List<? extends BaseDTO> findCommittees() {
         if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll());
         }
@@ -49,7 +49,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
-    public BaseDTO getCommitteeById(
+    public BaseDTO findCommitteeById(
             @PathVariable("committeeId") Long committeeId
     ) {
         Committee committee = service.findById(committeeId);

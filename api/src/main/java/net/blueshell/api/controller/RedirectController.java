@@ -24,7 +24,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     }
 
     @PostMapping("/telemetry/redirect")
-    public String addRedirect(@RequestParam("id") String telemetryId) {
+    public String createRedirect(@RequestParam("id") String telemetryId) {
         return service.createRedirect(UUID.fromString(telemetryId));
     }
 
@@ -35,7 +35,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     }
 
     @GetMapping("/telemetry/redirects")
-    public List<RedirectDTO> getRedirects(
+    public List<RedirectDTO> findRedirects(
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             @RequestParam(required = false) OffsetDateTime from,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

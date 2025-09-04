@@ -37,7 +37,7 @@
         <v-col cols="8">
           <v-autocomplete
             v-if="members"
-            v-model="member.user.id"
+            v-model="member.user"
             :item-title="user => user.discord ? `${user.fullName} (${user.discord})` : user.fullName"
             :items="members"
             :rules="[

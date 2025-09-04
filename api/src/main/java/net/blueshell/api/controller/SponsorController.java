@@ -24,7 +24,7 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/sponsors")
-    public List<SponsorDTO> getSponsors() {
+    public List<SponsorDTO> findSponsors() {
         return mapper.toDTOs(service.findAll());
     }
 
@@ -53,7 +53,7 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping(value = "/sponsors/{id}")
-    public SponsorDTO getSponsorById(@PathVariable("id") Long id) {
+    public SponsorDTO findSponsorById(@PathVariable("id") Long id) {
         return mapper.toDTO(service.findById(id));
     }
 

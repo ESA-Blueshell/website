@@ -64,13 +64,6 @@ public class EventController extends BaseController<EventService, EventMapper> {
         return mapper.toDTOs(events);
     }
 
-    @GetMapping("/upcoming")
-    public List<EventDTO> getUpcomingEvents(@RequestParam(required = false, defaultValue = "false") boolean editable) {
-
-        List<Event> events = service.findUpcoming();
-        return mapper.toDTOs(events);
-    }
-
     @GetMapping("/events/past")
     public Stream<EventDTO> getPastEvents(@RequestParam(required = false, defaultValue = "false") boolean editable) {
         User authedUser = getPrincipal();

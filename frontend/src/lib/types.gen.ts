@@ -339,7 +339,7 @@ export type DeleteSponsorByIdResponses = {
 
 export type DeleteSponsorByIdResponse = DeleteSponsorByIdResponses[keyof DeleteSponsorByIdResponses];
 
-export type GetSponsorByIdData = {
+export type FindSponsorByIdData = {
     body?: never;
     path: {
         id: number;
@@ -348,14 +348,14 @@ export type GetSponsorByIdData = {
     url: '/sponsors/{id}';
 };
 
-export type GetSponsorByIdResponses = {
+export type FindSponsorByIdResponses = {
     /**
      * OK
      */
     200: SponsorDto;
 };
 
-export type GetSponsorByIdResponse = GetSponsorByIdResponses[keyof GetSponsorByIdResponses];
+export type FindSponsorByIdResponse = FindSponsorByIdResponses[keyof FindSponsorByIdResponses];
 
 export type CreateOrUpdateSponsorData = {
     body: SponsorDto;
@@ -377,7 +377,7 @@ export type CreateOrUpdateSponsorResponses = {
 
 export type CreateOrUpdateSponsorResponse = CreateOrUpdateSponsorResponses[keyof CreateOrUpdateSponsorResponses];
 
-export type GetMembershipByIdData = {
+export type FindMembershipByIdData = {
     body?: never;
     path: {
         id: number;
@@ -386,14 +386,14 @@ export type GetMembershipByIdData = {
     url: '/memberships/{id}';
 };
 
-export type GetMembershipByIdResponses = {
+export type FindMembershipByIdResponses = {
     /**
      * OK
      */
     200: MembershipDto;
 };
 
-export type GetMembershipByIdResponse = GetMembershipByIdResponses[keyof GetMembershipByIdResponses];
+export type FindMembershipByIdResponse = FindMembershipByIdResponses[keyof FindMembershipByIdResponses];
 
 export type UpdateMembershipData = {
     body: MembershipDto;
@@ -449,7 +449,7 @@ export type UpdateEventResponses = {
 
 export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
 
-export type UpdateSignUpData = {
+export type UpdateEventSignUpData = {
     body: EventSignUpDto;
     path: {
         eventId: number;
@@ -460,16 +460,16 @@ export type UpdateSignUpData = {
     url: '/events/{eventId}/signups';
 };
 
-export type UpdateSignUpResponses = {
+export type UpdateEventSignUpResponses = {
     /**
      * OK
      */
     200: EventSignUpDto;
 };
 
-export type UpdateSignUpResponse = UpdateSignUpResponses[keyof UpdateSignUpResponses];
+export type UpdateEventSignUpResponse = UpdateEventSignUpResponses[keyof UpdateEventSignUpResponses];
 
-export type PaidData = {
+export type SetContributionPaidData = {
     body?: never;
     path: {
         id: number;
@@ -480,14 +480,14 @@ export type PaidData = {
     url: '/contributions/{id}/paid';
 };
 
-export type PaidResponses = {
+export type SetContributionPaidResponses = {
     /**
      * OK
      */
     200: ContributionDto;
 };
 
-export type PaidResponse = PaidResponses[keyof PaidResponses];
+export type SetContributionPaidResponse = SetContributionPaidResponses[keyof SetContributionPaidResponses];
 
 export type SendContributionReminderData = {
     body?: never;
@@ -559,7 +559,7 @@ export type DeleteCommitteeByIdResponses = {
 
 export type DeleteCommitteeByIdResponse = DeleteCommitteeByIdResponses[keyof DeleteCommitteeByIdResponses];
 
-export type GetCommitteeByIdData = {
+export type FindCommitteeByIdData = {
     body?: never;
     path: {
         committeeId: number;
@@ -568,14 +568,14 @@ export type GetCommitteeByIdData = {
     url: '/committees/{committeeId}';
 };
 
-export type GetCommitteeByIdResponses = {
+export type FindCommitteeByIdResponses = {
     /**
      * OK
      */
     200: BaseDto;
 };
 
-export type GetCommitteeByIdResponse = GetCommitteeByIdResponses[keyof GetCommitteeByIdResponses];
+export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
 
 export type UpdateCommitteeData = {
     body: AdvancedCommitteeDto;
@@ -595,7 +595,7 @@ export type UpdateCommitteeResponses = {
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
 
-export type FindAllUsersData = {
+export type FindUsersData = {
     body?: never;
     path?: never;
     query: {
@@ -604,14 +604,14 @@ export type FindAllUsersData = {
     url: '/users';
 };
 
-export type FindAllUsersResponses = {
+export type FindUsersResponses = {
     /**
      * OK
      */
     200: Array<AdvancedUserDto>;
 };
 
-export type FindAllUsersResponse = FindAllUsersResponses[keyof FindAllUsersResponses];
+export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
 
 export type CreateUserData = {
     body: AdvancedUserDto;
@@ -710,7 +710,7 @@ export type DeleteRedirectResponses = {
 
 export type DeleteRedirectResponse = DeleteRedirectResponses[keyof DeleteRedirectResponses];
 
-export type AddRedirectData = {
+export type CreateRedirectData = {
     body?: never;
     path?: never;
     query: {
@@ -719,30 +719,30 @@ export type AddRedirectData = {
     url: '/telemetry/redirect';
 };
 
-export type AddRedirectResponses = {
+export type CreateRedirectResponses = {
     /**
      * OK
      */
     200: string;
 };
 
-export type AddRedirectResponse = AddRedirectResponses[keyof AddRedirectResponses];
+export type CreateRedirectResponse = CreateRedirectResponses[keyof CreateRedirectResponses];
 
-export type GetSponsorsData = {
+export type FindSponsorsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/sponsors';
 };
 
-export type GetSponsorsResponses = {
+export type FindSponsorsResponses = {
     /**
      * OK
      */
     200: Array<SponsorDto>;
 };
 
-export type GetSponsorsResponse = GetSponsorsResponses[keyof GetSponsorsResponses];
+export type FindSponsorsResponse = FindSponsorsResponses[keyof FindSponsorsResponses];
 
 export type CreateSponsorData = {
     body: SponsorDto;
@@ -760,21 +760,21 @@ export type CreateSponsorResponses = {
 
 export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
 
-export type GetMembershipsData = {
+export type FindMembershipsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/memberships';
 };
 
-export type GetMembershipsResponses = {
+export type FindMembershipsResponses = {
     /**
      * OK
      */
     200: Array<MembershipDto>;
 };
 
-export type GetMembershipsResponse = GetMembershipsResponses[keyof GetMembershipsResponses];
+export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
 
 export type CreateMembershipData = {
     body: MembershipDto;
@@ -827,7 +827,7 @@ export type CreateEventResponses = {
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
 
-export type GetAllSignUpsData = {
+export type FindEventSignUpsData = {
     body?: never;
     path: {
         id: number;
@@ -836,7 +836,7 @@ export type GetAllSignUpsData = {
     url: '/events/{id}/signups';
 };
 
-export type GetAllSignUpsResponses = {
+export type FindEventSignUpsResponses = {
     /**
      * OK
      */
@@ -845,9 +845,9 @@ export type GetAllSignUpsResponses = {
     };
 };
 
-export type GetAllSignUpsResponse = GetAllSignUpsResponses[keyof GetAllSignUpsResponses];
+export type FindEventSignUpsResponse = FindEventSignUpsResponses[keyof FindEventSignUpsResponses];
 
-export type CreateSignupData = {
+export type CreateEventSignupData = {
     body: EventSignUpDto;
     path: {
         id: number;
@@ -856,16 +856,16 @@ export type CreateSignupData = {
     url: '/events/{id}/signups';
 };
 
-export type CreateSignupResponses = {
+export type CreateEventSignupResponses = {
     /**
      * OK
      */
     200: EventSignUpDto;
 };
 
-export type CreateSignupResponse = CreateSignupResponses[keyof CreateSignupResponses];
+export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
 
-export type GetAllData = {
+export type FindContributionsData = {
     body?: never;
     path?: never;
     query?: {
@@ -874,7 +874,7 @@ export type GetAllData = {
     url: '/contributions';
 };
 
-export type GetAllResponses = {
+export type FindContributionsResponses = {
     /**
      * OK
      */
@@ -883,39 +883,39 @@ export type GetAllResponses = {
     };
 };
 
-export type GetAllResponse = GetAllResponses[keyof GetAllResponses];
+export type FindContributionsResponse = FindContributionsResponses[keyof FindContributionsResponses];
 
-export type CreateData = {
+export type CreateContributionData = {
     body: ContributionDto;
     path?: never;
     query?: never;
     url: '/contributions';
 };
 
-export type CreateResponses = {
+export type CreateContributionResponses = {
     /**
      * OK
      */
     200: ContributionDto;
 };
 
-export type CreateResponse = CreateResponses[keyof CreateResponses];
+export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
-export type GetContributionPeriodsData = {
+export type FindContributionPeriodsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/contributionPeriods';
 };
 
-export type GetContributionPeriodsResponses = {
+export type FindContributionPeriodsResponses = {
     /**
      * OK
      */
     200: Array<ContributionPeriodDto>;
 };
 
-export type GetContributionPeriodsResponse = GetContributionPeriodsResponses[keyof GetContributionPeriodsResponses];
+export type FindContributionPeriodsResponse = FindContributionPeriodsResponses[keyof FindContributionPeriodsResponses];
 
 export type CreateContributionPeriodData = {
     body: ContributionPeriodDto;
@@ -933,21 +933,21 @@ export type CreateContributionPeriodResponses = {
 
 export type CreateContributionPeriodResponse = CreateContributionPeriodResponses[keyof CreateContributionPeriodResponses];
 
-export type GetCommitteesData = {
+export type FindCommitteesData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/committees';
 };
 
-export type GetCommitteesResponses = {
+export type FindCommitteesResponses = {
     /**
      * OK
      */
     200: Array<BaseDto>;
 };
 
-export type GetCommitteesResponse = GetCommitteesResponses[keyof GetCommitteesResponses];
+export type FindCommitteesResponse = FindCommitteesResponses[keyof FindCommitteesResponses];
 
 export type CreateCommitteeData = {
     body: AdvancedCommitteeDto;
@@ -965,37 +965,37 @@ export type CreateCommitteeResponses = {
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
 
-export type FindAllData = {
+export type FindBlogsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/blogs';
 };
 
-export type FindAllResponses = {
+export type FindBlogsResponses = {
     /**
      * OK
      */
     200: Array<BlogDto>;
 };
 
-export type FindAllResponse = FindAllResponses[keyof FindAllResponses];
+export type FindBlogsResponse = FindBlogsResponses[keyof FindBlogsResponses];
 
-export type Create1Data = {
+export type CreateData = {
     body: BlogDto;
     path?: never;
     query?: never;
     url: '/blogs';
 };
 
-export type Create1Responses = {
+export type CreateResponses = {
     /**
      * OK
      */
     200: BlogDto;
 };
 
-export type Create1Response = Create1Responses[keyof Create1Responses];
+export type CreateResponse = CreateResponses[keyof CreateResponses];
 
 export type AuthenticateData = {
     body: JwtRequest;
@@ -1031,7 +1031,7 @@ export type DownloadProfilePictureResponses = {
 
 export type DownloadProfilePictureResponse = DownloadProfilePictureResponses[keyof DownloadProfilePictureResponses];
 
-export type GetUserFromBrevoData = {
+export type FetchUserFromBrevoData = {
     body?: never;
     path?: never;
     query: {
@@ -1040,34 +1040,16 @@ export type GetUserFromBrevoData = {
     url: '/users/brevo';
 };
 
-export type GetUserFromBrevoResponses = {
+export type FetchUserFromBrevoResponses = {
     /**
      * OK
      */
     200: AdvancedUserDto;
 };
 
-export type GetUserFromBrevoResponse = GetUserFromBrevoResponses[keyof GetUserFromBrevoResponses];
+export type FetchUserFromBrevoResponse = FetchUserFromBrevoResponses[keyof FetchUserFromBrevoResponses];
 
-export type GetUpcomingEventsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        editable?: boolean;
-    };
-    url: '/upcoming';
-};
-
-export type GetUpcomingEventsResponses = {
-    /**
-     * OK
-     */
-    200: Array<EventDto>;
-};
-
-export type GetUpcomingEventsResponse = GetUpcomingEventsResponses[keyof GetUpcomingEventsResponses];
-
-export type GetTelemetryData = {
+export type FindTelemetryByIdData = {
     body?: never;
     path: {
         id: string;
@@ -1076,16 +1058,16 @@ export type GetTelemetryData = {
     url: '/telemetry/{id}';
 };
 
-export type GetTelemetryResponses = {
+export type FindTelemetryByIdResponses = {
     /**
      * OK
      */
     200: TelemetryDto;
 };
 
-export type GetTelemetryResponse = GetTelemetryResponses[keyof GetTelemetryResponses];
+export type FindTelemetryByIdResponse = FindTelemetryByIdResponses[keyof FindTelemetryByIdResponses];
 
-export type GetRedirectsData = {
+export type FindRedirectsData = {
     body?: never;
     path?: never;
     query?: {
@@ -1095,14 +1077,14 @@ export type GetRedirectsData = {
     url: '/telemetry/redirects';
 };
 
-export type GetRedirectsResponses = {
+export type FindRedirectsResponses = {
     /**
      * OK
      */
     200: Array<RedirectDto>;
 };
 
-export type GetRedirectsResponse = GetRedirectsResponses[keyof GetRedirectsResponses];
+export type FindRedirectsResponse = FindRedirectsResponses[keyof FindRedirectsResponses];
 
 export type DownloadSignatureData = {
     body?: never;
@@ -1174,23 +1156,23 @@ export type DownloadBannerResponses = {
 
 export type DownloadBannerResponse = DownloadBannerResponses[keyof DownloadBannerResponses];
 
-export type GetMySignUpsData = {
+export type FindEventSignUpsForCurrentUserData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/events/signups';
 };
 
-export type GetMySignUpsResponses = {
+export type FindEventSignUpsForCurrentUserResponses = {
     /**
      * OK
      */
     200: Array<EventSignUpDto>;
 };
 
-export type GetMySignUpsResponse = GetMySignUpsResponses[keyof GetMySignUpsResponses];
+export type FindEventSignUpsForCurrentUserResponse = FindEventSignUpsForCurrentUserResponses[keyof FindEventSignUpsForCurrentUserResponses];
 
-export type GetSignUpByAccessTokenData = {
+export type FindEventSignUpByAccessTokenData = {
     body?: never;
     path: {
         accessToken: string;
@@ -1199,14 +1181,14 @@ export type GetSignUpByAccessTokenData = {
     url: '/events/signups/byAccessToken/{accessToken}';
 };
 
-export type GetSignUpByAccessTokenResponses = {
+export type FindEventSignUpByAccessTokenResponses = {
     /**
      * OK
      */
     200: EventSignUpDto;
 };
 
-export type GetSignUpByAccessTokenResponse = GetSignUpByAccessTokenResponses[keyof GetSignUpByAccessTokenResponses];
+export type FindEventSignUpByAccessTokenResponse = FindEventSignUpByAccessTokenResponses[keyof FindEventSignUpByAccessTokenResponses];
 
 export type GetPastEventsData = {
     body?: never;
@@ -1282,7 +1264,7 @@ export type DownloadFileResponses = {
 
 export type DownloadFileResponse = DownloadFileResponses[keyof DownloadFileResponses];
 
-export type GetContributionsByPeriodIdData = {
+export type FindContributionsByPeriodIdData = {
     body?: never;
     path: {
         periodId: number;
@@ -1291,30 +1273,30 @@ export type GetContributionsByPeriodIdData = {
     url: '/contributionPeriods/{periodId}/contributions';
 };
 
-export type GetContributionsByPeriodIdResponses = {
+export type FindContributionsByPeriodIdResponses = {
     /**
      * OK
      */
     200: Array<ContributionDto>;
 };
 
-export type GetContributionsByPeriodIdResponse = GetContributionsByPeriodIdResponses[keyof GetContributionsByPeriodIdResponses];
+export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
 
-export type GetCommitteesByUserIdData = {
+export type FindCommitteesForCurrentUserData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/committeeMembers/committees';
 };
 
-export type GetCommitteesByUserIdResponses = {
+export type FindCommitteesForCurrentUserResponses = {
     /**
      * OK
      */
     200: Array<BaseDto>;
 };
 
-export type GetCommitteesByUserIdResponse = GetCommitteesByUserIdResponses[keyof GetCommitteesByUserIdResponses];
+export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
 
 export type DeleteByIdData = {
     body?: never;
@@ -1334,7 +1316,7 @@ export type DeleteByIdResponses = {
 
 export type DeleteByIdResponse = DeleteByIdResponses[keyof DeleteByIdResponses];
 
-export type FindByIdData = {
+export type FindBlogByIdData = {
     body?: never;
     path: {
         id: string;
@@ -1343,16 +1325,16 @@ export type FindByIdData = {
     url: '/blogs/{id}';
 };
 
-export type FindByIdResponses = {
+export type FindBlogByIdResponses = {
     /**
      * OK
      */
     200: BlogDto;
 };
 
-export type FindByIdResponse = FindByIdResponses[keyof FindByIdResponses];
+export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];
 
-export type DeleteSignupData = {
+export type DeleteEventSignupData = {
     body?: never;
     path: {
         eventSignupId: number;
@@ -1363,16 +1345,16 @@ export type DeleteSignupData = {
     url: '/events/signups/{eventSignupId}';
 };
 
-export type DeleteSignupResponses = {
+export type DeleteEventSignupResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteSignupResponse = DeleteSignupResponses[keyof DeleteSignupResponses];
+export type DeleteEventSignupResponse = DeleteEventSignupResponses[keyof DeleteEventSignupResponses];
 
-export type DeleteData = {
+export type DeleteContributionData = {
     body?: never;
     path: {
         id: number;
@@ -1381,14 +1363,14 @@ export type DeleteData = {
     url: '/contributions/{id}';
 };
 
-export type DeleteResponses = {
+export type DeleteContributionResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteResponse = DeleteResponses[keyof DeleteResponses];
+export type DeleteContributionResponse = DeleteContributionResponses[keyof DeleteContributionResponses];
 
 export type ClientOptions = {
     baseURL: 'http://localhost:8080' | (string & {});

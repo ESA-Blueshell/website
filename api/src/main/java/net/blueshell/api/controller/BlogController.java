@@ -34,12 +34,12 @@ public class BlogController extends BaseController<BlogService, BlogMapper> {
     }
 
     @GetMapping("/blogs")
-    public List<BlogDTO> findAll() {
+    public List<BlogDTO> findBlogs() {
         return mapper.toDTOs(service.findAll());
     }
 
     @GetMapping("/blogs/{id}")
-    public BlogDTO findById(@PathVariable UUID id) {
+    public BlogDTO findBlogById(@PathVariable UUID id) {
         return mapper.toDTO(service.findById(id));
     }
 

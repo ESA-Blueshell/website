@@ -77,7 +77,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
-    public List<AdvancedUserDTO> findAllUsers(@PathParam("isMember") boolean isMember) {
+    public List<AdvancedUserDTO> findUsers(@PathParam("isMember") boolean isMember) {
         List<User> users;
         if (isMember) {
             users = service.findByMembershipNotNull();
@@ -119,7 +119,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping(value = "/users/brevo")
     @PreAuthorize("hasPermission(#email, 'User', 'getBrevo')")
-    public AdvancedUserDTO getUserFromBrevo(@RequestParam String email) throws ApiException {
+    public AdvancedUserDTO fetchUserFromBrevo(@RequestParam String email) throws ApiException {
         User user = service.getFromBrevo(email);
         return advancedMapper.toDTO(user);
     }

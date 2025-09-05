@@ -53,17 +53,10 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column
     private String initials;
 
-    @Column
-    private String address;
-
-    @Column(name = "house_number")
-    private String houseNumber;
-
-    @Column(name = "postal_code")
-    private String postalCode;
-
-    @Column
-    private String city;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    @ToString.Exclude
+    private Address address;
 
     @Column(name = "phone_number")
     private String phoneNumber;
@@ -110,12 +103,6 @@ public class User implements UserDetails, BaseModel<Long> {
 
     @Column
     private String gender;
-
-    @Column
-    private String street;
-
-    @Column
-    private String country;
 
     @Column(name = "photo_consent")
     private boolean photoConsent;

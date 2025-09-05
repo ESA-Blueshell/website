@@ -210,9 +210,9 @@
 import { ref, onMounted, computed } from 'vue';
 import { VPhoneInput } from 'v-phone-input';
 import { DateTime } from 'luxon';
-import store from '@/plugins/store';
+import store from '@/plugins/store.ts';
 import { type AdvancedUserModel } from '@/models';
-import {createUser, updateUser} from '@/lib/sdk.gen';
+import {createUser, updateUser} from '@/lib/sdk.gen.ts';
 import type { VForm } from 'vuetify/components';
 import { type CountryCode, parsePhoneNumber, type PhoneNumber } from 'libphonenumber-js/max';
 import CountrySelect from '@/components/select/CountrySelect.vue';

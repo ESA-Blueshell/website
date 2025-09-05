@@ -5,10 +5,6 @@ export type AdvancedUserDto = SimpleUserDto & {
     roles?: Array<'ANONYMOUS' | 'GUEST' | 'COMPANY' | 'MEMBER' | 'VEGAN' | 'COMMITTEE' | 'BOARD' | 'TREASURER' | 'ADMIN' | 'SYSTEM'>;
     dateOfBirth: string;
     phoneNumber: string;
-    postalCode: string;
-    address: string;
-    city: string;
-    country: string;
     nationality: string;
     signature: FileDto;
     newsletter: boolean;
@@ -143,6 +139,17 @@ export type BaseDto = {
     type: string;
 };
 
+export type AddressDto = {
+    id?: number;
+    address?: string;
+    houseNumber?: string;
+    postalCode?: string;
+    city?: string;
+    street?: string;
+    country?: string;
+    createdAt?: string;
+};
+
 export type PasswordResetRequest = {
     username: string;
     token: string;
@@ -199,8 +206,8 @@ export type Pageable = {
 };
 
 export type PageEventDto = {
-    totalElements?: number;
     totalPages?: number;
+    totalElements?: number;
     size?: number;
     content?: Array<EventDto>;
     number?: number;
@@ -594,6 +601,60 @@ export type UpdateCommitteeResponses = {
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
+
+export type DeleteAddressData = {
+    body?: never;
+    path: {
+        addressId: number;
+    };
+    query?: never;
+    url: '/addresses/{addressId}';
+};
+
+export type DeleteAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteAddressResponse = DeleteAddressResponses[keyof DeleteAddressResponses];
+
+export type FindAddressByIdData = {
+    body?: never;
+    path: {
+        addressId: number;
+    };
+    query?: never;
+    url: '/addresses/{addressId}';
+};
+
+export type FindAddressByIdResponses = {
+    /**
+     * OK
+     */
+    200: AddressDto;
+};
+
+export type FindAddressByIdResponse = FindAddressByIdResponses[keyof FindAddressByIdResponses];
+
+export type UpdateAddressData = {
+    body: AddressDto;
+    path: {
+        addressId: number;
+    };
+    query?: never;
+    url: '/addresses/{addressId}';
+};
+
+export type UpdateAddressResponses = {
+    /**
+     * OK
+     */
+    200: AddressDto;
+};
+
+export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressResponses];
 
 export type FindUsersData = {
     body?: never;
@@ -1012,6 +1073,38 @@ export type AuthenticateResponses = {
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
+
+export type FindAllAddressesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/addresses';
+};
+
+export type FindAllAddressesResponses = {
+    /**
+     * OK
+     */
+    200: Array<AddressDto>;
+};
+
+export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
+
+export type CreateAddressData = {
+    body: AddressDto;
+    path?: never;
+    query?: never;
+    url: '/addresses';
+};
+
+export type CreateAddressResponses = {
+    /**
+     * Created
+     */
+    201: AddressDto;
+};
+
+export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
 
 export type DownloadProfilePictureData = {
     body?: never;

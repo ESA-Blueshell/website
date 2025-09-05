@@ -12,9 +12,8 @@ ALTER DATABASE blueshell CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 -- Create addresses table (will inherit database defaults)
 CREATE TABLE addresses (
                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                           address MEDIUMTEXT,
                            house_number MEDIUMTEXT,
-                           postal_code MEDIUMTEXT,
+                           zip_code MEDIUMTEXT,
                            city MEDIUMTEXT,
                            street VARCHAR(255),
                            country VARCHAR(255),
@@ -23,13 +22,12 @@ CREATE TABLE addresses (
 );
 
 -- Migrate existing address data from users table
-INSERT INTO addresses (address, house_number, postal_code, city, street, country, created_at)
+INSERT INTO addresses (street, house_number, zip_code, city, country, created_at)
 SELECT
     address,
     house_number,
     postal_code,
     city,
-    street,
     country,
     created_at
 FROM users
@@ -53,7 +51,7 @@ UPDATE users u
         SELECT
             ROW_NUMBER() OVER (ORDER BY created_at, id) as rn,
             id as addr_id,
-            address, house_number, postal_code, city, street, country, created_at
+            street, house_number, zip_code, city, country, created_at
         FROM addresses
     ) a ON a.rn = (
         SELECT ROW_NUMBER() OVER (ORDER BY u2.created_at, u2.id)
@@ -62,15 +60,13 @@ UPDATE users u
            OR (u2.house_number IS NOT NULL AND u2.house_number != '')
            OR (u2.postal_code IS NOT NULL AND u2.postal_code != '')
            OR (u2.city IS NOT NULL AND u2.city != '')
-           OR (u2.street IS NOT NULL AND u2.street != '')
            OR (u2.country IS NOT NULL AND u2.country != '')
             AND u2.id <= u.id
     )
-        AND COALESCE(u.address, '') = COALESCE(a.address, '')
+        AND COALESCE(u.address, '') = COALESCE(a.street, '')
         AND COALESCE(u.house_number, '') = COALESCE(a.house_number, '')
-        AND COALESCE(u.postal_code, '') = COALESCE(a.postal_code, '')
+        AND COALESCE(u.postal_code, '') = COALESCE(a.zip_code, '')
         AND COALESCE(u.city, '') = COALESCE(a.city, '')
-        AND COALESCE(u.street, '') = COALESCE(a.street, '')
         AND COALESCE(u.country, '') = COALESCE(a.country, '')
 SET u.address_id = a.addr_id;
 

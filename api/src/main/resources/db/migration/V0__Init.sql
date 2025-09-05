@@ -1,5 +1,5 @@
 set FOREIGN_KEY_CHECKS = 0;
-ALTER SCHEMA `blueshell` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+ALTER SCHEMA `blueshell` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci;
 
 drop table if exists
     pictures,

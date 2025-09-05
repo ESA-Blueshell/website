@@ -21,7 +21,8 @@ export function reconfigureClient(): void {
     headers: {
       'Content-Type': 'application/json',
       ...(login?.token && { 'Authorization': `Bearer ${login.token}` })
-    }
+    },
+    throwOnError: true,
   };
 
   client.setConfig(config as Config);

@@ -24,7 +24,7 @@ SELECT s.id,
        f.id,
        s.city
 FROM signatures s
-         JOIN files f ON s.name = f.name COLLATE utf8mb4_general_ci;
+         JOIN files f ON s.name = f.name COLLATE utf8mb4_unicode_ci;
 
 -- Insert data into members using the captured file IDs
 INSERT INTO memberships (user_id,

@@ -88,7 +88,7 @@
             <template v-if="!isMemberList">
               <!--            DELETE A USER       -->
               <v-btn
-                :disabled="user?.roles?.includes(Role.ADMIN)"
+                :disabled="user?.roles?.includes('ADMIN')"
                 color="red"
                 variant="text"
                 @click.stop="deleteUser()"
@@ -123,14 +123,14 @@
             </template>
             <!--            TOGGLE MEMBERSHIP       -->
             <v-btn
-              v-if="user?.membership?.endDate"
+              v-if="membership?.endDate"
               variant="text"
               @click.stop="resumeMembership()"
             >
               Resume Membership
             </v-btn>
             <v-btn
-              v-else-if="user?.membership?.startDate"
+              v-else-if="membership?.startDate"
               variant="text"
               @click.stop="endMembership()"
             >
@@ -165,155 +165,209 @@
     @confirm="confirmDeleteUser"
   />
 </template>
-<script lang="ts">
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
 import UserEdit from '@/components/UserEdit.vue';
-import {ContributionService, UserService, MembershipService} from "@/services";
-import {type ContributionModel, type MembershipModel, MemberType} from "@/models";
-import {computed, ref, toRefs} from 'vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
-import store from "@/plugins/store.ts";
-import {type AdvancedUserModel, Role} from "@/models";
-import {DateTime} from 'luxon';
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
+import client from "@/plugins/client";
+import { DateTime } from 'luxon';
+import {
+  deleteUser as deleteUserClient,
+  toggleUserRole,
+  createMembership,
+  updateMembership,
+  setContributionPaid
+} from "@/lib/sdk.gen";
+import type {
+  AdvancedUserDto,
+  ContributionDto,
+  MembershipDto
+} from "@/lib/types.gen";
+import {MemberType} from "@/models";
 
-export default {
-  name: 'UserListRow',
-  components: {MemberTypeSelect, UserEdit, DeleteConfirmationDialog},
-  props: {
-    user: {
-      type: Object as () => AdvancedUserModel,
-      required: true,
-    },
-    contributions: {
-      type: Array as () => ContributionModel[],
-      default: () => [],
-    },
-    expanded: {
-      type: Number,
-      default: null,
-    },
-    isMemberList: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: ['toggle-expanded', 'user-changed', 'contribution-changed', 'delete-user'],
-  setup(props, {emit}) {
-    const roles = store.getters.getLogin?.roles;
-    const disableDelete = !roles || !roles.includes('ADMIN');
-    const deleteDialog = ref(false);
-    const userService: UserService = new UserService();
-    const contributionService: ContributionService = new ContributionService();
-    const membershipService: MembershipService = new MembershipService();
-    const {user, contributions} = toRefs(props);
-    const showStartModal = ref(false);
-    const startDate = ref(DateTime.now().toISODate());
-    const memberType = ref(MemberType.REGULAR);
-    const isSubmitting = ref(false);
+interface Props {
+  user: AdvancedUserDto;
+  contributions?: Array<ContributionDto>;
+  memberships?: Array<MembershipDto>;
+  expanded?: number | null;
+  isMemberList?: boolean;
+}
 
-    const toggleExpanded = () => {
-      emit('toggle-expanded', props.user.id);
-    };
+interface Emits {
+  (e: 'toggle-expanded', userId: number): void;
+  (e: 'user-changed', userData: AdvancedUserDto): void;
+  (e: 'contribution-changed', contribution: ContributionDto): void;
+  (e: 'membership-changed', membership: MembershipDto): void;
+  (e: 'delete-user', user: AdvancedUserDto): void;
+}
 
-    const toggleMembership = async () => {
-      const userData: AdvancedUserModel = await userService.toggleRole(user.value.id as number, Role.MEMBER);
-      userChanged(userData)
-    };
+const props = withDefaults(defineProps<Props>(), {
+  contributions: () => [],
+  memberships: () => [],
+  expanded: null,
+  isMemberList: false,
+});
 
-    const startMembership = () => {
-      showStartModal.value = true;
-    };
+const emit = defineEmits<Emits>();
 
-    const confirmStartMembership = async () => {
-      try {
-        isSubmitting.value = true;
-        const newMembership = await membershipService.createMembership({
-          type: 'MembershipDTO',
-          userId: props.user.id as number,
-          memberType: memberType.value,
-          startDate: DateTime.fromISO(startDate.value).toISO() as string,
-          endDate: undefined
-        });
+// Reactive state
+const deleteDialog = ref(false);
+const showStartModal = ref(false);
+const startDate = ref(DateTime.now().toISODate());
+const memberType = ref('REGULAR');
+const isSubmitting = ref(false);
 
-        const changedUser = {
-          ...props.user,
-          membership: newMembership
-        };
-        userChanged(changedUser);
-        showStartModal.value = false;
-      } catch (e) {
+const contribution = computed(() =>
+  props.contributions.find((c) => c.userId === props.user.id)
+);
 
-      }finally {
-        isSubmitting.value = false;
-      }
-    };
+const membership = computed(() =>
+  props.memberships.find((m) => m.userId === props.user.id)
+)
 
+const toggleExpanded = () => {
+  emit('toggle-expanded', props.user.id);
+};
 
-    const endMembership = async () => {
-      const membership: MembershipModel = user.value.membership as MembershipModel;
-      membership.endDate = DateTime.now().toISO().toString();
-      const changedMembership: MembershipModel = await membershipService.updateMembership(membership.id as number, membership);
-      const changedUser: AdvancedUserModel = user.value;
-      changedUser.membership = changedMembership;
-      userChanged(changedUser)
-    }
-
-    const resumeMembership = async () => {
-      const membership: MembershipModel = user.value.membership as MembershipModel;
-      membership.endDate = undefined;
-      const changedMembership: MembershipModel = await membershipService.updateMembership(membership.id as number, membership);
-      const changedUser: AdvancedUserModel = user.value;
-      changedUser.membership = changedMembership;
-      userChanged(changedUser)
-    }
-
-    const deleteUser = () => {
-      deleteDialog.value = true;
-    };
-
-    const confirmDeleteUser = async () => {
-      deleteDialog.value = false;
-      await userService.deleteUser(props.user.id as number);
-      emit('delete-user', props.user);
-    };
-
-    const userChanged = (userData: AdvancedUserModel) => {
-      emit('user-changed', userData);
-    }
-
-    const contribution = computed(() => {
-      return contributions.value.find((c) => c.userId === user.value.id);
+const toggleMembership = async () => {
+  try {
+    const response = await toggleUserRole({
+      path: { userId: props.user.id as number },
+      query: { role: 'MEMBER' },
+      client
     });
 
-    const changeContributionPaid = async (paid: boolean) => {
-      if (contribution.value) {
-        const changedContribution = await contributionService.markAsPaid(contribution.value.id as number, paid)
-        emit('contribution-changed', changedContribution);
-      }
+    if (response.data) {
+      userChanged(response.data);
+    }
+  } catch (error) {
+    console.error('Failed to toggle membership:', error);
+  }
+};
+
+const startMembership = () => {
+  showStartModal.value = true;
+};
+
+const confirmStartMembership = async () => {
+  try {
+    isSubmitting.value = true;
+
+    const membershipData: MembershipDto = {
+      userId: props.user.id as number,
+      memberType: memberType.value as MemberType,
+      startDate: DateTime.fromISO(startDate.value).toISO() as string,
+      endDate: undefined
     };
 
-    return {
-      deleteDialog,
-      contribution,
-      deleteUser,
-      confirmDeleteUser,
-      toggleExpanded,
-      toggleMembership,
-      changeContributionPaid,
-      endMembership,
-      resumeMembership,
-      startMembership,
-      disableDelete,
-      userChanged,
-      Role,
-      showStartModal,
-      startDate,
-      isSubmitting,
-      confirmStartMembership,
-      memberType
+    const response = await createMembership({
+      body: membershipData,
+      client
+    });
+
+    if (response.data) {
+      const changedUser = {
+        ...props.user,
+        membership: response.data
+      };
+      userChanged(changedUser);
+      showStartModal.value = false;
+    }
+  } catch (error) {
+    console.error('Failed to create membership:', error);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const endMembership = async () => {
+  try {
+    const membershipData: MembershipDto = {
+      id: 0,
+      userId: props.user.id as number,
+      ...membership,
+      endDate: DateTime.now().toISO()
     };
-  },
-}
+
+    const response = await updateMembership({
+      path: { id: membershipData.id as number },
+      body: membershipData,
+      client
+    });
+
+    if (response.data) {
+      emit('membership-changed', response.data);
+    }
+  } catch (error) {
+    console.error('Failed to end membership:', error);
+  }
+};
+
+const resumeMembership = async () => {
+  try {
+    const membershipData: MembershipDto = {
+      id: 0,
+      userId: props.user.id as number,
+      ...membership,
+      endDate: undefined
+    };
+
+    const response = await updateMembership({
+      path: { id: membershipData.id as number },
+      body: membershipData,
+      client
+    });
+
+    if (response.data) {
+      emit('membership-changed', response.data);
+    }
+  } catch (error) {
+    console.error('Failed to resume membership:', error);
+  }
+};
+
+const deleteUser = () => {
+  deleteDialog.value = true;
+};
+
+const confirmDeleteUser = async () => {
+  try {
+    deleteDialog.value = false;
+
+    await deleteUserClient({
+      path: { userId: props.user.id },
+      client
+    });
+
+    emit('delete-user', props.user);
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+  }
+};
+
+const userChanged = (userData: any) => {
+  emit('user-changed', userData);
+};
+
+const changeContributionPaid = async (paid: boolean) => {
+  try {
+    if (contribution.value) {
+      const response = await setContributionPaid({
+        path: { id: contribution.value.id },
+        query: { paid },
+        client
+      });
+
+      if (response.data) {
+        emit('contribution-changed', response.data);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to change contribution paid status:', error);
+  }
+};
 </script>
 
 <style scoped>

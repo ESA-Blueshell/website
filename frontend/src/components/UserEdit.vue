@@ -127,13 +127,15 @@
             label="Gender"
           />
         </v-col>
+        <v-col cols="6"/>
       </v-row>
       <v-row>
-        <nationality-select
-          v-model="userData.nationality"
-          cols="4"
-        />
-        <country-select v-model="userData.country" />
+        <v-col cols="6">
+          <country-select v-model="userData.country" />
+        </v-col>
+        <v-col cols="6">
+          <country-select v-model="userData.nationality" label="Nationality"/>
+        </v-col>
       </v-row>
       <!-- Last Row: Checkboxes and Save Button -->
       <v-row
@@ -213,15 +215,14 @@ import { type AdvancedUserModel } from '@/models';
 import {createUser, updateUser} from '@/lib/sdk.gen';
 import type { VForm } from 'vuetify/components';
 import { type CountryCode, parsePhoneNumber, type PhoneNumber } from 'libphonenumber-js/max';
-import MemberTypeSelect from '@/components/select/MemberTypeSelect.vue';
-import NationalitySelect from '@/components/select/NationalitySelect.vue';
 import CountrySelect from '@/components/select/CountrySelect.vue';
+import type {AdvancedUserDto} from "@/lib";
 
 interface Props {
   editing?: boolean;
   creating?: boolean;
-  modelValue?: AdvancedUserModel;
-  user?: AdvancedUserModel;
+  modelValue?: AdvancedUserDto;
+  user?: AdvancedUserDto;
 }
 
 interface Emits {

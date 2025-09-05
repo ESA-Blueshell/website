@@ -69,6 +69,8 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "address", ignore = true)
+    @Mapping(target = "creator", ignore = true)
     public abstract User fromDTO(AdvancedUserDTO dto);
 
     @AfterMapping

@@ -46,12 +46,7 @@
 
     <v-row>
       <v-col cols="12">
-        <v-text-field
-          ref="country"
-          v-model="localAddress.country"
-          label="Country"
-          :rules="countryRules"
-        />
+        <country-select v-model="localAddress.country"/>
       </v-col>
     </v-row>
   </v-sheet>
@@ -59,9 +54,10 @@
 
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue';
-import type { AddressDto } from '@/lib/types.gen';
-import client from '@/plugins/client';
-import { createAddress, updateAddress } from '@/lib/sdk.gen';
+import type { AddressDto } from '@/lib/types.gen.ts';
+import client from '@/plugins/client.ts';
+import { createAddress, updateAddress } from '@/lib/sdk.gen.ts';
+import CountrySelect from "@/components/select/CountrySelect.vue";
 
 interface Props {
   modelValue: AddressDto;

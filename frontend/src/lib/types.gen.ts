@@ -141,12 +141,11 @@ export type BaseDto = {
 
 export type AddressDto = {
     id?: number;
-    address?: string;
-    houseNumber?: string;
-    postalCode?: string;
+    country?: string;
     city?: string;
     street?: string;
-    country?: string;
+    houseNumber?: string;
+    zipCode?: string;
     createdAt?: string;
 };
 

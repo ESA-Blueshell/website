@@ -72,22 +72,6 @@ public class AdvancedUserDTO extends SimpleUserDTO {
 
     @JsonProperty
     @NotBlank(groups = {Member.class})
-    private String postalCode;
-
-    @JsonProperty
-    @NotBlank(groups = {Member.class})
-    private String address;
-
-    @JsonProperty
-    @NotBlank(groups = {Member.class, Update.class})
-    private String city;
-
-    @JsonProperty
-    @NotBlank(groups = {Member.class})
-    private String country;
-
-    @JsonProperty
-    @NotBlank(groups = {Member.class})
     private String nationality;
 
     @JsonProperty

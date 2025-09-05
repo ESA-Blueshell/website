@@ -10,7 +10,3 @@ CREATE TABLE blogs
     deleted_at   datetime     NULL,
     CONSTRAINT pk_blogs PRIMARY KEY (id)
 );
-
-ALTER TABLE blogs
-    CONVERT TO CHARACTER SET utf8mb4
-        COLLATE utf8mb4_unicode_ci;

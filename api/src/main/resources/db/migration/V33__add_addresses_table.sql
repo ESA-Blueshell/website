@@ -1,4 +1,15 @@
--- Create addresses table
+-- Set session collation to ensure consistency
+SET collation_connection = 'utf8mb4_unicode_ci';
+SET collation_database = 'utf8mb4_unicode_ci';
+SET character_set_client = 'utf8mb4';
+SET character_set_connection = 'utf8mb4';
+SET character_set_database = 'utf8mb4';
+SET character_set_results = 'utf8mb4';
+
+-- Verify database collation
+ALTER DATABASE blueshell CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Create addresses table (will inherit database defaults)
 CREATE TABLE addresses (
                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
                            address MEDIUMTEXT,
@@ -9,17 +20,17 @@ CREATE TABLE addresses (
                            country VARCHAR(255),
                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                            deleted_at DATETIME NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+);
 
--- Migrate existing address data from users table to addresses table
+-- Migrate existing address data from users table
 INSERT INTO addresses (address, house_number, postal_code, city, street, country, created_at)
 SELECT
-    CASE WHEN address IS NOT NULL AND address != '' THEN address ELSE NULL END,
-    CASE WHEN house_number IS NOT NULL AND house_number != '' THEN house_number ELSE NULL END,
-    CASE WHEN postal_code IS NOT NULL AND postal_code != '' THEN postal_code ELSE NULL END,
-    CASE WHEN city IS NOT NULL AND city != '' THEN city ELSE NULL END,
-    CASE WHEN street IS NOT NULL AND street != '' THEN street ELSE NULL END,
-    CASE WHEN country IS NOT NULL AND country != '' THEN country ELSE NULL END,
+    address,
+    house_number,
+    postal_code,
+    city,
+    street,
+    country,
     created_at
 FROM users
 WHERE (address IS NOT NULL AND address != '')
@@ -31,21 +42,39 @@ WHERE (address IS NOT NULL AND address != '')
 
 -- Add address_id column to users table
 ALTER TABLE users ADD COLUMN address_id BIGINT NULL;
+
+-- Create foreign key relationship
 ALTER TABLE users ADD CONSTRAINT fk_users_address FOREIGN KEY (address_id) REFERENCES addresses(id);
 
--- Update users table to link with addresses
+-- Update users table to link to their addresses
+-- Use a more reliable matching strategy with row numbers to handle exact matches
 UPDATE users u
-    INNER JOIN addresses a ON (
-    (u.address IS NULL OR u.address = '' OR a.street = u.address OR (a.address IS NULL AND (u.address IS NULL OR u.address = ''))) AND
-    (u.house_number IS NULL OR u.house_number = '' OR a.house_number = u.house_number OR (a.house_number IS NULL AND (u.house_number IS NULL OR u.house_number = ''))) AND
-    (u.postal_code IS NULL OR u.postal_code = '' OR a.postal_code = u.postal_code OR (a.postal_code IS NULL AND (u.postal_code IS NULL OR u.postal_code = ''))) AND
-    (u.city IS NULL OR u.city = '' OR a.city = u.city OR (a.city IS NULL AND (u.city IS NULL OR u.city = ''))) AND
-    (u.country IS NULL OR u.country = '' OR a.country = u.country OR (a.country IS NULL AND (u.country IS NULL OR u.country = ''))) AND
-    u.created_at = a.created_at
+    INNER JOIN (
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY created_at, id) as rn,
+            id as addr_id,
+            address, house_number, postal_code, city, street, country, created_at
+        FROM addresses
+    ) a ON a.rn = (
+        SELECT ROW_NUMBER() OVER (ORDER BY u2.created_at, u2.id)
+        FROM users u2
+        WHERE (u2.address IS NOT NULL AND u2.address != '')
+           OR (u2.house_number IS NOT NULL AND u2.house_number != '')
+           OR (u2.postal_code IS NOT NULL AND u2.postal_code != '')
+           OR (u2.city IS NOT NULL AND u2.city != '')
+           OR (u2.street IS NOT NULL AND u2.street != '')
+           OR (u2.country IS NOT NULL AND u2.country != '')
+            AND u2.id <= u.id
     )
-    SET u.address_id = a.id;
+        AND COALESCE(u.address, '') = COALESCE(a.address, '')
+        AND COALESCE(u.house_number, '') = COALESCE(a.house_number, '')
+        AND COALESCE(u.postal_code, '') = COALESCE(a.postal_code, '')
+        AND COALESCE(u.city, '') = COALESCE(a.city, '')
+        AND COALESCE(u.street, '') = COALESCE(a.street, '')
+        AND COALESCE(u.country, '') = COALESCE(a.country, '')
+SET u.address_id = a.addr_id;
 
--- Drop old address columns from users table
+-- Drop the old address columns from users table
 ALTER TABLE users DROP COLUMN address;
 ALTER TABLE users DROP COLUMN house_number;
 ALTER TABLE users DROP COLUMN postal_code;

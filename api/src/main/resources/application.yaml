@@ -11,7 +11,7 @@ spring:
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&connectionCollation=utf8mb4_unicode_ci&character_set_server=utf8mb4
+    url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8mb4&connectionCollation=utf8mb4_unicode_ci&character_set_server=utf8mb4&collation_server=utf8mb4_unicode_ci
     hikari:
       minimum-idle: 10
       maximum-pool-size: 20

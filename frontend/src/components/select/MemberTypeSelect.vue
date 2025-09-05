@@ -20,14 +20,14 @@ export default defineComponent({
   name: 'MemberTypeSelect',
   props: {
     modelValue: {
-      type: String as () => MemberType,
-      default: MemberType.REGULAR,
+      type: String,
+      default: 'REGULAR',
     },
   },
   emits: ['update:modelValue'],
   setup(props, {emit}) {
     // Initialize the selected value with the prop
-    const selected = ref<MemberType>(props.modelValue);
+    const selected = ref(props.modelValue);
 
     // Preprocess MemberType.ts enum to create display text
     const memberTypeOptions = Object.values(MemberType).map((type) => ({

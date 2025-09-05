@@ -22,9 +22,6 @@ public interface BrevoContactMapper {
     @Mapping(target = "incasso", source = "incasso")
     @Mapping(target = "memberType", source = "memberType")
     @Mapping(target = "surnamePrefix", source = "prefix")
-    @Mapping(target = "country", source = "country")
-    @Mapping(target = "city", source = "city")
-    @Mapping(target = "street", source = "street")
     @Mapping(target = "email", source = "email")
     BrevoContactDTO toDTO(User user);
 
@@ -38,9 +35,6 @@ public interface BrevoContactMapper {
     @Mapping(target = "phoneNumber", source = "sms")
     @Mapping(target = "newsletter", source = "newsletter")
     @Mapping(target = "prefix", source = "surnamePrefix")
-    @Mapping(target = "country", source = "country")
-    @Mapping(target = "city", source = "city")
-    @Mapping(target = "street", source = "street")
     @Mapping(target = "email", source = "email")
     void fromDTO(BrevoContactDTO dto, @MappingTarget User user);
 
@@ -55,9 +49,6 @@ public interface BrevoContactMapper {
         dto.setIncasso((Boolean) attributes.get("INCASSO"));
         dto.setMemberType((String) attributes.get("MEMBER_TYPE"));
         dto.setSurnamePrefix((String) attributes.get("SURNAME_PREFIX"));
-        dto.setCountry((String) attributes.get("COUNTRY"));
-        dto.setCity((String) attributes.get("CITY"));
-        dto.setStreet((String) attributes.get("STREET"));
         dto.setEmail((String) attributes.get("EMAIL"));
         fromDTO(dto, user);
     }

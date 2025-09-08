@@ -1,4 +1,3 @@
-
 <template>
   <v-sheet
     class="pa-4"
@@ -76,9 +75,9 @@ import { ref, watch, onMounted, type Ref } from 'vue';
 import { DateTime } from 'luxon';
 import DocumentTable from "@/components/DocumentTable.vue";
 import ContributionPeriod from "@/components/ContributionPeriodComponent.vue";
-import type { MembershipDto, FileDto } from "@/lib/types.gen.ts";
-import client from "@/plugins/client.ts";
-import { updateMembership, createMembership } from "@/lib/sdk.gen.ts";
+import type { MembershipDto, FileDto } from "@/lib/types.gen";
+import client from "@/plugins/client";
+import { updateMembership, createMembership } from "@/lib/sdk.gen";
 
 // Props interface
 interface Props {
@@ -107,7 +106,7 @@ const signatureValidation: Ref<boolean> = ref(false);
 
 // Validation rules
 const signatureRules: Ref<Array<(v: any) => boolean | string>> = ref([
-  () => signatureValidation.value || 'Signature is required and must be saved',
+  () => signatureValidation.value || 'Signature is required',
 ]);
 
 const cityRules: Ref<Array<(v: any) => boolean | string>> = ref([
@@ -124,7 +123,7 @@ watch(
   (newVal: MembershipDto) => {
     localMembership.value = { ...newVal };
     // Update signature validation state
-    signatureValidation.value = !!(localMembership.value.signature?.url);
+    signatureValidation.value = !!(localMembership.value.signature?.base64Content || localMembership.value.signature?.url);
   },
   { deep: true, immediate: true }
 );
@@ -174,28 +173,26 @@ const saveSignature = async (): Promise<boolean> => {
   try {
     const scaledData: string = await scaleSignature(data);
 
-    // Create a temporary FileDto for upload
-    const tempFile: FileDto = {
-      base64Content: scaledData
+    // Create a FileDto with base64 content for the signature
+    const signatureFile: FileDto = {
+      base64Content: scaledData.split(",")[1], // Remove data URL prefix
+      fileType: 'SIGNATURE',
+      mediaType: 'image/png'
     };
 
-    if (response.data && response.data.url) {
-      // Store the complete FileDto with URL
-      localMembership.value.signature = response.data;
-      signatureValidation.value = true;
+    // Store the signature in the membership
+    localMembership.value.signature = signatureFile;
+    signatureValidation.value = true;
 
-      // Trigger validation update
-      if (signatureInput.value) {
-        signatureInput.value.validate();
-      }
-
-      emit('update:modelValue', localMembership.value);
-      return true;
+    // Trigger validation update
+    if (signatureInput.value) {
+      signatureInput.value.validate();
     }
 
-    return false;
+    emit('update:modelValue', localMembership.value);
+    return true;
   } catch (error: unknown) {
-    console.error('Failed to save signature:', error);
+    console.error('Failed to process signature:', error);
     signatureValidation.value = false;
     return false;
   }
@@ -212,7 +209,7 @@ const scaleSignature = (data: string): Promise<string> => {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(image, 0, 0, 500, 300);
-        resolve(canvas.toDataURL());
+        resolve(canvas.toDataURL('image/png'));
       }
     };
   });
@@ -232,8 +229,8 @@ const validateForm = async (): Promise<boolean> => {
   if (signaturePad.value && !signatureValidation.value) {
     const { isEmpty }: { isEmpty: boolean } = signaturePad.value.saveSignature('image/png');
 
-    if (!isEmpty && !localMembership.value.signature?.url) {
-      // Signature exists but hasn't been saved yet
+    if (!isEmpty && !localMembership.value.signature?.base64Content) {
+      // Signature exists but hasn't been processed yet
       const signatureSaved = await saveSignature();
       if (!signatureSaved) {
         return false;
@@ -287,7 +284,7 @@ const saveMembership = async (): Promise<boolean> => {
     return false;
   } catch (error: unknown) {
     console.error('Failed to save membership:', error);
-    return false;
+    throw error;
   }
 };
 
@@ -298,7 +295,7 @@ onMounted(() => {
   }
 
   // Initialize signature validation state
-  signatureValidation.value = !!(localMembership.value.signature?.url);
+  signatureValidation.value = !!(localMembership.value.signature?.base64Content || localMembership.value.signature?.url);
 });
 
 // Expose methods that might be called from parent components
@@ -309,3 +306,9 @@ defineExpose({
   validateForm
 });
 </script>
+
+<style scoped>
+.v-sheet {
+  background: white;
+}
+</style>

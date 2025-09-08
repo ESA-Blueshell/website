@@ -6,250 +6,101 @@
       v-if="!succeeded"
       class="mx-3 pb-10"
     >
-      <v-form
-        ref="form"
+      <v-stepper
+        v-model="currentStep"
+        :items="steps"
         class="mx-auto mt-10"
-        style="max-width: 600px"
+        style="max-width: 800px"
+        hide-actions
       >
-        <v-row>
-          <v-col cols="4">
-            <v-text-field
-              ref="initials"
-              v-model="form.initials"
-              :disabled="loggedIn"
-              :rules="initialsRules"
-              label="Initials"
+        <!-- Step 1: User Information -->
+        <template #item.1>
+          <v-card class="pa-4">
+            <user-edit
+              ref="userEditRef"
+              v-model="userData"
+              :editing="loggedIn"
+              :creating="!loggedIn"
             />
-          </v-col>
-          <v-col cols="8">
-            <v-text-field
-              ref="firstName"
-              v-model="form.firstName"
-              :disabled="loggedIn"
-              :rules="firstNameRules"
-              label="First name"
+
+            <v-row class="mt-4">
+              <v-spacer />
+              <v-col cols="auto">
+                <v-btn
+                  color="primary"
+                  :loading="saving"
+                  @click="nextStep"
+                >
+                  Next
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </template>
+
+        <!-- Step 2: Address Information -->
+        <template #item.2>
+          <v-card class="pa-4">
+            <address-edit
+              ref="addressEditRef"
+              v-model="addressData"
             />
-          </v-col>
-        </v-row>
-        <v-row class="mt-n7 mb-n5">
-          <v-col cols="4">
-            <v-text-field
-              ref="prefix"
-              v-model="form.prefix"
-              :disabled="loggedIn"
-              label="Surname Prefix"
+
+            <v-row class="mt-4">
+              <v-col cols="auto">
+                <v-btn
+                  variant="outlined"
+                  @click="previousStep"
+                >
+                  Previous
+                </v-btn>
+              </v-col>
+              <v-spacer />
+              <v-col cols="auto">
+                <v-btn
+                  color="primary"
+                  :loading="saving"
+                  @click="nextStep"
+                >
+                  Next
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </template>
+
+        <!-- Step 3: Membership Information -->
+        <template #item.3>
+          <v-card class="pa-4">
+            <v-card-title>Membership Agreement</v-card-title>
+            <membership-edit
+              ref="membershipEditRef"
+              v-model="membershipData"
             />
-          </v-col>
-          <v-col cols="8">
-            <v-text-field
-              ref="lastName"
-              v-model="form.lastName"
-              :disabled="loggedIn"
-              :rules="lastNameRules"
-              label="Surname"
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <nationality-select
-            v-model="form.nationality"
-            cols="4"
-          />
-          <country-select />
-        </v-row>
-        <v-row>
-          <v-col cols="6">
-            <v-text-field
-              ref="username"
-              v-model="form.username"
-              :disabled="loggedIn"
-              :rules="usernameRules"
-              label="Username"
-            />
-          </v-col>
-          <v-col cols="6">
-            <v-text-field
-              ref="email"
-              v-model="form.email"
-              :disabled="loggedIn"
-              :rules="emailRules"
-              label="Email"
-              required
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="12">
-            <v-text-field
-              ref="discord"
-              v-model="form.discord"
-              label="Discord Username"
-              :rules="discordRules"
-            />
-          </v-col>
-        </v-row>
-        <v-row v-if="!loggedIn">
-          <v-col cols="6">
-            <v-text-field
-              v-model="form.password"
-              :rules="passwordRules"
-              label="Password"
-              :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :type="showPass ? 'text' : 'password'"
-              @click:append="showPass = !showPass"
-            />
-          </v-col>
-          <v-col cols="6">
-            <v-text-field
-              v-model="form.passwordAgain"
-              :rules="[ v => !!v || 'Password is required', v => v===form.password || 'The passwords should be the same' ]"
-              label="Password (repeated)"
-              :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :type="showPass ? 'text' : 'password'"
-              @click:append="showPass = !showPass"
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="4">
-            <v-text-field
-              ref="postalCode"
-              v-model="form.postalCode"
-              label="Postal Code"
-              :rules="postalCodeRules"
-            />
-          </v-col>
-          <v-col cols="8">
-            <v-text-field
-              ref="city"
-              v-model="form.city"
-              label="Place of Residence"
-              :rules="cityRules"
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="4">
-            <v-text-field
-              ref="dateOfBirth"
-              v-model="form.dateOfBirth"
-              label="Date of Birth"
-              :rules="dateOfBirthRules"
-              type="date"
-            />
-          </v-col>
-          <v-col cols="8">
-            <v-phone-input
-              v-model="form.phoneNumber"
-              :mode="'international'"
-              :default-country="'nl'"
-              :rules="phoneNumberRules"
-              class="v-text-field__input"
-              placeholder="Phone Number"
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="6">
-            <v-checkbox
-              v-model="form.ehbo"
-              label="I have a EHBO Diploma"
-            />
-          </v-col>
-          <v-col cols="6">
-            <v-checkbox
-              v-model="form.bhv"
-              label="I have a BHV Diploma"
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="12">
-            <v-checkbox
-              v-model="form.newsletter"
-              label="I want subscribe to the newsletter of Blueshell E-sports"
-            />
-          </v-col>
-        </v-row>
-        <v-spacer />
-        <v-sheet
-          class="pa-4"
-          style="border-radius: 10px"
-        >
-          <strong>Membership conditions</strong><br>
-          The undersigned hereby declares to be a member of Blueshell E-Sports Association Enschede until further
-          notice. He/she hereby agrees to the Statutes, privacy policy and the Domestic Regulations (Huishoudelijk
-          reglement) of this association. Cancellation must take place no later than four weeks before the beginning of
-          the new academic year.
-          <br>
-          <br>
-          <document-table />
-          <br>
-          <contribution-period is-form />
-          <v-row
-            class="mt-4"
-            style="width: 100%;"
-          >
-            <v-input
-              ref="signature"
-              v-model="form.signature"
-              :rules="signatureRules"
-              hide-details="auto"
-            >
-              <v-row class="d-flex justify-center mb-1">
-                <VueSignaturePad
-                  ref="signaturePad"
-                  style="aspect-ratio: 5/3"
-                  :width="'100%'"
-                  :options="{backgroundColor: 'rgba(255,255,255)'}"
-                  :scale-to-device-pixel-ratio="true"
-                />
-              </v-row>
-            </v-input>
-          </v-row>
-          <v-row class="d-flex justify-end mt-4">
-            <v-btn
-              type="button"
-              class="btn btn-danger"
-              @click="clearSignature"
-            >
-              Clear
-            </v-btn>
-          </v-row>
-          <v-row>
-            <v-col cols="6">
-              <v-text-field
-                ref="signatureCity"
-                v-model="form.signatureCity"
-                label="Place"
-                :rules="signatureCityRules"
-              />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field
-                ref="signatureDate"
-                v-model="form.signatureDate"
-                type="date"
-                label="Date"
-                :rules="signatureDateRules"
-                :disabled="true"
-              />
-            </v-col>
-          </v-row>
-        </v-sheet>
-        <v-row>
-          <v-spacer />
-          <v-col cols="auto">
-            <v-btn
-              :loading="clicked"
-              color="primary"
-              @click="submitForm"
-            >
-              Submit
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-form>
+
+            <v-row class="mt-4">
+              <v-col cols="auto">
+                <v-btn
+                  variant="outlined"
+                  @click="previousStep"
+                >
+                  Previous
+                </v-btn>
+              </v-col>
+              <v-spacer />
+              <v-col cols="auto">
+                <v-btn
+                  color="primary"
+                  :loading="saving"
+                  @click="completeMembership"
+                >
+                  Complete Membership
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </template>
+      </v-stepper>
     </div>
 
     <div
@@ -257,208 +108,286 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <p class="text-center text-subtitle-1 font-weight-lifght">
-        Your membership form has successfully been submitted!
-      </p>
+      <v-card class="pa-6 text-center">
+        <v-icon
+          size="64"
+          color="success"
+          class="mb-4"
+        >
+          mdi-check-circle
+        </v-icon>
+        <p class="text-h6 font-weight-medium mb-2">
+          Membership Complete!
+        </p>
+        <p class="text-body-1 text-medium-emphasis">
+          Your membership form has been successfully submitted. Welcome to Blueshell E-Sports!
+        </p>
+        <v-btn
+          color="primary"
+          class="mt-4"
+          @click="$goto('/')"
+        >
+          Go to Homepage
+        </v-btn>
+      </v-card>
     </div>
   </v-main>
 </template>
 
-<script>
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {ref} from "vue";
+<script setup lang="ts">
+import { ref, onMounted, type Ref } from 'vue';
 import { DateTime } from 'luxon';
-import {VPhoneInput} from "v-phone-input";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
-import ContributionPeriodComponent from "@/components/ContributionPeriodComponent.vue";
-import {$goto} from "@/plugins/goto.js";
-import NationalitySelect from "@/components/select/NationalitySelect.vue";
-import CountrySelect from "@/components/select/CountrySelect.vue";
-import DocumentTable from "@/components/DocumentTable.vue";
+import TopBanner from "@/components/banners/TopBanner.vue";
+import UserEdit from "@/components/edit/UserEdit.vue";
+import AddressEdit from "@/components/edit/AddressEdit.vue";
+import MembershipEdit from "@/components/edit/MembershipEdit.vue";
+import type { AdvancedUserDto, AddressDto, MembershipDto } from '@/lib/types.gen';
+import { findUserById, updateUser, createUser } from '@/lib/sdk.gen';
+import client from '@/plugins/client';
+import store from '@/plugins/store';
+import { $handleNetworkError } from "@/plugins/handleNetworkError";
+import { $goto } from "@/plugins/goto";
 
-export default {
-  components: {
-    CountrySelect,
-    NationalitySelect,
-    DocumentTable,
-    ContributionPeriod: ContributionPeriodComponent,
-    VPhoneInput,
-    TopBanner: TopBanner,
-  },
-  setup() {
-    const signaturePad = ref(null);
-    const phone = ref('');
-    return {phone, signaturePad};
-  },
-  data: () => ({
-    clicked: false,
-    succeeded: false,
-    showPass: false,
-    loggedIn: false,
-    form: {
-      username: null,
-      password: null,
-      passwordAgain: null,
-      email: null,
-      firstName: null,
-      lastName: null,
-      initials: null,
+// Reactive state
+const currentStep: Ref<number> = ref(1);
+const succeeded: Ref<boolean> = ref(false);
+const saving: Ref<boolean> = ref(false);
+const loggedIn: Ref<boolean> = ref(false);
 
-      postalCode: null,
-      phoneNumber: null,
-      city: null,
-      dateOfBirth: null,
-      discord: null,
+// Form data
+const userData: Ref<AdvancedUserDto> = ref({
+  initials: '',
+  firstName: '',
+  lastName: '',
+  prefix: '',
+  email: '',
+  username: '',
+  phoneNumber: '',
+  dateOfBirth: '',
+  nationality: '',
+  discord: '',
+  newsletter: false,
+  photoConsent: false,
+  ehbo: false,
+  bhv: false,
+  incasso: false,
+  studentNumber: '',
+  gender: '',
+} as AdvancedUserDto);
 
-      ehbo: false,
-      bhv: false,
-      newsletter: false,
+const addressData: Ref<AddressDto> = ref({
+  street: '',
+  houseNumber: '',
+  zipCode: '',
+  city: '',
+  country: '',
+} as AddressDto);
 
-      signatureCity: null,
-      signatureDate: DateTime.now().toISODate(),
-      signature: null,
-    },
-    usernameRules: [
-      v => !!v || 'Username is required',
-      v => /^[a-zA-Z0-9]+$/.test(v) || 'Username must only contain alphanumeric characters',
-    ],
-    initialsRules: [
-      v => !!v || 'Initials are required',
-    ],
-    firstNameRules: [
-      v => !!v || 'First name is required',
-    ],
-    lastNameRules: [
-      v => !!v || 'Surname is required',
-    ],
-    passwordRules: [
-      v => !!v || 'Password is required',
-      (v) => v.length >= 8 || 'Password must be at least 8 characters',
-    ],
-    dateOfBirthRules: [
-      v => !!v || 'Date of birth is required',
-    ],
-    phoneNumberRules: [
-      v => !!v || 'Phone number is required',
-      v => !!v || !!v.match(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/) || 'Fill in a correct phone number'
-    ],
-    emailRules: [
-      v => !!v || 'Email is required',
-      v => (!!v && /^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$/.test(v)) || 'Enter a valid e-mail address',
-      v => (!/student/i.test(v)) || 'You may not use your student email to sign up',
-    ],
-    discordRules: [
-      v => !!v || 'Discord Username is required',
-    ],
-    postalCodeRules: [
-      v => !!v || 'Postal code is required',
-    ],
-    cityRules: [
-      v => !!v || 'Place of residence is required',
-    ],
-    signatureCityRules: [
-      v => !!v || 'Place is required',
-    ],
-    signatureDateRules: [
-      v => !!v || 'Date is required',
-    ],
-    signatureRules: [
-      v => !!v || 'Signature is required',
-    ]
-  }),
-  mounted() {
-    const login = this.$store.getters.getLogin;
-    this.loggedIn = !!login;
-    if (login) {
+const membershipData: Ref<MembershipDto> = ref({
+  userId: 0,
+  memberType: 'REGULAR',
+  city: '',
+  date: DateTime.now().toISODate(),
+} as MembershipDto);
 
-      this.$http
-        .get(`users/${login.userId}`, {headers: {'Authorization': `Bearer ${login.token}`}})
-        .then(response => {
-          Object.assign(this.form, response.data)
-        })
-    }
-  },
-  methods: {
-    clearSignature() {
-      this.signaturePad.clearSignature()
-    },
-    async submitForm() {
-      const {isEmpty, data} = this.signaturePad.saveSignature('image/png')
-      if (isEmpty) {
-        this.form.signature = null;
-      } else {
-        const image = new Image();
-        image.src = data;
+// Template refs
+const userEditRef: Ref<any> = ref(null);
+const addressEditRef: Ref<any> = ref(null);
+const membershipEditRef: Ref<any> = ref(null);
 
-        // Create a promise to await the image loading and scaling process
-        const scaledData = await new Promise((resolve) => {
-          image.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = 500;  // Set the canvas width to your desired scaling
-            canvas.height = 300; // Set the canvas height to your desired scaling
+// Steps configuration
+const steps = [
+  { title: 'Personal Information', value: 1 },
+  { title: 'Address', value: 2 },
+  { title: 'Membership', value: 3 }
+];
 
-            // Get the 2D drawing context
-            const ctx = canvas.getContext("2d");
+// Methods
+const nextStep = async (): Promise<void> => {
+  saving.value = true;
 
-            // Scale and draw the image on the canvas
-            ctx.drawImage(image, 0, 0, 500, 300);
-
-            // Get the scaled image data
-            const scaledImageData = canvas.toDataURL();
-            resolve(scaledImageData);
-          };
-        });
-
-        // Set the scaled signature to the form (Base64 part only)
-        this.form.signature = scaledData.split(",")[1];
-      }
-
-      const {valid} = await this.$refs.form.validate()
-
-      if (!valid) {
+  try {
+    if (currentStep.value === 1) {
+      // Validate and save user data
+      if (!await validateAndSaveUserData()) {
         return;
       }
-
-      this.clicked = true;
-
-      const login = this.$store.getters.getLogin;
-
-      var request = null;
-      if (login) {
-        request = this.$http.put(`users/${login.userId}`, this.form, {headers: {'Authorization': `Bearer ${login.token}`}})
-      } else {
-        request = this.$http.post('users', this.form)
+    } else if (currentStep.value === 2) {
+      // Validate and save address data
+      if (!await validateAndSaveAddressData()) {
+        return;
       }
-      request
-        .then(() => {
-          this.succeeded = true;
-          const login = this.$store.getters.getLogin;
-          // If succesfull update the roles so that the user is now a member
-          if (login) {
-            this.$http
-              .get(`users/${login.userId}`, {headers: {'Authorization': `Bearer ${login.token}`}})
-              .then(response => {
-                this.$store.commit('setRoles', response.data.roles)
-                $goto('/')
-              })
-          }
-        })
-        .catch(e => {
-          if (e.response?.status === 400) {
-            this.$store.commit('setStatusSnackbarMessage', e.response.data)
-          } else {
-            $handleNetworkError(e)
-          }
-        })
-        .finally(() => {
-          this.clicked = false;
-        });
-    },
+    }
+
+    currentStep.value += 1;
+  } catch (error: unknown) {
+    $handleNetworkError(error);
+  } finally {
+    saving.value = false;
   }
 };
+
+const previousStep = (): void => {
+  if (currentStep.value > 1) {
+    currentStep.value -= 1;
+  }
+};
+
+const validateAndSaveUserData = async (): Promise<boolean> => {
+  // Validate the child component
+  if (!userEditRef.value) {
+    return false;
+  }
+
+  const userEditValid = await userEditRef.value.validateForm();
+  if (!userEditValid) {
+    return false;
+  }
+
+  try {
+    let response: { data?: AdvancedUserDto };
+
+    if (loggedIn.value && userData.value.id) {
+      // Update existing user
+      response = await updateUser({
+        path: { userId: userData.value.id },
+        body: userData.value,
+        client
+      });
+    } else {
+      // Create new user
+      response = await createUser({
+        body: userData.value,
+        client
+      });
+    }
+
+    if (response.data) {
+      userData.value = response.data;
+      membershipData.value.userId = response.data.id!;
+      return true;
+    }
+
+    return false;
+  } catch (error: any) {
+    if (error.response?.status === 400) {
+      store.commit('setStatusSnackbarMessage', error.response.data);
+    } else {
+      $handleNetworkError(error);
+    }
+    return false;
+  }
+};
+
+const validateAndSaveAddressData = async (): Promise<boolean> => {
+  if (!addressEditRef.value) {
+    return false;
+  }
+
+  // Validate address using child component validation
+  if (!addressEditRef.value.validateAddress()) {
+    return false;
+  }
+
+  try {
+    // Save address using child component method
+    await addressEditRef.value.saveAddress();
+
+    // Link address to user if we have both IDs
+    if (userData.value.id && addressData.value.id) {
+      // Update user with address ID - this would typically be done on the backend
+      // but we'll set it locally for now
+      (userData.value as any).addressId = addressData.value.id;
+    }
+
+    return true;
+  } catch (error: unknown) {
+    $handleNetworkError(error);
+    return false;
+  }
+};
+
+const completeMembership = async (): Promise<void> => {
+  saving.value = true;
+
+  try {
+    if (!membershipEditRef.value) {
+      return;
+    }
+
+    // Validate and save membership using child component method
+    const membershipSaved = await membershipEditRef.value.saveMembership();
+
+    if (!membershipSaved) {
+      return;
+    }
+
+    // Mark as succeeded
+    succeeded.value = true;
+
+    // Update user roles if logged in
+    if (loggedIn.value && userData.value.id) {
+      // Fetch updated user data to get new roles
+      const response = await findUserById({
+        path: { userId: userData.value.id },
+        client
+      });
+
+      if (response.data) {
+        store.commit('setRoles', response.data.roles);
+      }
+    }
+
+  } catch (error: any) {
+    if (error.response?.status === 400) {
+      store.commit('setStatusSnackbarMessage', error.response.data);
+    } else {
+      $handleNetworkError(error);
+    }
+  } finally {
+    saving.value = false;
+  }
+};
+
+// Lifecycle hooks
+onMounted(async () => {
+  const login = store.getters.getLogin;
+  loggedIn.value = !!login;
+
+  if (login && login.userId) {
+    try {
+      // Fetch existing user data
+      const response = await findUserById({
+        path: { userId: login.userId },
+        client
+      });
+
+      if (response.data) {
+        userData.value = { ...response.data };
+        membershipData.value.userId = response.data.id!;
+
+        // If user has an address, fetch it
+        if ((response.data as any).address) {
+          addressData.value = { ...(response.data as any).address };
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Failed to fetch user data:', error);
+      $handleNetworkError(error);
+    }
+  }
+});
 </script>
 
 <style scoped>
+.v-stepper {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.v-card {
+  border-radius: 12px;
+}
+
 .v-col:first-child {
   padding-left: 0;
 }

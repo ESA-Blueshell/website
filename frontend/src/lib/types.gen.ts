@@ -17,6 +17,7 @@ export type AdvancedUserDto = SimpleUserDto & {
     gender?: string;
     study?: string;
     studentNumber?: string;
+    password: string;
 };
 
 export type FileDto = {

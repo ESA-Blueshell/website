@@ -28,7 +28,7 @@ import MemberManager from "@/views/login/member/MemberManager.vue";
 import RocketLeague from "@/views/esports/RocketLeague.vue";
 import ForgotPassword from "@/views/login/ForgotPassword.vue";
 import ResetPassword from "@/views/login/ResetPassword.vue";
-import EditSignUp from "@/views/EditSignUp.vue";
+import EventSignUpEdit from "@/components/edit/EventSignUpEdit.vue";
 
 import {createRouter, createWebHistory} from "vue-router";
 import store from './store.js'
@@ -211,7 +211,7 @@ const router = createRouter({
     {
       path: '/events/signups/edit/:accessToken',
       name: 'editSignUp',
-      component: EditSignUp,
+      component: EventSignUpEdit,
     },
     {
       path: '/events/circuitShowdown',

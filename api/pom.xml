@@ -433,7 +433,6 @@
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.15.0</version>
                 <executions>
-
                     <!-- Discord client (OAS3) -->
                     <execution>
                         <id>gen-discord-client</id>
@@ -459,15 +458,8 @@
                                 <skipValidateSpec>true</skipValidateSpec>
                                 <generateAliasAsModel>false</generateAliasAsModel>
                                 <legacyDiscriminatorBehavior>false</legacyDiscriminatorBehavior>
-                                <!-- Additional options to handle Discord spec issues -->
                                 <supportNullable>true</supportNullable>
                                 <nullableReturnType>true</nullableReturnType>
-                                <serializationLibrary>jackson</serializationLibrary>
-                                <useOptional>false</useOptional>
-                                <disallowAdditionalPropertiesIfNotPresent>false</disallowAdditionalPropertiesIfNotPresent>
-                                <useBeanValidation>false</useBeanValidation>
-                                <performBeanValidation>false</performBeanValidation>
-                                <!-- Handle union types better -->
                                 <generateOneOfAnyOf>true</generateOneOfAnyOf>
                             </configOptions>
                             <globalProperties>

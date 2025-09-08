@@ -432,129 +432,42 @@
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.15.0</version>
+                <configuration>
+                    <generatorName>java</generatorName>
+                    <library>restclient</library>
+                </configuration>
+
+                <!-- ───────────── Per-client executions ───────────── -->
                 <executions>
-                    <!-- Discord client (OAS3) -->
+                    <!-- Discord (OAS 3) -->
                     <execution>
                         <id>gen-discord-client</id>
                         <phase>generate-sources</phase>
                         <goals><goal>generate</goal></goals>
                         <configuration>
                             <inputSpec>https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json</inputSpec>
-                            <generatorName>java</generatorName>
                             <output>${project.build.directory}/generated-sources/openapi/discord</output>
                             <apiPackage>net.blueshell.clients.discord.api</apiPackage>
                             <modelPackage>net.blueshell.clients.discord.model</modelPackage>
                             <invokerPackage>net.blueshell.clients.discord.client</invokerPackage>
-                            <generateApiTests>false</generateApiTests>
-                            <generateModelTests>false</generateModelTests>
-                            <configOptions>
-                                <library>restclient</library>
-                                <useJakartaEe>true</useJakartaEe>
-                                <openApiNullable>false</openApiNullable>
-                                <dateLibrary>java8</dateLibrary>
-                                <generateModels>true</generateModels>
-                                <generateApis>true</generateApis>
-                                <generateSupportingFiles>true</generateSupportingFiles>
-                                <skipValidateSpec>true</skipValidateSpec>
-                                <generateAliasAsModel>false</generateAliasAsModel>
-                                <legacyDiscriminatorBehavior>false</legacyDiscriminatorBehavior>
-                                <supportNullable>true</supportNullable>
-                                <nullableReturnType>true</nullableReturnType>
-                                <generateOneOfAnyOf>true</generateOneOfAnyOf>
-                            </configOptions>
-                            <globalProperties>
-                                <property>models</property>
-                                <property>apis</property>
-                                <property>supportingFiles</property>
-                            </globalProperties>
-                            <!-- Add type mappings for known problematic types -->
-                            <typeMappings>
-                                <typeMapping>AnyType=java.lang.Object</typeMapping>
-                            </typeMappings>
-                            <importMappings>
-                                <importMapping>AnyType=java.lang.Object</importMapping>
-                            </importMappings>
                         </configuration>
                     </execution>
 
-                    <!-- Brevo client (Swagger 2.0 / OAS2) -->
+                    <!-- Brevo (Swagger 2 / OAS 2) -->
                     <execution>
                         <id>gen-brevo-client</id>
                         <phase>generate-sources</phase>
                         <goals><goal>generate</goal></goals>
                         <configuration>
                             <inputSpec>https://api.brevo.com/v3/swagger_definition_v3.yml</inputSpec>
-                            <generatorName>java</generatorName>
                             <output>${project.build.directory}/generated-sources/openapi/brevo</output>
                             <apiPackage>net.blueshell.clients.brevo.api</apiPackage>
                             <modelPackage>net.blueshell.clients.brevo.model</modelPackage>
                             <invokerPackage>net.blueshell.clients.brevo.invoker</invokerPackage>
-                            <generateApiTests>false</generateApiTests>
-                            <generateModelTests>false</generateModelTests>
-                            <!-- Key bits to sidestep the invalid *Value.java wrappers -->
-                            <importMappings>
-                                <importMapping>CreateDoiContactAttributesValue=java.lang.Object</importMapping>
-                                <importMapping>EventEventPropertiesValue=java.lang.Object</importMapping>
-                                <importMapping>PostContactInfoContactsFailure=java.lang.Object</importMapping>
-                            </importMappings>
-                            <typeMappings>
-                                <typeMapping>CreateDoiContactAttributesValue=java.lang.Object</typeMapping>
-                                <typeMapping>EventEventPropertiesValue=java.lang.Object</typeMapping>
-                                <typeMapping>PostContactInfoContactsFailure=java.lang.Object</typeMapping>
-                                <typeMapping>AnyType=java.lang.Object</typeMapping>
-                            </typeMappings>
-                            <configOptions>
-                                <library>restclient</library>
-                                <useJakartaEe>true</useJakartaEe>
-                                <openApiNullable>false</openApiNullable>
-                                <dateLibrary>java8</dateLibrary>
-                                <!-- Optional: tolerates minor OAS2 quirks -->
-                                <useBeanValidation>false</useBeanValidation>
-                            </configOptions>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
-<!--    <profiles>-->
-<!--        <profile>-->
-<!--            <id>lint</id>-->
-<!--            <build>-->
-<!--                <plugins>-->
-<!--                    &lt;!&ndash; Checkstyle &ndash;&gt;-->
-<!--                    <plugin>-->
-<!--                        <groupId>org.apache.maven.plugins</groupId>-->
-<!--                        <artifactId>maven-checkstyle-plugin</artifactId>-->
-<!--                        <version>3.5.0</version>-->
-<!--                        <configuration>-->
-<!--                            <consoleOutput>true</consoleOutput>-->
-<!--                            <includeTestSourceDirectory>true</includeTestSourceDirectory>-->
-<!--                            <failOnViolation>true</failOnViolation>-->
-<!--                            <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>-->
-<!--                            <outputFileFormat>xml</outputFileFormat>-->
-<!--                            <sourceDirectories>-->
-<!--                                <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>-->
-<!--                                <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>-->
-<!--                            </sourceDirectories>-->
-<!--                            <excludes>**/target/generated-sources/**</excludes>-->
-<!--                        </configuration>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>checkstyle-report</id>-->
-<!--                                <phase>verify</phase>-->
-<!--                                <goals><goal>checkstyle</goal></goals>-->
-<!--                            </execution>-->
-<!--                            <execution>-->
-<!--                                <id>checkstyle-verify</id>-->
-<!--                                <phase>verify</phase>-->
-<!--                                <goals><goal>check</goal></goals>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                    </plugin>-->
-<!--                </plugins>-->
-<!--            </build>-->
-<!--        </profile>-->
-<!--    </profiles>-->
 </project>

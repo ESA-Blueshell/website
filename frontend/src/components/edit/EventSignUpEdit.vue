@@ -6,7 +6,7 @@ import {ref} from "vue";
 import EventListItem from "@/components/events/EventListItem.vue";
 import EventSignUpForm from "@/components/events/EventSignUpForm.vue";
 import {useStore} from "vuex";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 import {$goto} from "@/plugins/goto.js";
 
 const route = useRoute()
@@ -138,7 +138,7 @@ async function deleteSignUp() {
 </template>
 
 <style scoped lang="scss">
-@use '@/styles/settings';
+@use 'settings';
 
 .accent-bordered {
   border: 1px solid rgb(var(--v-theme-accent));

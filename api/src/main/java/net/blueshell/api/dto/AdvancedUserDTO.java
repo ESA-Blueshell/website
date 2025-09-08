@@ -75,11 +75,6 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private String nationality;
 
     @JsonProperty
-    @Valid
-    @NotNull(groups = {Member.class})
-    private FileDTO signature;
-
-    @JsonProperty
     @NotNull(groups = {Member.class, Update.class})
     private boolean newsletter;
 
@@ -115,7 +110,6 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private String studentNumber;
 
     @JsonProperty
-    @JsonIgnore
     @NotBlank(groups = Creation.class)
     private String password;
 }

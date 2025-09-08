@@ -1,0 +1,534 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Discord Member Service API",
+    "version": "2.0.0",
+    "description": "A TypeScript-based Discord member service API with proper separation of concerns",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "DiscordMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Discord user ID"
+          },
+          "username": {
+            "type": "string",
+            "description": "Discord username"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name in guild"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "Discord discriminator"
+          },
+          "globalName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Global display name"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "description": "Avatar URL"
+          },
+          "avatarDecoration": {
+            "type": "string",
+            "nullable": true,
+            "description": "Avatar decoration URL"
+          },
+          "joinedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Guild join date"
+          },
+          "premiumSince": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Nitro boost date"
+          },
+          "isOwner": {
+            "type": "boolean",
+            "description": "Is guild owner"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true,
+            "description": "Guild nickname"
+          },
+          "pending": {
+            "type": "boolean",
+            "description": "Is pending member verification"
+          },
+          "communicationDisabledUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Timeout end date"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscordRole"
+            },
+            "description": "Member roles"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Member permissions"
+          }
+        }
+      },
+      "DiscordRole": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Role ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Role name"
+          },
+          "color": {
+            "type": "string",
+            "description": "Role color hex code"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Role position in hierarchy"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Role permissions"
+          },
+          "mentionable": {
+            "type": "boolean",
+            "description": "Can be mentioned"
+          },
+          "hoisted": {
+            "type": "boolean",
+            "description": "Displayed separately in member list"
+          },
+          "managed": {
+            "type": "boolean",
+            "description": "Managed by integration"
+          },
+          "memberCount": {
+            "type": "integer",
+            "description": "Number of members with this role"
+          }
+        }
+      },
+      "DiscordGuild": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Guild ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Guild name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Guild description"
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true,
+            "description": "Guild icon URL"
+          },
+          "banner": {
+            "type": "string",
+            "nullable": true,
+            "description": "Guild banner URL"
+          },
+          "memberCount": {
+            "type": "integer",
+            "description": "Total member count"
+          },
+          "presenceCount": {
+            "type": "integer",
+            "description": "Online member count"
+          },
+          "ownerId": {
+            "type": "string",
+            "description": "Guild owner ID"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Guild creation date"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Guild features"
+          },
+          "verificationLevel": {
+            "type": "integer",
+            "description": "Verification level"
+          },
+          "boostLevel": {
+            "type": "integer",
+            "description": "Nitro boost level"
+          },
+          "boostCount": {
+            "type": "integer",
+            "description": "Number of boosts"
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Request success status"
+          },
+          "data": {
+            "description": "Response data"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if failed"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error code if failed"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          },
+          "meta": {
+            "type": "object",
+            "description": "Additional metadata"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total number of items"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items returned"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether there are more items available"
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "disconnected",
+              "degraded"
+            ],
+            "description": "Service health status"
+          },
+          "guild": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "memberCount": {
+                "type": "integer"
+              }
+            }
+          },
+          "cache": {
+            "type": "object",
+            "properties": {
+              "keys": {
+                "type": "integer"
+              },
+              "hits": {
+                "type": "integer"
+              },
+              "misses": {
+                "type": "integer"
+              },
+              "ksize": {
+                "type": "integer"
+              },
+              "vsize": {
+                "type": "integer"
+              }
+            }
+          },
+          "uptime": {
+            "type": "number",
+            "description": "Process uptime in seconds"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service health status"
+          }
+        }
+      }
+    },
+    "/api/members": {
+      "get": {
+        "summary": "Get all Discord members",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of members to return"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of members to skip"
+          },
+          {
+            "in": "query",
+            "name": "includeRoles",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include role information"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of Discord members"
+          }
+        }
+      }
+    },
+    "/api/members/search": {
+      "get": {
+        "summary": "Search Discord members",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "in": "query",
+            "name": "includeRoles",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Include role information"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "400": {
+            "description": "Invalid query parameters"
+          }
+        }
+      }
+    },
+    "/api/members/{userId}": {
+      "get": {
+        "summary": "Get specific Discord member",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Discord user ID"
+          },
+          {
+            "in": "query",
+            "name": "includeRoles",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Include role information"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord member information"
+          },
+          "404": {
+            "description": "Member not found"
+          }
+        }
+      }
+    },
+    "/api/roles": {
+      "get": {
+        "summary": "Get Discord guild roles",
+        "tags": [
+          "Roles"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "includeMemberCount",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include member count for each role"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of Discord roles"
+          }
+        }
+      }
+    },
+    "/api/guild": {
+      "get": {
+        "summary": "Get Discord guild information",
+        "tags": [
+          "Guild"
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord guild information"
+          }
+        }
+      }
+    },
+    "/api/members/validate": {
+      "post": {
+        "summary": "Validate Discord username",
+        "tags": [
+          "Members"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "discriminator": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validation result"
+          },
+          "400": {
+            "description": "Invalid request body"
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

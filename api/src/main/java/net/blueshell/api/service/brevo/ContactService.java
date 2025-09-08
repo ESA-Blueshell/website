@@ -15,6 +15,7 @@ import sibModel.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.blueshell.clients.brevo.api.ContactsApi.*;
 
 @Service
 public class ContactService {

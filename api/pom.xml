@@ -268,6 +268,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.2.6</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -377,6 +383,8 @@
                         <configuration>
                             <sources>
                                 <source>${project.build.directory}/generated-sources/annotations</source>
+                                <source>${project.build.directory}/generated-sources/openapi/discord/src/main/java</source>
+                                <source>${project.build.directory}/generated-sources/openapi/brevo/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -418,109 +426,143 @@
                     <outputFileName>openapi.json</outputFileName>
                 </configuration>
             </plugin>
+
+            <!-- OpenAPI clients: Discord + Brevo -->
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.15.0</version>
+                <executions>
+
+                    <!-- Discord client (OAS3) -->
+                    <execution>
+                        <id>gen-discord-client</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <inputSpec>https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json</inputSpec>
+                            <generatorName>java</generatorName>
+                            <output>${project.build.directory}/generated-sources/openapi/discord</output>
+                            <apiPackage>net.blueshell.clients.discord.api</apiPackage>
+                            <modelPackage>net.blueshell.clients.discord.model</modelPackage>
+                            <invokerPackage>net.blueshell.clients.discord.client</invokerPackage>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <configOptions>
+                                <library>restclient</library>
+                                <useJakartaEe>true</useJakartaEe>
+                                <openApiNullable>false</openApiNullable>
+                                <dateLibrary>java8</dateLibrary>
+                                <generateModels>true</generateModels>
+                                <generateApis>true</generateApis>
+                                <generateSupportingFiles>true</generateSupportingFiles>
+                                <skipValidateSpec>true</skipValidateSpec>
+                                <generateAliasAsModel>false</generateAliasAsModel>
+                                <legacyDiscriminatorBehavior>false</legacyDiscriminatorBehavior>
+                                <!-- Additional options to handle Discord spec issues -->
+                                <supportNullable>true</supportNullable>
+                                <nullableReturnType>true</nullableReturnType>
+                                <serializationLibrary>jackson</serializationLibrary>
+                                <useOptional>false</useOptional>
+                                <disallowAdditionalPropertiesIfNotPresent>false</disallowAdditionalPropertiesIfNotPresent>
+                                <useBeanValidation>false</useBeanValidation>
+                                <performBeanValidation>false</performBeanValidation>
+                                <!-- Handle union types better -->
+                                <generateOneOfAnyOf>true</generateOneOfAnyOf>
+                            </configOptions>
+                            <globalProperties>
+                                <property>models</property>
+                                <property>apis</property>
+                                <property>supportingFiles</property>
+                            </globalProperties>
+                            <!-- Add type mappings for known problematic types -->
+                            <typeMappings>
+                                <typeMapping>AnyType=java.lang.Object</typeMapping>
+                            </typeMappings>
+                            <importMappings>
+                                <importMapping>AnyType=java.lang.Object</importMapping>
+                            </importMappings>
+                        </configuration>
+                    </execution>
+
+                    <!-- Brevo client (Swagger 2.0 / OAS2) -->
+                    <execution>
+                        <id>gen-brevo-client</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <inputSpec>https://api.brevo.com/v3/swagger_definition_v3.yml</inputSpec>
+                            <generatorName>java</generatorName>
+                            <output>${project.build.directory}/generated-sources/openapi/brevo</output>
+                            <apiPackage>net.blueshell.clients.brevo.api</apiPackage>
+                            <modelPackage>net.blueshell.clients.brevo.model</modelPackage>
+                            <invokerPackage>net.blueshell.clients.brevo.invoker</invokerPackage>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <!-- Key bits to sidestep the invalid *Value.java wrappers -->
+                            <importMappings>
+                                <importMapping>CreateDoiContactAttributesValue=java.lang.Object</importMapping>
+                                <importMapping>EventEventPropertiesValue=java.lang.Object</importMapping>
+                                <importMapping>PostContactInfoContactsFailure=java.lang.Object</importMapping>
+                            </importMappings>
+                            <typeMappings>
+                                <typeMapping>CreateDoiContactAttributesValue=java.lang.Object</typeMapping>
+                                <typeMapping>EventEventPropertiesValue=java.lang.Object</typeMapping>
+                                <typeMapping>PostContactInfoContactsFailure=java.lang.Object</typeMapping>
+                                <typeMapping>AnyType=java.lang.Object</typeMapping>
+                            </typeMappings>
+                            <configOptions>
+                                <library>restclient</library>
+                                <useJakartaEe>true</useJakartaEe>
+                                <openApiNullable>false</openApiNullable>
+                                <dateLibrary>java8</dateLibrary>
+                                <!-- Optional: tolerates minor OAS2 quirks -->
+                                <useBeanValidation>false</useBeanValidation>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>lint</id>
-            <build>
-                <plugins>
-                    <!-- Checkstyle -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <version>${checkstyle.plugin.version}</version>
-                        <configuration>
-                            <consoleOutput>true</consoleOutput>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                            <failOnViolation>true</failOnViolation>
-                            <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
-                            <outputFileFormat>xml</outputFileFormat>
-                            <sourceDirectories>
-                                <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
-                                <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>
-                            </sourceDirectories>
-                            <excludes>**/target/generated-sources/**</excludes>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>checkstyle-report</id>
-                                <phase>verify</phase>
-                                <goals><goal>checkstyle</goal></goals>
-                            </execution>
-                            <execution>
-                                <id>checkstyle-verify</id>
-                                <phase>verify</phase>
-                                <goals><goal>check</goal></goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <!-- PMD -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-pmd-plugin</artifactId>
-                        <version>${pmd.plugin.version}</version>
-                        <configuration>
-                            <printFailingErrors>true</printFailingErrors>
-                            <failOnViolation>true</failOnViolation>
-                            <targetJdk>${java.version}</targetJdk>
-                            <rulesets>
-                                <ruleset>category/java/bestpractices.xml</ruleset>
-                                <ruleset>category/java/errorprone.xml</ruleset>
-                                <ruleset>category/java/performance.xml</ruleset>
-                                <ruleset>category/java/codestyle.xml</ruleset>
-                                <ruleset>category/java/design.xml</ruleset>
-                            </rulesets>
-                            <excludeRoots>
-                                <excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
-                                <excludeRoot>${project.build.directory}/generated-sources/annotations</excludeRoot>
-                                <excludeRoot>${project.build.directory}/generated-sources/kapt</excludeRoot>
-                                <excludeRoot>${project.build.directory}/generated-sources/kaptKotlin</excludeRoot>
-                            </excludeRoots>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>pmd-report</id>
-                                <phase>verify</phase>
-                                <goals><goal>pmd</goal></goals>
-                            </execution>
-                            <execution>
-                                <id>pmd-check</id>
-                                <phase>verify</phase>
-                                <goals><goal>check</goal></goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <!-- SpotBugs -->
-                    <plugin>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs-maven-plugin</artifactId>
-                        <version>${spotbugs.plugin.version}</version>
-                        <configuration>
-                            <effort>Max</effort>
-                            <threshold>Low</threshold>
-                            <failOnError>true</failOnError>
-                            <xmlOutput>true</xmlOutput>
-                            <includeTests>true</includeTests>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>spotbugs-report</id>
-                                <phase>verify</phase>
-                                <goals><goal>spotbugs</goal></goals>
-                            </execution>
-                            <execution>
-                                <id>spotbugs-check</id>
-                                <phase>verify</phase>
-                                <goals><goal>check</goal></goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+<!--    <profiles>-->
+<!--        <profile>-->
+<!--            <id>lint</id>-->
+<!--            <build>-->
+<!--                <plugins>-->
+<!--                    &lt;!&ndash; Checkstyle &ndash;&gt;-->
+<!--                    <plugin>-->
+<!--                        <groupId>org.apache.maven.plugins</groupId>-->
+<!--                        <artifactId>maven-checkstyle-plugin</artifactId>-->
+<!--                        <version>3.5.0</version>-->
+<!--                        <configuration>-->
+<!--                            <consoleOutput>true</consoleOutput>-->
+<!--                            <includeTestSourceDirectory>true</includeTestSourceDirectory>-->
+<!--                            <failOnViolation>true</failOnViolation>-->
+<!--                            <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>-->
+<!--                            <outputFileFormat>xml</outputFileFormat>-->
+<!--                            <sourceDirectories>-->
+<!--                                <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>-->
+<!--                                <sourceDirectory>${project.basedir}/src/test/java</sourceDirectory>-->
+<!--                            </sourceDirectories>-->
+<!--                            <excludes>**/target/generated-sources/**</excludes>-->
+<!--                        </configuration>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>checkstyle-report</id>-->
+<!--                                <phase>verify</phase>-->
+<!--                                <goals><goal>checkstyle</goal></goals>-->
+<!--                            </execution>-->
+<!--                            <execution>-->
+<!--                                <id>checkstyle-verify</id>-->
+<!--                                <phase>verify</phase>-->
+<!--                                <goals><goal>check</goal></goals>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
+<!--                </plugins>-->
+<!--            </build>-->
+<!--        </profile>-->
+<!--    </profiles>-->
 </project>

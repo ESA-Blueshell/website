@@ -138,7 +138,7 @@
 import { ref, onMounted, type Ref } from 'vue';
 import { DateTime } from 'luxon';
 import TopBanner from "@/components/banners/TopBanner.vue";
-import AdvancedUserEdit from "@/components/edit/AdvancedUserEdit.vue";
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 import AddressEdit from "@/components/edit/AddressEdit.vue";
 import MembershipEdit from "@/components/edit/MembershipEdit.vue";
 import type { AdvancedUserDto, AddressDto, MembershipDto } from '@/lib/types.gen';

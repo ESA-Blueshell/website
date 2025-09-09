@@ -168,7 +168,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import AdvancedUserEdit from '@/components/edit/AdvancedUserEdit.vue';
+import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
 import client from "@/plugins/client";

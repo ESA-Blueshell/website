@@ -49,7 +49,7 @@
 <script lang="ts">
 import UserListRow from './UserListRow.vue';
 import type {AdvancedUserModel, ContributionModel} from "@/models";
-import AdvancedUserEdit from "@/components/edit/AdvancedUserEdit.vue";
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 
 export default {
   name: 'UserList',

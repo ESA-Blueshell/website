@@ -1,19 +1,29 @@
 package net.blueshell.api.mapper.user;
 
 import net.blueshell.api.base.BaseMapper;
+import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.model.User;
-import org.mapstruct.InheritInverseConfiguration;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.function.BiConsumer;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     public abstract SimpleUserDTO toDTO(User user);
 
-    @InheritInverseConfiguration(name = "toDTO")
+    @ObjectFactory
+    protected User newUser(@TargetType Class<User> type, SimpleUserDTO dto) {
+        return new User();
+    }
+
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "profilePicture", ignore = true)
     @Mapping(target = "committeeMembers", ignore = true)
@@ -24,5 +34,11 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "resetType", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "password", ignore = true)
     public abstract User fromDTO(SimpleUserDTO dto);
+
+    @AfterMapping
+    protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+    }
 }

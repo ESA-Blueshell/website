@@ -49,7 +49,7 @@ import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import {VPhoneInput} from "v-phone-input";
 import {DateTime} from 'luxon';
-import AdvancedUserEdit from "@/components/edit/AdvancedUserEdit.vue";
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 import {findUserById, updateUser} from "@/lib/index.js";
 import client from "@/plugins/client.js";
 

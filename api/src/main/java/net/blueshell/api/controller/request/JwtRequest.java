@@ -9,7 +9,6 @@ import java.io.Serial;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE) // disables type id handling for this class
 public class JwtRequest extends BaseDTO {
     @Serial
     private static final long serialVersionUID = 5926468583005150707L;

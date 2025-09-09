@@ -11,7 +11,6 @@ import net.blueshell.api.service.brevo.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import sendinblue.ApiException;
 
 @Slf4j
 @Component
@@ -31,7 +30,7 @@ public class UserEventListener {
      * send e-mail only if the transaction COMMITTED successfully
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onUserCreated(PreInsertEvent<User> evt) throws ApiException {
+    public void onUserCreated(PreInsertEvent<User> evt) {
         User u = evt.getSource();
         email.sendUserActivationEmail(u);
         contacts.sync(u);

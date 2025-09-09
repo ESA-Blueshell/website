@@ -1,0 +1,1286 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Hornet API",
+        "description": "The Hornet API can be used to programmatically update exposed association data. If you're missing functionality or you experience any problem using the API, you can always contact us.\n\nYou will need an API token consisting of a client id and a token value in order to use this API. You can either authenticate using a request header or a query parameter, the choice is yours.\n\nThe API is only documented in English.",
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/association": {
+            "get": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Retrieve general association information.",
+                "operationId": "get_app_apicontrollers_associationapi_get",
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Association"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Update general association information.",
+                "operationId": "put_app_apicontrollers_associationapi_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAssociation"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Association"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/association/members": {
+            "get": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Retrieve association members.",
+                "operationId": "get_app_apicontrollers_associationapi_getmembers",
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AssociationMember"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Add a member to the association.",
+                "operationId": "post_app_apicontrollers_associationapi_postmember",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateAssociationMember"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Add successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssociationMember"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/association/members/{associationMemberId}": {
+            "get": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Get an association member.",
+                "operationId": "get_app_apicontrollers_associationapi_getmember",
+                "parameters": [
+                    {
+                        "name": "associationMemberId",
+                        "in": "path",
+                        "description": "Association member ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssociationMember"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Update an association member.",
+                "operationId": "put_app_apicontrollers_associationapi_putmember",
+                "parameters": [
+                    {
+                        "name": "associationMemberId",
+                        "in": "path",
+                        "description": "Association member ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAssociationMember"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssociationMember"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Association"
+                ],
+                "summary": "Remove a member from the association.",
+                "operationId": "delete_app_apicontrollers_associationapi_deletemember",
+                "parameters": [
+                    {
+                        "name": "associationMemberId",
+                        "in": "path",
+                        "description": "Association member ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "OK"
+                                        },
+                                        "code": {
+                                            "description": "Code",
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/group": {
+            "get": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Retrieve association group list.",
+                "operationId": "get_app_apicontrollers_committeeapi_get",
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Group"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Add a group.",
+                "operationId": "post_app_apicontrollers_committeeapi_postcommittee",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateGroup"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Add successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Group"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/group/{groupId}": {
+            "get": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Retrieve group.",
+                "operationId": "get_app_apicontrollers_committeeapi_getcommittee",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Group"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Update a group.",
+                "operationId": "put_app_apicontrollers_committeeapi_putcommittee",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateGroup"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Group"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Remove a group.",
+                "operationId": "delete_app_apicontrollers_committeeapi_deletecommittee",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "OK"
+                                        },
+                                        "code": {
+                                            "description": "Code",
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/group/{groupId}/archive": {
+            "put": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Update the archive for a group.",
+                "description": "Note that when you disable an archive, all e-mails in it will be lost!",
+                "operationId": "put_app_apicontrollers_committeeapi_putcommitteearchive",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "\\d+"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateGroupArchive"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Group"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/group/{groupId}/members": {
+            "get": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Retrieve group members.",
+                "operationId": "get_app_apicontrollers_committeeapi_getmembers",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/GroupMember"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Add a group member.",
+                "operationId": "post_app_apicontrollers_committeeapi_postmember",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewGroupMember"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Add successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupMember"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        },
+                                        "errors": {
+                                            "description": "Will be absent when the error is not related to field validation",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "name"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "This value should not be blank."
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        },
+        "/api/group/{groupId}/members/{groupMemberId}": {
+            "get": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Retrieve group member.",
+                "operationId": "get_app_apicontrollers_committeeapi_getmember",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    },
+                    {
+                        "name": "groupMemberId",
+                        "in": "path",
+                        "description": "Group member ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieve successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupMember"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Remove a group member.",
+                "operationId": "delete_app_apicontrollers_committeeapi_deletemember",
+                "parameters": [
+                    {
+                        "name": "groupId",
+                        "in": "path",
+                        "description": "Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    },
+                    {
+                        "name": "groupMemberId",
+                        "in": "path",
+                        "description": "Group member ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[01]?\\d{1,9}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "description": "Message",
+                                            "type": "string",
+                                            "example": "OK"
+                                        },
+                                        "code": {
+                                            "description": "Code",
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "On error"
+                    },
+                    "401": {
+                        "description": "On authentication failure"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "UpdateGroupArchive": {
+                "properties": {
+                    "archive_enabled": {
+                        "title": "Archive enabled.",
+                        "description": "By setting this to true, a archive mailbox will be created which will receive all mails sent to this committee.",
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateGroup": {
+                "properties": {
+                    "name": {
+                        "title": "Group name.",
+                        "type": "string",
+                        "example": "Webcom"
+                    }
+                },
+                "type": "object"
+            },
+            "CreateGroup": {
+                "properties": {
+                    "archive_enabled": {
+                        "title": "Archive enabled.",
+                        "description": "By setting this to true, a archive mailbox will be created which will receive all mails sent to this committee.",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "name": {
+                        "title": "Group name.",
+                        "type": "string",
+                        "example": "Webcom"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateAssociationMember": {
+                "properties": {
+                    "admin": {
+                        "title": "Whether the user should be administrator.",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "mail_size": {
+                        "title": "User-specific mailbox limit. Send \"null\" to clear the user-specific mailbox limit.",
+                        "description": "You will need to enter a valid storage size here, in the format <number><G/M/K>. For example, use 1G for one\ngigabyte.",
+                        "type": "string",
+                        "example": "100M"
+                    }
+                },
+                "type": "object"
+            },
+            "CreateAssociationMember": {
+                "properties": {
+                    "admin": {
+                        "title": "Whether the user should be administrator.",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "internal_username": {
+                        "title": "User internal username.",
+                        "type": "string",
+                        "example": "bob"
+                    },
+                    "mail_size": {
+                        "title": "User-specific mailbox limit. Send \"null\" to set to the default mailbox limit.",
+                        "description": "You will need to enter a valid storage size here, in the format <number><G/M/K>. For example, use 1G for one\ngigabyte.",
+                        "type": "string",
+                        "example": "100M"
+                    },
+                    "username": {
+                        "title": "User e-mail address, which will be used to determine whether it is a new or existing user.",
+                        "type": "string",
+                        "example": "bob@gmail.com"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateAssociation": {
+                "properties": {
+                    "contact_email_address": {
+                        "title": "Contact e-mail address.",
+                        "type": "string",
+                        "example": "bestuur@snt.utwente.nl"
+                    },
+                    "default_emailbox_size": {
+                        "title": "Default email box size.",
+                        "description": "You will need to enter a valid storage size here, in the format <number><G/M/K>. For example, use 1G for one\ngigabyte.",
+                        "type": "string",
+                        "example": "100M"
+                    },
+                    "name": {
+                        "title": "Association name.",
+                        "type": "string",
+                        "example": "SNT"
+                    },
+                    "technical_contact_email_address": {
+                        "title": "Technical contact email address.",
+                        "type": "string",
+                        "example": "webcom@snt.utwente.nl"
+                    }
+                },
+                "type": "object"
+            },
+            "NewGroupMember": {
+                "properties": {
+                    "username": {
+                        "title": "User e-mail address, which will be used to determine whether it is a new or existing user.",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "Member": {
+                "properties": {
+                    "email_address": {
+                        "title": "User e-mail address.",
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "bob@gmail.com"
+                    },
+                    "has_hornet_account": {
+                        "title": "Whether this user has a Hornet account.",
+                        "type": "boolean",
+                        "readOnly": true,
+                        "example": true
+                    },
+                    "two_factor_enabled": {
+                        "title": "Whether this user has two factor enabled.",
+                        "type": "boolean",
+                        "readOnly": true,
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "GroupMember": {
+                "properties": {
+                    "id": {
+                        "title": "ID.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user": {
+                        "title": "To be used for serialization only!",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Member"
+                            }
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "Group": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "archive_enabled": {
+                        "title": "Whether the committee archive is enabled for this committee.",
+                        "type": "boolean",
+                        "default": false,
+                        "example": true
+                    },
+                    "id": {
+                        "title": "ID.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "title": "Name.",
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "example": "Webcom"
+                    }
+                },
+                "type": "object"
+            },
+            "AssociationMember": {
+                "required": [
+                    "internal_username"
+                ],
+                "properties": {
+                    "admin": {
+                        "title": "If checked, this user has admin rights for the association.",
+                        "type": "boolean",
+                        "default": false,
+                        "example": false
+                    },
+                    "id": {
+                        "title": "ID.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "internal_email": {
+                        "title": "Internal email address of the association user.",
+                        "description": "This is equals the internalUsername @ domain",
+                        "type": "string",
+                        "example": "bob@snt.utwente.nl"
+                    },
+                    "internal_username": {
+                        "title": "The internal username is combined with the association domain to form the association e-mail address.",
+                        "type": "string",
+                        "minLength": 2,
+                        "readOnly": true,
+                        "example": "bob"
+                    },
+                    "mail_size": {
+                        "title": "User-specific mailbox limit.",
+                        "description": "Saved as string, convert to bytes using SizeConverter.",
+                        "type": "string",
+                        "maxLength": 25,
+                        "example": "100M"
+                    },
+                    "user": {
+                        "title": "To be used for serialization only!",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Member"
+                            }
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "Association": {
+                "required": [
+                    "contact_email_address",
+                    "domain",
+                    "full_name",
+                    "technical_contact_email_address"
+                ],
+                "properties": {
+                    "contact_email_address": {
+                        "title": "Contact e-mail address.",
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 5,
+                        "example": "bestuur@snt.utwente.nl"
+                    },
+                    "default_emailbox_size": {
+                        "title": "Default email box size.",
+                        "description": "Saved as string, convert to bytes using SizeConverter.",
+                        "type": "string",
+                        "default": "100M",
+                        "maxLength": 25,
+                        "example": "100M"
+                    },
+                    "detected_storage_size": {
+                        "title": "Detected storage size in bytes.",
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": "1024"
+                    },
+                    "domain": {
+                        "title": "Domain.",
+                        "type": "string",
+                        "maxLength": 255,
+                        "readOnly": true,
+                        "example": "snt.utwente.nl"
+                    },
+                    "full_name": {
+                        "title": "Full name.",
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 3,
+                        "example": "SNT"
+                    },
+                    "id": {
+                        "title": "ID.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "storage_size": {
+                        "title": "Storage size limit.",
+                        "description": "Saved as string, convert to bytes using SizeConverter.",
+                        "type": "string",
+                        "default": "1G",
+                        "maxLength": 25,
+                        "readOnly": true,
+                        "example": "1G"
+                    },
+                    "technical_contact_email_address": {
+                        "title": "Technical contact email address.",
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 5,
+                        "example": "webcom@snt.utwente.nl"
+                    },
+                    "web_email_size": {
+                        "title": "Combined web & email size limit.",
+                        "description": "Saved as string, convert to bytes using SizeConverter.",
+                        "type": "string",
+                        "default": "1G",
+                        "maxLength": 25,
+                        "readOnly": true,
+                        "example": "1G"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "Header Auth": {
+                "type": "apiKey",
+                "description": "Combine client_id and token for the value: client_id:token",
+                "name": "X-API-AUTH",
+                "in": "header"
+            },
+            "Query Auth": {
+                "type": "apiKey",
+                "description": "Combine client_id and token for the value: client_id:token",
+                "name": "api-auth",
+                "in": "query"
+            }
+        }
+    },
+    "security": [
+        {
+            "Header Auth": [],
+            "Query Auth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Association"
+        },
+        {
+            "name": "Group"
+        }
+    ]
+}

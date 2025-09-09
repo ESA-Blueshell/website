@@ -1,17 +1,11 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.user;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
-import net.blueshell.api.validation.group.Member;
 import net.blueshell.api.validation.group.Update;
 import net.blueshell.api.validation.user.UniqueUser;
 import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
@@ -28,18 +22,18 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private Long id;
 
     @JsonProperty
-    @NotBlank(groups = {Creation.class, Administration.class})
+    @NotBlank(groups = {Creation.class})
     private String initials;
 
     @JsonProperty
-    @NotBlank(groups = {Creation.class, Administration.class})
+    @NotBlank(groups = {Creation.class})
     private String firstName;
 
     @JsonProperty
     private String prefix;
 
     @JsonProperty
-    @NotBlank(groups = {Creation.class, Administration.class})
+    @NotBlank(groups = {Creation.class})
     private String lastName;
 
     @JsonProperty
@@ -57,12 +51,12 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private String discord;
 
     @JsonProperty
-    @NotNull(groups = {Member.class})
+    @NotNull(groups = {Creation.class})
     private Timestamp dateOfBirth;
 
     @JsonProperty
-    @NotBlank(groups = {Creation.class, Administration.class})
-    @Email(groups = {Creation.class, Administration.class})
+    @NotBlank(groups = {Creation.class})
+    @Email(groups = {Creation.class})
     private String email;
 
     @JsonProperty
@@ -71,31 +65,27 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private String phoneNumber;
 
     @JsonProperty
-    @NotBlank(groups = {Member.class})
+    @NotBlank(groups = {Creation.class})
     private String nationality;
 
     @JsonProperty
-    @NotNull(groups = {Member.class, Update.class})
+    @NotNull(groups = {Creation.class, Update.class})
     private boolean newsletter;
 
     @JsonProperty
-    @NotNull(groups = {Member.class, Update.class})
+    @NotNull(groups = {Creation.class, Update.class})
     private boolean photoConsent;
 
     @JsonProperty
-    @NotNull(groups = {Member.class, Update.class})
+    @NotNull(groups = {Creation.class, Update.class})
     private boolean ehbo;
 
     @JsonProperty
-    @NotNull(groups = {Member.class, Update.class})
+    @NotNull(groups = {Creation.class, Update.class})
     private boolean bhv;
 
     @JsonProperty
     private boolean enabled;
-
-    @JsonProperty
-    @NotNull(groups = {Administration.class})
-    private boolean incasso;
 
     @JsonProperty
     private Timestamp createdAt;
@@ -104,12 +94,12 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private String gender;
 
     @JsonProperty
-    private String study;
-
-    @JsonProperty
     private String studentNumber;
 
-    @JsonProperty
-    @NotBlank(groups = Creation.class)
+    @NotBlank
+    @Size(min = 8, max = 100)
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
+            message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 }

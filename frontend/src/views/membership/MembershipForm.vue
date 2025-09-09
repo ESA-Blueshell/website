@@ -16,7 +16,7 @@
         <!-- Step 1: User Information -->
         <template #item.1>
           <v-card class="pa-4">
-            <user-edit
+            <advanced-user-edit
               ref="userEditRef"
               v-model="userData"
               :editing="loggedIn"
@@ -138,7 +138,7 @@
 import { ref, onMounted, type Ref } from 'vue';
 import { DateTime } from 'luxon';
 import TopBanner from "@/components/banners/TopBanner.vue";
-import UserEdit from "@/components/edit/UserEdit.vue";
+import AdvancedUserEdit from "@/components/edit/AdvancedUserEdit.vue";
 import AddressEdit from "@/components/edit/AddressEdit.vue";
 import MembershipEdit from "@/components/edit/MembershipEdit.vue";
 import type { AdvancedUserDto, AddressDto, MembershipDto } from '@/lib/types.gen';

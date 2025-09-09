@@ -11,7 +11,6 @@ import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
@@ -30,12 +29,13 @@ import java.util.concurrent.TimeUnit;
 public class FileService extends BaseModelService<File, Long, FileRepository> {
 
     private final Path rootLocation;
+    private final Path assetsLocation = Paths.get("assets");
 
     @Value("${app.url}")
     private String appUrl;
 
     @Autowired
-    public FileService(FileRepository fileRepository,  StorageConfig properties) {
+    public FileService(FileRepository fileRepository, StorageConfig properties) {
         super(fileRepository);
         this.rootLocation = Paths.get(properties.getLocation());
     }
@@ -86,6 +86,21 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
         }
     }
 
+    private Resource loadAssetAsResource(String filename) {
+        try {
+            Path filePath = assetsLocation.resolve(filename);
+            Resource resource = new UrlResource(filePath.toUri());
+            if (resource.exists() || resource.isReadable()) {
+                return resource;
+            } else {
+                throw new FileNotFoundException(
+                        "Could not read asset: " + filename);
+            }
+        } catch (MalformedURLException e) {
+            throw new FileNotFoundException("Could not read file: " + filename, e);
+        }
+    }
+
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> prepareFileResponse(File file) {
         Resource resource = loadAsResource(file);
@@ -105,5 +120,77 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
                 .headers(headers)
                 .body(resource);
+    }
+
+    public ResponseEntity<Resource> prepareAssetResponse(String filename) {
+        Resource resource = loadAssetAsResource(filename);
+
+        // Set headers
+        HttpHeaders headers = new HttpHeaders();
+
+        // Get content type from the resource filename or detect from the file
+        String contentType = determineContentType(filename, resource);
+        headers.setContentType(MediaType.valueOf(contentType));
+
+        // Use ContentDisposition builder for proper filename handling
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(filename)
+                .build();
+        headers.setContentDisposition(disposition);
+
+        // Build ResponseEntity with CacheControl
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
+                .headers(headers)
+                .body(resource);
+    }
+
+    private String determineContentType(String filename, Resource resource) {
+        try {
+            // First, try to determine content type from filename extension
+            String contentType = Files.probeContentType(Paths.get(filename));
+            if (contentType != null) {
+                return contentType;
+            }
+
+            // If that fails, try to determine from the actual file
+            resource.getFile();
+            contentType = Files.probeContentType(resource.getFile().toPath());
+            if (contentType != null) {
+                return contentType;
+            }
+
+            // Fall back to common file extensions
+            String extension = getFileExtension(filename).toLowerCase();
+            return switch (extension) {
+                case "jpg", "jpeg" -> "image/jpeg";
+                case "png" -> "image/png";
+                case "gif" -> "image/gif";
+                case "svg" -> "image/svg+xml";
+                case "pdf" -> "application/pdf";
+                case "txt" -> "text/plain";
+                case "html" -> "text/html";
+                case "css" -> "text/css";
+                case "js" -> "application/javascript";
+                case "json" -> "application/json";
+                case "xml" -> "application/xml";
+                case "zip" -> "application/zip";
+                case "mp4" -> "video/mp4";
+                case "mp3" -> "audio/mpeg";
+                default -> "application/octet-stream";
+            };
+
+        } catch (Exception e) {
+            // If all else fails, return generic binary content type
+            return "application/octet-stream";
+        }
+    }
+
+    private String getFileExtension(String filename) {
+        int lastDotIndex = filename.lastIndexOf('.');
+        if (lastDotIndex == -1 || lastDotIndex == filename.length() - 1) {
+            return "";
+        }
+        return filename.substring(lastDotIndex + 1);
     }
 }

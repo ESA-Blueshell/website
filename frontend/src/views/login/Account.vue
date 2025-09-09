@@ -31,7 +31,7 @@
         </p>
 
         <div v-if="user">
-          <UserEdit
+          <AdvancedUserEdit
             :user="user"
             editing
           />
@@ -49,7 +49,7 @@ import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import {VPhoneInput} from "v-phone-input";
 import {DateTime} from 'luxon';
-import UserEdit from "@/components/edit/UserEdit.vue";
+import AdvancedUserEdit from "@/components/edit/AdvancedUserEdit.vue";
 import {findUserById, updateUser} from "@/lib/index.js";
 import client from "@/plugins/client.js";
 

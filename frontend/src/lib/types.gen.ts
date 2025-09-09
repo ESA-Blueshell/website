@@ -6,7 +6,6 @@ export type AdvancedUserDto = SimpleUserDto & {
     dateOfBirth: string;
     phoneNumber: string;
     nationality: string;
-    signature: FileDto;
     newsletter: boolean;
     photoConsent: boolean;
     ehbo: boolean;
@@ -20,6 +19,12 @@ export type AdvancedUserDto = SimpleUserDto & {
     password: string;
 };
 
+export type SponsorDto = {
+    id?: number;
+    name: string;
+    description: string;
+};
+
 export type FileDto = {
     id?: number;
     name?: string;
@@ -31,12 +36,6 @@ export type FileDto = {
     fileName?: string;
     fileType?: 'DOCUMENT' | 'SIGNATURE' | 'PROFILE_PICTURE' | 'EVENT_BANNER' | 'EVENT_PICTURE' | 'SPONSOR_PICTURE';
     base64Content?: string;
-};
-
-export type SponsorDto = {
-    id?: number;
-    name: string;
-    description: string;
 };
 
 export type MembershipDto = {
@@ -137,7 +136,7 @@ export type SimpleUserDto = {
 };
 
 export type BaseDto = {
-    type: string;
+    [key: string]: unknown;
 };
 
 export type AddressDto = {
@@ -206,16 +205,16 @@ export type Pageable = {
 };
 
 export type PageEventDto = {
-    totalPages?: number;
     totalElements?: number;
+    totalPages?: number;
     size?: number;
     content?: Array<EventDto>;
     number?: number;
     sort?: SortObject;
     pageable?: PageableObject;
-    numberOfElements?: number;
     first?: boolean;
     last?: boolean;
+    numberOfElements?: number;
     empty?: boolean;
 };
 
@@ -1124,24 +1123,6 @@ export type DownloadProfilePictureResponses = {
 
 export type DownloadProfilePictureResponse = DownloadProfilePictureResponses[keyof DownloadProfilePictureResponses];
 
-export type FetchUserFromBrevoData = {
-    body?: never;
-    path?: never;
-    query: {
-        email: string;
-    };
-    url: '/users/brevo';
-};
-
-export type FetchUserFromBrevoResponses = {
-    /**
-     * OK
-     */
-    200: AdvancedUserDto;
-};
-
-export type FetchUserFromBrevoResponse = FetchUserFromBrevoResponses[keyof FetchUserFromBrevoResponses];
-
 export type FindTelemetryByIdData = {
     body?: never;
     path: {
@@ -1426,6 +1407,24 @@ export type FindBlogByIdResponses = {
 };
 
 export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];
+
+export type DownloadAssetData = {
+    body?: never;
+    path: {
+        filename: string;
+    };
+    query?: never;
+    url: '/assets/{filename}';
+};
+
+export type DownloadAssetResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadAssetResponse = DownloadAssetResponses[keyof DownloadAssetResponses];
 
 export type DeleteEventSignupData = {
     body?: never;

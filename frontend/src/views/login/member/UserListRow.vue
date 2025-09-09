@@ -148,7 +148,7 @@
       </div>
       <v-expand-transition>
         <div v-if="expanded === user.id">
-          <UserEdit
+          <AdvancedUserEdit
             class="mt-4"
             :user="user"
             @user-changed="userChanged"
@@ -168,7 +168,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import UserEdit from '@/components/edit/UserEdit.vue';
+import AdvancedUserEdit from '@/components/edit/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
 import client from "@/plugins/client";

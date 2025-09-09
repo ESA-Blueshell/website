@@ -1,3 +1,4 @@
+
 package net.blueshell.api.service.brevo;
 
 import net.blueshell.api.model.Contribution;
@@ -5,22 +6,22 @@ import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.ContributionPeriodRepository;
+import net.blueshell.api.service.email.EmailTemplateService;
+import net.blueshell.api.service.email.SmtpEmailService;
+import net.blueshell.clients.brevo.api.TransactionalEmailsApi;
+import net.blueshell.clients.brevo.invoker.ApiClient;
+import net.blueshell.clients.brevo.model.SendSmtpEmail;
+import net.blueshell.clients.brevo.model.SendSmtpEmailToInner;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import sendinblue.ApiClient;
-import sendinblue.ApiException;
-import sendinblue.Configuration;
-import sendinblue.auth.ApiKeyAuth;
-import sibApi.TransactionalEmailsApi;
-import sibModel.SendSmtpEmail;
-import sibModel.SendSmtpEmailTo;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +29,10 @@ public class EmailService {
 
     @Autowired
     ContributionPeriodRepository contributionPeriodRepository;
+
+    private final TransactionalEmailsApi transactionalEmailsApi;
+    private final SmtpEmailService smtpEmailService;
+
     @Value("${brevo.apiKey}")
     private String apiKey;
     @Value("${brevo.templates.userActivationId}")
@@ -45,79 +50,96 @@ public class EmailService {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    public EmailService(SmtpEmailService smtpEmailService) {
+        this.smtpEmailService = smtpEmailService;
+        ApiClient apiClient = new ApiClient();
+        this.transactionalEmailsApi = new TransactionalEmailsApi(apiClient);
+    }
+
     @NotNull
-    private static Properties getParams(ContributionPeriod contributionPeriod) {
-        Properties params = new Properties();
-        params.setProperty("startDate", contributionPeriod.getStartDate().toString());
-        params.setProperty("endDate", contributionPeriod.getEndDate().toString());
-        params.setProperty("halfYearFee", String.valueOf(contributionPeriod.getHalfYearFee()));
-        params.setProperty("fullYearFee", String.valueOf(contributionPeriod.getFullYearFee()));
-        params.setProperty("alumniFee", String.valueOf(contributionPeriod.getAlumniFee()));
+    private static Map<String, Object> getParams(ContributionPeriod contributionPeriod) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("startDate", contributionPeriod.getStartDate().toString());
+        params.put("endDate", contributionPeriod.getEndDate().toString());
+        params.put("halfYearFee", String.valueOf(contributionPeriod.getHalfYearFee()));
+        params.put("fullYearFee", String.valueOf(contributionPeriod.getFullYearFee()));
+        params.put("alumniFee", String.valueOf(contributionPeriod.getAlumniFee()));
         return params;
     }
 
-    public void sendUserActivationEmail(User user) throws ApiException {
-        Properties params = new Properties();
-        params.setProperty("link", String.format(this.frontendUrl + "/account/activate?username=%s&token=%s", user.getUsername(), user.getResetKey()));
-        sendEmail(Collections.singletonList(user.getEmail()), this.userActivationTemplateId, params);
+    public void sendUserActivationEmail(User user) {
+        smtpEmailService.sendUserActivationEmail(user);
+//        Map<String, Object> params = new HashMap<>();
+//        params.put("link", String.format(this.frontendUrl + "/account/activate?username=%s&token=%s", user.getUsername(), user.getResetKey()));
+//        sendEmail(Collections.singletonList(user.getEmail()), this.userActivationTemplateId, params);
     }
 
-    public void sendMemberActivationEmail(User user) throws ApiException {
-        Properties params = new Properties();
-        params.setProperty("link", String.format(this.frontendUrl + "/account/activate?token=%s", user.getResetKey()));
+    public void sendMemberActivationEmail(User user) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("link", String.format(this.frontendUrl + "/account/activate?token=%s", user.getResetKey()));
         sendEmail(Collections.singletonList(user.getEmail()), this.memberActivationTemplateId, params);
     }
 
-    public void sendPasswordResetEmail(User user) throws ApiException {
-        Properties params = new Properties();
-        params.setProperty("link", String.format(this.frontendUrl + "/login/reset-password?username=%s&token=%s", user.getUsername(), user.getResetKey()));
+    public void sendPasswordResetEmail(User user) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("link", String.format(this.frontendUrl + "/login/reset-password?username=%s&token=%s", user.getUsername(), user.getResetKey()));
         sendEmail(Collections.singletonList(user.getEmail()), this.passwordResetTemplateId, params);
     }
 
-    public void sendEventSignUpEmail(EventSignUp signUp) throws ApiException {
-        Properties params = new Properties();
-        params.setProperty("link", String.format(this.frontendUrl + "/events/signups/edit/%s", signUp.getGuest().getAccessToken()));
-        params.setProperty("eventTitle", signUp.getEvent().getTitle());
+    public void sendEventSignUpEmail(EventSignUp signUp) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("link", String.format(this.frontendUrl + "/events/signups/edit/%s", signUp.getGuest().getAccessToken()));
+        params.put("eventTitle", signUp.getEvent().getTitle());
         sendEmail(Collections.singletonList(signUp.getGuest().getEmail()), this.eventSignupTemplateId, params);
     }
 
-    public void sendContributionEmail(User user) throws ApiException {
+    public void sendContributionEmail(User user) {
         List<ContributionPeriod> contributionPeriods = contributionPeriodRepository.findCurrentOrLatestContributionPeriod();
         if (!contributionPeriods.isEmpty()) {
             ContributionPeriod contributionPeriod = contributionPeriods.getFirst();
-            Properties params = getParams(contributionPeriod);
+            Map<String, Object> params = getParams(contributionPeriod);
             sendEmail(Collections.singletonList(user.getEmail()), this.contributionTemplateId, params);
         }
     }
 
-    public void sendContributionReminderEmail(List<User> users, ContributionPeriod contributionPeriod) throws ApiException {
-        Properties params = getParams(contributionPeriod);
+    public void sendContributionReminderEmail(List<User> users, ContributionPeriod contributionPeriod) {
+        Map<String, Object> params = getParams(contributionPeriod);
         List<String> emails = users.stream().map(User::getEmail).collect(Collectors.toList());
-        sendEmail(emails, this.contributionTemplateId, params);
+        sendEmail(emails, this.contributionReminderTemplateId, params);
     }
 
-    private void sendEmail(List<String> toEmails, Long templateId, Properties params) throws ApiException {
-        ApiClient defaultClient = Configuration.getDefaultApiClient();
-        ApiKeyAuth apiKey = (ApiKeyAuth) defaultClient.getAuthentication("api-key");
-        apiKey.setApiKey(this.apiKey);
+    private void sendEmail(List<String> toEmails, Long templateId, Map<String, Object> params) {
+        // Configure API client with authentication
+        ApiClient apiClient = transactionalEmailsApi.getApiClient();
+        apiClient.addDefaultHeader("api-key", this.apiKey);
 
-        TransactionalEmailsApi api = new TransactionalEmailsApi();
+        // Create the email request
         SendSmtpEmail sendSmtpEmail = new SendSmtpEmail();
 
-        List<SendSmtpEmailTo> toList = new ArrayList<>();
+        // Set recipients
+        List<SendSmtpEmailToInner> toList = new ArrayList<>();
         for (String toEmail : toEmails) {
-            SendSmtpEmailTo to = new SendSmtpEmailTo();
+            SendSmtpEmailToInner to = new SendSmtpEmailToInner();
             to.setEmail(toEmail);
             toList.add(to);
         }
+        sendSmtpEmail.setTo(toList);
 
-        sendSmtpEmail.to(toList);
-        sendSmtpEmail.setParams(params);
+        // Set template and parameters
         sendSmtpEmail.setTemplateId(templateId);
+        sendSmtpEmail.setParams(params);
 
-        api.sendTransacEmail(sendSmtpEmail);
+        // Send the email
+        transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
     }
 
-    public void sendContributionReminders(List<Contribution> contributions) {
+    public void sendContributionReminders(List<Contribution> contributions, ContributionPeriod contributionPeriod) {
+        // Implementation for sending contribution reminders
+        // This method can be implemented based on your business requirements
+        var users = new ArrayList<User>();
+        contributions.forEach(contribution -> {
+            users.add(contribution.getUser());
+        });
+        sendContributionReminderEmail(users, contributionPeriod);
     }
 }

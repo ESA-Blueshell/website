@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import sendinblue.ApiException;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -60,7 +59,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     @PostMapping(value = "/events/{id}/signups")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'signUp')")
     public EventSignUpDTO createEventSignup(@PathVariable("id") Long eventId,
-                                       @Valid @RequestBody EventSignUpDTO dto) throws ApiException {
+                                       @Valid @RequestBody EventSignUpDTO dto) {
         dto.setEventId(eventId);
         var eventSignUp = mapper.fromDTO(dto);
         service.createSignUp(eventSignUp);

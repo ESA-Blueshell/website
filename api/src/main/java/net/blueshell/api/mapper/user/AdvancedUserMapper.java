@@ -2,11 +2,8 @@ package net.blueshell.api.mapper.user;
 
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.AdvancedUserDTO;
-import net.blueshell.api.mapper.MembershipMapper;
-import net.blueshell.api.model.Membership;
+import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.model.User;
-import net.blueshell.api.service.MembershipService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,13 +49,13 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     public abstract AdvancedUserDTO toDTO(User user);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "initials", ignore = true)
-    @Mapping(target = "firstName", ignore = true)
-    @Mapping(target = "prefix", ignore = true)
-    @Mapping(target = "lastName", ignore = true)
+    @Mapping(target = "initials")
+    @Mapping(target = "firstName")
+    @Mapping(target = "prefix")
+    @Mapping(target = "lastName")
     @Mapping(target = "username", conditionExpression = "java(hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
     @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "email")
     @Mapping(target = "enabled", ignore = true)
     @Mapping(target = "profilePicture", ignore = true)
     @Mapping(target = "committeeMembers", ignore = true)
@@ -72,6 +69,11 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "address", ignore = true)
     @Mapping(target = "creator", ignore = true)
     public abstract User fromDTO(AdvancedUserDTO dto);
+
+    @ObjectFactory
+    protected User newUser(@TargetType Class<User> type, AdvancedUserDTO dto) {
+        return new User();
+    }
 
     @AfterMapping
     protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {

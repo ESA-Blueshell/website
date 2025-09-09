@@ -22,24 +22,16 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     @Autowired
     private UserService userService;
 
-    @Mapping(target = "signature", ignore = true)
     public abstract MembershipDTO toDTO(Membership membership);
 
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "contributions", ignore = true)
-    @Mapping(target = "incasso", ignore = true)
-    @Mapping(target = "signature", ignore = true)
+    @Mapping(target = "incasso")
     @Mapping(target = "startDate", ignore = true)
     public abstract Membership fromDTO(MembershipDTO dto);
 
     @AfterMapping
     protected void afterFromDTO(MembershipDTO dto, @MappingTarget Membership membership) {
-        if (dto.getSignature() != null) {
-            FileDTO signatureDTO = dto.getSignature();
-            signatureDTO.setFileType(FileType.SIGNATURE);
-            File signature = fileMapper.fromDTO(dto.getSignature());
-            membership.setSignature(signature);
-        }
         if (membership.getStartDate() == null) {
             membership.setStartDate(LocalDate.now());
         }

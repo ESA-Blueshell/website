@@ -22,7 +22,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sendinblue.ApiException;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -88,7 +87,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     @Transactional
-    public void createUser(User user) throws ApiException {
+    public void createUser(User user) {
         contacts.sync(user);
 
         if (hasAuthority(Role.BOARD)) {
@@ -105,19 +104,19 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     @Transactional
-    public void updateUser(User user) throws ApiException {
+    public void updateUser(User user) {
         contacts.sync(user);
         self().update(user);
     }
 
-    private void sendUserActivationEmail(User user) throws ApiException {
+    private void sendUserActivationEmail(User user) {
         user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(USER_ACTIVATION_VALID_SECONDS)));
         user.setResetType(ResetType.USER_ACTIVATION);
         emails.sendUserActivationEmail(user);
     }
 
-    private void sendMemberActivationEmail(User user) throws ApiException {
+    private void sendMemberActivationEmail(User user) {
         user.setResetKey(Util.getRandomCapitalString(MEMBER_ACTIVATION_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(MEMBER_ACTIVATION_VALID_SECONDS)));
         user.setResetType(ResetType.MEMBER_ACTIVATION);
@@ -125,7 +124,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     @Transactional
-    public void resetPassword(String username) throws ApiException {
+    public void resetPassword(String username) {
         User user = findByUsername(username);
 
         user.setResetKey(Util.getRandomCapitalString(PASSWORD_RESET_KEY_LENGTH));
@@ -193,10 +192,6 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         }
         self().update(user);
         return user;
-    }
-
-    public User getFromBrevo(@NotBlank String email) throws ApiException {
-        return contacts.getUserFromBrevo(email);
     }
 
     @Transactional

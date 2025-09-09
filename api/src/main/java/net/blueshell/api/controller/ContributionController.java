@@ -1,6 +1,5 @@
 package net.blueshell.api.controller;
 
-import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
@@ -37,8 +36,8 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("/contributions/{id}/paid")
     public ContributionDTO setContributionPaid(
-            @ApiParam(name = "Id of the contribution") @PathVariable("id") Long id,
-            @ApiParam(name = "Whether the contribution is paid") @PathParam("paid") boolean paid) {
+            @PathVariable("id") Long id,
+            @PathParam("paid") boolean paid) {
         Contribution contribution = service.findById(id);
         contribution.setPaid(paid);
         service.update(contribution);
@@ -55,7 +54,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteContribution(@ApiParam(name = "Id of the contribution") @PathVariable("id") Long id) {
+    public void deleteContribution(@PathVariable("id") Long id) {
         Contribution contribution = service.findById(id);
         service.delete(contribution);
     }
@@ -63,8 +62,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("contributionPeriods/{periodId}/contributions/remind")
     public void sendContributionReminder(@PathVariable("periodId") Long periodId) {
-        List<Contribution> unpaidContributions = service.findByContributionPeriodIdAndPaid(periodId, false);
-        service.sendReminder(unpaidContributions);
+        service.sendReminder(periodId);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

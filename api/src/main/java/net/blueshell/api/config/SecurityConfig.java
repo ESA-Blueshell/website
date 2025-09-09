@@ -94,7 +94,8 @@ public class SecurityConfig {
                                 "/health").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/events/signups/*/guest",
-                                "/users").permitAll()
+                                "/users",
+                                "/users/guest").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();

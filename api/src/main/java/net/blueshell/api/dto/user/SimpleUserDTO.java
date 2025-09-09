@@ -49,6 +49,5 @@ public class SimpleUserDTO extends BaseDTO {
     @Size(min = 8, max = 100)
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
             message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 }

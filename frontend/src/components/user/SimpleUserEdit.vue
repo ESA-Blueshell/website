@@ -109,22 +109,20 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref, type Ref, watch} from 'vue';
-import {DateTime} from 'luxon';
-import type {AdvancedUserDto} from '@/lib';
-import {createUser, updateUser} from '@/lib';
+import {ref, type Ref, watch} from 'vue';
+import {createGuestUser, type SimpleUserDto} from '@/lib';
 import client from '@/plugins/client.ts';
 import type {VForm} from 'vuetify/components';
 
 interface Props {
   editing?: boolean;
-  modelValue: AdvancedUserDto;
+  modelValue: SimpleUserDto;
 }
 
 interface Emits {
-  (e: 'update:modelValue', user: AdvancedUserDto): void;
+  (e: 'update:modelValue', user: SimpleUserDto): void;
 
-  (e: 'user-changed', user: AdvancedUserDto): void;
+  (e: 'user-changed', user: SimpleUserDto): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -134,7 +132,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 // Reactive state
-const userData: Ref<AdvancedUserDto> = ref({...props.modelValue});
+const userData: Ref<SimpleUserDto> = ref({...props.modelValue});
 const valid: Ref<boolean> = ref(true);
 const submitting: Ref<boolean> = ref(false);
 const form: Ref<VForm | undefined> = ref();
@@ -210,20 +208,10 @@ const save = async (): Promise<void> => {
 
   try {
     let response;
-    if (userData.value?.id) {
-      // Update existing user
-      response = await updateUser({
-        path: {userId: userData.value.id},
-        body: userData.value,
-        client
-      });
-    } else {
-      // Create new user
-      response = await createUser({
-        body: userData.value,
-        client
-      });
-    }
+    response = await createGuestUser({
+      body: userData.value,
+      client
+    });
 
     if (response.data) {
       userData.value = response.data;
@@ -237,13 +225,6 @@ const save = async (): Promise<void> => {
     submitting.value = false;
   }
 };
-
-// Lifecycle hooks
-onMounted(() => {
-  if (userData.value.dateOfBirth) {
-    userData.value.dateOfBirth = DateTime.fromISO(userData.value.dateOfBirth).toISODate() as string;
-  }
-});
 
 // Expose methods
 defineExpose({

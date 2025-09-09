@@ -45,19 +45,17 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
 import TopBanner from "@/components/banners/TopBanner.vue";
-import AdvancedUserEdit from "@/components/edit/AdvancedUserEdit.vue";
-import type {AdvancedUserDto} from '@/lib';
-import {createUser} from '@/lib';
+import {createGuestUser, type SimpleUserDto} from '@/lib';
 import client from '@/plugins/client';
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import store from '@/plugins/store';
 import type {AxiosError} from "axios";
-import SimpleUserEdit from "@/components/edit/SimpleUserEdit.vue";
+import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue";
 
 // Reactive state
 const loading = ref(false);
 const succeeded = ref(false);
-const form = ref<AdvancedUserDto>({
+const form = ref<SimpleUserDto>({
   username: '',
   initials: '',
   firstName: '',
@@ -66,32 +64,14 @@ const form = ref<AdvancedUserDto>({
   email: '',
   discord: '',
   prefix: '',
-  phoneNumber: '',
-  dateOfBirth: '',
-  nationality: 'NL',
   newsletter: true,
-  photoConsent: false,
-  ehbo: false,
-  bhv: false,
-  enabled: true,
-  incasso: false,
-  gender: '',
-  study: '',
-  studentNumber: ''
 });
 
 // Component references
 const userEditComponent = ref();
 
-// Initialize form data
 onMounted(() => {
-  // Set default values for user creation
   form.value.newsletter = true;
-  form.value.photoConsent = false;
-  form.value.ehbo = false;
-  form.value.bhv = false;
-  form.value.enabled = true;
-  form.value.incasso = false;
 });
 
 // Methods
@@ -107,7 +87,7 @@ const createAccount = async () => {
 
   try {
     // Use the generated OpenAPI client to create user
-    const response = await createUser({
+    const response = await createGuestUser({
       body: form.value,
       client
     });

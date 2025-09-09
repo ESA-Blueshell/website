@@ -3,7 +3,7 @@ services:
     image: mariadb:10.11.10
     container_name: db
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - "./data:/var/lib/mysql"
       - "./env/dump.sql:/docker-entrypoint-initdb.d/init.sql"
@@ -50,7 +50,7 @@ services:
       - "3000:3000"
     volumes:
       - "./frontend:/usr/app"
-      - "./api/openapi.json:/usr/api/openapi.json"
+      - "./api/openapi/blueshell.json:/usr/openapi/blueshell.json"
       - /usr/app/node_modules
     networks:
       - global_network
@@ -75,7 +75,7 @@ services:
       - maven-repo:/root/.m2
       - "./storage:/home/storage"
     ports:
-      - "8080:8080"
+      - "8081:8080"
     command: [
       "sh",
       "-c",

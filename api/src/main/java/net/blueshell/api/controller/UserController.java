@@ -7,7 +7,8 @@ import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.request.ActivationRequest;
 import net.blueshell.api.controller.request.PasswordResetRequest;
-import net.blueshell.api.dto.AdvancedUserDTO;
+import net.blueshell.api.dto.user.AdvancedUserDTO;
+import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.mapper.RequestMapper;
 import net.blueshell.api.mapper.user.AdvancedUserMapper;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
@@ -20,7 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import sendinblue.ApiException;
 
 import java.util.List;
 
@@ -38,16 +38,23 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping("/users")
-    public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
+    public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
         User user = advancedMapper.fromDTO(dto);
         service.createUser(user);
         return advancedMapper.toDTO(user);
     }
 
+    @PostMapping("/users/guest")
+    public SimpleUserDTO createGuestUser(@Validated @RequestBody SimpleUserDTO dto) {
+        User user = simpleMapper.fromDTO(dto);
+        service.createUser(user);
+        return simpleMapper.toDTO(user);
+    }
+
     @PutMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     public AdvancedUserDTO updateUser(@PathVariable("userId") Long userId,
-                                  @Validated(Update.class) @RequestBody AdvancedUserDTO dto) throws ApiException {
+                                  @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
         dto.setId(userId);
         User user = advancedMapper.fromDTO(dto);
         service.updateUser(user);
@@ -55,7 +62,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping(value = "/users/reset")
-    public void resetPassword(@RequestParam("username") String username) throws ApiException {
+    public void resetPassword(@RequestParam("username") String username) {
         service.resetPassword(username);
     }
 
@@ -114,13 +121,6 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     public AdvancedUserDTO toggleUserRole(@PathVariable("userId") Long userId,
                                       @RequestParam(value = "role") Role role) {
         User user = service.toggleRole(userId, role);
-        return advancedMapper.toDTO(user);
-    }
-
-    @GetMapping(value = "/users/brevo")
-    @PreAuthorize("hasPermission(#email, 'User', 'getBrevo')")
-    public AdvancedUserDTO fetchUserFromBrevo(@RequestParam String email) throws ApiException {
-        User user = service.getFromBrevo(email);
         return advancedMapper.toDTO(user);
     }
 }

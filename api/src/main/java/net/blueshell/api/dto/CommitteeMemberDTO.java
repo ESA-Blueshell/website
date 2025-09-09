@@ -2,6 +2,7 @@ package net.blueshell.api.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.dto.user.SimpleUserDTO;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

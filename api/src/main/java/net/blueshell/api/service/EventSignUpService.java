@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sendinblue.ApiException;
 
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
     }
 
     @Transactional
-    public void createSignUp(EventSignUp signUp) throws ApiException {
+    public void createSignUp(EventSignUp signUp) {
         if (signUp.getGuest() != null) {
             emailService.sendEventSignUpEmail(signUp);
         }

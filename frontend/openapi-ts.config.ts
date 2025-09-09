@@ -1,7 +1,7 @@
 import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-  input: '../api/openapi.json',
+  input: '../openapi/blueshell.json',
   output: 'src/lib',
   plugins: ['@hey-api/client-axios']
 });

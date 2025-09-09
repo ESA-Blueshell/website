@@ -1,69 +1,64 @@
 package net.blueshell.api.service.brevo;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.mapper.BrevoContactMapper;
 import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import sendinblue.ApiClient;
-import sendinblue.ApiException;
-import sendinblue.Configuration;
-import sendinblue.auth.ApiKeyAuth;
-import sibApi.ContactsApi;
-import sibModel.*;
+import net.blueshell.clients.brevo.api.ContactsApi;
+import net.blueshell.clients.brevo.invoker.ApiClient;
+import net.blueshell.clients.brevo.invoker.auth.ApiKeyAuth;
+import net.blueshell.clients.brevo.model.AddContactToListRequest;
+import net.blueshell.clients.brevo.model.CreateContact;
+import net.blueshell.clients.brevo.model.CreateList;
+import net.blueshell.clients.brevo.model.CreateModel;
+import net.blueshell.clients.brevo.model.CreateUpdateContactModel;
+import net.blueshell.clients.brevo.model.GetExtendedContactDetails;
+import net.blueshell.clients.brevo.model.RemoveContactFromListRequest;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import net.blueshell.clients.brevo.api.ContactsApi.*;
 
+@Slf4j
 @Service
 public class ContactService {
 
-    private final BrevoContactMapper contactMapper;
+    private final BrevoContactMapper mapper;
 
     @Value("${brevo.apiKey}")
     private String apiKey;
     @Value("${brevo.folders.contributionPeriodsId}")
     private Long contributionPeriodsFolder;
 
-    public ContactService(BrevoContactMapper contactMapper) {
-        this.contactMapper = contactMapper;
+    private ContactsApi contacts;
+
+    public ContactService(BrevoContactMapper mapper) {
+        this.mapper = mapper;
     }
 
     private ContactsApi getContactsApi() {
-        ApiClient defaultClient = Configuration.getDefaultApiClient();
-        ApiKeyAuth apiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("api-key");
+        ApiClient apiClient = new ApiClient();
+        ApiKeyAuth apiKeyAuth = (ApiKeyAuth) apiClient.getAuthentication("api-key");
         apiKeyAuth.setApiKey(this.apiKey);
-        return new ContactsApi();
-    }
-
-    // Retrieves a User from Brevo without overwriting non-null values.
-    public User getUserFromBrevo(String email) throws ApiException {
-        ContactsApi api = getContactsApi();
-        GetExtendedContactDetails details = api.getContactInfo(email, null, null);
-        // Create a new User instance (or use an existing one) and map attributes.
-        User user = new User();
-        Map<String, Object> attributes = (Map<String, Object>) details.getAttributes();
-        contactMapper.attributesToUser(attributes, user);
-        return user;
+        return new ContactsApi(apiClient);
     }
 
     public User getUpdate(User user) {
         if (user.getContactId() != null) {
             return user;
         }
-        try {
-            ContactsApi api = getContactsApi();
-            GetExtendedContactDetails details = api.getContactInfo(user.getEmail(), null, null);
-            user.setContactId(details.getId());
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
+        log.info("Contact ID not found for user {}. Creating new contact.", user.getEmail());
+        ContactsApi api = getContactsApi();
+        GetExtendedContactDetails details =
+                api.getContactInfo(user.getEmail(), "email_id", null, null);
+        user.setContactId(details.getId());
+
         return user;
     }
 
-    public void sync(User user) throws ApiException {
+    public void sync(User user) {
         user = getUpdate(user);
         if (user.getContactId() != null) {
             sendUpdate(user);
@@ -72,26 +67,25 @@ public class ContactService {
         }
     }
 
-    private void createContact(User user) throws ApiException {
+    private void createContact(User user) throws RestClientResponseException {
         ContactsApi api = getContactsApi();
-        CreateContact createContact = new CreateContact();
-        createContact.setEmail(user.getEmail());
-        // Use the mapper to create the attributes map (null values are filtered out).
-        Map<String, Object> attributes = contactMapper.userToAttributes(user);
-        createContact.setAttributes(attributes);
+        CreateContact createContact = mapper.toCreate(user);
         CreateUpdateContactModel response = api.createContact(createContact);
         user.setContactId(response.getId());
     }
 
-    private void sendUpdate(User user) throws ApiException {
-        ContactsApi api = getContactsApi();
-        UpdateContact updateContact = new UpdateContact();
-        // Again, use the mapper so that only non-null attributes are updated.
-        updateContact.setAttributes(contactMapper.userToAttributes(user));
-        api.updateContact(user.getContactId().toString(), updateContact);
+    private void sendUpdate(User user) throws RestClientResponseException {
+        var api = getContactsApi();
+        var contact = mapper.toUpdate(user);
+        // Use contact_id as identifierType when updating by numeric ID
+        api.updateContact(
+                user.getEmail(),
+                contact,
+                "email_id"
+        );
     }
 
-    public Long createList(ContributionPeriod contributionPeriod) throws ApiException {
+    public Long createList(ContributionPeriod contributionPeriod) throws RestClientResponseException {
         ContactsApi api = getContactsApi();
         CreateList createList = new CreateList();
         String periodName = String.format("Contribution Paid %d - %d",
@@ -102,21 +96,21 @@ public class ContactService {
         return createModel.getId();
     }
 
-    public void addToList(ContributionPeriod contributionPeriod, User user) throws ApiException {
+    public void addToList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
         ContactsApi api = getContactsApi();
         List<Long> ids = new ArrayList<>();
         ids.add(user.getContactId());
-        AddContactToList contactEmails = new AddContactToList();
-        contactEmails.setIds(ids);
-        api.addContactToList(contributionPeriod.getListId(), contactEmails);
+        AddContactToListRequest payload = new AddContactToListRequest();
+        payload.setIds(ids);
+        api.addContactToList(contributionPeriod.getListId(), payload);
     }
 
-    public void removeFromList(ContributionPeriod contributionPeriod, User user) throws ApiException {
+    public void removeFromList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
         ContactsApi api = getContactsApi();
         List<Long> ids = new ArrayList<>();
         ids.add(user.getContactId());
-        RemoveContactFromList contactEmails = new RemoveContactFromList();
-        contactEmails.setIds(ids);
-        api.removeContactFromList(contributionPeriod.getListId(), contactEmails);
+        RemoveContactFromListRequest payload = new RemoveContactFromListRequest();
+        payload.setIds(ids);
+        api.removeContactFromList(contributionPeriod.getListId(), payload);
     }
 }

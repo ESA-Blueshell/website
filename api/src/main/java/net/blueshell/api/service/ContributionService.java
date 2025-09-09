@@ -40,8 +40,10 @@ public class ContributionService extends BaseModelService<Contribution, Long, Co
     }
 
     @Transactional
-    public void sendReminder(List<Contribution> unpaidContributions) {
-        emailService.sendContributionReminders(unpaidContributions);
+    public void sendReminder(Long periodId) {
+        ContributionPeriod contributionPeriod = periodService.findById(periodId);
+        List<Contribution> unpaidContributions = findByContributionPeriodIdAndPaid(periodId, false);
+        emailService.sendContributionReminders(unpaidContributions, contributionPeriod);
         Timestamp remindedAt = Timestamp.from(Instant.now());
         unpaidContributions.forEach(contribution -> contribution.setRemindedAt(remindedAt));
         self().updateAll(unpaidContributions);

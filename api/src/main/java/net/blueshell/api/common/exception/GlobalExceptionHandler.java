@@ -10,7 +10,6 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-import sendinblue.ApiException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -64,12 +63,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
         ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(createErrorResponse(ex.getMessage()));
-    }
-
-    @ExceptionHandler(ApiException.class)
-    public ResponseEntity<Object> handleApiException(ApiException ex, WebRequest request) {
-        ex.printStackTrace();
-        return ResponseEntity.status(ex.getCode()).body(ex.getResponseBody());
     }
 
     @ExceptionHandler(MissingParameterException.class)

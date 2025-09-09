@@ -4,47 +4,77 @@
       ref="form"
       v-model="valid"
     >
-      <v-row v-if="userData?.id && !creating">
-        <v-text-field
-          v-model="userData.username"
-          disabled
-          label="Username"
-        />
-      </v-row>
-      <v-row v-else-if="creating">
-        <v-text-field
-          v-model="userData.username"
-          :rules="usernameRules"
-          label="Username"
-        />
-      </v-row>
-
-      <!-- Password fields for new users only -->
-      <v-row v-if="creating">
-        <v-col cols="6">
+      <v-row>
+        <v-col cols="4">
           <v-text-field
-            v-model="password"
-            :rules="passwordRules"
-            label="Password"
-            :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :type="showPass ? 'text' : 'password'"
-            @click:append="showPass = !showPass"
+            v-model="userData.initials"
+            :disabled="disableEdit && !creating"
+            :rules="initialsRules"
+            label="Initials"
           />
         </v-col>
-        <v-col cols="6">
+        <v-col cols="8">
           <v-text-field
-            v-model="passwordAgain"
-            :rules="passwordConfirmRules"
-            label="Password (repeated)"
-            :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :type="showPass ? 'text' : 'password'"
-            @click:append="showPass = !showPass"
+            v-model="userData.firstName"
+            :disabled="disableEdit && !creating"
+            :rules="firstNameRules"
+            label="First Name"
           />
         </v-col>
       </v-row>
 
       <v-row>
+        <v-col cols="4">
+          <v-text-field
+            v-model="userData.prefix"
+            :disabled="disableEdit && !creating"
+            label="SurPrefix"
+          />
+        </v-col>
+        <v-col cols="8">
+          <v-text-field
+            v-model="userData.lastName"
+            :disabled="disableEdit && !creating"
+            :rules="lastNameRules"
+            label="Surname"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col
+          v-if="userData?.id && !creating"
+          cols="6"
+        >
+          <v-text-field
+            v-model="userData.username"
+            disabled
+            label="Username"
+          />
+        </v-col>
+        <v-col
+          v-else-if="creating"
+          cols="6"
+        >
+          <v-text-field
+            v-model="userData.username"
+            :rules="usernameRules"
+            label="Username"
+          />
+        </v-col>
+
         <v-col cols="6">
+          <v-text-field
+            v-model="userData.discord"
+            label="Discord"
+            :rules="discordRules"
+            :disabled="disableEdit && !creating"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12">
           <v-text-field
             v-model="userData.email"
             :disabled="disableEdit && !creating"
@@ -52,7 +82,34 @@
             label="E-mail"
           />
         </v-col>
+      </v-row>
+
+      <!-- Password fields for new users only -->
+      <v-row v-if="creating">
         <v-col cols="6">
+          <v-text-field
+            v-model="userData.password"
+            :rules="passwordRules"
+            label="Password"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :type="showPass ? 'text' : 'password'"
+            @click:append-inner="showPass = !showPass"
+          />
+        </v-col>
+        <v-col cols="6">
+          <v-text-field
+            v-model="passwordAgain"
+            :rules="passwordConfirmRules"
+            label="Password (repeated)"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :type="showPass ? 'text' : 'password'"
+            @click:append-inner="showPass = !showPass"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12">
           <v-phone-input
             ref="phoneInput"
             v-model="userData.phoneNumber"
@@ -68,62 +125,20 @@
       </v-row>
 
       <v-row>
-        <v-col cols="2">
-          <v-text-field
-            v-model="userData.initials"
-            :disabled="disableEdit && !creating"
-            :rules="initialsRules"
-            label="Initials"
-          />
-        </v-col>
-        <v-col cols="4">
-          <v-text-field
-            v-model="userData.firstName"
-            :disabled="disableEdit && !creating"
-            :rules="firstNameRules"
-            label="First Name"
-          />
-        </v-col>
-        <v-col cols="2">
-          <v-text-field
-            v-model="userData.prefix"
-            :disabled="disableEdit && !creating"
-            label="Surname Prefix"
-          />
-        </v-col>
-        <v-col cols="4">
-          <v-text-field
-            v-model="userData.lastName"
-            :disabled="disableEdit && !creating"
-            :rules="lastNameRules"
-            label="Surname"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="2">
+        <v-col cols="6">
           <v-text-field
             v-model="userData.studentNumber"
             label="Student Number"
             :disabled="disableEdit && !creating"
           />
         </v-col>
-        <v-col cols="4">
+        <v-col cols="6">
           <v-text-field
             v-model="userData.dateOfBirth"
             label="Date of Birth"
             type="date"
             :disabled="disableEdit && !creating"
             :rules="dateOfBirthRules"
-          />
-        </v-col>
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.discord"
-            label="Discord Username"
-            :rules="discordRules"
-            :disabled="disableEdit && !creating"
           />
         </v-col>
       </v-row>
@@ -146,7 +161,10 @@
       </v-row>
 
       <!-- Checkboxes -->
-      <v-row justify="space-evenly" align="center">
+      <v-row
+        justify="space-evenly"
+        align="center"
+      >
         <v-col cols="auto">
           <v-checkbox
             v-model="userData.newsletter"
@@ -173,7 +191,11 @@
         </v-col>
       </v-row>
 
-      <v-row justify="space-evenly" align="center" class="mb-3">
+      <v-row
+        justify="space-evenly"
+        align="center"
+        class="mb-3"
+      >
         <v-col cols="auto">
           <v-checkbox
             v-model="userData.photoConsent"
@@ -184,13 +206,17 @@
         </v-col>
         <v-col cols="auto">
           <v-checkbox
+            v-if="roles?.includes('BOARD')"
             v-model="userData.incasso"
             :hide-details="true"
             label="Pays through incasso"
             :disabled="disableEdit && !creating"
           />
         </v-col>
-        <v-col cols="auto" v-if="!creating">
+        <v-col
+          v-if="!creating"
+          cols="auto"
+        >
           <v-tooltip
             location="top"
             text="Save changes"
@@ -213,15 +239,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, type Ref } from 'vue';
-import { VPhoneInput } from 'v-phone-input';
-import { DateTime } from 'luxon';
+import {computed, onMounted, ref, type Ref, watch} from 'vue';
+import {VPhoneInput} from 'v-phone-input';
+import {DateTime} from 'luxon';
 import store from '@/plugins/store.ts';
-import { createUser, updateUser } from '@/lib';
-import type { AdvancedUserDto } from '@/lib';
+import type {AdvancedUserDto} from '@/lib';
+import {createUser, updateUser} from '@/lib';
 import client from '@/plugins/client.ts';
-import type { VForm } from 'vuetify/components';
-import { type CountryCode, parsePhoneNumber, type PhoneNumber } from 'libphonenumber-js/max';
+import type {VForm} from 'vuetify/components';
+import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
 import CountrySelect from '@/components/select/CountrySelect.vue';
 
 interface Props {
@@ -232,6 +258,7 @@ interface Props {
 
 interface Emits {
   (e: 'update:modelValue', user: AdvancedUserDto): void;
+
   (e: 'user-changed', user: AdvancedUserDto): void;
 }
 
@@ -247,7 +274,7 @@ const roles = computed(() => store.getters.getLogin?.roles);
 const disableEdit = computed(() => !props.creating && !props.editing && (!roles.value || !(roles.value.includes('BOARD') || roles.value.includes('ADMIN'))));
 
 // Reactive state
-const userData: Ref<AdvancedUserDto> = ref({ ...props.modelValue });
+const userData: Ref<AdvancedUserDto> = ref({...props.modelValue});
 const country: Ref<CountryCode> = ref('NL');
 const valid: Ref<boolean> = ref(true);
 const submitting: Ref<boolean> = ref(false);
@@ -261,10 +288,13 @@ const showPass: Ref<boolean> = ref(false);
 watch(
   () => props.modelValue,
   (newVal) => {
-    userData.value = { ...newVal };
+    if (JSON.stringify(userData.value) !== JSON.stringify(newVal)) {
+      userData.value = {...newVal};
+    }
   },
-  { deep: true, immediate: true }
+  {deep: true, immediate: true}
 );
+
 
 // Watch for local changes and emit
 watch(
@@ -272,7 +302,7 @@ watch(
   (newVal) => {
     emit('update:modelValue', newVal);
   },
-  { deep: true }
+  {deep: true}
 );
 
 // Validation rules
@@ -345,7 +375,7 @@ const save = async (): Promise<void> => {
     if (userData.value?.id) {
       // Update existing user
       response = await updateUser({
-        path: { userId: userData.value.id },
+        path: {userId: userData.value.id},
         body: userData.value,
         client
       });

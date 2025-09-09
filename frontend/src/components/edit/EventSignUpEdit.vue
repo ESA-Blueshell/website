@@ -138,7 +138,8 @@ async function deleteSignUp() {
 </template>
 
 <style scoped lang="scss">
-@use 'settings';
+@use '@/styles/colors' as colors;
+@use '@/styles/settings' as settings;
 
 .accent-bordered {
   border: 1px solid rgb(var(--v-theme-accent));

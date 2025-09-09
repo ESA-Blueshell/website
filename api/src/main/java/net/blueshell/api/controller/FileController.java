@@ -51,6 +51,12 @@ public class FileController extends BaseController<FileService, FileRepository> 
         return service.prepareFileResponse(file);
     }
 
+    @GetMapping("/assets/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> downloadAsset(@PathVariable String filename) {
+        return service.prepareAssetResponse(filename);
+    }
+
     @PostMapping("/files")
     public List<FileDTO> uploadFile(List<FileDTO> dtos) {
         List<File> files = fileMapper.fromDTOs(dtos);

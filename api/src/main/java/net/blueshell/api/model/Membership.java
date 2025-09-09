@@ -37,7 +37,7 @@ public class Membership implements BaseModel<Long> {
     @Enumerated(EnumType.STRING)
     private MemberType memberType;
 
-    @JoinColumn(name = "signature_id")
+    @JoinColumn(name = "signature_id", updatable = false, insertable = false)
     @OneToOne
     private File signature;
 

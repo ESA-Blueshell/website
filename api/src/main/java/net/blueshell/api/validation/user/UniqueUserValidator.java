@@ -2,7 +2,7 @@ package net.blueshell.api.validation.user;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import net.blueshell.api.dto.AdvancedUserDTO;
+import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

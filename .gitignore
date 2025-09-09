@@ -47,3 +47,7 @@ files
 data
 /env/.app.env
 /env/.db.env
+/env/.bot.env
+/env/.brevo.env
+/env/.google.env
+/env/.mollie.env

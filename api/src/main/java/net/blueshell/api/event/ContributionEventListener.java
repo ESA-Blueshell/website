@@ -7,7 +7,6 @@ import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import sendinblue.ApiException;
 
 @Component
 public class ContributionEventListener {
@@ -19,13 +18,13 @@ public class ContributionEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onContributionCreated(PreInsertEvent<Contribution> evt) throws ApiException {
+    public void onContributionCreated(PreInsertEvent<Contribution> evt) {
         var c = evt.getSource();
         contacts.addToList(c.getContributionPeriod(), c.getUser());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onContributionDeleted(PostDeleteEvent<Contribution> evt) throws ApiException {
+    public void onContributionDeleted(PostDeleteEvent<Contribution> evt) {
         var c = evt.getSource();
         contacts.removeFromList(c.getContributionPeriod(), c.getUser());
     }

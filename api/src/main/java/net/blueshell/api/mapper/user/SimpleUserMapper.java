@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.user;
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.SimpleUserDTO;
+import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.model.User;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;

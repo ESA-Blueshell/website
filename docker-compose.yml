@@ -1,0 +1,91 @@
+services:
+  db:
+    image: mariadb:10.11.10
+    container_name: db
+    volumes:
+      - "./data:/var/lib/mysql"
+      # Optional: seed only on first run if volume is empty. Remove if not needed.
+      # - "./env/dump.sql:/docker-entrypoint-initdb.d/init.sql"
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - ./env/.db.env
+    command: --log-bin-trust-function-creators=1
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  api:
+    container_name: api
+    build:
+      context: api
+      dockerfile: Dockerfile
+    networks:
+      - global_network
+    restart: unless-stopped
+    env_file:
+      - ./env/.db.env
+      - ./env/.app.env
+    volumes:
+      - "./storage:/home/storage"
+    depends_on:
+      - db
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    container_name: frontend
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    networks:
+      - global_network
+    restart: unless-stopped
+    depends_on:
+      - api
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  nginx:
+    build:
+      context: nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - global_network
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_certs:/etc/nginx/ssl:rw
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - api
+    healthcheck:
+      test: [ "CMD-SHELL", "service nginx status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  global_network:
+    driver: bridge
+
+volumes:
+  nginx_certs:
+    driver: local

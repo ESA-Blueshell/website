@@ -5,51 +5,50 @@ import lombok.Setter;
 import net.blueshell.api.common.event.*;
 import org.springframework.context.ApplicationEventPublisher;
 
-public abstract class BaseJpaListener<T> {
+public class JpaListener {
 
     @Setter
     private static ApplicationEventPublisher publisher;
 
     @PrePersist
-    public void prePersist(T entity) {
+    public void prePersist(Object entity) {
         if (publisher == null) return;
 
         publisher.publishEvent(new PrePersistEvent<>(entity));
     }
 
     @PostPersist
-    public void postPersist(T entity) {
+    public void postPersist(Object entity) {
         if (publisher == null) return;
 
         publisher.publishEvent(new PostPersistEvent<>(entity));
     }
 
     @PreUpdate
-    public void preUpdate(T entity) {
+    public void preUpdate(Object entity) {
         if (publisher == null) return;
 
         publisher.publishEvent(new PreUpdateEvent<>(entity));
     }
 
     @PostUpdate
-    public void postUpdate(T entity) {
+    public void postUpdate(Object entity) {
         if (publisher == null) return;
 
         publisher.publishEvent(new PostUpdateEvent<>(entity));
     }
 
     @PreRemove
-    public void preRemove(T entity) {
+    public void preRemove(Object entity) {
         if (publisher == null) return;
 
         publisher.publishEvent(new PreRemoveEvent<>(entity));
     }
 
     @PostRemove
-    public void postRemove(T entity) {
+    public void postRemove(Object entity) {
         if (publisher == null) return;
 
         publisher.publishEvent(new PostRemoveEvent<>(entity));
     }
 }
-

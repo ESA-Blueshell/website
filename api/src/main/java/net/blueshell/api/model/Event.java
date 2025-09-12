@@ -6,8 +6,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.converter.FormQuestionListConverter;
-import net.blueshell.api.model.listener.EventJpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -23,7 +23,7 @@ import java.util.Set;
 @Data
 @SQLDelete(sql = "UPDATE events SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-@EntityListeners(EventJpaListener.class)
+@EntityListeners(JpaListener.class)
 public class Event implements BaseModel<Long> {
 
     @Id

@@ -11,6 +11,9 @@ import net.blueshell.api.dto.BaseDTO;
 public class SimpleUserDTO extends BaseDTO {
 
     @JsonProperty
+    private Long id;
+
+    @JsonProperty
     @NotBlank
     private String initials;
 

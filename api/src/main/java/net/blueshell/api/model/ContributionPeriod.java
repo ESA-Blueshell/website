@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.model.listener.ContributionPeriodJpaListener;
+import net.blueshell.api.base.JpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -18,7 +18,7 @@ import java.util.Set;
 @Table(name = "contribution_periods")
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-@EntityListeners(ContributionPeriodJpaListener.class)
+@EntityListeners(JpaListener.class)
 public class ContributionPeriod implements BaseModel<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

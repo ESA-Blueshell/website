@@ -1,6 +1,7 @@
 package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.blueshell.api.config.SqlScriptTestExecutionListener;
 import net.blueshell.api.controller.request.JwtRequest;
 import net.blueshell.api.controller.response.JwtResponse;
 import net.blueshell.api.common.enums.Role;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -25,6 +27,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Test support for creating users with arbitrary roles and obtaining their JWT tokens.
  */
+@TestExecutionListeners(listeners = {
+        SqlScriptTestExecutionListener.class
+}, mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 public abstract class UserTestSupport {
 
     @Autowired
@@ -48,6 +53,8 @@ public abstract class UserTestSupport {
     protected User createUserWithRole(Role role) {
         String username = role.name().toLowerCase() + "_" + UUID.randomUUID().toString().substring(0, 8);
         User user = new User();
+        user.setFirstName(username);
+        user.setLastName(username);
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
         user.setEmail(username + "@example.com");

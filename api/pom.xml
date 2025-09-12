@@ -498,6 +498,8 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
+                            <apisToGenerate>TransactionalEmails,Contacts</apisToGenerate>
+
                             <!-- TODO: Check that the swagger def is up to date in github action -->
                             <!-- <inputSpec>https://api.brevo.com/v3/swagger_definition_v3.yml</inputSpec>-->
                             <inputSpec>${project.basedir}/openapi/brevo.yml</inputSpec>
@@ -505,33 +507,15 @@
                             <apiPackage>net.blueshell.clients.brevo.api</apiPackage>
                             <modelPackage>net.blueshell.clients.brevo.model</modelPackage>
                             <invokerPackage>net.blueshell.clients.brevo.invoker</invokerPackage>
+                            <inlineSchemaOptions>RESOLVE_INLINE_ENUMS=true</inlineSchemaOptions>
+
                             <schemaMappings>
-                                <!-- Map schema names directly to Object -->
-                                <schemaMapping>getContactInfo_identifier_parameter=Object</schemaMapping>
+                                <schemaMapping>getContactInfo_identifier_parameter=String</schemaMapping>
+                                <schemaMapping>updateContact_identifier_parameter=String</schemaMapping>
                                 <schemaMapping>createDoiContact_attributes_value=Object</schemaMapping>
-                                <schemaMapping>event_event_properties_value=Object</schemaMapping>
-                                <schemaMapping>event_contact_properties_value=Object</schemaMapping>
-                                <schemaMapping>order_metaInfo_value=Object</schemaMapping>
+                                <schemaMapping>getContactInfo_identifierType_parameter=String</schemaMapping>
+                                <schemaMapping>updateContact_identifierType_parameter=String</schemaMapping>
                             </schemaMappings>
-                            <typeMappings>
-                                <!-- Keep existing type mappings as backup -->
-                                <typeMapping>CreateDoiContactAttributesValue=Object</typeMapping>
-                                <typeMapping>EventEventPropertiesValue=Object</typeMapping>
-                                <typeMapping>EventContactPropertiesValue=Object</typeMapping>
-                                <typeMapping>OrderMetaInfoValue=Object</typeMapping>
-                                <typeMapping>PostContactInfoContactsFailure=Object</typeMapping>
-                                <typeMapping>PostContactInfoContactsSuccess=Object</typeMapping>
-                                <typeMapping>GetContactInfoIdentifierParameter=Object</typeMapping>
-                            </typeMappings>
-                            <importMappings>
-                                <importMapping>CreateDoiContactAttributesValue=java.lang.Object</importMapping>
-                                <importMapping>EventEventPropertiesValue=java.lang.Object</importMapping>
-                                <importMapping>EventContactPropertiesValue=java.lang.Object</importMapping>
-                                <importMapping>OrderMetaInfoValue=java.lang.Object</importMapping>
-                                <importMapping>PostContactInfoContactsFailure=java.lang.Object</importMapping>
-                                <importMapping>PostContactInfoContactsSuccess=java.lang.Object</importMapping>
-                                <importMapping>GetContactInfoIdentifierParameter=java.lang.Object</importMapping>
-                            </importMappings>
                         </configuration>
                     </execution>
 

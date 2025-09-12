@@ -6,7 +6,6 @@ import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.ContributionPeriodRepository;
-import net.blueshell.api.service.email.EmailTemplateService;
 import net.blueshell.api.service.email.SmtpEmailService;
 import net.blueshell.clients.brevo.api.TransactionalEmailsApi;
 import net.blueshell.clients.brevo.invoker.ApiClient;
@@ -17,11 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,33 +62,48 @@ public class EmailService {
         return params;
     }
 
-    public void sendUserActivationEmail(User user) {
-        smtpEmailService.sendUserActivationEmail(user);
+    public void activation(User user) {
+        switch (user.getResetType()) {
+            case MEMBER_ACTIVATION:
+                memberActivation(user);
+                break;
+            case USER_ACTIVATION:
+                userActivation(user);
+                break;
+            case PASSWORD_RESET:
+                passwordReset(user);
+                break;
+        }
+    }
+
+    public void userActivation(User user) {
+        smtpEmailService.activation(user);
 //        Map<String, Object> params = new HashMap<>();
 //        params.put("link", String.format(this.frontendUrl + "/account/activate?username=%s&token=%s", user.getUsername(), user.getResetKey()));
 //        sendEmail(Collections.singletonList(user.getEmail()), this.userActivationTemplateId, params);
+
     }
 
-    public void sendMemberActivationEmail(User user) {
+    public void memberActivation(User user) {
         Map<String, Object> params = new HashMap<>();
         params.put("link", String.format(this.frontendUrl + "/account/activate?token=%s", user.getResetKey()));
         sendEmail(Collections.singletonList(user.getEmail()), this.memberActivationTemplateId, params);
     }
 
-    public void sendPasswordResetEmail(User user) {
+    public void passwordReset(User user) {
         Map<String, Object> params = new HashMap<>();
         params.put("link", String.format(this.frontendUrl + "/login/reset-password?username=%s&token=%s", user.getUsername(), user.getResetKey()));
         sendEmail(Collections.singletonList(user.getEmail()), this.passwordResetTemplateId, params);
     }
 
-    public void sendEventSignUpEmail(EventSignUp signUp) {
+    public void eventSignup(EventSignUp signUp) {
         Map<String, Object> params = new HashMap<>();
         params.put("link", String.format(this.frontendUrl + "/events/signups/edit/%s", signUp.getGuest().getAccessToken()));
         params.put("eventTitle", signUp.getEvent().getTitle());
         sendEmail(Collections.singletonList(signUp.getGuest().getEmail()), this.eventSignupTemplateId, params);
     }
 
-    public void sendContributionEmail(User user) {
+    public void contribution(User user) {
         List<ContributionPeriod> contributionPeriods = contributionPeriodRepository.findCurrentOrLatestContributionPeriod();
         if (!contributionPeriods.isEmpty()) {
             ContributionPeriod contributionPeriod = contributionPeriods.getFirst();
@@ -102,7 +112,7 @@ public class EmailService {
         }
     }
 
-    public void sendContributionReminderEmail(List<User> users, ContributionPeriod contributionPeriod) {
+    public void contributionReminder(List<User> users, ContributionPeriod contributionPeriod) {
         Map<String, Object> params = getParams(contributionPeriod);
         List<String> emails = users.stream().map(User::getEmail).collect(Collectors.toList());
         sendEmail(emails, this.contributionReminderTemplateId, params);
@@ -133,13 +143,13 @@ public class EmailService {
         transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
     }
 
-    public void sendContributionReminders(List<Contribution> contributions, ContributionPeriod contributionPeriod) {
+    public void contributionReminders(List<Contribution> contributions, ContributionPeriod contributionPeriod) {
         // Implementation for sending contribution reminders
         // This method can be implemented based on your business requirements
         var users = new ArrayList<User>();
         contributions.forEach(contribution -> {
             users.add(contribution.getUser());
         });
-        sendContributionReminderEmail(users, contributionPeriod);
+        contributionReminder(users, contributionPeriod);
     }
 }

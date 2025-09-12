@@ -4,11 +4,11 @@ import lombok.Getter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
 
-public class PreDeleteEvent<T> implements ResolvableTypeProvider {
+public class PreRemoveEvent<T> implements ResolvableTypeProvider {
     @Getter
     private T source;
 
-    public PreDeleteEvent(T source) {
+    public PreRemoveEvent(T source) {
         this.source = source;
     }
 

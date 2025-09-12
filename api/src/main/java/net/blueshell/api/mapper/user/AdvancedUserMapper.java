@@ -8,41 +8,14 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.security.SecureRandom;
-import java.util.function.BiConsumer;
+import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
+import static net.blueshell.api.common.util.MappingUtil.generatePassword;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDTO> {
 
-    private static final String CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*()-_=+<>?";
-    private static final int PASSWORD_LENGTH = 12;
-    private static final SecureRandom random = new SecureRandom();
-
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    public static void applyCreationFields(AdvancedUserDTO dto, User user) {
-        applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
-        applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
-        applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
-        applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
-        applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
-    }
-
-    private static <T> void applyIfFieldIsNotNull(User user, T obj, BiConsumer<User, T> applier) {
-        if (obj != null) {
-            applier.accept(user, obj);
-        }
-    }
-
-    public static String generatePassword() {
-        StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            int index = random.nextInt(CHAR_SET.length());
-            password.append(CHAR_SET.charAt(index));
-        }
-        return password.toString();
-    }
 
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
@@ -77,20 +50,29 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
 
     @AfterMapping
     protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {
-        // Newly created or Board update
-        if (user.getCreatedAt() == null || hasAuthority(Role.BOARD)) {
-            applyCreationFields(dto, user);
+        // Return if user update
+        // Return if not board
+        if (user.getId() != null && !hasAuthority(Role.BOARD)) {
+            return;
+        }
 
-            // If creating a account for the first time, set the password. Otherwise create a random one
-            if (dto.getPassword() != null && !hasAuthority(Role.BOARD)) {
-                user.setPassword(passwordEncoder.encode(dto.getPassword()));
-            } else if (dto.getPassword() == null && dto.getId() == null && hasAuthority(Role.BOARD)) {
-                user.setPassword(passwordEncoder.encode(generatePassword()));
-            }
+        applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
+        applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
+        applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
+        applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
+        applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
 
-            if (hasAuthority(Role.BOARD)) {
-                user.setCreatorId(getPrincipal().getId());
-            }
+        // If a user is creating their account, set the password.
+        // Then return
+        if (!hasAuthority(Role.BOARD)) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            return;
+        }
+
+        // If creating a new user as a board member, set creator and generate random password.
+        if (user.getId() == null) {
+            user.setCreatorId(getPrincipal().getId());
+            user.setPassword(passwordEncoder.encode(generatePassword()));
         }
     }
 }

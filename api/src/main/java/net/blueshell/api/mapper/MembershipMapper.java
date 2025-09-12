@@ -2,10 +2,7 @@ package net.blueshell.api.mapper;
 
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.FileType;
-import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.dto.MembershipDTO;
-import net.blueshell.api.model.File;
 import net.blueshell.api.model.Membership;
 import net.blueshell.api.service.UserService;
 import org.mapstruct.*;

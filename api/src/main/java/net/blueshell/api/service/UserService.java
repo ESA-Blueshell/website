@@ -1,6 +1,5 @@
 package net.blueshell.api.service;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.NotFoundException;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.ResetType;
@@ -10,14 +9,12 @@ import net.blueshell.api.controller.request.ActivationRequest;
 import net.blueshell.api.controller.request.PasswordResetRequest;
 import net.blueshell.api.mapper.RequestMapper;
 import net.blueshell.api.model.File;
-import net.blueshell.api.model.Membership;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
 import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.brevo.EmailService;
 import net.blueshell.api.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -25,8 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -46,7 +41,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     private final RequestMapper requestMapper;
 
     @Autowired
-    public UserService(UserRepository repository,  EmailService emails, ContactService contacts, RequestMapper requestMapper) {
+    public UserService(UserRepository repository, EmailService emails, ContactService contacts, RequestMapper requestMapper) {
         super(repository);
         this.emails = emails;
         this.contacts = contacts;
@@ -86,42 +81,6 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         return repository.findByMembershipNotNull();
     }
 
-    @Transactional
-    public void createUser(User user) {
-        contacts.sync(user);
-
-        if (hasAuthority(Role.BOARD)) {
-            sendMemberActivationEmail(user);
-        } else {
-            sendUserActivationEmail(user);
-        }
-
-        if (user.hasRole(Role.MEMBER)) {
-            emails.sendContributionEmail(user);
-        }
-
-        self().create(user);
-    }
-
-    @Transactional
-    public void updateUser(User user) {
-        contacts.sync(user);
-        self().update(user);
-    }
-
-    private void sendUserActivationEmail(User user) {
-        user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(USER_ACTIVATION_VALID_SECONDS)));
-        user.setResetType(ResetType.USER_ACTIVATION);
-        emails.sendUserActivationEmail(user);
-    }
-
-    private void sendMemberActivationEmail(User user) {
-        user.setResetKey(Util.getRandomCapitalString(MEMBER_ACTIVATION_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(MEMBER_ACTIVATION_VALID_SECONDS)));
-        user.setResetType(ResetType.MEMBER_ACTIVATION);
-        emails.sendMemberActivationEmail(user);
-    }
 
     @Transactional
     public void resetPassword(String username) {
@@ -130,7 +89,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         user.setResetKey(Util.getRandomCapitalString(PASSWORD_RESET_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(PASSWORD_RESET_VALID_SECONDS)));
         user.setResetType(ResetType.PASSWORD_RESET);
-        emails.sendPasswordResetEmail(user);
+        emails.passwordReset(user);
 
         self().update(user);
     }
@@ -152,33 +111,6 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         User user = findByUsername(request.getUsername());
         requestMapper.fromRequest(request, user);
         self().update(user);
-    }
-
-
-    @Transactional
-    public User updateMembership(Long id, Boolean isMember) {
-        User user = self().findById(id);
-
-        if (Boolean.TRUE.equals(isMember)) {
-            if (user.hasRole(Role.MEMBER)) {
-                return user;
-            }
-            user.addRole(Role.MEMBER);
-            if (user.getMembership() == null) {
-                Membership membership = new Membership();
-                membership.setStartDate(LocalDate.now());
-            } else {
-                user.getMembership().setEndDate(null);
-            }
-        } else {
-            user.removeRole(Role.MEMBER);
-            if (user.getMembership() != null) {
-                user.getMembership().setEndDate(LocalDate.now());
-            }
-        }
-
-        self().update(user);
-        return user;
     }
 
     @Transactional
@@ -217,24 +149,5 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
 
     public User findByProfilePicture(File profilePicture) {
         return repository.findByProfilePicture(profilePicture).orElseThrow(() -> new NotFoundException("User not found for profile picture: " + profilePicture.getName()));
-    }
-
-    @Transactional
-    public void synchronizeRole(Role role) {
-        List<User> toRemoveRole = new ArrayList<>();
-        List<User> toAddRole = new ArrayList<>();
-        switch (role) {
-            case COMMITTEE -> {
-                toRemoveRole = repository.findUsersWithRoleWithoutActiveCommittees();
-                toAddRole = repository.findUsersWithoutRoleWithActiveCommittees();
-            }
-            case MEMBER -> {
-                toRemoveRole = repository.findUsersWithRoleWithoutActiveMembership();
-                toAddRole = repository.findUsersWithoutRoleWithActiveMembership();
-            }
-        }
-
-        toRemoveRole.forEach(u -> removeRole(u, role));
-        toAddRole.forEach(u -> addRole(u, role));
     }
 }

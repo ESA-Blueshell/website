@@ -28,7 +28,7 @@ public class SmtpEmailService {
     @Value("${app.url}")
     private String appUrl;
 
-    public void sendUserActivationEmail(User user) {
+    public void activation(User user) {
         Map<String, Object> templateParams = new HashMap<>();
         templateParams.put("user", user);
         templateParams.put("activationLink", String.format(this.frontendUrl + "/account/activate?username=%s&token=%s", user.getUsername(), user.getResetKey()));

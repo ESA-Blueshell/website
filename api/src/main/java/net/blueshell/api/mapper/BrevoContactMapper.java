@@ -4,7 +4,10 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.clients.brevo.model.CreateContact;
 import net.blueshell.clients.brevo.model.UpdateContact;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +36,6 @@ public interface BrevoContactMapper {
         attrs.put("SURNAME", user.getLastName());
         attrs.put("SMS", user.getPhoneNumber());
         attrs.put("MEMBER_TYPE", user.getMemberType());
-        attrs.put("EXT_ID", user.getId());
         return attrs;
     }
 }

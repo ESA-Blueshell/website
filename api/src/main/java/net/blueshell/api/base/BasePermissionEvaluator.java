@@ -3,10 +3,6 @@ package net.blueshell.api.base;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.security.core.Authentication;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
-
 public abstract class BasePermissionEvaluator<T extends BaseModel<ID>, ID, S extends BaseModelService<T, ID, ?>> extends IdentityProvider {
 
     public final Class<T> domainType;

@@ -10,6 +10,8 @@ import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.util.TimeUtil;
+import net.blueshell.api.model.listener.UserJpaListener;
+import net.blueshell.api.util.Util;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 @SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
+@EntityListeners(UserJpaListener.class)
 public class User implements UserDetails, BaseModel<Long> {
 
     @Id
@@ -155,18 +158,15 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column(name = "creator_id")
     private Long creatorId;
 
+    private static final int ACTIVATION_KEY_LENGTH = 15;
+    private static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
+
     public User() {
         this.createdAt = Timestamp.from(Instant.now());
+        this.resetKey = Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH);
+        this.resetKeyValidUntil = Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
+        this.resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;
         addRole(Role.GUEST);
-    }
-
-    public User(String username, String password, String firstName, String lastName, String email) {
-        this();
-        this.username = username;
-        this.password = password;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
     }
 
     @JsonProperty("profilePicture")

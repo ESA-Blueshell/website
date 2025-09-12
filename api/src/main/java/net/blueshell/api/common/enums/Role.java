@@ -3,7 +3,6 @@ package net.blueshell.api.common.enums;
 import lombok.Getter;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public enum Role {
     ANONYMOUS("ANONYMOUS"),

@@ -6,7 +6,6 @@ import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.brevo.EmailService;
 import net.blueshell.api.service.google.CalendarService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 
 public class EventListenerConfig {
@@ -32,7 +31,7 @@ public class EventListenerConfig {
     }
 
     @Bean
-    public UserEventListener committeeMemberEventListener(EmailService emails, ContactService contacts, CommitteeMemberService committeeMembers) {
+    public UserEventListener userEventListener(EmailService emails, ContactService contacts, CommitteeMemberService committeeMembers) {
         return new UserEventListener(emails, contacts, committeeMembers);
     }
 }

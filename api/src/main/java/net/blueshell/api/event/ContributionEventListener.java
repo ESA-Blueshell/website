@@ -1,10 +1,12 @@
 package net.blueshell.api.event;
 
-import net.blueshell.api.common.event.PreInsertEvent;
-import net.blueshell.api.common.event.PostDeleteEvent;
+import net.blueshell.api.common.event.PostRemoveEvent;
+import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.Contribution;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -18,13 +20,15 @@ public class ContributionEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onContributionCreated(PreInsertEvent<Contribution> evt) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onContributionCreated(PrePersistEvent<Contribution> evt) {
         var c = evt.getSource();
         contacts.addToList(c.getContributionPeriod(), c.getUser());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onContributionDeleted(PostDeleteEvent<Contribution> evt) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onContributionDeleted(PostRemoveEvent<Contribution> evt) {
         var c = evt.getSource();
         contacts.removeFromList(c.getContributionPeriod(), c.getUser());
     }

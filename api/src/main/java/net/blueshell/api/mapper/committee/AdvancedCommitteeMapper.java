@@ -3,7 +3,6 @@ package net.blueshell.api.mapper.committee;
 
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.AdvancedCommitteeDTO;
-import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.CommitteeMemberMapper;
 import net.blueshell.api.model.Committee;
 import net.blueshell.api.model.CommitteeMember;
@@ -15,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 

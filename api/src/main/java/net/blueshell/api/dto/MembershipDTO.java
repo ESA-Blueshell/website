@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.MemberType;
-import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.membership.NoExistingMembershipForUserId;
 
 import java.util.Date;

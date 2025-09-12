@@ -4,109 +4,13 @@
       ref="form"
       v-model="valid"
     >
-      <v-row>
-        <v-col cols="4">
-          <v-text-field
-            v-model="userData.initials"
-            :disabled="disableEdit && !creating"
-            :rules="initialsRules"
-            label="Initials"
-          />
-        </v-col>
-        <v-col cols="8">
-          <v-text-field
-            v-model="userData.firstName"
-            :disabled="disableEdit && !creating"
-            :rules="firstNameRules"
-            label="First Name"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="4">
-          <v-text-field
-            v-model="userData.prefix"
-            :disabled="disableEdit && !creating"
-            label="SurPrefix"
-          />
-        </v-col>
-        <v-col cols="8">
-          <v-text-field
-            v-model="userData.lastName"
-            :disabled="disableEdit && !creating"
-            :rules="lastNameRules"
-            label="Surname"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col
-          v-if="userData?.id && !creating"
-          cols="6"
-        >
-          <v-text-field
-            v-model="userData.username"
-            disabled
-            label="Username"
-          />
-        </v-col>
-        <v-col
-          v-else-if="creating"
-          cols="6"
-        >
-          <v-text-field
-            v-model="userData.username"
-            :rules="usernameRules"
-            label="Username"
-          />
-        </v-col>
-
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.discord"
-            label="Discord"
-            :rules="discordRules"
-            :disabled="disableEdit && !creating"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            v-model="userData.email"
-            :disabled="disableEdit && !creating"
-            :rules="emailRules"
-            label="E-mail"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- Password fields for new users only -->
-      <v-row v-if="creating">
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.password"
-            :rules="passwordRules"
-            label="Password"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :type="showPass ? 'text' : 'password'"
-            @click:append-inner="showPass = !showPass"
-          />
-        </v-col>
-        <v-col cols="6">
-          <v-text-field
-            v-model="passwordAgain"
-            :rules="passwordConfirmRules"
-            label="Password (repeated)"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :type="showPass ? 'text' : 'password'"
-            @click:append-inner="showPass = !showPass"
-          />
-        </v-col>
-      </v-row>
+      <!-- Reuse SimpleUserEdit -->
+      <SimpleUserEdit
+        ref="simpleRef"
+        :model-value="simpleModel"
+        :show-passwords="creating"
+        @update:model-value="(val) => simpleModel = val"
+      />
 
       <v-row>
         <v-col cols="12">
@@ -203,15 +107,6 @@
             :disabled="disableEdit && !creating"
           />
         </v-col>
-        <v-col cols="auto">
-          <v-checkbox
-            v-if="roles?.includes('BOARD')"
-            v-model="userData.incasso"
-            :hide-details="true"
-            label="Pays through incasso"
-            :disabled="disableEdit && !creating"
-          />
-        </v-col>
         <v-col
           v-if="!creating"
           cols="auto"
@@ -242,12 +137,13 @@ import {computed, onMounted, ref, type Ref, watch} from 'vue';
 import {VPhoneInput} from 'v-phone-input';
 import {DateTime} from 'luxon';
 import store from '@/plugins/store.ts';
-import type {AdvancedUserDto} from '@/lib';
+import type {AdvancedUserDto, SimpleUserDto} from '@/lib';
 import {createUser, updateUser} from '@/lib';
 import client from '@/plugins/client.ts';
 import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
 import CountrySelect from '@/components/select/CountrySelect.vue';
+import SimpleUserEdit from '@/components/user/SimpleUserEdit.vue';
 
 interface Props {
   editing?: boolean;
@@ -278,10 +174,29 @@ const country: Ref<CountryCode> = ref('NL');
 const valid: Ref<boolean> = ref(true);
 const submitting: Ref<boolean> = ref(false);
 const form: Ref<VForm | undefined> = ref();
+const simpleRef = ref<InstanceType<typeof SimpleUserEdit> | null>(null);
 
-// Password fields (only for user creation)
-const passwordAgain: Ref<string> = ref('');
-const showPass: Ref<boolean> = ref(false);
+// Bridge SimpleUserEdit v-model into AdvancedUserEdit v-model
+let simpleModel = computed<SimpleUserDto>({
+  get: () => ({
+    initials: userData.value.initials,
+    firstName: userData.value.firstName,
+    prefix: userData.value.prefix,
+    lastName: userData.value.lastName,
+    username: userData.value.username,
+    discord: userData.value.discord,
+    email: userData.value.email,
+    password: userData.value.password,
+    newsletter: userData.value.newsletter,
+  } as SimpleUserDto),
+  set: (val: SimpleUserDto) => {
+    userData.value = {
+      ...userData.value,
+      ...val,
+    };
+    emit('update:modelValue', userData.value);
+  }
+});
 
 // Watch for prop changes
 watch(
@@ -294,7 +209,6 @@ watch(
   {deep: true, immediate: true}
 );
 
-
 // Watch for local changes and emit
 watch(
   userData,
@@ -304,38 +218,8 @@ watch(
   {deep: true}
 );
 
-// Validation rules
-const usernameRules = [
-  (v: string) => !!v || 'Username is required',
-  (v: string) => /^[a-zA-Z0-9]+$/.test(v) || 'Username must only contain alphanumeric characters',
-];
-
-// Enhanced password validation rules
-const passwordRules = [
-  (v: string) => !!v || 'Password is required',
-  (v: string) => v.length >= 8 || 'Password must be at least 8 characters',
-  (v: string) => /(?=.*[a-z])/.test(v) || 'Password must contain at least one lowercase letter',
-  (v: string) => /(?=.*[A-Z])/.test(v) || 'Password must contain at least one uppercase letter',
-  (v: string) => /(?=.*\d)/.test(v) || 'Password must contain at least one number',
-  (v: string) => /(?=.*[@$!%*?&])/.test(v) || 'Password must contain at least one special character (@$!%*?&)',
-];
-
-const passwordConfirmRules = [
-  (v: string) => !!v || 'Password confirmation is required',
-  (v: string) => v === userData.value.password || 'Passwords do not match',
-];
-
-const initialsRules = [(v: string) => !!v || 'Initials are required'];
-const firstNameRules = [(v: string) => !!v || 'First name is required'];
-const lastNameRules = [(v: string) => !!v || 'Surname is required'];
+// Validation rules (only ones needed for fields not covered by SimpleUserEdit)
 const dateOfBirthRules = [(v: string) => !!v || 'Date of birth is required'];
-const discordRules = [(v: string) => !!v || 'Discord Username is required'];
-
-const emailRules = [
-  (v: string | undefined) => !!v || 'Email is required',
-  (v: string | undefined) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v || '') || 'Enter a valid e-mail address',
-  (v: string | undefined) => !/student/i.test(v || '') || 'You may not use your student email to sign up',
-];
 
 const phoneNumberRules = [
   (v: string) => {
@@ -358,9 +242,11 @@ const updateCountry = (newCountry: string): void => {
 };
 
 const validateForm = async (): Promise<boolean> => {
+  // Validate child (SimpleUserEdit) and this form
+  const childValid = (await simpleRef.value?.validateForm?.()) ?? true;
   if (!form.value) return false;
-  const result = await form.value.validate();
-  return result.valid;
+  const selfResult = await form.value.validate();
+  return childValid && selfResult.valid;
 };
 
 const save = async (): Promise<void> => {
@@ -372,14 +258,12 @@ const save = async (): Promise<void> => {
   try {
     let response;
     if (userData.value?.id) {
-      // Update existing user
       response = await updateUser({
         path: {userId: userData.value.id},
         body: userData.value,
         client
       });
     } else {
-      // Create new user
       response = await createUser({
         body: userData.value,
         client

@@ -38,7 +38,6 @@
       </v-row>
 
       <v-row>
-
         <v-col
           cols="6"
         >
@@ -68,7 +67,8 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <!-- Password fields (only for user creation) -->
+      <v-row v-if="showPasswords">
         <v-col cols="6">
           <v-text-field
             v-model="userData.password"
@@ -117,6 +117,7 @@ import type {VForm} from 'vuetify/components';
 interface Props {
   editing?: boolean;
   modelValue: SimpleUserDto;
+  showPasswords?: boolean;
 }
 
 interface Emits {
@@ -127,6 +128,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   editing: false,
+  showPasswords: true,
 });
 
 const emit = defineEmits<Emits>();
@@ -151,7 +153,6 @@ watch(
   },
   {deep: true, immediate: true}
 );
-
 
 // Watch for local changes and emit
 watch(

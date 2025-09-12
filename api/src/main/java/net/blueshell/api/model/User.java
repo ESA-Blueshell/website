@@ -6,11 +6,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.util.TimeUtil;
-import net.blueshell.api.model.listener.UserJpaListener;
 import net.blueshell.api.util.Util;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
-@EntityListeners(UserJpaListener.class)
+@EntityListeners(JpaListener.class)
 public class User implements UserDetails, BaseModel<Long> {
 
     @Id
@@ -184,6 +184,10 @@ public class User implements UserDetails, BaseModel<Long> {
             set.add(cm.getCommittee().getId());
         }
         return set;
+    }
+
+    public Set<Role> getRoles() {
+        return roles == null ? new HashSet<>() : roles;
     }
 
     public Set<Role> getInheritedRoles() {

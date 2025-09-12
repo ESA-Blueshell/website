@@ -27,24 +27,16 @@ import java.util.List;
 @Service
 public class UserService extends BaseModelService<User, Long, UserRepository> implements UserDetailsService {
 
-    private static final int ACTIVATION_KEY_LENGTH = 15;
-    private static final long USER_ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
     private static final int PASSWORD_RESET_KEY_LENGTH = 15;
     private static final long PASSWORD_RESET_VALID_SECONDS = 3600 * 2; // 2 hours
 
-    private static final int MEMBER_ACTIVATION_KEY_LENGTH = 25;
-    private static final long MEMBER_ACTIVATION_VALID_SECONDS = 3600L * 24 * 365 * 100; // 100 years
-
-
     private final EmailService emails;
-    private final ContactService contacts;
     private final RequestMapper requestMapper;
 
     @Autowired
-    public UserService(UserRepository repository, EmailService emails, ContactService contacts, RequestMapper requestMapper) {
+    public UserService(UserRepository repository, EmailService emails, RequestMapper requestMapper) {
         super(repository);
         this.emails = emails;
-        this.contacts = contacts;
         this.requestMapper = requestMapper;
     }
 

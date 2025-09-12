@@ -4,22 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.AdvancedCommitteeDTO;
-import net.blueshell.api.model.CommitteeMember;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.CommitteeService;
 import net.blueshell.api.testsupport.UserTestSupport;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlConfig;
-import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.TransactionManager;
@@ -43,7 +40,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class CommitteeControllerIT extends UserTestSupport {
 
     @Autowired
@@ -86,13 +82,10 @@ class CommitteeControllerIT extends UserTestSupport {
     }
 
     @Test
-    @Sql(scripts = "/cleanup.sql", executionPhase = AFTER_TEST_METHOD,
-            config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED))
+    @Commit
     void committeesAreCreatedCorrectly() throws Exception {
         var board = userMap.get(Role.BOARD);
         var member = userMap.get(Role.MEMBER);
-
-        TestTransaction.flagForCommit();
 
         mvc.perform(post("/committees")
                         .with(bearer(userMap.get(Role.BOARD)))
@@ -107,8 +100,6 @@ class CommitteeControllerIT extends UserTestSupport {
                         containsInAnyOrder("Chair", "Member")))
                 .andExpect(jsonPath("$.members[*].user.id",
                         containsInAnyOrder(board.getId().intValue(), member.getId().intValue())));
-
-        TestTransaction.end();
 
         // Refresh entities to get updated state from database
         member = refreshUser(member);
@@ -160,10 +151,7 @@ class CommitteeControllerIT extends UserTestSupport {
     }
 
     @Test
-    @Sql(scripts = "/cleanup.sql", executionPhase = AFTER_TEST_METHOD,
-            config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED))
     void updatingCommitteesUpdatesMembers() throws Exception {
-        TestTransaction.flagForCommit();
         // initial create
         MvcResult createResult = mvc.perform(post("/committees")
                         .with(bearer(userMap.get(Role.BOARD)))
@@ -176,7 +164,6 @@ class CommitteeControllerIT extends UserTestSupport {
                 createResult.getResponse().getContentAsByteArray(),
                 AdvancedCommitteeDTO.class
         );
-        TestTransaction.end();
 
         // prepare updated payload (switch to a single member, using the existing MEMBER account)
         var board = userMap.get(Role.BOARD);
@@ -196,9 +183,6 @@ class CommitteeControllerIT extends UserTestSupport {
                 )
         );
 
-        TestTransaction.start();
-        TestTransaction.flagForCommit();
-
         // perform update
         mvc.perform(put("/committees/{id}", created.getId())
                         .with(bearer(userMap.get(Role.BOARD)))
@@ -211,8 +195,6 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.members", hasSize(1)))
                 .andExpect(jsonPath("$.members[0].role").value("Lead"))
                 .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()));
-
-        TestTransaction.end();
 
         assertFalse(refreshUser(member).hasRole(Role.COMMITTEE));
         assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));

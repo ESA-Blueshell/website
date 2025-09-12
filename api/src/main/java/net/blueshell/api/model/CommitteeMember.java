@@ -3,7 +3,7 @@ package net.blueshell.api.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.model.listener.CommitteeMemberJpaListener;
+import net.blueshell.api.base.JpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -15,7 +15,7 @@ import java.util.Objects;
 @Data
 @SQLDelete(sql = "UPDATE committee_members SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-@EntityListeners(CommitteeMemberJpaListener.class)
+@EntityListeners(JpaListener.class)
 public class CommitteeMember implements BaseModel<Long> {
 
     @Id

@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.MemberType;
-import net.blueshell.api.model.listener.MembershipJpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -17,7 +17,7 @@ import java.util.Set;
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
-@EntityListeners(MembershipJpaListener.class)
+@EntityListeners(JpaListener.class)
 public class Membership implements BaseModel<Long> {
 
     @Id

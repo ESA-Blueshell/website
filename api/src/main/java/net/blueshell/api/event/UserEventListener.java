@@ -2,6 +2,7 @@ package net.blueshell.api.event;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.User;
@@ -28,17 +29,22 @@ public class UserEventListener {
         this.committeeMembers = committeeMembers;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onUserCreated(PrePersistEvent<User> evt) {
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void prePersist(PrePersistEvent<User> evt) {
         User u = evt.getSource();
         contacts.sync(u);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void postPersist(PostPersistEvent<User> evt) {
+        User u = evt.getSource();
         email.activation(u);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onUserUpdated(PostUpdateEvent<User> evt) {
+    public void onUpdate(PostUpdateEvent<User> evt) {
         User u = evt.getSource();
         contacts.sync(u);
         if (!u.hasRole(Role.MEMBER)) {

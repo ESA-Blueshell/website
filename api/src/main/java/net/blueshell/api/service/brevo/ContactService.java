@@ -1,17 +1,21 @@
 package net.blueshell.api.service.brevo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.mapper.BrevoContactMapper;
 import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.User;
+import net.blueshell.api.service.UserService;
 import net.blueshell.clients.brevo.api.ContactsApi;
 import net.blueshell.clients.brevo.invoker.ApiClient;
-import net.blueshell.clients.brevo.invoker.auth.ApiKeyAuth;
 import net.blueshell.clients.brevo.model.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +24,7 @@ import java.util.List;
 public class ContactService {
 
     private final BrevoContactMapper mapper;
+    private final UserService users;
 
     @Value("${brevo.apiKey}")
     private String apiKey;
@@ -28,32 +33,42 @@ public class ContactService {
 
     private ContactsApi contacts;
 
-    public ContactService(BrevoContactMapper mapper) {
+    public ContactService(BrevoContactMapper mapper, UserService users) {
         this.mapper = mapper;
+        this.users = users;
     }
 
     private ContactsApi getContactsApi() {
-        ApiClient apiClient = new ApiClient();
-        ApiKeyAuth apiKeyAuth = (ApiKeyAuth) apiClient.getAuthentication("api-key");
-        apiKeyAuth.setApiKey(this.apiKey);
+        DateFormat dateFormat = ApiClient.createDefaultDateFormat();
+        ObjectMapper objectMapper = ApiClient.createDefaultObjectMapper(dateFormat)
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .setDefaultPropertyInclusion(
+                        JsonInclude.Value.construct(
+                                JsonInclude.Include.NON_EMPTY,
+                                JsonInclude.Include.NON_EMPTY
+                        )
+                );
+
+        ApiClient apiClient = new ApiClient(objectMapper, dateFormat);
+        apiClient.setApiKey(this.apiKey);
         return new ContactsApi(apiClient);
     }
 
-    public User getUpdate(User user) {
-        if (user.getContactId() != null) {
-            return user;
-        }
-        log.info("Contact ID not found for user {}. Creating new contact.", user.getEmail());
-        ContactsApi api = getContactsApi();
-        GetExtendedContactDetails details =
-                api.getContactInfo(user.getEmail(), "email_id", null, null);
-        user.setContactId(details.getId());
+    public void getUpdate(User user) {
+        if (user.getContactId() != null) return;
 
-        return user;
+        try {
+            ContactsApi api = getContactsApi();
+            GetExtendedContactDetails details =
+                    api.getContactInfo(user.getEmail(), "email_id", null, null);
+            user.setContactId(details.getId());
+        } catch (HttpClientErrorException e) {
+            log.info("Failed to get contact details for user: {}", user.getEmail());
+        }
     }
 
     public void sync(User user) {
-        user = getUpdate(user);
+        getUpdate(user);
         if (user.getContactId() != null) {
             sendUpdate(user);
         } else {
@@ -62,6 +77,7 @@ public class ContactService {
     }
 
     private void createContact(User user) throws RestClientResponseException {
+        log.info("Creating contact for user: {}", user.getEmail());
         ContactsApi api = getContactsApi();
         CreateContact createContact = mapper.toCreate(user);
         CreateUpdateContactModel response = api.createContact(createContact);
@@ -69,9 +85,9 @@ public class ContactService {
     }
 
     private void sendUpdate(User user) throws RestClientResponseException {
+        log.info("Sending update for user: {}", user.getEmail());
         var api = getContactsApi();
         var contact = mapper.toUpdate(user);
-        // Use contact_id as identifierType when updating by numeric ID
         api.updateContact(
                 user.getEmail(),
                 contact,

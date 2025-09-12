@@ -35,6 +35,7 @@ public interface BrevoContactMapper {
         attrs.put("LASTNAME", user.getLastName());
         attrs.put("SURNAME", user.getLastName());
         attrs.put("SMS", user.getPhoneNumber());
+        attrs.put("WHATSAPP", user.getPhoneNumber());
         attrs.put("MEMBER_TYPE", user.getMemberType());
         return attrs;
     }

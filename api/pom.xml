@@ -508,6 +508,15 @@
                             <modelPackage>net.blueshell.clients.brevo.model</modelPackage>
                             <invokerPackage>net.blueshell.clients.brevo.invoker</invokerPackage>
                             <inlineSchemaOptions>RESOLVE_INLINE_ENUMS=true</inlineSchemaOptions>
+                            <configOptions>
+                                <jackson>true</jackson>
+                                <serializationLibrary>jackson</serializationLibrary>
+                            </configOptions>
+                            <additionalProperties>
+                                <additionalProperty>withXml=false</additionalProperty>
+                                <additionalProperty>jackson=true</additionalProperty>
+                                <additionalProperty>serializationLibrary=jackson</additionalProperty>
+                            </additionalProperties>
 
                             <schemaMappings>
                                 <schemaMapping>getContactInfo_identifier_parameter=String</schemaMapping>

@@ -4,8 +4,6 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.service.MembershipService;
-import net.blueshell.api.service.UserService;
-import net.blueshell.api.validation.user.UniqueUsername;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

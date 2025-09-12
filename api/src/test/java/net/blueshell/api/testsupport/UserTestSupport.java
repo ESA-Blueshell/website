@@ -47,8 +47,12 @@ public abstract class UserTestSupport {
      */
     protected User createUserWithRole(Role role) {
         String username = role.name().toLowerCase() + "_" + UUID.randomUUID().toString().substring(0, 8);
-        User user = new User(username, passwordEncoder.encode(DEFAULT_PASSWORD), "Test", "User", username + "@example.com");
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
+        user.setEmail(username + "@example.com");
         user.setEnabled(true);
+        user.setResetType(null);
         user.addRole(role);
         return userRepository.save(user);
     }

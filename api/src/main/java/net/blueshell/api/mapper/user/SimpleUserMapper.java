@@ -1,15 +1,12 @@
 package net.blueshell.api.mapper.user;
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.model.User;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.function.BiConsumer;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
@@ -39,6 +36,8 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
 
     @AfterMapping
     protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {
+        if (user.getId() != null) return;
+
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
     }
 }

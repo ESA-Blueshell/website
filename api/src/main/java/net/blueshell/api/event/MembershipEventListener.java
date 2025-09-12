@@ -2,11 +2,12 @@ package net.blueshell.api.event;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.common.event.PrePersistEvent;
+import net.blueshell.api.model.Membership;
 import net.blueshell.api.service.UserService;
+import net.blueshell.api.service.brevo.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,35 +16,37 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Component
-public class CommitteeMemberEventListener {
+public class MembershipEventListener {
 
+    private final EmailService email;
     private final UserService users;
 
-    public CommitteeMemberEventListener(UserService users) {
+    public MembershipEventListener(EmailService email, UserService users) {
+        this.email = email;
         this.users = users;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void postInsert(PostPersistEvent<CommitteeMember> evt) {
-        var c = evt.getSource();
-        users.addRole(c.getUser(), Role.COMMITTEE);
+    public void onCreate(PrePersistEvent<Membership> evt) {
+        Membership m = evt.getSource();
+        users.addRole(m.getUser(), Role.MEMBER);
+        email.contribution(m.getUser());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void postUpdate(PostUpdateEvent<CommitteeMember> evt) {
-        var c = evt.getSource();
-        users.addRole(c.getUser(), Role.COMMITTEE);
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void postDelete(PostRemoveEvent<CommitteeMember> evt) {
-        var c = evt.getSource();
-        var u = c.getUser();
-        if (u.getCommitteeMembers().isEmpty()) {
-            users.removeRole(c.getUser(), Role.COMMITTEE);
+    public void onUpdate(PostUpdateEvent<Membership> evt) {
+        Membership m = evt.getSource();
+        if (m.getEndDate() != null) {
+            users.removeRole(m.getUser(), Role.MEMBER);
         }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onDelete(PostRemoveEvent<Membership> evt) {
+        Membership m = evt.getSource();
+        users.removeRole(m.getUser(), Role.MEMBER);
     }
 }

@@ -4,11 +4,11 @@ import lombok.Getter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
 
-public class PostDeleteEvent<T> implements ResolvableTypeProvider {
+public class PostRemoveEvent<T> implements ResolvableTypeProvider {
     @Getter
     private T source;
 
-    public PostDeleteEvent(T source) {
+    public PostRemoveEvent(T source) {
         this.source = source;
     }
 

@@ -1,5 +1,6 @@
 package net.blueshell.api.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Slf4j
 @RestController

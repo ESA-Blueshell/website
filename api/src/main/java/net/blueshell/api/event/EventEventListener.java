@@ -1,11 +1,13 @@
 package net.blueshell.api.event;
 
-import net.blueshell.api.common.event.PreInsertEvent;
-import net.blueshell.api.common.event.PostDeleteEvent;
+import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
+import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.service.google.CalendarService;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -24,7 +26,8 @@ public class EventEventListener {
      * send e-mail only if the transaction COMMITTED successfully
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onEventCreated(PreInsertEvent<Event> evt) throws IOException {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onEventCreated(PrePersistEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
         if (e.isVisible()) {
             calendars.add(e);
@@ -32,6 +35,7 @@ public class EventEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onEventUpdated(PostUpdateEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
         if (e.isVisible()) {
@@ -46,20 +50,13 @@ public class EventEventListener {
         }
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void onEventDeleted(PostDeleteEvent<Event> evt) throws IOException {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onEventDeleted(PostRemoveEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
         if (e.getGoogleId() != null) {
             calendars.remove(e);
         }
-    }
-
-    /**
-     * clean-up if the outer transaction rolls back
-     */
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
-    public void onFailure(PreInsertEvent<Event> evt) {
-        Event e = evt.getSource();
     }
 }
 

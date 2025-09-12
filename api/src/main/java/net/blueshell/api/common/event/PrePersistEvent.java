@@ -4,11 +4,11 @@ import lombok.Getter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
 
-public class PreInsertEvent<T> implements ResolvableTypeProvider {
+public class PrePersistEvent<T> implements ResolvableTypeProvider {
     @Getter
     private T source;
 
-    public PreInsertEvent(T source) {
+    public PrePersistEvent(T source) {
         this.source = source;
     }
 

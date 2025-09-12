@@ -1,6 +1,5 @@
 package net.blueshell.api.controller.request;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.dto.BaseDTO;

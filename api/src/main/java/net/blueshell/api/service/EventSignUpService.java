@@ -3,12 +3,10 @@ package net.blueshell.api.service;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
-import net.blueshell.api.model.Event;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.repository.EventSignUpRepository;
 import net.blueshell.api.service.brevo.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +44,7 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
     @Transactional
     public void createSignUp(EventSignUp signUp) {
         if (signUp.getGuest() != null) {
-            emailService.sendEventSignUpEmail(signUp);
+            emailService.eventSignup(signUp);
         }
         log.warn("Event Signup: " + signUp);
         self().create(signUp);

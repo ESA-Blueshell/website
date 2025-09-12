@@ -4,11 +4,11 @@ import lombok.Getter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
 
-public class PostInsertEvent<T> implements ResolvableTypeProvider {
+public class PostPersistEvent<T> implements ResolvableTypeProvider {
     @Getter
     private T source;
 
-    public PostInsertEvent(T source) {
+    public PostPersistEvent(T source) {
         this.source = source;
     }
 

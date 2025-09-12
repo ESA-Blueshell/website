@@ -40,14 +40,14 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PostMapping("/users")
     public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
         User user = advancedMapper.fromDTO(dto);
-        service.createUser(user);
+        service.create(user);
         return advancedMapper.toDTO(user);
     }
 
     @PostMapping("/users/guest")
     public SimpleUserDTO createGuestUser(@Validated @RequestBody SimpleUserDTO dto) {
         User user = simpleMapper.fromDTO(dto);
-        service.createUser(user);
+        service.create(user);
         return simpleMapper.toDTO(user);
     }
 
@@ -57,7 +57,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
                                   @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
         dto.setId(userId);
         User user = advancedMapper.fromDTO(dto);
-        service.updateUser(user);
+        service.update(user);
         return advancedMapper.toDTO(user);
     }
 
@@ -98,14 +98,6 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     public AdvancedUserDTO findUserById(@PathVariable("userId") Long userId) {
         User user = service.findById(userId);
-        return advancedMapper.toDTO(user);
-    }
-
-    @PutMapping(value = "/users/{id}/membership")
-    @PreAuthorize("hasAuthority('BOARD')")
-    public AdvancedUserDTO updateUserMembership(@PathVariable("id") Long userId,
-                                            @RequestParam(defaultValue = "isMember") Boolean isMember) {
-        User user = service.updateMembership(userId, isMember);
         return advancedMapper.toDTO(user);
     }
 

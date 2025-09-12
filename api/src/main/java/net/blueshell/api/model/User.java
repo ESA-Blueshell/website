@@ -125,6 +125,10 @@ public class User implements UserDetails, BaseModel<Long> {
     @JsonIgnore
     private Set<CommitteeMember> committeeMembers;
 
+    public Set<CommitteeMember> getCommitteeMembers() {
+        return committeeMembers == null ? new HashSet<>() : committeeMembers;
+    }
+
     @JoinTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
     @Enumerated(EnumType.STRING)

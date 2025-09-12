@@ -2,13 +2,12 @@ services:
   db:
     image: mariadb:10.11.10
     container_name: db
+    networks:
+      - database
     volumes:
-      - "./data:/var/lib/mysql"
+      - db_data:/var/lib/mysql
       # Optional: seed only on first run if volume is empty. Remove if not needed.
       # - "./env/dump.sql:/docker-entrypoint-initdb.d/init.sql"
-    networks:
-      - global_network
-    restart: unless-stopped
     env_file:
       - ./env/.db.env
     command: --log-bin-trust-function-creators=1
@@ -24,8 +23,6 @@ services:
     build:
       context: api
       dockerfile: Dockerfile
-    networks:
-      - global_network
     restart: unless-stopped
     env_file:
       - ./env/.db.env
@@ -33,7 +30,11 @@ services:
     volumes:
       - "./storage:/home/storage"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - frontback
+      - database
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
@@ -47,45 +48,78 @@ services:
       context: frontend
       dockerfile: Dockerfile
     networks:
-      - global_network
-    restart: unless-stopped
-    depends_on:
-      - api
+      - frontback
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
 
   nginx:
-    build:
-      context: nginx
-      dockerfile: Dockerfile
-    container_name: nginx
+    image: nginx:latest
+    restart: always
     ports:
       - "80:80"
       - "443:443"
     networks:
-      - global_network
+      - frontback
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - nginx_certs:/etc/nginx/ssl:rw
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    configs:
+      - source: nginx_default_conf
+        target: /etc/nginx/conf.d/default.conf
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    depends_on:
+      - nginx
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    # One-shot obtain/force-renew to initialize certs (run once, or when rotating domains)
+    command: >
+      certonly --webroot
+      -w /var/www/certbot
+      --force-renewal
+      --non-interactive
+      --agree-tos
+      --email board@blueshell.utwente.nl
+      -d esa-blueshell.nl
+
+  certbot-renew:
+    image: certbot/certbot
     restart: unless-stopped
     depends_on:
-      - frontend
-      - api
-    healthcheck:
-      test: [ "CMD-SHELL", "service nginx status || exit 1" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
+      - nginx
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    # Renew monthly; using a simple sleep loop
+    command: >
+      sh -c '
+        while true; do
+          certbot renew --webroot -w /var/www/certbot --non-interactive || true;
+          sleep 30d;
+        done
+      '
 
 networks:
-  global_network:
-    driver: bridge
+  frontback:
+  database:
 
 volumes:
-  nginx_certs:
-    driver: local
+  letsencrypt:
+  certbot-www:
+  db_data:
+
+configs:
+  nginx_default_conf:
+    file: ./nginx/nginx.conf

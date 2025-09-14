@@ -154,11 +154,21 @@ watch(
   {deep: true, immediate: true}
 );
 
-// Watch for local changes and emit
 watch(
   userData,
   (newVal) => {
-    emit('update:modelValue', newVal);
+    const cleanUserData: SimpleUserDto = {
+      username: newVal.username,
+      initials: newVal.initials,
+      firstName: newVal.firstName,
+      lastName: newVal.lastName,
+      password: newVal.password,
+      email: newVal.email,
+      discord: newVal.discord,
+      prefix: newVal.prefix,
+      newsletter: newVal.newsletter,
+    };
+    emit('update:modelValue', cleanUserData);
   },
   {deep: true}
 );

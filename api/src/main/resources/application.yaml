@@ -54,7 +54,7 @@ spring:
 
   mail:
     host: ${SMTP_HOST}
-    port: ${SMTP_PORT:587}
+    port: ${SMTP_PORT:465}
     username: ${SMTP_USERNAME}
     password: ${SMTP_PASSWORD}
     properties:
@@ -63,9 +63,6 @@ spring:
           auth: true
           starttls:
             enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
 
 springdoc:
   api-docs:

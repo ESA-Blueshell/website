@@ -56,6 +56,7 @@ public class ContactService {
 
     public void getUpdate(User user) {
         if (user.getContactId() != null) return;
+        log.info("Getting update for user: {}", user.getEmail());
 
         try {
             ContactsApi api = getContactsApi();

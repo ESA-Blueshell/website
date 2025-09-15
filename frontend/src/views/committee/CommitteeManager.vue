@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Committee Manager"/>
+    <top-banner title="Committee Manager" />
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -113,7 +113,7 @@
               There will be no undo
             </v-card-text>
             <v-card-actions>
-              <v-spacer/>
+              <v-spacer />
               <v-btn
                 variant="text"
                 @click="committeeToDelete = null"

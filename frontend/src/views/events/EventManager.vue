@@ -1,7 +1,7 @@
 <template>
   <!-- Render a loading indicator (or whatever you prefer) until data is fetched -->
   <v-main v-if="isLoaded">
-    <top-banner title="EventModel Manager"/>
+    <top-banner title="EventModel Manager" />
 
     <div
       class="mx-auto my-10"
@@ -63,7 +63,7 @@
     v-else
     class="text-center mt-8"
   >
-    <v-progress-circular indeterminate/>
+    <v-progress-circular indeterminate />
     <!-- or you can just show some text: "Loading events..." -->
   </div>
 </template>

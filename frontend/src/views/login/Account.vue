@@ -30,7 +30,10 @@
           give it a description and add any members to it.
         </p>
 
-        <div v-if="user" class="mt-10">
+        <div
+          v-if="user"
+          class="mt-10"
+        >
           <v-form ref="form">
             <AdvancedUserEdit
               v-model="user"

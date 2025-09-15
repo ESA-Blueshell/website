@@ -77,7 +77,7 @@ onMounted(async () => {
           class="event-list-item"
         />
         <!-- only show divider when there's another item after -->
-        <v-divider v-if="i < events.length - 1"/>
+        <v-divider v-if="i < events.length - 1" />
       </template>
     </v-list>
   </v-expand-transition>

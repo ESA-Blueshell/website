@@ -5,9 +5,14 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.validation.group.Creation;
+import net.blueshell.api.validation.group.Update;
+import net.blueshell.api.validation.user.UniqueUser;
+import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@UniqueUser
 public class SimpleUserDTO extends BaseDTO {
 
     @JsonProperty
@@ -48,9 +53,12 @@ public class SimpleUserDTO extends BaseDTO {
     @NotNull
     private boolean newsletter;
 
-    @NotBlank
+    @JsonProperty
+    @NotBlank(groups = {Creation.class})
     @Size(min = 8, max = 100)
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-            message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
+            message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
+    )
     private String password;
 }

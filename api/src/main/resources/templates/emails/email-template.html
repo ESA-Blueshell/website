@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="format-detection" content="telephone=no">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${emailTitle ?: 'Blueshell Email'}">Blueshell Email</title>
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap" rel="stylesheet">
@@ -119,6 +118,131 @@
             line-height: 1.4;
         }
 
+        /* Markdown Heading Styles */
+        .email-content h1 {
+            font-family: 'Fugaz One', Arial, sans-serif;
+            font-size: 38pt;
+            text-transform: uppercase;
+            line-height: 1.2;
+            margin: 20px 0 15px 0;
+            color: inherit;
+        }
+
+        .email-content h2 {
+            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+            font-size: 26pt;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 18px 0 12px 0;
+            color: inherit;
+        }
+
+        .email-content h3 {
+            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+            font-size: 22pt;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 16px 0 10px 0;
+            color: inherit;
+        }
+
+        .email-content h4 {
+            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+            font-size: 18pt;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 14px 0 8px 0;
+            color: inherit;
+        }
+
+        .email-content h5 {
+            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+            font-size: 16pt;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 12px 0 6px 0;
+            color: inherit;
+        }
+
+        .email-content h6 {
+            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+            font-size: 14pt;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 10px 0 5px 0;
+            color: inherit;
+        }
+
+        /* Markdown content styles */
+        .email-content p {
+            margin: 0 0 15px 0;
+            line-height: 1.4;
+        }
+
+        .email-content ul, .email-content ol {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .email-content li {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
+        .email-content strong {
+            font-weight: 600;
+        }
+
+        .email-content em {
+            font-style: italic;
+        }
+
+        .email-content code {
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14pt;
+        }
+
+        .email-content pre {
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .email-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .email-content blockquote {
+            border-left: 4px solid var(--shell-blue);
+            padding-left: 15px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        /* Dark mode adjustments for markdown content */
+        body.dark-mode .email-content code {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .email-content pre {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Light mode adjustments for markdown content */
+        body.light-mode .email-content code {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.light-mode .email-content pre {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
         /* Dark Mode Styles (default) */
         body.dark-mode {
             background-color: #0a0a0a;
@@ -127,10 +251,6 @@
 
         body.dark-mode .content-text {
             color: var(--white);
-        }
-
-        body.dark-mode .main-title {
-            color: var(--shell-blue);
         }
 
         body.dark-mode a {
@@ -179,7 +299,7 @@
             color: var(--close-black);
         }
 
-        body.light-mode .main-title {
+        .main-title {
             color: var(--shell-blue);
         }
 
@@ -299,11 +419,32 @@
     </style>
 
     <script type="text/javascript">
+        // Initialize darkMode to true when email loads
+        function initializeTheme() {
+            window.darkMode = true;
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+
+            // Ensure dark mode is applied
+            body.classList.remove('light-mode');
+            body.classList.add('dark-mode');
+            toggleBtn.textContent = '☀️ Light Mode';
+
+            // Set background image for dark mode
+            const bgContainer = document.querySelector('.background-container');
+            if (bgContainer) {
+                const appUrl = bgContainer.getAttribute('data-app-url');
+                bgContainer.style.backgroundImage = `url(${appUrl}/api/assets/BackdropBlack.jpg)`;
+                bgContainer.style.backgroundColor = '#1E1E1E';
+            }
+        }
+
         function toggleTheme() {
             const body = document.body;
             const toggleBtn = document.getElementById('themeToggle');
 
             if (body.classList.contains('dark-mode')) {
+                window.darkMode = false;
                 body.classList.remove('dark-mode');
                 body.classList.add('light-mode');
                 toggleBtn.textContent = '🌙 Dark Mode';
@@ -316,6 +457,7 @@
                     bgContainer.style.backgroundColor = '#FFFFFF';
                 }
             } else {
+                window.darkMode = true;
                 body.classList.remove('light-mode');
                 body.classList.add('dark-mode');
                 toggleBtn.textContent = '☀️ Light Mode';
@@ -329,6 +471,9 @@
                 }
             }
         }
+
+        // Initialize theme when page loads
+        document.addEventListener('DOMContentLoaded', initializeTheme);
     </script>
 
     <!--[if mso]>
@@ -341,17 +486,17 @@
     <![endif]-->
 </head>
 
-<body th:class="${darkMode != null && darkMode == false ? 'light-mode' : 'dark-mode'}">
+<body th:class="${darkMode == null || darkMode == true ? 'dark-mode' : 'light-mode'}">
 
 <!-- Theme Toggle Button -->
 <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">
-    <span th:text="${darkMode != null && darkMode == false ? '🌙 Dark Mode' : '☀️ Light Mode'}">☀️ Light Mode</span>
+    <span th:text="${darkMode == null || darkMode == true ? '☀️ Light Mode' : '🌙 Dark Mode'}">🌙 Dark Mode</span>
 </button>
 
 <!-- Background with dynamic mode selection -->
 <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
-       th:style="${'background-image: url(' + appUrl + '/api/assets/' + (darkMode != null && darkMode == false ? 'BackdropWhite.jpg' : 'BackdropBlack.jpg') + '); background-position: center; background-repeat: repeat-y; background-size: auto; width: 100%; background-color: ' + (darkMode != null && darkMode == false ? '#FFFFFF' : '#1E1E1E') + ';'}">
-    <tr>
+       th:style="${'background-image: url(' + appUrl + '/api/assets/' + (darkMode == null || darkMode == true ? 'BackdropBlack.jpg' : 'BackdropWhite.jpg') + '); background-position: center; background-repeat: repeat-y; background-size: auto; width: 100%; background-color: ' + (darkMode == null || darkMode == true ? '#1E1E1E' : '#FFFFFF') + ';'}">
+<tr>
         <td>
             <!-- Main container -->
             <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
@@ -383,6 +528,7 @@
                                                 </table>
 
                                                 <!-- Main Title (conditional) -->
+                                                <!--/*@thymesVar id="mainTitle" type="java.lang.String"*/-->
                                                 <div th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}">
                                                     <table cellspacing="0" cellpadding="0" border="0"
                                                            role="presentation"
@@ -391,6 +537,7 @@
                                                         <tr>
                                                             <td align="center" valign="top" class="text-content"
                                                                 style="padding-bottom: 30px; text-align: center;">
+                                                                <!--/*@thymesVar id="mainTitle" type="String"*/-->
                                                                 <h1 class="title-font main-title"
                                                                     th:text="${mainTitle}">MAIN TITLE</h1>
                                                             </td>
@@ -406,21 +553,12 @@
                                                         <td align="left" valign="top"
                                                             class="main-text-font content-text text-content email-body-background"
                                                             style="padding: 30px; text-align: left; border-radius: 10px; margin: 20px 0;">
-
-                                                            <!-- Greeting -->
-                                                            <p style="margin: 0 0 20px 0;">Dear <span
-                                                                    th:text="${fullName ?: 'Member'}">[Full Name]</span>,
-                                                            </p>
-
                                                             <!-- Dynamic Content -->
-                                                            <div th:utext="${emailContent ?: 'No content provided.'}">
+                                                            <!--/*@thymesVar id="emailContent" type="java.lang.String"*/-->
+                                                            <div class="email-content" th:utext="${emailContent ?: 'No content provided.'}">
                                                                 <p>This is the default content area where your email
                                                                     content will be displayed.</p>
                                                             </div>
-
-                                                            <!-- Closing -->
-                                                            <p style="margin: 30px 0 0 0;">Kind regards,<br/>Blueshell
-                                                                SiteCie</p>
                                                         </td>
                                                     </tr>
                                                 </table>
@@ -437,14 +575,14 @@
             <!-- Footer section -->
             <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
                    class="email-container" style="table-layout: fixed; width: 600px;"
-                   th:style="${'background-color: ' + (darkMode != null && darkMode == false ? '#FFFFFF' : '#1E1E1E') + ';'}">
-                <tr>
+                   th:style="${'background-color: ' + (darkMode == null || darkMode == true ? '#1E1E1E' : '#FFFFFF') + ';'}">
+            <tr>
                     <td valign="top">
                         <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
                                align="center"
                                class="content-width" style="table-layout: fixed; width: 100%;">
                             <tr>
-                                <td class="main-text-font" style="padding-bottom: 20px; padding-top: 20px;">
+                                <td class="main-text-font" style="padding-bottom: 20px; padding-top: 5px;">
                                     <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                                         <tr>
                                             <th width="100%" valign="top" style="font-weight: normal;">
@@ -556,15 +694,12 @@
 
                                                                 <!-- Email info -->
                                                                 <tr>
-                                                                    <td class="email-footer text-content"
-                                                                        style="padding: 5px; text-align: center; border-radius: 10px; margin: 20px 0;">
-                                                                        <p class="footer-text"
-                                                                           style="margin: 0; font-size: 12px;">
+                                                                    <td class="email-footer text-content" style="padding: 5px; text-align: center; border-radius: 10px; margin: 20px 0;">
+                                                                        <p class="footer-text" style="margin: 0; font-size: 12px;">
                                                                             This email was sent to: <strong
-                                                                                th:text="${sentTo ?: to}">[recipient-email]</strong>
+                                                                                th:text="${sentTo}">[recipient-email]</strong>
                                                                         </p>
-                                                                        <p class="footer-text"
-                                                                           style="margin: 5px 0 0 0; font-size: 12px;">
+                                                                        <p class="footer-text" style="margin: 5px 0 0 0; font-size: 12px;">
                                                                             Sent on: <span
                                                                                 th:text="${#temporals.format(#temporals.createNow(), 'MMMM dd, yyyy \'at\' HH:mm')}">Date and Time</span>
                                                                         </p>

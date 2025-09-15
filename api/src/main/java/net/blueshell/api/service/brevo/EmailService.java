@@ -6,7 +6,6 @@ import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.ContributionPeriodRepository;
-import net.blueshell.api.service.email.SmtpEmailService;
 import net.blueshell.clients.brevo.api.TransactionalEmailsApi;
 import net.blueshell.clients.brevo.invoker.ApiClient;
 import net.blueshell.clients.brevo.model.SendSmtpEmail;
@@ -26,7 +25,7 @@ public class EmailService {
     ContributionPeriodRepository contributionPeriodRepository;
 
     private final TransactionalEmailsApi transactionalEmailsApi;
-    private final SmtpEmailService smtpEmailService;
+    private final net.blueshell.api.service.email.EmailService emailService;
 
     @Value("${brevo.apiKey}")
     private String apiKey;
@@ -45,8 +44,8 @@ public class EmailService {
     @Value("${frontend.url}")
     private String frontendUrl;
 
-    public EmailService(SmtpEmailService smtpEmailService) {
-        this.smtpEmailService = smtpEmailService;
+    public EmailService(net.blueshell.api.service.email.EmailService emailService) {
+        this.emailService = emailService;
         ApiClient apiClient = new ApiClient();
         this.transactionalEmailsApi = new TransactionalEmailsApi(apiClient);
     }
@@ -77,7 +76,7 @@ public class EmailService {
     }
 
     public void userActivation(User user) {
-        smtpEmailService.activation(user);
+        emailService.activation(user);
 //        Map<String, Object> params = new HashMap<>();
 //        params.put("link", String.format(this.frontendUrl + "/account/activate?username=%s&token=%s", user.getUsername(), user.getResetKey()));
 //        sendEmail(Collections.singletonList(user.getEmail()), this.userActivationTemplateId, params);

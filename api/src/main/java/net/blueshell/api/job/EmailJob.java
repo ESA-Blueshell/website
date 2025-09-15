@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.Job;
-import net.blueshell.api.service.email.SmtpEmailService;
+import net.blueshell.api.service.email.EmailService;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class EmailJob implements Job {
 
-    private final SmtpEmailService emailService;
+    private final EmailService emailService;
 
     @Setter
     private String to;

@@ -2,7 +2,13 @@ package net.blueshell.api.service.email;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.email.PasswordResetEmail;
 import net.blueshell.api.model.User;
+import net.blueshell.api.base.BaseEmail;
+import net.blueshell.api.base.EmailContent;
+import net.blueshell.api.email.MemberActivationEmail;
+import net.blueshell.api.email.UserActivationEmail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,17 +16,15 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
-public class SmtpEmailService {
+public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
 
     @Autowired
-    private EmailTemplateService emailTemplateService;
+    private EmailTemplateService templateService;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -29,14 +33,34 @@ public class SmtpEmailService {
     private String appUrl;
 
     public void activation(User user) {
-        Map<String, Object> templateParams = new HashMap<>();
-        templateParams.put("user", user);
-        templateParams.put("activationLink", String.format(this.frontendUrl + "/account/activate?username=%s&token=%s", user.getUsername(), user.getResetKey()));
-        templateParams.put("appUrl", this.appUrl);
+        BaseEmail email = switch (user.getResetType()) {
+            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
+            case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
+            case PASSWORD_RESET -> new PasswordResetEmail(user, frontendUrl, appUrl);
+        };
 
-        String htmlContent = emailTemplateService.processTemplate("emails/user-activation", templateParams);
+        sendEmail(email);
+    }
 
-        sendHtmlEmail(user.getEmail(), "Activate your Blueshell Account", htmlContent, "ESA Blueshell", "sitecie@blueshell.utwente.nl");
+    /**
+     * Send any email using the BaseEmail abstraction
+     */
+    private void sendEmail(BaseEmail email) {
+        EmailContent content = email.buildEmailContent();
+
+        String htmlContent = templateService.createEmail(
+                email.getRecipient(),
+                content.subject(),
+                content.markdownContent()
+        );
+
+        sendHtmlEmail(
+                content.recipient().getEmail(),
+                content.subject(),
+                htmlContent,
+                content.senderName(),
+                content.senderAddress()
+        );
     }
 
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent, String senderName, String senderAddress) {

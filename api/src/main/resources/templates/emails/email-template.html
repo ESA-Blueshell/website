@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
     <meta name="format-detection" content="telephone=no">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Hint some clients that we’re dark-mode native -->
@@ -10,9 +9,10 @@
     <meta name="supported-color-schemes" content="dark">
 
     <!-- Google Fonts (clients will fallback if blocked) -->
-    <link href="https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet">
+    <!--[if !mso]><!-->
+    <link href="https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap" rel="stylesheet" type="text/css">
+    <!--<![endif]-->
 
     <style type="text/css">
         /* Resets and email-safe defaults */
@@ -109,39 +109,33 @@
     <![endif]-->
 </head>
 
-<body bgcolor="#121212" style="margin:0; padding:0; width:100% !important; background-color:#121212;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#121212"
+<body style="margin:0; padding:0; width:100% !important; background-color:#121212;">
+<table role="presentation"
        style="background-color:#121212; width:100%;">
     <tr>
-        <td align="center" bgcolor="#121212" style="background-color:#121212;">
-
-            <!-- Hero background (bulletproof) with solid color fallback -->
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#121212"
-                   style="background-color:#121212;">
+        <td style="background-color:#121212;">
+            <table role="presentation" style="background-color:#121212;">
                 <tr>
-                    <td align="center" bgcolor="#121212" style="background-color:#121212;">
+                    <td style="background-color:#121212; text-align:center;">
                         <!--[if gte mso 9]>
                         <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
-                                style="width:1000px;height:220px;">
+                                style="width:400px;height:400px;">
                             <v:fill type="frame" color="#121212" src="cid:bg"/>
                             <v:textbox inset="0,0,0,0">
                         <![endif]-->
                         <div style="background-color:#121212; background-image:url('cid:bg'); background-size:cover; background-position:center;">
                             <!-- Non-Outlook background image (decorative); solid color remains primary -->
-                            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
-                                   class="w-600" bgcolor="#121212" background="cid:bg"
-                                   style="width:600px; background-color:#121212; margin:0 auto; background-size:cover; background-position:center;">
+                            <table role="presentation" class="w-600"
+                                   style="width:600px; background-color:#121212; margin:0 auto; background-image:url('cid:bg'); background-size:cover; background-position:center;">
                                 <tr>
-                                    <td bgcolor="#121212" style="background-color:#121212; padding:24px 0 16px 0;"
-                                        align="center">
+                                    <td style="background-color:#121212; padding:24px 0 16px 0;">
                                         <img th:src="'cid:logo'" src="cid:logo"
-                                             width="340" height="300" alt="Blueshell Esports Logo"
+                                             alt="Blueshell Esports Logo"
                                              style="width:340px; height:300px;">
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td align="center" bgcolor="#121212"
-                                        style="background-color:#121212; padding:0 24px 24px 24px;">
+                                    <td style="background-color:#121212; padding:0 24px 24px 24px; text-align:center;">
                                         <h1 class="f-title title"
                                             th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}"
                                             th:text="${mainTitle}">
@@ -160,11 +154,10 @@
             </table>
 
             <!-- Main card -->
-            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" class="w-600"
-                   align="center"
-                   bgcolor="#1A1A1A" style="width:600px; background-color:#1A1A1A; border-radius:12px; margin:0 auto;">
+            <table role="presentation" class="w-600"
+                   style="width:600px; background-color:#1A1A1A; border-radius:12px; margin:0 auto;">
                 <tr>
-                    <td bgcolor="#1A1A1A" style="background-color:#1A1A1A; padding:24px;" class="px">
+                    <td style="background-color:#1A1A1A; padding:24px;" class="px">
                         <!-- Email content -->
                         <div class="f-body body"
                              style="color:#FAFAFA; font-size:16px; line-height:1.5;">
@@ -249,24 +242,22 @@
             </table>
 
             <!-- Footer -->
-            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" class="w-600"
-                   align="center"
-                   bgcolor="#121212" style="width:600px; background-color:#121212; margin:0px auto 32px auto;">
+            <table role="presentation" class="w-600"
+                   style="width:600px; background-color:#121212; margin:0px auto 32px auto;">
                 <tr>
-                    <td bgcolor="#121212" style="background-color:#121212; padding:16px 8px;">
-                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
-                               bgcolor="#121212" style="background-color:#121212;">
+                    <td style="background-color:#121212; padding:16px 8px;">
+                        <table role="presentation"
+                               style="width:100%; background-color:#121212;">
                             <tr>
-                                <td align="center" bgcolor="#121212" style="background-color:#121212;">
+                                <td style="background-color:#121212; text-align:center;">
                                     <!-- Social icons -->
-                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0"
-                                           bgcolor="#121212" style="background-color:#121212;">
+                                    <table role="presentation" style="background-color:#121212;">
                                         <tr>
                                             <td style="padding:6px 4px;">
                                                 <a href="https://discord.gg/dFam2yqXu7" target="_blank"
                                                    style="color:#FAFAFA; text-decoration:none;">
                                                     <img src="https://cdn-icons-png.flaticon.com/32/2111/2111370.png"
-                                                         width="32" height="32" alt="Discord"
+                                                         alt="Discord"
                                                          style="width:32px; height:32px;">
                                                 </a>
                                             </td>
@@ -274,7 +265,7 @@
                                                 <a href="https://www.facebook.com/BlueshellEsports" target="_blank"
                                                    style="color:#FAFAFA; text-decoration:none;">
                                                     <img src="https://cdn-icons-png.flaticon.com/32/733/733547.png"
-                                                         width="32" height="32" alt="Facebook"
+                                                         alt="Facebook"
                                                          style="width:32px; height:32px;">
                                                 </a>
                                             </td>
@@ -282,7 +273,7 @@
                                                 <a href="https://www.instagram.com/esablueshell/" target="_blank"
                                                    style="color:#FAFAFA; text-decoration:none;">
                                                     <img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png"
-                                                         width="32" height="32" alt="Instagram"
+                                                         alt="Instagram"
                                                          style="width:32px; height:32px;">
                                                 </a>
                                             </td>
@@ -290,7 +281,7 @@
                                                 <a href="https://twitter.com/BlueshellESA" target="_blank"
                                                    style="color:#FAFAFA; text-decoration:none;">
                                                     <img src="https://cdn-icons-png.flaticon.com/32/733/733579.png"
-                                                         width="32" height="32" alt="Twitter/X"
+                                                         alt="Twitter/X"
                                                          style="width:32px; height:32px;">
                                                 </a>
                                             </td>
@@ -298,7 +289,7 @@
                                                 <a href="https://www.twitch.tv/blueshellesports" target="_blank"
                                                    style="color:#FAFAFA; text-decoration:none;">
                                                     <img src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
-                                                         width="32" height="32" alt="Twitch"
+                                                         alt="Twitch"
                                                          style="width:32px; height:32px;">
                                                 </a>
                                             </td>
@@ -306,7 +297,7 @@
                                                 <a href="https://esa-blueshell.nl/" target="_blank"
                                                    style="color:#FAFAFA; text-decoration:none;">
                                                     <img src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
-                                                         width="32" height="32" alt="Website"
+                                                         alt="Website"
                                                          style="width:32px; height:32px;">
                                                 </a>
                                             </td>
@@ -316,8 +307,7 @@
                             </tr>
 
                             <tr>
-                                <td align="center" bgcolor="#1A1A1A"
-                                    style="background-color:#1A1A1A; border-radius:10px; padding:12px 16px; margin:0 16px;">
+                                <td style="background-color:#1A1A1A; border-radius:10px; padding:12px 16px; margin:0 16px; text-align:center;">
                                     <p class="f-body" style="font-size:12px; line-height:1.4; color:#CCCCCC; margin:0;">
                                         This email was sent to:
                                         <strong th:text="${sentTo}" style="color:#FFFFFF;">[recipient-email]</strong>
@@ -332,7 +322,7 @@
                             </tr>
 
                             <tr>
-                                <td align="center" style="padding-top:12px;">
+                                <td style="padding-top:12px; text-align:center;">
                                     <p class="f-body" style="font-size:12px; line-height:1.4; color:#AAAAAA; margin:0;">
                                         Need help? Visit
                                         <a href="https://esa-blueshell.nl/"

@@ -3,7 +3,9 @@ package net.blueshell.api.service.email;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.email.ContributionReminderEmail;
 import net.blueshell.api.email.PasswordResetEmail;
+import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.model.User;
 import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.base.EmailContent;
@@ -16,6 +18,10 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EmailService {
@@ -36,10 +42,31 @@ public class EmailService {
         BaseEmail email = switch (user.getResetType()) {
             case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
             case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
-            case PASSWORD_RESET -> new PasswordResetEmail(user, frontendUrl, appUrl);
+            case null, default -> null;
         };
 
+        if (email == null) {
+            return;
+        }
+
         sendEmail(email);
+    }
+
+    public void contribution(User user, ContributionPeriod contributionPeriod) {
+        var email = new ContributionReminderEmail(
+                user,
+                frontendUrl,
+                appUrl,
+                contributionPeriod
+        );
+
+        sendEmail(email);
+    }
+
+    public void contributionReminder(List<User> users, ContributionPeriod contributionPeriod) {
+        for (var user : users) {
+            contribution(user, contributionPeriod);
+        }
     }
 
     /**

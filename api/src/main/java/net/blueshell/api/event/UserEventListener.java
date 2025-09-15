@@ -8,7 +8,7 @@ import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.brevo.ContactService;
-import net.blueshell.api.service.brevo.EmailService;
+import net.blueshell.api.service.email.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;

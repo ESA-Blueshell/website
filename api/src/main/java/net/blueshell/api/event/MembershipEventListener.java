@@ -7,7 +7,7 @@ import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.Membership;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.brevo.EmailService;
+import net.blueshell.api.service.brevo.BrevoEmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +18,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class MembershipEventListener {
 
-    private final EmailService email;
+    private final BrevoEmailService email;
     private final UserService users;
 
-    public MembershipEventListener(EmailService email, UserService users) {
+    public MembershipEventListener(BrevoEmailService email, UserService users) {
         this.email = email;
         this.users = users;
     }

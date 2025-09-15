@@ -5,7 +5,7 @@ import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.repository.EventSignUpRepository;
-import net.blueshell.api.service.brevo.EmailService;
+import net.blueshell.api.service.brevo.BrevoEmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +17,15 @@ import java.util.List;
 public class EventSignUpService extends BaseModelService<EventSignUp, Long, EventSignUpRepository> {
 
     private final EventService eventService;
-    private final EmailService emailService;
+    private final BrevoEmailService brevoEmailService;
 
     @Autowired
     public EventSignUpService(EventSignUpRepository repository,
                               EventService eventService,
-                              EmailService emailService) {
+                              BrevoEmailService brevoEmailService) {
         super(repository);
         this.eventService = eventService;
-        this.emailService = emailService;
+        this.brevoEmailService = brevoEmailService;
     }
 
     @Transactional(readOnly = true)
@@ -44,7 +44,7 @@ public class EventSignUpService extends BaseModelService<EventSignUp, Long, Even
     @Transactional
     public void createSignUp(EventSignUp signUp) {
         if (signUp.getGuest() != null) {
-            emailService.eventSignup(signUp);
+            brevoEmailService.eventSignup(signUp);
         }
         log.warn("Event Signup: " + signUp);
         self().create(signUp);

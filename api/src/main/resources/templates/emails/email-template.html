@@ -161,6 +161,16 @@
             filter: invert(1) brightness(1.2);
         }
 
+        /* Dark mode footer styles */
+        body.dark-mode .email-footer {
+            background-color: var(--cool-grey);
+            border-top: 1px solid #555;
+        }
+
+        body.dark-mode .footer-text {
+            color: #ccc;
+        }
+
         /* Light Mode Styles */
         body.light-mode {
             background-color: var(--white);
@@ -201,45 +211,17 @@
 
         /* Main email body background for light mode */
         body.light-mode .email-body-background {
-            background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white */
+            background-color: rgba(255, 255, 255, 0.95);
         }
 
-        /* Light Mode Styles */
-        body.light-mode {
-            background-color: var(--white);
-            color: var(--close-black);
+        /* Light mode footer styles */
+        body.light-mode .email-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
         }
 
-        body.light-mode .content-text {
-            color: var(--close-black);
-        }
-
-        body.light-mode .main-title {
-            color: var(--shell-blue);
-        }
-
-        body.light-mode a {
-            color: var(--shell-blue);
-        }
-
-        body.light-mode .background-container {
-            background-color: var(--white);
-        }
-
-        body.light-mode .theme-toggle {
-            background-color: var(--cool-grey);
-            color: var(--white);
-            border: 2px solid var(--cool-grey);
-        }
-
-        body.light-mode .theme-toggle:hover {
-            background-color: var(--shell-blue);
-            color: var(--white);
-        }
-
-        /* Social media website icon filter for light mode */
-        body.light-mode .website-icon {
-            filter: none;
+        body.light-mode .footer-text {
+            color: #6c757d;
         }
 
         /* Main Content Container - 2/3 width, max 800px */
@@ -268,7 +250,6 @@
             text-decoration: none !important;
             font-family: 'Barlow Semi Condensed', Arial, sans-serif;
         }
-
 
         @media (max-width: 600px) {
             .main-content-container {
@@ -577,12 +558,12 @@
 
                                                                 <!-- Email info -->
                                                                 <tr>
-                                                                    <td style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef;">
-                                                                        <p style="margin: 0; color: #6c757d; font-size: 12px;">
+                                                                    <td class="email-footer" style="padding: 20px; text-align: center; transition: background-color 0.3s ease, border-color 0.3s ease;">
+                                                                        <p class="footer-text" style="margin: 0; font-size: 12px; transition: color 0.3s ease;">
                                                                             This email was sent to: <strong
                                                                                 th:text="${sentTo ?: to}">[recipient-email]</strong>
                                                                         </p>
-                                                                        <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 12px;">
+                                                                        <p class="footer-text" style="margin: 5px 0 0 0; font-size: 12px; transition: color 0.3s ease;">
                                                                             Sent on: <span
                                                                                 th:text="${#temporals.format(#temporals.createNow(), 'MMMM dd, yyyy \'at\' HH:mm')}">Date and Time</span>
                                                                         </p>

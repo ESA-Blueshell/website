@@ -163,8 +163,6 @@
 
         /* Dark mode footer styles */
         body.dark-mode .email-footer {
-            background-color: var(--cool-grey);
-            border-top: 1px solid #555;
         }
 
         body.dark-mode .footer-text {
@@ -211,17 +209,16 @@
 
         /* Main email body background for light mode */
         body.light-mode .email-body-background {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: var(--white);
         }
 
         /* Light mode footer styles */
         body.light-mode .email-footer {
-            background-color: #f8f9fa;
-            border-top: 1px solid #e9ecef;
+            background-color: var(--white);
         }
 
         body.light-mode .footer-text {
-            color: #6c757d;
+            background-color: var(--white);
         }
 
         /* Main Content Container - 2/3 width, max 800px */
@@ -408,7 +405,7 @@
                                                     <tr>
                                                         <td align="left" valign="top"
                                                             class="main-text-font content-text text-content email-body-background"
-                                                            style="padding: 30px; text-align: left; border-radius: 10px; margin: 20px 0; transition: background-color 0.3s ease;">
+                                                            style="padding: 30px; text-align: left; border-radius: 10px; margin: 20px 0;">
 
                                                             <!-- Greeting -->
                                                             <p style="margin: 0 0 20px 0;">Dear <span
@@ -438,13 +435,14 @@
             </table>
 
             <!-- Footer section -->
-            <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%" align="center"
-                   style="table-layout: fixed; width: 100%;">
+            <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
+                   class="email-container" style="table-layout: fixed; width: 600px;"
+                   th:style="${'background-color: ' + (darkMode != null && darkMode == false ? '#FFFFFF' : '#1E1E1E') + ';'}">
                 <tr>
-                    <td valign="top"
-                        th:style="${'background-color: ' + (darkMode != null && darkMode == false ? '#FFFFFF' : '#1E1E1E') + ';'}">
-                        <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
-                               class="email-container" style="table-layout: fixed; width: 600px;">
+                    <td valign="top">
+                        <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
+                               align="center"
+                               class="content-width" style="table-layout: fixed; width: 100%;">
                             <tr>
                                 <td class="main-text-font" style="padding-bottom: 20px; padding-top: 20px;">
                                     <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
@@ -544,7 +542,7 @@
                                                                                                          alt="Website"
                                                                                                          border="0"
                                                                                                          class="website-icon"
-                                                                                                         style="display: block; transition: filter 0.3s ease;">
+                                                                                                         style="display: block;">
                                                                                                 </a>
                                                                                             </td>
 
@@ -558,12 +556,15 @@
 
                                                                 <!-- Email info -->
                                                                 <tr>
-                                                                    <td class="email-footer" style="padding: 20px; text-align: center; transition: background-color 0.3s ease, border-color 0.3s ease;">
-                                                                        <p class="footer-text" style="margin: 0; font-size: 12px; transition: color 0.3s ease;">
+                                                                    <td class="email-footer text-content"
+                                                                        style="padding: 5px; text-align: center; border-radius: 10px; margin: 20px 0;">
+                                                                        <p class="footer-text"
+                                                                           style="margin: 0; font-size: 12px;">
                                                                             This email was sent to: <strong
                                                                                 th:text="${sentTo ?: to}">[recipient-email]</strong>
                                                                         </p>
-                                                                        <p class="footer-text" style="margin: 5px 0 0 0; font-size: 12px; transition: color 0.3s ease;">
+                                                                        <p class="footer-text"
+                                                                           style="margin: 5px 0 0 0; font-size: 12px;">
                                                                             Sent on: <span
                                                                                 th:text="${#temporals.format(#temporals.createNow(), 'MMMM dd, yyyy \'at\' HH:mm')}">Date and Time</span>
                                                                         </p>

@@ -88,6 +88,14 @@
         .body-text {
             color: #FAFAFA !important;
         }
+
+        hr {
+            border: 0 !important;
+            border-top: 1px solid #A8FF00 !important; /* Outlook-friendly */
+            height: 1px !important;
+            background-color: #A8FF00 !important; /* WebKit/others */
+            color: #A8FF00 !important;
+        }
     </style>
 
 
@@ -116,7 +124,7 @@
         <div style="max-width: 600px; margin: 0 auto; background-color: #1E1E1E;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td align="center" style="padding:10px;">
+                    <td align="center" style="padding:24px;">
                         <table role="presentation" class="email-container" cellpadding="0" cellspacing="0" border="0"
                                style="margin:0 auto;">
                             <tr>
@@ -131,6 +139,7 @@
                                         th:text="${mainTitle}">
                                         MAIN TITLE
                                     </h1>
+                                    <hr>
                                     <div class="email-content"
                                          th:utext="${emailContent ?: 'No content provided.'}">
                                         <p style="margin:0 0 16px 0; color:#FAFAFA;">
@@ -143,7 +152,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td align="center" style="padding:16px 24px 8px 24px;">
+                    <td align="center" style="padding:0px 48px 8px 48px;">
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
                             <tr>
                                 <td style="padding:6px 4px;">
@@ -197,6 +206,7 @@
                             </tr>
                         </table>
                         <table>
+                            <hr>
                             <tr>
                                 <td style="text-align:center;">
                                     <p>

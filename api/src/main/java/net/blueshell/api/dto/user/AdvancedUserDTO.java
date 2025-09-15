@@ -9,6 +9,7 @@ import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
 import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public class AdvancedUserDTO extends SimpleUserDTO {
 
     @JsonProperty
     @NotNull
-    private Timestamp dateOfBirth;
+    private Date dateOfBirth;
 
     @JsonProperty
     @NotBlank

@@ -2,41 +2,25 @@ package net.blueshell.api.service;
 
 import jakarta.ws.rs.NotFoundException;
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
-import net.blueshell.api.controller.request.ActivationRequest;
-import net.blueshell.api.controller.request.PasswordResetRequest;
-import net.blueshell.api.mapper.RequestMapper;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
-import net.blueshell.api.service.email.EmailService;
-import net.blueshell.api.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.List;
 
 @Service
 public class UserService extends BaseModelService<User, Long, UserRepository> implements UserDetailsService {
 
-    private static final int PASSWORD_RESET_KEY_LENGTH = 15;
-    private static final long PASSWORD_RESET_VALID_SECONDS = 3600 * 2; // 2 hours
-
-    private final EmailService emails;
-    private final RequestMapper requestMapper;
-
     @Autowired
-    public UserService(UserRepository repository, EmailService emails, RequestMapper requestMapper) {
+    public UserService(UserRepository repository) {
         super(repository);
-        this.emails = emails;
-        this.requestMapper = requestMapper;
     }
 
     @Override
@@ -70,38 +54,6 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
 
     public List<User> findByMembershipNotNull() {
         return repository.findByMembershipNotNull();
-    }
-
-
-    @Transactional
-    public void resetPassword(String username) {
-        User user = findByUsername(username);
-
-        user.setResetKey(Util.getRandomCapitalString(PASSWORD_RESET_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(PASSWORD_RESET_VALID_SECONDS)));
-        user.setResetType(ResetType.PASSWORD_RESET);
-        emails.passwordReset(user);
-
-        self().update(user);
-    }
-
-    @Transactional
-    public void activate(ActivationRequest request) {
-        User user;
-        if (request.getResetType() == ResetType.MEMBER_ACTIVATION) {
-            user = findByResetKey(request.getToken());
-        } else {
-            user = findByUsername(request.getUsername());
-        }
-        requestMapper.fromRequest(request, user);
-        self().update(user);
-    }
-
-    @Transactional
-    public void setPassword(PasswordResetRequest request) {
-        User user = findByUsername(request.getUsername());
-        requestMapper.fromRequest(request, user);
-        self().update(user);
     }
 
     @Transactional

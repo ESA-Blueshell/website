@@ -17,11 +17,11 @@ public class PasswordResetEmail extends BaseEmail {
     @Override
     public String getMarkdownContent() {
         String resetLink = String.format(
-            frontendUrl + "/login/reset-password?username=%s&token=%s", 
+            frontendUrl + "/account/reset-password/%s/%s",
             recipient.getUsername(),
             recipient.getResetKey()
         );
-        
+
         return String.format(
             """
             Dear %s,

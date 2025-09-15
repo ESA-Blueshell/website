@@ -106,7 +106,7 @@ import DiscordBanner from "@/components/DiscordBanner.vue";
 import SocialsBanner from "@/components/banners/SocialsBanner.vue";
 import GamesWePlay from "@/components/GamesWePlay.vue";
 import {$require} from "@/plugins/require.js";
-import {$goto} from "@/plugins/goto.js";
+import {$goto} from "@/plugins/goto";
 
 export default {
   components: {GamesWePlay: GamesWePlay, SocialsBanner: SocialsBanner, DiscordBanner: DiscordBanner, MainBanner: MainBanner},

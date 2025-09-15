@@ -5,9 +5,13 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.auth.JWTAuthBase;
 import net.blueshell.api.auth.JwtTokenUtil;
-import net.blueshell.api.controller.request.JwtRequest;
-import net.blueshell.api.controller.response.JwtResponse;
+import net.blueshell.api.dto.request.JwtRequest;
+import net.blueshell.api.dto.request.MemberActivationRequest;
+import net.blueshell.api.dto.request.PasswordResetRequest;
+import net.blueshell.api.dto.request.UserActivationRequest;
+import net.blueshell.api.dto.response.JwtResponse;
 import net.blueshell.api.model.User;
+import net.blueshell.api.service.ActivationService;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Authentication")
 public class AuthenticationController extends JWTAuthBase {
 
+    private final ActivationService activationService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
@@ -31,13 +36,30 @@ public class AuthenticationController extends JWTAuthBase {
     private Long expiration;
 
     public AuthenticationController(
-            AuthenticationManager authenticationManager,
+            ActivationService activationService, AuthenticationManager authenticationManager,
             JwtTokenUtil jwtTokenUtil,
             UserService userService, PasswordEncoder encoder) {
+        this.activationService = activationService;
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
         this.encoder = encoder;
+    }
+
+
+    @PostMapping("/auth/user/activate")
+    public void userActivate(@Valid @RequestBody UserActivationRequest request) {
+        activationService.activate(request);
+    }
+
+    @PostMapping("/auth/member/activate")
+    public void memberActivate(@Valid @RequestBody MemberActivationRequest request) {
+        activationService.activate(request);
+    }
+
+    @PostMapping("/auth/password/reset")
+    public void resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        activationService.resetPassword(request);
     }
 
     @PostMapping("/auth")

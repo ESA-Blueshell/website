@@ -7,7 +7,7 @@ import EventListItem from "@/components/events/EventListItem.vue";
 import EventSignUpForm from "@/components/events/EventSignUpForm.vue";
 import {useStore} from "vuex";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
-import {$goto} from "@/plugins/goto.js";
+import {$goto} from "@/plugins/goto";
 
 const route = useRoute()
 const router = useRouter()

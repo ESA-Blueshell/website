@@ -1,19 +1,16 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.controller.request.ActivationRequest;
-import net.blueshell.api.controller.request.PasswordResetRequest;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
-import net.blueshell.api.mapper.RequestMapper;
 import net.blueshell.api.mapper.user.AdvancedUserMapper;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
+import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,12 +26,9 @@ import java.util.List;
 @Tag(name = "Users")
 public class UserController extends AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper> {
 
-    private final RequestMapper requestMapper;
-
     @Autowired
-    public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper, RequestMapper requestMapper) {
+    public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper) {
         super(service, advancedUserMapper, simpleUserMapper);
-        this.requestMapper = requestMapper;
     }
 
     @PostMapping("/users")
@@ -44,8 +38,15 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return advancedMapper.toDTO(user);
     }
 
+    @PostMapping("/users/member")
+    public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
+        User user = advancedMapper.fromDTO(dto);
+        service.create(user);
+        return advancedMapper.toDTO(user);
+    }
+
     @PostMapping("/users/guest")
-    public SimpleUserDTO createGuestUser(@Validated @RequestBody SimpleUserDTO dto) {
+    public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
         User user = simpleMapper.fromDTO(dto);
         service.create(user);
         return simpleMapper.toDTO(user);
@@ -59,27 +60,6 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         User user = advancedMapper.fromDTO(dto);
         service.update(user);
         return advancedMapper.toDTO(user);
-    }
-
-    @PostMapping(value = "/users/reset")
-    public void resetPassword(@RequestParam("username") String username) {
-        service.resetPassword(username);
-    }
-
-    @PostMapping(value = "/users/activate")
-    @PreAuthorize("hasPermission(#request, 'User', 'activate')")
-    public void activateUser(@Valid @RequestBody ActivationRequest request) {
-        User user = service.findByResetKey(request.getToken());
-        requestMapper.fromRequest(request, user);
-        service.update(user);
-    }
-
-    @PostMapping(value = "/users/password")
-    @PreAuthorize("hasPermission(#request, 'User', 'password')")
-    public void setPassword(@Valid @RequestBody PasswordResetRequest request) {
-        User user = service.findByResetKey(request.getToken());
-        requestMapper.fromRequest(request, user);
-        service.update(user);
     }
 
     @GetMapping("/users")

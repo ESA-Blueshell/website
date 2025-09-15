@@ -8,6 +8,8 @@ import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Date;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -30,7 +32,7 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     @AfterMapping
     protected void afterFromDTO(MembershipDTO dto, @MappingTarget Membership membership) {
         if (membership.getStartDate() == null) {
-            membership.setStartDate(LocalDate.now());
+            membership.setStartDate((java.sql.Date) Date.from(Instant.now()));
         }
         if (dto.getUserId() != null) {
             membership.setUser(userService.findById(dto.getUserId()));

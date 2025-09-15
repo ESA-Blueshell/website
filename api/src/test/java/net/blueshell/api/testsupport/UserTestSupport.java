@@ -2,8 +2,8 @@ package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.blueshell.api.config.SqlScriptTestExecutionListener;
-import net.blueshell.api.controller.request.JwtRequest;
-import net.blueshell.api.controller.response.JwtResponse;
+import net.blueshell.api.dto.request.JwtRequest;
+import net.blueshell.api.dto.response.JwtResponse;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;

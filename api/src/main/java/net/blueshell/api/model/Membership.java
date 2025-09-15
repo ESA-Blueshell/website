@@ -9,7 +9,7 @@ import net.blueshell.api.common.enums.MemberType;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDate;
+import java.sql.Date;
 import java.util.Set;
 
 @Entity
@@ -30,10 +30,10 @@ public class Membership implements BaseModel<Long> {
     private User user;
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private Date startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private Date endDate;
 
     @Column(name = "type")
     @Enumerated(EnumType.STRING)

@@ -11,7 +11,7 @@ import org.springframework.util.StringUtils;
  * Validator to check if the username is unique.
  */
 @Component
-public class ExistingUsernameValidator implements ConstraintValidator<UniqueUsername, String> {
+public class ExistingUsernameValidator implements ConstraintValidator<ExistingUsername, String> {
 
     private final UserService userService;
 

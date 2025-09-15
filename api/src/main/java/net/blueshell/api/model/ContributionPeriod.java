@@ -8,6 +8,7 @@ import net.blueshell.api.base.JpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -29,11 +30,11 @@ public class ContributionPeriod implements BaseModel<Long> {
 
     @Column(name = "start_date")
     @Setter
-    private LocalDate startDate;
+    private Date startDate;
 
     @Column(name = "end_date")
     @Setter
-    private LocalDate endDate;
+    private Date endDate;
 
     @Column(name = "half_year_fee")
     @Setter

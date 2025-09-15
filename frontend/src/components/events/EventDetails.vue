@@ -112,7 +112,7 @@
 </template>
 <script>
 import MarqueeText from 'vue-marquee-text-component'
-import {$goto} from "@/plugins/goto.js";
+import {$goto} from "@/plugins/goto";
 import $markdownToHtml from "@/plugins/markdownToHtml.ts";
 
 export default {

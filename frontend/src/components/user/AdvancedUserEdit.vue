@@ -12,7 +12,7 @@
         @update:model-value="(val) => simpleModel = val"
       />
 
-      <v-row>
+      <v-row class="mt-10">
         <v-col cols="12">
           <v-phone-input
             ref="phoneInput"
@@ -70,14 +70,6 @@
       >
         <v-col cols="auto">
           <v-checkbox
-            v-model="userData.newsletter"
-            :hide-details="true"
-            label="Subscribe to newsletter"
-            :disabled="disableEdit && !creating"
-          />
-        </v-col>
-        <v-col cols="auto">
-          <v-checkbox
             v-model="userData.ehbo"
             :hide-details="true"
             label="EHBO Diploma"
@@ -133,12 +125,10 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, type Ref, watch} from 'vue';
+import {computed, ref, type Ref, watch} from 'vue';
 import {VPhoneInput} from 'v-phone-input';
-import {DateTime} from 'luxon';
 import store from '@/plugins/store.ts';
-import type {AdvancedUserDto, SimpleUserDto} from '@/lib';
-import {createUser, updateUser} from '@/lib';
+import {type AdvancedUserDto, createMember, createUser, type SimpleUserDto, updateUser} from '@/lib';
 import client from '@/plugins/client.ts';
 import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
@@ -264,10 +254,17 @@ const save = async (): Promise<void> => {
         client
       });
     } else {
-      response = await createUser({
-        body: userData.value,
-        client
-      });
+      if (roles.value && roles.value.includes('BOARD')) {
+        response = await createMember({
+          body: userData.value,
+          client
+        });
+      } else {
+        response = await createUser({
+          body: userData.value,
+          client
+        });
+      }
     }
 
     if (response.data) {
@@ -282,13 +279,6 @@ const save = async (): Promise<void> => {
     submitting.value = false;
   }
 };
-
-// Lifecycle hooks
-onMounted(() => {
-  if (userData.value.dateOfBirth) {
-    userData.value.dateOfBirth = DateTime.fromISO(userData.value.dateOfBirth).toISODate() as string;
-  }
-});
 
 // Expose methods
 defineExpose({

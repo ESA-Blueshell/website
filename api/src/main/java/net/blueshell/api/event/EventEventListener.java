@@ -39,12 +39,8 @@ public class EventEventListener {
     public void onEventUpdated(PostUpdateEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
         if (e.isVisible()) {
-            if (e.getGoogleId() != null) {
-                calendars.update(e);
-            } else {
-                calendars.add(e);
-            }
-        } else if (e.getGoogleId() != null) {
+            calendars.sync(e);
+        } else {
             // Remove from calendar if no longer visible
             calendars.remove(e);
         }
@@ -54,9 +50,7 @@ public class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onEventDeleted(PostRemoveEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
-        if (e.getGoogleId() != null) {
-            calendars.remove(e);
-        }
+
+        calendars.remove(e);
     }
 }
-

@@ -62,7 +62,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
                                        @Valid @RequestBody EventSignUpDTO dto) {
         dto.setEventId(eventId);
         var eventSignUp = mapper.fromDTO(dto);
-        service.createSignUp(eventSignUp);
+        service.create(eventSignUp);
         return mapper.toDTO(eventSignUp);
     }
 

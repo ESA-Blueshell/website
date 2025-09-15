@@ -61,9 +61,10 @@ spring:
       mail:
         smtp:
           auth: true
+          ssl:
+            enable: ${SMTP_USE_SSL}
           starttls:
-            enable: true
-
+            enable: ${SMTP_USE_TLS}
 springdoc:
   api-docs:
     path: /v3/api-docs

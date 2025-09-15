@@ -1,6 +1,7 @@
 package net.blueshell.api.config;
 
 import net.blueshell.api.event.*;
+import net.blueshell.api.job.SyncContactJob;
 import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
@@ -31,7 +32,7 @@ public class EventListenerConfig {
     }
 
     @Bean
-    public UserEventListener userEventListener(EmailService emails, ContactService contacts, CommitteeMemberService committeeMembers) {
-        return new UserEventListener(emails, contacts, committeeMembers);
+    public UserEventListener userEventListener(EmailService emails, SyncContactJob syncContactJob, CommitteeMemberService committeeMembers) {
+        return new UserEventListener(emails, syncContactJob, committeeMembers);
     }
 }

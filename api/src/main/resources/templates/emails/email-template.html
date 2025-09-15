@@ -496,7 +496,7 @@
 <!-- Background with dynamic mode selection -->
 <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
        th:style="${'background-image: url(' + appUrl + '/api/assets/' + (darkMode == null || darkMode == true ? 'BackdropBlack.jpg' : 'BackdropWhite.jpg') + '); background-position: center; background-repeat: repeat-y; background-size: auto; width: 100%; background-color: ' + (darkMode == null || darkMode == true ? '#1E1E1E' : '#FFFFFF') + ';'}">
-<tr>
+    <tr>
         <td>
             <!-- Main container -->
             <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
@@ -555,7 +555,8 @@
                                                             style="padding: 30px; text-align: left; border-radius: 10px; margin: 20px 0;">
                                                             <!-- Dynamic Content -->
                                                             <!--/*@thymesVar id="emailContent" type="java.lang.String"*/-->
-                                                            <div class="email-content" th:utext="${emailContent ?: 'No content provided.'}">
+                                                            <div class="email-content"
+                                                                 th:utext="${emailContent ?: 'No content provided.'}">
                                                                 <p>This is the default content area where your email
                                                                     content will be displayed.</p>
                                                             </div>
@@ -576,7 +577,7 @@
             <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
                    class="email-container" style="table-layout: fixed; width: 600px;"
                    th:style="${'background-color: ' + (darkMode == null || darkMode == true ? '#1E1E1E' : '#FFFFFF') + ';'}">
-            <tr>
+                <tr>
                     <td valign="top">
                         <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
                                align="center"
@@ -694,14 +695,17 @@
 
                                                                 <!-- Email info -->
                                                                 <tr>
-                                                                    <td class="email-footer text-content" style="padding: 5px; text-align: center; border-radius: 10px; margin: 20px 0;">
-                                                                        <p class="footer-text" style="margin: 0; font-size: 12px;">
+                                                                    <td class="email-footer text-content"
+                                                                        style="padding: 5px; text-align: center; border-radius: 10px; margin: 20px 0;">
+                                                                        <p class="footer-text"
+                                                                           style="margin: 0; font-size: 12px;">
                                                                             This email was sent to: <strong
                                                                                 th:text="${sentTo}">[recipient-email]</strong>
                                                                         </p>
-                                                                        <p class="footer-text" style="margin: 5px 0 0 0; font-size: 12px;">
+                                                                        <p class="footer-text"
+                                                                           style="margin: 5px 0 0 0; font-size: 12px;">
                                                                             Sent on: <span
-                                                                                th:text="${#temporals.format(#temporals.createNow(), 'MMMM dd, yyyy \'at\' HH:mm')}">Date and Time</span>
+                                                                                th:text="${#dates.format(#dates.createNow(), 'MMMM dd, yyyy ''at'' HH:mm')}">Date and Time</span>
                                                                         </p>
                                                                     </td>
                                                                 </tr>

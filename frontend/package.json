@@ -8,8 +8,7 @@
     "typescheck": "vue-tsc --noEmit",
     "dev": "vite --host",
     "lint": "eslint  --fix",
-    "preview": "tsc && vite preview",
-    "generate:client": "openapi-ts"
+    "preview": "tsc && vite preview"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

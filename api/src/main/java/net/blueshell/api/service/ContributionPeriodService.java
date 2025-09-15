@@ -6,11 +6,17 @@ import net.blueshell.api.repository.ContributionPeriodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ContributionPeriodService extends BaseModelService<ContributionPeriod, Long, ContributionPeriodRepository> {
     @Autowired
     public ContributionPeriodService(ContributionPeriodRepository repository, ApplicationEventPublisher events) {
         super(repository);
+    }
+
+    @Transactional(readOnly = true)
+    public ContributionPeriod findLatest() {
+        return repository.findCurrentOrLatestContributionPeriod();
     }
 }

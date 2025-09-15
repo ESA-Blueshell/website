@@ -4,7 +4,7 @@ import net.blueshell.api.event.*;
 import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
-import net.blueshell.api.service.brevo.EmailService;
+import net.blueshell.api.service.email.EmailService;
 import net.blueshell.api.service.google.CalendarService;
 import org.springframework.context.annotation.Bean;
 

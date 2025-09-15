@@ -11,8 +11,7 @@ import net.blueshell.api.mapper.RequestMapper;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
-import net.blueshell.api.service.brevo.ContactService;
-import net.blueshell.api.service.brevo.EmailService;
+import net.blueshell.api.service.brevo.BrevoEmailService;
 import net.blueshell.api.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -30,11 +29,11 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     private static final int PASSWORD_RESET_KEY_LENGTH = 15;
     private static final long PASSWORD_RESET_VALID_SECONDS = 3600 * 2; // 2 hours
 
-    private final EmailService emails;
+    private final BrevoEmailService emails;
     private final RequestMapper requestMapper;
 
     @Autowired
-    public UserService(UserRepository repository, EmailService emails, RequestMapper requestMapper) {
+    public UserService(UserRepository repository, BrevoEmailService emails, RequestMapper requestMapper) {
         super(repository);
         this.emails = emails;
         this.requestMapper = requestMapper;

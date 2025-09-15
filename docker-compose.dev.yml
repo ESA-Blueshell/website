@@ -84,7 +84,6 @@ services:
     ]
     networks:
       - global_network
-    restart: unless-stopped
     env_file:
       - ./env/.db.env
       - ./env/.app.env

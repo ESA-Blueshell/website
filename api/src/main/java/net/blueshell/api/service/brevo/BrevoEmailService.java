@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class EmailService {
+public class BrevoEmailService {
 
     @Autowired
     ContributionPeriodRepository contributionPeriodRepository;
@@ -44,7 +44,7 @@ public class EmailService {
     @Value("${frontend.url}")
     private String frontendUrl;
 
-    public EmailService(net.blueshell.api.service.email.EmailService emailService) {
+    public BrevoEmailService(net.blueshell.api.service.email.EmailService emailService) {
         this.emailService = emailService;
         ApiClient apiClient = new ApiClient();
         this.transactionalEmailsApi = new TransactionalEmailsApi(apiClient);

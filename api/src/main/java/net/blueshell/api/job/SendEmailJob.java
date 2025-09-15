@@ -53,6 +53,15 @@ public class SendEmailJob {
             helper.setSubject(subject);
             helper.setText(htmlContent, true); // true = HTML content
 
+            helper.addInline("logo",
+                    new org.springframework.core.io.ClassPathResource("templates/assets/BSLOGO.png"),
+                    "image/png");
+
+            helper.addInline("bg",
+                    new org.springframework.core.io.ClassPathResource("templates/assets/BackdropBlack.jpg"),
+                    "image/jpeg");
+
+
             mailSender.send(message);
 
             log.info("Successfully sent email to: {} with subject: {}", toEmail, subject);

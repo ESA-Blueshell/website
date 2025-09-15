@@ -5,14 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="format-detection" content="telephone=no">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Hint some clients that we’re dark-mode native -->
+    <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts (clients will fallback if blocked) -->
     <link href="https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap"
           rel="stylesheet">
 
     <style type="text/css">
-        /* Reset styles */
+        /* Resets and email-safe defaults */
         #outlook a {
             padding: 0;
         }
@@ -25,456 +28,76 @@
             line-height: 100%;
         }
 
-        table td {
-            border-collapse: collapse;
-            mso-line-height-rule: exactly;
-        }
-
-        .editable.image {
-            font-size: 0 !important;
-            line-height: 0 !important;
-        }
-
-        body {
-            width: 100% !important;
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        img {
-            outline: none;
-            text-decoration: none;
-            -ms-interpolation-mode: bicubic;
-        }
-
-        a img {
-            border: none;
-        }
-
-        table {
+        table, td {
             border-collapse: collapse;
             mso-table-lspace: 0pt;
             mso-table-rspace: 0pt;
         }
 
-        th {
-            font-weight: normal;
-            text-align: left;
+        img {
+            border: 0;
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+            display: block;
         }
 
-        *[class="gmail-fix"] {
-            display: none !important;
-        }
-
-        /* Color Variables */
-        :root {
-            --neon-lime: #A8FF00;
-            --shell-blue: #3387FA;
-            --cool-grey: #343434;
-            --close-black: #1E1E1E;
-            --white: #FFFFFF;
-        }
-
-        /* Custom styles */
-        p, h1, h2, h3, h4, ol, ul, li {
+        p {
             margin: 0;
         }
 
-        a, a:link {
-            color: var(--shell-blue);
+        a {
             text-decoration: underline;
         }
 
-        /* Font Classes */
-        .title-font {
+        /* Minimal safe typography fallbacks; critical colors are inlined */
+        .f-title {
             font-family: 'Fugaz One', Arial, sans-serif;
-            font-size: 48pt;
+            color: #3387FA;
+            font-size: 36px;
+            line-height: 1.15;
             text-transform: uppercase;
-            line-height: 1;
-            margin: 0;
         }
 
-        .heading1-font {
-            font-family: 'Fugaz One', Arial, sans-serif;
-            font-size: 38pt;
-            text-transform: uppercase;
-            line-height: 1.2;
-            margin: 0;
-        }
-
-        .main-text-font {
+        .f-body {
             font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 16pt;
-            font-weight: 300;
-            line-height: 1.4;
+            color: #FFFFFF;
         }
 
-        .heading2-font {
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 26pt;
-            font-weight: 400;
-            line-height: 1.4;
-        }
-
-        /* Markdown Heading Styles */
-        .email-content h1 {
-            font-family: 'Fugaz One', Arial, sans-serif;
-            font-size: 38pt;
-            text-transform: uppercase;
-            line-height: 1.2;
-            margin: 20px 0 15px 0;
-            color: inherit;
-        }
-
-        .email-content h2 {
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 26pt;
-            font-weight: 600;
-            line-height: 1.4;
-            margin: 18px 0 12px 0;
-            color: inherit;
-        }
-
-        .email-content h3 {
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 22pt;
-            font-weight: 500;
-            line-height: 1.4;
-            margin: 16px 0 10px 0;
-            color: inherit;
-        }
-
-        .email-content h4 {
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 18pt;
-            font-weight: 500;
-            line-height: 1.4;
-            margin: 14px 0 8px 0;
-            color: inherit;
-        }
-
-        .email-content h5 {
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 16pt;
-            font-weight: 500;
-            line-height: 1.4;
-            margin: 12px 0 6px 0;
-            color: inherit;
-        }
-
-        .email-content h6 {
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-            font-size: 14pt;
-            font-weight: 500;
-            line-height: 1.4;
-            margin: 10px 0 5px 0;
-            color: inherit;
-        }
-
-        /* Markdown content styles */
-        .email-content p {
-            margin: 0 0 15px 0;
-            line-height: 1.4;
-        }
-
-        .email-content ul, .email-content ol {
-            margin: 15px 0;
-            padding-left: 20px;
-        }
-
-        .email-content li {
-            margin: 5px 0;
-            line-height: 1.4;
-        }
-
-        .email-content strong {
-            font-weight: 600;
-        }
-
-        .email-content em {
-            font-style: italic;
-        }
-
-        .email-content code {
-            background-color: rgba(0, 0, 0, 0.1);
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 14pt;
-        }
-
-        .email-content pre {
-            background-color: rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-            margin: 15px 0;
-        }
-
-        .email-content pre code {
-            background-color: transparent;
-            padding: 0;
-        }
-
-        .email-content blockquote {
-            border-left: 4px solid var(--shell-blue);
-            padding-left: 15px;
-            margin: 15px 0;
-            font-style: italic;
-        }
-
-        /* Dark mode adjustments for markdown content */
-        body.dark-mode .email-content code {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body.dark-mode .email-content pre {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Light mode adjustments for markdown content */
-        body.light-mode .email-content code {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        body.light-mode .email-content pre {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        /* Dark Mode Styles (default) */
-        body.dark-mode {
-            background-color: #0a0a0a;
-            color: var(--white);
-        }
-
-        body.dark-mode .content-text {
-            color: var(--white);
-        }
-
-        body.dark-mode a {
-            color: var(--shell-blue);
-        }
-
-        body.dark-mode .background-container {
-            background-color: #0a0a0a;
-        }
-
-        body.dark-mode .email-body-background {
-            background-color: var(--close-black);
-        }
-
-        body.dark-mode .theme-toggle {
-            background-color: var(--shell-blue);
-            color: var(--white);
-            border: 2px solid var(--shell-blue);
-        }
-
-        body.dark-mode .theme-toggle:hover {
-            background-color: var(--white);
-            color: var(--shell-blue);
-        }
-
-        /* Social media website icon filter for dark mode */
-        body.dark-mode .website-icon {
-            filter: invert(1) brightness(1.2);
-        }
-
-        /* Dark mode footer styles */
-        body.dark-mode .email-footer {
-        }
-
-        body.dark-mode .footer-text {
-            color: #ccc;
-        }
-
-        /* Light Mode Styles */
-        body.light-mode {
-            background-color: var(--white);
-            color: var(--close-black);
-        }
-
-        body.light-mode .content-text {
-            color: var(--close-black);
-        }
-
-        .main-title {
-            color: var(--shell-blue);
-        }
-
-        body.light-mode a {
-            color: var(--shell-blue);
-        }
-
-        body.light-mode .background-container {
-            background-color: var(--white);
-        }
-
-        body.light-mode .theme-toggle {
-            background-color: var(--cool-grey);
-            color: var(--white);
-            border: 2px solid var(--cool-grey);
-        }
-
-        body.light-mode .theme-toggle:hover {
-            background-color: var(--shell-blue);
-            color: var(--white);
-        }
-
-        /* Social media website icon filter for light mode */
-        body.light-mode .website-icon {
-            filter: none;
-        }
-
-        /* Main email body background for light mode */
-        body.light-mode .email-body-background {
-            background-color: var(--white);
-        }
-
-        /* Light mode footer styles */
-        body.light-mode .email-footer {
-            background-color: var(--white);
-        }
-
-        body.light-mode .footer-text {
-            background-color: var(--white);
-        }
-
-        /* Main Content Container - 2/3 width, max 800px */
-        .main-content-container {
-            width: 66.67%;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .full-width-container {
-            width: 100%;
-        }
-
-        /* Theme Toggle Button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            padding: 10px 15px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none !important;
-            font-family: 'Barlow Semi Condensed', Arial, sans-serif;
-        }
-
-        @media (max-width: 600px) {
-            .main-content-container {
-                width: 95% !important;
+        /* Optional client-targeted dark enhancements without relying on them */
+        @media (prefers-color-scheme: dark) {
+            .code, pre {
+                background-color: rgba(255, 255, 255, 0.08) !important;
             }
+        }
 
-            .content-width {
+        /* Small mobile tweak */
+        @media screen and (max-width: 600px) {
+            .w-600 {
                 width: 100% !important;
             }
 
-            .logo-container {
-                width: 100% !important;
+            .px {
+                padding-left: 16px !important;
+                padding-right: 16px !important;
             }
 
-            .social-container {
-                padding-left: 25px !important;
-                padding-right: 25px !important;
+            .title {
+                font-size: 28px !important;
+                line-height: 1.1 !important;
             }
 
-            .title-font {
-                font-size: 32pt !important;
+            .h1 {
+                font-size: 24px !important;
+                line-height: 1.2 !important;
             }
 
-            .heading1-font {
-                font-size: 24pt !important;
-            }
-
-            .main-text-font {
-                font-size: 14pt !important;
-            }
-
-            .heading2-font {
-                font-size: 14pt !important;
-            }
-
-            .text-content {
-                padding-left: 15px !important;
-                padding-right: 15px !important;
-            }
-
-            .theme-toggle {
-                position: relative !important;
-                top: auto !important;
-                right: auto !important;
-                display: block !important;
-                margin: 20px auto !important;
-                width: fit-content !important;
+            .body {
+                font-size: 14px !important;
+                line-height: 1.5 !important;
             }
         }
     </style>
-
-    <script type="text/javascript">
-        // Initialize darkMode to true when email loads
-        function initializeTheme() {
-            window.darkMode = true;
-            const body = document.body;
-            const toggleBtn = document.getElementById('themeToggle');
-
-            // Ensure dark mode is applied
-            body.classList.remove('light-mode');
-            body.classList.add('dark-mode');
-            toggleBtn.textContent = '☀️ Light Mode';
-
-            // Set background image for dark mode
-            const bgContainer = document.querySelector('.background-container');
-            if (bgContainer) {
-                const appUrl = bgContainer.getAttribute('data-app-url');
-                bgContainer.style.backgroundImage = `url(${appUrl}/api/assets/BackdropBlack.jpg)`;
-                bgContainer.style.backgroundColor = '#1E1E1E';
-            }
-        }
-
-        function toggleTheme() {
-            const body = document.body;
-            const toggleBtn = document.getElementById('themeToggle');
-
-            if (body.classList.contains('dark-mode')) {
-                window.darkMode = false;
-                body.classList.remove('dark-mode');
-                body.classList.add('light-mode');
-                toggleBtn.textContent = '🌙 Dark Mode';
-
-                // Update background image
-                const bgContainer = document.querySelector('.background-container');
-                if (bgContainer) {
-                    const appUrl = bgContainer.getAttribute('data-app-url');
-                    bgContainer.style.backgroundImage = `url(${appUrl}/api/assets/BackdropWhite.jpg)`;
-                    bgContainer.style.backgroundColor = '#FFFFFF';
-                }
-            } else {
-                window.darkMode = true;
-                body.classList.remove('light-mode');
-                body.classList.add('dark-mode');
-                toggleBtn.textContent = '☀️ Light Mode';
-
-                // Update background image
-                const bgContainer = document.querySelector('.background-container');
-                if (bgContainer) {
-                    const appUrl = bgContainer.getAttribute('data-app-url');
-                    bgContainer.style.backgroundImage = `url(${appUrl}/api/assets/BackdropBlack.jpg)`;
-                    bgContainer.style.backgroundColor = '#1E1E1E';
-                }
-            }
-        }
-
-        // Initialize theme when page loads
-        document.addEventListener('DOMContentLoaded', initializeTheme);
-    </script>
 
     <!--[if mso]>
     <xml>
@@ -486,236 +109,235 @@
     <![endif]-->
 </head>
 
-<body th:class="${darkMode == null || darkMode == true ? 'dark-mode' : 'light-mode'}">
-
-<!-- Theme Toggle Button -->
-<button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">
-    <span th:text="${darkMode == null || darkMode == true ? '☀️ Light Mode' : '🌙 Dark Mode'}">🌙 Dark Mode</span>
-</button>
-
-<!-- Background with dynamic mode selection -->
-<table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
-       th:style="${'background-image: url(' + appUrl + '/api/assets/' + (darkMode == null || darkMode == true ? 'BackdropBlack.jpg' : 'BackdropWhite.jpg') + '); background-position: center; background-repeat: repeat-y; background-size: auto; width: 100%; background-color: ' + (darkMode == null || darkMode == true ? '#1E1E1E' : '#FFFFFF') + ';'}">
+<body bgcolor="#121212" style="margin:0; padding:0; width:100% !important; background-color:#121212;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#121212"
+       style="background-color:#121212; width:100%;">
     <tr>
-        <td>
-            <!-- Main container -->
-            <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
-                   class="email-container" style="table-layout: fixed; width: 600px;">
+        <td align="center" bgcolor="#121212" style="background-color:#121212;">
+
+            <!-- Hero background (bulletproof) with solid color fallback -->
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#121212"
+                   style="background-color:#121212;">
                 <tr>
-                    <td valign="top">
-                        <!-- Header section with logo -->
-                        <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
-                               align="center" class="content-width" style="table-layout: fixed; width: 100%;">
-                            <tr>
-                                <td class="main-text-font" style="padding-bottom: 20px; padding-top: 20px;">
-                                    <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-                                        <tr>
-                                            <th width="100%" valign="top" style="font-weight: normal;">
-                                                <!-- Logo -->
-                                                <table cellspacing="0" cellpadding="0" border="0" role="presentation"
-                                                       width="300" align="center" class="logo-container"
-                                                       style="table-layout: fixed; width: 300px;">
-                                                    <tr>
-                                                        <td style="font-size: 0px; line-height: 0px; padding-bottom: 30px;">
-                                                            <img th:src="${appUrl} + '/api/assets/Logo.png'"
-                                                                 src="${appUrl}/api/assets/Logo.png"
-                                                                 width="300"
-                                                                 alt="Blueshell Esports Logo"
-                                                                 border="0"
-                                                                 style="display: block; width: 100%; max-width: 300px;">
-                                                        </td>
-                                                    </tr>
-                                                </table>
-
-                                                <!-- Main Title (conditional) -->
-                                                <!--/*@thymesVar id="mainTitle" type="java.lang.String"*/-->
-                                                <div th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}">
-                                                    <table cellspacing="0" cellpadding="0" border="0"
-                                                           role="presentation"
-                                                           width="100%" align="left"
-                                                           style="table-layout: fixed; width: 100%;">
-                                                        <tr>
-                                                            <td align="center" valign="top" class="text-content"
-                                                                style="padding-bottom: 30px; text-align: center;">
-                                                                <!--/*@thymesVar id="mainTitle" type="String"*/-->
-                                                                <h1 class="title-font main-title"
-                                                                    th:text="${mainTitle}">MAIN TITLE</h1>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </div>
-
-                                                <!-- Main content -->
-                                                <table cellspacing="0" cellpadding="0" border="0" role="presentation"
-                                                       width="100%" align="left"
-                                                       style="table-layout: fixed; width: 100%;">
-                                                    <tr>
-                                                        <td align="left" valign="top"
-                                                            class="main-text-font content-text text-content email-body-background"
-                                                            style="padding: 30px; text-align: left; border-radius: 10px; margin: 20px 0;">
-                                                            <!-- Dynamic Content -->
-                                                            <!--/*@thymesVar id="emailContent" type="java.lang.String"*/-->
-                                                            <div class="email-content"
-                                                                 th:utext="${emailContent ?: 'No content provided.'}">
-                                                                <p>This is the default content area where your email
-                                                                    content will be displayed.</p>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </th>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
+                    <td align="center" bgcolor="#121212" style="background-color:#121212;">
+                        <!--[if gte mso 9]>
+                        <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                                style="width:1000px;height:220px;">
+                            <v:fill type="frame" color="#121212" src="cid:bg"/>
+                            <v:textbox inset="0,0,0,0">
+                        <![endif]-->
+                        <div style="background-color:#121212; background-image:url('cid:bg'); background-size:cover; background-position:center;">
+                            <!-- Non-Outlook background image (decorative); solid color remains primary -->
+                            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                                   class="w-600" bgcolor="#121212" background="cid:bg"
+                                   style="width:600px; background-color:#121212; margin:0 auto; background-size:cover; background-position:center;">
+                                <tr>
+                                    <td bgcolor="#121212" style="background-color:#121212; padding:24px 0 16px 0;"
+                                        align="center">
+                                        <img th:src="'cid:logo'" src="cid:logo"
+                                             width="340" height="300" alt="Blueshell Esports Logo"
+                                             style="width:340px; height:300px;">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" bgcolor="#121212"
+                                        style="background-color:#121212; padding:0 24px 24px 24px;">
+                                        <h1 class="f-title title"
+                                            th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}"
+                                            th:text="${mainTitle}">
+                                            MAIN TITLE
+                                        </h1>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <!--[if gte mso 9]>
+                        </v:textbox>
+                        </v:rect>
+                        <![endif]-->
                     </td>
                 </tr>
             </table>
 
-            <!-- Footer section -->
-            <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="600" align="center"
-                   class="email-container" style="table-layout: fixed; width: 600px;"
-                   th:style="${'background-color: ' + (darkMode == null || darkMode == true ? '#1E1E1E' : '#FFFFFF') + ';'}">
+            <!-- Main card -->
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" class="w-600"
+                   align="center"
+                   bgcolor="#1A1A1A" style="width:600px; background-color:#1A1A1A; border-radius:12px; margin:0 auto;">
                 <tr>
-                    <td valign="top">
-                        <table cellspacing="0" cellpadding="0" border="0" role="presentation" width="100%"
-                               align="center"
-                               class="content-width" style="table-layout: fixed; width: 100%;">
+                    <td bgcolor="#1A1A1A" style="background-color:#1A1A1A; padding:24px;" class="px">
+                        <!-- Email content -->
+                        <div class="f-body body"
+                             style="color:#FAFAFA; font-size:16px; line-height:1.5;">
+                            <!-- Injected Markdown HTML -->
+                            <div class="email-content"
+                                 th:utext="${emailContent ?: 'No content provided.'}">
+                                <p style="margin:0 0 16px 0; color:#FAFAFA;">This is the default content area where your
+                                    email content will be displayed.</p>
+                            </div>
+                        </div>
+
+                        <!-- Recommended base styles for common markdown elements (kept minimal, critical colors inline above) -->
+                        <div style="display:none; line-height:0; font-size:0;">
+                            <style type="text/css">
+                                .email-content h1 {
+                                    font-family: 'Fugaz One', Arial, sans-serif;
+                                    font-size: 32px;
+                                    line-height: 1.2;
+                                    margin: 20px 0 12px 0;
+                                    color: #FAFAFA !important;
+                                    text-transform: uppercase;
+                                }
+
+                                .email-content h2 {
+                                    font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+                                    font-size: 24px;
+                                    line-height: 1.3;
+                                    margin: 18px 0 10px 0;
+                                    color: #FAFAFA !important;
+                                }
+
+                                .email-content h3 {
+                                    font-family: 'Barlow Semi Condensed', Arial, sans-serif;
+                                    font-size: 20px;
+                                    line-height: 1.3;
+                                    margin: 16px 0 8px 0;
+                                    color: #FAFAFA !important;
+                                }
+
+                                .email-content p {
+                                    margin: 0 0 16px 0;
+                                    color: #FAFAFA !important;
+                                }
+
+                                .email-content li {
+                                    margin: 6px 0;
+                                    color: #FAFAFA !important;
+                                }
+
+                                .email-content a {
+                                    color: #3387FA !important;
+                                    text-decoration: underline !important;
+                                }
+
+                                .email-content code {
+                                    background-color: rgba(255, 255, 255, 0.08);
+                                    padding: 2px 4px;
+                                    border-radius: 3px;
+                                    font-family: 'Courier New', monospace;
+                                    color: #FAFAFA;
+                                }
+
+                                .email-content pre {
+                                    background-color: rgba(255, 255, 255, 0.08);
+                                    padding: 12px;
+                                    border-radius: 6px;
+                                    overflow: auto;
+                                    color: #FAFAFA;
+                                }
+
+                                .email-content blockquote {
+                                    border-left: 4px solid #3387FA;
+                                    padding-left: 12px;
+                                    margin: 16px 0;
+                                    color: #E6E6E6;
+                                    font-style: italic;
+                                }
+                            </style>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Footer -->
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" class="w-600"
+                   align="center"
+                   bgcolor="#121212" style="width:600px; background-color:#121212; margin:0px auto 32px auto;">
+                <tr>
+                    <td bgcolor="#121212" style="background-color:#121212; padding:16px 8px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                               bgcolor="#121212" style="background-color:#121212;">
                             <tr>
-                                <td class="main-text-font" style="padding-bottom: 20px; padding-top: 5px;">
-                                    <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                                <td align="center" bgcolor="#121212" style="background-color:#121212;">
+                                    <!-- Social icons -->
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0"
+                                           bgcolor="#121212" style="background-color:#121212;">
                                         <tr>
-                                            <th width="100%" valign="top" style="font-weight: normal;">
-                                                <!-- Social media links -->
-                                                <table cellspacing="0" cellpadding="0" border="0" role="presentation"
-                                                       width="100%" style="table-layout: fixed; width: 100%;">
-                                                    <tr>
-                                                        <td valign="top"
-                                                            style="padding-left: 15px; padding-right: 15px;">
-                                                            <table width="100%" cellspacing="0" cellpadding="0"
-                                                                   border="0" role="presentation">
-                                                                <tr>
-                                                                    <td align="center">
-                                                                        <table cellspacing="0" cellpadding="0"
-                                                                               border="0" role="presentation"
-                                                                               width="100%"
-                                                                               style="table-layout: fixed;">
-                                                                            <tr>
-                                                                                <td class="social-container"
-                                                                                    style="padding-bottom: 5px; padding-left: 169px; padding-right: 169px; padding-top: 5px; text-align: center;">
-                                                                                    <!-- Social icons row -->
-                                                                                    <table cellspacing="0"
-                                                                                           cellpadding="0"
-                                                                                           border="0"
-                                                                                           role="presentation"
-                                                                                           style="display: inline-table;">
-                                                                                        <tr>
-                                                                                            <td style="padding: 5px 4px;">
-                                                                                                <a href="https://discord.gg/dFam2yqXu7"
-                                                                                                   target="_blank"
-                                                                                                   style="color: #fbfafa; text-decoration: none;">
-                                                                                                    <img src="https://cdn-icons-png.flaticon.com/32/2111/2111370.png"
-                                                                                                         width="32"
-                                                                                                         height="32"
-                                                                                                         alt="Discord"
-                                                                                                         border="0"
-                                                                                                         style="display: block;">
-                                                                                                </a>
-                                                                                            </td>
-                                                                                            <td style="padding: 5px 4px;">
-                                                                                                <a href="https://www.facebook.com/BlueshellEsports"
-                                                                                                   target="_blank"
-                                                                                                   style="color: #fbfafa; text-decoration: none;">
-                                                                                                    <img src="https://cdn-icons-png.flaticon.com/32/733/733547.png"
-                                                                                                         width="32"
-                                                                                                         height="32"
-                                                                                                         alt="Facebook"
-                                                                                                         border="0"
-                                                                                                         style="display: block;">
-                                                                                                </a>
-                                                                                            </td>
-                                                                                            <td style="padding: 5px 4px;">
-                                                                                                <a href="https://www.instagram.com/esablueshell/"
-                                                                                                   target="_blank"
-                                                                                                   style="color: #fbfafa; text-decoration: none;">
-                                                                                                    <img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png"
-                                                                                                         width="32"
-                                                                                                         height="32"
-                                                                                                         alt="Instagram"
-                                                                                                         border="0"
-                                                                                                         style="display: block;">
-                                                                                                </a>
-                                                                                            </td>
-                                                                                            <td style="padding: 5px 4px;">
-                                                                                                <a href="https://twitter.com/BlueshellESA"
-                                                                                                   target="_blank"
-                                                                                                   style="color: #fbfafa; text-decoration: none;">
-                                                                                                    <img src="https://cdn-icons-png.flaticon.com/32/733/733579.png"
-                                                                                                         width="32"
-                                                                                                         height="32"
-                                                                                                         alt="Twitter"
-                                                                                                         border="0"
-                                                                                                         style="display: block;">
-                                                                                                </a>
-                                                                                            </td>
-                                                                                            <td style="padding: 5px 4px;">
-                                                                                                <a href="https://www.twitch.tv/blueshellesports"
-                                                                                                   target="_blank"
-                                                                                                   style="color: #fbfafa; text-decoration: none;">
-                                                                                                    <img src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
-                                                                                                         width="32"
-                                                                                                         height="32"
-                                                                                                         alt="Twitch"
-                                                                                                         border="0"
-                                                                                                         style="display: block;">
-                                                                                                </a>
-                                                                                            </td>
-                                                                                            <td style="padding: 5px 4px;">
-                                                                                                <a href="https://esa-blueshell.nl/"
-                                                                                                   target="_blank"
-                                                                                                   style="color: #fbfafa; text-decoration: none;">
-                                                                                                    <img src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
-                                                                                                         width="32"
-                                                                                                         height="32"
-                                                                                                         alt="Website"
-                                                                                                         border="0"
-                                                                                                         class="website-icon"
-                                                                                                         style="display: block;">
-                                                                                                </a>
-                                                                                            </td>
-
-                                                                                        </tr>
-                                                                                    </table>
-                                                                                </td>
-                                                                            </tr>
-                                                                        </table>
-                                                                    </td>
-                                                                </tr>
-
-                                                                <!-- Email info -->
-                                                                <tr>
-                                                                    <td class="email-footer text-content"
-                                                                        style="padding: 5px; text-align: center; border-radius: 10px; margin: 20px 0;">
-                                                                        <p class="footer-text"
-                                                                           style="margin: 0; font-size: 12px;">
-                                                                            This email was sent to: <strong
-                                                                                th:text="${sentTo}">[recipient-email]</strong>
-                                                                        </p>
-                                                                        <p class="footer-text"
-                                                                           style="margin: 5px 0 0 0; font-size: 12px;">
-                                                                            Sent on: <span
-                                                                                th:text="${#dates.format(#dates.createNow(), 'MMMM dd, yyyy ''at'' HH:mm')}">Date and Time</span>
-                                                                        </p>
-                                                                    </td>
-                                                                </tr>
-                                                            </table>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </th>
+                                            <td style="padding:6px 4px;">
+                                                <a href="https://discord.gg/dFam2yqXu7" target="_blank"
+                                                   style="color:#FAFAFA; text-decoration:none;">
+                                                    <img src="https://cdn-icons-png.flaticon.com/32/2111/2111370.png"
+                                                         width="32" height="32" alt="Discord"
+                                                         style="width:32px; height:32px;">
+                                                </a>
+                                            </td>
+                                            <td style="padding:6px 4px;">
+                                                <a href="https://www.facebook.com/BlueshellEsports" target="_blank"
+                                                   style="color:#FAFAFA; text-decoration:none;">
+                                                    <img src="https://cdn-icons-png.flaticon.com/32/733/733547.png"
+                                                         width="32" height="32" alt="Facebook"
+                                                         style="width:32px; height:32px;">
+                                                </a>
+                                            </td>
+                                            <td style="padding:6px 4px;">
+                                                <a href="https://www.instagram.com/esablueshell/" target="_blank"
+                                                   style="color:#FAFAFA; text-decoration:none;">
+                                                    <img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png"
+                                                         width="32" height="32" alt="Instagram"
+                                                         style="width:32px; height:32px;">
+                                                </a>
+                                            </td>
+                                            <td style="padding:6px 4px;">
+                                                <a href="https://twitter.com/BlueshellESA" target="_blank"
+                                                   style="color:#FAFAFA; text-decoration:none;">
+                                                    <img src="https://cdn-icons-png.flaticon.com/32/733/733579.png"
+                                                         width="32" height="32" alt="Twitter/X"
+                                                         style="width:32px; height:32px;">
+                                                </a>
+                                            </td>
+                                            <td style="padding:6px 4px;">
+                                                <a href="https://www.twitch.tv/blueshellesports" target="_blank"
+                                                   style="color:#FAFAFA; text-decoration:none;">
+                                                    <img src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
+                                                         width="32" height="32" alt="Twitch"
+                                                         style="width:32px; height:32px;">
+                                                </a>
+                                            </td>
+                                            <td style="padding:6px 4px;">
+                                                <a href="https://esa-blueshell.nl/" target="_blank"
+                                                   style="color:#FAFAFA; text-decoration:none;">
+                                                    <img src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
+                                                         width="32" height="32" alt="Website"
+                                                         style="width:32px; height:32px;">
+                                                </a>
+                                            </td>
                                         </tr>
                                     </table>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td align="center" bgcolor="#1A1A1A"
+                                    style="background-color:#1A1A1A; border-radius:10px; padding:12px 16px; margin:0 16px;">
+                                    <p class="f-body" style="font-size:12px; line-height:1.4; color:#CCCCCC; margin:0;">
+                                        This email was sent to:
+                                        <strong th:text="${sentTo}" style="color:#FFFFFF;">[recipient-email]</strong>
+                                    </p>
+                                    <p class="f-body"
+                                       style="font-size:12px; line-height:1.4; color:#CCCCCC; margin:6px 0 0 0;">
+                                        Sent on:
+                                        <span th:text="${#dates.format(#dates.createNow(), 'MMMM dd, yyyy ''at'' HH:mm')}"
+                                              style="color:#FFFFFF;">Date and Time</span>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td align="center" style="padding-top:12px;">
+                                    <p class="f-body" style="font-size:12px; line-height:1.4; color:#AAAAAA; margin:0;">
+                                        Need help? Visit
+                                        <a href="https://esa-blueshell.nl/"
+                                           style="color:#3387FA; text-decoration:underline;">our website</a>.
+                                    </p>
                                 </td>
                             </tr>
                         </table>

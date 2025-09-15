@@ -3,13 +3,14 @@ package net.blueshell.api.validation.user;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
+import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
-public class UniqueUserValidator implements ConstraintValidator<UniqueUser, AdvancedUserDTO> {
+public class UniqueUserValidator implements ConstraintValidator<UniqueUser, SimpleUserDTO> {
 
     private final UserRepository userRepository;
 
@@ -19,7 +20,7 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Adva
     }
 
     @Override
-    public boolean isValid(AdvancedUserDTO dto, ConstraintValidatorContext context) {
+    public boolean isValid(SimpleUserDTO dto, ConstraintValidatorContext context) {
         if (dto == null) {
             // Let @NotNull handle this
             return true;
@@ -68,24 +69,27 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Adva
             }
         }
 
-        // Validate Phone Number
-        if (StringUtils.hasText(dto.getPhoneNumber())) {
-            if (currentUserId == null) { // Creation
-                if (userRepository.existsByPhoneNumber(dto.getPhoneNumber())) {
-                    isValid = false;
-                    context.buildConstraintViolationWithTemplate("Phone number is already in use.")
-                            .addPropertyNode("phoneNumber")
-                            .addConstraintViolation();
-                }
-            } else { // Update
-                if (userRepository.existsByPhoneNumberAndIdNot(dto.getPhoneNumber(), currentUserId)) {
-                    isValid = false;
-                    context.buildConstraintViolationWithTemplate("Phone number is already in use.")
-                            .addPropertyNode("phoneNumber")
-                            .addConstraintViolation();
+        if (dto instanceof AdvancedUserDTO advancedDto) {
+            // Validate Phone Number
+            if (StringUtils.hasText(advancedDto.getPhoneNumber())) {
+                if (currentUserId == null) { // Creation
+                    if (userRepository.existsByPhoneNumber(advancedDto.getPhoneNumber())) {
+                        isValid = false;
+                        context.buildConstraintViolationWithTemplate("Phone number is already in use.")
+                                .addPropertyNode("phoneNumber")
+                                .addConstraintViolation();
+                    }
+                } else { // Update
+                    if (userRepository.existsByPhoneNumberAndIdNot(advancedDto.getPhoneNumber(), currentUserId)) {
+                        isValid = false;
+                        context.buildConstraintViolationWithTemplate("Phone number is already in use.")
+                                .addPropertyNode("phoneNumber")
+                                .addConstraintViolation();
+                    }
                 }
             }
         }
+
 
         if (!isValid) {
             context.disableDefaultConstraintViolation();

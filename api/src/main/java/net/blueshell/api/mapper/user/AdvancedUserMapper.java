@@ -4,6 +4,7 @@ import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.model.User;
+import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +17,8 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserService users;
 
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
@@ -46,6 +49,9 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
 
     @ObjectFactory
     protected User newUser(@TargetType Class<User> type, AdvancedUserDTO dto) {
+        if (dto.getId() != null) {
+            return users.findById(dto.getId());
+        }
         return new User();
     }
 

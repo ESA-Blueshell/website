@@ -1,4 +1,4 @@
-package net.blueshell.api.controller.response;
+package net.blueshell.api.dto.response;
 
 import lombok.Getter;
 import net.blueshell.api.dto.BaseDTO;

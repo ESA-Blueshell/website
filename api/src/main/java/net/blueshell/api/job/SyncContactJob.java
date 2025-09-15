@@ -32,7 +32,7 @@ public class SyncContactJob {
 
     @Async
     @Retryable(
-            value = {Exception.class},
+            retryFor = {Exception.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000, multiplier = 2)
     )

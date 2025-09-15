@@ -18,6 +18,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class User implements UserDetails, BaseModel<Long> {
     private String studentNumber;
 
     @Column(name = "date_of_birth")
-    private Timestamp dateOfBirth;
+    private Date dateOfBirth;
 
     @Column(name = "created_at")
     private Timestamp createdAt;

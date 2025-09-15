@@ -18,11 +18,11 @@
           />
         </v-row>
         <v-row>
-          <member-type-select v-model="memberType" />
+          <member-type-select v-model="memberType"/>
         </v-row>
       </v-card-text>
       <v-card-actions>
-        <v-spacer />
+        <v-spacer/>
         <v-btn
           color="secondary"
           @click="showStartModal = false"
@@ -147,10 +147,13 @@
         </div>
       </div>
       <v-expand-transition>
-        <div v-if="expanded === user.id">
+        <div
+          v-if="expanded === user.id"
+          @click.stop
+        >
           <AdvancedUserEdit
-            class="mt-4"
-            :user="user"
+            v-model="userModel"
+            class="mt-6"
             @user-changed="userChanged"
           />
         </div>
@@ -167,24 +170,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import {computed, ref} from 'vue';
 import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
 import client from "@/plugins/client";
-import { DateTime } from 'luxon';
-import {
-  deleteUser as deleteUserClient,
-  toggleUserRole,
-  createMembership,
-  updateMembership,
-  setContributionPaid
-} from "@/lib/sdk.gen";
-import type {
-  AdvancedUserDto,
-  ContributionDto,
-  MembershipDto
-} from "@/lib/types.gen";
+import {DateTime} from 'luxon';
+import {createMembership, deleteUser as deleteUserClient, setContributionPaid, updateMembership} from "@/lib/sdk.gen";
+import type {AdvancedUserDto, ContributionDto, MembershipDto} from "@/lib/types.gen";
 import {MemberType} from "@/models";
 
 interface Props {
@@ -227,24 +220,12 @@ const membership = computed(() =>
   props.memberships.find((m) => m.userId === props.user.id)
 )
 
+const userModel = computed<AdvancedUserDto>({
+  get: () => props.user
+});
+
 const toggleExpanded = () => {
   emit('toggle-expanded', props.user.id);
-};
-
-const toggleMembership = async () => {
-  try {
-    const response = await toggleUserRole({
-      path: { userId: props.user.id as number },
-      query: { role: 'MEMBER' },
-      client
-    });
-
-    if (response.data) {
-      userChanged(response.data);
-    }
-  } catch (error) {
-    console.error('Failed to toggle membership:', error);
-  }
 };
 
 const startMembership = () => {
@@ -292,7 +273,7 @@ const endMembership = async () => {
     };
 
     const response = await updateMembership({
-      path: { id: membershipData.id as number },
+      path: {id: membershipData.id as number},
       body: membershipData,
       client
     });
@@ -315,7 +296,7 @@ const resumeMembership = async () => {
     };
 
     const response = await updateMembership({
-      path: { id: membershipData.id as number },
+      path: {id: membershipData.id as number},
       body: membershipData,
       client
     });
@@ -337,7 +318,7 @@ const confirmDeleteUser = async () => {
     deleteDialog.value = false;
 
     await deleteUserClient({
-      path: { userId: props.user.id },
+      path: {userId: props.user.id},
       client
     });
 
@@ -355,8 +336,8 @@ const changeContributionPaid = async (paid: boolean) => {
   try {
     if (contribution.value) {
       const response = await setContributionPaid({
-        path: { id: contribution.value.id },
-        query: { paid },
+        path: {id: contribution.value.id},
+        query: {paid},
         client
       });
 

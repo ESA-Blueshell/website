@@ -78,7 +78,7 @@
 
 <script>
 import TopBanner from "@/components/banners/TopBanner.vue";
-import {$goto} from "@/plugins/goto.js";
+import {$goto} from "@/plugins/goto";
 
 export default {
   components: {TopBanner: TopBanner},

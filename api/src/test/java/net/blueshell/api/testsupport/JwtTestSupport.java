@@ -1,8 +1,8 @@
 package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.blueshell.api.controller.request.JwtRequest;
-import net.blueshell.api.controller.response.JwtResponse;
+import net.blueshell.api.dto.request.JwtRequest;
+import net.blueshell.api.dto.response.JwtResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;

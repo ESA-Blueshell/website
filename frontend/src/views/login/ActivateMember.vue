@@ -6,9 +6,14 @@
     style="max-width: 500px"
   >
     <v-text-field
+      v-model="form.username"
+      :rules="usernameRules"
+      label="Username"
+    />
+    <v-text-field
       v-model="form.password"
       :rules="passwordRules"
-      label="New Password"
+      label="Password"
       :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
       :type="showPass ? 'text' : 'password'"
       @click:append-inner="showPass = !showPass"
@@ -16,12 +21,11 @@
     <v-text-field
       v-model="passwordAgain"
       :rules="passwordConfirmRules"
-      label="Repeat New Password"
+      label="Repeat Password"
       :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
       :type="showPass ? 'text' : 'password'"
       @click:append-inner="showPass = !showPass"
     />
-
     <v-row
       class="mt-2"
       align="center"
@@ -33,7 +37,7 @@
         color="primary"
         @click="submit"
       >
-        Reset Password
+        Activate Member
       </v-btn>
     </v-row>
 
@@ -42,7 +46,7 @@
       class="mt-6"
     >
       <p class="text-subtitle-1">
-        Your password has been reset successfully.
+        Membership activated! You can now log in.
       </p>
     </div>
   </v-form>
@@ -52,8 +56,8 @@
 import {onMounted, ref} from 'vue';
 import type {VForm} from 'vuetify/components';
 import {useRoute, useRouter} from 'vue-router';
-import {resetPassword} from '@/lib/sdk.gen';
-import type {PasswordResetRequest} from '@/lib/types.gen';
+import {memberActivate} from '@/lib/sdk.gen';
+import type {MemberActivationRequest} from '@/lib/types.gen';
 
 const route = useRoute();
 const router = useRouter();
@@ -65,12 +69,17 @@ const succeeded = ref<boolean>(false);
 const showPass = ref<boolean>(false);
 const token = ref<string>('');
 
-const form = ref<PasswordResetRequest>({
+const form = ref<MemberActivationRequest>({
   token: '',
   username: '',
   password: ''
 });
 
+// Same validations as UserEdit
+const usernameRules = [
+  (v: string) => !!v || 'Username is required',
+  (v: string) => /^[a-zA-Z0-9]+$/.test(v) || 'Username must only contain alphanumeric characters',
+];
 const passwordRules = [
   (v: string) => !!v || 'Password is required',
   (v: string) => v.length >= 8 || 'Password must be at least 8 characters',
@@ -79,6 +88,7 @@ const passwordRules = [
   (v: string) => /(?=.*\d)/.test(v) || 'Password must contain at least one number',
   (v: string) => /(?=.*[@$!%*?&])/.test(v) || 'Password must contain at least one special character (@$!%*?&)',
 ];
+
 const passwordAgain = ref<string>('');
 const passwordConfirmRules = [
   (v: string) => !!v || 'Password confirmation is required',
@@ -101,7 +111,7 @@ const submit = async () => {
     const result = await formRef.value?.validate();
     if (!result || (typeof result === 'object' && 'valid' in result && !result.valid)) return;
 
-    await resetPassword({body: form.value});
+    await memberActivate({body: form.value});
     succeeded.value = true;
   } finally {
     loading.value = false;

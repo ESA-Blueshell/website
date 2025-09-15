@@ -30,21 +30,17 @@
           give it a description and add any members to it.
         </p>
 
-        <div v-if="user" class="mt-10">
-          <v-form ref="form">
-            <AdvancedUserEdit
-              v-model="user"
-              editing
-            />
-          </v-form>
+        <div v-if="user">
+          <AdvancedUserEdit
+            v-model="user"
+            editing
+          />
         </div>
         <v-progress-circular v-else />
       </div>
     </div>
   </v-main>
 </template>
-
-
 <script setup>
 import {onMounted, ref} from 'vue';
 import {useStore} from 'vuex';
@@ -57,7 +53,6 @@ import client from "@/plugins/client.js";
 
 // Reactive data
 const user = ref(null);
-const form = ref(null);
 
 // Store access
 const store = useStore();
@@ -80,14 +75,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-
-<style scoped>
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-</style>

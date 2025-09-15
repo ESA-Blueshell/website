@@ -1,4 +1,4 @@
-package net.blueshell.api.validation.user;
+package net.blueshell.api.validation.request;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -6,10 +6,10 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = ValidActivationRequestValidator.class)
+@Constraint(validatedBy = ValidPasswordResetRequestValidator.class)
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ValidActivationRequest {
+public @interface ValidPasswordResetRequest {
     String message() default "Invalid request.";
 
     Class<?>[] groups() default {};

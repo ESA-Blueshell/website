@@ -17,7 +17,7 @@ public class MemberActivationEmail extends BaseEmail {
     @Override
     public String getMarkdownContent() {
         String activationLink = String.format(
-            frontendUrl + "/account/activate?token=%s",
+            frontendUrl + "/account/activate/member/%s",
             recipient.getResetKey()
         );
 

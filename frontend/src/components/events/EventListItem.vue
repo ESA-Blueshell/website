@@ -214,18 +214,17 @@ function formatEventTime() {
 <template v-if="event.id">
   <v-list-item
     :style="{
-        'background-image': !event.banner
-          ? ''
+      'background-image': !event.banner
+        ? ''
         : $vuetify.theme.global.current.dark
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${event.banner})`
-            : `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${event.banner})`
-      }"
+          ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${event.banner})`
+          : `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${event.banner})`
+    }"
     rounded="sm"
     class="py-4"
     style="background-size: cover; background-position: center; min-height: 240px;"
   >
     <div ref="eventElement">
-
       <v-container>
         <v-row
           no-gutters
@@ -247,10 +246,13 @@ function formatEventTime() {
             </div>
 
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <div v-html="event.description ? $markdownToHtml(event.description) : 'No description...'"/>
+            <div v-html="event.description ? $markdownToHtml(event.description) : 'No description...'" />
           </v-col>
           <!-- Buttons on the right -->
-          <v-col class="pa-0" cols="auto">
+          <v-col
+            class="pa-0"
+            cols="auto"
+          >
             <template v-if="event.signUp">
               <!-- Simple signup with no form -->
               <v-row v-if="isLoggedIn && !event.signUpForm?.length && signUp?.id">

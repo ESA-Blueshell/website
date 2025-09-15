@@ -46,7 +46,7 @@
 
     <v-row>
       <v-col cols="12">
-        <country-select v-model="localAddress.country"/>
+        <country-select v-model="localAddress.country" />
       </v-col>
     </v-row>
   </v-sheet>

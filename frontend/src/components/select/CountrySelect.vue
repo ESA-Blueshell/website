@@ -8,8 +8,7 @@
     :label="label || 'Country'"
     clearable
     :custom-filter="customFilter"
-  >
-  </v-autocomplete>
+  />
 </template>
 
 <script setup lang="ts">

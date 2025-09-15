@@ -11,7 +11,10 @@
     :counter="countries.length"
   >
     <template #item="{ item }">
-      <v-list-item class="pa-2" :value="item">
+      <v-list-item
+        class="pa-2"
+        :value="item"
+      >
         <v-list-item-title>
           {{ item.flag }} {{ item.nationality }}
         </v-list-item-title>
@@ -20,7 +23,11 @@
 
     <!-- Slot to customize the display of the selected item -->
     <template #selection="{ item }">
-      <v-chip class="mr-2" size="small" variant="tonal">
+      <v-chip
+        class="mr-2"
+        size="small"
+        variant="tonal"
+      >
         {{ item.flag }} {{ item.nationality }}
       </v-chip>
     </template>

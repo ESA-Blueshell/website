@@ -18,11 +18,11 @@
           />
         </v-row>
         <v-row>
-          <member-type-select v-model="memberType"/>
+          <member-type-select v-model="memberType" />
         </v-row>
       </v-card-text>
       <v-card-actions>
-        <v-spacer/>
+        <v-spacer />
         <v-btn
           color="secondary"
           @click="showStartModal = false"

@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Create Account"/>
+    <top-banner title="Create Account" />
 
     <div
       v-if="!succeeded"

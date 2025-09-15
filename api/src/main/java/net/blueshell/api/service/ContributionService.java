@@ -4,7 +4,7 @@ import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.Contribution;
 import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.repository.ContributionRepository;
-import net.blueshell.api.service.brevo.BrevoEmailService;
+import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +17,12 @@ import java.util.List;
 public class ContributionService extends BaseModelService<Contribution, Long, ContributionRepository> {
 
     private final ContributionPeriodService periodService;
-    private final BrevoEmailService brevoEmailService;
+    private final EmailService emails;
 
     @Autowired
-    public ContributionService(ContributionRepository repository, BrevoEmailService brevoEmailService, ContributionPeriodService periodService) {
+    public ContributionService(ContributionRepository repository, EmailService emails, ContributionPeriodService periodService) {
         super(repository);
-        this.brevoEmailService = brevoEmailService;
+        this.emails = emails;
         this.periodService = periodService;
     }
 
@@ -40,9 +40,8 @@ public class ContributionService extends BaseModelService<Contribution, Long, Co
 
     @Transactional
     public void sendReminder(Long periodId) {
-        ContributionPeriod contributionPeriod = periodService.findById(periodId);
         List<Contribution> unpaidContributions = findByContributionPeriodIdAndPaid(periodId, false);
-        brevoEmailService.contributionReminders(unpaidContributions, contributionPeriod);
+        emails.contributionReminders(unpaidContributions);
         Timestamp remindedAt = Timestamp.from(Instant.now());
         unpaidContributions.forEach(contribution -> contribution.setRemindedAt(remindedAt));
         self().updateAll(unpaidContributions);

@@ -31,38 +31,46 @@ public class EventSignupEmail extends BaseEmail {
         Event event = eventSignUp.getEvent();
         String editLink = String.format(frontendUrl + "/events/signups/edit/%s", eventSignUp.getGuest().getAccessToken());
 
-        String eventDetailsLink = String.format(frontendUrl + "/events/%d", event.getId());
+        String eventDetailsLink = String.format(frontendUrl + "/events#%d", event.getId());
 
         return String.format("""
-                Dear %s,
-                
-                Thank you for registering for **%s**!
-                
-                Your registration has been successfully confirmed. Here are the event details:
-                
-                **Event Information:**
-                - **Event:** %s
-                - **Date:** %s
-                - **Location:** %s
-                
-                **Important Links:**
-                - [View full event details](%s)
-                - [Edit your registration](%s)
-                
-                **What's Next?**
-                - Keep an eye on your email for any event updates
-                - Join our [Discord community](https://discord.gg/dFam2yqXu7) to connect with other participants
-                - Visit our [website](%s) for more upcoming events
-                
-                If you need to make changes to your registration or have any questions, please use the edit link above or contact us through our Discord server.
-                
-                We're excited to see you at the event!
-                
-                Please do not reply to this email, as this is a generated email. Any responses will be ignored.
-                
-                Kind regards,
-                Blueshell Events Team
-                """, eventSignUp.getGuest().getName(), event.getTitle(), event.getTitle(), formatEventDate(event), formatEventLocation(event), eventDetailsLink, editLink, appUrl);
+                        Dear %s,
+                        
+                        Thank you for registering for **%s**!
+                        
+                        Your registration has been successfully confirmed. Here are the event details:
+                        
+                        **Event Information:**
+                        - **Event:** %s
+                        - **Date:** %s
+                        - **Location:** %s
+                        
+                        **Important Links:**
+                        - [View full event details](%s)
+                        - [Edit your registration](%s)
+                        
+                        **What's Next?**
+                        - Keep an eye on your email for any event updates
+                        - Join our [Discord community](https://discord.gg/dFam2yqXu7) to connect with other participants
+                        - Visit our [website](%s) for more upcoming events
+                        
+                        If you need to make changes to your registration or have any questions, please use the edit link above or contact us through our Discord server.
+                        
+                        We're excited to see you at the event!
+                        
+                        Please do not reply to this email, as this is a generated email. Any responses will be ignored.
+                        
+                        Kind regards,
+                        Blueshell Events Team
+                        """,
+                eventSignUp.getGuest().getName(),
+                event.getTitle(),
+                event.getTitle(),
+                formatEventDate(event), formatEventLocation(event),
+                eventDetailsLink,
+                editLink,
+                appUrl
+        );
     }
 
     @Override

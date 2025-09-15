@@ -86,6 +86,10 @@ public class CalendarService {
     }
 
     public void remove(Event event) throws IOException {
+        if (event.getGoogleId() == null) {
+            return;
+        }
+
         service.events()
                 .delete(calendarId, event.getGoogleId())
                 .execute();
@@ -116,5 +120,13 @@ public class CalendarService {
                 .setTimeZone("Europe/Amsterdam");
         googleEvent.setEnd(end);
         return googleEvent;
+    }
+
+    public void sync(Event event) throws IOException {
+        if (event.getGoogleId() != null) {
+            update(event);
+        } else {
+            add(event);
+        }
     }
 }

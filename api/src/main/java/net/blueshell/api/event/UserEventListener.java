@@ -5,9 +5,9 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
+import net.blueshell.api.job.SyncContactJob;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.email.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -20,19 +20,19 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class UserEventListener {
 
     private final EmailService email;
-    private final ContactService contacts;
+    private final SyncContactJob syncContactJob;
     private final CommitteeMemberService committeeMembers;
 
-    public UserEventListener(EmailService email, ContactService contacts, CommitteeMemberService committeeMembers) {
+    public UserEventListener(EmailService email, SyncContactJob syncContactJob, CommitteeMemberService committeeMembers) {
         this.email = email;
-        this.contacts = contacts;
+        this.syncContactJob = syncContactJob;
         this.committeeMembers = committeeMembers;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void prePersist(PrePersistEvent<User> evt) {
         User u = evt.getSource();
-        contacts.sync(u);
+        syncContactJob.sync(u.getId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -46,7 +46,7 @@ public class UserEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onUpdate(PostUpdateEvent<User> evt) {
         User u = evt.getSource();
-        contacts.sync(u);
+        syncContactJob.sync(u.getId());
         if (!u.hasRole(Role.MEMBER)) {
             u.getCommitteeMembers().forEach(committeeMembers::delete);
         }

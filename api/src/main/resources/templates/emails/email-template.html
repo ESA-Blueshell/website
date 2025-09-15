@@ -121,7 +121,7 @@
 
         /* Dark Mode Styles (default) */
         body.dark-mode {
-            background-color: var(--close-black);
+            background-color: #0a0a0a;
             color: var(--white);
         }
 
@@ -138,6 +138,10 @@
         }
 
         body.dark-mode .background-container {
+            background-color: #0a0a0a;
+        }
+
+        body.dark-mode .email-body-background {
             background-color: var(--close-black);
         }
 
@@ -155,6 +159,49 @@
         /* Social media website icon filter for dark mode */
         body.dark-mode .website-icon {
             filter: invert(1) brightness(1.2);
+        }
+
+        /* Light Mode Styles */
+        body.light-mode {
+            background-color: var(--white);
+            color: var(--close-black);
+        }
+
+        body.light-mode .content-text {
+            color: var(--close-black);
+        }
+
+        body.light-mode .main-title {
+            color: var(--shell-blue);
+        }
+
+        body.light-mode a {
+            color: var(--shell-blue);
+        }
+
+        body.light-mode .background-container {
+            background-color: var(--white);
+        }
+
+        body.light-mode .theme-toggle {
+            background-color: var(--cool-grey);
+            color: var(--white);
+            border: 2px solid var(--cool-grey);
+        }
+
+        body.light-mode .theme-toggle:hover {
+            background-color: var(--shell-blue);
+            color: var(--white);
+        }
+
+        /* Social media website icon filter for light mode */
+        body.light-mode .website-icon {
+            filter: none;
+        }
+
+        /* Main email body background for light mode */
+        body.light-mode .email-body-background {
+            background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white */
         }
 
         /* Light Mode Styles */
@@ -379,8 +426,8 @@
                                                        style="table-layout: fixed; width: 100%;">
                                                     <tr>
                                                         <td align="left" valign="top"
-                                                            class="main-text-font content-text text-content"
-                                                            style="padding-bottom: 15px; padding-top: 15px; text-align: left; padding-left: 20px; padding-right: 20px;">
+                                                            class="main-text-font content-text text-content email-body-background"
+                                                            style="padding: 30px; text-align: left; border-radius: 10px; margin: 20px 0; transition: background-color 0.3s ease;">
 
                                                             <!-- Greeting -->
                                                             <p style="margin: 0 0 20px 0;">Dear <span

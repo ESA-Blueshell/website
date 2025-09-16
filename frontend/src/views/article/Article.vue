@@ -31,7 +31,7 @@
 
 <script>
 import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 import DOMPurify from "dompurify";
 
 export default {

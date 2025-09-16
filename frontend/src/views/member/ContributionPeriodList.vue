@@ -75,7 +75,7 @@
 
 <script lang="ts">
 import {defineComponent, onMounted, ref} from 'vue';
-import ContributionPeriodDialog from '@/views/login/member/ContributionPeriodDialog.vue';
+import ContributionPeriodDialog from '@/views/member/ContributionPeriodDialog.vue';
 import DeleteConfirmationDialog from '@/components/DeletionConfirmationDialog.vue';
 import {ContributionPeriodService} from '@/services';
 import type {ContributionPeriodModel} from '@/models';

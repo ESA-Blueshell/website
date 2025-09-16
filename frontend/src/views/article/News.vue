@@ -69,7 +69,7 @@
 </template>
 <script>
 import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 
 export default {
   components: {TopBanner: TopBanner},

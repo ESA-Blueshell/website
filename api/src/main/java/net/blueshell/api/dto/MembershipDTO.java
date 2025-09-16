@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.MemberType;
+import net.blueshell.api.validation.group.Administration;
+import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.membership.NoExistingMembershipForUserId;
 
-import java.util.Date;
+import java.sql.Date;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -19,19 +21,19 @@ public class MembershipDTO extends BaseDTO {
     @NoExistingMembershipForUserId
     private Long userId;
 
-    @NotNull
+    @NotNull(groups = {Administration.class})
     private MemberType memberType;
 
-    @NotNull
+    @NotNull(groups = {Creation.class})
     private Date date;
 
-    @NotNull
+    @NotNull(groups = {Creation.class})
     private String city;
 
-    @NotNull
+    @NotNull(groups = {Creation.class})
     private String country;
 
-    @NotNull
+    @NotNull(groups = {Administration.class})
     private Date startDate;
 
     private Date endDate;

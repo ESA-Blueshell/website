@@ -46,8 +46,8 @@
 <script lang="ts">
 import {ref, watch, onMounted, defineComponent} from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
-import ContributionPeriodList from '@/views/login/member/ContributionPeriodList.vue';
-import UserList from '@/views/login/member/UserList.vue';
+import ContributionPeriodList from '@/views/member/ContributionPeriodList.vue';
+import UserList from '@/views/member/UserList.vue';
 import UserService from "@/services/UserService.ts";
 import {type ContributionModel, type AdvancedUserModel, Role} from "@/models";
 import {ContributionService} from "@/services";

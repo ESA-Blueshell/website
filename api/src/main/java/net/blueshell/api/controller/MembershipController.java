@@ -1,13 +1,15 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.MembershipDTO;
 import net.blueshell.api.mapper.MembershipMapper;
 import net.blueshell.api.model.Membership;
 import net.blueshell.api.service.MembershipService;
+import net.blueshell.api.validation.group.Administration;
+import net.blueshell.api.validation.group.Creation;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,16 +29,26 @@ public class MembershipController extends BaseController<MembershipService, Memb
         return mapper.toDTOs(service.findAll());
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(#dto.userId, 'User', 'write') || hasAuthority('BOARD')")
     @PostMapping("/memberships")
-    public MembershipDTO createMembership(@Valid @RequestBody MembershipDTO dto) {
+    public MembershipDTO createMembership(@Validated(Creation.class) @RequestBody MembershipDTO dto
+    ) {
         Membership membership = mapper.fromDTO(dto);
         service.create(membership);
         return mapper.toDTO(membership);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PutMapping(value = "/memberships/{id}")
+    @PostMapping("memberships/member")
+    public MembershipDTO boardCreateMembership(@Validated(Administration.class) @RequestBody MembershipDTO dto
+    ) {
+        Membership membership = mapper.fromDTO(dto);
+        service.create(membership);
+        return mapper.toDTO(membership);
+    }
+
+    @PreAuthorize("hasAuthority('BOARD')")
+    @PutMapping(value = "/{id}")
     public MembershipDTO updateMembership(@PathVariable("id") Long id, @RequestBody MembershipDTO dto) {
         service.findById(id);
         Membership membership = mapper.fromDTO(dto);
@@ -44,8 +56,8 @@ public class MembershipController extends BaseController<MembershipService, Memb
         return mapper.toDTO(membership);
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
-    @GetMapping(value = "/memberships/{id}")
+    @PreAuthorize("hasPermission(#id, 'Membership', 'read') || hasAuthority('BOARD')")
+    @GetMapping(value = "/{id}")
     public MembershipDTO findMembershipById(@PathVariable("id") Long id) {
         return mapper.toDTO(service.findById(id));
     }

@@ -10,6 +10,11 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Map;
+
 @ControllerAdvice
 public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
 
@@ -33,8 +38,95 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
                     }
                 }
             }
+            // Check if a password field is present and has a value
+            if (containsPassword(body)) {
+                throw new IllegalStateException("Response must not contain a password field.");
+            }
         }
         return body;
     }
-}
 
+    private boolean containsPassword(Object body) {
+        if (body == null) return false;
+
+        if (body.getClass().isArray()) {
+            Object[] arr = (Object[]) body;
+            for (Object o : arr) {
+                if (containsPassword(o)) return true;
+            }
+            return false;
+        }
+
+        if (body instanceof Collection<?> collection) {
+            for (Object o : collection) {
+                if (containsPassword(o)) return true;
+            }
+            return false;
+        }
+
+        if (body instanceof Map<?, ?> map) {
+            for (Map.Entry<?, ?> e : map.entrySet()) {
+                if (e.getKey() instanceof String key && "password" .equals(key)) {
+                    if (hasValue(e.getValue())) return true;
+                }
+                if (containsPassword(e.getValue())) return true;
+            }
+            return false;
+        }
+
+        return hasPasswordValue(body);
+    }
+
+    private boolean hasPasswordValue(Object obj) {
+        if (obj == null) return false;
+
+        // Try getter: getPassword()
+        try {
+            Method m = obj.getClass().getMethod("getPassword");
+            if (m.getParameterCount() == 0) {
+                Object value = m.invoke(obj);
+                if (hasValue(value)) return true;
+            }
+        } catch (NoSuchMethodException ignored) {
+            // no-op
+        } catch (Exception reflectionError) {
+            // If reflection fails for other reasons, be conservative and do not block
+        }
+
+        // Try field named "password" up the class hierarchy
+        Field f = findFieldRecursive(obj.getClass(), "password");
+        if (f != null) {
+            try {
+                f.setAccessible(true);
+                Object value = f.get(obj);
+                if (hasValue(value)) return true;
+            } catch (Exception ignored) {
+                // If we can't access, skip
+            }
+        }
+
+        return false;
+    }
+
+    private Field findFieldRecursive(Class<?> type, String name) {
+        Class<?> current = type;
+        while (current != null && current != Object.class) {
+            try {
+                return current.getDeclaredField(name);
+            } catch (NoSuchFieldException ignored) {
+                current = current.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    private boolean hasValue(Object value) {
+        return switch (value) {
+            case null -> false;
+            case String s -> !s.isBlank();
+            case char[] chars -> chars.length > 0;
+            default ->
+                true;
+        };
+    }
+}

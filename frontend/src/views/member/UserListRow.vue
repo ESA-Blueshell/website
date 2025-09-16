@@ -174,10 +174,10 @@ import {computed, ref} from 'vue';
 import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
-import client from "@/plugins/client";
+import client from "@/plugins/client.ts";
 import {DateTime} from 'luxon';
-import {createMembership, deleteUser as deleteUserClient, setContributionPaid, updateMembership} from "@/lib/sdk.gen";
-import type {AdvancedUserDto, ContributionDto, MembershipDto} from "@/lib/types.gen";
+import {createMembership, deleteUser as deleteUserClient, setContributionPaid, updateMembership} from "@/lib/sdk.gen.ts";
+import type {AdvancedUserDto, ContributionDto, MembershipDto} from "@/lib/types.gen.ts";
 import {MemberType} from "@/models";
 
 interface Props {

@@ -11,7 +11,7 @@ public class MappingUtil {
     private static final SecureRandom random = new SecureRandom();
 
 
-    public static <T> void applyIfFieldIsNotNull(User user, T obj, BiConsumer<User, T> applier) {
+    public static <O, T> void applyIfFieldIsNotNull(O user, T obj, BiConsumer<O, T> applier) {
         if (obj != null) {
             applier.accept(user, obj);
         }

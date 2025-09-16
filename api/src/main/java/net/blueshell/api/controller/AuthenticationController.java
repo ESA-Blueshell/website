@@ -16,7 +16,6 @@ import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,20 +29,20 @@ public class AuthenticationController extends JWTAuthBase {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
-    private final PasswordEncoder encoder;
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
 
     public AuthenticationController(
-            ActivationService activationService, AuthenticationManager authenticationManager,
+            ActivationService activationService,
+            AuthenticationManager authenticationManager,
             JwtTokenUtil jwtTokenUtil,
-            UserService userService, PasswordEncoder encoder) {
+            UserService userService
+    ) {
         this.activationService = activationService;
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
-        this.encoder = encoder;
     }
 
 

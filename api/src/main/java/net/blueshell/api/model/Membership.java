@@ -24,10 +24,16 @@ public class Membership implements BaseModel<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     @OneToOne
     @ToString.Exclude
     private User user;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "city")
+    private String city;
 
     @Column(name = "start_date")
     private Date startDate;

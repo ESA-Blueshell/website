@@ -35,11 +35,6 @@ const getContributionPeriod = async () => {
   try {
     const periods: Promise<ContributionPeriodModel[]> = await contributionPeriodService.getContributionPeriods();
 
-    // Ensure response.data is an array
-    if (!Array.isArray(periods)) {
-      throw new Error('Invalid data format for contribution periods.');
-    }
-
     // Find the current period where today's date is between startDate and endDate (inclusive)
     const now = DateTime.now();
     const current = periods.find(period => {

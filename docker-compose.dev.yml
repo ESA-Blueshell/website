@@ -51,6 +51,7 @@ services:
     volumes:
       - "./frontend:/usr/app"
       - "./api/openapi/blueshell.json:/usr/openapi/blueshell.json"
+      - "./api/openapi/discord.json:/usr/openapi/discord.json"
       - /usr/app/node_modules
     networks:
       - global_network

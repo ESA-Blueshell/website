@@ -59,7 +59,7 @@ print_status "Generating TypeScript client for frontend..."
 # Generate TypeScript client in the frontend container
 docker compose -f docker-compose.dev.yml exec frontend sh -c "
     cd /usr/app && \
-    yarn openapi-ts
+    yarn gen:all
 "
 
 if [ $? -ne 0 ]; then

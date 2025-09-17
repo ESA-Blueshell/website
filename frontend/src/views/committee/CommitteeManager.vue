@@ -141,7 +141,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent } from 'vue'
 import TopBanner from '@/components/banners/TopBanner.vue'
 import CommitteeEdit from '@/views/committee/CommitteeEdit.vue'
 import { $require } from '@/plugins/require.js'
@@ -152,7 +152,7 @@ import {
   type AdvancedCommitteeDto
 } from '@/lib'
 
-import client from "@/plugins/client.ts"
+import client from "@/lib/blueshell/client.ts"
 
 interface Data {
   committees: AdvancedCommitteeDto[]

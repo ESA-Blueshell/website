@@ -35,14 +35,14 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @GetMapping("/events/{id}")
     @PreAuthorize("hasPermission(#id, 'Event', 'read')")
-    public EventDTO getEventById(
+    public EventDTO findEventById(
             @PathVariable("id") Long id) {
         Event event = service.findById(id);
         return mapper.toDTO(event);
     }
 
     @GetMapping("/events")
-    public Page<EventDTO> getEvents(
+    public Page<EventDTO> findEvents(
             @RequestParam(value = "pageable", required = false) Pageable pageable,
             @RequestParam(value = "filter", required = false) EventFilter filter
     ) {

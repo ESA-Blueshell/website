@@ -129,7 +129,7 @@ import {computed, ref, type Ref, watch} from 'vue';
 import {VPhoneInput} from 'v-phone-input';
 import store from '@/plugins/store.ts';
 import {type AdvancedUserDto, createMember, createUser, type SimpleUserDto, updateUser} from '@/lib';
-import client from '@/plugins/client.ts';
+import client from "@/lib/blueshell/client.ts";
 import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
 import CountrySelect from '@/components/select/CountrySelect.vue';

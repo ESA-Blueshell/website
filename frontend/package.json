@@ -8,7 +8,10 @@
     "typescheck": "vue-tsc --noEmit",
     "dev": "vite --host",
     "lint": "eslint  --fix",
-    "preview": "tsc && vite preview"
+    "preview": "tsc && vite preview",
+    "gen:discord": "openapi-ts --file ./openapi-ts.discord.config.ts",
+    "gen:blueshell": "openapi-ts --file ./openapi-ts.blueshell.config.ts",
+    "gen:all": "yarn gen:blueshell && yarn gen:discord"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

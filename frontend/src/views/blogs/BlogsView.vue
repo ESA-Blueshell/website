@@ -2,9 +2,7 @@
 import {ref, onMounted} from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
 import BlogService from '@/services/BlogService.ts';
-import $markdownToHtml from '@/plugins/markdownToHtml.ts';
 import type BlogModel from "@/models/BlogModel.ts";
-import DOMPurify from "dompurify";
 import { useRouter } from 'vue-router'
 import {DateTime} from "luxon";
 

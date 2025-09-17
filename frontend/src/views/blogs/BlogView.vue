@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
+import {useRoute} from 'vue-router'
 import type BlogModel from '@/models/BlogModel.ts'
 import BlogService from '@/services/BlogService.ts'
-import DOMPurify from "dompurify";
 
-
-const router = useRouter();
 // Create an instance of our BlogService
 const blogService = new BlogService()
 

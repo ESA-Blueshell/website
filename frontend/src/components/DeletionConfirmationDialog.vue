@@ -7,8 +7,9 @@
       <v-card-title class="text-h5">
         {{ title }}
       </v-card-title>
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <v-card-text v-html="DOMPurify.sanitize(message)" />
+      <v-card-text>
+        {{ message }}
+      </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
@@ -25,38 +26,36 @@
   </v-dialog>
 </template>
 
-<script>
-import {computed, defineComponent} from 'vue';
-import DOMPurify from "dompurify";
+<script setup lang="ts">
+import {computed} from 'vue';
 
-export default defineComponent({
-  name: 'DeletionConfirmationDialog',
-  props: {
-    modelValue: Boolean,
-    title: String,
-    message: String,
-  },
-  emits: ['update:modelValue', 'confirm'],
-  setup(props, {emit}) {
-    const showDialog = computed({
-      get: () => props.modelValue,
-      set: (value) => emit('update:modelValue', value),
-    });
+interface Props {
+  modelValue?: boolean;
+  title?: string;
+  message?: string;
+}
 
-    const closeDialog = () => {
-      emit('update:modelValue', false);
-    };
-
-    const confirm = () => {
-      emit('confirm');
-    };
-
-    return {
-      showDialog,
-      closeDialog,
-      confirm,
-    };
-  },
-  methods: {DOMPurify},
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  title: '',
+  message: '',
 });
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'confirm'): void;
+}>();
+
+const showDialog = computed({
+  get: () => props.modelValue,
+  set: (value: boolean) => emit('update:modelValue', value),
+});
+
+const closeDialog = () => {
+  emit('update:modelValue', false);
+};
+
+const confirm = () => {
+  emit('confirm');
+};
 </script>

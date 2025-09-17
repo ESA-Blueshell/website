@@ -52,8 +52,8 @@
 import {onMounted, ref} from 'vue';
 import type {VForm} from 'vuetify/components';
 import {useRoute, useRouter} from 'vue-router';
-import {resetPassword} from '@/lib/sdk.gen';
-import type {PasswordResetRequest} from '@/lib/types.gen';
+import {resetPassword} from '@/lib';
+import type {PasswordResetRequest} from '@/lib';
 
 const route = useRoute();
 const router = useRouter();

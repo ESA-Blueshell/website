@@ -73,8 +73,8 @@ import {useRoute, useRouter} from 'vue-router'
 import {useStore} from 'vuex'
 import TopBanner from '@/components/banners/TopBanner.vue'
 import {$handleNetworkError} from '@/plugins/handleNetworkError.js'
-import {authenticate} from '@/lib/sdk.gen'
-import type {JwtRequest, JwtResponse} from '@/lib/types.gen'
+import {authenticate} from '@/lib'
+import type {JwtRequest, JwtResponse} from '@/lib'
 import type {State} from '@/plugins/store'
 
 const router = useRouter()

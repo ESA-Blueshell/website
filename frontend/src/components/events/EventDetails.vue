@@ -3,13 +3,13 @@
     <!-- Start of the toolbar in the selected event menu -->
     <!-- Includes the event's title and the location and add to calendar buttons -->
     <v-toolbar
-      :color="selectedEvent.color"
+      :color="toolbarColor || undefined"
       dark
     >
       <!-- Name of the event -->
       <v-toolbar-title
-        v-if="selectedEvent.name.length < 15"
-        :text="selectedEvent.name"
+        v-if="eventTitle.length < 15"
+        :text="eventTitle"
       />
       <marquee-text
         v-else
@@ -18,11 +18,11 @@
       >
         <v-toolbar-title
           class="mr-5"
-          :text="selectedEvent.name"
+          :text="eventTitle"
         />
       </marquee-text>
 
-      <v-spacer />
+      <v-spacer/>
       <v-tooltip
         text="Find location"
         location="bottom"
@@ -51,21 +51,17 @@
 
     <!-- Promo image -->
     <img
-      v-if="selectedEvent.banner.url"
-      :src="selectedEvent.banner.url"
+      v-if="bannerUrl"
+      :src="bannerUrl"
       style="width: 100%; object-fit: contain"
       alt="promo image for the event"
     >
 
     <v-card-text>
       <!-- Description of the event -->
-      <p v-if="selectedEvent.details">
-        <!-- In the span is the actual text of the event -->
-        <!-- If the expand variable is true show the fill message, otherwise only show the first 100 words -->
+      <p v-if="description">
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <span v-html="expand || !longDescription ? $markdownToHtml(selectedEvent.details) : $markdownToHtml(firstHundredWords)+'...'" />
-        <!-- Only show the "read more" if the message is long -->
-        <!-- If it's clicked expand will be set to true and the full message will be shown -->
+        <span v-html="expand || !longDescription ? markdownToHtml(description) : markdownToHtml(firstHundredWords)+'...'"/>
         <br v-if="!expand && longDescription">
         <a
           v-if="!expand && longDescription"
@@ -78,112 +74,168 @@
         No description...
       </p>
       <!-- Starting time of the event -->
-      <v-divider class="my-2" />
+      <v-divider class="my-2"/>
       <p>
         <b>When</b>
         <br>
         {{ formattedDate }}
       </p>
-      <!-- Only show this part if there is a location for this event (should always be true tho) -->
+      <!-- Only show this part if there is a location for this event -->
       <v-divider
-        v-if="selectedEvent.location"
+        v-if="location"
         class="my-2"
       />
-      <p v-if="selectedEvent.location">
+      <p v-if="location">
         <b>Where</b>
         <br>
-        {{ selectedEvent.location }}
+        {{ location }}
       </p>
       <!-- Only show this part if there is a price for this event -->
-      <!-- I want to die -->
       <v-divider
-        v-if="selectedEvent.memberPrice"
+        v-if="memberPrice !== undefined && memberPrice !== null"
       />
       <p
-        v-if="selectedEvent.memberPrice"
+        v-if="memberPrice !== undefined && memberPrice !== null"
         class="mt-4"
       >
         <b>Price</b><br>
-        Members: €{{ selectedEvent.memberPrice }} <br>
-        Non-members: €{{ selectedEvent.publicPrice }}
+        Members: €{{ memberPrice }} <br>
+        Non-members: €{{ publicPrice }}
       </p>
     </v-card-text>
   </v-card>
 </template>
-<script>
+
+<script setup lang="ts">
+import {computed, ref} from 'vue'
 import MarqueeText from 'vue-marquee-text-component'
-import {$goto} from "@/plugins/goto";
-import $markdownToHtml from "@/plugins/markdownToHtml.ts";
+import {$goto} from '@/plugins/goto'
+import markdownToHtml from '@/plugins/markdownToHtml.ts'
+import type {EventDto, FileDto} from '@/lib'
 
-export default {
-  name: 'EventDetails',
-  components: {MarqueeText},
-  props: {
-    selectedEvent: null,
-  },
-  data: () => ({
-    expand: false,
-    linkRegex: /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/i,
-    htmlRegex: /<\/?[a-z][\s\S]*>/i
-  }),
-  computed: {
-    formattedDate() {
-      const start = this.selectedEvent.start;
-      const end = this.selectedEvent.end;
+// Props: accept object coming from calendar, normalize to EventDto shape for usage.
+// We keep the prop flexible to avoid breaking callers, but all internal types are aligned to generated types.
+const props = defineProps<{
+  selectedEvent: EventDto
+}>()
 
-      let str;
-      if (end) {
-        str = new Intl.DateTimeFormat('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).format(start).replace(',', '');
-        str += " - ";
-        str += new Intl.DateTimeFormat('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).format(end);
-      } else {
-        str = new Intl.DateTimeFormat('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric'
-        }).format(start)
-      }
-      return str;
-    },
-    longDescription() {
-      return this.selectedEvent.details?.split(/\s+/).length > 100
-    },
-    firstHundredWords() {
-      return this.selectedEvent.details.split(" ").slice(0, 100).join(" ");
-    }
-  },
-  methods: {
-    $markdownToHtml,
-    // Triggers when the add to calendar button is clicked on an event.
-    // Opens google calendar with the id of the event so all data is instantly filled in
-    addToCal() {
-      $goto(encodeURI('https://calendar.google.com/event?action=TEMPLATE&tmeid=' + this.selectedEvent.googleId + '&tmsrc=blueshellesports@gmail.com'))
-    },
-    expandWords() {
-      this.expand = true
-    },
-    // Triggers when the location button is clicked on an event.
-    // Opens a search on google maps with the location if the location isn't discord
-    findLocation() {
-      if (this.selectedEvent.location.toLowerCase().includes("discord")) {
-        $goto(encodeURI('https://discord.gg/23YMFQy'));
-      } else if (this.selectedEvent.location.toLowerCase().includes("pel")) {
-        $goto(encodeURI('https://www.google.com/maps/search/?api=1&query=Predator Esports Lounge'));
-      } else {
-        $goto(encodeURI('https://www.google.com/maps/search/?api=1&query=' + this.selectedEvent.location));
-      }
-    },
-  },
+// Local state
+const expand = ref(false)
+
+// Normalization helpers
+const se = computed(() => props.selectedEvent as Record<string, unknown>)
+
+// Title: prefer EventDto.title, fallback to legacy "name"
+const eventTitle = computed(() => {
+  const title = (se.value.title as string | undefined) ?? (se.value.name as string | undefined)
+  return title ?? ''
+})
+
+// Color is not part of EventDto; allow passthrough if present
+const toolbarColor = computed(() => (se.value.color as string | undefined) ?? '')
+
+// Description: EventDto.description, fallback to legacy "details"
+const description = computed(() => {
+  return (se.value.description as string | undefined) ?? (se.value.details as string | undefined) ?? ''
+})
+
+// Banner url: EventDto.banner is FileDto with url field, or string in some backends
+const bannerUrl = computed(() => {
+  const banner = se.value.banner as FileDto | string | undefined
+  if (!banner) return ''
+  if (typeof banner === 'string') return banner
+  return banner.url ?? ''
+})
+
+// Dates: accept either Date (calendar local) or ISO strings (EventDto)
+function toDate(d: unknown): Date | null {
+  if (!d) return null
+  if (d instanceof Date) return d
+  if (typeof d === 'string') {
+    const dt = new Date(d)
+    return isNaN(dt.getTime()) ? null : dt
+  }
+  return null
+}
+
+const startDate = computed<Date | null>(() => {
+  return toDate((se.value.start as unknown) ?? (se.value.startTime as unknown))
+})
+
+const endDate = computed<Date | null>(() => {
+  return toDate((se.value.end as unknown) ?? (se.value.endTime as unknown))
+})
+
+// Location
+const location = computed(() => (se.value.location as string | undefined) ?? '')
+
+// Prices (numbers in generated types)
+const memberPrice = computed<number | null>(() => {
+  const mp = se.value.memberPrice as number | string | undefined
+  if (mp === undefined || mp === null || mp === '') return null
+  return typeof mp === 'string' ? Number(mp) : mp
+})
+const publicPrice = computed<number | null>(() => {
+  const pp = se.value.publicPrice as number | string | undefined
+  if (pp === undefined || pp === null || pp === '') return null
+  return typeof pp === 'string' ? Number(pp) : pp
+})
+
+// Formatting
+const formattedDate = computed(() => {
+  const start = startDate.value
+  const end = endDate.value
+  if (!start) return ''
+  const dateFmt = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  }).format(start)
+
+  if (!end) return dateFmt
+
+  const startTime = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(start).replace(',', '')
+
+  const endTime = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(end)
+
+  return `${startTime} - ${endTime}`
+})
+
+const longDescription = computed(() => (description.value?.split(/\s+/).length ?? 0) > 100)
+const firstHundredWords = computed(() => description.value.split(/\s+/).slice(0, 100).join(' '))
+
+// Methods
+function addToCal() {
+  const googleId = se.value.googleId as string | undefined
+  if (!googleId) return
+  $goto(encodeURI(`https://calendar.google.com/event?action=TEMPLATE&tmeid=${googleId}&tmsrc=blueshellesports@gmail.com`))
+}
+
+function expandWords() {
+  expand.value = true
+}
+
+function findLocation() {
+  const loc = location.value
+  if (!loc) return
+  const lower = loc.toLowerCase()
+  if (lower.includes('discord')) {
+    $goto(encodeURI('https://discord.gg/23YMFQy'));
+  } else if (lower.includes('pel')) {
+    $goto(encodeURI('https://www.google.com/maps/search/?api=1&query=Predator Esports Lounge'));
+  } else {
+    $goto(encodeURI(`https://www.google.com/maps/search/?api=1&query=${loc}`));
+  }
 }
 </script>

@@ -70,13 +70,13 @@ const store = createStore<State>({
     async setLogin(state: State, payload: Login) {
       state.login = payload;
       writeJsonCookie('login', payload);
-      import('@/plugins/client.ts').then(({ reconfigureClient }) => reconfigureClient());
+      import('@/lib/client.ts').then(({ reconfigureClient }) => reconfigureClient());
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`;
     },
     async logout(state: State) {
       state.login = null;
       deleteCookie('login');
-      import('@/plugins/client.ts').then(({ reconfigureClient }) => reconfigureClient());
+      import('@/lib/client.ts').then(({ reconfigureClient }) => reconfigureClient());
       state.statusSnackbarMessage = 'You are now logged out.';
     },
     setRoles(state: State, roles: string[]): void {

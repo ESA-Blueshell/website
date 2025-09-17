@@ -56,8 +56,8 @@
 import {onMounted, ref} from 'vue';
 import type {VForm} from 'vuetify/components';
 import {useRoute, useRouter} from 'vue-router';
-import {memberActivate} from '@/lib/sdk.gen';
-import type {MemberActivationRequest} from '@/lib/types.gen';
+import {memberActivate} from '@/lib';
+import type {MemberActivationRequest} from '@/lib';
 
 const route = useRoute();
 const router = useRouter();

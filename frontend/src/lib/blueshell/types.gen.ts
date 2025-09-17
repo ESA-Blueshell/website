@@ -246,9 +246,9 @@ export type PageableObject = {
     offset?: number;
     sort?: SortObject;
     unpaged?: boolean;
+    pageNumber?: number;
     paged?: boolean;
     pageSize?: number;
-    pageNumber?: number;
 };
 
 export type SortObject = {
@@ -860,7 +860,7 @@ export type BoardCreateMembershipResponses = {
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
 
-export type GetEventsData = {
+export type FindEventsData = {
     body?: never;
     path?: never;
     query?: {
@@ -870,14 +870,14 @@ export type GetEventsData = {
     url: '/events';
 };
 
-export type GetEventsResponses = {
+export type FindEventsResponses = {
     /**
      * OK
      */
     200: PageEventDto;
 };
 
-export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
+export type FindEventsResponse = FindEventsResponses[keyof FindEventsResponses];
 
 export type CreateEventData = {
     body: EventDto;
@@ -1244,7 +1244,7 @@ export type HealthCheckResponses = {
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
 
-export type GetEventByIdData = {
+export type FindEventByIdData = {
     body?: never;
     path: {
         id: number;
@@ -1253,14 +1253,14 @@ export type GetEventByIdData = {
     url: '/events/{id}';
 };
 
-export type GetEventByIdResponses = {
+export type FindEventByIdResponses = {
     /**
      * OK
      */
     200: EventDto;
 };
 
-export type GetEventByIdResponse = GetEventByIdResponses[keyof GetEventByIdResponses];
+export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
 
 export type DownloadBannerData = {
     body?: never;

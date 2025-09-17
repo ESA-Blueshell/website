@@ -44,6 +44,6 @@ import Calendar from "@/components/Calendar.vue"
 import EventList from "@/components/events/EventList.vue";
 
 export default {
-  components: {EventList, TopBanner: TopBanner, Calendar: Calendar}
+  components: {EventList, TopBanner, Calendar}
 }
 </script>

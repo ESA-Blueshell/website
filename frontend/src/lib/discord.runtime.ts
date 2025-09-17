@@ -7,7 +7,6 @@ import type { Config } from '@/lib/blueshell/client/types.gen.ts';
 export function createClientConfig(defaultConfig: Config): Config {
   const config: Partial<Config> = {
     ...defaultConfig,
-    baseURL: 'https://discord.com/api/v10',
     throwOnError: true,
     headers: {
       'Content-Type': 'application/json',

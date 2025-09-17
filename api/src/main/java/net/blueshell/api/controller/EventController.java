@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventDTO;
+import net.blueshell.api.filter.EventFilter;
 import net.blueshell.api.mapper.EventMapper;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.User;
@@ -51,46 +52,8 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
 
     @GetMapping("/events")
-    public List<EventDTO> getEvents(
-            @RequestParam(name = "from", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            OffsetDateTime from,
-            @RequestParam(name = "to", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            OffsetDateTime to) {
-        List<Event> events = service.findStartTimeBetween(
-                from != null ? from.toLocalDateTime() : null,
-                to != null ? to.toLocalDateTime() : null);
-        return mapper.toDTOs(events);
-    }
-
-    @GetMapping("/events/past")
-    public Stream<EventDTO> getPastEvents(@RequestParam(required = false, defaultValue = "false") boolean editable) {
-        User authedUser = getPrincipal();
-        List<Event> events = service.findAll();
-
-        Predicate<Event> predicate = event -> {
-            if (!event.isVisible() && !editable) {
-                return false;
-            }
-            if (editable) {
-                return true;
-//                return event.canEdit(authedUser) && event.getStartTime().isBefore(LocalDateTime.now());
-            }
-            return event.getStartTime().isBefore(LocalDateTime.now());
-        };
-
-        Stream<Event> filteredEvents = events.stream()
-                .filter(predicate)
-                .sorted(Comparator.comparing(Event::getStartTime).reversed())
-                .limit(30);
-
-        return mapper.toDTOs(filteredEvents);
-    }
-
-    @GetMapping("/events/pageable")
-    public Page<EventDTO> getEventsPageable(Pageable pageable) {
-        Page<Event> events = service.findAll(pageable);
+    public Page<EventDTO> getEvents(Pageable pageable, @ModelAttribute EventFilter filter) {
+        Page<Event> events = service.findByFilter(pageable, filter);
         return mapper.toDTOs(events);
     }
 

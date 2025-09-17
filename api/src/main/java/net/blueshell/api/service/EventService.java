@@ -2,14 +2,17 @@ package net.blueshell.api.service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
+import net.blueshell.api.filter.EventFilter;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.EventRepository;
+import net.blueshell.api.specification.EventSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,20 +20,17 @@ import java.util.List;
 public class EventService extends BaseModelService<Event, Long, EventRepository> {
 
     @Autowired
-    public EventService(EventRepository repository, ApplicationEventPublisher events) {
+    public EventService(EventRepository repository) {
         super(repository);
-    }
-
-    public List<Event> findUpcoming() {
-        return repository.findUpcoming();
     }
 
     public Event findByBanner(File banner) {
         return repository.findByBanner(banner);
     }
 
-    public List<Event> findStartTimeBetween(LocalDateTime from, LocalDateTime to) {
-        log.info("FROM: " + from + " TO: " + to);
-        return repository.findStartTimeBetween(from, to);
+    public Page<Event> findByFilter(Pageable pageable, EventFilter filter) {
+        if (filter == null) filter = new EventFilter();
+        var spec = EventSpecifications.fromFilter(filter, getPrincipal());
+        return repository.findAll(spec, pageable);
     }
 }

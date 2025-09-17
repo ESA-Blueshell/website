@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "types": ["node"]
+  },
+  "include": [
+    "vite.config.mjs",
+    "eslint.config.mjs",
+    "*.config.ts",
+    "*.config.mjs"
+  ]
+}

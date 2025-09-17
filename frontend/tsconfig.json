@@ -4,7 +4,8 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
 
     "strict": true,
     "skipLibCheck": true,
@@ -18,9 +19,10 @@
     },
 
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "resolveJsonModule": true,
 
-    "types": ["vite/client", "node"]
+    "types": ["vite/client"]
   },
 
   "include": [

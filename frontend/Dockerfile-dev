@@ -1,12 +1,25 @@
-FROM node:22
+FROM node:24
 
 WORKDIR /usr/app
-COPY package.json ./
-COPY yarn.lock ./
 
-RUN yarn install
+# Enable Corepack to use the exact Yarn version specified in package.json
+RUN corepack enable
 
-COPY . .
+# Copy package files and configuration files needed for installation
+COPY package.json .
+COPY yarn.lock .
+COPY tsconfig.json .
+COPY jsconfig.json .
+COPY vite.config.mjs .
+COPY eslint.config.mjs .
+COPY .browserslistrc .
+COPY .editorconfig .
+COPY .yarnrc.yml .
+COPY nginx.conf .
+copy index.html .
+
+# Install dependencies
+RUN yarn install --immutable
 
 EXPOSE 3000
 

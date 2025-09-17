@@ -499,7 +499,7 @@ export default {
 
     const setDarkMode = (dark: boolean) => {
       localStorage.setItem('esa-blueshell.nl:darkMode', dark.toString())
-      theme.global.name.value = dark ? 'dark' : 'light'
+      theme.change('dark')
     }
 
     const toggleDarkMode = () => {
@@ -561,7 +561,7 @@ export default {
       }
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => checkPrefersColorScheme())
 
-      theme.global.name.value = localStorage.getItem('esa-blueshell.nl:darkMode') === 'true' ? 'dark' : 'light'
+      theme.change(localStorage.getItem('esa-blueshell.nl:darkMode') === 'true' ? 'dark' : 'light')
     });
 
     return {

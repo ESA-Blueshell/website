@@ -7,22 +7,13 @@ import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.filter.EventFilter;
 import net.blueshell.api.mapper.EventMapper;
 import net.blueshell.api.model.Event;
-import net.blueshell.api.model.User;
 import net.blueshell.api.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping
@@ -50,9 +41,11 @@ public class EventController extends BaseController<EventService, EventMapper> {
         return mapper.toDTO(event);
     }
 
-
     @GetMapping("/events")
-    public Page<EventDTO> getEvents(Pageable pageable, @ModelAttribute EventFilter filter) {
+    public Page<EventDTO> getEvents(
+            @RequestParam(value = "pageable", required = false) Pageable pageable,
+            @RequestParam(value = "filter", required = false) EventFilter filter
+    ) {
         Page<Event> events = service.findByFilter(pageable, filter);
         return mapper.toDTOs(events);
     }

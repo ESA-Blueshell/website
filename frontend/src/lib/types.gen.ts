@@ -218,6 +218,16 @@ export type Pageable = {
     sort?: Array<string>;
 };
 
+export type EventFilter = {
+    from?: string;
+    to?: string;
+    visible?: boolean;
+    membersOnly?: boolean;
+    publicOnly?: boolean;
+    committeeId?: number;
+    titleContains?: string;
+};
+
 export type PageEventDto = {
     totalElements?: number;
     totalPages?: number;
@@ -226,9 +236,9 @@ export type PageEventDto = {
     number?: number;
     sort?: SortObject;
     pageable?: PageableObject;
+    numberOfElements?: number;
     first?: boolean;
     last?: boolean;
-    numberOfElements?: number;
     empty?: boolean;
 };
 
@@ -854,8 +864,8 @@ export type GetEventsData = {
     body?: never;
     path?: never;
     query?: {
-        from?: string;
-        to?: string;
+        pageable?: Pageable;
+        filter?: EventFilter;
     };
     url: '/events';
 };
@@ -864,7 +874,7 @@ export type GetEventsResponses = {
     /**
      * OK
      */
-    200: Array<EventDto>;
+    200: PageEventDto;
 };
 
 export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
@@ -1303,44 +1313,6 @@ export type FindEventSignUpByAccessTokenResponses = {
 };
 
 export type FindEventSignUpByAccessTokenResponse = FindEventSignUpByAccessTokenResponses[keyof FindEventSignUpByAccessTokenResponses];
-
-export type GetPastEventsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        editable?: boolean;
-    };
-    url: '/events/past';
-};
-
-export type GetPastEventsResponses = {
-    /**
-     * OK
-     */
-    200: {
-        parallel?: boolean;
-    };
-};
-
-export type GetPastEventsResponse = GetPastEventsResponses[keyof GetPastEventsResponses];
-
-export type GetEventsPageableData = {
-    body?: never;
-    path?: never;
-    query: {
-        pageable: Pageable;
-    };
-    url: '/events/pageable';
-};
-
-export type GetEventsPageableResponses = {
-    /**
-     * OK
-     */
-    200: PageEventDto;
-};
-
-export type GetEventsPageableResponse = GetEventsPageableResponses[keyof GetEventsPageableResponses];
 
 export type DownloadEventPictureData = {
     body?: never;

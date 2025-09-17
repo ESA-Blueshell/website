@@ -30,6 +30,7 @@ public class EventService extends BaseModelService<Event, Long, EventRepository>
 
     public Page<Event> findByFilter(Pageable pageable, EventFilter filter) {
         if (filter == null) filter = new EventFilter();
+        if (pageable == null) pageable = Pageable.unpaged();
         var spec = EventSpecifications.fromFilter(filter, getPrincipal());
         return repository.findAll(spec, pageable);
     }

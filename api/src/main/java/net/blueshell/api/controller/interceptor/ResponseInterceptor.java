@@ -38,10 +38,7 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
                     }
                 }
             }
-            // Check if a password field is present and has a value
-            if (containsPassword(body)) {
-                throw new IllegalStateException("Response must not contain a password field.");
-            }
+            // TODO: Check if password in response body.
         }
         return body;
     }

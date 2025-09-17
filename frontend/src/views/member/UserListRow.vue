@@ -18,11 +18,11 @@
           />
         </v-row>
         <v-row>
-          <member-type-select v-model="memberType" />
+          <member-type-select v-model="memberType"/>
         </v-row>
       </v-card-text>
       <v-card-actions>
-        <v-spacer />
+        <v-spacer/>
         <v-btn
           color="secondary"
           @click="showStartModal = false"
@@ -174,11 +174,10 @@ import {computed, ref} from 'vue';
 import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
-import client from "@/lib/blueshell/client.ts";
+
 import {DateTime} from 'luxon';
-import {createMembership, deleteUser as deleteUserClient, setContributionPaid, updateMembership} from "@/lib";
-import type {AdvancedUserDto, ContributionDto, MembershipDto} from "@/lib";
-import {MemberType} from "@/models";
+import {type AdvancedUserDto, type ContributionDto, deleteUserById, type MembershipDto} from "@/lib";
+import {createMembership, setContributionPaid, updateMembership} from "@/lib";
 
 interface Props {
   user: AdvancedUserDto;
@@ -238,14 +237,13 @@ const confirmStartMembership = async () => {
 
     const membershipData: MembershipDto = {
       userId: props.user.id as number,
-      memberType: memberType.value as MemberType,
+      memberType: memberType.value,
       startDate: DateTime.fromISO(startDate.value).toISO() as string,
       endDate: undefined
     };
 
     const response = await createMembership({
-      body: membershipData,
-      client
+      body: membershipData
     });
 
     if (response.data) {
@@ -274,8 +272,7 @@ const endMembership = async () => {
 
     const response = await updateMembership({
       path: {id: membershipData.id as number},
-      body: membershipData,
-      client
+      body: membershipData
     });
 
     if (response.data) {
@@ -297,8 +294,7 @@ const resumeMembership = async () => {
 
     const response = await updateMembership({
       path: {id: membershipData.id as number},
-      body: membershipData,
-      client
+      body: membershipData
     });
 
     if (response.data) {
@@ -317,9 +313,8 @@ const confirmDeleteUser = async () => {
   try {
     deleteDialog.value = false;
 
-    await deleteUserClient({
-      path: {userId: props.user.id},
-      client
+    await deleteUserById({
+      path: {userId: props.user.id as number}
     });
 
     emit('delete-user', props.user);
@@ -328,7 +323,7 @@ const confirmDeleteUser = async () => {
   }
 };
 
-const userChanged = (userData: any) => {
+const userChanged = (userData: AdvancedUserDto) => {
   emit('user-changed', userData);
 };
 
@@ -336,9 +331,8 @@ const changeContributionPaid = async (paid: boolean) => {
   try {
     if (contribution.value) {
       const response = await setContributionPaid({
-        path: {id: contribution.value.id},
-        query: {paid},
-        client
+        path: {id: contribution.value.id as number},
+        query: {paid}
       });
 
       if (response.data) {

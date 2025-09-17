@@ -1,119 +1,133 @@
 <script setup lang="ts">
 import $markdownToHtml from "@/plugins/markdownToHtml.ts";
-import {defaultEventSignUp, type EventModel, type EventSignUpModel, type FormAnswer} from "@/models";
-import {computed, nextTick, onMounted, ref} from "vue";
-import {createEvent} from "ics";
+import { computed, nextTick, onMounted, ref } from "vue";
+import { createEvent as createIcsEvent } from "ics";
 import SignUpForm from "@/components/events/EventSignUpForm.vue";
 import store from "@/plugins/store.ts";
-import EventSignUpService from "@/services/EventSignUpService.ts";
-import {$goto} from "@/plugins/goto";
-import {useRoute} from "vue-router";
-import {DateTime} from "luxon";
+import { $goto } from "@/plugins/goto";
+import { useRoute } from "vue-router";
+import { DateTime } from "luxon";
+import {
+  updateEventSignUp,
+  createEventSignup,
+  deleteEventSignup,
+  type EventDto,
+  type EventSignUpDto
+} from "@/lib/blueshell";
 
 const props = defineProps({
   event: {
-    type: Object as () => EventModel,
+    type: Object as () => EventDto,
     required: true,
   },
   signUp: {
-    type: Object as () => EventSignUpModel,
-    default: () => defaultEventSignUp,
+    type: Object as () => EventSignUpDto,
+    default: () =>
+      ({
+        id: undefined,
+        eventId: undefined,
+        formAnswers: [],
+      } as EventSignUpDto),
     required: false,
   },
 });
 
-const event = ref<EventModel>(props.event);
+const event = ref<EventDto>(props.event);
 
-// Merge a default signUp object with props.signUp
-const signUp = ref<EventSignUpModel>({
-  ...defaultEventSignUp,
-  eventId: event.value.id,
-  ...props.signUp
+const signUp = ref<EventSignUpDto>({
+  id: props.signUp?.id,
+  eventId: props.event.id,
+  formAnswers: props.signUp?.formAnswers ?? [],
+  ...props.signUp,
 });
 
 const route = useRoute();
 const expanded = ref(false);
 const submitting = ref(false);
-const eventElement = ref<HTMLElement>(null)
+const eventElement = ref<HTMLElement | null>(null);
 
-// Store getters
 const isMember = computed<boolean>(() => store.getters.isMember);
-const guestToken = computed<string | undefined>(() => store.getters.getGuestData?.token);
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn);
 
-const signUpService = new EventSignUpService();
-
-/**
- * Simple sign-up with no form
- */
 async function submitSignUp() {
   submitting.value = true;
-  if (signUp.value?.id) {
-    await signUpService.updateSignUp(event.value.id!, signUp.value);
-  } else {
-    await signUpService.createSignUp(event.value.id!, signUp.value);
+  try {
+    if (signUp.value?.id) {
+      await updateEventSignUp({
+        path: { eventId: event.value.id as number },
+        body: signUp.value,
+      });
+    } else {
+      await createEventSignup({
+        path: { id: event.value.id as number },
+        body: {
+          ...signUp.value,
+          eventId: event.value.id as number,
+        },
+      });
+    }
+    signUp.value.formAnswers = [];
+  } finally {
+    submitting.value = false;
   }
-  submitting.value = false;
-  signUp.value.formAnswers = [];
 }
 
-/**
- * Cancel an existing sign-up
- */
 async function removeSignUp() {
-  if (isMember.value) {
-    await signUpService.deleteSignUp(event.value.id!);
-  } else {
-    await signUpService.deleteSignUp(event.value.id!, guestToken.value);
+  if (signUp.value?.id !== undefined) {
+    await deleteEventSignup({
+      path: { eventSignupId: signUp.value.id as number },
+    });
   }
   signUp.value = {
-    ...defaultEventSignUp,
+    id: undefined,
     eventId: event.value.id,
-  };
+    formAnswers: [],
+  } as EventSignUpDto;
 }
 
-/**
- * If we navigated to a #hash that matches this event's id, scroll to it.
- */
 onMounted(async () => {
   if (route.hash && event.value.id === Number(route.hash.replace("#", ""))) {
     await nextTick();
-    eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"});
+    eventElement.value?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 });
 
-/**
- * Submit the sign-up form (with additional form fields).
- * Covers both logged-in and guest users.
- */
 async function submitSignUpForm(
   eventId: number,
-  payload: { answers: FormAnswer[]; guestData: any }
+  payload: { answers: any; guestData: any }
 ) {
-  // Scroll up to the event
-  eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"});
+  eventElement.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  signUp.value.formAnswers = payload.answers ?? [];
 
   if (isLoggedIn.value) {
-    signUp.value = await signUpService.createSignUp(eventId, signUp.value);
+    if (signUp.value?.id) {
+      await updateEventSignUp({
+        path: { eventId },
+        body: signUp.value,
+      });
+    } else {
+      await createEventSignup({
+        path: { id: eventId },
+        body: { ...signUp.value, eventId },
+      });
+    }
   } else {
-    // Save guest data in store
-    store.commit("saveGuestData", payload.guestData.value);
+    store.commit("saveGuestData", payload.guestData?.value ?? payload.guestData);
+    await createEventSignup({
+      path: { id: eventId },
+      body: { ...signUp.value, eventId },
+    });
   }
 }
 
-/**
- * Expand/collapse the sign-up form area
- */
 function toggleExpanded() {
   if (!expanded.value) {
-    eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"});
+    eventElement.value?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   expanded.value = !expanded.value;
 }
 
-/**
- * Open a link for the event location
- */
 function findLocation() {
   if (event.value.location && event.value.location.toLowerCase().includes("discord")) {
     $goto("https://discord.gg/23YMFQy");
@@ -124,23 +138,17 @@ function findLocation() {
   }
 }
 
-/**
- * Generate an ICS file for the event and prompt download
- * Uses Luxon to build the date arrays for ICS in UTC.
- */
 function downloadIcs() {
   const start = DateTime.fromISO(event.value.startTime).toUTC();
   const end = DateTime.fromISO(event.value.endTime).toUTC();
 
-  createEvent(
+  createIcsEvent(
     {
       title: event.value.title,
       description: event.value.description,
       location: event.value.location,
       start: [start.year, start.month, start.day, start.hour, start.minute],
       end: [end.year, end.month, end.day, end.hour, end.minute],
-      // If you want ICS to treat them as local times, you could omit the "toUTC()" part above,
-      // but ICS typically expects a time + timezone or a UTC time.
     },
     (error, value) => {
       if (error) {
@@ -161,26 +169,18 @@ function downloadIcs() {
   );
 }
 
-/**
- * Copy a shareable link (with hash) to the clipboard
- */
 async function copyShareLink() {
   const url = `${window.location.origin}${window.location.pathname}#${event.value.id}`;
   await navigator.clipboard.writeText(url);
   store.commit("setStatusSnackbarMessage", `Link for ${event.value.title} copied to clipboard`);
 }
 
-/**
- * Format event times with Luxon.
- * For example: "Thursday, 5 June 10:00 - Thursday, 5 June 12:00"
- */
 function formatEventTime() {
   const startTime = DateTime.fromISO(event.value.startTime);
   const endTime = DateTime.fromISO(event.value.endTime);
 
   let result = "";
 
-  // e.g. "Monday, 5 June, 10:00"
   result += startTime.toLocaleString({
     weekday: "long",
     day: "numeric",
@@ -191,8 +191,11 @@ function formatEventTime() {
 
   result += " - ";
 
-  // If it ends on a different date, show "Monday, 5 June" again
-  if (startTime.day !== endTime.day || startTime.month !== endTime.month || startTime.year !== endTime.year) {
+  if (
+    startTime.day !== endTime.day ||
+    startTime.month !== endTime.month ||
+    startTime.year !== endTime.year
+  ) {
     result += endTime.toLocaleString({
       weekday: "long",
       day: "numeric",
@@ -201,7 +204,6 @@ function formatEventTime() {
     result += " at ";
   }
 
-  // e.g. "12:00"
   result += endTime.toLocaleString({
     hour: "2-digit",
     minute: "2-digit",
@@ -230,7 +232,6 @@ function formatEventTime() {
           no-gutters
           align="start"
         >
-          <!-- Event description -->
           <v-col>
             <v-list-item-title class="text-h4">
               {{ event.title }}
@@ -245,16 +246,13 @@ function formatEventTime() {
               {{ event.membersOnly ? 'Members only' : '' }}
             </div>
 
-            <!-- eslint-disable-next-line vue/no-v-html -->
             <div v-html="event.description ? $markdownToHtml(event.description) : 'No description...'" />
           </v-col>
-          <!-- Buttons on the right -->
           <v-col
             class="pa-0"
             cols="auto"
           >
             <template v-if="event.signUp">
-              <!-- Simple signup with no form -->
               <v-row v-if="isLoggedIn && !event.signUpForm?.length && signUp?.id">
                 <v-tooltip
                   location="left"
@@ -291,9 +289,7 @@ function formatEventTime() {
                 </v-tooltip>
               </v-row>
 
-              <!-- SignUp form-based events -->
               <template v-else-if="event.signUpForm && (isLoggedIn || !event.membersOnly)">
-                <!-- Cancel sign-up if already signed up -->
                 <v-row>
                   <v-tooltip
                     v-if="isLoggedIn && signUp?.id !== undefined"
@@ -313,7 +309,6 @@ function formatEventTime() {
                   </v-tooltip>
                 </v-row>
 
-                <!-- Toggle sign-up form (edit or fill) -->
                 <v-row>
                   <v-tooltip
                     location="left"
@@ -340,7 +335,6 @@ function formatEventTime() {
               </template>
             </template>
 
-            <!-- Location and share links -->
             <v-row>
               <v-tooltip
                 text="Find location"
@@ -389,7 +383,6 @@ function formatEventTime() {
           </v-col>
         </v-row>
         <v-row>
-          <!-- If expanded, show the sign-up form -->
           <v-expand-transition :key="event.id">
             <div
               v-if="expanded"
@@ -409,8 +402,8 @@ function formatEventTime() {
     </div>
   </v-list-item>
 </template>
-<style scoped>
 
+<style scoped>
 .form-border {
   border-width: 1px;
   border-color: rgb(var(--v-theme-accent));

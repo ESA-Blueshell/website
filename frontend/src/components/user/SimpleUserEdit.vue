@@ -111,7 +111,7 @@
 <script setup lang="ts">
 import {ref, type Ref, watch} from 'vue';
 import {createGuestUser, type SimpleUserDto} from '@/lib';
-import client from "@/lib/blueshell/client.ts";
+
 import type {VForm} from 'vuetify/components';
 
 interface Props {

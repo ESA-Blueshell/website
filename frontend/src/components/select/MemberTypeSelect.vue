@@ -14,7 +14,6 @@
 
 <script lang="ts">
 import {defineComponent, ref, watch} from 'vue';
-import {MemberType} from "@/models";
 
 export default defineComponent({
   name: 'MemberTypeSelect',

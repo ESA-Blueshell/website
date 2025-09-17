@@ -54,8 +54,7 @@
 
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue';
-import type { AddressDto } from '@/lib/types.gen.ts';
-import client from "@/lib/blueshell/client.ts";
+import type { AddressDto } from '@/lib';
 import { createAddress, updateAddress } from '@/lib';
 import CountrySelect from "@/components/select/CountrySelect.vue";
 

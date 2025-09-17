@@ -129,7 +129,6 @@ import {computed, ref, type Ref, watch} from 'vue';
 import {VPhoneInput} from 'v-phone-input';
 import store from '@/plugins/store.ts';
 import {type AdvancedUserDto, createMember, createUser, type SimpleUserDto, updateUser} from '@/lib';
-import client from "@/lib/blueshell/client.ts";
 import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
 import CountrySelect from '@/components/select/CountrySelect.vue';
@@ -250,19 +249,16 @@ const save = async (): Promise<void> => {
     if (userData.value?.id) {
       response = await updateUser({
         path: {userId: userData.value.id},
-        body: userData.value,
-        client
+        body: userData.value
       });
     } else {
       if (roles.value && roles.value.includes('BOARD')) {
         response = await createMember({
-          body: userData.value,
-          client
+          body: userData.value
         });
       } else {
         response = await createUser({
-          body: userData.value,
-          client
+          body: userData.value
         });
       }
     }

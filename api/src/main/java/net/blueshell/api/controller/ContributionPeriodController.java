@@ -29,6 +29,12 @@ public class ContributionPeriodController extends BaseController<ContributionPer
         return mapper.toDTOs(service.findAll());
     }
 
+    @GetMapping("/contributionPeriods/current")
+    public ContributionPeriodDTO findCurrentContributionPeriod() {
+        var contributionPeriod = service.findLatest();
+        return mapper.toDTO(contributionPeriod);
+    }
+
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
     public ContributionPeriodDTO createContributionPeriod(@Valid @RequestBody ContributionPeriodDTO dto) {
@@ -50,7 +56,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteContributionPeriod(@PathVariable("id") Long id) {
+    public void deleteContributionPeriodById(@PathVariable("id") Long id) {
         ContributionPeriod contributionPeriod = service.findById(id);
         service.delete(contributionPeriod);
     }

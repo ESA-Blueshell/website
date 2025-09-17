@@ -17,7 +17,7 @@
         </v-list-item>
         <v-expand-transition>
           <div v-if="expanded === -1">
-            <UserEdit
+            <AdvancedUserEdit
               class="mt-4"
               @user-changed="userChanged"
             />
@@ -40,72 +40,58 @@
           @user-changed="userChanged"
           @delete-user="deleteUser"
         />
-        <v-divider />
+        <v-divider/>
       </div>
     </v-list>
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import UserListRow from './UserListRow.vue';
-import type {AdvancedUserModel, ContributionModel} from "@/models";
+// Use only generated models from lib/blueshell
+import type {AdvancedUserDto, ContributionDto} from '@/lib/blueshell/types.gen';
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 
-export default {
-  name: 'UserList',
-  components: {UserEdit: AdvancedUserEdit, UserListRow},
-  props: {
-    title: {
-      type: String,
-      required: true,
-    },
-    contributions: {
-      type: Array as () => ContributionModel[],
-      default: () => [],
-    },
-    users: {
-      type: Array as () => AdvancedUserModel[],
-      default: () => [],
-    },
-    expanded: {
-      type: Number,
-      default: null,
-    },
-    isMemberList: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: [
-    'toggle-expanded',
-    'user-changed',
-    'delete-user',
-    'contribution-changed',
-  ],
-  setup(props, {emit}) {
-    const toggleExpanded = (userId: number) => {
-      emit('toggle-expanded', userId);
-    };
+// Props
+const props = withDefaults(defineProps<{
+  title: string;
+  contributions?: ContributionDto[];
+  users?: AdvancedUserDto[];
+  expanded?: number | null;
+  isMemberList?: boolean;
+}>(), {
+  contributions: () => [],
+  users: () => [],
+  expanded: null,
+  isMemberList: false,
+});
 
-    const contributionChanged = (contribution: ContributionModel) => {
-      emit('contribution-changed', contribution);
-    }
+// Emits
+const emit = defineEmits<{
+  (e: 'toggle-expanded', userId: number): void;
+  (e: 'user-changed', user: AdvancedUserDto): void;
+  (e: 'delete-user', user: AdvancedUserDto): void;
+  (e: 'contribution-changed', contribution: ContributionDto): void;
+}>();
 
-    const userChanged = (user: AdvancedUserModel) => {
-      toggleExpanded(0);
-      emit('user-changed', user);
-    };
-
-    const deleteUser = (user: AdvancedUserModel) => {
-      emit('delete-user', user);
-    };
-
-    return {
-      toggleExpanded,
-      userChanged,
-      deleteUser,
-      contributionChanged,
-    };
-  },
+// Handlers
+const toggleExpanded = (userId: number) => {
+  emit('toggle-expanded', userId);
 };
+
+const contributionChanged = (contribution: ContributionDto) => {
+  emit('contribution-changed', contribution);
+};
+
+const userChanged = (user: AdvancedUserDto) => {
+  toggleExpanded(0);
+  emit('user-changed', user);
+};
+
+const deleteUser = (user: AdvancedUserDto) => {
+  emit('delete-user', user);
+};
+
+// Expose to template
+const {title, users, contributions, expanded, isMemberList} = props;
 </script>

@@ -48,7 +48,7 @@ import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 import {findUserById} from "@/lib/index.js";
-import client from "@/lib/blueshell/client.ts";
+
 
 // Reactive data
 const user = ref(null);

@@ -1,14 +1,13 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { FileType } from '@/models/enums/FileType';
-import type FileModel from '@/models/FileModel.ts';
+import type {FileDto} from "@/lib";
 
 // References and reactive state
 const fileInput = ref<HTMLInputElement | null>(null);
-const selectedFile = ref<FileModel | null>(null);
+const selectedFile = ref<FileDto | null>(null);
 const previewUrl = ref<string | null>(null);
 // Default file type (can be changed via the select)
-const fileType = ref<FileType>(FileType.DOCUMENT);
+const fileType = ref<'DOCUMENT' | 'SIGNATURE' | 'PROFILE_PICTURE' | 'EVENT_BANNER' | 'EVENT_PICTURE' | 'SPONSOR_PICTURE'>('DOCUMENT');
 
 // Called when a file is selected from the input element
 function onFileSelected(event: Event) {
@@ -76,7 +75,7 @@ function downloadFile() {
         v-model="fileType"
       >
         <option
-          v-for="type in Object.values(FileType)"
+          v-for="type in ['DOCUMENT', 'SIGNATURE', 'PROFILE_PICTURE', 'EVENT_BANNER', 'EVENT_PICTURE', 'SPONSOR_PICTURE']"
           :key="type"
           :value="type"
         >
@@ -97,7 +96,7 @@ function downloadFile() {
       <h3>FileModel: {{ selectedFile.name }}</h3>
       <!-- Preview image if file type is not DOCUMENT -->
       <img
-        v-if="selectedFile.fileType !== FileType.DOCUMENT && previewUrl"
+        v-if="selectedFile.fileType !== 'DOCUMENT' && previewUrl"
         :src="previewUrl"
         alt="Preview"
         style="max-width:200px; max-height:200px;"

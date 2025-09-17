@@ -43,122 +43,104 @@
     </div>
   </v-main>
 </template>
-<script lang="ts">
-import {ref, watch, onMounted, defineComponent} from 'vue';
+<script setup lang="ts">
+// ... existing code ...
+import { ref, watch, onMounted } from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
 import ContributionPeriodList from '@/views/member/ContributionPeriodList.vue';
 import UserList from '@/views/member/UserList.vue';
-import UserService from "@/services/UserService.ts";
-import {type ContributionModel, type AdvancedUserModel, Role} from "@/models";
-import {ContributionService} from "@/services";
+import type { AdvancedUserDto, ContributionDto } from '@/lib';
+import { findUsers, findContributionsByPeriodId } from '@/lib';
 
-export default defineComponent({
-  name: 'MemberManager',
-  components: {
-    TopBanner: TopBanner,
-    ContributionPeriodList,
-    UserList,
-  },
-  setup() {
-    const members = ref([] as AdvancedUserModel[]);
-    const nonMembers = ref([] as AdvancedUserModel[]);
-    const users = ref([] as AdvancedUserModel[]);
-    const contributions = ref([] as ContributionModel[]);
-    const expanded = ref(0);
-    const search = ref('');
-    const userService = new UserService();
-    const contributionService = new ContributionService();
-    const selectedPeriodId = ref(0)
+// State
+const members = ref([] as AdvancedUserDto[]);
+const nonMembers = ref([] as AdvancedUserDto[]);
+const users = ref([] as AdvancedUserDto[]);
+const contributions = ref([] as ContributionDto[]);
+const expanded = ref(0);
+const search = ref('');
+const selectedPeriodId = ref(0);
 
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
 
+// Data loading
+const getUsers = async () => {
+  const response = await findUsers({});
+  users.value = response.data ?? [];
+  updateMembers();
+};
 
-    const getUsers = async () => {
-      users.value = await userService.getUsers();
-      updateMembers();
-    };
+// Helpers
+const isSearched = (user: AdvancedUserDto) => {
+  if (!search.value) return true;
 
-    const isSearched = (user: AdvancedUserModel) => {
-      if (!search.value) {
-        return true
-      }
-      // Split the search string into individual terms and convert them to lowercase
-      const searchTerms = search.value.toLowerCase().split(' ').filter(Boolean);
+  const searchTerms = search.value.toLowerCase().split(' ').filter(Boolean);
+  const userValues = Object.values(user ?? {})
+    .filter(Boolean)
+    .map((v) => String(v).toLowerCase());
 
-      // Get all values from the user object, filter out falsy values, and convert them to lowercase strings
-      const userValues = Object.values(user)
-        .filter(Boolean)
-        .map(value => String(value).toLowerCase());
+  return searchTerms.every((term) => userValues.some((value) => value.includes(term)));
+};
 
-      // Check if any search term is included in any of the user values
-      return searchTerms.every((term) =>
-        userValues.some((value) => value.includes(term))
-      );
-    };
+const updateMembers = () => {
+  members.value = users.value.filter(
+    (user) => user?.membership && !user.membership?.endDate && isSearched(user)
+  );
+  nonMembers.value = users.value.filter(
+    (user) => (!user?.membership || user?.membership?.endDate) && isSearched(user)
+  );
+};
 
-    const updateMembers = () => {
-      members.value = users.value.filter((user) => user?.membership && !user.membership?.endDate && isSearched(user));
-      nonMembers.value = users.value.filter((user) => (!user?.membership || user?.membership?.endDate) && isSearched(user));
-    };
-
-    watch(search, () => {
-      updateMembers();
-    });
-
-    const deleteUser = (user: AdvancedUserModel) => {
-      users.value = users.value.filter((u) => u.id !== user.id);
-      updateMembers();
-    };
-
-    const toggleExpanded = (userId: number) => {
-      expanded.value = userId === expanded.value ? 0 : userId;
-    };
-
-    const userChanged = async (user: AdvancedUserModel) => {
-      const index = users.value.findIndex((u) => u.id === user.id);
-      if (index !== -1) {
-        users.value.splice(index, 1, user);
-      } else {
-        users.value.push(user);
-        contributions.value = await contributionService.getByPeriod(selectedPeriodId.value);
-      }
-      updateMembers();
-    };
-
-    const contributionChanged = (updatedContribution: ContributionModel) => {
-      const index = contributions.value.findIndex((c) => c.id === updatedContribution.id);
-      if (index !== -1) {
-        contributions.value.splice(index, 1, updatedContribution);
-      } else {
-        contributions.value.push(updatedContribution);
-      }
-    };
-
-    const selectedPeriodIdChanged = async (periodId: number) => {
-      contributions.value = await contributionService.getByPeriod(periodId);
-      selectedPeriodId.value = periodId;
-    }
-
-    onMounted(() => {
-      getUsers();
-    });
-
-    return {
-      members,
-      nonMembers,
-      contributions,
-      expanded,
-      search,
-      deleteUser,
-      toggleExpanded,
-      userChanged,
-      contributionChanged,
-      selectedPeriodIdChanged,
-    };
-  },
+watch(search, () => {
+  updateMembers();
 });
+
+// Events
+const deleteUser = (user: AdvancedUserDto) => {
+  users.value = users.value.filter((u) => u.id !== user.id);
+  updateMembers();
+};
+
+const toggleExpanded = (userId: number) => {
+  expanded.value = userId === expanded.value ? 0 : userId;
+};
+
+const userChanged = async (user: AdvancedUserDto) => {
+  const index = users.value.findIndex((u) => u.id === user.id);
+  if (index !== -1) {
+    users.value.splice(index, 1, user);
+  } else {
+    users.value.push(user);
+    if (selectedPeriodId.value) {
+      const resp = await findContributionsByPeriodId({ path: { periodId: selectedPeriodId.value } });
+      contributions.value = resp.data ?? [];
+    }
+  }
+  updateMembers();
+};
+
+const contributionChanged = (updatedContribution: ContributionDto) => {
+  const index = contributions.value.findIndex((c) => c.id === updatedContribution.id);
+  if (index !== -1) {
+    contributions.value.splice(index, 1, updatedContribution);
+  } else {
+    contributions.value.push(updatedContribution);
+  }
+};
+
+const selectedPeriodIdChanged = async (periodId: number) => {
+  const resp = await findContributionsByPeriodId({ path: { periodId } });
+  contributions.value = resp.data ?? [];
+  selectedPeriodId.value = periodId;
+};
+
+// Lifecycle
+onMounted(() => {
+  getUsers();
+});
+// ... existing code ...
 </script>
 
 <style scoped>

@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
-import BlogService from '@/services/BlogService.ts';
-import type BlogModel from "@/models/BlogModel.ts";
 import { useRouter } from 'vue-router'
 import {DateTime} from "luxon";
+import {type BlogDto, findBlogs} from "@/lib";
 
 const router = useRouter()
 
-const blogs = ref<BlogModel[]>([]);
-const blogService = new BlogService();
+const blogs = ref<BlogDto[]>([]);
 
 onMounted(async () => {
   try {
-    blogs.value = await blogService.getBlogs();
+    const resp = await findBlogs();
+    blogs.value = resp.data ?? [];
   } catch (error) {
     console.error('Error fetching blog list:', error);
   }
 });
 
-const navigateToBlog = (blogId: number) => {
+const navigateToBlog = (blogId: string) => {
   router.push(`/blogs/${blogId}`)
 }
 </script>
@@ -56,7 +55,7 @@ const navigateToBlog = (blogId: number) => {
               {{ blog.title }}
             </v-list-item-title>
             <v-list-item-subtitle>
-              {{ DateTime.fromISO(blog.publishedAt).toLocaleString("en-GB") }}
+              {{ DateTime.fromISO(blog.publishedAt as string).toLocaleString() }}
             </v-list-item-subtitle>
           </div>
         </v-list-item>

@@ -87,7 +87,7 @@
         There will be no undo
       </v-card-text>
       <v-card-actions>
-        <v-spacer />
+        <v-spacer/>
         <v-btn
           variant="text"
           @click="eventToDelete = null"
@@ -109,35 +109,40 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import {useRouter} from 'vue-router'
-import {EventService} from "@/services";
-import type {EventModel} from "@/models"
 import EventListItem from '@/components/events/EventListItem.vue'
 import {useDisplay} from "vuetify";
+import {deleteEventById, type EventDto} from "@/lib";
 
 defineOptions({name: 'EventManageList'})
 const display = useDisplay()
 
 
 const props = defineProps<{
-  initialEvents: EventModel[],
+  initialEvents: EventDto[],
   idToCommittee,
 }>()
 
-const events = ref<EventModel[]>(props.initialEvents)
-const eventToDelete = ref<EventModel>()
-const eventService = new EventService()
+const events = ref<EventDto[]>(props.initialEvents)
+const eventToDelete = ref<EventDto>()
 
 // Access router and store if you still need them
 const router = useRouter()
 
-function deleteEvent(): void {
+async function deleteEvent() {
   if (!eventToDelete.value) return
 
-  eventService.deleteEvent(eventToDelete.value.id as number)
-    .then(() => {
-      events.value = events.value.filter((e) => e.id !== eventToDelete.value?.id);
-      eventToDelete.value = undefined
+  try {
+    await deleteEventById({
+      path: {
+        eventId: eventToDelete.value.id as number
+      }
     })
+
+    events.value = events.value.filter((e) => e.id !== eventToDelete.value?.id);
+    eventToDelete.value = undefined
+  } catch (e) {
+    console.error(e)
+  }
 }
 </script>
 

@@ -3,25 +3,10 @@ import {computed, onMounted, ref} from 'vue'
 import {useStore} from 'vuex'
 import {useRoute} from 'vue-router'
 import EventListItem from '@/components/events/EventListItem.vue'
+import { findEvents, findEventSignUpsForCurrentUser, type EventDto, type EventSignUpDto } from '@/lib'
 
-// Services
-import EventService from '@/services/EventService'
-import EventSignUpService from '@/services/EventSignUpService'
-
-// Types
-import type EventModel from '@/models/EventModel.ts'
-import type {EventSignUpModel} from '@/models'
-import {DateTime} from "luxon";
-
-// Track loaded events: null => not loaded yet, [] => loaded but empty
-const events = ref<EventModel[] | null>(null)
-
-// Map of eventId => formAnswers or `undefined` if not signed up
-const eventSignups = ref<Record<number, EventSignUpModel>>({})
-
-// Services
-const eventService = new EventService()
-const signUpService = new EventSignUpService()
+const events = ref<EventDto[] | null>(null)
+const eventSignups = ref<Record<number, EventSignUpDto>>({})
 
 // Access route and store
 const route = useRoute()
@@ -31,22 +16,26 @@ const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 
 onMounted(async () => {
-  const [fetchedEvents, signups] = await Promise.all([
-    eventService.getEvents(DateTime.local().startOf('day').toISO(), undefined),
+  const [eventsResp, signupsResp] = await Promise.all([
+    findEvents(),
     isLoggedIn.value
-      ? signUpService.getSignups()
-      : Promise.resolve([]),
+      ? findEventSignUpsForCurrentUser()
+      : Promise.resolve({ data: [] as EventSignUpDto[] }),
   ])
+
+  const fetchedEvents = eventsResp.data?.content ?? []
 
   // Assign signups first, as otherwise event rendering happens before they're available
   if (isLoggedIn.value) {
+    const signups = signupsResp.data ?? []
     eventSignups.value = Object.fromEntries(
-      (signups as EventSignUpModel[]).map(s => [s.eventId as number, s])
+      signups
+        .filter(s => typeof s.eventId === 'number')
+        .map(s => [s.eventId as number, s])
     )
   }
   events.value = fetchedEvents
 })
-
 
 </script>
 <template>
@@ -73,7 +62,7 @@ onMounted(async () => {
       >
         <event-list-item
           :event="event"
-          :sign-up="eventSignups[event.id]"
+          :sign-up="eventSignups[event.id as number]"
           class="event-list-item"
         />
         <!-- only show divider when there's another item after -->

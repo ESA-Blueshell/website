@@ -81,9 +81,8 @@ import {
 } from 'vue';
 import {$handleNetworkError} from '@/plugins/handleNetworkError.ts';
 import { DateTime } from 'luxon';
-import type {ContributionPeriodModel} from '@/models';
-import {ContributionPeriodService} from '@/services';
 import type {VForm} from 'vuetify/components';
+import {type ContributionPeriodDto, createContributionPeriod, updateContributionPeriod} from "@/lib";
 
 export default defineComponent({
   name: 'ContributionPeriodDialog',
@@ -97,11 +96,11 @@ export default defineComponent({
       required: true,
     },
     selectedPeriod: {
-      type: Object as () => ContributionPeriodModel | null,
+      type: Object as () => ContributionPeriodDto | null,
       default: null,
     },
     contributionPeriods: {
-      type: Array as () => ContributionPeriodModel[],
+      type: Array as () => ContributionPeriodDto[],
       default: () => [],
     },
   },
@@ -112,7 +111,7 @@ export default defineComponent({
       set: (value) => emit('update:modelValue', value),
     });
 
-    const form = reactive<ContributionPeriodModel>({
+    const form = reactive<ContributionPeriodDto>({
       id: props.selectedPeriod?.id || 0,
       startDate: '',
       endDate: '',
@@ -127,8 +126,6 @@ export default defineComponent({
     const formRef = ref<VForm>();
 
     const {contributionPeriods, selectedPeriod} = toRefs(props);
-
-    const contributionPeriodService = new ContributionPeriodService();
 
     const startDateRules = computed(() => [
       (value: string) => !!value || 'Start Date is required',
@@ -185,9 +182,16 @@ export default defineComponent({
 
       try {
         if (props.isEditing) {
-          await contributionPeriodService.updatePeriod(form.id as number, form);
+          await updateContributionPeriod({
+            body: form,
+            path: {
+              id: form.id as number
+            }
+          })
         } else {
-          await contributionPeriodService.createPeriod(form);
+          await createContributionPeriod({
+            body: form
+          })
         }
         emit('refresh-periods');
         closeDialog();

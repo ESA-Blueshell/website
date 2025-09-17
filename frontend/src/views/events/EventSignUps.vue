@@ -115,20 +115,18 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import TopBanner from '@/components/banners/TopBanner.vue'
-import { EventService, EventSignUpService } from '@/services'
-import type { EventModel, EventSignUpModel } from '@/models'
-
-// Provide an interface for sign-up form items if you prefer more structure
-interface SignUpFormItem {
-  type: 'open' | 'radio' | 'checkbox' | 'description'
-  prompt: string
-  options?: string[]
-}
+import {
+  type EventDto,
+  type EventSignUpDto,
+  findEventById,
+  findEventSignUpsByEventId,
+  type FormQuestionDto
+} from "@/lib";
 
 // Refs for reactive data
 const eventName = ref<string | null>(null)
-const signUpForm = ref<SignUpFormItem[]>([])
-const responses = ref<EventSignUpModel[]>([])
+const signUpForm = ref<FormQuestionDto[]>([])
+const responses = ref<EventSignUpDto[]>([])
 
 // This tracks expanded rows for the checkbox question
 // We'll store them as `'i-j'` strings
@@ -148,16 +146,25 @@ function toggle(i: number, j: number) {
 
 onMounted(async () => {
   try {
-    const eventService = new EventService()
-    const eventSignupService = new EventSignUpService()
-
-    const [event, signups] = await Promise.all([
-      eventService.getEvent(route.params.id),
-      eventSignupService.getEventSignUps(route.params.id)
+    const eventId: number = Number(route.params.id)
+    const [eventResp, signupsResp] = await Promise.all([
+      findEventById({
+        path: {
+          id: eventId
+        }
+      }),
+      findEventSignUpsByEventId({
+        path: {
+          eventId
+        }
+      })
     ])
 
-    eventName.value = (event as EventModel).title
-    signUpForm.value = (event as EventModel).signUpForm
+    const event: EventDto = eventResp.data ?? {} as EventDto
+    const signups: EventSignUpDto[] = signupsResp.data ?? []
+
+    eventName.value = event.title
+    signUpForm.value = event.signUpForm ?? []
     responses.value = signups
   } catch (err) {
     // Handle errors as desired

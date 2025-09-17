@@ -76,7 +76,6 @@ import { DateTime } from 'luxon';
 import DocumentTable from "@/components/DocumentTable.vue";
 import ContributionPeriod from "@/components/ContributionPeriodComponent.vue";
 import type { MembershipDto, FileDto } from "@/lib";
-import client from "@/lib/blueshell/client.ts";
 import { updateMembership, createMembership } from "@/lib";
 
 // Props interface

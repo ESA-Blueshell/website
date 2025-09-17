@@ -1,20 +1,17 @@
-// Styles
 import '@mdi/font/css/materialdesignicons.css'
 import '@/styles/main.scss'
-// Composables
-import {createVuetify} from 'vuetify'
-import en from 'vuetify/lib/locale/en.mjs'
+import { createVuetify } from 'vuetify'
+import type { VuetifyOptions } from 'vuetify'
 
-export default createVuetify({
+const vuetifyConfig: VuetifyOptions = {
   locale: {
-    locale: en,
+    locale: "en",
   },
   theme: {
-    options: {customProperties: true},
-
     variations: {
       colors: ['primary'],
-      lighten: 1
+      lighten: 1,
+      darken: 1,
     },
 
     themes: {
@@ -40,5 +37,6 @@ export default createVuetify({
       }
     },
   },
-})
+}
 
+export default createVuetify(vuetifyConfig)

@@ -107,11 +107,11 @@ export type ContributionDto = {
 
 export type ContributionPeriodDto = {
     id?: number;
-    startDate?: string;
-    endDate?: string;
-    halfYearFee?: number;
-    fullYearFee?: number;
-    alumniFee?: number;
+    startDate: string;
+    endDate: string;
+    halfYearFee: number;
+    fullYearFee: number;
+    alumniFee: number;
     listId?: number;
 };
 
@@ -246,9 +246,9 @@ export type PageableObject = {
     offset?: number;
     sort?: SortObject;
     unpaged?: boolean;
-    pageNumber?: number;
     paged?: boolean;
     pageSize?: number;
+    pageNumber?: number;
 };
 
 export type SortObject = {
@@ -293,7 +293,7 @@ export type UpdateMembershipResponses = {
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
 
-export type DeleteUserData = {
+export type DeleteUserByIdData = {
     body?: never;
     path: {
         userId: number;
@@ -302,14 +302,14 @@ export type DeleteUserData = {
     url: '/users/{userId}';
 };
 
-export type DeleteUserResponses = {
+export type DeleteUserByIdResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteUserResponse = DeleteUserResponses[keyof DeleteUserResponses];
+export type DeleteUserByIdResponse = DeleteUserByIdResponses[keyof DeleteUserByIdResponses];
 
 export type FindUserByIdData = {
     body?: never;
@@ -459,6 +459,24 @@ export type UpdateEventResponses = {
 
 export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
 
+export type FindEventSignUpsByEventIdData = {
+    body?: never;
+    path: {
+        eventId: number;
+    };
+    query?: never;
+    url: '/events/{eventId}/signups';
+};
+
+export type FindEventSignUpsByEventIdResponses = {
+    /**
+     * OK
+     */
+    200: Array<EventSignUpDto>;
+};
+
+export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdResponses[keyof FindEventSignUpsByEventIdResponses];
+
 export type UpdateEventSignUpData = {
     body: EventSignUpDto;
     path: {
@@ -515,7 +533,7 @@ export type SendContributionReminderResponses = {
     200: unknown;
 };
 
-export type DeleteContributionPeriodData = {
+export type DeleteContributionPeriodByIdData = {
     body?: never;
     path: {
         id: number;
@@ -524,14 +542,14 @@ export type DeleteContributionPeriodData = {
     url: '/contributionPeriods/{id}';
 };
 
-export type DeleteContributionPeriodResponses = {
+export type DeleteContributionPeriodByIdResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteContributionPeriodResponse = DeleteContributionPeriodResponses[keyof DeleteContributionPeriodResponses];
+export type DeleteContributionPeriodByIdResponse = DeleteContributionPeriodByIdResponses[keyof DeleteContributionPeriodByIdResponses];
 
 export type UpdateContributionPeriodData = {
     body: ContributionPeriodDto;
@@ -894,26 +912,6 @@ export type CreateEventResponses = {
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
-
-export type FindEventSignUpsData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/events/{id}/signups';
-};
-
-export type FindEventSignUpsResponses = {
-    /**
-     * OK
-     */
-    200: {
-        parallel?: boolean;
-    };
-};
-
-export type FindEventSignUpsResponse = FindEventSignUpsResponses[keyof FindEventSignUpsResponses];
 
 export type CreateEventSignupData = {
     body: EventSignUpDto;
@@ -1367,6 +1365,22 @@ export type FindContributionsByPeriodIdResponses = {
 };
 
 export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
+
+export type FindCurrentContributionPeriodData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributionPeriods/current';
+};
+
+export type FindCurrentContributionPeriodResponses = {
+    /**
+     * OK
+     */
+    200: ContributionPeriodDto;
+};
+
+export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
 
 export type FindCommitteesForCurrentUserData = {
     body?: never;

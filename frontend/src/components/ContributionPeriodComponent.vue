@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import {ref, onMounted} from 'vue';
+import {onMounted, ref} from 'vue';
 import {$handleNetworkError} from "@/plugins/handleNetworkError";
-import { DateTime, Interval } from 'luxon';
-import { ContributionPeriodService } from '@/services';
-import { type ContributionPeriodModel } from "@/models";
+import {DateTime} from 'luxon';
+import {type ContributionPeriodDto, findCurrentContributionPeriod} from "@/lib";
 
 // Reactive variables
-const contributionPeriod = ref(null); // Initialize as null
+const contributionPeriod = ref<ContributionPeriodDto>(); // Initialize as null
 const currentPeriod = ref(false);
 const loading = ref(true); // Loading state
 const error = ref(null); // Error state
 
 // Number formatter for Euro currency
 const euros = new Intl.NumberFormat('nl-NL', {style: 'currency', currency: 'EUR'});
-const contributionPeriodService = new ContributionPeriodService();
 
 // Function to format the period
-const formatPeriod = (period) => {
+const formatPeriod = (period: ContributionPeriodDto) => {
   if (!period || !period.startDate || !period.endDate) return 'N/A';
   const start = DateTime.fromISO(period.startDate).toFormat('yyyy');
   const end = DateTime.fromISO(period.endDate).toFormat('yyyy');
@@ -33,28 +31,13 @@ const formatCurrency = (amount) => {
 // Function to fetch the current contribution period
 const getContributionPeriod = async () => {
   try {
-    const periods: Promise<ContributionPeriodModel[]> = await contributionPeriodService.getContributionPeriods();
+    const response = await findCurrentContributionPeriod();
+    contributionPeriod.value = response.data;
 
-    // Find the current period where today's date is between startDate and endDate (inclusive)
     const now = DateTime.now();
-    const current = periods.find(period => {
-      const start = DateTime.fromISO(period.startDate);
-      const end = DateTime.fromISO(period.endDate);
-      return Interval.fromDateTimes(start, end).contains(now);
-    });
-
-    if (current) {
-      contributionPeriod.value = current;
-      currentPeriod.value = true;
-    } else if (periods.length > 0) {
-      // If no current period, use the latest period (assuming the last in the array is the latest)
-      contributionPeriod.value = periods.at(-1); // ES2022 method
-      currentPeriod.value = false;
-    } else {
-      // No periods available
-      contributionPeriod.value = null;
-      currentPeriod.value = false;
-    }
+    const startDate = DateTime.fromISO(contributionPeriod.value.startDate as string);
+    const endDate = DateTime.fromISO(contributionPeriod.value.endDate as string);
+    currentPeriod.value = now >= startDate && now <= endDate;
   } catch (err) {
     // Capture and set error message
     error.value = err.response?.data?.message || err.message || 'Unknown error occurred.';

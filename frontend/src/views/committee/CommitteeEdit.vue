@@ -82,17 +82,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import type { VForm } from 'vuetify/components';
-import type {CommitteeModel, CommitteeMemberModel, SimpleUserModel} from '@/models';
-import { UserService, CommitteeService } from '@/services';
-import type {SimpleUserDto} from "@/lib";
+import {onMounted, ref} from 'vue';
+import type {VForm} from 'vuetify/components';
+import {
+  type AdvancedCommitteeDto,
+  type CommitteeMemberDto,
+  createCommittee,
+  findUsers,
+  type SimpleUserDto,
+  updateCommittee
+} from "@/lib";
 
 const props = defineProps<{
   committee: {
-    members: CommitteeMemberModel[];
-    type: CommitteeModel,
+    members: CommitteeMemberDto[];
+    type: AdvancedCommitteeDto,
     required: false,
+    default: () => AdvancedCommitteeDto;
   };
 }>();
 
@@ -104,26 +110,28 @@ const emit = defineEmits<{
 const valid = ref(false);
 const members = ref<SimpleUserDto[]>([]);
 const form = ref<VForm | null>(null);
-const userService = new UserService();
-const committeeService = new CommitteeService();
 
 // Create a local copy of the committee to avoid direct prop mutation
-const localCommittee = ref<CommitteeModel>({
+const localCommittee = ref<AdvancedCommitteeDto>({
+  name: '',
   ...props.committee,
-  members: props.committee?.members ? [...props.committee.members.map(m => ({ ...m }))] : [],
-  type: 'AdvancedCommitteeDTO'
+  members: props.committee?.members ? [...props.committee.members.map(m => ({...m}))] : []
 });
 
 // Fetch members on mount
 onMounted(async () => {
-  members.value = await userService.getUsers(true);
+  const resp = await findUsers({
+    query: {
+      isMember: true
+    }
+  });
+  members.value = resp.data ?? [];
 });
 
 const addMember = () => {
   localCommittee.value.members.push({
     role: '',
     userId: 0,
-    type: 'CommitteeMemberDTO',
     committeeId: localCommittee.value.id
   });
 };
@@ -133,16 +141,23 @@ const removeMember = (index: number) => {
 };
 
 const submit = async () => {
-  const { valid: formValid } = await form.value?.validate() ?? { valid: false };
+  const {valid: formValid} = await form.value?.validate() ?? {valid: false};
   if (!formValid) return;
 
   emit('submitting');
 
   try {
     if (localCommittee.value.id) {
-      await committeeService.updateCommittee(localCommittee.value.id, localCommittee.value);
+      await updateCommittee({
+        body: localCommittee.value,
+        path: {
+          committeeId: localCommittee.value.id
+        }
+      })
     } else {
-      await committeeService.createCommittee(localCommittee.value);
+      await createCommittee({
+        body: localCommittee.value,
+      })
     }
     emit('close');
   } catch (error) {

@@ -46,7 +46,7 @@
 import {onMounted, ref} from 'vue';
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {createGuestUser, type SimpleUserDto} from '@/lib';
-import client from "@/lib/blueshell/client.ts";
+
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import store from '@/plugins/store';
 import type {AxiosError} from "axios";

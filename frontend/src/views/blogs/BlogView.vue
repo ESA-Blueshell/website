@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue'
 import {useRoute} from 'vue-router'
-import type BlogModel from '@/models/BlogModel.ts'
-import BlogService from '@/services/BlogService.ts'
-
-// Create an instance of our BlogService
-const blogService = new BlogService()
+import {type BlogDto, findBlogById} from "@/lib";
 
 // Reactive reference to hold the single blog data
-const blog = ref<BlogModel | null>(null)
+const blog = ref<BlogDto | null>(null)
 
 // Grab the "id" from the route (assuming your route is set up with :id)
 const route = useRoute()
@@ -17,7 +13,12 @@ const blogId = String(route.params.id)
 // Fetch the blog when component mounts
 onMounted(async () => {
   try {
-    blog.value = await blogService.getBlog(blogId)
+    const resp = await findBlogById({
+      path: {
+        id: blogId
+      }
+    })
+    blog.value = resp.data ?? {};
   } catch (error) {
     console.error(`Error fetching blog with id ${blogId}:`, error)
   }

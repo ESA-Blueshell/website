@@ -84,7 +84,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @DeleteMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable("userId") Long userId) {
+    public void deleteUserById(@PathVariable("userId") Long userId) {
         service.delete(userId);
     }
 

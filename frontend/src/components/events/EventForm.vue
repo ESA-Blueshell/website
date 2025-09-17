@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import {ref, computed} from 'vue';
 import EventSignUpFormEdit from '@/components/events/EventSignUpFormEdit.vue';
-import {CommitteeService} from '@/services';
-import {type CommitteeModel, type EventModel} from '@/models';
-import {EventService} from '@/services';
+// ... existing code ...
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 import {useStore} from 'vuex';
 import {DateTime} from 'luxon';
 import type {VForm} from "vuetify/components";
+import { createEvent, findCommittees, updateEvent, type EventDto, type BaseDto } from '@/lib';
 
+// ... existing code ...
 const props = defineProps({
   initialEvent: {
-    type: Object as () => EventModel,
+    type: Object as () => EventDto,
     default: () => null
   },
   hasPromo: {
@@ -23,8 +23,7 @@ const props = defineProps({
 const emits = defineEmits(['submit', 'title', 'success']);
 
 const store = useStore();
-const eventService = new EventService();
-const committeeService = new CommitteeService();
+// ... existing code ...
 
 const eventForm = ref<VForm>();
 const signUpForm = ref(null);
@@ -35,17 +34,16 @@ const submitting = ref(false);
 // --------------------
 // 1) Initialize event
 // --------------------
-function getDefaultEvent(): EventModel {
+function getDefaultEvent(): EventDto {
   return {
     id: undefined,
-    type: 'EventDTO',
     title: '',
     location: '',
     description: '',
     startTime: '',
     endTime: '',
-    memberPrice: 0,
-    publicPrice: 0,
+    memberPrice: '',
+    publicPrice: '',
     visible: false,
     membersOnly: false,
     signUp: false,
@@ -56,23 +54,23 @@ function getDefaultEvent(): EventModel {
   };
 }
 
-function initializeEvent(): EventModel {
+function initializeEvent(): EventDto {
   return {
     ...getDefaultEvent(),
     ...(props.initialEvent || {}),
   };
 }
 
-const event = ref<EventModel>(initializeEvent());
+const event = ref<EventDto>(initializeEvent());
 
 // -------------------------------------------------------------
 // 2) Convert existing ISO date/time → separate date + time vars
 // -------------------------------------------------------------
-const startDateTime = props.initialEvent.startTime
+const startDateTime = props.initialEvent?.startTime
   ? DateTime.fromISO(props.initialEvent.startTime)
   : DateTime.local();
 
-const endDateTime = props.initialEvent.endTime
+const endDateTime = props.initialEvent?.endTime
   ? DateTime.fromISO(props.initialEvent.endTime)
   : DateTime.local();
 
@@ -91,8 +89,8 @@ const hadSignUp = ref<boolean>(event.value.signUp || false);
 const oldEnableSignUpForm = ref<boolean>(enableSignupForm.value);
 
 // Committees
-const committees = ref<CommitteeModel[]>([]);
-committeeService.getCommittees(true).then((response) => (committees.value = response));
+const committees = ref<BaseDto[]>([]);
+findCommittees().then((response) => (committees.value = response.data ?? [])).catch(() => (committees.value = []));
 
 // Price rules
 const priceRules = [
@@ -125,7 +123,7 @@ async function submit() {
 
   try {
     // Clone our event object
-    const payload = {...event.value};
+    const payload: EventDto = {...event.value};
 
     // Combine date + time -> Luxon -> ISO
     payload.startTime = DateTime.fromFormat(
@@ -138,28 +136,13 @@ async function submit() {
       'yyyy-MM-dd HH:mm'
     ).toISO() as string;
 
-    // signUpForm is already an array → keep it
-    // (If you need to send JSON string, do: JSON.stringify(event.value.signUpForm))
     payload.signUpForm = event.value.signUpForm ?? [];
 
-    // If we have a promo image as a FileModel, convert it to base64
-    // if (event.value.banner && event.value.banner instanceof FileModel) {
-    //   const base64Image = await toBase64(event.value.banner);
-    //   const fileExtension = '.' + event.value.banner.name.split('.').pop();
-    //   (payload as any).base64Image = base64Image;
-    //   (payload as any).fileExtension = fileExtension;
-    // }
-
-    // console.log('payload:', payload);
-    // console.log('initialEvent:', props.initialEvent);
-
-    // Correct create vs. update logic:
+    // Create vs update using generated client
     if (!payload.id) {
-      // No ID => create
-      await eventService.createEvent(payload);
+      await createEvent({ body: payload });
     } else {
-      // Has ID => update
-      await eventService.updateEvent(payload.id, payload);
+      await updateEvent({ path: { eventId: payload.id }, body: payload });
     }
 
     emits('success');
@@ -169,20 +152,6 @@ async function submit() {
     submitting.value = false;
   }
 }
-
-// function toBase64(file: FileModel) {
-//   return new Promise<string>((resolve, reject) => {
-//     const reader = new FileReader();
-//     reader.readAsDataURL(file);
-//     reader.onload = () => {
-//       const base64 = (reader.result as string)
-//         .replace('data:', '')
-//         .replace(/^.+,/, '');
-//       resolve(base64);
-//     };
-//     reader.onerror = (error) => reject(error);
-//   });
-// }
 
 // Toggles
 function toggleSignUp() {
@@ -218,7 +187,7 @@ function toggleSignUpForm() {
             ref="title"
             v-model="event.title"
             :rules="[v => !!v || 'Title is required']"
-            label="EventModel name"
+            label="Event name"
             required
             @update:model-value="emits('title', event.title)"
           />
@@ -341,7 +310,7 @@ function toggleSignUpForm() {
             v-model="endTime"
             :rules="[
               v => (!!v || !event.visible) || 'End time is required for public events',
-              v => (!!v && new Date(`${startDate} ${startTime}`) < new Date(`${endDateDisplay} ${v}`)) || 'EventModel must end after it starts'
+              v => (!!v && new Date(`${startDate} ${startTime}`) < new Date(`${endDateDisplay} ${v}`)) || 'Event must end after it starts'
             ]"
             label="End time"
             prepend-icon="mdi-clock"
@@ -350,7 +319,7 @@ function toggleSignUpForm() {
         </v-col>
       </v-row>
 
-      <!-- CommitteeModel + FileModel Input -->
+      <!-- Committee + File Input -->
       <v-row>
         <v-col>
           <v-select

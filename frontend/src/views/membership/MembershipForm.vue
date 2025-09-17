@@ -143,7 +143,7 @@ import AddressEdit from "@/components/edit/AddressEdit.vue";
 import MembershipEdit from "@/components/edit/MembershipEdit.vue";
 import type { AdvancedUserDto, AddressDto, MembershipDto } from '@/lib';
 import { findUserById, updateUser, createUser } from '@/lib';
-import client from "@/lib/blueshell/client.ts";
+
 import store from '@/plugins/store';
 import { $handleNetworkError } from "@/plugins/handleNetworkError";
 import { $goto } from "@/plugins/goto";

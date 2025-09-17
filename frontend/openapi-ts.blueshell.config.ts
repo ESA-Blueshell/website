@@ -7,8 +7,16 @@ export default defineConfig({
   },
   plugins: [
     {
+      name: '@hey-api/typescript',
+      enums: 'typescript',
+    },
+    {
       name: '@hey-api/client-axios',
       runtimeConfigPath: './src/lib/blueshell.runtime.ts',
-    }
+    },
+    {
+      asClass: false,
+      name: '@hey-api/sdk',
+    },
   ],
 });

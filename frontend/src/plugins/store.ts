@@ -1,5 +1,5 @@
-import { createStore, Store } from 'vuex';
 import { writeJsonCookie, readJsonCookie, deleteCookie } from '@/plugins/cookies';
+import {createStore, type Store} from "vuex";
 
 export type Login = {
   userId: number;
@@ -27,9 +27,9 @@ export interface Mutations {
 }
 
 export interface Actions {
-  login(context: { commit: (type: keyof Mutations, payload?: any) => void }, payload: Login): Promise<void>;
+  login(context: { commit: (type: keyof Mutations, payload?: Login) => void }, payload: Login): Promise<void>;
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
-  setRoles(context: { commit: (type: keyof Mutations, payload?: any) => void }, roles: string[]): Promise<void>;
+  setRoles(context: { commit: (type: keyof Mutations, payload?: string[]) => void }, roles: string[]): Promise<void>;
 }
 
 export interface Getters {
@@ -70,13 +70,11 @@ const store = createStore<State>({
     async setLogin(state: State, payload: Login) {
       state.login = payload;
       writeJsonCookie('login', payload);
-      import('@/lib/client.ts').then(({ reconfigureClient }) => reconfigureClient());
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`;
     },
     async logout(state: State) {
       state.login = null;
       deleteCookie('login');
-      import('@/lib/client.ts').then(({ reconfigureClient }) => reconfigureClient());
       state.statusSnackbarMessage = 'You are now logged out.';
     },
     setRoles(state: State, roles: string[]): void {

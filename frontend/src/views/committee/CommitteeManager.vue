@@ -152,8 +152,6 @@ import {
   type AdvancedCommitteeDto
 } from '@/lib'
 
-import client from "@/lib/blueshell/client.ts"
-
 interface Data {
   committees: AdvancedCommitteeDto[]
   committeeToDelete: AdvancedCommitteeDto | null
@@ -189,7 +187,7 @@ export default defineComponent({
 
     async fetchCommittees(): Promise<void> {
       try {
-        const response = await findCommittees(client)
+        const response = await findCommittees()
         const committeesData = response.data
 
         if (committeesData && committeesData.length > 0) {

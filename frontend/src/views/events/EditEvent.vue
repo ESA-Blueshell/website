@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import {computed, onMounted, ref} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
 import TopBanner from '@/components/banners/TopBanner.vue';
 import EventForm from '@/components/events/EventForm.vue';
-import { EventService } from '@/services';
-import type { EventModel } from '@/models';
-import { useRouter} from "vue-router";
+import {type EventDto, findEventById} from "@/lib";
 
-const eventService = new EventService();
 const route = useRoute();
 const router = useRouter();
 // This holds the event data once fetched (or newly created)
-const eventData = ref<EventModel | null>(null);
+const eventData = ref<EventDto | null>(null);
 
 // Reactive title for top banner
 const headerTitle = ref('');
@@ -25,7 +22,8 @@ onMounted(async () => {
     headerTitle.value = 'Edit EventModel';
     try {
       const id = Number(route.params.id);
-      eventData.value = await eventService.getEvent(id);
+      const resp = await findEventById({path: {id}});
+      eventData.value = resp.data ?? ({} as EventDto);
     } catch (err) {
       console.error('Error fetching event:', err);
       // Optionally handle or redirect on error
@@ -46,7 +44,7 @@ onMounted(async () => {
       signUp: false,
       banner: undefined,
       signUpForm: [],
-    } as EventModel;
+    } as EventDto;
   }
 });
 
@@ -57,7 +55,7 @@ function onSuccess() {
 
 <template>
   <v-main>
-    <top-banner :title="headerTitle" />
+    <top-banner :title="headerTitle"/>
     <div class="mb-8">
       <div
         class="mx-auto mt-10"

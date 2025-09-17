@@ -48,11 +48,11 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
         return mapper.toDTO(signUp);
     }
 
-    @GetMapping(value = "/events/{id}/signups")
+    @GetMapping(value = "/events/{eventId}/signups")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'seeSignUps')")
-    public Stream<EventSignUpDTO> findEventSignUps(@PathVariable("id") Long eventId) {
+    public List<EventSignUpDTO> findEventSignUpsByEventId(@PathVariable("eventId") Long eventId) {
         List<EventSignUp> eventSignUps = service.findByEventId(eventId);
-        return mapper.toDTOs(eventSignUps.stream());
+        return mapper.toDTOs(eventSignUps);
     }
 
 

@@ -73,10 +73,9 @@ import {computed, onMounted, ref} from 'vue'
 import {useStore} from 'vuex'
 import TopBanner from '@/components/banners/TopBanner.vue'
 import EventManageList from '@/components/events/EventManageList.vue'
-import {CommitteeService, EventService} from '@/services'
 import {$require} from '@/plugins/require'
-import type {CommitteeModel, EventModel} from "@/models";
 import {DateTime} from 'luxon';
+import {type EventDto, findCommittees, findEvents, type SimpleCommitteeDto} from "@/lib";
 
 // Local “groupBy” helper if you don't have a built-in one
 function groupBy<T, K extends keyof T & (string | number)>(
@@ -90,9 +89,9 @@ function groupBy<T, K extends keyof T & (string | number)>(
 }
 
 // Reactive references for data
-const events = ref<EventModel[]>([])
-const pastEvents = ref<CommitteeModel[]>([])
-const idToCommittee = ref<Record<number, CommitteeModel>>({})
+const events = ref<EventDto[]>([])
+const pastEvents = ref<EventDto[]>([])
+const idToCommittee = ref<Record<number, SimpleCommitteeDto>>({})
 const noCommittees = ref(false)
 // Track if data has finished loading
 const isLoaded = ref(false)
@@ -108,20 +107,28 @@ function myRequire(path: string) {
 
 onMounted(async () => {
   try {
-    const eventService = new EventService()
-    const committeeService = new CommitteeService()
-
-    const [upcoming, past, committees] = await Promise.all([
-      eventService.getEvents(DateTime.local().startOf('day').toISO(), undefined),
-      eventService.getEvents(
-        DateTime.local().minus({months: 1}).startOf('day').toISO(),
-        DateTime.local().startOf('day').toISO(),
-      ),
-      committeeService.getCommittees(false),
+    const [upcomingResp, pastResp, committeesResp] = await Promise.all([
+      findEvents({
+        query: {
+          filter: {
+            from: DateTime.local().startOf('day').toISO()
+          }
+        }
+      }),
+      findEvents({
+        query: {
+          filter: {
+            from: DateTime.local().minus({months: 1}).startOf('day').toISO(),
+            to: DateTime.local().startOf('day').toISO()
+          }
+        }
+      }),
+      findCommittees(),
     ])
 
-    events.value = upcoming
-    pastEvents.value = past
+    events.value = upcomingResp.data?.content ?? []
+    pastEvents.value = pastResp.data?.content ?? []
+    const committees = committeesResp.data ?? []
 
     idToCommittee.value = groupBy(committees, 'id')
     if (committees.length === 0) {

@@ -22,7 +22,7 @@
         />
       </marquee-text>
 
-      <v-spacer/>
+      <v-spacer />
       <v-tooltip
         text="Find location"
         location="bottom"
@@ -61,7 +61,7 @@
       <!-- Description of the event -->
       <p v-if="description">
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <span v-html="expand || !longDescription ? markdownToHtml(description) : markdownToHtml(firstHundredWords)+'...'"/>
+        <span v-html="expand || !longDescription ? markdownToHtml(description) : markdownToHtml(firstHundredWords)+'...'" />
         <br v-if="!expand && longDescription">
         <a
           v-if="!expand && longDescription"
@@ -74,7 +74,7 @@
         No description...
       </p>
       <!-- Starting time of the event -->
-      <v-divider class="my-2"/>
+      <v-divider class="my-2" />
       <p>
         <b>When</b>
         <br>

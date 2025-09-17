@@ -28,14 +28,14 @@
 
 import {ref} from 'vue'
 import {useStore} from 'vuex'
-import type {EventModel, FormQuestionModel, FormAnswer} from '@/models'
+import type {EventDto} from "@/lib";
 
 const emit = defineEmits(['submit'])
 
 interface Props {
-  event: EventModel
+  event: EventDto
   // If provided, we assume it's already a valid set of answers
-  initialFormAnswers?: FormAnswer[]
+  initialFormAnswers?: any[]
   showGuestForm: boolean
   buttonLoading?: boolean
 }

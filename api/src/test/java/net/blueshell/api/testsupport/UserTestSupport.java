@@ -3,7 +3,7 @@ package net.blueshell.api.testsupport;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.blueshell.api.config.SqlScriptTestExecutionListener;
 import net.blueshell.api.dto.request.JwtRequest;
-import net.blueshell.api.dto.response.JwtResponse;
+import net.blueshell.api.dto.response.AuthenticationDTO;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
@@ -73,7 +73,7 @@ public abstract class UserTestSupport {
 
         MvcResult result = mvc.perform(post("/auth").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(requestBody))).andExpect(status().isOk()).andExpect(jsonPath("$.token").isNotEmpty()).andReturn();
 
-        JwtResponse response = mapper.readValue(result.getResponse().getContentAsByteArray(), JwtResponse.class);
+        AuthenticationDTO response = mapper.readValue(result.getResponse().getContentAsByteArray(), AuthenticationDTO.class);
         return response.getToken();
     }
 
@@ -81,7 +81,7 @@ public abstract class UserTestSupport {
     protected String tokenForUser(User user) throws Exception {
         JwtRequest requestBody = new JwtRequest(user.getUsername(), DEFAULT_PASSWORD);
         MvcResult result = mvc.perform(post("/auth").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(requestBody))).andExpect(status().isOk()).andExpect(jsonPath("$.token").isNotEmpty()).andReturn();
-        JwtResponse response = mapper.readValue(result.getResponse().getContentAsByteArray(), JwtResponse.class);
+        AuthenticationDTO response = mapper.readValue(result.getResponse().getContentAsByteArray(), AuthenticationDTO.class);
         return response.getToken();
     }
 

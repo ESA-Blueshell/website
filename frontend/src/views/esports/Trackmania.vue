@@ -14,17 +14,19 @@
         </p>
       </div>
     </div>
-    <team-details
-      :v-for="team in teams"
-      :team="team"
-    />
+    <template
+      v-for="team in teams"
+      :key="team.name"
+    >
+      <team-details :team="team" />
+    </template>
   </v-main>
 </template>
 
 <script setup lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import TeamDetails from "@/components/TeamDetails.vue";
-import Team from "@/types/Team.ts"
+import type Team from "@/types/Team.ts"
 import {$require} from "@/plugins/require.js";
 import {ref} from "vue";
 

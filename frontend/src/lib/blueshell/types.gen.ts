@@ -216,7 +216,7 @@ export type JwtRequest = {
     password?: string;
 };
 
-export type JwtResponse = {
+export type AuthenticationDto = {
     token: string;
     userId: number;
     username: string;
@@ -1109,7 +1109,7 @@ export type AuthenticateResponses = {
     /**
      * OK
      */
-    200: JwtResponse;
+    200: AuthenticationDto;
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];

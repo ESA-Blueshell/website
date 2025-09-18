@@ -9,7 +9,7 @@ import net.blueshell.api.dto.request.JwtRequest;
 import net.blueshell.api.dto.request.MemberActivationRequest;
 import net.blueshell.api.dto.request.PasswordResetRequest;
 import net.blueshell.api.dto.request.UserActivationRequest;
-import net.blueshell.api.dto.response.JwtResponse;
+import net.blueshell.api.dto.response.AuthenticationDTO;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.ActivationService;
 import net.blueshell.api.service.UserService;
@@ -62,7 +62,7 @@ public class AuthenticationController extends JWTAuthBase {
     }
 
     @PostMapping("/auth")
-    public JwtResponse authenticate(
+    public AuthenticationDTO authenticate(
             @Valid @RequestBody JwtRequest authenticationRequest) {
         authenticate(
                 authenticationRequest.getUsername(),
@@ -73,7 +73,7 @@ public class AuthenticationController extends JWTAuthBase {
         String token = jwtTokenUtil.generateToken(user);
         long expirationTime = System.currentTimeMillis() + expiration;
 
-        return new JwtResponse(token,
+        return new AuthenticationDTO(token,
                 user.getId(),
                 user.getUsername(),
                 expirationTime,

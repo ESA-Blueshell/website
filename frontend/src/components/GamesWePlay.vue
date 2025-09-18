@@ -1,3 +1,4 @@
+
 <template>
   <div style="position:relative;overflow: hidden;">
     <p
@@ -35,7 +36,7 @@
             height: $vuetify.display.smAndUp ? '85px' : '70px',
           }"
 
-          @click="$goto(game.esportsLink)"
+          @click="handleGameClick(game.esportsLink)"
           @mouseenter="hover(i,j)"
           @mouseleave="unhover"
         >
@@ -104,42 +105,69 @@
   </div>
 </template>
 
-<script  setup lang="ts">
-import {$goto} from "@/plugins/goto";
+<script setup lang="ts">
+import { ref } from 'vue';
+import { $goto } from "@/plugins/goto";
 
-export default {
-  name: "GamesWePlay",
-  props: ["games"],
-  data: () => ({
-    showPopup: 0,
-    currentGame: null,
-    currentGameIndex: null,
-    hoverCarousel: false
-  }),
-  methods: {
-    $goto,
-    hover(i, j) {
-      setTimeout(() => {
-        this.showPopup++;
-        if (i !== null && j !== null) {
-          this.currentGame = {y: i, x: j};
-
-          let newIndex = 0;
-          for (let k = 0; k < i; k++) {
-            newIndex += this.games[k].titles.length;
-          }
-          newIndex += j;
-          this.currentGameIndex = newIndex;
-        }
-      }, 1)
-    },
-    unhover() {
-      setTimeout(() => {
-        this.showPopup--;
-      }, 1000)
-    },
-  }
+// Define types
+interface Game {
+  title: string;
+  icon: string;
+  bg: string;
+  esportsLink?: string;
 }
+
+interface GameCategory {
+  categoryName: string;
+  titles: Game[];
+}
+
+interface CurrentGame {
+  x: number;
+  y: number;
+}
+
+// Props
+interface Props {
+  games: GameCategory[];
+}
+
+const props = defineProps<Props>();
+
+// Reactive state
+const showPopup = ref<number>(0);
+const currentGame = ref<CurrentGame | null>(null);
+const currentGameIndex = ref<number | null>(null);
+const hoverCarousel = ref<boolean>(false);
+
+// Methods
+const handleGameClick = (esportsLink?: string): void => {
+  if (esportsLink) {
+    $goto(esportsLink);
+  }
+};
+
+const hover = (i: number | null, j: number | null): void => {
+  setTimeout(() => {
+    showPopup.value++;
+    if (i !== null && j !== null) {
+      currentGame.value = { y: i, x: j };
+
+      let newIndex = 0;
+      for (let k = 0; k < i; k++) {
+        newIndex += props.games[k].titles.length;
+      }
+      newIndex += j;
+      currentGameIndex.value = newIndex;
+    }
+  }, 1);
+};
+
+const unhover = (): void => {
+  setTimeout(() => {
+    showPopup.value--;
+  }, 1000);
+};
 </script>
 
 <style lang="scss" scoped>

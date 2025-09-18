@@ -11,6 +11,7 @@ import type { RouteLocationRaw } from 'vue-router';
 export function $handleNetworkError(error: any): void {
   let errorMessage: string;
   const currentRoute = router.currentRoute.value;
+  console.log(error);
 
   if (error.response) {
     switch (error.response.status) {

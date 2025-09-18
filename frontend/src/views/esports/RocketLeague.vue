@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Rocket League" />
+    <top-banner title="Rocket League"/>
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -12,11 +12,15 @@
         </p>
       </div>
     </div>
-    <team-details
-      :v-for="team in teams"
-      :team="team"
-      :name-right="true"
-    />
+    <template
+      v-for="team in teams"
+      :key="team.name"
+    >
+      <team-details
+        :team="team"
+        :name-right="true"
+      />
+    </template>
   </v-main>
 </template>
 
@@ -27,6 +31,7 @@ import type Team from "@/types/Team.ts"
 
 import {$require} from "@/plugins/require.js";
 import {ref} from 'vue';
+
 const teams = ref<Team[]>([
   {
     name: 'BS Oogway',

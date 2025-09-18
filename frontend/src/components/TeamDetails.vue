@@ -241,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme, useDisplay } from 'vuetify';
+import {useDisplay, useTheme} from 'vuetify';
 import type Team from "@/types/Team.ts"
 
 // Props
@@ -256,7 +256,6 @@ const theme = useTheme();
 const display = useDisplay();
 
 </script>
-
 <style lang="scss" scoped>
 .team-wrapper + .team-wrapper {
   border-top: rgb(var(--v-theme-accent)) 1px solid;

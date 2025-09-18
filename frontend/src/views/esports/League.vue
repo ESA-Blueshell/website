@@ -14,10 +14,12 @@
       </div>
     </div>
 
-    <team-details
-      :v-for="team in teams"
-      :team="team"
-    />
+    <template
+      v-for="team in teams"
+      :key="team.name"
+    >
+      <team-details :team="team" />
+    </template>
   </v-main>
 </template>
 

@@ -2,7 +2,7 @@ package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.blueshell.api.dto.request.JwtRequest;
-import net.blueshell.api.dto.response.JwtResponse;
+import net.blueshell.api.dto.response.AuthenticationDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -50,9 +50,9 @@ public abstract class JwtTestSupport {
                         .andExpect(jsonPath("$.token").isNotEmpty())
                         .andReturn();
 
-        JwtResponse response =
+        AuthenticationDTO response =
                 mapper.readValue(result.getResponse().getContentAsByteArray(),
-                        JwtResponse.class);
+                        AuthenticationDTO.class);
 
         return cachedAdminToken = response.getToken();
     }

@@ -392,7 +392,7 @@
 
     <router-view />
 
-    <bs-footer />
+    <footer-banner />
 
 
     <v-snackbar
@@ -454,137 +454,126 @@
   </v-app>
 </template>
 
-<script lang="ts">
-import {ref, computed, onMounted} from 'vue'
-import {useStore} from 'vuex'
-import {useRouter, useRoute} from 'vue-router'
-import {useTheme, useDisplay} from 'vuetify'
-import axios from 'axios'
-import FooterBanner from "@/components/banners/FooterBanner.vue";
-import {$goto} from "@/plugins/goto";
-import {$handleNetworkError} from "@/plugins/handleNetworkError";
-import DOMPurify from "dompurify";
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useRoute } from 'vue-router'
+import { useTheme, useDisplay } from 'vuetify'
+import FooterBanner from "@/components/banners/FooterBanner.vue"
+import { $goto } from "@/plugins/goto"
+import { $handleNetworkError } from "@/plugins/handleNetworkError"
+import DOMPurify from "dompurify"
+import {type AdvancedUserDto, findUserById} from "@/lib";
 
-export default {
-  components: {BsFooter: FooterBanner},
-  setup() {
-    const drawer = ref(false);
-    const poggers = ref(false);
-    const showCookieSnackbar = ref(false);
-    const store = useStore();
-    const router = useRouter();
-    const route = useRoute();
-    const theme = useTheme();
-    const display = useDisplay();
+// Reactive state
+const drawer = ref<boolean>(false)
+const poggers = ref<boolean>(false)
+const showCookieSnackbar = ref<boolean>(false)
 
-    const statusSnackbarMessage = computed({
-      get: () => store.state.statusSnackbarMessage,
-      set: (message) => store.commit('setStatusSnackbarMessage', message)
-    });
+// Composables
+const store = useStore()
+const route = useRoute()
+const theme = useTheme()
+const display = useDisplay()
 
-    const isLoggedIn = computed(() => store.getters.isLoggedIn);
-    const isActive = computed(() => store.getters.isActive);
-    const isBoard = computed(() => store.getters.isBoard);
-    const login = computed(() => store.getters.getLogin);
+// Computed properties
+const statusSnackbarMessage = computed({
+  get: (): string => store.state.statusSnackbarMessage,
+  set: (message: string) => store.commit('setStatusSnackbarMessage', message)
+})
 
-    const isDarkMode = computed(() => theme.global.current.value.dark);
+const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
+const isActive = computed((): boolean => store.getters.isActive)
+const isBoard = computed((): boolean => store.getters.isBoard)
+const login = computed(() => store.getters.getLogin)
 
-    const checkPrefersColorScheme = () => {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setDarkMode(true)
-      } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-        setDarkMode(false)
-      }
-    }
+const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 
-    const setDarkMode = (dark: boolean) => {
-      localStorage.setItem('esa-blueshell.nl:darkMode', dark.toString())
-      theme.change('dark')
-    }
+// Methods
+const checkPrefersColorScheme = (): void => {
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    setDarkMode(true)
+  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+    setDarkMode(false)
+  }
+}
 
-    const toggleDarkMode = () => {
-      setDarkMode(!theme.global.current.value.dark)
-    }
+const setDarkMode = (dark: boolean): void => {
+  localStorage.setItem('esa-blueshell.nl:darkMode', dark.toString())
+  theme.change(dark ? 'dark' : 'light')
+}
 
-    const logOut = () => {
-      document.cookie = 'login=;expires=Thu, 01 Jan 1970 00:00:01 GMT'
-      store.commit('logout')
-      if (route.meta.requiresAuth) {
-        $goto('/')
-      }
-    }
+const toggleDarkMode = (): void => {
+  setDarkMode(!theme.global.current.value.dark)
+}
 
-    const acceptCookies = () => {
-      localStorage.setItem('esa-blueshell.nl:cookiesAccepted', 'true')
-      showCookieSnackbar.value = false
-    }
+const logOut = (): void => {
+  document.cookie = 'login=;expires=Thu, 01 Jan 1970 00:00:01 GMT'
+  store.commit('logout')
+  if (route.meta.requiresAuth) {
+    $goto('/')
+  }
+}
 
-    onMounted(() => {
-      if (localStorage.getItem('esa-blueshell.nl:cookiesAccepted') !== 'true') {
-        showCookieSnackbar.value = true;
-      }
+const acceptCookies = (): void => {
+  localStorage.setItem('esa-blueshell.nl:cookiesAccepted', 'true')
+  showCookieSnackbar.value = false
+}
 
-      const loginData = login.value;
-      if (loginData) {
-        axios
-          .get(`users/${loginData.userId}`, {headers: {'Authorization': `Bearer ${loginData.token}`}})
-          .then(response => {
-            store.commit('setRoles', response.data.roles)
-          })
-          .catch(e => {
-            if (e.response?.status === 401) {
-              store.commit('statusSnackbarMessage', 'Login expired. You have been logged out.')
-              store.commit('logout')
-              if (route.meta.requiresAuth) {
-                $goto('/')
-              }
-            } else {
-              $handleNetworkError(e)
-            }
-          })
-      }
+// Lifecycle
+onMounted(async () => {
+  if (localStorage.getItem('esa-blueshell.nl:cookiesAccepted') !== 'true') {
+    showCookieSnackbar.value = true
+  }
 
-      let keysPressed: string[] = [];
-      window.addEventListener('keydown', event => {
-        if (event.key) {
-          const key = event.key.toLowerCase();
-          keysPressed.push(key);
-          if (keysPressed.toString().endsWith("arrowup,arrowup,arrowdown,arrowdown,arrowleft,arrowright,arrowleft,arrowright,b,a,enter")) {
-            poggers.value = true;
-            alert("BIG SITECIE ENERGY")
-          }
+  const loginData: AdvancedUserDto = login.value
+  if (loginData) {
+    try {
+      const resp = await findUserById({
+        path: {
+          userId: loginData.userId
         }
       });
 
-      if (!localStorage.getItem('esa-blueshell.nl:darkMode')) {
-        checkPrefersColorScheme();
+      const userData: AdvancedUserDto = resp.data;
+      store.commit('setRoles', userData.roles)
+    } catch (e: any) {
+      if (e.response?.status === 401) {
+        store.commit('setStatusSnackbarMessage', 'Login expired. You have been logged out.')
+        store.commit('logout')
+        if (route.meta.requiresAuth) {
+          $goto('/')
+        }
+      } else {
+        $handleNetworkError(e)
       }
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => checkPrefersColorScheme())
-
-      theme.change(localStorage.getItem('esa-blueshell.nl:darkMode') === 'true' ? 'dark' : 'light')
-    });
-
-    return {
-      drawer,
-      poggers,
-      showCookieSnackbar,
-      statusSnackbarMessage,
-      display,
-      isLoggedIn,
-      isActive,
-      isBoard,
-      isDarkMode,
-      toggleDarkMode,
-      logOut,
-      acceptCookies,
-      theme,
-      DOMPurify
     }
-  },
-}
+  }
+
+  const keysPressed: string[] = []
+  window.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key) {
+      const key = event.key.toLowerCase()
+      keysPressed.push(key)
+      if (keysPressed.toString().endsWith("arrowup,arrowup,arrowdown,arrowdown,arrowleft,arrowright,arrowleft,arrowright,b,a,enter")) {
+        poggers.value = true
+        alert("BIG SITECIE ENERGY")
+      }
+    }
+  })
+
+  if (!localStorage.getItem('esa-blueshell.nl:darkMode')) {
+    checkPrefersColorScheme()
+  }
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => checkPrefersColorScheme())
+
+  const savedTheme = localStorage.getItem('esa-blueshell.nl:darkMode')
+  theme.change(savedTheme === 'true' ? 'dark' : 'light')
+})
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 
 .v-btn.bar-button {
   margin: 0 2px;
@@ -627,6 +616,4 @@ export default {
     transform: rotate(0);
   }
 }
-
-
 </style>

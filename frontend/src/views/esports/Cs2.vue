@@ -13,7 +13,12 @@
         </p>
       </div>
     </div>
-    <team-details :team="hypers" />
+    <template
+      v-for="team in teams"
+      :key="team.name"
+    >
+      <team-details :team="team" />
+    </template>
   </v-main>
 </template>
 
@@ -22,60 +27,48 @@ import TopBanner from "@/components/banners/TopBanner.vue";
 import TeamDetails from "@/components/TeamDetails.vue";
 import { $require } from "@/plugins/require.js";
 import { ref } from 'vue';
+import type Team from "@/types/Team.ts";
 
-// Types
-interface TeamMember {
-  name: string;
-  ign: string;
-}
-
-interface Team {
-  name: string;
-  bg: string;
-  players: TeamMember[];
-  coaches: TeamMember[];
-  substitutes: TeamMember[];
-}
-
-// Data
-const hypers = ref<Team>({
-  name: 'BS HyperS',
-  bg: $require('@/assets/csgoesports1.jpg'),
-  players: [
-    {
-      name: 'Ivo Heitlager',
-      ign: 'BSKingCookie'
-    },
-    {
-      name: 'Reinier Algra',
-      ign: 'Reign'
-    },
-    {
-      name: 'Joran Hagen',
-      ign: 'MacVanish_'
-    },
-    {
-      name: 'Mario van der Wal Agraz',
-      ign: 'TheCheeser'
-    },
-    {
-      name: 'Marijn de Boer',
-      ign: 'Marijn02'
-    },
-  ],
-  coaches: [
-    {
-      name: 'Bob Even',
-      ign: 'Bobbuz'
-    }
-  ],
-  substitutes: [
-    {
-      name: 'Chris Wong',
-      ign: 'FetaBass'
-    }
-  ]
-});
+const teams = ref<Team>([
+  {
+    name: 'BS HyperS',
+    bg: $require('@/assets/csgoesports1.jpg'),
+    players: [
+      {
+        name: 'Ivo Heitlager',
+        ign: 'BSKingCookie'
+      },
+      {
+        name: 'Reinier Algra',
+        ign: 'Reign'
+      },
+      {
+        name: 'Joran Hagen',
+        ign: 'MacVanish_'
+      },
+      {
+        name: 'Mario van der Wal Agraz',
+        ign: 'TheCheeser'
+      },
+      {
+        name: 'Marijn de Boer',
+        ign: 'Marijn02'
+      },
+    ],
+    coaches: [
+      {
+        name: 'Bob Even',
+        ign: 'Bobbuz'
+      }
+    ],
+    substitutes: [
+      {
+        name: 'Chris Wong',
+        ign: 'FetaBass'
+      }
+    ]
+  }
+])
 </script>
 
 <style lang="scss" scoped>

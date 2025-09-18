@@ -1,16 +1,9 @@
 import { writeJsonCookie, readJsonCookie, deleteCookie } from '@/plugins/cookies';
 import {createStore, type Store} from "vuex";
-
-export type Login = {
-  userId: number;
-  username: string;
-  roles: string[];
-  token: string;
-  expiration: number
-};
+import {Role, type AuthenticationDto} from "@/lib";
 
 export interface State {
-  login: Login | null;
+  login: AuthenticationDto | null;
   guestData: Record<string, unknown> | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
@@ -18,7 +11,7 @@ export interface State {
 }
 
 export interface Mutations {
-  setLogin(state: State, payload: Login): void;
+  setLogin(state: State, payload: AuthenticationDto): void;
   logout(state: State): void;
   setRoles(state: State, roles: string[]): void;
   setStatusSnackbarMessage(state: State, message: string): void;
@@ -27,13 +20,13 @@ export interface Mutations {
 }
 
 export interface Actions {
-  login(context: { commit: (type: keyof Mutations, payload?: Login) => void }, payload: Login): Promise<void>;
+  login(context: { commit: (type: keyof Mutations, payload?: AuthenticationDto) => void }, payload: AuthenticationDto): Promise<void>;
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
   setRoles(context: { commit: (type: keyof Mutations, payload?: string[]) => void }, roles: string[]): Promise<void>;
 }
 
 export interface Getters {
-  getLogin(state: State): Login | null;
+  getLogin(state: State): AuthenticationDto | null;
   isLoggedIn(state: State): boolean;
   tokenExpired(state: State): boolean;
   isBoard(state: State): boolean;
@@ -59,7 +52,7 @@ export type TypedStore = Store<State> & {
 const store = createStore<State>({
   state(): State {
     return {
-      login: readJsonCookie<Login>('login'),
+      login: readJsonCookie<AuthenticationDto>('login'),
       guestData: readJsonCookie('guestData'),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
@@ -67,7 +60,7 @@ const store = createStore<State>({
     };
   },
   mutations: {
-    async setLogin(state: State, payload: Login) {
+    async setLogin(state: State, payload: AuthenticationDto) {
       state.login = payload;
       writeJsonCookie('login', payload);
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`;
@@ -99,7 +92,7 @@ const store = createStore<State>({
     },
   },
   getters: {
-    getLogin(state: State): Login | null {
+    getLogin(state: State): AuthenticationDto | null {
       return state.login;
     },
     isLoggedIn(state: State): boolean {
@@ -109,13 +102,13 @@ const store = createStore<State>({
       return !state.login || Date.now() > state.login.expiration;
     },
     isBoard(state: State): boolean {
-      return state.login?.roles.includes('BOARD') || false;
+      return state.login?.roles.includes(Role.BOARD) || false;
     },
     isActive(state: State): boolean {
-      return state.login?.roles.includes('COMMITTEE') || false;
+      return state.login?.roles.includes(Role.COMMITTEE) || false;
     },
     isMember(state: State): boolean {
-      return state.login?.roles.includes('MEMBER') || false;
+      return state.login?.roles.includes(Role.MEMBER) || false;
     },
     getXsrfToken(state: State): string | null {
       return state.xsrfToken;

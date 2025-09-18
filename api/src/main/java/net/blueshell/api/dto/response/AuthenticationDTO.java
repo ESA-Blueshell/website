@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.BaseDTO;
 
@@ -13,7 +12,7 @@ import java.util.Set;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class JwtResponse extends BaseDTO {
+public class AuthenticationDTO extends BaseDTO {
 
     @Serial
     private static final long serialVersionUID = -8091879091924046844L;
@@ -33,7 +32,7 @@ public class JwtResponse extends BaseDTO {
     @NotEmpty
     private final Set<Role> roles;
 
-    public JwtResponse(String token, long userId, String username, long expiration, Set<Role> roles) {
+    public AuthenticationDTO(String token, long userId, String username, long expiration, Set<Role> roles) {
         this.token = token;
         this.userId = userId;
         this.username = username;

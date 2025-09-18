@@ -1,6 +1,6 @@
-import TeamMember from "./TeamMember";
+import type TeamMember from "./TeamMember";
 
-interface Team {
+export default interface Team {
   name: string;
   bg: string;
   players: TeamMember[];

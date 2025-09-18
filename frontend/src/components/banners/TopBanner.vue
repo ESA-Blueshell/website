@@ -17,7 +17,6 @@
 import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
 
-// ... existing code ...
 interface Props {
   title: string
 }

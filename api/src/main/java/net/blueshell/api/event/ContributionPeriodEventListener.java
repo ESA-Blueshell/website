@@ -1,7 +1,9 @@
 package net.blueshell.api.event;
 
+import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.service.ContributionPeriodService;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -13,16 +15,20 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ContributionPeriodEventListener {
 
     private final ContactService contacts;
+    private final ContributionPeriodService periods;
 
-    public ContributionPeriodEventListener(ContactService contacts) {
+    public ContributionPeriodEventListener(ContactService contacts, ContributionPeriodService periods) {
         this.contacts = contacts;
+        this.periods = periods;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onContributionPeriodCreated(PrePersistEvent<ContributionPeriod> evt) {
+    public void onContributionPeriodCreated(PostPersistEvent<ContributionPeriod> evt) {
         var c = evt.getSource();
-        var listId = contacts.createList(c);
-        c.setListId(listId);
+        if (c.getListId() != null) return;
+
+        contacts.createList(c);
+        periods.update(c);
     }
 }

@@ -3,12 +3,15 @@ package net.blueshell.api.config;
 import net.blueshell.api.event.*;
 import net.blueshell.api.job.SyncContactJob;
 import net.blueshell.api.service.CommitteeMemberService;
+import net.blueshell.api.service.ContributionPeriodService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.email.EmailService;
 import net.blueshell.api.service.google.CalendarService;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
 public class EventListenerConfig {
 
     @Bean
@@ -22,8 +25,8 @@ public class EventListenerConfig {
     }
 
     @Bean
-    public ContributionPeriodEventListener contributionPeriodEventListener(ContactService contacts) {
-        return new ContributionPeriodEventListener(contacts);
+    public ContributionPeriodEventListener contributionPeriodEventListener(ContactService contacts, ContributionPeriodService periods) {
+        return new ContributionPeriodEventListener(contacts, periods);
     }
 
     @Bean

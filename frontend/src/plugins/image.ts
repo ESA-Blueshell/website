@@ -4,5 +4,5 @@
  * @returns a vite transformed url string
  */
 export function $require(url: string): string {
-  return new URL(url, import.meta.url).href
+  return new URL('@/assets/', import.meta.url).href
 }

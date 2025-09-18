@@ -23,7 +23,7 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 import {$require} from "@/plugins/require.js";
 
 export default {

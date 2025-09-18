@@ -19,7 +19,7 @@ const isEditing = computed(() => Boolean(route.params.id));
 onMounted(async () => {
   if (isEditing.value) {
     // We are editing
-    headerTitle.value = 'Edit EventModel';
+    headerTitle.value = 'Edit Event';
     try {
       const id = Number(route.params.id);
       const resp = await findEventById({path: {id}});
@@ -30,7 +30,7 @@ onMounted(async () => {
     }
   } else {
     // We are creating
-    headerTitle.value = 'Create EventModel';
+    headerTitle.value = 'Create Event';
     // Initialize a blank event object
     eventData.value = {
       id: undefined,

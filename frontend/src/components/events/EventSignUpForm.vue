@@ -28,7 +28,7 @@
 
 import {ref} from 'vue'
 import {useStore} from 'vuex'
-import type {EventDto} from "@/lib";
+import type {EventDto, FormQuestionDto} from "@/lib";
 
 const emit = defineEmits(['submit'])
 
@@ -51,7 +51,7 @@ const store = useStore()
  */
 const formAnswers = ref(
   props.initialFormAnswers
-  ?? props.event.signUpForm?.map((question: FormQuestionModel) => {
+  ?? props.event.signUpForm?.map((question: FormQuestionDto) => {
     if (question.type === 'open') return ''
     if (question.type === 'checkbox') return []
     return null // For radio or anything else

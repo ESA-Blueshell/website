@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import {useRoute, useRouter} from "vue-router";
 import TopBanner from "@/components/banners/TopBanner.vue";
 import axios from "axios";

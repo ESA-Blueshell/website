@@ -6,6 +6,7 @@ import SignUpForm from "@/components/events/EventSignUpForm.vue";
 import store from "@/plugins/store.ts";
 import { $goto } from "@/plugins/goto";
 import { useRoute } from "vue-router";
+import { useTheme } from "vuetify";
 import { DateTime } from "luxon";
 import {
   updateEventSignUp,
@@ -42,6 +43,7 @@ const signUp = ref<EventSignUpDto>({
 });
 
 const route = useRoute();
+const theme = useTheme();
 const expanded = ref(false);
 const submitting = ref(false);
 const eventElement = ref<HTMLElement | null>(null);
@@ -218,7 +220,7 @@ function formatEventTime() {
     :style="{
       'background-image': !event.banner
         ? ''
-        : $vuetify.theme.global.current.dark
+        : theme.global.current.value.dark
           ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${event.banner})`
           : `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${event.banner})`
     }"

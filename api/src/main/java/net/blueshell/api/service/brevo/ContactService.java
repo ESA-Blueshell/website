@@ -96,7 +96,7 @@ public class ContactService {
         );
     }
 
-    public Long createList(ContributionPeriod contributionPeriod) throws RestClientResponseException {
+    public void createList(ContributionPeriod contributionPeriod) throws RestClientResponseException {
         ContactsApi api = getContactsApi();
         CreateList createList = new CreateList();
         String periodName = String.format("Contribution Paid %d - %d",
@@ -104,7 +104,7 @@ public class ContactService {
         createList.name(periodName);
         createList.setFolderId(contributionPeriodsFolder);
         CreateModel createModel = api.createList(createList);
-        return createModel.getId();
+        contributionPeriod.setListId(createModel.getId());
     }
 
     public void addToList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {

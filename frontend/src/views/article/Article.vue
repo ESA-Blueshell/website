@@ -29,7 +29,7 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 import DOMPurify from "dompurify";

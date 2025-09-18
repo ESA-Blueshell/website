@@ -10,7 +10,7 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import DocumentTable from "@/components/DocumentTable.vue";
 import {$require} from "@/plugins/require.js";

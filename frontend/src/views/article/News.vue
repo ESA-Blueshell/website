@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="NewsModel" />
+    <top-banner title="News" />
 
     <div class="mx-3">
       <div
@@ -67,7 +67,7 @@
     />
   </v-main>
 </template>
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 

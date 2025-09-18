@@ -142,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import {$require} from "@/plugins/require.js";
+import {$require} from "@/plugins/require";
 
 /**
  * Downloads a file by creating a temporary link.

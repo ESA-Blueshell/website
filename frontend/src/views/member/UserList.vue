@@ -17,8 +17,9 @@
         </v-list-item>
         <v-expand-transition>
           <div v-if="expanded === -1">
-            <AdvancedUserEdit
+            <advanced-user-edit
               class="mt-4"
+              :model-value="{}"
               @user-changed="userChanged"
             />
           </div>
@@ -30,7 +31,7 @@
         v-for="user in users"
         :key="user.username"
       >
-        <UserListRow
+        <user-list-row
           :user="user"
           :expanded="expanded"
           :is-member-list="isMemberList"
@@ -40,7 +41,7 @@
           @user-changed="userChanged"
           @delete-user="deleteUser"
         />
-        <v-divider/>
+        <v-divider />
       </div>
     </v-list>
   </div>
@@ -48,20 +49,19 @@
 
 <script setup lang="ts">
 import UserListRow from './UserListRow.vue';
-// Use only generated models from lib/blueshell
 import type {AdvancedUserDto, ContributionDto} from '@/lib/blueshell/types.gen';
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
+import {toRefs} from "vue";
 
 // Props
 const props = withDefaults(defineProps<{
   title: string;
   contributions?: ContributionDto[];
-  users?: AdvancedUserDto[];
+  users: AdvancedUserDto[];
   expanded?: number | null;
   isMemberList?: boolean;
 }>(), {
   contributions: () => [],
-  users: () => [],
   expanded: null,
   isMemberList: false,
 });
@@ -93,5 +93,5 @@ const deleteUser = (user: AdvancedUserDto) => {
 };
 
 // Expose to template
-const {title, users, contributions, expanded, isMemberList} = props;
+const { title, users, contributions, expanded, isMemberList } = toRefs(props);
 </script>

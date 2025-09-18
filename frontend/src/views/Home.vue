@@ -99,7 +99,7 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 
 import MainBanner from "@/components/banners/MainBanner.vue";
 import DiscordBanner from "@/components/DiscordBanner.vue";

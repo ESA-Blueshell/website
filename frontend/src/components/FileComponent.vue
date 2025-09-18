@@ -61,7 +61,7 @@ function downloadFile() {
   <div class="file-component">
     <!-- Upload Section -->
     <div class="upload-section">
-      <label for="fileInput">Select FileModel:</label>
+      <label for="fileInput">Select File:</label>
       <input
         id="fileInput"
         ref="fileInput"
@@ -69,7 +69,7 @@ function downloadFile() {
         @change="onFileSelected"
       >
 
-      <label for="fileTypeSelect">Select FileModel Type:</label>
+      <label for="fileTypeSelect">Select File Type:</label>
       <select
         id="fileTypeSelect"
         v-model="fileType"
@@ -84,7 +84,7 @@ function downloadFile() {
       </select>
 
       <button @click="uploadFile">
-        Upload FileModel
+        Upload File
       </button>
     </div>
 
@@ -93,7 +93,7 @@ function downloadFile() {
       v-if="selectedFile"
       class="download-section"
     >
-      <h3>FileModel: {{ selectedFile.name }}</h3>
+      <h3>File: {{ selectedFile.name }}</h3>
       <!-- Preview image if file type is not DOCUMENT -->
       <img
         v-if="selectedFile.fileType !== 'DOCUMENT' && previewUrl"
@@ -102,7 +102,7 @@ function downloadFile() {
         style="max-width:200px; max-height:200px;"
       >
       <button @click="downloadFile">
-        Download FileModel
+        Download File
       </button>
     </div>
   </div>

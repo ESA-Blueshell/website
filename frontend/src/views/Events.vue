@@ -38,7 +38,7 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import Calendar from "@/components/Calendar.vue"
 import EventList from "@/components/events/EventList.vue";

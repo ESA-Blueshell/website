@@ -573,7 +573,7 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
 .v-btn.bar-button {
   margin: 0 2px;

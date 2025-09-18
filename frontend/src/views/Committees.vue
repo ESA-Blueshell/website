@@ -44,7 +44,7 @@
     </div>
   </v-main>
 </template>
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import $markdownToHtml from "@/plugins/markdownToHtml.ts";

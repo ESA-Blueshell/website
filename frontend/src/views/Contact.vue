@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Contact" />
+    <top-banner title="Contact"/>
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -66,7 +66,7 @@
               allowfullscreen=""
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
-              :style="{filter: $vuetify.theme.global.current.dark ? 'invert(90%)' : ''}"
+              :style="{filter: theme.global.current.value.dark ? 'invert(90%)' : ''}"
               @load="mapLoading=false"
             />
           </v-col>
@@ -76,17 +76,14 @@
   </v-main>
 </template>
 
-<script>
+<script setup lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$goto} from "@/plugins/goto";
+import {useTheme} from "vuetify";
+import {ref} from "vue";
 
-export default {
-  components: {TopBanner: TopBanner},
-  data: () => ({
-    mapLoading: true,
-  }),
-  methods: {$goto},
-}
+const mapLoading = ref(true);
+const theme = useTheme();
 </script>
 
 <style lang="scss" scoped>

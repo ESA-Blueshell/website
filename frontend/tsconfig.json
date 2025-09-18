@@ -1,39 +1,11 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.json",
-
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "moduleResolution": "bundler",
-
-    "strict": true,
-    "skipLibCheck": true,
-
-    "jsx": "preserve",
-    "noUncheckedIndexedAccess": true,
-
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-
-    "types": ["vite/client"]
-  },
-
+  "extends": "./tsconfig.ide.json",
   "include": [
     "env.d.ts",
-    "src/**/*.d.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "src/types/**/*.d.ts",
-    "*.config.*"
-  ],
-
-  "exclude": ["dist", "node_modules"]
+    "src",
+    "vite.config.mjs",
+    "eslint.config.mjs",
+    "*.config.ts",
+    "*.config.mjs"
+  ]
 }

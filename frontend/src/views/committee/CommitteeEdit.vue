@@ -7,7 +7,7 @@
       ref="title"
       v-model="localCommittee.name"
       :rules="[v => !!v || 'Name is required']"
-      label="CommitteeModel name"
+      label="Committee name"
       required
     />
 

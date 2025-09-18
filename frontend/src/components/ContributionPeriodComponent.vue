@@ -55,7 +55,7 @@ onMounted(() => {
 </script>
 <template>
   <div>
-    <strong>ContributionModel</strong><br>
+    <strong>Contribution</strong><br>
 
     <!-- Loading State -->
     <div v-if="loading">
@@ -70,7 +70,7 @@ onMounted(() => {
       Error fetching contribution information: {{ error }}
     </div>
 
-    <!-- Display ContributionModel Information -->
+    <!-- Display Contribution Information -->
     <div v-else>
       <p v-if="$props.isForm">
         The undersigned understands that they will need to pay the {{ formatPeriod(contributionPeriod) }} contribution

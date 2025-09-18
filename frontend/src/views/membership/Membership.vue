@@ -54,7 +54,7 @@
   </v-main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$goto} from "@/plugins/goto";
 import ContributionPeriodComponent from "@/components/ContributionPeriodComponent.vue";

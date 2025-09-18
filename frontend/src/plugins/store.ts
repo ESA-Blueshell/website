@@ -70,7 +70,7 @@ const store = createStore<State>({
       deleteCookie('login');
       state.statusSnackbarMessage = 'You are now logged out.';
     },
-    setRoles(state: State, roles: string[]): void {
+    setRoles(state: State, roles: Role[]): void {
       if (state.login) {
         state.login = { ...state.login, roles };
         writeJsonCookie('login', state.login);

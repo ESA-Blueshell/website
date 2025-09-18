@@ -31,7 +31,7 @@
           style="border-radius: 10px;z-index: 3;transition: .3s cubic-bezier(.25,.8,.5,1) !important;"
           :class="{ 'elevation-8': (showPopup || hoverCarousel) && currentGame!==null && i===currentGame.y && j===currentGame.x }"
           :style="{
-            cursor: game.esportsLink ? 'pointer' : 'auto', 'background-color': !($vuetify.theme.global.current.dark && (!showPopup && !hoverCarousel)) && ((!showPopup && !hoverCarousel) || (currentGame!==null && i===currentGame.y && j===currentGame.x )) ? '#F5F5F5aa' : '#F5F5F544',
+            cursor: game.esportsLink ? 'pointer' : 'auto', 'background-color': !(theme.global.current.value.dark && (!showPopup && !hoverCarousel)) && ((!showPopup && !hoverCarousel) || (currentGame!==null && i===currentGame.y && j===currentGame.x )) ? '#F5F5F5aa' : '#F5F5F544',
             width: $vuetify.display.smAndUp ? '85px' : '70px',
             height: $vuetify.display.smAndUp ? '85px' : '70px',
           }"
@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { $goto } from "@/plugins/goto";
+import { useTheme } from 'vuetify';
 
 // Define types
 interface Game {
@@ -131,6 +132,8 @@ interface CurrentGame {
 interface Props {
   games: GameCategory[];
 }
+
+const theme = useTheme();
 
 const props = defineProps<Props>();
 

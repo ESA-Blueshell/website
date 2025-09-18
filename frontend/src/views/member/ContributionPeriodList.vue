@@ -1,8 +1,9 @@
 <template>
   <div>
     <p class="text-h3">
-      ContributionModel Periods
+      Contribution Periods
     </p>
+
     <v-row class="d-flex align-center mb-4">
       <v-col cols="11">
         <v-slide-group
@@ -20,8 +21,8 @@
             :value="period.id"
           >
             <div
-              @mouseover="hoveredPeriodId = period.id || 0"
-              @mouseleave="hoveredPeriodId = 0"
+              @mouseover="hoveredPeriodId = period.id ?? null"
+              @mouseleave="hoveredPeriodId = null"
             >
               <v-btn
                 :class="['mr-2', selectedClass]"
@@ -53,7 +54,7 @@
       </v-col>
     </v-row>
 
-    <!-- ContributionModel Period Dialog -->
+    <!-- Contribution Period Dialog -->
     <contribution-period-dialog
       v-model="showAddPeriodDialog"
       :is-editing="isEditing"
@@ -73,99 +74,82 @@
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent, onMounted, ref} from 'vue';
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import { DateTime } from 'luxon';
 import ContributionPeriodDialog from '@/views/member/ContributionPeriodDialog.vue';
 import DeleteConfirmationDialog from '@/components/DeletionConfirmationDialog.vue';
-import {DateTime} from 'luxon';
-import {type ContributionPeriodDto, findContributionPeriods} from "@/lib";
+import { type ContributionPeriodDto, findContributionPeriods } from '@/lib';
 
-export default defineComponent({
-  name: 'ContributionPeriodList',
-  components: {
-    ContributionPeriodDialog,
-    DeleteConfirmationDialog,
-  },
-  emits: ['selected-period-id-changed'],
-  setup(props, {emit}) {
-    const contributionPeriods = ref([] as ContributionPeriodDto[]);
-    const selectedPeriodId = ref(0);
-    const hoveredPeriodId = ref(0);
-    const deleteDialog = ref(false);
-    const selectedPeriod = ref({} as ContributionPeriodDto);
-    const isEditing = ref(false);
-    const showAddPeriodDialog = ref(false);
+defineOptions({ name: 'ContributionPeriodList' });
 
-    const formatPeriod = (period: ContributionPeriodDto) => {
-      if (!period) return '';
-      const start = DateTime.fromISO(period.startDate).toFormat('dd/MM/yyyy');
-      const end = DateTime.fromISO(period.endDate).toFormat('dd/MM/yyyy');
-      return `${start} - ${end}`;
-    };
+const emit = defineEmits<{
+  (e: 'selected-period-id-changed', value: number | null): void;
+}>();
 
-    const getContributionPeriods = async () => {
-      const response = await findContributionPeriods();
-      contributionPeriods.value = response.data ?? [];
-      if (contributionPeriods.value.length > 0) {
-        selectedPeriodId.value = contributionPeriods.value[contributionPeriods.value.length - 1].id || 0;
-        selectedPeriodIdChanged(selectedPeriodId.value)
-      }
-    };
+const contributionPeriods = ref<ContributionPeriodDto[]>([]);
+const selectedPeriodId = ref<number | null>(null); // ← no default ID
+const hoveredPeriodId = ref<number | null>(null);
+const deleteDialog = ref(false);
+const selectedPeriod = ref<ContributionPeriodDto | null>(null);
+const isEditing = ref(false);
+const showAddPeriodDialog = ref(false);
 
-    const openAddPeriodDialog = () => {
-      isEditing.value = false;
-      selectedPeriod.value = {} as ContributionPeriodDto;
-      showAddPeriodDialog.value = true;
-    };
+const formatPeriod = (period?: ContributionPeriodDto | null) => {
+  if (!period) return '';
+  const start = DateTime.fromISO(period.startDate).toFormat('dd/MM/yyyy');
+  const end = DateTime.fromISO(period.endDate).toFormat('dd/MM/yyyy');
+  return `${start} - ${end}`;
+};
 
-    const openEditPeriodDialog = (period: ContributionPeriodDto) => {
-      isEditing.value = true;
-      selectedPeriod.value = period;
-      showAddPeriodDialog.value = true;
-    };
+const getContributionPeriods = async () => {
+  const response = await findContributionPeriods();
+  contributionPeriods.value = response.data ?? [];
+  if (contributionPeriods.value.length > 0) {
+    selectedPeriodId.value =
+      contributionPeriods.value[contributionPeriods.value.length - 1].id ?? null;
+    selectedPeriodIdChanged(selectedPeriodId.value);
+  } else {
+    selectedPeriodId.value = null;
+    selectedPeriodIdChanged(null);
+  }
+};
 
-    const deleteContributionPeriod = () => {
-      deleteDialog.value = true;
-    }
+const openAddPeriodDialog = () => {
+  isEditing.value = false;
+  selectedPeriod.value = null; // ← blank object; dialog will initialize its own form
+  showAddPeriodDialog.value = true;
+};
 
-    const confirmDeleteContributionPeriod = async () => {
+const openEditPeriodDialog = (period: ContributionPeriodDto) => {
+  isEditing.value = true;
+  selectedPeriod.value = period;
+  showAddPeriodDialog.value = true;
+};
 
-      isEditing.value = false;
-      deleteDialog.value = false;
-      selectedPeriod.value = {} as ContributionPeriodModel;
-      selectedPeriodId.value = 0;
-      await getContributionPeriods();
-    };
+const deleteContributionPeriod = () => {
+  deleteDialog.value = true;
+};
 
-    const selectedPeriodIdChanged = (selectedPeriodId: number) => {
-      emit('selected-period-id-changed', selectedPeriodId);
-    };
+const confirmDeleteContributionPeriod = async () => {
+  isEditing.value = false;
+  deleteDialog.value = false;
+  selectedPeriod.value = null;
+  selectedPeriodId.value = null; // ← clear selection
+  await getContributionPeriods();
+};
 
-    onMounted(() => {
-      getContributionPeriods();
-    });
+const selectedPeriodIdChanged = (value: number | null) => {
+  emit('selected-period-id-changed', value);
+};
 
-    return {
-      contributionPeriods,
-      selectedPeriodId,
-      hoveredPeriodId,
-      deleteDialog,
-      selectedPeriod,
-      isEditing,
-      showAddPeriodDialog,
-      deleteContributionPeriod,
-      formatPeriod,
-      getContributionPeriods,
-      openAddPeriodDialog,
-      openEditPeriodDialog,
-      confirmDeleteContributionPeriod,
-      selectedPeriodIdChanged,
-    };
-  },
+onMounted(() => {
+  getContributionPeriods();
 });
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+
 span {
   font-weight: bold;
 }
@@ -176,6 +160,6 @@ span {
 
 .hover-shadow:hover {
   box-shadow: 0 4px 8px rgba(186, 181, 181, 0.2);
-  border-radius: 50%;
+  border-radius: 50% !important;
 }
 </style>

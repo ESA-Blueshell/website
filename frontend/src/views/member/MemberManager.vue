@@ -16,7 +16,7 @@
           label="Search for a user"
         />
 
-        <UserList
+        <user-list
           title="Non-member users"
           :users="nonMembers"
           :expanded="expanded"
@@ -27,7 +27,7 @@
           @delete-user="deleteUser"
         />
 
-        <UserList
+        <user-list
           class="mt-5"
           title="Members"
           :users="members"
@@ -44,13 +44,11 @@
   </v-main>
 </template>
 <script setup lang="ts">
-// ... existing code ...
-import { ref, watch, onMounted } from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
 import ContributionPeriodList from '@/views/member/ContributionPeriodList.vue';
 import UserList from '@/views/member/UserList.vue';
-import type { AdvancedUserDto, ContributionDto } from '@/lib';
-import { findUsers, findContributionsByPeriodId } from '@/lib';
+import {type AdvancedUserDto, type ContributionDto, findContributionsByPeriodId, findUsers, Role} from '@/lib';
 
 // State
 const members = ref([] as AdvancedUserDto[]);
@@ -86,10 +84,10 @@ const isSearched = (user: AdvancedUserDto) => {
 
 const updateMembers = () => {
   members.value = users.value.filter(
-    (user) => user?.membership && !user.membership?.endDate && isSearched(user)
+    (user: AdvancedUserDto) => user.roles.includes(Role.MEMBER) && isSearched(user)
   );
   nonMembers.value = users.value.filter(
-    (user) => (!user?.membership || user?.membership?.endDate) && isSearched(user)
+    (user: AdvancedUserDto) => (!user.roles.includes(Role.MEMBER)) && isSearched(user)
   );
 };
 
@@ -131,6 +129,7 @@ const contributionChanged = (updatedContribution: ContributionDto) => {
 };
 
 const selectedPeriodIdChanged = async (periodId: number) => {
+  if (!periodId) return;
   const resp = await findContributionsByPeriodId({ path: { periodId } });
   contributions.value = resp.data ?? [];
   selectedPeriodId.value = periodId;
@@ -140,10 +139,9 @@ const selectedPeriodIdChanged = async (periodId: number) => {
 onMounted(() => {
   getUsers();
 });
-// ... existing code ...
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 span {
   font-weight: bold;
 }

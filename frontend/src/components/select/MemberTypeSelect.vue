@@ -4,61 +4,45 @@
     :items="memberTypeOptions"
     label="Member Type"
     :rules="[requiredRule]"
-    outlined
-    dense
-    item-text="text"
+    variant="outlined"
+    density="compact"
     item-value="value"
     item-title="text"
   />
 </template>
 
-<script lang="ts">
-import {defineComponent, ref, watch} from 'vue';
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { MemberType } from '@/lib'
 
-export default defineComponent({
-  name: 'MemberTypeSelect',
-  props: {
-    modelValue: {
-      type: String,
-      default: 'REGULAR',
-    },
-  },
-  emits: ['update:modelValue'],
-  setup(props, {emit}) {
-    // Initialize the selected value with the prop
-    const selected = ref(props.modelValue);
+// Props & emits
+const props = withDefaults(defineProps<{
+  modelValue?: string
+}>(), {
+  modelValue: MemberType.ALUMNI,
+})
 
-    // Preprocess MemberType.ts enum to create display text
-    const memberTypeOptions = Object.values(MemberType).map((type) => ({
-      text: `${type.charAt(0)}${type.slice(1).toLowerCase()}`, // Capitalize first letter
-      value: type,
-    }));
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
 
-    // Validation rule to ensure a membership type is selected
-    const requiredRule = (value: MemberType) => !!value || 'Member type is required';
+// Local state mirrors v-model
+const selected = ref(props.modelValue)
 
-    // Watch for changes in the selected value and emit updates
-    watch(selected, (newVal) => {
-      emit('update:modelValue', newVal);
-    });
+// Build select options from enum
+const memberTypeOptions = Object.values(MemberType).map((type: MemberType) => ({
+  text: `${type.charAt(0)}${type.slice(1).toLowerCase()}`,
+  value: type,
+}))
 
-    // Watch for external changes to modelValue and update selected accordingly
-    watch(
-      () => props.modelValue,
-      (newVal) => {
-        if (newVal !== selected.value) {
-          selected.value = newVal;
-        }
-      }
-    );
+// Validation
+const requiredRule = (value: MemberType) => !!value || 'Member type is required'
 
-    return {
-      selected,
-      memberTypeOptions,
-      requiredRule,
-    };
-  },
-});
+// Keep prop and local state in sync (both directions)
+watch(selected, (val) => emit('update:modelValue', val))
+watch(() => props.modelValue, (val) => {
+  if (val !== selected.value) selected.value = val
+})
 </script>
 
 <style lang="scss" scoped>

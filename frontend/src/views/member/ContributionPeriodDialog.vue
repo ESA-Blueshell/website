@@ -4,12 +4,12 @@
     max-width="500"
   >
     <v-card>
-      <v-card-title>
-        <span class="text-h5">{{ isEditing ? 'Edit ContributionModel Period' : 'Add ContributionModel Period' }}</span>
+      <v-card-title class="mx-7 mt-6  align-center justify-center">
+        <span class="text-h4">{{ isEditing ? 'Edit Contribution Period' : 'Add Contribution Period' }}</span>
       </v-card-title>
       <v-card-text>
         <v-form ref="formRef">
-          <v-row>
+          <v-row dense>
             <v-col cols="6">
               <v-text-field
                 v-model="form.startDate"
@@ -70,192 +70,132 @@
   </v-dialog>
 </template>
 
-<script lang="ts">
-import {
-  ref,
-  reactive,
-  computed,
-  defineComponent,
-  toRefs,
-  watch,
-} from 'vue';
-import {$handleNetworkError} from '@/plugins/handleNetworkError.ts';
+<script setup lang="ts">
+import { ref, reactive, computed, watch, toRef } from 'vue';
 import { DateTime } from 'luxon';
-import type {VForm} from 'vuetify/components';
-import {type ContributionPeriodDto, createContributionPeriod, updateContributionPeriod} from "@/lib";
+import type { VForm } from 'vuetify/components';
+import { type ContributionPeriodDto, createContributionPeriod, updateContributionPeriod } from '@/lib';
+import { $handleNetworkError } from '@/plugins/handleNetworkError.ts';
 
-export default defineComponent({
-  name: 'ContributionPeriodDialog',
-  props: {
-    modelValue: {
-      type: Boolean,
-      required: true,
-    },
-    isEditing: {
-      type: Boolean,
-      required: true,
-    },
-    selectedPeriod: {
-      type: Object as () => ContributionPeriodDto | null,
-      default: null,
-    },
-    contributionPeriods: {
-      type: Array as () => ContributionPeriodDto[],
-      default: () => [],
-    },
-  },
-  emits: ['update:modelValue', 'refresh-periods', 'delete'],
-  setup(props, {emit}) {
-    const showDialog = computed({
-      get: () => props.modelValue,
-      set: (value) => emit('update:modelValue', value),
-    });
+defineOptions({ name: 'ContributionPeriodDialog' });
 
-    const form = reactive<ContributionPeriodDto>({
-      id: props.selectedPeriod?.id || 0,
-      startDate: '',
-      endDate: '',
-      halfYearFee: 0,
-      fullYearFee: 0,
-      alumniFee: 0,
-    });
+type Props = {
+  modelValue: boolean;
+  isEditing: boolean;
+  selectedPeriod: ContributionPeriodDto | null;
+  contributionPeriods: ContributionPeriodDto[];
+};
 
-    const feeRules = [
-      (value: number | null) => (value !== null && value !== 0) || 'Fee is required',
-    ];
-    const formRef = ref<VForm>();
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'refresh-periods'): void;
+  (e: 'delete'): void;
+}>();
 
-    const {contributionPeriods, selectedPeriod} = toRefs(props);
-
-    const startDateRules = computed(() => [
-      (value: string) => !!value || 'Start Date is required',
-      (value: string) => isValidStartDate(value) || 'Start date must be before end date',
-      (value: string) =>
-        startsAfterLatest(value) ||
-        'The period must start after the latest contribution period',
-    ]);
-
-    const endDateRules = computed(() => [
-      (value: string) => !!value || 'End Date is required',
-      (value: string) => isValidEndDate(value) || 'End date must be after start date',
-    ]);
-
-    const startsAfterLatest = (startDate: string): boolean => {
-      if (!contributionPeriods.value || contributionPeriods.value.length === 0) {
-        return true; // No periods to compare with
-      }
-
-      // Exclude the current period if editing
-      const otherPeriods = contributionPeriods.value.filter(
-        (period) => period.id !== selectedPeriod.value?.id
-      );
-
-      if (otherPeriods.length === 0) {
-        return true;
-      }
-
-      // Find the latest end date among other periods
-      const latestEndDate = otherPeriods.reduce((latest, period) => {
-        const periodEndDate = DateTime.fromISO(period.endDate);
-        return periodEndDate > latest ? periodEndDate : latest;
-      }, DateTime.fromISO(otherPeriods[0].endDate));
-
-      return DateTime.fromISO(startDate) >= latestEndDate;
-    };
-
-    const isValidStartDate = (startDate: string): boolean => {
-      if (!form.endDate) return true;
-      return DateTime.fromISO(startDate) < DateTime.fromISO(form.endDate);
-    };
-
-    const isValidEndDate = (endDate: string): boolean => {
-      if (!form.startDate) return true;
-      return DateTime.fromISO(endDate) > DateTime.fromISO(form.startDate);
-    };
-
-    const saveContributionPeriod = async () => {
-      const valid = await formRef.value?.validate();
-
-      if (!valid) {
-        return;
-      }
-
-      try {
-        if (props.isEditing) {
-          await updateContributionPeriod({
-            body: form,
-            path: {
-              id: form.id as number
-            }
-          })
-        } else {
-          await createContributionPeriod({
-            body: form
-          })
-        }
-        emit('refresh-periods');
-        closeDialog();
-      } catch (e) {
-        $handleNetworkError(e);
-      }
-    };
-
-    const closeDialog = () => {
-      emit('update:modelValue', false);
-      resetForm();
-    };
-
-    const resetForm = () => {
-      form.id = 0;
-      form.startDate = '';
-      form.endDate = '';
-      form.halfYearFee = 0;
-      form.fullYearFee = 0;
-      form.alumniFee = 0;
-    };
-
-    const confirmDeletePeriod = () => {
-      emit('update:modelValue', false);
-      emit('delete');
-    };
-
-    // Watch for changes in 'showDialog' to reset form when not editing
-    watch(
-      () => showDialog.value,
-      (newVal) => {
-        if (newVal) {
-          if (props.isEditing && props.selectedPeriod) {
-            // Populate form with selectedPeriod data when editing
-            Object.assign(form, props.selectedPeriod);
-          } else {
-            // Reset form data when adding a new period
-            resetForm();
-          }
-        }
-      }
-    );
-
-    return {
-      showDialog,
-      form,
-      feeRules,
-      formRef,
-      startDateRules,
-      endDateRules,
-      saveContributionPeriod,
-      closeDialog,
-      confirmDeletePeriod,
-    };
-  },
+const showDialog = computed({
+  get: () => props.modelValue,
+  set: (value: boolean) => emit('update:modelValue', value),
 });
+
+const formRef = ref<VForm | null>(null);
+
+const form = reactive<ContributionPeriodDto>({
+  startDate: '',
+  endDate: '',
+  halfYearFee: 0,
+  fullYearFee: 0,
+  alumniFee: 0,
+} as ContributionPeriodDto);
+
+const contributionPeriods = toRef(props, 'contributionPeriods');
+const selectedPeriod = toRef(props, 'selectedPeriod');
+
+const feeRules = [
+  (value: number | null) => (value !== null && value !== 0) || 'Fee is required',
+];
+
+const startsAfterLatest = (startDate: string): boolean => {
+  if (!contributionPeriods.value || contributionPeriods.value.length === 0) return true;
+
+  // Exclude the current period when editing
+  const otherPeriods = contributionPeriods.value.filter(
+    (p) => p.id !== selectedPeriod.value?.id
+  );
+
+  if (otherPeriods.length === 0) return true;
+
+  const latestEndDate = otherPeriods.reduce((latest, period) => {
+    const end = DateTime.fromISO(period.endDate);
+    return end > latest ? end : latest;
+  }, DateTime.fromISO(otherPeriods[0].endDate));
+
+  return DateTime.fromISO(startDate) >= latestEndDate;
+};
+
+const isValidStartDate = (startDate: string): boolean => {
+  if (!form.endDate) return true;
+  return DateTime.fromISO(startDate) < DateTime.fromISO(form.endDate);
+};
+
+const isValidEndDate = (endDate: string): boolean => {
+  if (!form.startDate) return true;
+  return DateTime.fromISO(endDate) > DateTime.fromISO(form.startDate);
+};
+
+const startDateRules = computed(() => [
+  (value: string) => !!value || 'Start Date is required',
+  (value: string) => isValidStartDate(value) || 'Start date must be before end date',
+  (value: string) =>
+    startsAfterLatest(value) ||
+    'The period must start after the latest contribution period',
+]);
+
+const endDateRules = computed(() => [
+  (value: string) => !!value || 'End Date is required',
+  (value: string) => isValidEndDate(value) || 'End date must be after start date',
+]);
+
+const closeDialog = () => {
+  emit('update:modelValue', false);
+};
+
+const confirmDeletePeriod = () => {
+  emit('update:modelValue', false);
+  emit('delete');
+};
+
+const saveContributionPeriod = async () => {
+  const result = await formRef.value?.validate();
+  if (!result?.valid) return;
+
+  try {
+    if (props.isEditing) {
+      await updateContributionPeriod({
+        body: form,
+        path: { id: form.id as number },
+      });
+    } else {
+      await createContributionPeriod({ body: form });
+    }
+    emit('refresh-periods');
+    closeDialog();
+  } catch (e) {
+    $handleNetworkError(e);
+  }
+};
+
+// Populate/reset when dialog opens
+watch(
+  () => showDialog.value,
+  (open) => {
+    if (!open) return;
+    if (props.isEditing && props.selectedPeriod) {
+      Object.assign(form, props.selectedPeriod);
+    }
+  }
+);
 </script>
 
-<style lang="scss" scoped>
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
+<style lang="scss">
 </style>

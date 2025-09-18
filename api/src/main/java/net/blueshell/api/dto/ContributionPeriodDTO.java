@@ -1,30 +1,31 @@
 package net.blueshell.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDate;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ContributionPeriodDTO extends BaseDTO {
+    @Nullable
     private Long id;
 
-    @NotBlank
+    @NotNull
     private LocalDate startDate;
 
-    @NotBlank
+    @NotNull
     private LocalDate endDate;
 
-    @NotBlank
+    @NotNull
     private double halfYearFee;
 
-    @NotBlank
+    @NotNull
     private double fullYearFee;
 
-    @NotBlank
+    @NotNull
     private double alumniFee;
 
     private Long listId;

@@ -1,7 +1,7 @@
 <template>
   <!-- Render a loading indicator (or whatever you prefer) until data is fetched -->
   <v-main v-if="isLoaded">
-    <top-banner title="EventModel Manager" />
+    <top-banner title="Event Manager" />
 
     <div
       class="mx-auto my-10"
@@ -138,5 +138,5 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-/* Your styles here, if needed */
+
 </style>

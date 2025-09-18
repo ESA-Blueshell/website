@@ -46,7 +46,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import {$goto} from "@/plugins/goto";
 
 export default {

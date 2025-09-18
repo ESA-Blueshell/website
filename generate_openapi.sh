@@ -71,8 +71,9 @@ print_success "TypeScript client generated successfully"
 
 print_success "🎉 OpenAPI documentation and TypeScript client generation completed!"
 print_status "Generated files:"
-print_status "  - API OpenAPI spec: api/openapi/blueshell.json"
-print_status "  - Frontend client: frontend/src/lib/"
+print_status "  - API OpenAPI spec: openapi/blueshell.json"
+print_status "  - Discord OpenAPI spec: openapi/discord.json"
+print_status "  - Frontend clients: frontend/src/lib/"
 
 echo ""
 print_status "You can now use the generated TypeScript client in your frontend application."

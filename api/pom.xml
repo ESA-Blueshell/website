@@ -449,7 +449,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <outputDir>${project.basedir}/openapi</outputDir>
+                    <outputDir>../openapi</outputDir>
                     <outputFileName>blueshell.json</outputFileName>
                 </configuration>
             </plugin>
@@ -483,7 +483,7 @@
                             <!-- <inputSpec>-->
                             <!-- https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json-->
                             <!-- </inputSpec>-->
-                            <inputSpec>${project.basedir}/openapi/discord.json</inputSpec>
+                            <inputSpec>${project.basedir}/../openapi/discord.json</inputSpec>
                             <output>${project.build.directory}/generated-sources/openapi/discord</output>
                             <apiPackage>net.blueshell.clients.discord.api</apiPackage>
                             <modelPackage>net.blueshell.clients.discord.model</modelPackage>
@@ -513,7 +513,7 @@
 
                             <!-- TODO: Check that the swagger def is up to date in github action -->
                             <!-- <inputSpec>https://api.brevo.com/v3/swagger_definition_v3.yml</inputSpec>-->
-                            <inputSpec>${project.basedir}/openapi/brevo.yml</inputSpec>
+                            <inputSpec>${project.basedir}/../openapi/brevo.yml</inputSpec>
                             <output>${project.build.directory}/generated-sources/openapi/brevo</output>
                             <apiPackage>net.blueshell.clients.brevo.api</apiPackage>
                             <modelPackage>net.blueshell.clients.brevo.model</modelPackage>
@@ -550,7 +550,7 @@
                             <skipValidateSpec>true</skipValidateSpec>
                             <!-- TODO: Check that the swagger def is up to date in github action -->
                             <!-- <inputSpec>https://hornet.snt.utwente.nl/en/api/download</inputSpec>-->
-                            <inputSpec>${project.basedir}/openapi/hornet.json</inputSpec>
+                            <inputSpec>${project.basedir}/../openapi/hornet.json</inputSpec>
                             <output>${project.build.directory}/generated-sources/openapi/hornet</output>
                             <apiPackage>net.blueshell.clients.hornet.api</apiPackage>
                             <modelPackage>net.blueshell.clients.hornet.model</modelPackage>

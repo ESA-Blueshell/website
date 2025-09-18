@@ -52,8 +52,7 @@ services:
       - "3000:3000"
     volumes:
       - "./frontend:/usr/app"
-      - "./api/openapi/blueshell.json:/usr/openapi/blueshell.json"
-      - "./api/openapi/discord.json:/usr/openapi/discord.json"
+      - ./openapi:/usr/openapi
       - /usr/app/node_modules
     networks:
       - global_network
@@ -73,10 +72,13 @@ services:
     build:
       context: api
       dockerfile: Dockerfile-dev
+      additional_contexts:
+        root: .
     volumes:
       - ./api:/app
       - maven-repo:/root/.m2
-      - "./storage:/home/storage"
+      - ./openapi:/openapi
+      - ./storage:/home/storage
     ports:
       - "8081:8080"
     command: [

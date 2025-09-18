@@ -230,9 +230,9 @@ export type PageableObject = {
     offset?: number;
     sort?: SortObject;
     unpaged?: boolean;
+    pageNumber?: number;
     paged?: boolean;
     pageSize?: number;
-    pageNumber?: number;
 };
 
 export type SortObject = {

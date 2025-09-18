@@ -90,17 +90,17 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$require} from "@/plugins/require.js";
 
 export default {
   name: "ElNino",
-  components: {TopBanner: TopBanner},
+  components: {TopBanner},
   methods: {$require}
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
 </style>

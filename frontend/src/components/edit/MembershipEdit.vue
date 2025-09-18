@@ -306,7 +306,7 @@ defineExpose({
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .v-sheet {
   background: white;
 }

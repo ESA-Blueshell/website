@@ -182,7 +182,7 @@ function moveDown(array, i) {
   </div>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 @use '../../styles/settings';
 
 .form {

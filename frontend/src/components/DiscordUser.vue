@@ -52,7 +52,7 @@ const props = defineProps([
   </v-col>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 
 .discord-membership-entry {
   display: -webkit-box;

@@ -192,7 +192,7 @@ const guestForm = ref(null)
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .v-checkbox .v-selection-control {
   min-height: 40px !important;
 }

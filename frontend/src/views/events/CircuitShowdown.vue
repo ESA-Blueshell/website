@@ -147,7 +147,7 @@ export default {
   </v-main>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 
 .table-container {
   display: flex;

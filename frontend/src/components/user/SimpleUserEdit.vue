@@ -244,7 +244,7 @@ defineExpose({
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .v-col:first-child {
   padding-left: 0;
 }

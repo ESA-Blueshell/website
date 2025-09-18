@@ -137,6 +137,6 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* Your styles here, if needed */
 </style>

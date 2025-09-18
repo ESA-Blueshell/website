@@ -137,7 +137,7 @@ async function deleteSignUp() {
   </v-main>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 @use '@/styles/colors' as colors;
 @use '@/styles/settings' as settings;
 

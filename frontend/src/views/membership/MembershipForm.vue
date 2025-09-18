@@ -379,7 +379,7 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .v-stepper {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

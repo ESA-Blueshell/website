@@ -11,11 +11,11 @@
       Here starts the team view on size medium and above
     -->
     <v-container
-      v-if="$vuetify.display.mdAndUp"
+      v-if="display.mdAndUp"
       class="py-16"
       fill-height
       fluid
-      :style="{background: $vuetify.theme.global.current.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
+      :style="{background: theme.global.current.value.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
     >
       <v-row
         align="center"
@@ -62,7 +62,7 @@
             </v-col>
           </v-row>
           <v-row v-if="team.coaches || team.substitutes">
-            <v-divider class="my-2" />
+            <v-divider class="my-2"/>
           </v-row>
           <v-row
             v-for="(coach,i) in team.coaches"
@@ -134,7 +134,7 @@
       class="py-16"
       fill-height
       fluid
-      :style="{background: $vuetify.theme.global.current.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
+      :style="{background: theme.global.current.value.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
     >
       <v-row justify="center">
         <p class="text-h2 font-italic text-center">
@@ -173,7 +173,7 @@
 
 
       <v-row v-if="team.coaches || team.substitutes">
-        <v-divider class="my-2" />
+        <v-divider class="my-2"/>
       </v-row>
 
       <v-row
@@ -240,25 +240,24 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "Team",
-  props: ["team", "nameRight"],
-  // The team prop should be an Object with the following structure:
-  //  {
-  //   name: 'Team name',
-  //   bg: $require('@/assets/backgroundImage.jpg'),
-  //   players: [
-  //     {
-  //       name: 'Player name',
-  //       ign: 'xXx_gamertag69_xXx'
-  //     },
-  //   ],
-  //   Similarly, there are fields for coaches and substitutes. These should have the same format as the players attribute.
-  // }
+<script setup lang="ts">
+import { useTheme, useDisplay } from 'vuetify';
+import type Team from "@/types/Team.ts"
+
+// Props
+interface Props {
+  team: Team;
+  nameRight?: boolean;
 }
+
+defineProps<Props>();
+
+const theme = useTheme();
+const display = useDisplay();
+
 </script>
-<style scoped>
+
+<style lang="scss" scoped>
 .team-wrapper + .team-wrapper {
   border-top: rgb(var(--v-theme-accent)) 1px solid;
 }

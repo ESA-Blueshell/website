@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="League of Legends" />
+    <top-banner title="League of Legends"/>
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -14,107 +14,102 @@
       </div>
     </div>
 
-    <team :team="scaling" />
-    <team
-      :team="housecats"
-      name-right="true"
+    <team-details
+      :v-for="team in teams"
+      :team="team"
     />
   </v-main>
 </template>
 
-<script>
-import TopBanner from "../../components/banners/TopBanner.vue";
-import Team from "@/components/Team.vue";
-import {$require} from "@/plugins/require.js";
+<script setup lang="ts">
+import TopBanner from "@/components/banners/TopBanner.vue";
+import TeamDetails from "@/components/TeamDetails.vue";
+import type Team from "@/types/Team.ts"
 
-export default {
-  components: {Team: Team, TopBanner: TopBanner},
-  data: () => {
-    return {
-      scaling: {
-        name: 'BS Scaling',
-        bg: $require('@/assets/leagueesportsbg1.jpg'),
-        players: [
-          {
-            name: 'Wilco Strijker',
-            ign: 'Fill Main'
-          },
-          {
-            name: 'Thomas van den Brink',
-            ign: 'ThompieB'
-          },
-          {
-            name: 'Bob Even',
-            ign: 'Bobbus'
-          },
-          {
-            name: 'Mark Ganzevles',
-            ign: 'Magaera'
-          },
-          {
-            name: 'Ivo Heitlager',
-            ign: 'BS King Cookie'
-          }
-        ],
-        coaches: [
-          {
-            name: 'Hielke Kleijsen',
-            ign: 'OG Klutch'
-          }
-        ]
+import {$require} from "@/plugins/require.js";
+import {ref} from 'vue';
+
+const teams = ref<Team[]>([
+  {
+    name: 'BS Scaling',
+    bg: $require('@/assets/leagueesportsbg1.jpg'),
+    players: [
+      {
+        name: 'Wilco Strijker',
+        ign: 'Fill Main'
       },
-      housecats: {
-        name: 'BS Housecats',
-        bg: $require('@/assets/leagueesportsbg2.jpg'),
-        players: [
-          {
-            name: 'Mark Otter',
-            ign: 'markdeotter'
-          },
-          {
-            name: 'Mithell van Poecke',
-            ign: 'tennissky1'
-          },
-          {
-            name: 'Victor Barkey',
-            ign: 'The RUde Unicorn'
-          },
-          {
-            name: 'Jesse van Gameren',
-            ign: 'Machom36'
-          },
-          {
-            name: 'Jelle van Wezep',
-            ign: 'TheJellyMan'
-          }
-        ],
-        coaches: [
-          {
-            name: 'Max Jansdam',
-            ign: 'DwalendeDrol'
-          }
-        ],
-        substitutes: [
-          {
-            name: "Sylwia Siekman",
-            ign: "SylWorld"
-          },
-          {
-            name: 'Roos Kruk',
-            ign: 'ShadowSkyeWolf'
-          },
-        ]
+      {
+        name: 'Thomas van den Brink',
+        ign: 'ThompieB'
       },
-    }
-  }
-}
+      {
+        name: 'Bob Even',
+        ign: 'Bobbus'
+      },
+      {
+        name: 'Mark Ganzevles',
+        ign: 'Magaera'
+      },
+      {
+        name: 'Ivo Heitlager',
+        ign: 'BS King Cookie'
+      }
+    ],
+    coaches: [
+      {
+        name: 'Hielke Kleijsen',
+        ign: 'OG Klutch'
+      }
+    ]
+  },
+  {
+    name: 'BS Housecats',
+    bg: $require('@/assets/leagueesportsbg2.jpg'),
+    players: [
+      {
+        name: 'Mark Otter',
+        ign: 'markdeotter'
+      },
+      {
+        name: 'Mithell van Poecke',
+        ign: 'tennissky1'
+      },
+      {
+        name: 'Victor Barkey',
+        ign: 'The RUde Unicorn'
+      },
+      {
+        name: 'Jesse van Gameren',
+        ign: 'Machom36'
+      },
+      {
+        name: 'Jelle van Wezep',
+        ign: 'TheJellyMan'
+      }
+    ],
+    coaches: [
+      {
+        name: 'Max Jansdam',
+        ign: 'DwalendeDrol'
+      }
+    ],
+    substitutes: [
+      {
+        name: "Sylwia Siekman",
+        ign: "SylWorld"
+      },
+      {
+        name: 'Roos Kruk',
+        ign: 'ShadowSkyeWolf'
+      },
+    ]
+  },
+]);
 </script>
 
-<style>
+<style lang="scss" scoped>
 .v-parallax__content {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
-
-
 </style>

@@ -57,7 +57,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
 
 .theme--dark .quote {
   color: #A8FF00;

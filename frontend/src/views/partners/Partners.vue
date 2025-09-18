@@ -38,15 +38,15 @@
   </v-main>
 </template>
 
-<script>
+<script lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
 
 export default {
   name: "Partners",
-  components: {TopBanner: TopBanner}
+  components: {TopBanner}
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
 </style>

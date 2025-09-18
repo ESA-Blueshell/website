@@ -104,7 +104,7 @@ const showEvent = ({ nativeEvent, event }: { nativeEvent: MouseEvent; event: Eve
 }
 
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 @use '@/styles/settings' as settings;
 @use "sass:map";
 

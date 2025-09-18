@@ -104,7 +104,7 @@
   </div>
 </template>
 
-<script>
+<script  setup lang="ts">
 import {$goto} from "@/plugins/goto";
 
 export default {
@@ -142,7 +142,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .overlay {
   position: absolute;
   bottom: 0;

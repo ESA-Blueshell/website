@@ -122,13 +122,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import DiscordUser from "@/components/DiscordUser.vue";
 import {$require} from "@/plugins/require.js";
 
 export default {
   name: "DiscordBanner",
-  components: {DiscordUser: DiscordUser},
+  components: {DiscordUser},
   data: () => ({
     discordData: null,
     channels: {},
@@ -168,7 +168,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
 .container {
   max-width: 1100px;

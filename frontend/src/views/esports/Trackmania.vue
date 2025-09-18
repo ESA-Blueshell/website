@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Trackmania" />
+    <top-banner title="Trackmania"/>
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -14,38 +14,35 @@
         </p>
       </div>
     </div>
-    <team :team="blueshell" />
+    <team
+      :v-for="team in teams"
+      :team="team"
+    />
   </v-main>
 </template>
 
-<script>
-import TopBanner from "../../components/banners/TopBanner.vue";
+<script setup lang="ts">
+import TopBanner from "@/components/banners/TopBanner.vue";
 import Team from "@/components/Team.vue";
 import {$require} from "@/plugins/require.js";
+import {ref} from "vue";
 
-export default {
-  components: {Team: Team, TopBanner: TopBanner},
-  data: () => {
-    return {
-      blueshell: {
-        name: '[ESABS]',
-        bg: $require('@/assets/trackmaniabg.jpg'),
-        players: [
-          {
-            name: 'Jarno',
-            ign: 'Poepboer'
-          },
-          {
-            name: 'Tim',
-            ign: 'Swordie'
-          },
-        ]
+const teams = ref<Team[]>([
+  {
+    name: '[ESABS]',
+    bg: $require('@/assets/trackmaniabg.jpg'),
+    players: [
+      {
+        name: 'Jarno',
+        ign: 'Poepboer'
       },
-    }
+      {
+        name: 'Tim',
+        ign: 'Swordie'
+      },
+    ]
   }
-}
+]);
 </script>
-
-<style scoped>
-
+<style lang="scss" scoped>
 </style>

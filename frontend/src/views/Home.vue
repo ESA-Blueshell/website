@@ -242,7 +242,7 @@ export default {
   }
 }
 </script>
-<style>
+<style lang="scss" scoped>
 .expand {
   transition: transform .2s;
   cursor: pointer;

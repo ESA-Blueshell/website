@@ -84,6 +84,6 @@ watch(
 );
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* Your custom styles here */
 </style>

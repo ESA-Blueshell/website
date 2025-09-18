@@ -345,7 +345,7 @@ const changeContributionPaid = async (paid: boolean) => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 span {
   font-weight: bold;
 }

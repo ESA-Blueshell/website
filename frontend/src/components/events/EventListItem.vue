@@ -403,7 +403,7 @@ function formatEventTime() {
   </v-list-item>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .form-border {
   border-width: 1px;
   border-color: rgb(var(--v-theme-accent));

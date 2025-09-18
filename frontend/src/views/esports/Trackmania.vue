@@ -14,7 +14,7 @@
         </p>
       </div>
     </div>
-    <team
+    <team-details
       :v-for="team in teams"
       :team="team"
     />
@@ -23,7 +23,8 @@
 
 <script setup lang="ts">
 import TopBanner from "@/components/banners/TopBanner.vue";
-import Team from "@/components/Team.vue";
+import TeamDetails from "@/components/TeamDetails.vue";
+import Team from "@/types/Team.ts"
 import {$require} from "@/plugins/require.js";
 import {ref} from "vue";
 

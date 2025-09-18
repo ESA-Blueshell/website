@@ -14,9 +14,7 @@ public class EventFilter {
     private LocalDateTime to;
 
     // Optional toggles
-    private Boolean visible;        // if null, leave unspecified; if true/false, enforce
-    private Boolean membersOnly;    // if null, unspecified
-    private Boolean publicOnly;     // convenience flag (membersOnly == false)
+    private Boolean visible;
 
     // Example extra filters you can grow over time
     private Long committeeId;

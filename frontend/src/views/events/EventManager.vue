@@ -110,17 +110,13 @@ onMounted(async () => {
     const [upcomingResp, pastResp, committeesResp] = await Promise.all([
       findEvents({
         query: {
-          filter: {
-            from: DateTime.local().startOf('day').toISO()
-          }
+          from: DateTime.local().startOf('day').toISO()
         }
       }),
       findEvents({
         query: {
-          filter: {
-            from: DateTime.local().minus({months: 1}).startOf('day').toISO(),
-            to: DateTime.local().startOf('day').toISO()
-          }
+          from: DateTime.local().minus({months: 1}).startOf('day').toISO(),
+          to: DateTime.local().startOf('day').toISO()
         }
       }),
       findCommittees(),

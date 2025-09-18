@@ -12,7 +12,7 @@ export default defineConfig({
     },
     {
       name: '@hey-api/client-axios',
-      runtimeConfigPath: './src/lib/discord.runtime.ts',
+      runtimeConfigPath: '../discord.runtime.ts',
     },
     {
       asClass: false,

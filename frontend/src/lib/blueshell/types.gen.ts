@@ -212,22 +212,6 @@ export type RedirectDto = {
     telemetry?: TelemetryDto;
 };
 
-export type Pageable = {
-    page?: number;
-    size?: number;
-    sort?: Array<string>;
-};
-
-export type EventFilter = {
-    from?: string;
-    to?: string;
-    visible?: boolean;
-    membersOnly?: boolean;
-    publicOnly?: boolean;
-    committeeId?: number;
-    titleContains?: string;
-};
-
 export type PageEventDto = {
     totalElements?: number;
     totalPages?: number;
@@ -882,8 +866,23 @@ export type FindEventsData = {
     body?: never;
     path?: never;
     query?: {
-        pageable?: Pageable;
-        filter?: EventFilter;
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+        from?: string;
+        to?: string;
+        visible?: boolean;
+        committeeId?: number;
+        titleContains?: string;
     };
     url: '/events';
 };

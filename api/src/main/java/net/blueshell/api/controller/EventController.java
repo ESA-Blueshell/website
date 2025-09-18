@@ -8,6 +8,7 @@ import net.blueshell.api.filter.EventFilter;
 import net.blueshell.api.mapper.EventMapper;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.service.EventService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,8 +44,8 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @GetMapping("/events")
     public Page<EventDTO> findEvents(
-            @RequestParam(value = "pageable", required = false) Pageable pageable,
-            @RequestParam(value = "filter", required = false) EventFilter filter
+            @ParameterObject Pageable pageable,
+            @ParameterObject EventFilter filter
     ) {
         Page<Event> events = service.findByFilter(pageable, filter);
         return mapper.toDTOs(events);

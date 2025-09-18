@@ -12,7 +12,7 @@ export default defineConfig({
     },
     {
       name: '@hey-api/client-axios',
-      runtimeConfigPath: './src/lib/blueshell.runtime.ts',
+      runtimeConfigPath: '../blueshell.runtime.ts',
     },
     {
       asClass: false,

@@ -77,7 +77,8 @@ public class AuthenticationController extends JWTAuthBase {
                 user.getId(),
                 user.getUsername(),
                 expirationTime,
-                user.getRoleStrings());
+                user.getInheritedRoles()
+        );
     }
 
     private void authenticate(String username, String password) {

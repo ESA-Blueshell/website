@@ -1,9 +1,11 @@
 package net.blueshell.api.common.enums;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 import java.util.*;
 
+@Schema(enumAsRef = true)
 public enum Role {
     ANONYMOUS("ANONYMOUS"),
     GUEST("GUEST", ANONYMOUS),

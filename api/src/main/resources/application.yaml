@@ -69,11 +69,8 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
-    path: /swagger-ui.html
-  info:
-    title: Blueshell API
-    description: The API for the Blueshell Esports website
-    version: 1.0.0
+    path: /swagger-ui
+    url: /api/v3/api-docs
 
 app:
   url: ${APP_URL}

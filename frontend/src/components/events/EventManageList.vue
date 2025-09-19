@@ -111,19 +111,19 @@ import {ref} from 'vue'
 import {useRouter} from 'vue-router'
 import EventListItem from '@/components/events/EventListItem.vue'
 import {useDisplay} from "vuetify";
-import {deleteEventById, type EventDto} from "@/lib";
+import {deleteEventById, type Event} from "@/lib";
 
 defineOptions({name: 'EventManageList'})
 const display = useDisplay()
 
 
 const props = defineProps<{
-  initialEvents: EventDto[],
+  initialEvents: Event[],
   idToCommittee,
 }>()
 
-const events = ref<EventDto[]>(props.initialEvents)
-const eventToDelete = ref<EventDto>()
+const events = ref<Event[]>(props.initialEvents)
+const eventToDelete = ref<Event>()
 
 // Access router and store if you still need them
 const router = useRouter()

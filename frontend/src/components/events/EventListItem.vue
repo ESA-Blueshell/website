@@ -12,30 +12,30 @@ import {
   updateEventSignUp,
   createEventSignup,
   deleteEventSignup,
-  type EventDto,
-  type EventSignUpDto
+  type Event,
+  type EventSignUp
 } from "@/lib/blueshell";
 
 const props = defineProps({
   event: {
-    type: Object as () => EventDto,
+    type: Object as () => Event,
     required: true,
   },
   signUp: {
-    type: Object as () => EventSignUpDto,
+    type: Object as () => EventSignUp,
     default: () =>
       ({
         id: undefined,
         eventId: undefined,
         formAnswers: [],
-      } as EventSignUpDto),
+      } as EventSignUp),
     required: false,
   },
 });
 
-const event = ref<EventDto>(props.event);
+const event = ref<Event>(props.event);
 
-const signUp = ref<EventSignUpDto>({
+const signUp = ref<EventSignUp>({
   id: props.signUp?.id,
   eventId: props.event.id,
   formAnswers: props.signUp?.formAnswers ?? [],
@@ -84,7 +84,7 @@ async function removeSignUp() {
     id: undefined,
     eventId: event.value.id,
     formAnswers: [],
-  } as EventSignUpDto;
+  } as EventSignUp;
 }
 
 onMounted(async () => {

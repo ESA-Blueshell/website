@@ -51,16 +51,16 @@
 
 <script setup lang="ts">
 import UserListRow from './UserListRow.vue';
-import type {AdvancedUserDto, ContributionDto, MembershipDto} from '@/lib/blueshell/types.gen.ts';
+import type {AdvancedUser, Contribution, Membership} from '@/lib/blueshell/types.gen.ts';
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 import {toRefs, watch} from "vue";
 
 // Props
 const props = withDefaults(defineProps<{
   title: string;
-  contributions?: ContributionDto[];
-  memberships?: MembershipDto[];
-  users: AdvancedUserDto[];
+  contributions?: Contribution[];
+  memberships?: Membership[];
+  users: AdvancedUser[];
   expanded?: number | null;
   isMemberList?: boolean;
 }>(), {
@@ -75,10 +75,10 @@ const { title, users, contributions, memberships, expanded, isMemberList } = toR
 // Emits
 const emit = defineEmits<{
   (e: 'toggle-expanded', userId: number): void;
-  (e: 'user-changed', user: AdvancedUserDto): void;
-  (e: 'delete-user', user: AdvancedUserDto): void;
-  (e: 'contribution-changed', contribution: ContributionDto): void;
-  (e: 'membership-changed', membership: MembershipDto): void;
+  (e: 'user-changed', user: AdvancedUser): void;
+  (e: 'delete-user', user: AdvancedUser): void;
+  (e: 'contribution-changed', contribution: Contribution): void;
+  (e: 'membership-changed', membership: Membership): void;
 }>();
 
 // Handlers
@@ -86,20 +86,20 @@ const toggleExpanded = (userId: number) => {
   emit('toggle-expanded', userId);
 };
 
-const contributionChanged = (contribution: ContributionDto) => {
+const contributionChanged = (contribution: Contribution) => {
   emit('contribution-changed', contribution);
 };
 
-const membershipChanged = (membership: MembershipDto) => {
+const membershipChanged = (membership: Membership) => {
   emit('membership-changed', membership);
 };
 
-const userChanged = (user: AdvancedUserDto) => {
+const userChanged = (user: AdvancedUser) => {
   toggleExpanded(0);
   emit('user-changed', user);
 };
 
-const deleteUser = (user: AdvancedUserDto) => {
+const deleteUser = (user: AdvancedUser) => {
   emit('delete-user', user);
 };
 </script>

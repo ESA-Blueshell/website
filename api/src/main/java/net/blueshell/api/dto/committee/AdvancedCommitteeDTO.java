@@ -1,16 +1,20 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.committee;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.dto.CommitteeMemberDTO;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Schema(name = "AdvancedCommittee")
 public class AdvancedCommitteeDTO extends BaseDTO {
 
     @JsonProperty("id")

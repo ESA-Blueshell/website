@@ -1,5 +1,6 @@
 package net.blueshell.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Schema(name = "ContributionPeriod")
 public class ContributionPeriodDTO extends BaseDTO {
     @Nullable
     private Long id;

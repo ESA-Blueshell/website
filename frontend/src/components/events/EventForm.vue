@@ -6,12 +6,12 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
 import {useStore} from 'vuex';
 import {DateTime} from 'luxon';
 import type {VForm} from "vuetify/components";
-import { createEvent, findCommittees, updateEvent, type EventDto, type BaseDto } from '@/lib';
+import { createEvent, findCommittees, updateEvent, type Event, type Base } from '@/lib';
 
 // ... existing code ...
 const props = defineProps({
   initialEvent: {
-    type: Object as () => EventDto,
+    type: Object as () => Event,
     default: () => null
   },
   hasPromo: {
@@ -34,7 +34,7 @@ const submitting = ref(false);
 // --------------------
 // 1) Initialize event
 // --------------------
-function getDefaultEvent(): EventDto {
+function getDefaultEvent(): Event {
   return {
     id: undefined,
     title: '',
@@ -54,14 +54,14 @@ function getDefaultEvent(): EventDto {
   };
 }
 
-function initializeEvent(): EventDto {
+function initializeEvent(): Event {
   return {
     ...getDefaultEvent(),
     ...(props.initialEvent || {}),
   };
 }
 
-const event = ref<EventDto>(initializeEvent());
+const event = ref<Event>(initializeEvent());
 
 // -------------------------------------------------------------
 // 2) Convert existing ISO date/time → separate date + time vars
@@ -89,7 +89,7 @@ const hadSignUp = ref<boolean>(event.value.signUp || false);
 const oldEnableSignUpForm = ref<boolean>(enableSignupForm.value);
 
 // Committees
-const committees = ref<BaseDto[]>([]);
+const committees = ref<Base[]>([]);
 findCommittees().then((response) => (committees.value = response.data ?? [])).catch(() => (committees.value = []));
 
 // Price rules
@@ -123,7 +123,7 @@ async function submit() {
 
   try {
     // Clone our event object
-    const payload: EventDto = {...event.value};
+    const payload: Event = {...event.value};
 
     // Combine date + time -> Luxon -> ISO
     payload.startTime = DateTime.fromFormat(

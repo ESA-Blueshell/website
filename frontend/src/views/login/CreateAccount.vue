@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
 import TopBanner from "@/components/banners/TopBanner.vue";
-import {createGuestUser, type SimpleUserDto} from '@/lib';
+import {createGuestUser, type SimpleUser} from '@/lib';
 
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
 import store from '@/plugins/store';
@@ -55,7 +55,7 @@ import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue";
 // Reactive state
 const loading = ref(false);
 const succeeded = ref(false);
-const form = ref<SimpleUserDto>({
+const form = ref<SimpleUser>({
   username: '',
   initials: '',
   firstName: '',

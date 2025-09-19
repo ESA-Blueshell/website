@@ -23,7 +23,7 @@
           >
             <committee-edit
               class="form"
-              :committee="{} as AdvancedCommitteeDto"
+              :committee="{} as AdvancedCommittee"
               @close="handleCreateClose"
               @submitting="creatingLoading = true"
             />
@@ -149,12 +149,12 @@ import { $handleNetworkError } from '@/plugins/handleNetworkError.js'
 import {
   findCommittees,
   deleteCommitteeById,
-  type AdvancedCommitteeDto
+  type AdvancedCommittee
 } from '@/lib'
 
 interface Data {
-  committees: AdvancedCommitteeDto[]
-  committeeToDelete: AdvancedCommitteeDto | null
+  committees: AdvancedCommittee[]
+  committeeToDelete: AdvancedCommittee | null
   editingCommitteeId: number | null
   submittingId: number | null
   creatingCommittee: boolean
@@ -193,7 +193,7 @@ export default defineComponent({
         if (committeesData && committeesData.length > 0) {
           // Type assertion to ensure proper typing
           this.committees = committeesData.filter(
-            (committee): committee is AdvancedCommitteeDto =>
+            (committee): committee is AdvancedCommittee =>
               committee && typeof committee === 'object' && 'name' in committee
           )
         } else {

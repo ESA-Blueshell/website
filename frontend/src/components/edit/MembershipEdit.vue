@@ -75,17 +75,17 @@ import { ref, watch, onMounted, type Ref } from 'vue';
 import { DateTime } from 'luxon';
 import DocumentTable from "@/components/DocumentTable.vue";
 import ContributionPeriod from "@/components/ContributionPeriodComponent.vue";
-import type { MembershipDto, FileDto } from "@/lib";
+import type { Membership, File } from "@/lib";
 import { updateMembership, createMembership } from "@/lib";
 
 // Props interface
 interface Props {
-  modelValue: MembershipDto;
+  modelValue: Membership;
 }
 
 // Emits interface
 interface Emits {
-  (e: 'update:modelValue', value: MembershipDto): void;
+  (e: 'update:modelValue', value: Membership): void;
 }
 
 // Define props and emits
@@ -100,7 +100,7 @@ const cityField: Ref<any> = ref(null);
 const dateField: Ref<any> = ref(null);
 
 // Reactive data
-const localMembership: Ref<MembershipDto> = ref({ ...props.modelValue });
+const localMembership: Ref<Membership> = ref({ ...props.modelValue });
 const signatureValidation: Ref<boolean> = ref(false);
 
 // Validation rules
@@ -119,7 +119,7 @@ const dateRules: Ref<Array<(v: any) => boolean | string>> = ref([
 // Watch for prop changes
 watch(
   () => props.modelValue,
-  (newVal: MembershipDto) => {
+  (newVal: Membership) => {
     localMembership.value = { ...newVal };
     // Update signature validation state
     signatureValidation.value = !!(localMembership.value.signature?.base64Content || localMembership.value.signature?.url);
@@ -130,7 +130,7 @@ watch(
 // Watch for local changes and emit
 watch(
   localMembership,
-  (newVal: MembershipDto) => {
+  (newVal: Membership) => {
     emit('update:modelValue', newVal);
   },
   { deep: true }
@@ -172,8 +172,8 @@ const saveSignature = async (): Promise<boolean> => {
   try {
     const scaledData: string = await scaleSignature(data);
 
-    // Create a FileDto with base64 content for the signature
-    const signatureFile: FileDto = {
+    // Create a File with base64 content for the signature
+    const signatureFile: File = {
       base64Content: scaledData.split(",")[1], // Remove data URL prefix
       fileType: 'SIGNATURE',
       mediaType: 'image/png'
@@ -257,7 +257,7 @@ const saveMembership = async (): Promise<boolean> => {
   }
 
   try {
-    let response: { data?: MembershipDto };
+    let response: { data?: Membership };
 
     if (localMembership.value.id) {
       // Update existing membership

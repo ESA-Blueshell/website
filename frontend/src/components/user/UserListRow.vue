@@ -140,30 +140,30 @@ import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import {DateTime} from 'luxon';
 import {
-  type AdvancedUserDto,
-  type ContributionDto,
+  type AdvancedUser,
+  type Contribution,
   createMembership,
   deleteUserById,
-  type MembershipDto, MemberType,
+  type Membership, MemberType,
   setContributionPaid,
   updateMembership
 } from "@/lib";
 import StartMembershipDialog from "@/components/membership/StartMembershipDialog.vue";
 
 interface Props {
-  user: AdvancedUserDto;
-  contributions?: Array<ContributionDto>;
-  memberships?: Array<MembershipDto>;
+  user: AdvancedUser;
+  contributions?: Array<Contribution>;
+  memberships?: Array<Membership>;
   expanded?: number | null;
   isMemberList?: boolean;
 }
 
 interface Emits {
   (e: 'toggle-expanded', userId: number): void;
-  (e: 'user-changed', userData: AdvancedUserDto): void;
-  (e: 'contribution-changed', contribution: ContributionDto): void;
-  (e: 'membership-changed', membership: MembershipDto): void;
-  (e: 'delete-user', user: AdvancedUserDto): void;
+  (e: 'user-changed', userData: AdvancedUser): void;
+  (e: 'contribution-changed', contribution: Contribution): void;
+  (e: 'membership-changed', membership: Membership): void;
+  (e: 'delete-user', user: AdvancedUser): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -190,7 +190,7 @@ const membership = computed(() =>
   props.memberships.find((m) => m.userId === props.user.id)
 )
 
-const userModel = computed<AdvancedUserDto>({
+const userModel = computed<AdvancedUser>({
   get: () => props.user
 });
 
@@ -206,7 +206,7 @@ const confirmStartMembership = async () => {
   try {
     isSubmitting.value = true;
 
-    const membershipData: MembershipDto = {
+    const membershipData: Membership = {
       userId: props.user.id as number,
       memberType: memberType.value,
       startDate: DateTime.fromISO(startDate.value).toISO() as string,
@@ -234,7 +234,7 @@ const confirmStartMembership = async () => {
 
 const endMembership = async () => {
   try {
-    const membershipData: MembershipDto = {
+    const membershipData: Membership = {
       userId: props.user.id as number,
       ...membership,
       endDate: DateTime.now().toISO()
@@ -255,7 +255,7 @@ const endMembership = async () => {
 
 const resumeMembership = async () => {
   try {
-    const membershipData: MembershipDto = {
+    const membershipData: Membership = {
       id: 0,
       userId: props.user.id as number,
       ...membership,
@@ -293,7 +293,7 @@ const confirmDeleteUser = async () => {
   }
 };
 
-const userChanged = (userData: AdvancedUserDto) => {
+const userChanged = (userData: AdvancedUser) => {
   emit('user-changed', userData);
 };
 

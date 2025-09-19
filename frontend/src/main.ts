@@ -7,6 +7,7 @@ import VueSignaturePad from 'vue-signature-pad'
 import { registerPlugins } from '@/plugins'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
+import "vuetify/styles"
 
 Axios.defaults.baseURL = 'https://localhost/api'
 

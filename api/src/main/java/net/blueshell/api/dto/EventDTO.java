@@ -1,16 +1,19 @@
 package net.blueshell.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Schema(name = "Event")
 public class EventDTO extends BaseDTO {
     private Long id;
     private Long committeeId;

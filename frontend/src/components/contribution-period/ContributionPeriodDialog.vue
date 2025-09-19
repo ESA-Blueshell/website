@@ -74,7 +74,7 @@
 import { ref, reactive, computed, watch, toRef } from 'vue';
 import { DateTime } from 'luxon';
 import type { VForm } from 'vuetify/components';
-import { type ContributionPeriodDto, createContributionPeriod, updateContributionPeriod } from '@/lib';
+import { type ContributionPeriod, createContributionPeriod, updateContributionPeriod } from '@/lib';
 import { $handleNetworkError } from '@/plugins/handleNetworkError.ts';
 
 defineOptions({ name: 'ContributionPeriodDialog' });
@@ -82,8 +82,8 @@ defineOptions({ name: 'ContributionPeriodDialog' });
 type Props = {
   modelValue: boolean;
   isEditing: boolean;
-  selectedPeriod: ContributionPeriodDto | null;
-  contributionPeriods: ContributionPeriodDto[];
+  selectedPeriod: ContributionPeriod | null;
+  contributionPeriods: ContributionPeriod[];
 };
 
 const props = defineProps<Props>();
@@ -100,13 +100,13 @@ const showDialog = computed({
 
 const formRef = ref<VForm | null>(null);
 
-const form = reactive<ContributionPeriodDto>({
+const form = reactive<ContributionPeriod>({
   startDate: '',
   endDate: '',
   halfYearFee: 0,
   fullYearFee: 0,
   alumniFee: 0,
-} as ContributionPeriodDto);
+} as ContributionPeriod);
 
 const contributionPeriods = toRef(props, 'contributionPeriods');
 const selectedPeriod = toRef(props, 'selectedPeriod');

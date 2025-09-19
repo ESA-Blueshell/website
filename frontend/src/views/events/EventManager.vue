@@ -75,7 +75,7 @@ import TopBanner from '@/components/banners/TopBanner.vue'
 import EventManageList from '@/components/events/EventManageList.vue'
 import {$require} from '@/plugins/require'
 import {DateTime} from 'luxon';
-import {type EventDto, findCommittees, findEvents, type SimpleCommitteeDto} from "@/lib";
+import {type Event, findCommittees, findEvents, type SimpleCommittee} from "@/lib";
 
 // Local “groupBy” helper if you don't have a built-in one
 function groupBy<T, K extends keyof T & (string | number)>(
@@ -89,9 +89,9 @@ function groupBy<T, K extends keyof T & (string | number)>(
 }
 
 // Reactive references for data
-const events = ref<EventDto[]>([])
-const pastEvents = ref<EventDto[]>([])
-const idToCommittee = ref<Record<number, SimpleCommitteeDto>>({})
+const events = ref<Event[]>([])
+const pastEvents = ref<Event[]>([])
+const idToCommittee = ref<Record<number, SimpleCommittee>>({})
 const noCommittees = ref(false)
 // Track if data has finished loading
 const isLoaded = ref(false)

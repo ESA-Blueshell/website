@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue'
 import {useRoute} from 'vue-router'
-import {type BlogDto, findBlogById} from "@/lib";
+import {type Blog, findBlogById} from "@/lib";
 
 // Reactive reference to hold the single blog data
-const blog = ref<BlogDto | null>(null)
+const blog = ref<Blog | null>(null)
 
 // Grab the "id" from the route (assuming your route is set up with :id)
 const route = useRoute()

@@ -54,16 +54,16 @@
 
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue';
-import type { AddressDto } from '@/lib';
+import type { Address } from '@/lib';
 import { createAddress, updateAddress } from '@/lib';
 import CountrySelect from "@/components/select/CountrySelect.vue";
 
 interface Props {
-  modelValue: AddressDto;
+  modelValue: Address;
 }
 
 interface Emits {
-  (e: 'update:modelValue', value: AddressDto): void;
+  (e: 'update:modelValue', value: Address): void;
 }
 
 const props = defineProps<Props>();
@@ -77,7 +77,7 @@ const city: Ref<HTMLElement | null> = ref(null);
 const country: Ref<HTMLElement | null> = ref(null);
 
 // Reactive data
-const localAddress: Ref<AddressDto> = ref({ ...props.modelValue });
+const localAddress: Ref<Address> = ref({ ...props.modelValue });
 
 // Validation rules
 const streetRules: Ref<Array<(v: any) => boolean | string>> = ref([
@@ -106,7 +106,7 @@ const countryRules: Ref<Array<(v: any) => boolean | string>> = ref([
 // Watch for prop changes
 watch(
   () => props.modelValue,
-  (newVal: AddressDto) => {
+  (newVal: Address) => {
     localAddress.value = { ...newVal };
   },
   { deep: true, immediate: true }
@@ -115,7 +115,7 @@ watch(
 // Watch for local changes and emit
 watch(
   localAddress,
-  (newVal: AddressDto) => {
+  (newVal: Address) => {
     emit('update:modelValue', newVal);
   },
   { deep: true }
@@ -124,7 +124,7 @@ watch(
 // Methods
 const saveAddress = async (): Promise<void> => {
   try {
-    let response: { data?: AddressDto };
+    let response: { data?: Address };
 
     if (localAddress.value.id) {
       // Update existing address

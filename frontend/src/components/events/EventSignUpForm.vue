@@ -28,12 +28,12 @@
 
 import {ref} from 'vue'
 import {useStore} from 'vuex'
-import type {EventDto, FormQuestionDto} from "@/lib";
+import type {Event, FormQuestion} from "@/lib";
 
 const emit = defineEmits(['submit'])
 
 interface Props {
-  event: EventDto
+  event: Event
   // If provided, we assume it's already a valid set of answers
   initialFormAnswers?: any[]
   showGuestForm: boolean
@@ -51,7 +51,7 @@ const store = useStore()
  */
 const formAnswers = ref(
   props.initialFormAnswers
-  ?? props.event.signUpForm?.map((question: FormQuestionDto) => {
+  ?? props.event.signUpForm?.map((question: FormQuestion) => {
     if (question.type === 'open') return ''
     if (question.type === 'checkbox') return []
     return null // For radio or anything else

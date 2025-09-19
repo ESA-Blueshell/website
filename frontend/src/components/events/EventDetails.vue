@@ -111,12 +111,12 @@ import {computed, ref} from 'vue'
 import MarqueeText from 'vue-marquee-text-component'
 import {$goto} from '@/plugins/goto'
 import markdownToHtml from '@/plugins/markdownToHtml.ts'
-import type {EventDto, FileDto} from '@/lib'
+import type {Event, File} from '@/lib'
 
-// Props: accept object coming from calendar, normalize to EventDto shape for usage.
+// Props: accept object coming from calendar, normalize to Event shape for usage.
 // We keep the prop flexible to avoid breaking callers, but all internal types are aligned to generated types.
 const props = defineProps<{
-  selectedEvent: EventDto
+  selectedEvent: Event
 }>()
 
 // Local state
@@ -125,29 +125,29 @@ const expand = ref(false)
 // Normalization helpers
 const se = computed(() => props.selectedEvent as Record<string, unknown>)
 
-// Title: prefer EventDto.title, fallback to legacy "name"
+// Title: prefer Event.title, fallback to legacy "name"
 const eventTitle = computed(() => {
   const title = (se.value.title as string | undefined) ?? (se.value.name as string | undefined)
   return title ?? ''
 })
 
-// Color is not part of EventDto; allow passthrough if present
+// Color is not part of Event; allow passthrough if present
 const toolbarColor = computed(() => (se.value.color as string | undefined) ?? '')
 
-// Description: EventDto.description, fallback to legacy "details"
+// Description: Event.description, fallback to legacy "details"
 const description = computed(() => {
   return (se.value.description as string | undefined) ?? (se.value.details as string | undefined) ?? ''
 })
 
-// Banner url: EventDto.banner is FileDto with url field, or string in some backends
+// Banner url: Event.banner is File with url field, or string in some backends
 const bannerUrl = computed(() => {
-  const banner = se.value.banner as FileDto | string | undefined
+  const banner = se.value.banner as File | string | undefined
   if (!banner) return ''
   if (typeof banner === 'string') return banner
   return banner.url ?? ''
 })
 
-// Dates: accept either Date (calendar local) or ISO strings (EventDto)
+// Dates: accept either Date (calendar local) or ISO strings (Event)
 function toDate(d: unknown): Date | null {
   if (!d) return null
   if (d instanceof Date) return d

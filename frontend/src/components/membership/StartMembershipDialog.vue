@@ -50,7 +50,7 @@
 import {computed, ref} from 'vue';
 import {DateTime} from 'luxon';
 import MemberTypeSelect from '@/components/select/MemberTypeSelect.vue';
-import {createMembership, type MembershipDto, MemberType,} from '@/lib';
+import {createMembership, type Membership, MemberType,} from '@/lib';
 import CountrySelect from "@/components/select/CountrySelect.vue";
 
 interface Props {
@@ -66,7 +66,7 @@ const emit = defineEmits<{
   /** v-model updater */
   (e: 'update:modelValue', value: boolean): void;
   /** Fires when a membership is successfully created */
-  (e: 'started', membership: MembershipDto): void;
+  (e: 'started', membership: Membership): void;
 }>();
 
 // Local v-model proxy
@@ -76,7 +76,7 @@ const open = computed({
 });
 
 // Local state for the dialog
-const form = ref<MembershipDto>({
+const form = ref<Membership>({
   startDate: DateTime.now().toISODate(),
   memberType: MemberType.REGULAR,
   userId: props.userId,
@@ -91,7 +91,7 @@ const confirm = async () => {
   try {
     isSubmitting.value = true;
 
-    const membershipData: MembershipDto = form.value
+    const membershipData: Membership = form.value
 
     const response = await createMembership({body: membershipData});
 

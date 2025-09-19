@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
-import type {FileDto} from "@/lib";
+import type {File} from "@/lib";
 
 // References and reactive state
 const fileInput = ref<HTMLInputElement | null>(null);
-const selectedFile = ref<FileDto | null>(null);
+const selectedFile = ref<File | null>(null);
 const previewUrl = ref<string | null>(null);
 // Default file type (can be changed via the select)
 const fileType = ref<'DOCUMENT' | 'SIGNATURE' | 'PROFILE_PICTURE' | 'EVENT_BANNER' | 'EVENT_PICTURE' | 'SPONSOR_PICTURE'>('DOCUMENT');

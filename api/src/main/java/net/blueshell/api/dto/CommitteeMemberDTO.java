@@ -1,11 +1,13 @@
 package net.blueshell.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Schema(name = "CommitteeMember")
 public class CommitteeMemberDTO extends BaseDTO {
     private Long id;
     private String role;

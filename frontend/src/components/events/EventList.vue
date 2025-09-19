@@ -3,10 +3,10 @@ import {computed, onMounted, ref} from 'vue'
 import {useStore} from 'vuex'
 import {useRoute} from 'vue-router'
 import EventListItem from '@/components/events/EventListItem.vue'
-import { findEvents, findEventSignUpsForCurrentUser, type EventDto, type EventSignUpDto } from '@/lib'
+import { findEvents, findEventSignUpsForCurrentUser, type Event, type EventSignUp } from '@/lib'
 
-const events = ref<EventDto[] | null>(null)
-const eventSignups = ref<Record<number, EventSignUpDto>>({})
+const events = ref<Event[] | null>(null)
+const eventSignups = ref<Record<number, EventSignUp>>({})
 
 // Access route and store
 const route = useRoute()
@@ -20,7 +20,7 @@ onMounted(async () => {
     findEvents(),
     isLoggedIn.value
       ? findEventSignUpsForCurrentUser()
-      : Promise.resolve({ data: [] as EventSignUpDto[] }),
+      : Promise.resolve({ data: [] as EventSignUp[] }),
   ])
 
   const fetchedEvents = eventsResp.data?.content ?? []

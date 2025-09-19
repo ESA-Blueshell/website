@@ -1,6 +1,7 @@
 package net.blueshell.api.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,6 +16,7 @@ import java.util.Set;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Schema(name = "AdvancedUser")
 public class AdvancedUserDTO extends SimpleUserDTO {
 
     @JsonProperty

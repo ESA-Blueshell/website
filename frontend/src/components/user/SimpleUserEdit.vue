@@ -110,20 +110,20 @@
 
 <script setup lang="ts">
 import {ref, type Ref, watch} from 'vue';
-import {createGuestUser, type SimpleUserDto} from '@/lib';
+import {createGuestUser, type SimpleUser} from '@/lib';
 
 import type {VForm} from 'vuetify/components';
 
 interface Props {
   editing?: boolean;
-  modelValue: SimpleUserDto;
+  modelValue: SimpleUser;
   showPasswords?: boolean;
 }
 
 interface Emits {
-  (e: 'update:modelValue', user: SimpleUserDto): void;
+  (e: 'update:modelValue', user: SimpleUser): void;
 
-  (e: 'user-changed', user: SimpleUserDto): void;
+  (e: 'user-changed', user: SimpleUser): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -134,7 +134,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 // Reactive state
-const userData: Ref<SimpleUserDto> = ref({...props.modelValue});
+const userData: Ref<SimpleUser> = ref({...props.modelValue});
 const valid: Ref<boolean> = ref(true);
 const submitting: Ref<boolean> = ref(false);
 const form: Ref<VForm | undefined> = ref();
@@ -157,7 +157,7 @@ watch(
 watch(
   userData,
   (newVal) => {
-    const cleanUserData: SimpleUserDto = {
+    const cleanUserData: SimpleUser = {
       username: newVal.username,
       initials: newVal.initials,
       firstName: newVal.firstName,

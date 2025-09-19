@@ -79,7 +79,7 @@ import { onMounted, ref } from 'vue';
 import { DateTime } from 'luxon';
 import ContributionPeriodDialog from '@/components/contribution-period/ContributionPeriodDialog.vue';
 import DeleteConfirmationDialog from '@/components/DeletionConfirmationDialog.vue';
-import { type ContributionPeriodDto, findContributionPeriods } from '@/lib';
+import { type ContributionPeriod, findContributionPeriods } from '@/lib';
 
 defineOptions({ name: 'ContributionPeriodList' });
 
@@ -87,15 +87,15 @@ const emit = defineEmits<{
   (e: 'selected-period-id-changed', value: number | null): void;
 }>();
 
-const contributionPeriods = ref<ContributionPeriodDto[]>([]);
+const contributionPeriods = ref<ContributionPeriod[]>([]);
 const selectedPeriodId = ref<number | null>(null); // ← no default ID
 const hoveredPeriodId = ref<number | null>(null);
 const deleteDialog = ref(false);
-const selectedPeriod = ref<ContributionPeriodDto | null>(null);
+const selectedPeriod = ref<ContributionPeriod | null>(null);
 const isEditing = ref(false);
 const showAddPeriodDialog = ref(false);
 
-const formatPeriod = (period?: ContributionPeriodDto | null) => {
+const formatPeriod = (period?: ContributionPeriod | null) => {
   if (!period) return '';
   const start = DateTime.fromISO(period.startDate).toFormat('dd/MM/yyyy');
   const end = DateTime.fromISO(period.endDate).toFormat('dd/MM/yyyy');
@@ -121,7 +121,7 @@ const openAddPeriodDialog = () => {
   showAddPeriodDialog.value = true;
 };
 
-const openEditPeriodDialog = (period: ContributionPeriodDto) => {
+const openEditPeriodDialog = (period: ContributionPeriod) => {
   isEditing.value = true;
   selectedPeriod.value = period;
   showAddPeriodDialog.value = true;

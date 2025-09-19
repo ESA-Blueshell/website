@@ -1,6 +1,7 @@
 package net.blueshell.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.sql.Date;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Schema(name = "Membership")
 public class MembershipDTO extends BaseDTO {
 
     private Long id;

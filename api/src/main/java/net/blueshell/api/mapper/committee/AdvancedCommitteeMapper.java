@@ -2,7 +2,7 @@ package net.blueshell.api.mapper.committee;
 
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.AdvancedCommitteeDTO;
+import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.CommitteeMemberMapper;
 import net.blueshell.api.model.Committee;
 import net.blueshell.api.model.CommitteeMember;

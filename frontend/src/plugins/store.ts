@@ -1,9 +1,9 @@
 import { writeJsonCookie, readJsonCookie, deleteCookie } from '@/plugins/cookies';
 import {createStore, type Store} from "vuex";
-import {Role, type AuthenticationDto} from "@/lib";
+import {Role, type Authentication} from "@/lib";
 
 export interface State {
-  login: AuthenticationDto | null;
+  login: Authentication | null;
   guestData: Record<string, unknown> | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
@@ -11,7 +11,7 @@ export interface State {
 }
 
 export interface Mutations {
-  setLogin(state: State, payload: AuthenticationDto): void;
+  setLogin(state: State, payload: Authentication): void;
   logout(state: State): void;
   setRoles(state: State, roles: string[]): void;
   setStatusSnackbarMessage(state: State, message: string): void;
@@ -20,13 +20,13 @@ export interface Mutations {
 }
 
 export interface Actions {
-  login(context: { commit: (type: keyof Mutations, payload?: AuthenticationDto) => void }, payload: AuthenticationDto): Promise<void>;
+  login(context: { commit: (type: keyof Mutations, payload?: Authentication) => void }, payload: Authentication): Promise<void>;
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
   setRoles(context: { commit: (type: keyof Mutations, payload?: string[]) => void }, roles: string[]): Promise<void>;
 }
 
 export interface Getters {
-  getLogin(state: State): AuthenticationDto | null;
+  getLogin(state: State): Authentication | null;
   isLoggedIn(state: State): boolean;
   tokenExpired(state: State): boolean;
   isBoard(state: State): boolean;
@@ -52,7 +52,7 @@ export type TypedStore = Store<State> & {
 const store = createStore<State>({
   state(): State {
     return {
-      login: readJsonCookie<AuthenticationDto>('login'),
+      login: readJsonCookie<Authentication>('login'),
       guestData: readJsonCookie('guestData'),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
@@ -60,7 +60,7 @@ const store = createStore<State>({
     };
   },
   mutations: {
-    async setLogin(state: State, payload: AuthenticationDto) {
+    async setLogin(state: State, payload: Authentication) {
       state.login = payload;
       writeJsonCookie('login', payload);
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`;
@@ -92,7 +92,7 @@ const store = createStore<State>({
     },
   },
   getters: {
-    getLogin(state: State): AuthenticationDto | null {
+    getLogin(state: State): Authentication | null {
       return state.login;
     },
     isLoggedIn(state: State): boolean {

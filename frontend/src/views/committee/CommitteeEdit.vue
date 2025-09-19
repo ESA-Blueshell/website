@@ -85,20 +85,20 @@
 import {onMounted, ref} from 'vue';
 import type {VForm} from 'vuetify/components';
 import {
-  type AdvancedCommitteeDto,
-  type CommitteeMemberDto,
+  type AdvancedCommittee,
+  type CommitteeMember,
   createCommittee,
   findUsers,
-  type SimpleUserDto,
+  type SimpleUser,
   updateCommittee
 } from "@/lib";
 
 const props = defineProps<{
   committee: {
-    members: CommitteeMemberDto[];
-    type: AdvancedCommitteeDto,
+    members: CommitteeMember[];
+    type: AdvancedCommittee,
     required: false,
-    default: () => AdvancedCommitteeDto;
+    default: () => AdvancedCommittee;
   };
 }>();
 
@@ -108,11 +108,11 @@ const emit = defineEmits<{
 }>();
 
 const valid = ref(false);
-const members = ref<SimpleUserDto[]>([]);
+const members = ref<SimpleUser[]>([]);
 const form = ref<VForm | null>(null);
 
 // Create a local copy of the committee to avoid direct prop mutation
-const localCommittee = ref<AdvancedCommitteeDto>({
+const localCommittee = ref<AdvancedCommittee>({
   name: '',
   ...props.committee,
   members: props.committee?.members ? [...props.committee.members.map(m => ({...m}))] : []

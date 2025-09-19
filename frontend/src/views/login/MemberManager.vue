@@ -53,20 +53,20 @@ import TopBanner from '@/components/banners/TopBanner.vue';
 import ContributionPeriodList from '@/components/contribution-period/ContributionPeriodList.vue';
 import UserList from '@/components/user/UserList.vue';
 import {
-  type AdvancedUserDto,
-  type ContributionDto,
+  type AdvancedUser,
+  type Contribution,
   findContributionsByPeriodId, findMemberships,
   findUsers,
-  type MembershipDto,
+  type Membership,
   Role
 } from '@/lib';
 
 // State
-const members = ref([] as AdvancedUserDto[]);
-const nonMembers = ref([] as AdvancedUserDto[]);
-const users = ref([] as AdvancedUserDto[]);
-const contributions = ref([] as ContributionDto[]);
-const memberships = ref([] as MembershipDto[]);
+const members = ref([] as AdvancedUser[]);
+const nonMembers = ref([] as AdvancedUser[]);
+const users = ref([] as AdvancedUser[]);
+const contributions = ref([] as Contribution[]);
+const memberships = ref([] as Membership[]);
 const expanded = ref(0);
 const search = ref('');
 const selectedPeriodId = ref(0);
@@ -95,7 +95,7 @@ const getMemberships = async () => {
 };
 
 // Helpers
-const isSearched = (user: AdvancedUserDto) => {
+const isSearched = (user: AdvancedUser) => {
   if (!search.value) return true;
 
   const searchTerms = search.value.toLowerCase().split(' ').filter(Boolean);
@@ -108,10 +108,10 @@ const isSearched = (user: AdvancedUserDto) => {
 
 const updateMembers = () => {
   members.value = users.value.filter(
-    (user: AdvancedUserDto) => memberships.value.some((m) => m.userId === user.id) && isSearched(user)
+    (user: AdvancedUser) => memberships.value.some((m) => m.userId === user.id) && isSearched(user)
   );
   nonMembers.value = users.value.filter(
-    (user: AdvancedUserDto) => !memberships.value.some((m) => m.userId === user.id) && isSearched(user)
+    (user: AdvancedUser) => !memberships.value.some((m) => m.userId === user.id) && isSearched(user)
   );
 };
 
@@ -120,7 +120,7 @@ watch(search, () => {
 });
 
 // Events
-const deleteUser = (user: AdvancedUserDto) => {
+const deleteUser = (user: AdvancedUser) => {
   users.value = users.value.filter((u) => u.id !== user.id);
   updateMembers();
 };
@@ -129,7 +129,7 @@ const toggleExpanded = (userId: number) => {
   expanded.value = userId === expanded.value ? 0 : userId;
 };
 
-const userChanged = async (user: AdvancedUserDto) => {
+const userChanged = async (user: AdvancedUser) => {
   const index = users.value.findIndex((u) => u.id === user.id);
   if (index !== -1) {
     users.value.splice(index, 1, user);
@@ -143,7 +143,7 @@ const userChanged = async (user: AdvancedUserDto) => {
   updateMembers();
 };
 
-const contributionChanged = (updatedContribution: ContributionDto) => {
+const contributionChanged = (updatedContribution: Contribution) => {
   const index = contributions.value.findIndex((c) => c.id === updatedContribution.id);
   if (index !== -1) {
     contributions.value.splice(index, 1, updatedContribution);
@@ -152,7 +152,7 @@ const contributionChanged = (updatedContribution: ContributionDto) => {
   }
 };
 
-const membershipChanged = (updatedMembership: MembershipDto) => {
+const membershipChanged = (updatedMembership: Membership) => {
   const index = memberships.value.findIndex((c) => c.id === updatedMembership.id);
   if (index !== -1) {
     memberships.value.splice(index, 1, updatedMembership);

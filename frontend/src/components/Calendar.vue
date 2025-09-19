@@ -25,15 +25,15 @@ import { useDisplay, useLocale } from 'vuetify'
 import { computed, onMounted, ref, watch } from 'vue'
 import { DateTime } from "luxon";
 import { findEvents } from "@/lib";
-import type { EventDto, PageEventDto } from "@/lib"
+import type { Event, PageEvent } from "@/lib"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar";
 
 // State
 const focus = ref<Date[]>([new Date()])
-const selectedEvent = ref<EventDto | null>(null)
+const selectedEvent = ref<Event | null>(null)
 const selectedElement = ref<HTMLElement | null>(null)
 const selectedOpen = ref(false)
-const events = ref<EventDto[]>([])
+const events = ref<Event[]>([])
 const collectedMonths = ref<string[]>([])
 const monthsLoading = ref(0)
 
@@ -57,10 +57,11 @@ const loadEventsForMonth = async (month: Date) => {
   try {
     const { data } = await findEvents({
       query: {
-        filter: { from, to }
+        from,
+        to,
       }
     })
-    const page = (data ?? {}) as PageEventDto
+    const page = (data ?? {}) as PageEvent
     if (page.content) events.value = [...events.value, ...page.content]
     collectedMonths.value.push(from)
   } finally {
@@ -87,7 +88,7 @@ onMounted(() => {
 })
 
 // Event handling
-const showEvent = ({ nativeEvent, event }: { nativeEvent: MouseEvent; event: EventDto }) => {
+const showEvent = ({ nativeEvent, event }: { nativeEvent: MouseEvent; event: Event }) => {
   const toggle = () => {
     selectedEvent.value = event
     selectedElement.value = nativeEvent.target as HTMLElement
@@ -104,83 +105,62 @@ const showEvent = ({ nativeEvent, event }: { nativeEvent: MouseEvent; event: Eve
 }
 
 </script>
-<style lang="scss" scoped>
-@use '@/styles/settings' as settings;
+<style scoped lang="scss">
 @use "sass:map";
 
-.v-calendar {
-  @media #{map.get(settings.$display-breakpoints, 'xs')} {
-    .v-calendar-header__title {
-      font-size: 6vw;
-    }
+@media #{map.get($display-breakpoints, 'xs')} {
+  .v-calendar-header__title { font-size: 6vw; }
+  .v-calendar-header__today { margin-inline-end: 6px; }
+  .v-calendar-header__title { margin-inline-start: 6px; }
+}
 
-    .v-calendar-header__today {
-      margin-inline-end: 6px;
-    }
+.v-calendar-weekly__day-alldayevents-container { min-height: 0; }
 
-    .v-calendar-header__title {
-      margin-inline-start: 6px;
-    }
+.v-calendar-month__day {
+  min-height: 84.5px;
+
+  .v-calendar-weekly__day-events-container { padding: 0 4px; }
+
+  .v-chip {
+    background-color: rgb(var(--v-theme-primary));
+    color: rgb(var(--v-theme-on-primary));
+    padding: 0 5px;
+
+    .v-badge { display: none; }
   }
+}
 
-  .v-calendar-weekly__day-alldayevents-container {
-    min-height: 0;
-  }
+.v-calendar-weekly__head-weekday,
+.v-calendar-weekly__head-weekday-with-weeknumber {
+  border-bottom: thin solid #e0e0e0;
+}
 
-  .v-calendar-month__day {
-    min-height: 84.5px;
+.v-calendar-month__weeknumber { border-right: thin solid #e0e0e0; }
 
-    .v-calendar-weekly__day-events-container {
-      padding: 0 4px;
-    }
+.v-calendar-weekly__head-weeknumber {
+  border-right: thin solid #e0e0e0;
+  border-bottom: thin solid #e0e0e0;
+}
 
-    .v-chip {
-      background-color: rgb(var(--v-theme-primary));
-      color: rgb(var(--v-theme-on-primary));
-      padding: 0 5px;
-
-      .v-badge {
-        display: none;
-      }
-    }
-  }
-
-  // Add some extra lines for readability
-  .v-calendar-weekly__head-weekday, .v-calendar-weekly__head-weekday-with-weeknumber {
-    border-bottom: thin solid #e0e0e0;
-  }
-
-  .v-calendar-month__weeknumber {
-    border-right: thin solid #e0e0e0;
-  }
+.v-calendar__container {
+  border-radius: $border-radius-root;
 
   .v-calendar-weekly__head-weeknumber {
-    border-right: thin solid #e0e0e0;
-    border-bottom: thin solid #e0e0e0;
+    border-top-left-radius: $border-radius-root;
   }
 
-  // Rounded corners :)
-  .v-calendar__container {
-    border-radius: settings.$border-radius-root;
+  :nth-last-child(1 of .v-calendar-month__weeknumber) {
+    border-bottom-left-radius: $border-radius-root;
+  }
 
-    .v-calendar-weekly__head-weeknumber {
-      border-top-left-radius: settings.$border-radius-root;
-    }
-
-    :nth-last-child(1 of .v-calendar-month__weeknumber) {
-      border-bottom-left-radius: settings.$border-radius-root;
-    }
-
-    @media #{map.get(settings.$display-breakpoints, 'xs')} {
-      :nth-last-child(5 of .v-calendar-month__day) {
-        border-bottom-left-radius: settings.$border-radius-root;
-      }
-    }
-
-    :nth-last-child(1 of .v-calendar-month__day) {
-      border-bottom-right-radius: settings.$border-radius-root;
+  @media #{map.get($display-breakpoints, 'xs')} {
+    :nth-last-child(5 of .v-calendar-month__day) {
+      border-bottom-left-radius: $border-radius-root;
     }
   }
 
+  :nth-last-child(1 of .v-calendar-month__day) {
+    border-bottom-right-radius: $border-radius-root;
+  }
 }
 </style>

@@ -9,7 +9,7 @@
         ref="simpleRef"
         :model-value="simpleModel"
         :show-passwords="creating"
-        @update:model-value="(val: SimpleUserDto) => simpleModel = val"
+        @update:model-value="(val: SimpleUser) => simpleModel = val"
       />
 
       <v-row class="mt-10">
@@ -130,7 +130,7 @@ import 'flag-icons/css/flag-icons.min.css';
 import 'v-phone-input/dist/v-phone-input.css';
 import { VPhoneInput } from 'v-phone-input';
 import store from '@/plugins/store.ts';
-import {type AdvancedUserDto, createMember, createUser, type SimpleUserDto, updateUser} from '@/lib';
+import {type AdvancedUser, createMember, createUser, type SimpleUser, updateUser} from '@/lib';
 import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
 import SimpleUserEdit from '@/components/user/SimpleUserEdit.vue';
@@ -139,13 +139,13 @@ import NationalitySelect from "@/components/select/NationalitySelect.vue";
 interface Props {
   editing?: boolean;
   creating?: boolean;
-  modelValue: AdvancedUserDto;
+  modelValue: AdvancedUser;
 }
 
 interface Emits {
-  (e: 'update:modelValue', user: AdvancedUserDto): void;
+  (e: 'update:modelValue', user: AdvancedUser): void;
 
-  (e: 'user-changed', user: AdvancedUserDto): void;
+  (e: 'user-changed', user: AdvancedUser): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -160,7 +160,7 @@ const roles = computed(() => store.getters.getLogin?.roles);
 const disableEdit = computed(() => !props.creating && !props.editing && (!roles.value || !(roles.value.includes('BOARD') || roles.value.includes('ADMIN'))));
 
 // Reactive state
-const userData: Ref<AdvancedUserDto> = ref({...props.modelValue});
+const userData: Ref<AdvancedUser> = ref({...props.modelValue});
 const country: Ref<CountryCode> = ref('NL');
 const valid: Ref<boolean> = ref(true);
 const submitting: Ref<boolean> = ref(false);
@@ -168,7 +168,7 @@ const form: Ref<VForm | undefined> = ref();
 const simpleRef = ref<InstanceType<typeof SimpleUserEdit> | null>(null);
 
 // Bridge SimpleUserEdit v-model into AdvancedUserEdit v-model
-let simpleModel = computed<SimpleUserDto>({
+let simpleModel = computed<SimpleUser>({
   get: () => ({
     initials: userData.value.initials,
     firstName: userData.value.firstName,
@@ -179,8 +179,8 @@ let simpleModel = computed<SimpleUserDto>({
     email: userData.value.email,
     password: userData.value.password,
     newsletter: userData.value.newsletter,
-  } as SimpleUserDto),
-  set: (val: SimpleUserDto) => {
+  } as SimpleUser),
+  set: (val: SimpleUser) => {
     userData.value = {
       ...userData.value,
       ...val,

@@ -1,6 +1,7 @@
 package net.blueshell.api.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,6 +15,7 @@ import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @UniqueUser
+@Schema(name = "SimpleUser")
 public class SimpleUserDTO extends BaseDTO {
 
     @JsonProperty

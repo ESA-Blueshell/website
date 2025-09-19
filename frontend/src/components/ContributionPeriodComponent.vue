@@ -2,10 +2,10 @@
 import {onMounted, ref} from 'vue';
 import {$handleNetworkError} from "@/plugins/handleNetworkError";
 import {DateTime} from 'luxon';
-import {type ContributionPeriodDto, findCurrentContributionPeriod} from "@/lib";
+import {type ContributionPeriod, findCurrentContributionPeriod} from "@/lib";
 
 // Reactive variables
-const contributionPeriod = ref<ContributionPeriodDto>(); // Initialize as null
+const contributionPeriod = ref<ContributionPeriod>(); // Initialize as null
 const currentPeriod = ref(false);
 const loading = ref(true); // Loading state
 const error = ref(null); // Error state
@@ -14,7 +14,7 @@ const error = ref(null); // Error state
 const euros = new Intl.NumberFormat('nl-NL', {style: 'currency', currency: 'EUR'});
 
 // Function to format the period
-const formatPeriod = (period: ContributionPeriodDto) => {
+const formatPeriod = (period: ContributionPeriod) => {
   if (!period || !period.startDate || !period.endDate) return 'N/A';
   const start = DateTime.fromISO(period.startDate).toFormat('yyyy');
   const end = DateTime.fromISO(period.endDate).toFormat('yyyy');

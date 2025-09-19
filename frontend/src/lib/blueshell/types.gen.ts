@@ -7,7 +7,7 @@ export enum MemberType {
     NONE = 'NONE'
 }
 
-export type MembershipDto = {
+export type Membership = {
     id?: number;
     userId: number;
     memberType: MemberType;
@@ -18,7 +18,7 @@ export type MembershipDto = {
     incasso: boolean;
 };
 
-export type AdvancedUserDto = {
+export type AdvancedUser = {
     id?: number;
     initials: string;
     firstName: string;
@@ -56,16 +56,16 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
-export type SponsorDto = {
+export type Sponsor = {
     id?: number;
     name: string;
     description: string;
 };
 
-export type EventDto = {
+export type Event = {
     id?: number;
     committeeId?: number;
-    committee?: SimpleCommitteeDto;
+    committee?: SimpleCommittee;
     title: string;
     startTime: string;
     endTime: string;
@@ -74,13 +74,13 @@ export type EventDto = {
     visible?: boolean;
     membersOnly?: boolean;
     signUp?: boolean;
-    banner?: FileDto;
-    signUpForm?: Array<FormQuestionDto>;
+    banner?: File;
+    signUpForm?: Array<FormQuestion>;
     description: string;
     location?: string;
 };
 
-export type FileDto = {
+export type File = {
     id?: number;
     name?: string;
     url?: string;
@@ -102,19 +102,19 @@ export enum FileType {
     SPONSOR_PICTURE = 'SPONSOR_PICTURE'
 }
 
-export type FormQuestionDto = {
+export type FormQuestion = {
     prompt: string;
     type: string;
     options?: Array<string>;
 };
 
-export type SimpleCommitteeDto = {
+export type SimpleCommittee = {
     id?: number;
     name?: string;
     description?: string;
 };
 
-export type EventSignUpDto = {
+export type EventSignUp = {
     id?: number;
     eventId?: number;
     fullName?: string;
@@ -125,7 +125,7 @@ export type EventSignUpDto = {
     }>;
 };
 
-export type ContributionDto = {
+export type Contribution = {
     id?: number;
     userId?: number;
     contributionPeriodId?: number;
@@ -133,7 +133,7 @@ export type ContributionDto = {
     remindedAt?: string;
 };
 
-export type ContributionPeriodDto = {
+export type ContributionPeriod = {
     id?: number;
     startDate: string;
     endDate: string;
@@ -143,22 +143,22 @@ export type ContributionPeriodDto = {
     listId?: number;
 };
 
-export type AdvancedCommitteeDto = {
+export type AdvancedCommittee = {
     id?: number;
     name: string;
     description?: string;
-    members?: Array<CommitteeMemberDto>;
+    members?: Array<CommitteeMember>;
 };
 
-export type CommitteeMemberDto = {
+export type CommitteeMember = {
     id?: number;
     role?: string;
     userId?: number;
-    user?: SimpleUserDto;
+    user?: SimpleUser;
     committeeId?: number;
 };
 
-export type SimpleUserDto = {
+export type SimpleUser = {
     id?: number;
     initials: string;
     firstName: string;
@@ -172,11 +172,11 @@ export type SimpleUserDto = {
     password: string;
 };
 
-export type BaseDto = {
+export type Base = {
     [key: string]: unknown;
 };
 
-export type AddressDto = {
+export type Address = {
     id?: number;
     country?: string;
     city?: string;
@@ -193,14 +193,14 @@ export enum PlatformType {
     INSTAGRAM = 'INSTAGRAM'
 }
 
-export type TelemetryDto = {
+export type Telemetry = {
     id?: string;
     url?: string;
     platform?: PlatformType;
     createdAt?: string;
 };
 
-export type BlogDto = {
+export type Blog = {
     id?: string;
     url?: string;
     title?: string;
@@ -215,7 +215,7 @@ export type JwtRequest = {
     password?: string;
 };
 
-export type AuthenticationDto = {
+export type Login = {
     token: string;
     userId: number;
     username: string;
@@ -241,17 +241,17 @@ export type MemberActivationRequest = {
     password?: string;
 };
 
-export type RedirectDto = {
+export type Redirect = {
     id?: string;
     createdAt?: string;
-    telemetry?: TelemetryDto;
+    telemetry?: Telemetry;
 };
 
-export type PageEventDto = {
+export type PageEvent = {
     totalElements?: number;
     totalPages?: number;
     size?: number;
-    content?: Array<EventDto>;
+    content?: Array<Event>;
     number?: number;
     sort?: SortObject;
     pageable?: PageableObject;
@@ -289,13 +289,13 @@ export type FindMembershipByIdResponses = {
     /**
      * OK
      */
-    200: MembershipDto;
+    200: Membership;
 };
 
 export type FindMembershipByIdResponse = FindMembershipByIdResponses[keyof FindMembershipByIdResponses];
 
 export type UpdateMembershipData = {
-    body: MembershipDto;
+    body: Membership;
     path: {
         id: number;
     };
@@ -307,7 +307,7 @@ export type UpdateMembershipResponses = {
     /**
      * OK
      */
-    200: MembershipDto;
+    200: Membership;
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
@@ -343,13 +343,13 @@ export type FindUserByIdResponses = {
     /**
      * OK
      */
-    200: AdvancedUserDto;
+    200: AdvancedUser;
 };
 
 export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
 
 export type UpdateUserData = {
-    body: AdvancedUserDto;
+    body: AdvancedUser;
     path: {
         userId: number;
     };
@@ -361,7 +361,7 @@ export type UpdateUserResponses = {
     /**
      * OK
      */
-    200: AdvancedUserDto;
+    200: AdvancedUser;
 };
 
 export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
@@ -381,7 +381,7 @@ export type ToggleUserRoleResponses = {
     /**
      * OK
      */
-    200: AdvancedUserDto;
+    200: AdvancedUser;
 };
 
 export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
@@ -417,13 +417,13 @@ export type FindSponsorByIdResponses = {
     /**
      * OK
      */
-    200: SponsorDto;
+    200: Sponsor;
 };
 
 export type FindSponsorByIdResponse = FindSponsorByIdResponses[keyof FindSponsorByIdResponses];
 
 export type CreateOrUpdateSponsorData = {
-    body: SponsorDto;
+    body: Sponsor;
     path: {
         id: number;
     };
@@ -461,7 +461,7 @@ export type DeleteEventByIdResponses = {
 export type DeleteEventByIdResponse = DeleteEventByIdResponses[keyof DeleteEventByIdResponses];
 
 export type UpdateEventData = {
-    body: EventDto;
+    body: Event;
     path: {
         eventId: number;
     };
@@ -473,7 +473,7 @@ export type UpdateEventResponses = {
     /**
      * OK
      */
-    200: EventDto;
+    200: Event;
 };
 
 export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
@@ -491,13 +491,13 @@ export type FindEventSignUpsByEventIdResponses = {
     /**
      * OK
      */
-    200: Array<EventSignUpDto>;
+    200: Array<EventSignUp>;
 };
 
 export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdResponses[keyof FindEventSignUpsByEventIdResponses];
 
 export type UpdateEventSignUpData = {
-    body: EventSignUpDto;
+    body: EventSignUp;
     path: {
         eventId: number;
     };
@@ -511,7 +511,7 @@ export type UpdateEventSignUpResponses = {
     /**
      * OK
      */
-    200: EventSignUpDto;
+    200: EventSignUp;
 };
 
 export type UpdateEventSignUpResponse = UpdateEventSignUpResponses[keyof UpdateEventSignUpResponses];
@@ -531,7 +531,7 @@ export type SetContributionPaidResponses = {
     /**
      * OK
      */
-    200: ContributionDto;
+    200: Contribution;
 };
 
 export type SetContributionPaidResponse = SetContributionPaidResponses[keyof SetContributionPaidResponses];
@@ -571,7 +571,7 @@ export type DeleteContributionPeriodByIdResponses = {
 export type DeleteContributionPeriodByIdResponse = DeleteContributionPeriodByIdResponses[keyof DeleteContributionPeriodByIdResponses];
 
 export type UpdateContributionPeriodData = {
-    body: ContributionPeriodDto;
+    body: ContributionPeriod;
     path: {
         id: number;
     };
@@ -583,7 +583,7 @@ export type UpdateContributionPeriodResponses = {
     /**
      * OK
      */
-    200: ContributionPeriodDto;
+    200: ContributionPeriod;
 };
 
 export type UpdateContributionPeriodResponse = UpdateContributionPeriodResponses[keyof UpdateContributionPeriodResponses];
@@ -619,13 +619,13 @@ export type FindCommitteeByIdResponses = {
     /**
      * OK
      */
-    200: BaseDto;
+    200: Base;
 };
 
 export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
 
 export type UpdateCommitteeData = {
-    body: AdvancedCommitteeDto;
+    body: AdvancedCommittee;
     path: {
         committeeId: number;
     };
@@ -637,7 +637,7 @@ export type UpdateCommitteeResponses = {
     /**
      * OK
      */
-    200: BaseDto;
+    200: Base;
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
@@ -673,13 +673,13 @@ export type FindAddressByIdResponses = {
     /**
      * OK
      */
-    200: AddressDto;
+    200: Address;
 };
 
 export type FindAddressByIdResponse = FindAddressByIdResponses[keyof FindAddressByIdResponses];
 
 export type UpdateAddressData = {
-    body: AddressDto;
+    body: Address;
     path: {
         addressId: number;
     };
@@ -691,7 +691,7 @@ export type UpdateAddressResponses = {
     /**
      * OK
      */
-    200: AddressDto;
+    200: Address;
 };
 
 export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressResponses];
@@ -707,13 +707,13 @@ export type FindUsersResponses = {
     /**
      * OK
      */
-    200: Array<AdvancedUserDto>;
+    200: Array<AdvancedUser>;
 };
 
 export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
 
 export type CreateUserData = {
-    body: AdvancedUserDto;
+    body: AdvancedUser;
     path?: never;
     query?: never;
     url: '/users';
@@ -723,13 +723,13 @@ export type CreateUserResponses = {
     /**
      * OK
      */
-    200: AdvancedUserDto;
+    200: AdvancedUser;
 };
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
 
 export type CreateMemberData = {
-    body: AdvancedUserDto;
+    body: AdvancedUser;
     path?: never;
     query?: never;
     url: '/users/member';
@@ -739,13 +739,13 @@ export type CreateMemberResponses = {
     /**
      * OK
      */
-    200: AdvancedUserDto;
+    200: AdvancedUser;
 };
 
 export type CreateMemberResponse = CreateMemberResponses[keyof CreateMemberResponses];
 
 export type CreateGuestUserData = {
-    body: SimpleUserDto;
+    body: SimpleUser;
     path?: never;
     query?: never;
     url: '/users/guest';
@@ -755,7 +755,7 @@ export type CreateGuestUserResponses = {
     /**
      * OK
      */
-    200: SimpleUserDto;
+    200: SimpleUser;
 };
 
 export type CreateGuestUserResponse = CreateGuestUserResponses[keyof CreateGuestUserResponses];
@@ -774,7 +774,7 @@ export type CreateTelemetryResponses = {
     /**
      * OK
      */
-    200: TelemetryDto;
+    200: Telemetry;
 };
 
 export type CreateTelemetryResponse = CreateTelemetryResponses[keyof CreateTelemetryResponses];
@@ -826,13 +826,13 @@ export type FindSponsorsResponses = {
     /**
      * OK
      */
-    200: Array<SponsorDto>;
+    200: Array<Sponsor>;
 };
 
 export type FindSponsorsResponse = FindSponsorsResponses[keyof FindSponsorsResponses];
 
 export type CreateSponsorData = {
-    body: SponsorDto;
+    body: Sponsor;
     path?: never;
     query?: never;
     url: '/sponsors';
@@ -842,7 +842,7 @@ export type CreateSponsorResponses = {
     /**
      * OK
      */
-    200: SponsorDto;
+    200: Sponsor;
 };
 
 export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
@@ -858,13 +858,13 @@ export type FindMembershipsResponses = {
     /**
      * OK
      */
-    200: Array<MembershipDto>;
+    200: Array<Membership>;
 };
 
 export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
 
 export type CreateMembershipData = {
-    body: MembershipDto;
+    body: Membership;
     path?: never;
     query?: never;
     url: '/memberships';
@@ -874,13 +874,13 @@ export type CreateMembershipResponses = {
     /**
      * OK
      */
-    200: MembershipDto;
+    200: Membership;
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
 
 export type BoardCreateMembershipData = {
-    body: MembershipDto;
+    body: Membership;
     path?: never;
     query?: never;
     url: '/memberships/member';
@@ -890,7 +890,7 @@ export type BoardCreateMembershipResponses = {
     /**
      * OK
      */
-    200: MembershipDto;
+    200: Membership;
 };
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
@@ -924,13 +924,13 @@ export type FindEventsResponses = {
     /**
      * OK
      */
-    200: PageEventDto;
+    200: PageEvent;
 };
 
 export type FindEventsResponse = FindEventsResponses[keyof FindEventsResponses];
 
 export type CreateEventData = {
-    body: EventDto;
+    body: Event;
     path?: never;
     query?: never;
     url: '/events';
@@ -940,13 +940,13 @@ export type CreateEventResponses = {
     /**
      * OK
      */
-    200: EventDto;
+    200: Event;
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
 
 export type CreateEventSignupData = {
-    body: EventSignUpDto;
+    body: EventSignUp;
     path: {
         id: number;
     };
@@ -958,7 +958,7 @@ export type CreateEventSignupResponses = {
     /**
      * OK
      */
-    200: EventSignUpDto;
+    200: EventSignUp;
 };
 
 export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
@@ -984,7 +984,7 @@ export type FindContributionsResponses = {
 export type FindContributionsResponse = FindContributionsResponses[keyof FindContributionsResponses];
 
 export type CreateContributionData = {
-    body: ContributionDto;
+    body: Contribution;
     path?: never;
     query?: never;
     url: '/contributions';
@@ -994,7 +994,7 @@ export type CreateContributionResponses = {
     /**
      * OK
      */
-    200: ContributionDto;
+    200: Contribution;
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
@@ -1010,13 +1010,13 @@ export type FindContributionPeriodsResponses = {
     /**
      * OK
      */
-    200: Array<ContributionPeriodDto>;
+    200: Array<ContributionPeriod>;
 };
 
 export type FindContributionPeriodsResponse = FindContributionPeriodsResponses[keyof FindContributionPeriodsResponses];
 
 export type CreateContributionPeriodData = {
-    body: ContributionPeriodDto;
+    body: ContributionPeriod;
     path?: never;
     query?: never;
     url: '/contributionPeriods';
@@ -1026,7 +1026,7 @@ export type CreateContributionPeriodResponses = {
     /**
      * OK
      */
-    200: ContributionPeriodDto;
+    200: ContributionPeriod;
 };
 
 export type CreateContributionPeriodResponse = CreateContributionPeriodResponses[keyof CreateContributionPeriodResponses];
@@ -1042,13 +1042,13 @@ export type FindCommitteesResponses = {
     /**
      * OK
      */
-    200: Array<BaseDto>;
+    200: Array<Base>;
 };
 
 export type FindCommitteesResponse = FindCommitteesResponses[keyof FindCommitteesResponses];
 
 export type CreateCommitteeData = {
-    body: AdvancedCommitteeDto;
+    body: AdvancedCommittee;
     path?: never;
     query?: never;
     url: '/committees';
@@ -1058,7 +1058,7 @@ export type CreateCommitteeResponses = {
     /**
      * OK
      */
-    200: AdvancedCommitteeDto;
+    200: AdvancedCommittee;
 };
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
@@ -1074,13 +1074,13 @@ export type FindBlogsResponses = {
     /**
      * OK
      */
-    200: Array<BlogDto>;
+    200: Array<Blog>;
 };
 
 export type FindBlogsResponse = FindBlogsResponses[keyof FindBlogsResponses];
 
 export type CreateData = {
-    body: BlogDto;
+    body: Blog;
     path?: never;
     query?: never;
     url: '/blogs';
@@ -1090,7 +1090,7 @@ export type CreateResponses = {
     /**
      * OK
      */
-    200: BlogDto;
+    200: Blog;
 };
 
 export type CreateResponse = CreateResponses[keyof CreateResponses];
@@ -1106,7 +1106,7 @@ export type AuthenticateResponses = {
     /**
      * OK
      */
-    200: AuthenticationDto;
+    200: Login;
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
@@ -1164,13 +1164,13 @@ export type FindAllAddressesResponses = {
     /**
      * OK
      */
-    200: Array<AddressDto>;
+    200: Array<Address>;
 };
 
 export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
 
 export type CreateAddressData = {
-    body: AddressDto;
+    body: Address;
     path?: never;
     query?: never;
     url: '/addresses';
@@ -1180,7 +1180,7 @@ export type CreateAddressResponses = {
     /**
      * Created
      */
-    201: AddressDto;
+    201: Address;
 };
 
 export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
@@ -1216,7 +1216,7 @@ export type FindTelemetryByIdResponses = {
     /**
      * OK
      */
-    200: TelemetryDto;
+    200: Telemetry;
 };
 
 export type FindTelemetryByIdResponse = FindTelemetryByIdResponses[keyof FindTelemetryByIdResponses];
@@ -1235,7 +1235,7 @@ export type FindRedirectsResponses = {
     /**
      * OK
      */
-    200: Array<RedirectDto>;
+    200: Array<Redirect>;
 };
 
 export type FindRedirectsResponse = FindRedirectsResponses[keyof FindRedirectsResponses];
@@ -1287,7 +1287,7 @@ export type FindEventByIdResponses = {
     /**
      * OK
      */
-    200: EventDto;
+    200: Event;
 };
 
 export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
@@ -1321,7 +1321,7 @@ export type FindEventSignUpsForCurrentUserResponses = {
     /**
      * OK
      */
-    200: Array<EventSignUpDto>;
+    200: Array<EventSignUp>;
 };
 
 export type FindEventSignUpsForCurrentUserResponse = FindEventSignUpsForCurrentUserResponses[keyof FindEventSignUpsForCurrentUserResponses];
@@ -1339,7 +1339,7 @@ export type FindEventSignUpByAccessTokenResponses = {
     /**
      * OK
      */
-    200: EventSignUpDto;
+    200: EventSignUp;
 };
 
 export type FindEventSignUpByAccessTokenResponse = FindEventSignUpByAccessTokenResponses[keyof FindEventSignUpByAccessTokenResponses];
@@ -1393,7 +1393,7 @@ export type FindContributionsByPeriodIdResponses = {
     /**
      * OK
      */
-    200: Array<ContributionDto>;
+    200: Array<Contribution>;
 };
 
 export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
@@ -1409,7 +1409,7 @@ export type FindCurrentContributionPeriodResponses = {
     /**
      * OK
      */
-    200: ContributionPeriodDto;
+    200: ContributionPeriod;
 };
 
 export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
@@ -1425,7 +1425,7 @@ export type FindCommitteesForCurrentUserResponses = {
     /**
      * OK
      */
-    200: Array<BaseDto>;
+    200: Array<Base>;
 };
 
 export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
@@ -1461,7 +1461,7 @@ export type FindBlogByIdResponses = {
     /**
      * OK
      */
-    200: BlogDto;
+    200: Blog;
 };
 
 export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];

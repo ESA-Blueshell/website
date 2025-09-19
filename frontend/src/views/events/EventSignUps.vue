@@ -116,17 +116,17 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import TopBanner from '@/components/banners/TopBanner.vue'
 import {
-  type EventDto,
-  type EventSignUpDto,
+  type Event,
+  type EventSignUp,
   findEventById,
   findEventSignUpsByEventId,
-  type FormQuestionDto
+  type FormQuestion
 } from "@/lib";
 
 // Refs for reactive data
 const eventName = ref<string | null>(null)
-const signUpForm = ref<FormQuestionDto[]>([])
-const responses = ref<EventSignUpDto[]>([])
+const signUpForm = ref<FormQuestion[]>([])
+const responses = ref<EventSignUp[]>([])
 
 // This tracks expanded rows for the checkbox question
 // We'll store them as `'i-j'` strings
@@ -160,8 +160,8 @@ onMounted(async () => {
       })
     ])
 
-    const event: EventDto = eventResp.data ?? {} as EventDto
-    const signups: EventSignUpDto[] = signupsResp.data ?? []
+    const event: Event = eventResp.data ?? {} as Event
+    const signups: EventSignUp[] = signupsResp.data ?? []
 
     eventName.value = event.title
     signUpForm.value = event.signUpForm ?? []

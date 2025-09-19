@@ -141,7 +141,7 @@ import TopBanner from "@/components/banners/TopBanner.vue";
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 import AddressEdit from "@/components/edit/AddressEdit.vue";
 import MembershipEdit from "@/components/edit/MembershipEdit.vue";
-import type { AdvancedUserDto, AddressDto, MembershipDto } from '@/lib';
+import type { AdvancedUser, Address, Membership } from '@/lib';
 import { findUserById, updateUser, createUser } from '@/lib';
 
 import store from '@/plugins/store';
@@ -155,7 +155,7 @@ const saving: Ref<boolean> = ref(false);
 const loggedIn: Ref<boolean> = ref(false);
 
 // Form data
-const userData: Ref<AdvancedUserDto> = ref({
+const userData: Ref<AdvancedUser> = ref({
   initials: '',
   firstName: '',
   lastName: '',
@@ -173,22 +173,22 @@ const userData: Ref<AdvancedUserDto> = ref({
   incasso: false,
   studentNumber: '',
   gender: '',
-} as AdvancedUserDto);
+} as AdvancedUser);
 
-const addressData: Ref<AddressDto> = ref({
+const addressData: Ref<Address> = ref({
   street: '',
   houseNumber: '',
   zipCode: '',
   city: '',
   country: '',
-} as AddressDto);
+} as Address);
 
-const membershipData: Ref<MembershipDto> = ref({
+const membershipData: Ref<Membership> = ref({
   userId: 0,
   memberType: 'REGULAR',
   city: '',
   date: DateTime.now().toISODate(),
-} as MembershipDto);
+} as Membership);
 
 // Template refs
 const userEditRef: Ref<any> = ref(null);
@@ -245,7 +245,7 @@ const validateAndSaveUserData = async (): Promise<boolean> => {
   }
 
   try {
-    let response: { data?: AdvancedUserDto };
+    let response: { data?: AdvancedUser };
 
     if (loggedIn.value && userData.value.id) {
       // Update existing user

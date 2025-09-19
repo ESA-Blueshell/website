@@ -15,7 +15,6 @@ export default defineConfig({
           @use "@/styles/settings" as *;
           @use "@/styles/housestyle" as *;
           @use "@/styles/colors" as *;
-          @use "vuetify/styles" as *;
         `,
                 sassOptions: {
                     api: 'modern'
@@ -28,7 +27,9 @@ export default defineConfig({
         vue(),
         vuetify({
             autoImport: true,
-            configFile: './src/styles/settings.scss',
+            styles: {
+                configFile: './src/styles/settings.scss',
+            }
         }),
     ],
     optimizeDeps: {

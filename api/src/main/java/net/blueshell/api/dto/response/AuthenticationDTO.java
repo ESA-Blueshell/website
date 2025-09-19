@@ -1,5 +1,6 @@
 package net.blueshell.api.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Schema(name = "Login")
 public class AuthenticationDTO extends BaseDTO {
 
     @Serial

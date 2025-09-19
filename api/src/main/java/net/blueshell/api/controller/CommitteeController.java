@@ -5,7 +5,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.AdvancedCommitteeDTO;
+import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.dto.BaseDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;

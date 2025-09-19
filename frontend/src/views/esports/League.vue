@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="League of Legends"/>
+    <top-banner title="League of Legends" />
     <div class="mx-3">
       <div
         class="mx-auto my-10"

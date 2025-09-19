@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <top-banner title="Rocket League"/>
+    <top-banner title="Rocket League" />
     <div class="mx-3">
       <div
         class="mx-auto my-10"

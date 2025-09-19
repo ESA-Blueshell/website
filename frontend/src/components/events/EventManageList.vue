@@ -87,7 +87,7 @@
         There will be no undo
       </v-card-text>
       <v-card-actions>
-        <v-spacer/>
+        <v-spacer />
         <v-btn
           variant="text"
           @click="eventToDelete = null"

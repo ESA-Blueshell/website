@@ -1431,6 +1431,7 @@ __metadata:
     vuetify: "npm:^3.10.2"
     vuex: "npm:^4.1.0"
     webfontloader: "npm:^1.6.28"
+    world-countries: "npm:^5.1.0"
     xss: "npm:^1.0.15"
   languageName: unknown
   linkType: soft
@@ -4924,6 +4925,13 @@ __metadata:
   version: 1.0.0
   resolution: "wordwrap@npm:1.0.0"
   checksum: 10c0/7ed2e44f3c33c5c3e3771134d2b0aee4314c9e49c749e37f464bf69f2bcdf0cbf9419ca638098e2717cff4875c47f56a007532f6111c3319f557a2ca91278e92
+  languageName: node
+  linkType: hard
+
+"world-countries@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "world-countries@npm:5.1.0"
+  checksum: 10c0/a8884b6beb432b33c08457b66dd2c91a25dd64fdbffb59b93ca3dcb5011a08a66dc3ffa6b4257c2682ed9c28651a493417343749f9894e51088ce148499c45ba
   languageName: node
   linkType: hard
 

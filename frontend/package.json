@@ -39,6 +39,7 @@
     "vuetify": "^3.10.2",
     "vuex": "^4.1.0",
     "webfontloader": "^1.6.28",
+    "world-countries": "^5.1.0",
     "xss": "^1.0.15"
   },
   "devDependencies": {

@@ -78,6 +78,7 @@ const RAW_RUNTIME_STATE =
           ["vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:3.10.2"],\
           ["vuex", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:4.1.0"],\
           ["webfontloader", "npm:1.6.28"],\
+          ["world-countries", "npm:5.1.0"],\
           ["xss", "npm:1.0.15"]\
         ],\
         "linkType": "SOFT"\
@@ -1979,6 +1980,7 @@ const RAW_RUNTIME_STATE =
           ["vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:3.10.2"],\
           ["vuex", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:4.1.0"],\
           ["webfontloader", "npm:1.6.28"],\
+          ["world-countries", "npm:5.1.0"],\
           ["xss", "npm:1.0.15"]\
         ],\
         "linkType": "SOFT"\
@@ -6021,6 +6023,15 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/wordwrap-npm-1.0.0-ae57a645e8-7ed2e44f3c.zip/node_modules/wordwrap/",\
         "packageDependencies": [\
           ["wordwrap", "npm:1.0.0"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["world-countries", [\
+      ["npm:5.1.0", {\
+        "packageLocation": "./.yarn/cache/world-countries-npm-5.1.0-a3322dc7ec-a8884b6beb.zip/node_modules/world-countries/",\
+        "packageDependencies": [\
+          ["world-countries", "npm:5.1.0"]\
         ],\
         "linkType": "HARD"\
       }]\

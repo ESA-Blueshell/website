@@ -35,8 +35,8 @@ const getContributionPeriod = async () => {
     contributionPeriod.value = response.data;
 
     const now = DateTime.now();
-    const startDate = DateTime.fromISO(contributionPeriod.value.startDate as string);
-    const endDate = DateTime.fromISO(contributionPeriod.value.endDate as string);
+    const startDate = DateTime.fromISO(contributionPeriod.value?.startDate as string);
+    const endDate = DateTime.fromISO(contributionPeriod.value?.endDate as string);
     currentPeriod.value = now >= startDate && now <= endDate;
   } catch (err) {
     // Capture and set error message

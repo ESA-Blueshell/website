@@ -1,89 +1,68 @@
 <template>
-  <!-- :rules="[requiredRule]" -->
   <v-autocomplete
-    v-model="selectedNationality"
-    :items="nationalityOptions"
-    label="Select a Nationality"
-    outlined
-    dense
-    return-object
+    v-model="selectedCountry"
+    :items="countryItems"
+    :item-title="displayName"
+    item-value="cca2"
+    :label="label ?? 'Nationality'"
     clearable
-    :counter="countries.length"
-  >
-    <template #item="{ item }">
-      <v-list-item
-        class="pa-2"
-        :value="item"
-      >
-        <v-list-item-title>
-          {{ item.flag }} {{ item.nationality }}
-        </v-list-item-title>
-      </v-list-item>
-    </template>
-
-    <!-- Slot to customize the display of the selected item -->
-    <template #selection="{ item }">
-      <v-chip
-        class="mr-2"
-        size="small"
-        variant="tonal"
-      >
-        {{ item.flag }} {{ item.nationality }}
-      </v-chip>
-    </template>
-  </v-autocomplete>
+    :custom-filter="customFilter"
+  />
 </template>
 
 <script setup lang="ts">
-import {ref, watch} from 'vue';
-import {countries, getEmojiFlag, type TCountryCode} from 'countries-list';
+import { ref, computed, watch } from 'vue'
+import countries, { type Country } from 'world-countries'
+import type { InternalItem } from 'vuetify'
 
-// Define the props and emits for v-model binding
-const props = defineProps<{ modelValue?: string }>();
-const emit = defineEmits(['update:modelValue']);
+// Props / emits unchanged: we still pass the 2-letter code (cca2) to parent
+const props = defineProps<{ modelValue?: string | null; label?: string }>()
+const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
 
-type NationalityOption = {
-  nationality: string;
-  code: string;
-  flag: string;
-};
+const selectedCountry = ref<string | null>(props.modelValue ?? null)
 
-// Generate the options for the select component, mapping each country's primary language name
-const nationalityOptions: NationalityOption[] = Object.entries(countries).map(([code, country]) => ({
-  nationality: country.nationality,
-  code: code,
-  flag: getEmojiFlag(code as TCountryCode),
-}));
+// Use countries as-is (optionally sort for nicer UX)
+const countryItems = computed<Country[]>(() =>
+  [...countries].sort((a, b) => {
+    const ta = (a.demonyms?.eng?.m || a.name.common).toLowerCase()
+    const tb = (b.demonyms?.eng?.m || b.name.common).toLowerCase()
+    return ta.localeCompare(tb)
+  })
+)
 
+// Show demonym if present; otherwise the common name
+const displayName = (c: Country) => c.flag + ' ' + (c.demonyms?.eng?.m || c.name.common)
 
-// Validation rule to ensure a selection is made
-const requiredRule = (value: NationalityOption | null) => !!value || 'Nationality is required';
+// Search by demonym, common/official name, or code (cca2/cca3/cioc)
+const customFilter = (_itemText: string, queryText: string, item: InternalItem<Country>) => {
+  const c = item.raw
+  const q = queryText.trim().toLowerCase()
+  if (!q) return true
 
-// Set up the selected value as an object (or null)
-const selectedNationality = ref<NationalityOption | null>(
-  props.modelValue
-    ? nationalityOptions.find(option => option.code === props.modelValue) || null
-    : null
-);
+  const parts = [
+    c.demonyms?.eng?.m,
+    c.demonyms?.eng?.f,
+    c.name?.common,
+    c.name?.official,
+    c.cca2,
+    c.cca3,
+    c.cioc,
+    ...(c.altSpellings ?? []),
+  ]
+    .filter(Boolean)
+    .map(s => String(s).toLowerCase())
 
-// Watch local selection changes and emit the country code
-watch(selectedNationality, (newVal) => {
-  emit('update:modelValue', newVal ? newVal.code : '');
-});
+  return parts.some(p => p.includes(q))
+}
 
-// Watch for external modelValue changes and update the local selection accordingly
-watch(
-  () => props.modelValue,
-  (newVal) => {
-    if (newVal !== (selectedNationality.value ? selectedNationality.value.code : undefined)) {
-      selectedNationality.value = newVal
-        ? nationalityOptions.find(option => option.code === newVal) || null
-        : null;
-    }
+// v-model wiring unchanged
+watch(selectedCountry, (newVal) => {
+  emit('update:modelValue', newVal)
+})
+
+watch(() => props.modelValue, (newVal) => {
+  if (newVal !== selectedCountry.value) {
+    selectedCountry.value = newVal ?? null
   }
-);
+})
 </script>
-
-<style lang="scss" scoped>
-/* Your custom styles here */
-</style>

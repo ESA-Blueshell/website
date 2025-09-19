@@ -9,7 +9,7 @@
         ref="simpleRef"
         :model-value="simpleModel"
         :show-passwords="creating"
-        @update:model-value="(val) => simpleModel = val"
+        @update:model-value="(val: SimpleUserDto) => simpleModel = val"
       />
 
       <v-row class="mt-10">
@@ -55,7 +55,7 @@
           />
         </v-col>
         <v-col cols="6">
-          <country-select
+          <nationality-select
             v-model="userData.nationality"
             label="Nationality"
             :disabled="disableEdit && !creating"
@@ -109,7 +109,7 @@
           >
             <template #activator="{ props }">
               <v-btn
-                x-small
+                size="x-small"
                 icon="mdi-content-save"
                 :disabled="disableEdit"
                 :loading="submitting"
@@ -133,6 +133,7 @@ import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
 import CountrySelect from '@/components/select/CountrySelect.vue';
 import SimpleUserEdit from '@/components/user/SimpleUserEdit.vue';
+import NationalitySelect from "@/components/select/NationalitySelect.vue";
 
 interface Props {
   editing?: boolean;

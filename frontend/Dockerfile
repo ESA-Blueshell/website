@@ -1,19 +1,32 @@
-# build stage
-FROM node:24 AS build-stage
-
+FROM node:24-bookworm-slim AS deps
 WORKDIR /app
 
-COPY package.json ./
-COPY yarn.lock ./
+# Use Corepack/Yarn exactly as defined in package.json ("packageManager")
+RUN corepack enable && corepack install
 
-RUN yarn install
+# Copy only what Yarn needs first for better layer caching
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn/ .yarn/
+
+# Install dependencies strictly against lockfile
+RUN yarn install --immutable
+
+# Build stage
+FROM deps AS build
+# Copy the rest of the project
 COPY . .
+
+# Create production build
 RUN yarn build
 
-# production stage
-FROM nginx:stable AS production-stage
-RUN mkdir /app
+FROM nginx:stable-alpine AS runtime
+# Keep nginx config you already have (expects root /app)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build-stage /app/dist /app
+# Serve the built app
+COPY --from=build /app/dist /app
 
 EXPOSE 8080
+
+# Optional: simple healthcheck
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget -qO- http://localhost:8080/ >/dev/null 2>&1 || exit 1

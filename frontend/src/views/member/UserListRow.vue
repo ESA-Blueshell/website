@@ -174,10 +174,16 @@ import {computed, ref} from 'vue';
 import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
 import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
-
 import {DateTime} from 'luxon';
-import {type AdvancedUserDto, type ContributionDto, deleteUserById, type MembershipDto} from "@/lib";
-import {createMembership, setContributionPaid, updateMembership} from "@/lib";
+import {
+  type AdvancedUserDto,
+  type ContributionDto,
+  createMembership,
+  deleteUserById,
+  type MembershipDto, MemberType,
+  setContributionPaid,
+  updateMembership
+} from "@/lib";
 
 interface Props {
   user: AdvancedUserDto;
@@ -208,7 +214,7 @@ const emit = defineEmits<Emits>();
 const deleteDialog = ref(false);
 const showStartModal = ref(false);
 const startDate = ref(DateTime.now().toISODate());
-const memberType = ref('REGULAR');
+const memberType = ref<MemberType>(MemberType.REGULAR);
 const isSubmitting = ref(false);
 
 const contribution = computed(() =>
@@ -224,7 +230,7 @@ const userModel = computed<AdvancedUserDto>({
 });
 
 const toggleExpanded = () => {
-  emit('toggle-expanded', props.user.id);
+  emit('toggle-expanded', props.user.id as number);
 };
 
 const startMembership = () => {

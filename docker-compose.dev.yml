@@ -53,7 +53,7 @@ services:
     volumes:
       - "./frontend:/usr/app"
       - ./openapi:/usr/openapi
-      - /usr/app/node_modules
+      - /usr/app/.yarn
     networks:
       - global_network
     env_file:

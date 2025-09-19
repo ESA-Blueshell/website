@@ -44,6 +44,7 @@ const RAW_RUNTIME_STATE =
           ["axios", "npm:1.12.2"],\
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.45.1"],\
+          ["countries-list", "npm:3.1.1"],\
           ["dompurify", "npm:3.2.7"],\
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:9.35.0"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.4.0"],\
@@ -1944,6 +1945,7 @@ const RAW_RUNTIME_STATE =
           ["axios", "npm:1.12.2"],\
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.45.1"],\
+          ["countries-list", "npm:3.1.1"],\
           ["dompurify", "npm:3.2.7"],\
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:9.35.0"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.4.0"],\

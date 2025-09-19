@@ -249,8 +249,8 @@ export type RedirectDto = {
 };
 
 export type PageEventDto = {
-    totalPages?: number;
     totalElements?: number;
+    totalPages?: number;
     size?: number;
     content?: Array<EventDto>;
     number?: number;
@@ -266,9 +266,9 @@ export type PageableObject = {
     offset?: number;
     sort?: SortObject;
     unpaged?: boolean;
-    pageNumber?: number;
     paged?: boolean;
     pageSize?: number;
+    pageNumber?: number;
 };
 
 export type SortObject = {
@@ -700,9 +700,7 @@ export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressRe
 export type FindUsersData = {
     body?: never;
     path?: never;
-    query: {
-        isMember: boolean;
-    };
+    query?: never;
     url: '/users';
 };
 

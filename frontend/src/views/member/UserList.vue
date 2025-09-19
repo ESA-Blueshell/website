@@ -38,6 +38,7 @@
           :contributions="contributions"
           @toggle-expanded="toggleExpanded"
           @contribution-changed="contributionChanged"
+          @membership-changed="membershipChanged"
           @user-changed="userChanged"
           @delete-user="deleteUser"
         />
@@ -49,7 +50,7 @@
 
 <script setup lang="ts">
 import UserListRow from './UserListRow.vue';
-import type {AdvancedUserDto, ContributionDto} from '@/lib/blueshell/types.gen';
+import type {AdvancedUserDto, ContributionDto, MembershipDto} from '@/lib/blueshell/types.gen';
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
 import {toRefs} from "vue";
 
@@ -57,11 +58,13 @@ import {toRefs} from "vue";
 const props = withDefaults(defineProps<{
   title: string;
   contributions?: ContributionDto[];
+  memberships?: MembershipDto[];
   users: AdvancedUserDto[];
   expanded?: number | null;
   isMemberList?: boolean;
 }>(), {
   contributions: () => [],
+  memberships: () => [],
   expanded: null,
   isMemberList: false,
 });
@@ -72,6 +75,7 @@ const emit = defineEmits<{
   (e: 'user-changed', user: AdvancedUserDto): void;
   (e: 'delete-user', user: AdvancedUserDto): void;
   (e: 'contribution-changed', contribution: ContributionDto): void;
+  (e: 'membership-changed', membership: MembershipDto): void;
 }>();
 
 // Handlers
@@ -81,6 +85,10 @@ const toggleExpanded = (userId: number) => {
 
 const contributionChanged = (contribution: ContributionDto) => {
   emit('contribution-changed', contribution);
+};
+
+const membershipChanged = (membership: MembershipDto) => {
+  emit('membership-changed', membership);
 };
 
 const userChanged = (user: AdvancedUserDto) => {

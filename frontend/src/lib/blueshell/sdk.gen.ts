@@ -211,8 +211,8 @@ export const updateAddress = <ThrowOnError extends boolean = false>(options: Opt
     });
 };
 
-export const findUsers = <ThrowOnError extends boolean = false>(options: Options<FindUsersData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindUsersResponses, unknown, ThrowOnError>({
+export const findUsers = <ThrowOnError extends boolean = false>(options?: Options<FindUsersData, ThrowOnError>) => {
+    return (options?.client ?? client).get<FindUsersResponses, unknown, ThrowOnError>({
         url: '/users',
         ...options
     });

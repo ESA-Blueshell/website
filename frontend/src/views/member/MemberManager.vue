@@ -22,6 +22,7 @@
           :expanded="expanded"
           :contributions="contributions"
           @contribution-changed="contributionChanged"
+          @membership-changed="membershipChanged"
           @toggle-expanded="toggleExpanded"
           @user-changed="userChanged"
           @delete-user="deleteUser"
@@ -48,13 +49,21 @@ import {onMounted, ref, watch} from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
 import ContributionPeriodList from '@/views/member/ContributionPeriodList.vue';
 import UserList from '@/views/member/UserList.vue';
-import {type AdvancedUserDto, type ContributionDto, findContributionsByPeriodId, findUsers, Role} from '@/lib';
+import {
+  type AdvancedUserDto,
+  type ContributionDto,
+  findContributionsByPeriodId, findMemberships,
+  findUsers,
+  type MembershipDto,
+  Role
+} from '@/lib';
 
 // State
 const members = ref([] as AdvancedUserDto[]);
 const nonMembers = ref([] as AdvancedUserDto[]);
 const users = ref([] as AdvancedUserDto[]);
 const contributions = ref([] as ContributionDto[]);
+const memberships = ref([] as MembershipDto[]);
 const expanded = ref(0);
 const search = ref('');
 const selectedPeriodId = ref(0);
@@ -65,9 +74,14 @@ if ('scrollRestoration' in window.history) {
 
 // Data loading
 const getUsers = async () => {
-  const response = await findUsers({});
+  const response = await findUsers();
   users.value = response.data ?? [];
   updateMembers();
+};
+
+const getMemberships = async () => {
+  const response = await findMemberships();
+  memberships.value = response.data ?? [];
 };
 
 // Helpers
@@ -84,10 +98,10 @@ const isSearched = (user: AdvancedUserDto) => {
 
 const updateMembers = () => {
   members.value = users.value.filter(
-    (user: AdvancedUserDto) => user.roles.includes(Role.MEMBER) && isSearched(user)
+    (user: AdvancedUserDto) => user.roles?.includes(Role.MEMBER) && isSearched(user)
   );
   nonMembers.value = users.value.filter(
-    (user: AdvancedUserDto) => (!user.roles.includes(Role.MEMBER)) && isSearched(user)
+    (user: AdvancedUserDto) => (!user.roles?.includes(Role.MEMBER)) && isSearched(user)
   );
 };
 
@@ -128,6 +142,15 @@ const contributionChanged = (updatedContribution: ContributionDto) => {
   }
 };
 
+const membershipChanged = (updatedMembership: MembershipDto) => {
+  const index = memberships.value.findIndex((c) => c.id === updatedMembership.id);
+  if (index !== -1) {
+    memberships.value.splice(index, 1, updatedMembership);
+  } else {
+    memberships.value.push(updatedMembership);
+  }
+};
+
 const selectedPeriodIdChanged = async (periodId: number) => {
   if (!periodId) return;
   const resp = await findContributionsByPeriodId({ path: { periodId } });
@@ -138,6 +161,7 @@ const selectedPeriodIdChanged = async (periodId: number) => {
 // Lifecycle
 onMounted(() => {
   getUsers();
+  getMemberships();
 });
 </script>
 

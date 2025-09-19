@@ -55,7 +55,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PutMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     public AdvancedUserDTO updateUser(@PathVariable("userId") Long userId,
-                                  @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
+                                      @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
         dto.setId(userId);
         User user = advancedMapper.fromDTO(dto);
         service.update(user);
@@ -64,13 +64,8 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
-    public List<AdvancedUserDTO> findUsers(@PathParam("isMember") boolean isMember) {
-        List<User> users;
-        if (isMember) {
-            users = service.findByMembershipNotNull();
-        } else {
-            users = service.findAll();
-        }
+    public List<AdvancedUserDTO> findUsers() {
+        List<User> users = service.findAll();
         return advancedMapper.toDTOs(users);
     }
 
@@ -91,7 +86,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PutMapping(value = "/users/{userId}/roles")
     @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
     public AdvancedUserDTO toggleUserRole(@PathVariable("userId") Long userId,
-                                      @RequestParam(value = "role") Role role) {
+                                          @RequestParam(value = "role") Role role) {
         User user = service.toggleRole(userId, role);
         return advancedMapper.toDTO(user);
     }

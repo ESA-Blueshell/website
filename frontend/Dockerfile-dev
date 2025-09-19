@@ -1,26 +1,18 @@
-FROM node:24
+FROM node:24-bookworm-slim
 
 WORKDIR /usr/app
 
-# Enable Corepack to use the exact Yarn version specified in package.json
+# Enable Corepack
 RUN corepack enable
 
-# Copy package files and configuration files needed for installation
-COPY package.json .
-COPY yarn.lock .
-COPY tsconfig.json .
-COPY jsconfig.json .
-COPY vite.config.mjs .
-COPY eslint.config.mjs .
-COPY .browserslistrc .
-COPY .editorconfig .
-COPY .yarnrc.yml .
-COPY nginx.conf .
-copy index.html .
+# Copy only what's needed for dependency install
+COPY package.json yarn.lock .yarnrc.yml ./
 
-# Install dependencies
-RUN yarn install --immutable
+# Run corepack and yarn install
+RUN corepack install && yarn install --immutable
+
+# App/config files
+COPY . .
 
 EXPOSE 3000
-
-CMD ["yarn", "run", "dev", "--host"]
+CMD ["yarn", "dev", "--host"]

@@ -21,6 +21,8 @@
           :users="nonMembers"
           :expanded="expanded"
           :contributions="contributions"
+          :memberships="memberships"
+          :selected-period-id="selectedPeriodId"
           @contribution-changed="contributionChanged"
           @membership-changed="membershipChanged"
           @toggle-expanded="toggleExpanded"
@@ -33,6 +35,7 @@
           title="Members"
           :users="members"
           :expanded="expanded"
+          :memberships="memberships"
           is-member-list
           :contributions="contributions"
           @contribution-changed="contributionChanged"
@@ -47,8 +50,8 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
 import TopBanner from '@/components/banners/TopBanner.vue';
-import ContributionPeriodList from '@/views/member/ContributionPeriodList.vue';
-import UserList from '@/views/member/UserList.vue';
+import ContributionPeriodList from '@/components/contribution-period/ContributionPeriodList.vue';
+import UserList from '@/components/user/UserList.vue';
 import {
   type AdvancedUserDto,
   type ContributionDto,
@@ -74,14 +77,21 @@ if ('scrollRestoration' in window.history) {
 
 // Data loading
 const getUsers = async () => {
-  const response = await findUsers();
-  users.value = response.data ?? [];
-  updateMembers();
+  try {
+    const response = await findUsers();
+    users.value = response.data ?? [];
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  }
 };
 
 const getMemberships = async () => {
-  const response = await findMemberships();
-  memberships.value = response.data ?? [];
+  try {
+    const response = await findMemberships();
+    memberships.value = response.data ?? [];
+  } catch (error) {
+    console.error('Error fetching memberships:', error);
+  }
 };
 
 // Helpers
@@ -98,10 +108,10 @@ const isSearched = (user: AdvancedUserDto) => {
 
 const updateMembers = () => {
   members.value = users.value.filter(
-    (user: AdvancedUserDto) => user.roles?.includes(Role.MEMBER) && isSearched(user)
+    (user: AdvancedUserDto) => memberships.value.some((m) => m.userId === user.id) && isSearched(user)
   );
   nonMembers.value = users.value.filter(
-    (user: AdvancedUserDto) => (!user.roles?.includes(Role.MEMBER)) && isSearched(user)
+    (user: AdvancedUserDto) => !memberships.value.some((m) => m.userId === user.id) && isSearched(user)
   );
 };
 
@@ -149,6 +159,7 @@ const membershipChanged = (updatedMembership: MembershipDto) => {
   } else {
     memberships.value.push(updatedMembership);
   }
+  updateMembers();
 };
 
 const selectedPeriodIdChanged = async (periodId: number) => {
@@ -159,9 +170,14 @@ const selectedPeriodIdChanged = async (periodId: number) => {
 };
 
 // Lifecycle
-onMounted(() => {
-  getUsers();
-  getMemberships();
+onMounted(async () => {
+  try {
+    await Promise.all([getUsers(), getMemberships()]);
+
+    updateMembers();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
 });
 </script>
 

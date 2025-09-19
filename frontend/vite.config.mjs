@@ -15,7 +15,6 @@ export default defineConfig({
           @use "@/styles/settings" as *;
           @use "@/styles/housestyle" as *;
           @use "@/styles/colors" as *;
-          // now pull in the Vuetify Sass API:
           @use "vuetify/styles" as *;
         `,
                 sassOptions: {
@@ -47,12 +46,11 @@ export default defineConfig({
         port: 3000,
         host: true,
         hmr: {
-            port: 3000,
-            host: 'localhost',
             protocol: 'ws'
         },
         watch: {
-            usePolling: true
+            usePolling: true,
+            interval: 100,
         }
     }
 })

@@ -4,8 +4,6 @@
     :items="memberTypeOptions"
     label="Member Type"
     :rules="[requiredRule]"
-    variant="outlined"
-    density="compact"
     item-value="value"
     item-title="text"
   />
@@ -44,7 +42,3 @@ watch(() => props.modelValue, (val) => {
   if (val !== selected.value) selected.value = val
 })
 </script>
-
-<style lang="scss" scoped>
-/* Optional: Customize the appearance */
-</style>

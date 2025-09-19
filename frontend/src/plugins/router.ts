@@ -23,7 +23,7 @@ import EditEvent from "@/views/events/EditEvent.vue";
 import EventSignUps from "@/views/events/EventSignUps.vue";
 import CommitteeManager from "@/views/committee/CommitteeManager.vue";
 import CreateAccount from "@/views/login/CreateAccount.vue";
-import MemberManager from "@/views/member/MemberManager.vue";
+import MemberManager from "@/views/login/MemberManager.vue";
 import RocketLeague from "@/views/esports/RocketLeague.vue";
 import ForgotPassword from "@/views/login/ForgotPassword.vue";
 import ResetPassword from "@/views/login/ResetPassword.vue";

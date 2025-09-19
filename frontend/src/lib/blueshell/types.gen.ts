@@ -11,10 +11,9 @@ export type MembershipDto = {
     id?: number;
     userId: number;
     memberType: MemberType;
-    date: string;
     city: string;
     country: string;
-    startDate: string;
+    startDate?: string;
     endDate?: string;
     incasso: boolean;
 };
@@ -266,9 +265,9 @@ export type PageableObject = {
     offset?: number;
     sort?: SortObject;
     unpaged?: boolean;
+    pageNumber?: number;
     paged?: boolean;
     pageSize?: number;
-    pageNumber?: number;
 };
 
 export type SortObject = {

@@ -1,44 +1,9 @@
 <template>
-  <v-dialog
+  <start-membership-dialog
     v-model="showStartModal"
-    max-width="500"
-  >
-    <v-card>
-      <v-card-title class="text-h5">
-        Start Membership
-      </v-card-title>
-      <v-card-text>
-        <v-row>
-          <v-text-field
-            v-model="startDate"
-            :max="new Date().toISOString()"
-            label="Start Date"
-            type="date"
-            required
-          />
-        </v-row>
-        <v-row>
-          <member-type-select v-model="memberType" />
-        </v-row>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          color="secondary"
-          @click="showStartModal = false"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          color="primary"
-          :loading="isSubmitting"
-          @click="confirmStartMembership"
-        >
-          Confirm
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    :user-id="user.id"
+    @started="onMembershipStarted"
+  />
   <div>
     <v-list-item>
       <div
@@ -173,7 +138,6 @@
 import {computed, ref} from 'vue';
 import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
-import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue";
 import {DateTime} from 'luxon';
 import {
   type AdvancedUserDto,
@@ -184,6 +148,7 @@ import {
   setContributionPaid,
   updateMembership
 } from "@/lib";
+import StartMembershipDialog from "@/components/membership/StartMembershipDialog.vue";
 
 interface Props {
   user: AdvancedUserDto;

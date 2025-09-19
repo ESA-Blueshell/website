@@ -36,6 +36,7 @@
           :expanded="expanded"
           :is-member-list="isMemberList"
           :contributions="contributions"
+          :memberships="memberships"
           @toggle-expanded="toggleExpanded"
           @contribution-changed="contributionChanged"
           @membership-changed="membershipChanged"
@@ -50,9 +51,9 @@
 
 <script setup lang="ts">
 import UserListRow from './UserListRow.vue';
-import type {AdvancedUserDto, ContributionDto, MembershipDto} from '@/lib/blueshell/types.gen';
+import type {AdvancedUserDto, ContributionDto, MembershipDto} from '@/lib/blueshell/types.gen.ts';
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
-import {toRefs} from "vue";
+import {toRefs, watch} from "vue";
 
 // Props
 const props = withDefaults(defineProps<{
@@ -68,6 +69,8 @@ const props = withDefaults(defineProps<{
   expanded: null,
   isMemberList: false,
 });
+
+const { title, users, contributions, memberships, expanded, isMemberList } = toRefs(props);
 
 // Emits
 const emit = defineEmits<{
@@ -99,7 +102,4 @@ const userChanged = (user: AdvancedUserDto) => {
 const deleteUser = (user: AdvancedUserDto) => {
   emit('delete-user', user);
 };
-
-// Expose to template
-const { title, users, contributions, expanded, isMemberList } = toRefs(props);
 </script>

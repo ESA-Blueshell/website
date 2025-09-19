@@ -77,7 +77,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { DateTime } from 'luxon';
-import ContributionPeriodDialog from '@/views/member/ContributionPeriodDialog.vue';
+import ContributionPeriodDialog from '@/components/contribution-period/ContributionPeriodDialog.vue';
 import DeleteConfirmationDialog from '@/components/DeletionConfirmationDialog.vue';
 import { type ContributionPeriodDto, findContributionPeriods } from '@/lib';
 

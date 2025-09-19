@@ -17,6 +17,7 @@
           <v-phone-input
             ref="phoneInput"
             v-model="userData.phoneNumber"
+            country-icon-mode="svg"
             label="Phone Number"
             mode="international"
             :rules="phoneNumberRules"
@@ -109,7 +110,6 @@
           >
             <template #activator="{ props }">
               <v-btn
-                size="x-small"
                 icon="mdi-content-save"
                 :disabled="disableEdit"
                 :loading="submitting"
@@ -126,12 +126,13 @@
 
 <script setup lang="ts">
 import {computed, ref, type Ref, watch} from 'vue';
-import {VPhoneInput} from 'v-phone-input';
+import 'flag-icons/css/flag-icons.min.css';
+import 'v-phone-input/dist/v-phone-input.css';
+import { VPhoneInput } from 'v-phone-input';
 import store from '@/plugins/store.ts';
 import {type AdvancedUserDto, createMember, createUser, type SimpleUserDto, updateUser} from '@/lib';
 import type {VForm} from 'vuetify/components';
 import {type CountryCode, parsePhoneNumber, type PhoneNumber} from 'libphonenumber-js/max';
-import CountrySelect from '@/components/select/CountrySelect.vue';
 import SimpleUserEdit from '@/components/user/SimpleUserEdit.vue';
 import NationalitySelect from "@/components/select/NationalitySelect.vue";
 

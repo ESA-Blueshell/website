@@ -31,7 +31,7 @@ const countryItems = computed<Country[]>(() =>
 )
 
 // Show demonym if present; otherwise the common name
-const displayName = (c: Country) => c.flag + ' ' + (c.name.common)
+const displayName = (c: Country) => c.flag + ' ' + (c.name?.common || c.name?.official)
 
 // Search by demonym, common/official name, or code (cca2/cca3/cioc)
 const customFilter = (_itemText: string, queryText: string, item: InternalItem<Country>) => {

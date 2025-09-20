@@ -4,6 +4,7 @@ import {useStore} from 'vuex'
 import {useRoute} from 'vue-router'
 import EventListItem from '@/components/events/EventListItem.vue'
 import { findEvents, findEventSignUpsForCurrentUser, type Event, type EventSignUp } from '@/lib'
+import {DateTime} from "luxon";
 
 const events = ref<Event[] | null>(null)
 const eventSignups = ref<Record<number, EventSignUp>>({})
@@ -17,7 +18,14 @@ const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 
 onMounted(async () => {
   const [eventsResp, signupsResp] = await Promise.all([
-    findEvents(),
+    findEvents({
+      query: {
+        from: DateTime.now().startOf("day").toISO()!
+
+      }
+      }
+
+    ),
     isLoggedIn.value
       ? findEventSignUpsForCurrentUser()
       : Promise.resolve({ data: [] as EventSignUp[] }),

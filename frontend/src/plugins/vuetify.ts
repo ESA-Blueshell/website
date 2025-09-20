@@ -39,4 +39,6 @@ const vuetifyConfig: VuetifyOptions = {
   },
 }
 
-export default createVuetify(vuetifyConfig)
+export default createVuetify({
+  ...vuetifyConfig,
+})

@@ -69,8 +69,8 @@ export type Event = {
     title: string;
     startTime: string;
     endTime: string;
-    memberPrice?: string;
-    publicPrice?: string;
+    memberPrice?: number;
+    publicPrice?: number;
     visible?: boolean;
     membersOnly?: boolean;
     signUp?: boolean;
@@ -172,7 +172,7 @@ export type SimpleUser = {
     password: string;
 };
 
-export type Base = {
+export type BaseDto = {
     [key: string]: unknown;
 };
 
@@ -200,7 +200,7 @@ export type Telemetry = {
     createdAt?: string;
 };
 
-export type Blog = {
+export type BlogDto = {
     id?: string;
     url?: string;
     title?: string;
@@ -619,7 +619,7 @@ export type FindCommitteeByIdResponses = {
     /**
      * OK
      */
-    200: Base;
+    200: BaseDto;
 };
 
 export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
@@ -637,7 +637,7 @@ export type UpdateCommitteeResponses = {
     /**
      * OK
      */
-    200: Base;
+    200: BaseDto;
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
@@ -899,18 +899,6 @@ export type FindEventsData = {
     body?: never;
     path?: never;
     query?: {
-        /**
-         * Zero-based page index (0..N)
-         */
-        page?: number;
-        /**
-         * The size of the page to be returned
-         */
-        size?: number;
-        /**
-         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
-         */
-        sort?: Array<string>;
         from?: string;
         to?: string;
         visible?: boolean;
@@ -1042,7 +1030,7 @@ export type FindCommitteesResponses = {
     /**
      * OK
      */
-    200: Array<Base>;
+    200: Array<BaseDto>;
 };
 
 export type FindCommitteesResponse = FindCommitteesResponses[keyof FindCommitteesResponses];
@@ -1074,13 +1062,13 @@ export type FindBlogsResponses = {
     /**
      * OK
      */
-    200: Array<Blog>;
+    200: Array<BlogDto>;
 };
 
 export type FindBlogsResponse = FindBlogsResponses[keyof FindBlogsResponses];
 
 export type CreateData = {
-    body: Blog;
+    body: BlogDto;
     path?: never;
     query?: never;
     url: '/blogs';
@@ -1090,7 +1078,7 @@ export type CreateResponses = {
     /**
      * OK
      */
-    200: Blog;
+    200: BlogDto;
 };
 
 export type CreateResponse = CreateResponses[keyof CreateResponses];
@@ -1425,7 +1413,7 @@ export type FindCommitteesForCurrentUserResponses = {
     /**
      * OK
      */
-    200: Array<Base>;
+    200: Array<BaseDto>;
 };
 
 export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
@@ -1461,7 +1449,7 @@ export type FindBlogByIdResponses = {
     /**
      * OK
      */
-    200: Blog;
+    200: BlogDto;
 };
 
 export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];

@@ -1,9 +1,9 @@
 <template>
   <v-calendar
     v-model="focus"
-    :events="events"
+    :events="calendarEvents"
     :show-adjacent-months="true"
-    :hide-week-number="hideWeekNumber"
+    type="month"
     :weekdays="weekdays"
     @click:event="showEvent"
   />
@@ -19,14 +19,15 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { VCalendar } from 'vuetify/labs/VCalendar'
 import EventDetails from "@/components/events/EventDetails.vue"
 import { useDisplay, useLocale } from 'vuetify'
 import { computed, onMounted, ref, watch } from 'vue'
 import { DateTime } from "luxon";
 import { findEvents } from "@/lib";
 import type { Event, PageEvent } from "@/lib"
+import type { CalendarEvent } from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar";
+import { VCalendar } from "vuetify/labs/VCalendar"
 
 // State
 const focus = ref<Date[]>([new Date()])
@@ -34,8 +35,11 @@ const selectedEvent = ref<Event | null>(null)
 const selectedElement = ref<HTMLElement | null>(null)
 const selectedOpen = ref(false)
 const events = ref<Event[]>([])
+const calendarEvents = ref<CalendarEvent[]>([])
 const collectedMonths = ref<string[]>([])
 const monthsLoading = ref(0)
+
+type CalendarEventEx = CalendarEvent & { raw: Event } // keep original event handy
 
 // Localization
 const { current: localeCurrent } = useLocale()
@@ -49,8 +53,8 @@ const weekdays = computed(() => (isXs.value ? [1, 2, 3, 4, 5] : [1, 2, 3, 4, 5, 
 
 // Data fetching using generated client
 const loadEventsForMonth = async (month: Date) => {
-  const from: string = DateTime.fromJSDate(month).startOf("month").toISO()!
-  const to: string = DateTime.fromJSDate(month).endOf("month").toISO()!
+  const from: string = DateTime.fromJSDate(month).startOf("month").startOf("week").startOf("day").toISO()!
+  const to: string = DateTime.fromJSDate(month).endOf("month").endOf("week").endOf("day").toISO()!
   if (collectedMonths.value.includes(from)) return
 
   monthsLoading.value++
@@ -80,6 +84,31 @@ watch(
   { deep: true }
 )
 
+watch(
+  events,
+  (list: Event[]) => {
+    calendarEvents.value = list.map((e): CalendarEventEx => {
+      // ensure ISO strings (Vuetify accepts Date, number, or string)
+      const start = DateTime.fromISO(e.startTime).toJSDate()!
+      const end   = DateTime.fromISO(e.endTime ?? e.startTime).toJSDate()!
+      console.log(e.startTime, e.endTime, start, end)
+
+      return {
+        name: e.title,
+        start,
+        end,
+
+        // nice-to-haves
+        color: "primary",
+        category: e.committee?.name,     // useful if you switch to category view
+        // stash the original event so click handlers can use your own type
+        raw: e,
+      }
+    })
+  }
+)
+
+
 // Initial load
 onMounted(() => {
   const initialFocus = new Date(focus.value[0])
@@ -88,79 +117,21 @@ onMounted(() => {
 })
 
 // Event handling
-const showEvent = ({ nativeEvent, event }: { nativeEvent: MouseEvent; event: Event }) => {
+const showEvent = ({ nativeEvent, event }: { nativeEvent: MouseEvent; event: CalendarEventEx }) => {
   const toggle = () => {
-    selectedEvent.value = event
+    selectedEvent.value = event.raw           // <- your domain Event
     selectedElement.value = nativeEvent.target as HTMLElement
     selectedOpen.value = !selectedOpen.value
   }
   if (selectedOpen.value) {
     setTimeout(toggle, 10)
-    return
   } else {
-   toggle()
+    toggle()
   }
-
   nativeEvent.stopPropagation()
 }
 
 </script>
-<style scoped lang="scss">
-@use "sass:map";
+<style lang="scss">
 
-@media #{map.get($display-breakpoints, 'xs')} {
-  .v-calendar-header__title { font-size: 6vw; }
-  .v-calendar-header__today { margin-inline-end: 6px; }
-  .v-calendar-header__title { margin-inline-start: 6px; }
-}
-
-.v-calendar-weekly__day-alldayevents-container { min-height: 0; }
-
-.v-calendar-month__day {
-  min-height: 84.5px;
-
-  .v-calendar-weekly__day-events-container { padding: 0 4px; }
-
-  .v-chip {
-    background-color: rgb(var(--v-theme-primary));
-    color: rgb(var(--v-theme-on-primary));
-    padding: 0 5px;
-
-    .v-badge { display: none; }
-  }
-}
-
-.v-calendar-weekly__head-weekday,
-.v-calendar-weekly__head-weekday-with-weeknumber {
-  border-bottom: thin solid #e0e0e0;
-}
-
-.v-calendar-month__weeknumber { border-right: thin solid #e0e0e0; }
-
-.v-calendar-weekly__head-weeknumber {
-  border-right: thin solid #e0e0e0;
-  border-bottom: thin solid #e0e0e0;
-}
-
-.v-calendar__container {
-  border-radius: $border-radius-root;
-
-  .v-calendar-weekly__head-weeknumber {
-    border-top-left-radius: $border-radius-root;
-  }
-
-  :nth-last-child(1 of .v-calendar-month__weeknumber) {
-    border-bottom-left-radius: $border-radius-root;
-  }
-
-  @media #{map.get($display-breakpoints, 'xs')} {
-    :nth-last-child(5 of .v-calendar-month__day) {
-      border-bottom-left-radius: $border-radius-root;
-    }
-  }
-
-  :nth-last-child(1 of .v-calendar-month__day) {
-    border-bottom-right-radius: $border-radius-root;
-  }
-}
 </style>

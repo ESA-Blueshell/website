@@ -34,13 +34,14 @@ spring:
       hibernate.connection.characterEncoding: utf8mb4
       hibernate.connection.useUnicode: true
       hibernate.connection.useSSL: false
-      hibernate.connection.serverTimezone: UTC
+      hibernate.connection.serverTimezone: Europe/Amsterdam
       hibernate.connection.allowPublicKeyRetrieval: true
       hibernate.connection.collation: utf8mb4_unicode_ci
 
   flyway:
     enabled: true
     locations: classpath:db/migration
+    validate-migration-naming: true
 
   mvc:
     dispatch-options-request: true
@@ -120,3 +121,12 @@ x:
   access:
     token: ${X_ACCESS_TOKEN}
     secret: ${X_ACCESS_SECRET}
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+        hibernate: INFO
+        security: INFO
+        flywaydb: DEBUG

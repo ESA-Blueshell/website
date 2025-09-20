@@ -30,8 +30,8 @@ public class EventDTO extends BaseDTO {
     private String startTime;
     @NotBlank(message = "endTime is required (ISO-8601 string).")
     private String endTime;
-    private String memberPrice;
-    private String publicPrice;
+    private Double memberPrice;
+    private Double publicPrice;
     private boolean visible;
     private boolean membersOnly;
     private boolean signUp;

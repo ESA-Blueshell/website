@@ -51,3 +51,4 @@ data
 /env/.brevo.env
 /env/.google.env
 /env/.mollie.env
+/storage/

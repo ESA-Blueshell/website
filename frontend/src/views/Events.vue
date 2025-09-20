@@ -3,7 +3,7 @@
     <top-banner title="Events" />
     <div class="mx-3">
       <div
-        class="mx-auto"
+        class="mx-auto my-5"
         style="max-width: 1000px"
       >
         <calendar />

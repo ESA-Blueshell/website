@@ -86,7 +86,7 @@ public final class EventSpecifications {
         // Select the events that are visible to the user
         // Board members can see all events
         // So we don't filter further
-        if (!user.hasAuthority(Role.MEMBER)) {
+        if (user == null || !user.hasAuthority(Role.MEMBER)) {
             // For a non-member, only public events are visible
             spec = spec.and(isPublicEvent().and(visible()));
         } else if (!user.hasAuthority(Role.BOARD)) {

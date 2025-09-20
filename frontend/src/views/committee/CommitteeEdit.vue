@@ -6,7 +6,7 @@
     <v-text-field
       ref="title"
       v-model="localCommittee.name"
-      :rules="[v => !!v || 'Name is required']"
+      :rules="[(v: string) => !!v || 'Name is required']"
       label="Committee name"
       required
     />
@@ -14,7 +14,7 @@
     <v-textarea
       ref="description"
       v-model="localCommittee.description"
-      :rules="[v => !!v || 'Description is required']"
+      :rules="[(v: string) => !!v || 'Description is required']"
       label="Description"
       variant="outlined"
       hide-details
@@ -37,19 +37,19 @@
         <v-col cols="8">
           <v-autocomplete
             v-if="members"
-            v-model="member.user"
-            :item-title="user => user.discord ? `${user.fullName} (${user.discord})` : user.fullName"
+            v-model="member.userId"
             :items="members"
+            :item-title="u => u.discord ? `${u.fullName} (${u.discord})` : u.fullName"
+            item-value="id"
             :rules="[
-              v => !!v || 'Select a member',
-              v => (!!v && localCommittee.members.filter(ms => ms.user?.username === v.username).length === 1) || 'Member can\'t be in committee twice'
-            ]"
+    (v) => !!v || 'Select a member',
+    (v) => !v || localCommittee.members.findIndex((ms, idx) => ms.userId === v && idx !== i) === -1 || 'Member already in this committee'
+  ]"
             hide-details="auto"
             auto-select-first
             clearable
             hide-no-data
             label="Member name"
-            return-object
           >
             <template #append>
               <v-btn
@@ -115,7 +115,11 @@ const form = ref<VForm | null>(null);
 const localCommittee = ref<AdvancedCommittee>({
   name: '',
   ...props.committee,
-  members: props.committee?.members ? [...props.committee.members.map(m => ({...m}))] : []
+  members: (props.committee?.members ?? []).map((m: CommitteeMember) => ({
+    ...m,
+    userId: m.userId ?? m.user?.id,
+    user: undefined
+  }))
 });
 
 // Fetch members on mount
@@ -131,8 +135,8 @@ onMounted(async () => {
 const addMember = () => {
   localCommittee.value.members.push({
     role: '',
-    userId: 0,
-    committeeId: localCommittee.value.id
+    committeeId: localCommittee.value.id,
+    userId: undefined,
   });
 };
 

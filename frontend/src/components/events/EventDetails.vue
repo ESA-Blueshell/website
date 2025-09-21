@@ -22,7 +22,7 @@
         />
       </marquee-text>
 
-      <v-spacer />
+      <v-spacer/>
       <v-tooltip
         text="Find location"
         location="bottom"
@@ -67,14 +67,14 @@
           v-if="!expand && longDescription"
           @click="expandWords"
         >
-          <b>read more</b>
+          <b style="cursor: pointer">read more</b>
         </a>
       </p>
       <p v-else>
         No description...
       </p>
       <!-- Starting time of the event -->
-      <v-divider class="my-2" />
+      <v-divider class="my-2"/>
       <p>
         <b>When</b>
         <br>
@@ -112,36 +112,37 @@ import MarqueeText from 'vue-marquee-text-component'
 import {$goto} from '@/plugins/goto'
 import markdownToHtml from '@/plugins/markdownToHtml.ts'
 import type {Event, File} from '@/lib'
+import $markdownToHtml from "@/plugins/markdownToHtml.ts";
 
 // Props: accept object coming from calendar, normalize to Event shape for usage.
 // We keep the prop flexible to avoid breaking callers, but all internal types are aligned to generated types.
 const props = defineProps<{
-  selectedEvent: Event
+  modelValue: Event
 }>()
 
 // Local state
 const expand = ref(false)
 
 // Normalization helpers
-const se = computed(() => props.selectedEvent as Record<string, unknown>)
+const event = computed(() => props.modelValue as Record<string, unknown>)
 
 // Title: prefer Event.title, fallback to legacy "name"
 const eventTitle = computed(() => {
-  const title = (se.value.title as string | undefined) ?? (se.value.name as string | undefined)
+  const title = (event.value.title as string | undefined) ?? (event.value.name as string | undefined)
   return title ?? ''
 })
 
-// Color is not part of Event; allow passthrough if present
-const toolbarColor = computed(() => (se.value.color as string | undefined) ?? '')
+// Color is not part of Event; allow passthrough if preeventnt
+const toolbarColor = computed(() => (event.value.color as string | undefined) ?? '')
 
 // Description: Event.description, fallback to legacy "details"
 const description = computed(() => {
-  return (se.value.description as string | undefined) ?? (se.value.details as string | undefined) ?? ''
+  return (event.value.description as string | undefined) ?? (event.value.details as string | undefined) ?? ''
 })
 
 // Banner url: Event.banner is File with url field, or string in some backends
 const bannerUrl = computed(() => {
-  const banner = se.value.banner as File | string | undefined
+  const banner = event.value.banner as File | string | undefined
   if (!banner) return ''
   if (typeof banner === 'string') return banner
   return banner.url ?? ''
@@ -159,24 +160,24 @@ function toDate(d: unknown): Date | null {
 }
 
 const startDate = computed<Date | null>(() => {
-  return toDate((se.value.start as unknown) ?? (se.value.startTime as unknown))
+  return toDate((event.value.start as unknown) ?? (event.value.startTime as unknown))
 })
 
 const endDate = computed<Date | null>(() => {
-  return toDate((se.value.end as unknown) ?? (se.value.endTime as unknown))
+  return toDate((event.value.end as unknown) ?? (event.value.endTime as unknown))
 })
 
 // Location
-const location = computed(() => (se.value.location as string | undefined) ?? '')
+const location = computed(() => (event.value.location as string | undefined) ?? '')
 
 // Prices (numbers in generated types)
 const memberPrice = computed<number | null>(() => {
-  const mp = se.value.memberPrice as number | string | undefined
+  const mp = event.value.memberPrice as number | string | undefined
   if (mp === undefined || mp === null || mp === '') return null
   return typeof mp === 'string' ? Number(mp) : mp
 })
 const publicPrice = computed<number | null>(() => {
-  const pp = se.value.publicPrice as number | string | undefined
+  const pp = event.value.publicPrice as number | string | undefined
   if (pp === undefined || pp === null || pp === '') return null
   return typeof pp === 'string' ? Number(pp) : pp
 })
@@ -217,7 +218,7 @@ const firstHundredWords = computed(() => description.value.split(/\s+/).slice(0,
 
 // Methods
 function addToCal() {
-  const googleId = se.value.googleId as string | undefined
+  const googleId = event.value.googleId as string | undefined
   if (!googleId) return
   $goto(encodeURI(`https://calendar.google.com/event?action=TEMPLATE&tmeid=${googleId}&tmsrc=blueshellesports@gmail.com`))
 }

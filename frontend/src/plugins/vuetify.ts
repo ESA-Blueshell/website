@@ -1,6 +1,7 @@
 import '@mdi/font/css/materialdesignicons.css'
 import '@/styles/main.scss'
 import { createVuetify } from 'vuetify'
+import * as directives from 'vuetify/directives'
 import type { VuetifyOptions } from 'vuetify'
 
 const vuetifyConfig: VuetifyOptions = {
@@ -41,4 +42,5 @@ const vuetifyConfig: VuetifyOptions = {
 
 export default createVuetify({
   ...vuetifyConfig,
+  directives,
 })

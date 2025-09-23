@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.dto.user.SimpleUserDTO;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -13,11 +15,14 @@ import java.util.List;
 @Schema(name = "EventSignUp")
 public class EventSignUpDTO extends BaseDTO {
     private Long id;
+
+    @NotNull
     private Long eventId;
-    private String fullName;
-    private String discord;
-    private String email;
+
     @Valid
     private List<Object> formAnswers;
+
     private GuestDTO guest;
+
+    private SimpleUserDTO user;
 }

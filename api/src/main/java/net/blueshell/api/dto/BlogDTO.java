@@ -1,6 +1,7 @@
 package net.blueshell.api.dto;
 
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,6 +13,7 @@ import java.util.UUID;
 public class BlogDTO extends BaseDTO {
     private UUID id;
     private String url;
+    @NotBlank
     private String title;
     private String text;
     private String html;

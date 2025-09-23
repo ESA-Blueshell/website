@@ -1,6 +1,8 @@
 package net.blueshell.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.dto.user.SimpleUserDTO;
@@ -10,8 +12,11 @@ import net.blueshell.api.dto.user.SimpleUserDTO;
 @Schema(name = "CommitteeMember")
 public class CommitteeMemberDTO extends BaseDTO {
     private Long id;
-    private String role;
+    @NotBlank
     private Long userId;
-    private SimpleUserDTO user;
+    @NotNull
     private Long committeeId;
+    @NotBlank
+    private String role;
+    private SimpleUserDTO user;
 }

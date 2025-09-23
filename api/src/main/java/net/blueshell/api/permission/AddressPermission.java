@@ -39,5 +39,4 @@ public class AddressPermission extends BasePermissionEvaluator<Address, Long, Ad
         var target = service.findById((Long) targetId);
         return target != null && hasPermission(authentication, target, permission);
     }
-
 }

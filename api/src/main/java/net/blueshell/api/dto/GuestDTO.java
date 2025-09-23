@@ -15,7 +15,7 @@ public class GuestDTO extends BaseDTO {
     private Long id;
 
     @NotNull
-    private String name;
+    private String fullName;
 
     @NotNull
     private String discord;

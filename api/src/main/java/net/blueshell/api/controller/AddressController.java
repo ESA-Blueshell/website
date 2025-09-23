@@ -34,6 +34,15 @@ public class AddressController extends BaseController<AddressService, AddressMap
         return mapper.toDTO(address);
     }
 
+    @PutMapping("/{addressId}")
+    @PreAuthorize("hasAuthority('BOARD') || (#addressId.equals(dto.id) && hasPermission(#addressId, 'Address', 'write'))")
+    public AddressDTO updateAddress(@PathVariable("addressId") Long addressId, @Valid @RequestBody AddressDTO dto) {
+        dto.setId(addressId);
+        Address address = mapper.fromDTO(dto);
+        service.update(address);
+        return mapper.toDTO(address);
+    }
+
     @GetMapping
     @PreAuthorize("hasAuthority('BOARD')")
     public List<AddressDTO> findAllAddresses() {
@@ -42,18 +51,9 @@ public class AddressController extends BaseController<AddressService, AddressMap
     }
 
     @GetMapping("/{addressId}")
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#addressId, 'Address', 'read')")
     public AddressDTO findAddressById(@PathVariable("addressId") Long addressId) {
         Address address = service.findById(addressId);
-        return mapper.toDTO(address);
-    }
-
-    @PutMapping("/{addressId}")
-    @PreAuthorize("hasAuthority('BOARD')")
-    public AddressDTO updateAddress(@PathVariable("addressId") Long addressId, @Valid @RequestBody AddressDTO dto) {
-        dto.setId(addressId);
-        Address address = mapper.fromDTO(dto);
-        service.update(address);
         return mapper.toDTO(address);
     }
 

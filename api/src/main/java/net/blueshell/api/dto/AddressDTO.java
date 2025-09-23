@@ -11,10 +11,10 @@ public class AddressDTO {
     private Long id;
 
     @NotNull
-    @ValidCountryCode
     private Long userId;
 
     @NotNull
+    @ValidCountryCode
     private String country;
 
     @NotNull

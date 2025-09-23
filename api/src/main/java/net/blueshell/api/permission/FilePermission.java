@@ -33,10 +33,6 @@ public class FilePermission extends BasePermissionEvaluator<File, Long, FileServ
         File file = (File) targetDomainObject;
         var principal = getPrincipal();
 
-        if (principal.hasRole(Role.BOARD)) {
-            return true;
-        }
-
         return switch (permission) {
             case "read" -> handleReadPermission(file, principal);
             case "delete" -> handleDeletePermission(file, principal);
@@ -54,7 +50,7 @@ public class FilePermission extends BasePermissionEvaluator<File, Long, FileServ
                 Event event = eventService.findByBanner(file);
                 yield event != null && (event.isVisible() || event.getCommittee().hasMember(principal));
             }
-            case EVENT_PICTURE -> principal.hasRole(Role.MEMBER);
+            case EVENT_PICTURE -> principal.hasAuthority(Role.MEMBER);
             case PROFILE_PICTURE, DOCUMENT, SPONSOR_PICTURE -> true;
         };
     }

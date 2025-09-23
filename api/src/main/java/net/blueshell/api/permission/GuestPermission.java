@@ -28,7 +28,7 @@ public class GuestPermission extends BasePermissionEvaluator<Guest, Long, GuestS
 
         EventSignUp signUp = guest.getEventSignUp();
         return switch (permission) {
-            case "read", "write", "delete" -> signUp != null || (getPrincipal() != null && hasAuthority(Role.BOARD));
+            case "read", "write", "delete" -> signUp != null;
             default -> false;
         };
     }

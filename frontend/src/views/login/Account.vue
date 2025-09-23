@@ -53,14 +53,12 @@ import {onMounted, ref} from 'vue';
 import {useStore} from 'vuex';
 import TopBanner from "@/components/banners/TopBanner.vue";
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
-import {DateTime} from 'luxon';
 import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
-import {findUserById} from "@/lib/index.js";
+import {type AdvancedUser, findUserById} from "@/lib/index.js";
 
 
 // Reactive data
-const user = ref(null);
-const form = ref(null);
+const user = ref<AdvancedUser>();
 
 // Store access
 const store = useStore();
@@ -71,13 +69,12 @@ onMounted(async () => {
 
   try {
     const response = await findUserById({
-      client,
       path: {
         userId: login.userId
       }
     });
 
-    user.value = response.data;
+    user.value = response.data!;
   } catch (e) {
     $handleNetworkError(e);
   }

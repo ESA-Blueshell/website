@@ -25,8 +25,7 @@ public class CommitteePermission extends BasePermissionEvaluator<Committee, Long
         Committee committee = (Committee) targetDomainObject;
         return switch (permission) {
             case "read" -> true;
-            case "write", "delete" -> principal.hasRole(Role.BOARD);
-            case "createEvent" -> principal.hasRole(Role.BOARD) || committee.hasMember(principal);
+            case "createEvent" -> committee.hasMember(principal);
             default -> false;
         };
     }

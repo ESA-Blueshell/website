@@ -15,7 +15,7 @@
                 v-if="display.smAndUp"
                 class="ml-4"
               >
-                {{ idToCommittee[event.committee] }}
+                {{ committeeForEvent(event) }}
               </p>
 
               <div
@@ -87,7 +87,7 @@
         There will be no undo
       </v-card-text>
       <v-card-actions>
-        <v-spacer />
+        <v-spacer/>
         <v-btn
           variant="text"
           @click="eventToDelete = null"
@@ -107,11 +107,11 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue'
+import {computed, ref, toRef, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import EventListItem from '@/components/events/EventListItem.vue'
 import {useDisplay} from "vuetify";
-import {deleteEventById, type Event} from "@/lib";
+import {type AdvancedCommittee, deleteEventById, type Event, type SimpleCommittee} from "@/lib";
 
 defineOptions({name: 'EventManageList'})
 const display = useDisplay()
@@ -119,14 +119,33 @@ const display = useDisplay()
 
 const props = defineProps<{
   initialEvents: Event[],
-  idToCommittee,
+  initialCommittees: AdvancedCommittee[],
 }>()
 
 const events = ref<Event[]>(props.initialEvents)
 const eventToDelete = ref<Event>()
 
+const committees = computed<AdvancedCommittee[]>(() => props.initialCommittees ?? [])
+
+const committeesRef = toRef(props, 'initialCommittees')
+
+watch(
+  committeesRef,
+  (newVal) => {
+    console.log('committees changed:', newVal)
+  },
+  { deep: true, immediate: true }
+)
+
 // Access router and store if you still need them
 const router = useRouter()
+
+function committeeForEvent(event: Event) {
+  console.log('committee for event:', event)
+  console.log('committees:', committees.value)
+  if (!event.committeeId) return 'No committee'
+  return committees.value.find((c: SimpleCommittee) => c.id === event.committeeId)
+}
 
 async function deleteEvent() {
   if (!eventToDelete.value) return

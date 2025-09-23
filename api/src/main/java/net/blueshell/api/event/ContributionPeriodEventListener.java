@@ -1,6 +1,7 @@
 package net.blueshell.api.event;
 
 import net.blueshell.api.common.event.PostPersistEvent;
+import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.ContributionPeriod;
 import net.blueshell.api.service.ContributionPeriodService;
@@ -22,13 +23,26 @@ public class ContributionPeriodEventListener {
         this.periods = periods;
     }
 
+
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onContributionPeriodCreated(PostPersistEvent<ContributionPeriod> evt) {
+    public void onUpdate(PostUpdateEvent<ContributionPeriod> evt) {
         var c = evt.getSource();
         if (c.getListId() != null) return;
 
-        contacts.createList(c);
+        var listId = contacts.createList(c);
+        c.setListId(listId);
+        periods.update(c);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onCreate(PostPersistEvent<ContributionPeriod> evt) {
+        var c = evt.getSource();
+        if (c.getListId() != null) return;
+
+        var listId = contacts.createList(c);
+        c.setListId(listId);
         periods.update(c);
     }
 }

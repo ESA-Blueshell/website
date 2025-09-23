@@ -17,13 +17,13 @@
       </v-btn>
 
       <!-- Only show non-public events if user is board AND there are non-visible events -->
-      <template v-if="isBoard && events.filter(e => !e.visible).length > 0">
+      <template v-if="isBoard && events.filter((e: Event) => !e.visible).length > 0">
         <p class="mt-8 mx-3 text-h3 text-center">
           Non-public events (to be approved)
         </p>
         <event-manage-list
-          :initial-events="events.filter(e => !e.visible)"
-          :id-to-committee="idToCommittee"
+          :initial-events="events.filter((e: Event) => !e.visible)"
+          :initial-committees="committees"
         />
       </template>
 
@@ -31,8 +31,8 @@
         Upcoming Events
       </p>
       <event-manage-list
-        :initial-events="events.filter(e => e.visible)"
-        :id-to-committee="idToCommittee"
+        :initial-events="events.filter((e: Event) => e.visible)"
+        :initial-committees="committees"
       />
 
       <p class="mt-8 mx-3 mb-4 text-h3 text-center">
@@ -40,7 +40,7 @@
       </p>
       <event-manage-list
         :initial-events="pastEvents"
-        :id-to-committee="idToCommittee"
+        :initial-committees="committees"
       />
 
       <p
@@ -75,23 +75,12 @@ import TopBanner from '@/components/banners/TopBanner.vue'
 import EventManageList from '@/components/events/EventManageList.vue'
 import {$require} from '@/plugins/require'
 import {DateTime} from 'luxon';
-import {type Event, findCommittees, findEvents, type SimpleCommittee} from "@/lib";
-
-// Local “groupBy” helper if you don't have a built-in one
-function groupBy<T, K extends keyof T & (string | number)>(
-  items: T[],
-  key: K                      // which property is the id?
-): Record<T[K], T> {
-  return items.reduce((acc, item) => {
-    acc[item[key]] = item
-    return acc
-  }, {} as Record<T[K], T>)
-}
+import {type AdvancedCommittee, type Event, findCommittees, findEvents} from "@/lib";
 
 // Reactive references for data
 const events = ref<Event[]>([])
+const committees = ref<AdvancedCommittee[]>([])
 const pastEvents = ref<Event[]>([])
-const idToCommittee = ref<Record<number, SimpleCommittee>>({})
 const noCommittees = ref(false)
 // Track if data has finished loading
 const isLoaded = ref(false)
@@ -124,10 +113,9 @@ onMounted(async () => {
 
     events.value = upcomingResp.data?.content ?? []
     pastEvents.value = pastResp.data?.content ?? []
-    const committees = committeesResp.data ?? []
-
-    idToCommittee.value = groupBy(committees, 'id')
-    if (committees.length === 0) {
+    committees.value = committeesResp.data as AdvancedCommittee[] ?? []
+    console.log("committees: ", committees.value)
+    if (committees.value.length === 0) {
       noCommittees.value = true
     }
   } finally {

@@ -25,8 +25,7 @@ public class ContributionPermission extends BasePermissionEvaluator<Contribution
         Contribution contribution = (Contribution) object;
         var principal = getPrincipal();
         return switch (permission) {
-            case "read", "write" ->
-                    principal.hasRole(Role.BOARD) || Objects.equals(principal.getId(), contribution.getUserId());
+            case "read" -> Objects.equals(principal.getId(), contribution.getUserId());
             default -> false;
         };
     }

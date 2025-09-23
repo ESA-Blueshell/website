@@ -1,6 +1,8 @@
 package net.blueshell.api.event;
 
+import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostRemoveEvent;
+import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.Contribution;
 import net.blueshell.api.service.brevo.ContactService;
@@ -21,14 +23,21 @@ public class ContributionEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onContributionCreated(PrePersistEvent<Contribution> evt) {
+    public void onPersist(PostPersistEvent<Contribution> evt) {
         var c = evt.getSource();
         contacts.addToList(c.getContributionPeriod(), c.getUser());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onContributionDeleted(PostRemoveEvent<Contribution> evt) {
+    public void onUpdate(PostUpdateEvent<Contribution> evt) {
+        var c = evt.getSource();
+        contacts.addToList(c.getContributionPeriod(), c.getUser());
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onDelete(PostRemoveEvent<Contribution> evt) {
         var c = evt.getSource();
         contacts.removeFromList(c.getContributionPeriod(), c.getUser());
     }

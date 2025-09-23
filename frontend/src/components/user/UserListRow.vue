@@ -2,7 +2,7 @@
   <start-membership-dialog
     v-model="showStartModal"
     :user-id="user.id"
-    @started="onMembershipStarted"
+    :memberships="memberships"
   />
   <div>
     <v-list-item>

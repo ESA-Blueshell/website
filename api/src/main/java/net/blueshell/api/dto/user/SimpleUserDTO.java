@@ -1,5 +1,6 @@
 package net.blueshell.api.dto.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -56,7 +57,6 @@ public class SimpleUserDTO extends BaseDTO {
     @NotNull
     private boolean newsletter;
 
-    @JsonProperty
     @NotBlank(groups = {Creation.class})
     @Size(min = 8, max = 100, groups = {Creation.class})
     @Pattern(
@@ -64,5 +64,6 @@ public class SimpleUserDTO extends BaseDTO {
             message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
             groups = {Creation.class}
     )
+    @JsonIgnore
     private String password;
 }

@@ -8,25 +8,30 @@
         Start Membership
       </v-card-title>
       <v-card-text>
-        <v-row>
-          <v-text-field
-            v-model="form.startDate"
-            :max="new Date().toISOString()"
-            label="Start Date"
-            type="date"
-            required
-          />
-        </v-row>
-        <v-row>
-          <member-type-select v-model="form.memberType"/>
-        </v-row>
-        <v-row>
-          <country-select v-model="form.country"/>
-        </v-row>
+        <v-form
+          ref="form"
+        >
+          <v-row>
+            <v-text-field
+              v-model="membership.startDate"
+              :max="new Date().toISOString()"
+              label="Start Date"
+              type="date"
+              required
+            />
+          </v-row>
+          <v-row>
+            <member-type-select v-model="membership.memberType" />
+          </v-row>
+          <v-row>
+            <country-select v-model="membership.country" />
+          </v-row>
+        </v-form>
       </v-card-text>
+      >
 
       <v-card-actions>
-        <v-spacer/>
+        <v-spacer />
         <v-btn
           color="secondary"
           :disabled="isSubmitting"
@@ -47,27 +52,26 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref} from 'vue';
+import {computed, type Ref, ref} from 'vue';
 import {DateTime} from 'luxon';
 import MemberTypeSelect from '@/components/select/MemberTypeSelect.vue';
 import {createMembership, type Membership, MemberType,} from '@/lib';
 import CountrySelect from "@/components/select/CountrySelect.vue";
+import type {VForm} from "vuetify/lib/components";
+import type {Country} from "world-countries";
 
 interface Props {
-  /** Control the dialog from the parent with v-model */
   modelValue: boolean;
-  /** User ID to create the membership for */
+  memberships: Array<Membership>;
   userId: number;
 }
 
-
 const props = defineProps<Props>();
 const emit = defineEmits<{
-  /** v-model updater */
   (e: 'update:modelValue', value: boolean): void;
-  /** Fires when a membership is successfully created */
-  (e: 'started', membership: Membership): void;
 }>();
+
+const form: Ref<VForm | undefined> = ref();
 
 // Local v-model proxy
 const open = computed({
@@ -76,7 +80,7 @@ const open = computed({
 });
 
 // Local state for the dialog
-const form = ref<Membership>({
+const membership = ref<Membership>({
   startDate: DateTime.now().toISODate(),
   memberType: MemberType.REGULAR,
   userId: props.userId,
@@ -89,14 +93,16 @@ const isSubmitting = ref(false);
 
 const confirm = async () => {
   try {
+    const validationResult = await form.value?.validate()
+    if (!validationResult?.valid) return;
+
     isSubmitting.value = true;
 
-    const membershipData: Membership = form.value
-
+    const membershipData: Membership = membership.value
     const response = await createMembership({body: membershipData});
 
     if (response.data) {
-      emit('started', response.data);
+
       open.value = false;
     }
   } catch (error) {

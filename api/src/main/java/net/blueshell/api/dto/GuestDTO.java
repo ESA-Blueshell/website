@@ -1,6 +1,7 @@
 package net.blueshell.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,10 +14,13 @@ public class GuestDTO extends BaseDTO {
 
     private Long id;
 
+    @NotNull
     private String name;
 
+    @NotNull
     private String discord;
 
+    @NotNull
     private String email;
 
     private Timestamp createdAt;

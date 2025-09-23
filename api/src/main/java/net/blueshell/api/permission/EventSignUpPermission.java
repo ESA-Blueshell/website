@@ -28,9 +28,8 @@ public class EventSignUpPermission extends BasePermissionEvaluator<EventSignUp, 
         }
 
         return switch (permission) {
-            case "read" ->
-                    hasAuthority(Role.BOARD) || signUp.getUser().equals(getPrincipal()) || signUp.getEvent().getCommittee().hasMember(getPrincipal());
-            case "write", "delete" -> hasAuthority(Role.BOARD) || signUp.getUser().equals(getPrincipal());
+            case "read" -> signUp.getUser().equals(getPrincipal()) || signUp.getEvent().getCommittee().hasMember(getPrincipal());
+            case "write", "delete" -> signUp.getUser().equals(getPrincipal());
             default -> false;
         };
     }

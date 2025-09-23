@@ -7,26 +7,21 @@ import net.blueshell.api.dto.EventSignUpDTO;
 import net.blueshell.api.model.EventSignUp;
 import net.blueshell.api.model.Guest;
 import net.blueshell.api.model.User;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 
 @Slf4j
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSignUpDTO> {
 
     @Autowired
     protected GuestMapper guestMapper;
 
-    @Mapping(target = "fullName", ignore = true)
-    @Mapping(target = "discord", ignore = true)
-    @Mapping(target = "email", ignore = true)
     @Mapping(target = "formAnswers", source = "signUp.formAnswers")
+    @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUpDTO toDTO(EventSignUp signUp);
 
     @AfterMapping
@@ -43,14 +38,9 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
         }
     }
 
-    @Mapping(target = "event", ignore = true)
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "guest", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "formAnswers", source = "dto.formAnswers")
-    @Mapping(target = "signedUpAt", ignore = true)
-    @Mapping(target = "userId", ignore = true)
-    public abstract EventSignUp fromDTO(EventSignUpDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract EventSignUp fromDTO(EventSignUpDTO dto,@MappingTarget EventSignUp signUp);
 
     @AfterMapping
     protected void afterFromDTO(EventSignUpDTO dto, @MappingTarget EventSignUp signUp) {
@@ -61,7 +51,7 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
         if (user != null) {
             signUp.setUserId(user.getId());
         } else {
-            Guest guest = guestMapper.fromDTO(dto);
+            Guest guest = guestMapper.fromDTO(dto.getGuest());
             signUp.setGuest(guest);
         }
     }

@@ -6,10 +6,7 @@ import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.CommitteeMemberMapper;
 import net.blueshell.api.model.Committee;
 import net.blueshell.api.model.CommitteeMember;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -19,21 +16,19 @@ import java.util.stream.Collectors;
 
 @Mapper(
         componentModel = "spring",
-        uses = {CommitteeMemberMapper.class}
+        uses = {CommitteeMemberMapper.class},
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
 public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, AdvancedCommitteeDTO> {
 
     @Autowired
     protected CommitteeMemberMapper memberMapper;
 
-    @Mapping(target = "members", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "users", ignore = true)
-    public abstract Committee fromDTO(AdvancedCommitteeDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract Committee fromDTO(AdvancedCommitteeDTO dto, @MappingTarget Committee committee);
 
     @AfterMapping
-    protected void afterFromDTO(AdvancedCommitteeDTO dto,
-                                @MappingTarget Committee committee) {
+    protected void afterFromDTO(AdvancedCommitteeDTO dto, @MappingTarget Committee committee) {
 
         if (dto.getMembers() == null) {
             committee.setMembers(new HashSet<>());
@@ -48,7 +43,7 @@ public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, Adva
         committee.setMembers(members);
     }
 
-    @Mapping(target = "members", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract AdvancedCommitteeDTO toDTO(Committee committee);
 
     @AfterMapping

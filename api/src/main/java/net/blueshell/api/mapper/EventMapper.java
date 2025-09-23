@@ -7,10 +7,7 @@ import net.blueshell.api.model.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.service.CommitteeService;
 import net.blueshell.api.service.FileService;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
@@ -19,29 +16,16 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
-
-    @Autowired
-    protected CommitteeService committeeService;
     @Autowired
     protected SimpleCommitteeMapper simpleCommitteeMapper;
     @Autowired
-    protected FileService fileService;
-    @Autowired
     protected FileMapper fileMapper;
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "lastEditor", ignore = true)
-    @Mapping(target = "banner", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "googleId", ignore = true)
-    @Mapping(target = "feedbacks", ignore = true)
-    @Mapping(target = "startTime", ignore = true)
-    @Mapping(target = "endTime", ignore = true)
-    public abstract Event fromDTO(EventDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract Event fromDTO(EventDTO dto, @MappingTarget Event event);
 
     @AfterMapping
     protected void afterFromDTO(EventDTO dto, @MappingTarget Event event) {
@@ -67,6 +51,7 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     @Mapping(target = "startTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getStartTime()))")
     @Mapping(target = "endTime",   expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getEndTime()))")
+    @BeanMapping(ignoreByDefault = true)
     public abstract EventDTO toDTO(Event event);
 
     static String toIso(LocalDateTime t) {

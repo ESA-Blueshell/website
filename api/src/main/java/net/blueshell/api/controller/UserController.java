@@ -52,12 +52,12 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return simpleMapper.toDTO(user);
     }
 
-    @PutMapping(value = "/users/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'User', 'write')")
-    public AdvancedUserDTO updateUser(@PathVariable("userId") Long userId,
+    @PutMapping(value = "/users/{id}")
+    @PreAuthorize("#dto.id == #id && hasPermission(#id, 'User', 'write')")
+    public AdvancedUserDTO updateUser(@PathVariable("id") Long id,
                                       @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
-        dto.setId(userId);
-        User user = advancedMapper.fromDTO(dto);
+        User user = service.findById(id);
+        advancedMapper.fromDTO(dto, user);
         service.update(user);
         return advancedMapper.toDTO(user);
     }

@@ -19,4 +19,5 @@ public class EventSignUpDTO extends BaseDTO {
     private String email;
     @Valid
     private List<Object> formAnswers;
+    private GuestDTO guest;
 }

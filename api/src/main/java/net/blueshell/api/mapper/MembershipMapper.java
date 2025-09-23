@@ -17,21 +17,13 @@ import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class MembershipMapper extends BaseMapper<Membership, MembershipDTO> {
 
-    @Autowired
-    private FileMapper fileMapper;
-
-    @Autowired
-    private UserService userService;
-
+    @BeanMapping(ignoreByDefault = true)
     public abstract MembershipDTO toDTO(Membership membership);
 
-    @Mapping(target = "user", ignore = true)
     @Mapping(target = "userId")
     @Mapping(target = "city")
-    @Mapping(target = "contributions", ignore = true)
-    @Mapping(target = "incasso", ignore = true)
-    @Mapping(target = "startDate", ignore = true)
-    public abstract Membership fromDTO(MembershipDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract Membership fromDTO(MembershipDTO dto, @MappingTarget Membership membership);
 
     @AfterMapping
     protected void afterFromDTO(MembershipDTO dto, @MappingTarget Membership membership) {

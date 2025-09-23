@@ -3,17 +3,16 @@ package net.blueshell.api.mapper;
 import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.dto.SocialDTO;
 import net.blueshell.api.model.Blog;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Value;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class SocialMapper {
 
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @BeanMapping(ignoreByDefault = true)
     public abstract SocialDTO toSocialDTO(Blog blog);
 
     @AfterMapping

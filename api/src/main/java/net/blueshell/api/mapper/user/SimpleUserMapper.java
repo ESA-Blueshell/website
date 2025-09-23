@@ -17,7 +17,7 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
 
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "id")
-    @Mapping(target = "password", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract SimpleUserDTO toDTO(User user);
 
     @ObjectFactory
@@ -25,18 +25,9 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
         return new User();
     }
 
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "profilePicture", ignore = true)
-    @Mapping(target = "committeeMembers", ignore = true)
-    @Mapping(target = "contributions", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "resetKey", ignore = true)
-    @Mapping(target = "resetKeyValidUntil", ignore = true)
-    @Mapping(target = "resetType", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    public abstract User fromDTO(SimpleUserDTO dto);
+
+    @BeanMapping(ignoreByDefault = true)
+    public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
 
     @AfterMapping
     protected void afterFromDTO(SimpleUserDTO dto, @MappingTarget User user) {

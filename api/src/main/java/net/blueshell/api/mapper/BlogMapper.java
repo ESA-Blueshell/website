@@ -8,28 +8,21 @@ import net.blueshell.api.model.Blog;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
 
     @Value("${frontend.url}")
     private String frontendUrl;
 
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "title", ignore = true)
-    @Mapping(target = "text", ignore = true)
-    @Mapping(target = "html", ignore = true)
-    @Mapping(target = "markdown", ignore = true)
-    public abstract Blog fromDTO(BlogDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract Blog fromDTO(BlogDTO dto, @MappingTarget Blog blog);
 
     @AfterMapping
     protected void afterFromDTO(BlogDTO dto, @MappingTarget Blog blog) {
@@ -55,7 +48,7 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
         }
     }
 
-    @Mapping(target = "url", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract BlogDTO toDTO(Blog blog);
 
     @AfterMapping

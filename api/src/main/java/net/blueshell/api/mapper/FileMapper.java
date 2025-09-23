@@ -25,8 +25,7 @@ import java.util.Base64;
 /**
  * Mapper that converts between FileURLDTO <-> File entity.
  */
-@Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class FileMapper extends BaseMapper<File, FileDTO> {
 
     @Autowired
@@ -51,13 +50,8 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
      * Basic mapping from DTO to File without considering content/url specifics;
      * we’ll fill those in after mapping (see `afterFromDTO`).
      */
-    @Mapping(target = "name", ignore = true)
-    @Mapping(target = "url", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "mediaType", ignore = true)
-    @Mapping(target = "size", ignore = true)
-    @Mapping(target = "fileType", ignore = true)
-    public abstract File fromDTO(FileDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract File fromDTO(FileDTO dto, @MappingTarget File file);
 
     /**
      * Handles the logic of extracting either base64 content or remote URL content,
@@ -82,8 +76,7 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
      * (If you want FileURLDTO returned, you can similarly fill in relevant fields.)
      */
     @InheritInverseConfiguration
-    @Mapping(target = "base64Content", ignore = true) // Not needed when returning to client
-    @Mapping(target = "fileName", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract FileDTO toDTO(File file);
 
     /**

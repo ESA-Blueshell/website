@@ -22,38 +22,17 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
 
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
-    @Mapping(target = "password", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract AdvancedUserDTO toDTO(User user);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "initials")
     @Mapping(target = "firstName")
     @Mapping(target = "prefix")
     @Mapping(target = "lastName")
     @Mapping(target = "username", conditionExpression = "java(hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "roles", ignore = true)
     @Mapping(target = "email")
-    @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "profilePicture", ignore = true)
-    @Mapping(target = "committeeMembers", ignore = true)
-    @Mapping(target = "contributions", ignore = true)
-    @Mapping(target = "resetKey", ignore = true)
-    @Mapping(target = "resetKeyValidUntil", ignore = true)
-    @Mapping(target = "resetType", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "address", ignore = true)
-    @Mapping(target = "creator", ignore = true)
-    public abstract User fromDTO(AdvancedUserDTO dto);
-
-    @ObjectFactory
-    protected User newUser(@TargetType Class<User> type, AdvancedUserDTO dto) {
-        if (dto.getId() != null) {
-            return users.findById(dto.getId());
-        }
-        return new User();
-    }
+    @BeanMapping(ignoreByDefault = true)
+    public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);
 
     @AfterMapping
     protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {

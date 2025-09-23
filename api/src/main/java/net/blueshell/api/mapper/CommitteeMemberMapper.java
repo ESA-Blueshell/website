@@ -9,17 +9,15 @@ import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Mapper(componentModel = "spring", uses = {SimpleUserMapper.class}, injectionStrategy = InjectionStrategy.CONSTRUCTOR)
+@Mapper(componentModel = "spring", uses = {SimpleUserMapper.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, CommitteeMemberDTO> {
 
     @Autowired
     protected SimpleUserMapper simpleUserMapper;
     @Autowired
     protected UserService userService;
-    @Autowired
-    private CommitteeService committeeService;
 
-    @Mapping(target = "user", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract CommitteeMemberDTO toDTO(CommitteeMember member);
 
     @AfterMapping
@@ -29,10 +27,8 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
         }
     }
 
-    @Mapping(target = "user",      ignore = true)
-    @Mapping(target = "committee", ignore = true) // parent sets this
-    @Mapping(target = "deletedAt", ignore = true)
-    public abstract CommitteeMember fromDTO(CommitteeMemberDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    public abstract CommitteeMember fromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember member);
 
     @AfterMapping
     protected void afterFromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember entity) {

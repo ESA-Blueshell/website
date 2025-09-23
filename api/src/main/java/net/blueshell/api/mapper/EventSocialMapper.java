@@ -3,19 +3,14 @@ package net.blueshell.api.mapper;
 import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.dto.SocialDTO;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class EventSocialMapper {
 
     @Mapping(source = "description", target = "text")
-    @Mapping(target = "url", ignore = true)
-    @Mapping(target = "platforms", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
     public abstract SocialDTO toSocialDto(EventDTO dto);
-
 
     @AfterMapping
     public void afterToSocialDTO(EventDTO dto, @MappingTarget SocialDTO socialDTO) {

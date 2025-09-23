@@ -4,10 +4,7 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.clients.brevo.model.CreateContact;
 import net.blueshell.clients.brevo.model.UpdateContact;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,10 +16,12 @@ public interface BrevoContactMapper {
     @Mapping(target = "email", source = "email")
     @Mapping(target = "extId", source = "id")
     @Mapping(target = "attributes", source = ".", qualifiedByName = "toAttributes")
+    @BeanMapping(ignoreByDefault = true)
     CreateContact toCreate(User user);
 
     @Mapping(target = "extId", source = "id")
     @Mapping(target = "attributes", source = ".", qualifiedByName = "toAttributes")
+    @BeanMapping(ignoreByDefault = true)
     UpdateContact toUpdate(User user);
 
     @Named("toAttributes")

@@ -29,16 +29,16 @@ public class AddressController extends BaseController<AddressService, AddressMap
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.userId, 'User', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     public AddressDTO createAddress(@Valid @RequestBody AddressDTO dto) {
-        Address address = mapper.fromDTO(dto);
+        var address = mapper.fromDTO(dto);
         service.create(address);
         return mapper.toDTO(address);
     }
 
-    @PutMapping("/{addressId}")
-    @PreAuthorize("hasAuthority('BOARD') || (#addressId.equals(dto.id) && hasPermission(#addressId, 'Address', 'write'))")
-    public AddressDTO updateAddress(@PathVariable("addressId") Long addressId, @Valid @RequestBody AddressDTO dto) {
-        dto.setId(addressId);
-        Address address = mapper.fromDTO(dto);
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOARD') || (#id == dto.id && hasPermission(#id, 'Address', 'write'))")
+    public AddressDTO updateAddress(@PathVariable("id") Long id, @Valid @RequestBody AddressDTO dto) {
+        var address = service.findById(id);
+        mapper.fromDTO(dto, address);
         service.update(address);
         return mapper.toDTO(address);
     }
@@ -46,21 +46,21 @@ public class AddressController extends BaseController<AddressService, AddressMap
     @GetMapping
     @PreAuthorize("hasAuthority('BOARD')")
     public List<AddressDTO> findAllAddresses() {
-        List<Address> addresses = service.findAll();
+        var addresses = service.findAll();
         return mapper.toDTOs(addresses);
     }
 
-    @GetMapping("/{addressId}")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#addressId, 'Address', 'read')")
-    public AddressDTO findAddressById(@PathVariable("addressId") Long addressId) {
-        Address address = service.findById(addressId);
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'read')")
+    public AddressDTO findAddressById(@PathVariable("id") Long id) {
+        var address = service.findById(id);
         return mapper.toDTO(address);
     }
 
-    @DeleteMapping("/{addressId}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteAddress(@PathVariable("addressId") Long addressId) {
-        service.delete(addressId);
+    public void deleteAddressById(@PathVariable("id") Long id) {
+        service.delete(id);
     }
 }

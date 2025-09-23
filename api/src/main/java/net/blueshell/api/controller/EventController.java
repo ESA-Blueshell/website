@@ -26,28 +26,33 @@ public class EventController extends BaseController<EventService, EventMapper> {
         super(service, mapper);
     }
 
-    @PreAuthorize("hasAuthority('COMMITTEE') && hasPermission(#eventDTO.committeeId, 'Committee', 'createEvent')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventDTO.committeeId, 'Committee', 'createEvent')")
     @PostMapping("/events")
     public EventDTO createEvent(@Valid @RequestBody EventDTO eventDTO) {
-        Event event = mapper.fromDTO(eventDTO);
+        var event = mapper.fromDTO(eventDTO);
         service.create(event);
+        return mapper.toDTO(event);
+    }
+
+    @PreAuthorize("hasAuthority('BOARD') || (#id == dto.id && hasPermission(#id, 'Event', 'write'))")
+    @PutMapping("/events/{id}")
+    public EventDTO updateEvent(@PathVariable("id") Long id, @Valid @RequestBody EventDTO dto) {
+        var event = service.findById(id);
+        mapper.fromDTO(dto, event);
+        service.update(event);
         return mapper.toDTO(event);
     }
 
     @GetMapping("/events/{id}")
     @PreAuthorize("hasPermission(#id, 'Event', 'read')")
-    public EventDTO findEventById(
-            @PathVariable("id") Long id) {
-        Event event = service.findById(id);
+    public EventDTO findEventById(@PathVariable("id") Long id) {
+        var event = service.findById(id);
         return mapper.toDTO(event);
     }
 
     @GetMapping("/events")
-    public Page<EventDTO> findEvents(
-            @ParameterObject Pageable pageable,
-            @ParameterObject EventFilter filter
-    ) {
-        Page<Event> events = service.findByFilter(pageable, filter);
+    public Page<EventDTO> findEvents(@ParameterObject Pageable pageable, @ParameterObject EventFilter filter) {
+        var events = service.findByFilter(pageable, filter);
         return mapper.toDTOs(events);
     }
 
@@ -56,14 +61,5 @@ public class EventController extends BaseController<EventService, EventMapper> {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventById(@PathVariable("eventId") Long eventId) {
         service.delete(eventId);
-    }
-
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
-    @PutMapping("/events/{eventId}")
-    public EventDTO updateEvent(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventDTO dto) {
-        Event event = mapper.fromDTO(dto);
-        event.setId(eventId);
-        service.update(event);
-        return mapper.toDTO(event);
     }
 }

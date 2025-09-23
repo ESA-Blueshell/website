@@ -38,16 +38,10 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = "/sponsors/{id}")
-    public Object createOrUpdateSponsor(@PathVariable("id") Long id, @RequestBody SponsorDTO dto) {
-        service.findById(id);
-        Sponsor sponsor = mapper.fromDTO(dto);
-        if (id != null) {
-            sponsor.setId(id);
-            service.update(sponsor);
-        } else {
-            service.create(sponsor);
-        }
-
+    public Object updateSponsor(@PathVariable("id") Long id, @RequestBody SponsorDTO dto) {
+        var sponsor = service.findById(id);
+        mapper.fromDTO(dto, sponsor);
+        service.update(sponsor);
         return mapper.toDTO(sponsor);
     }
 

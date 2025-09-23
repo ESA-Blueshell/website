@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import net.blueshell.api.validation.address.ValidCountryCode;
 
+import java.sql.Timestamp;
+
 @Data
 @Schema(name = "Address")
 public class AddressDTO {
@@ -29,5 +31,5 @@ public class AddressDTO {
     @NotNull
     private String zipCode;
 
-    private String createdAt;
+    private Timestamp createdAt;
 }

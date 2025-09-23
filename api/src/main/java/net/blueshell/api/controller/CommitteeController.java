@@ -5,8 +5,8 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Committee;
@@ -52,7 +52,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     public BaseDTO findCommitteeById(
             @PathVariable("committeeId") Long committeeId
     ) {
-        Committee committee = service.findById(committeeId);
+        var committee = service.findById(committeeId);
         if (hasAuthority(Role.BOARD) || committee.hasMember(getPrincipal())) {
             return advancedMapper.toDTO(committee);
         }
@@ -63,18 +63,16 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
     public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
-        Committee committee = advancedMapper.fromDTO(advancedCommitteeDTO);
+        var committee = advancedMapper.fromDTO(advancedCommitteeDTO);
         service.create(committee);
         return advancedMapper.toDTO(committee);
     }
 
-    @PreAuthorize("hasPermission(#committeeId, 'Committee', 'write')")
-    @PutMapping(value = "/committees/{committeeId}")
-    public BaseDTO updateCommittee(
-            @PathVariable("committeeId") Long committeeId,
-            @Valid @RequestBody AdvancedCommitteeDTO dto) {
-        dto.setId(committeeId);
-        var committee = advancedMapper.fromDTO(dto);
+    @PreAuthorize("hasAuthority('BOARD') || (#id == dto.id && hasPermission(#id, 'Committee', 'write'))")
+    @PutMapping(value = "/committees/{id}")
+    public BaseDTO updateCommittee(@PathVariable("id") Long id, @Valid @RequestBody AdvancedCommitteeDTO dto) {
+        var committee = service.findById(id);
+        advancedMapper.fromDTO(dto, committee);
         service.update(committee);
         return advancedMapper.toDTO(committee);
     }

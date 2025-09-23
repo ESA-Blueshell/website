@@ -29,11 +29,11 @@ public class MembershipController extends BaseController<MembershipService, Memb
         return mapper.toDTOs(service.findAll());
     }
 
-    @PreAuthorize("hasPermission(#dto.userId, 'User', 'write') || hasAuthority('BOARD')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.userId, 'User', 'write')")
     @PostMapping("/memberships")
     public MembershipDTO createMembership(@Validated(Creation.class) @RequestBody MembershipDTO dto
     ) {
-        Membership membership = mapper.fromDTO(dto);
+        var membership = mapper.fromDTO(dto);
         service.create(membership);
         return mapper.toDTO(membership);
     }
@@ -50,13 +50,13 @@ public class MembershipController extends BaseController<MembershipService, Memb
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = "/{id}")
     public MembershipDTO updateMembership(@PathVariable("id") Long id, @RequestBody MembershipDTO dto) {
-        service.findById(id);
-        Membership membership = mapper.fromDTO(dto);
+        var membership = service.findById(id);
+        mapper.fromDTO(dto, membership);
         service.update(membership);
         return mapper.toDTO(membership);
     }
 
-    @PreAuthorize("hasPermission(#id, 'Membership', 'read') || hasAuthority('BOARD')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = "/{id}")
     public MembershipDTO findMembershipById(@PathVariable("id") Long id) {
         return mapper.toDTO(service.findById(id));

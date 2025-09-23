@@ -20,12 +20,6 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @BeanMapping(ignoreByDefault = true)
     public abstract SimpleUserDTO toDTO(User user);
 
-    @ObjectFactory
-    protected User newUser(@TargetType Class<User> type, SimpleUserDTO dto) {
-        return new User();
-    }
-
-
     @BeanMapping(ignoreByDefault = true)
     public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
 

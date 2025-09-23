@@ -28,7 +28,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributions")
     public ContributionDTO createContribution(@Valid @RequestBody ContributionDTO dto) {
-        Contribution contribution = mapper.fromDTO(dto);
+        var contribution = mapper.fromDTO(dto);
         service.create(contribution);
         return mapper.toDTO(contribution);
     }
@@ -38,7 +38,7 @@ public class ContributionController extends BaseController<ContributionService, 
     public ContributionDTO setContributionPaid(
             @PathVariable("id") Long id,
             @PathParam("paid") boolean paid) {
-        Contribution contribution = service.findById(id);
+        var contribution = service.findById(id);
         contribution.setPaid(paid);
         service.update(contribution);
         return mapper.toDTO(contribution);
@@ -47,7 +47,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributions")
     public Stream<ContributionDTO> findContributions(@RequestParam(required = false) Long contributionPeriodId) {
-        List<Contribution> contributions = service.findByContributionPeriodId(contributionPeriodId);
+        var contributions = service.findByContributionPeriodId(contributionPeriodId);
         return mapper.toDTOs(contributions.stream());
     }
 
@@ -55,7 +55,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @DeleteMapping("/contributions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteContribution(@PathVariable("id") Long id) {
-        Contribution contribution = service.findById(id);
+        var contribution = service.findById(id);
         service.delete(contribution);
     }
 
@@ -68,7 +68,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
     public List<ContributionDTO> findContributionsByPeriodId(@PathVariable("periodId") Long periodId) {
-        List<Contribution> contributions = service.findByContributionPeriodId(periodId);
+        var contributions = service.findByContributionPeriodId(periodId);
         return mapper.toDTOs(contributions);
     }
 }

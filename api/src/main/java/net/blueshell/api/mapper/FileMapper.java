@@ -75,7 +75,6 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
      * Convert the final `File` entity back to a DTO.
      * (If you want FileURLDTO returned, you can similarly fill in relevant fields.)
      */
-    @InheritInverseConfiguration
     @BeanMapping(ignoreByDefault = true)
     public abstract FileDTO toDTO(File file);
 

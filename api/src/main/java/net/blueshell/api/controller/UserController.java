@@ -33,21 +33,21 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @PostMapping("/users")
     public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
-        User user = advancedMapper.fromDTO(dto);
+        var user = advancedMapper.fromDTO(dto);
         service.create(user);
         return advancedMapper.toDTO(user);
     }
 
     @PostMapping("/users/member")
     public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
-        User user = advancedMapper.fromDTO(dto);
+        var user = advancedMapper.fromDTO(dto);
         service.create(user);
         return advancedMapper.toDTO(user);
     }
 
     @PostMapping("/users/guest")
     public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
-        User user = simpleMapper.fromDTO(dto);
+        var user = simpleMapper.fromDTO(dto);
         service.create(user);
         return simpleMapper.toDTO(user);
     }
@@ -56,7 +56,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PreAuthorize("#dto.id == #id && hasPermission(#id, 'User', 'write')")
     public AdvancedUserDTO updateUser(@PathVariable("id") Long id,
                                       @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
-        User user = service.findById(id);
+        var user = service.findById(id);
         advancedMapper.fromDTO(dto, user);
         service.update(user);
         return advancedMapper.toDTO(user);
@@ -65,14 +65,14 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
     public List<AdvancedUserDTO> findUsers() {
-        List<User> users = service.findAll();
+        var users = service.findAll();
         return advancedMapper.toDTOs(users);
     }
 
     @GetMapping(value = "/users/{userId}")
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     public AdvancedUserDTO findUserById(@PathVariable("userId") Long userId) {
-        User user = service.findById(userId);
+        var user = service.findById(userId);
         return advancedMapper.toDTO(user);
     }
 
@@ -87,7 +87,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
     public AdvancedUserDTO toggleUserRole(@PathVariable("userId") Long userId,
                                           @RequestParam(value = "role") Role role) {
-        User user = service.toggleRole(userId, role);
+        var user = service.toggleRole(userId, role);
         return advancedMapper.toDTO(user);
     }
 }

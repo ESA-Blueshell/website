@@ -1,4 +1,4 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.converter;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

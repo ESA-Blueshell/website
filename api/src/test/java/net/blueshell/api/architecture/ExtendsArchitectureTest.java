@@ -1,29 +1,15 @@
 package net.blueshell.api.architecture;
 
-import com.tngtech.archunit.base.DescribedPredicate;
-import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaParameterizedType;
-import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport;
-import net.blueshell.api.testsupport.ReturnTypeConditions;
-import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.http.ResponseEntity;
 
-import java.util.List;
-
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static net.blueshell.api.architecture.GenericsPredicates.assignableToGeneric;
-import static net.blueshell.api.testsupport.ReturnTypeConditions.haveReturnType;
 import static net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnType;
 
 /**
@@ -34,7 +20,7 @@ import static net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnTy
         packages = "net.blueshell.api",
         importOptions = {ImportOption.DoNotIncludeTests.class, DoNotIncludeTestSupport.class}
 )
-public class ReturnsArchitectureTest {
+public class ExtendsArchitectureTest {
 
     private static final String DTO = "net.blueshell.api.dto..";
     private static final String CONTROLLER = "net.blueshell.api.controller..";
@@ -43,12 +29,12 @@ public class ReturnsArchitectureTest {
     private static final String SERVICE = "net.blueshell.api.service..";
     private static final String REPOSITORY = "net.blueshell.api.repository..";
     private static final String VALIDATION = "net.blueshell.api.validation..";
-    private static final String MODEL = "net.blueshell.api.model..";
-    private static final String CONVERTER = "net.blueshell.api.model.converter..";
 
     @ArchTest
-    public final ArchRule modelsExtendBaseModel = classes()
-            .that().resideInAnyPackage(MODEL)
-            .and().resideOutsideOfPackage(CONVERTER)
-            .should().beAssignableTo(BaseModel.class);
+    public final ArchRule controllersMethodsDontReturnModels = methods()
+            .that().areDeclaredInClassesThat().resideInAnyPackage(CONTROLLER)
+            .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
+            .and().arePublic()
+            .should().notHaveRawReturnType(assignableTo(BaseModel.class))
+            .andShould(notHaveReturnType(assignableToGeneric(Iterable.class, BaseModel.class)));
 }

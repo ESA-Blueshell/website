@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.Getter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
+import net.blueshell.api.model.converter.FormQuestion;
 import net.blueshell.api.model.converter.FormQuestionListConverter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;

@@ -1,6 +1,7 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.mapper.FileMapper;
@@ -53,11 +54,13 @@ public class FileController extends BaseController<FileService, FileRepository> 
 
     @GetMapping("/assets/{filename:.+}")
     @ResponseBody
+    @PermitAll
     public ResponseEntity<Resource> downloadAsset(@PathVariable String filename) {
         return service.prepareAssetResponse(filename);
     }
 
     @PostMapping("/files")
+    @PreAuthorize("hasAuthority('MEMBER')")
     public List<FileDTO> uploadFile(List<FileDTO> dtos) {
         List<File> files = fileMapper.fromDTOs(dtos);
         return fileMapper.toDTOs(files);

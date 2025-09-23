@@ -6,12 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.api.dto.BaseDTO;
-import net.blueshell.api.validation.group.Administration;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.group.Creation;
-import net.blueshell.api.validation.group.Update;
 import net.blueshell.api.validation.user.UniqueUser;
-import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

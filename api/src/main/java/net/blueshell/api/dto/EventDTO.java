@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
 
 import java.util.List;

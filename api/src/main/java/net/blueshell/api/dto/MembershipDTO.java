@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.validation.date.Today;
 import net.blueshell.api.validation.group.Administration;

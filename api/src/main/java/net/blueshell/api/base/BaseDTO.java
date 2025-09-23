@@ -1,4 +1,4 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.base;
 
 import java.io.Serializable;
 

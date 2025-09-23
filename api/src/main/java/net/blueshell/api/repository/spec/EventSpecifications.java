@@ -1,9 +1,9 @@
-package net.blueshell.api.specification;
+package net.blueshell.api.repository.spec;
 
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.SetJoin;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.filter.EventFilter;
+import net.blueshell.api.controller.filter.EventFilter;
 import net.blueshell.api.model.Committee;
 import net.blueshell.api.model.CommitteeMember;
 import net.blueshell.api.model.Event;

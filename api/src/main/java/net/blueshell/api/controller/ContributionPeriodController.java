@@ -1,6 +1,7 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.ContributionPeriodDTO;
@@ -25,11 +26,13 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     }
 
     @GetMapping("/contributionPeriods")
+    @PermitAll
     public List<ContributionPeriodDTO> findContributionPeriods() {
         return mapper.toDTOs(service.findAll());
     }
 
     @GetMapping("/contributionPeriods/current")
+    @PermitAll
     public ContributionPeriodDTO findCurrentContributionPeriod() {
         var contributionPeriod = service.findLatest();
         return mapper.toDTO(contributionPeriod);

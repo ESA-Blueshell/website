@@ -5,6 +5,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.base.BaseDTO;
 
 import java.time.LocalDate;
 

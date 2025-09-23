@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 import org.jetbrains.annotations.NotNull;
 

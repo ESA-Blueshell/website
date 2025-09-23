@@ -8,6 +8,7 @@ import net.blueshell.api.model.Redirect;
 import net.blueshell.api.service.RedirectService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -24,17 +25,20 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     }
 
     @PostMapping("/telemetry/redirect")
+    @PreAuthorize("hasAuthority('BOARD')")
     public String createRedirect(@RequestParam("id") String telemetryId) {
         return service.createRedirect(UUID.fromString(telemetryId));
     }
 
     @DeleteMapping("/telemetry/redirect")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('BOARD')")
     public void deleteRedirect(@RequestParam("id") String telemetryId) {
         service.delete(UUID.fromString(telemetryId));
     }
 
     @GetMapping("/telemetry/redirects")
+    @PreAuthorize("hasAuthority('BOARD')")
     public List<RedirectDTO> findRedirects(
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             @RequestParam(required = false) OffsetDateTime from,
@@ -52,6 +56,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     }
 
     @GetMapping("/telemetry/redirects/dashboard")
+    @PreAuthorize("hasAuthority('BOARD')")
     public ModelAndView getDashboard() {
         return new ModelAndView("index");
     }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.base.BaseDTO;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

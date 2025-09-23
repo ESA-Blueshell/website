@@ -1,4 +1,4 @@
-package net.blueshell.api.filter;
+package net.blueshell.api.controller.filter;
 
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;

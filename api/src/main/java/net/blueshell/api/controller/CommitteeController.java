@@ -1,11 +1,12 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
@@ -29,6 +30,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     }
 
     @GetMapping("/committeeMembers/committees")
+    @PermitAll
     public List<? extends BaseDTO> findCommitteesForCurrentUser() {
         if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll());
@@ -39,6 +41,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     }
 
     @GetMapping("/committees")
+    @PermitAll
     public List<? extends BaseDTO> findCommittees() {
         if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll());

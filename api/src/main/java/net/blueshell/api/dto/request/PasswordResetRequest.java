@@ -1,19 +1,20 @@
 package net.blueshell.api.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.request.ValidPasswordResetRequest;
 import net.blueshell.api.validation.user.ExistingUsername;
-import net.blueshell.api.validation.request.ValidMemberActivationRequest;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ValidPasswordResetRequest
+@Schema(name = "PasswordResetRequest")
 public class PasswordResetRequest extends BaseDTO {
 
     @NotBlank

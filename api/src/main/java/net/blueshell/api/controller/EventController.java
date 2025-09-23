@@ -1,12 +1,12 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventDTO;
-import net.blueshell.api.filter.EventFilter;
+import net.blueshell.api.controller.filter.EventFilter;
 import net.blueshell.api.mapper.EventMapper;
-import net.blueshell.api.model.Event;
 import net.blueshell.api.service.EventService;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +51,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
     }
 
     @GetMapping("/events")
+    @PermitAll
     public Page<EventDTO> findEvents(@ParameterObject Pageable pageable, @ParameterObject EventFilter filter) {
         var events = service.findByFilter(pageable, filter);
         return mapper.toDTOs(events);

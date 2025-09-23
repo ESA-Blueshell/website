@@ -1,18 +1,20 @@
 package net.blueshell.api.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.api.dto.BaseDTO;
+import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.user.UniqueUsername;
 import net.blueshell.api.validation.request.ValidMemberActivationRequest;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ValidMemberActivationRequest
+@Schema(name = "MemberActivationRequest")
 public class MemberActivationRequest extends BaseDTO {
 
     @NotBlank

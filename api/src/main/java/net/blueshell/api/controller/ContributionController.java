@@ -46,9 +46,9 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributions")
-    public Stream<ContributionDTO> findContributions(@RequestParam(required = false) Long contributionPeriodId) {
+    public List<ContributionDTO> findContributions(@RequestParam(required = false) Long contributionPeriodId) {
         var contributions = service.findByContributionPeriodId(contributionPeriodId);
-        return mapper.toDTOs(contributions.stream());
+        return mapper.toDTOs(contributions);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

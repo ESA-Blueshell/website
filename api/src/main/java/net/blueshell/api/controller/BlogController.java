@@ -1,6 +1,7 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
@@ -43,11 +44,13 @@ public class BlogController extends BaseController<BlogService, BlogMapper> {
     }
 
     @GetMapping("/blogs")
+    @PermitAll
     public List<BlogDTO> findBlogs() {
         return mapper.toDTOs(service.findAll());
     }
 
     @GetMapping("/blogs/{id}")
+    @PermitAll
     public BlogDTO findBlogById(@PathVariable UUID id) {
         return mapper.toDTO(service.findById(id));
     }

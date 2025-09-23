@@ -1,6 +1,7 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.auth.JWTAuthBase;
 import net.blueshell.api.auth.JwtTokenUtil;
@@ -15,6 +16,7 @@ import net.blueshell.api.mapper.activation.UserActivationRequestMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
@@ -55,6 +57,7 @@ public class AuthenticationController extends JWTAuthBase {
 
 
     @PostMapping("/auth/user/activate")
+    @PermitAll
     public void userActivate(@Validated @RequestBody UserActivationRequest request) {
         var user = users.findByUsername(request.getUsername());
         userActivationMapper.fromDTO(request, user);
@@ -62,6 +65,7 @@ public class AuthenticationController extends JWTAuthBase {
     }
 
     @PostMapping("/auth/member/activate")
+    @PermitAll
     public void memberActivate(@Validated @RequestBody MemberActivationRequest request) {
         var user = users.findByUsername(request.getUsername());
         memberActivationMapper.fromDTO(request, user);
@@ -69,6 +73,7 @@ public class AuthenticationController extends JWTAuthBase {
     }
 
     @PostMapping("/auth/password/reset")
+    @PermitAll
     public void resetPassword(@Validated @RequestBody PasswordResetRequest request) {
         var user = users.findByUsername(request.getUsername());
         passwordResetMapper.fromDTO(request, user);
@@ -76,6 +81,7 @@ public class AuthenticationController extends JWTAuthBase {
     }
 
     @PostMapping("/auth")
+    @PermitAll
     public AuthenticationDTO authenticate(@Validated @RequestBody JwtRequest authenticationRequest) {
         authenticate(
                 authenticationRequest.getUsername(),

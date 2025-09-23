@@ -1,6 +1,7 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
@@ -32,6 +33,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping("/users")
+    @PermitAll
     public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
         service.create(user);
@@ -39,6 +41,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping("/users/member")
+    @PermitAll
     public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
         service.create(user);
@@ -46,6 +49,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping("/users/guest")
+    @PermitAll
     public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
         var user = simpleMapper.fromDTO(dto);
         service.create(user);

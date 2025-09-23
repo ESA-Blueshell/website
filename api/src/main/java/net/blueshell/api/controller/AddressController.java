@@ -26,7 +26,7 @@ public class AddressController extends BaseController<AddressService, AddressMap
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.userId, 'User', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     public AddressDTO createAddress(@Valid @RequestBody AddressDTO dto) {
         Address address = mapper.fromDTO(dto);

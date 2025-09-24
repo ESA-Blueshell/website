@@ -9,7 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EventPermission extends BasePermissionEvaluator<Event, Long, EventService> {
+public class EventPermission extends BasePermissionEvaluator<Event, EventService> {
 
     @Autowired
     public EventPermission(EventService service) {

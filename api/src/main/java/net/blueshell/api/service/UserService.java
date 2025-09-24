@@ -1,6 +1,7 @@
 package net.blueshell.api.service;
 
 import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
@@ -15,8 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
-public class UserService extends BaseModelService<User, Long, UserRepository> implements UserDetailsService {
+public class UserService extends BaseModelService<User, UserRepository> implements UserDetailsService {
 
     @Autowired
     public UserService(UserRepository repository) {
@@ -58,7 +60,7 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
 
     @Transactional
     public User toggleRole(Long id, Role role) {
-        User user = self().findById(id);
+        var user = self().findById(id);
 
         if (user.hasRole(role)) {
             user.removeRole(role);
@@ -70,8 +72,8 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     @Transactional
-    public void addRole(User user, Role role) {
-        System.out.println("Add role: in user service" + role);
+    public void addRole(Long id, Role role) {
+        var user = self().findById(id);
         if (!user.hasRole(role)) {
             user.addRole(role);
             self().update(user);
@@ -79,7 +81,8 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     @Transactional
-    public void removeRole(User user, Role role) {
+    public void removeRole(Long id, Role role) {
+        var user = self().findById(id);
         if (user.hasRole(role)) {
             user.removeRole(role);
             self().update(user);

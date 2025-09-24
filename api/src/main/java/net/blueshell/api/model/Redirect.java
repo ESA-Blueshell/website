@@ -17,11 +17,11 @@ import java.util.UUID;
 @SQLRestriction("deleted_at IS NULL")
 @Data
 @NoArgsConstructor
-public class Redirect implements BaseModel<UUID> {
+public class Redirect implements BaseModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "telemetry_id")

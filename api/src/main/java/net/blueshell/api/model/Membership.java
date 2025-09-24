@@ -18,14 +18,14 @@ import java.util.Set;
 @SQLRestriction("deleted_at IS NULL")
 @Data
 @EntityListeners(JpaListener.class)
-public class Membership implements BaseModel<Long> {
+public class Membership implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @ToString.Exclude
     private User user;
 

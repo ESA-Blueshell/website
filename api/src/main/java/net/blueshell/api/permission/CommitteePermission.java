@@ -9,7 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CommitteePermission extends BasePermissionEvaluator<Committee, Long, CommitteeService> {
+public class CommitteePermission extends BasePermissionEvaluator<Committee, CommitteeService> {
 
     @Autowired
     public CommitteePermission(CommitteeService service) {

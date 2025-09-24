@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SponsorRepository extends BaseRepository<Sponsor, Long> {
+public interface SponsorRepository extends BaseRepository<Sponsor> {
     Optional<Sponsor> findByPicture(File picture);
 }

@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Data
 @SQLDelete(sql = "UPDATE committees SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class Committee implements BaseModel<Long> {
+public class Committee implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

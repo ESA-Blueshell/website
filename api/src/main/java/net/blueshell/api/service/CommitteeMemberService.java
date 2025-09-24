@@ -6,7 +6,7 @@ import net.blueshell.api.repository.CommitteeMemberRepository;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CommitteeMemberService extends BaseModelService<CommitteeMember, Long, CommitteeMemberRepository> {
+public class CommitteeMemberService extends BaseModelService<CommitteeMember, CommitteeMemberRepository> {
 
     public CommitteeMemberService(CommitteeMemberRepository repository) {
         super(repository);

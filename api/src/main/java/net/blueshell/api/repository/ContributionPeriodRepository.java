@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ContributionPeriodRepository extends BaseRepository<ContributionPeriod, Long> {
+public interface ContributionPeriodRepository extends BaseRepository<ContributionPeriod> {
     @Query("SELECT cp FROM ContributionPeriod cp " +
             "WHERE cp.startDate <= CURRENT_DATE " +
             "ORDER BY CASE WHEN CURRENT_DATE BETWEEN cp.startDate AND cp.endDate THEN 0 ELSE 1 END, cp.startDate DESC " +

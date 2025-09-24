@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SponsorService extends BaseModelService<Sponsor, Long, SponsorRepository> {
+public class SponsorService extends BaseModelService<Sponsor, SponsorRepository> {
 
     @Autowired
     public SponsorService(SponsorRepository repository, ApplicationEventPublisher events) {

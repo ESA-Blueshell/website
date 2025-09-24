@@ -1,7 +1,7 @@
 CREATE TABLE redirects
 (
-    id           BINARY(16) NOT NULL,
-    telemetry_id BINARY(16) NULL,
+    id           bigint   not null auto_increment,
+    telemetry_id bigint NULL,
     created_at   datetime   NULL,
     deleted_at   datetime   NULL,
     CONSTRAINT pk_redirects PRIMARY KEY (id)
@@ -9,7 +9,7 @@ CREATE TABLE redirects
 
 CREATE TABLE telemetries
 (
-    id         BINARY(16)   NOT NULL,
+    id         bigint   not null auto_increment,
     url        VARCHAR(255) NULL,
     platform   SMALLINT     NULL,
     created_at datetime     NULL,

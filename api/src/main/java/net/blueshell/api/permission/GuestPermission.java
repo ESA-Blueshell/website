@@ -10,7 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GuestPermission extends BasePermissionEvaluator<Guest, Long, GuestService> {
+public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService> {
 
 
     @Autowired

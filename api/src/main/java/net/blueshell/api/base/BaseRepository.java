@@ -9,5 +9,5 @@ import org.springframework.data.repository.NoRepositoryBean;
  * All entity-specific repositories can extend this interface.
  */
 @NoRepositoryBean
-public interface BaseRepository<T, ID> extends JpaRepository<T, ID>, JpaSpecificationExecutor<T> {
+public interface BaseRepository<T> extends JpaRepository<T, Long>, JpaSpecificationExecutor<T> {
 }

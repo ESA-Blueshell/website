@@ -14,19 +14,17 @@ import java.util.UUID;
 @SQLDelete(sql = "UPDATE blogs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
-public class Blog implements BaseModel<UUID> {
+public class Blog implements BaseModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @Column(name = "title")
     private String title;
 
-    private String text;
-
+    @Column(name = "html")
     private String html;
-
-    private String markdown;
 
     @Column(name = "published_at")
     private Timestamp publishedAt;

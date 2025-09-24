@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class MembershipService extends BaseModelService<Membership, Long, MemberRepository> {
+public class MembershipService extends BaseModelService<Membership, MemberRepository> {
 
     @Autowired
     public MembershipService(MemberRepository repository, ApplicationEventPublisher events) {

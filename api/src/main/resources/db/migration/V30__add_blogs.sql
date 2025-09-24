@@ -1,6 +1,6 @@
 CREATE TABLE blogs
 (
-    id           VARCHAR(36)   NOT NULL,
+    id           bigint   not null auto_increment,
     title        VARCHAR(255) NULL,
     text         MEDIUMTEXT   NULL,
     html         MEDIUMTEXT   NULL,

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface EventSignUpRepository extends BaseRepository<EventSignUp, Long> {
+public interface EventSignUpRepository extends BaseRepository<EventSignUp> {
 
     Optional<EventSignUp> findByUserIdAndEventId(Long userId, Long event);
 

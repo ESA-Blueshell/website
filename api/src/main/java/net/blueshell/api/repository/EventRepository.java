@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface EventRepository extends BaseRepository<Event, Long> {
+public interface EventRepository extends BaseRepository<Event> {
 
     @NotNull
     @Query("SELECT e FROM Event e ORDER BY e.startTime DESC")

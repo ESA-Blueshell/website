@@ -6,5 +6,5 @@ import net.blueshell.api.model.Address;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AddressRepository extends BaseRepository<Address, Long> {
+public interface AddressRepository extends BaseRepository<Address> {
 }

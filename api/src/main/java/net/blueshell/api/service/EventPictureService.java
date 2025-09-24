@@ -8,7 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EventPictureService extends BaseModelService<EventPicture, Long, EventPictureRepository> {
+public class EventPictureService extends BaseModelService<EventPicture, EventPictureRepository> {
 
     @Autowired
     public EventPictureService(EventPictureRepository repository, ApplicationEventPublisher events) {

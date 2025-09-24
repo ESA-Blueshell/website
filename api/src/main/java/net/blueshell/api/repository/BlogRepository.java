@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface BlogRepository extends BaseRepository<Blog, UUID> {
+public interface BlogRepository extends BaseRepository<Blog> {
 
     @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Blog n ORDER BY n.publishedAt DESC")

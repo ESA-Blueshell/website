@@ -16,10 +16,10 @@ import java.util.List;
 @Component
 public class CompositePermissionEvaluator extends IdentityProvider implements PermissionEvaluator {
 
-    private final List<BasePermissionEvaluator<?, ?, ?>> evaluators;
+    private final List<BasePermissionEvaluator<?, ?>> evaluators;
 
     @Autowired
-    public CompositePermissionEvaluator(List<BasePermissionEvaluator<?, ?, ?>> evaluators) {
+    public CompositePermissionEvaluator(List<BasePermissionEvaluator<?, ?>> evaluators) {
         this.evaluators = evaluators;
     }
 

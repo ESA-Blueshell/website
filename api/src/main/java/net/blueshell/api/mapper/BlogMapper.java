@@ -1,6 +1,5 @@
 package net.blueshell.api.mapper;
 
-import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.dto.FileDTO;
@@ -22,6 +21,8 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
 
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "title")
+    @Mapping(target = "publishedAt")
     public abstract Blog fromDTO(BlogDTO dto, @MappingTarget Blog blog);
 
     @AfterMapping
@@ -29,36 +30,22 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
         String content = dto.getHtml();
         if (content != null && !content.trim().isEmpty()) {
             Document doc = Jsoup.parse(content);
-
-            // Remove unwanted elements: any divs containing an unsubscribe link
-            // (adjust the selector as needed if the structure differs).
             doc.select("div:has(a:contains(Unsubscribe))").remove();
-
-            // Extract plain text from the updated document.
-            String plainText = doc.select("body").text();
-            String title = extractTitle(doc);
-
-            // Minify HTML: remove extra whitespace between HTML tags,
-            // replacing ">\s+<" with "><". This preserves necessary spacing within text nodes.
             String minifiedHtml = doc.html().replaceAll(">\\s+<", "><").trim();
-
-            blog.setTitle(title);
             blog.setHtml(minifiedHtml);
-            blog.setText(plainText);
         }
     }
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "title")
+    @Mapping(target = "html")
+    @Mapping(target = "publishedAt")
     public abstract BlogDTO toDTO(Blog blog);
 
     @AfterMapping
     protected void afterToDTO(BlogDTO dto, @MappingTarget Blog blog) {
-        dto.setUrl(frontendUrl + "/blogs/" + blog.getId());
-    }
-
-    private String generateMarkdown(String content) {
-        FlexmarkHtmlConverter converter = FlexmarkHtmlConverter.builder().build();
-        return converter.convert(content);
+        dto.setUrl("%s/blogs/%s".formatted(frontendUrl, blog.getId()));
     }
 
     /**

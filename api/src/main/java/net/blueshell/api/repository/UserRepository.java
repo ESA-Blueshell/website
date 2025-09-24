@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends BaseRepository<User, Long> {
+public interface UserRepository extends BaseRepository<User> {
 
     Optional<User> findByUsername(String username);
 

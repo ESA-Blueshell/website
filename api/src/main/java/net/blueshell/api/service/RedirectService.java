@@ -1,5 +1,6 @@
 package net.blueshell.api.service;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.Redirect;
 import net.blueshell.api.model.Telemetry;
@@ -15,10 +16,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class RedirectService extends BaseModelService<Redirect, UUID, RedirectRepository> {
+@Slf4j
+public class RedirectService extends BaseModelService<Redirect, RedirectRepository> {
     private final TelemetryService telemetryService;
     private final WebSocketMessageService webSocketMessageService;
-    final Logger logger = LoggerFactory.getLogger(RedirectService.class);
 
     @Autowired
     public RedirectService(RedirectRepository repository,  TelemetryService telemetryService,
@@ -29,18 +30,18 @@ public class RedirectService extends BaseModelService<Redirect, UUID, RedirectRe
     }
 
     @Transactional
-    public String createRedirect(UUID telemetryId) {
-        logger.info("TL Creating redirect for telemetry");
+    public String createRedirect(Long telemetryId) {
+        log.info("TL Creating redirect for telemetry");
         Telemetry telemetry = telemetryService.findById(telemetryId);
         Redirect newRedirect = new Redirect(telemetry);
-        logger.info("TL Created redirect for telemetry: {}", telemetry.getId());
+        log.info("TL Created redirect for telemetry: {}", telemetry.getId());
         self().create(newRedirect);
 
         List<Redirect> redirects = self().findAll();
-        logger.info("TL Found all redirects");
+        log.info("TL Found all redirects");
         webSocketMessageService.sendMessage("/clicks/updates", redirects);
 
-        return "redirect:" + telemetry.getUrl();
+        return "redirect:%s".formatted(telemetry.getUrl());
     }
 
     public List<Redirect> findCreatedAtBetween(OffsetDateTime from, OffsetDateTime to) {

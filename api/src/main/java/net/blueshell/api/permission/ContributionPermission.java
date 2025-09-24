@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 @Component
-public class ContributionPermission extends BasePermissionEvaluator<Contribution, Long, ContributionService> {
+public class ContributionPermission extends BasePermissionEvaluator<Contribution, ContributionService> {
 
     @Autowired
     public ContributionPermission(ContributionService service) {

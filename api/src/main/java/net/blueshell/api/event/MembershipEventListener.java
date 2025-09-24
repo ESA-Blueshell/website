@@ -42,7 +42,7 @@ public class MembershipEventListener {
     public void onUpdate(PostUpdateEvent<Membership> evt) {
         Membership m = evt.getSource();
         if (m.getEndDate() != null) {
-            users.removeRole(m.getUser(), Role.MEMBER);
+            users.removeRole(m.getUserId(), Role.MEMBER);
         }
     }
 
@@ -50,6 +50,6 @@ public class MembershipEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Membership> evt) {
         Membership m = evt.getSource();
-        users.removeRole(m.getUser(), Role.MEMBER);
+        users.removeRole(m.getUserId(), Role.MEMBER);
     }
 }

@@ -16,21 +16,21 @@ import java.util.Objects;
 @SQLDelete(sql = "UPDATE committee_members SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @EntityListeners(JpaListener.class)
-public class CommitteeMember implements BaseModel<Long> {
+public class CommitteeMember implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false) // allow Hibernate to write FK
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false, insertable = false)
     private User user;
 
-    @Column(name = "user_id", updatable = false, insertable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "committee_id", nullable = false) // allow Hibernate to write FK
+    @JoinColumn(name = "committee_id", nullable = false)
     private Committee committee;
 
     @Column(name = "deleted_at")
@@ -53,7 +53,7 @@ public class CommitteeMember implements BaseModel<Long> {
         }
 
         // Transient entities: compare the natural/business key
-        return Objects.equals(user, other.user) &&
+        return Objects.equals(userId, other.userId) &&
                 Objects.equals(committee, other.committee);
     }
 
@@ -63,12 +63,12 @@ public class CommitteeMember implements BaseModel<Long> {
         if (id != null) return 31 + id.hashCode();
 
         // Transient entities: use the business key
-        return Objects.hash(user, committee);
+        return Objects.hash(userId, committee);
     }
 
     @Override
     public String toString() {
         return String.format("CommitteeMember={id: %d, userId: %d, committeeId: %d, role: %s}",
-                id, getUser() != null ? getUser().getId() : null, getCommittee() != null ? getCommittee().getId() : null, role);
+                id, getUser() != null ? getUser().getId() : getUserId(), getCommittee() != null ? getCommittee().getId() : null, role);
     }
 }

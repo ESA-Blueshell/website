@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class CommitteeService extends BaseModelService<Committee, Long, CommitteeRepository> {
+public class CommitteeService extends BaseModelService<Committee, CommitteeRepository> {
 
     @Autowired
     public CommitteeService(CommitteeRepository repository, ApplicationEventPublisher events) {

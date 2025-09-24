@@ -1,6 +1,7 @@
 package net.blueshell.api.mapper.committee;
 
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.CommitteeMemberMapper;
@@ -14,45 +15,34 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Mapper(
         componentModel = "spring",
         uses = {CommitteeMemberMapper.class},
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
 public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, AdvancedCommitteeDTO> {
-
-    @Autowired
-    protected CommitteeMemberMapper memberMapper;
-
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "members")
     public abstract Committee fromDTO(AdvancedCommitteeDTO dto, @MappingTarget Committee committee);
 
     @AfterMapping
-    protected void afterFromDTO(AdvancedCommitteeDTO dto, @MappingTarget Committee committee) {
-
-        if (dto.getMembers() == null) {
-            committee.setMembers(new HashSet<>());
-            return;
+    protected void wireBackRefs(AdvancedCommitteeDTO dto, @MappingTarget Committee committee) {
+        if (committee.getMembers() != null) {
+            log.info("Committee members map: {}", committee.getMembers());
+            log.info("Committee members map dto: {}", dto.getMembers());
+            for (CommitteeMember m : committee.getMembers()) {
+                m.setCommittee(committee);
+            }
         }
-
-        Set<CommitteeMember> members = memberMapper.fromDTOs(dto.getMembers())
-                .stream()
-                .peek(cm -> cm.setCommittee(committee))
-                .collect(Collectors.toSet());
-
-        committee.setMembers(members);
     }
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "members")
     public abstract AdvancedCommitteeDTO toDTO(Committee committee);
-
-    @AfterMapping
-    protected void afterToDTO(Committee committee,
-                              @MappingTarget AdvancedCommitteeDTO dto) {
-        if (committee.getMembers() != null) {
-            dto.setMembers(
-                    memberMapper.toDTOs(new ArrayList<>(committee.getMembers()))
-            );
-        }
-    }
 }

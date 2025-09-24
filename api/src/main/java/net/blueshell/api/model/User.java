@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @SQLRestriction("deleted_at IS NULL")
 @Data
 @EntityListeners(JpaListener.class)
-public class User implements UserDetails, BaseModel<Long> {
+public class User implements UserDetails, BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -114,7 +114,7 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column
     private String nationality;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture", insertable = false, updatable = false)
     @JsonIgnore
     private File profilePicture;
@@ -145,7 +145,7 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column(name = "bhv")
     private boolean bhv = false;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @JsonIgnore
     private Set<Contribution> contributions;
@@ -154,7 +154,7 @@ public class User implements UserDetails, BaseModel<Long> {
     @ToString.Exclude
     private Membership membership;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
     @JsonIgnore
     @ToString.Exclude

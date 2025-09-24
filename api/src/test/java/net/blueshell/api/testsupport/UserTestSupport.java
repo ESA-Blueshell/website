@@ -61,7 +61,8 @@ public abstract class UserTestSupport {
         user.setEnabled(true);
         user.setResetType(null);
         user.addRole(role);
-        return userRepository.save(user);
+        userRepository.save(user);
+        return user;
     }
 
     /**

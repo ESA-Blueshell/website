@@ -5,5 +5,5 @@ import net.blueshell.api.model.CommitteeMember;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CommitteeMemberRepository extends BaseRepository<CommitteeMember, Long> {
+public interface CommitteeMemberRepository extends BaseRepository<CommitteeMember> {
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class UserPermission extends BasePermissionEvaluator<User, Long, UserService> {
+public class UserPermission extends BasePermissionEvaluator<User, UserService> {
 
     @Autowired
     public UserPermission(UserService service) {

@@ -26,7 +26,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class FileService extends BaseModelService<File, Long, FileRepository> {
+public class FileService extends BaseModelService<File, FileRepository> {
 
     private final Path rootLocation;
     private final Path assetsLocation = Paths.get("assets");

@@ -80,10 +80,10 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
         return advancedMapper.toDTO(committee);
     }
 
-    @PreAuthorize("hasPermission(#committeeId, 'Committee', 'delete')")
-    @DeleteMapping(value = "/committees/{committeeId}")
+    @PreAuthorize("hasAuthority('BOARD')")
+    @DeleteMapping(value = "/committees/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCommitteeById(@PathVariable("committeeId") Long committeeId) {
-        service.delete(committeeId);
+    public void deleteCommitteeById(@PathVariable("id") Long id) {
+        service.delete(id);
     }
 }

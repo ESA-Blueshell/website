@@ -13,8 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.Long;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -36,7 +36,7 @@ public class BlogController extends BaseController<BlogService, BlogMapper> {
 
     @PostMapping("/blogs/{:id}")
     @PreAuthorize("hasAuthority('BOARD')")
-    public BlogDTO updateBlog(@PathVariable("id") UUID id, @Valid @RequestBody BlogDTO dto) {
+    public BlogDTO updateBlog(@PathVariable("id") Long id, @Valid @RequestBody BlogDTO dto) {
         var blog = service.findById(id);
         mapper.fromDTO(dto, blog);
         service.create(blog);
@@ -51,14 +51,14 @@ public class BlogController extends BaseController<BlogService, BlogMapper> {
 
     @GetMapping("/blogs/{id}")
     @PermitAll
-    public BlogDTO findBlogById(@PathVariable UUID id) {
+    public BlogDTO findBlogById(@PathVariable Long id) {
         return mapper.toDTO(service.findById(id));
     }
 
     @DeleteMapping("/blogs/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteById(@PathVariable UUID id) {
+    public void deleteById(@PathVariable Long id) {
         service.delete(id);
     }
 }

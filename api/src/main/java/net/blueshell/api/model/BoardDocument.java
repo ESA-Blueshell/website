@@ -11,7 +11,7 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at IS NULL")
 @SQLDelete(sql = "UPDATE board_documents SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
-public class BoardDocument implements BaseModel<Long> {
+public class BoardDocument implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

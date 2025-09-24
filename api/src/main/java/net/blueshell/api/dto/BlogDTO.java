@@ -14,13 +14,12 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "Blog")
 public class BlogDTO extends BaseDTO {
-    private UUID id;
+    private Long id;
     private String url;
     @NotBlank
     private String title;
-    private String text;
+    @NotBlank
     private String html;
-    private String markdown;
     private Timestamp publishedAt;
 }
 

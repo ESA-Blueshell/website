@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Service
-public class ContributionService extends BaseModelService<Contribution, Long, ContributionRepository> {
+public class ContributionService extends BaseModelService<Contribution, ContributionRepository> {
 
     private final ContributionPeriodService periodService;
     private final EmailService emails;

@@ -15,12 +15,13 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Mapping(target = "fullName", expression = "java(user.getFullName())")
-    @Mapping(target = "id")
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "fullName", expression = "java(user.getFullName())")
     public abstract SimpleUserDTO toDTO(User user);
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
     public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
 
     @AfterMapping

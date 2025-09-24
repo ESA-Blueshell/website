@@ -17,7 +17,7 @@ import java.util.List;
 @Data
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class EventSignUp implements BaseModel<Long> {
+public class EventSignUp implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

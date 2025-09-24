@@ -5,5 +5,5 @@ import net.blueshell.api.model.EventPicture;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EventPictureRepository extends BaseRepository<EventPicture, Long> {
+public interface EventPictureRepository extends BaseRepository<EventPicture> {
 }

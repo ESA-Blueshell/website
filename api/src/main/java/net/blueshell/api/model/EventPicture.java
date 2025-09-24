@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 @Data
 @SQLDelete(sql = "UPDATE event_pictures SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class EventPicture implements BaseModel<Long> {
+public class EventPicture implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

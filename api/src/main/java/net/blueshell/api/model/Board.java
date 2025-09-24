@@ -14,7 +14,7 @@ import java.util.Set;
 @SQLRestriction("deleted_at IS NULL")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
-public class Board implements BaseModel<Long> {
+public class Board implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

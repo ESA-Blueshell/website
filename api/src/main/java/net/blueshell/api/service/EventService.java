@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class EventService extends BaseModelService<Event, Long, EventRepository> {
+public class EventService extends BaseModelService<Event, EventRepository> {
 
     @Autowired
     public EventService(EventRepository repository) {

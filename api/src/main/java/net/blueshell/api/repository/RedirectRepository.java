@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface RedirectRepository extends BaseRepository<Redirect, UUID> {
+public interface RedirectRepository extends BaseRepository<Redirect> {
 
     @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")

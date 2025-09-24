@@ -18,11 +18,11 @@ import java.util.UUID;
 @SQLRestriction("deleted_at IS NULL")
 @Data
 @NoArgsConstructor
-public class Telemetry implements BaseModel<UUID> {
+public class Telemetry implements BaseModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String url;
 

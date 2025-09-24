@@ -27,7 +27,7 @@ public class TelemetryController extends BaseController<TelemetryService, Teleme
 
     @GetMapping("/telemetry/{id}")
     @PermitAll
-    public TelemetryDTO findTelemetryById(@PathVariable UUID id) {
+    public TelemetryDTO findTelemetryById(@PathVariable Long id) {
         Telemetry telemetry = service.findById(id);
         return mapper.toDTO(telemetry);
     }

@@ -26,15 +26,15 @@ public class RedirectController extends BaseController<RedirectService, Redirect
 
     @PostMapping("/telemetry/redirect")
     @PreAuthorize("hasAuthority('BOARD')")
-    public String createRedirect(@RequestParam("id") String telemetryId) {
-        return service.createRedirect(UUID.fromString(telemetryId));
+    public String createRedirect(@RequestParam("id") Long telemetryId) {
+        return service.createRedirect(telemetryId);
     }
 
     @DeleteMapping("/telemetry/redirect")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('BOARD')")
-    public void deleteRedirect(@RequestParam("id") String telemetryId) {
-        service.delete(UUID.fromString(telemetryId));
+    public void deleteRedirect(@RequestParam("id") Long telemetryId) {
+        service.delete(telemetryId);
     }
 
     @GetMapping("/telemetry/redirects")

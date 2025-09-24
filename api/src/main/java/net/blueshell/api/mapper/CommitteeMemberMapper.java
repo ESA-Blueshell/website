@@ -1,40 +1,43 @@
 package net.blueshell.api.mapper;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.CommitteeMemberDTO;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.CommitteeService;
 import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@Slf4j
 @Mapper(componentModel = "spring", uses = {SimpleUserMapper.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, CommitteeMemberDTO> {
 
     @Autowired
-    protected SimpleUserMapper simpleUserMapper;
-    @Autowired
-    protected UserService userService;
+    private CommitteeMemberService committeeMemberService;
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "role")
+    @Mapping(target = "user")
+    @Mapping(target = "userId")
     public abstract CommitteeMemberDTO toDTO(CommitteeMember member);
 
-    @AfterMapping
-    protected void afterToDTO(CommitteeMember member, @MappingTarget CommitteeMemberDTO dto) {
-        if (member.getUser() != null) {
-            dto.setUser(simpleUserMapper.toDTO(member.getUser()));
+    @ObjectFactory
+    public CommitteeMember create(CommitteeMemberDTO dto) {
+        log.info("Creating committee member for dto mapping: {}", dto);
+        if (dto.getId() == null) {
+            return new CommitteeMember();
+        } else {
+            return committeeMemberService.findById(dto.getId());
         }
     }
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "role")
+    @Mapping(target = "userId")
     public abstract CommitteeMember fromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember member);
-
-    @AfterMapping
-    protected void afterFromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember entity) {
-        if (dto.getUserId() != null) {
-            var user = userService.findById(dto.getUserId());
-            entity.setUser(user);
-        }
-    }
 }

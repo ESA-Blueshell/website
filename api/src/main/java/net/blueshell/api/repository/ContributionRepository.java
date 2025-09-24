@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ContributionRepository extends BaseRepository<Contribution, Long> {
+public interface ContributionRepository extends BaseRepository<Contribution> {
 
     @Modifying
     @Query("DELETE FROM Contribution c WHERE c.contributionPeriod = :contributionPeriod")

@@ -1,5 +1,8 @@
 package net.blueshell.api.base;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.data.domain.Page;
@@ -27,21 +30,24 @@ import java.util.List;
  * {@code pre…} / {@code post…} hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).</p>
  */
+@Slf4j
 public abstract class BaseModelService<
-        T extends BaseModel<ID>,
-        ID,
-        R extends BaseRepository<T, ID>>
+        T extends BaseModel,
+        R extends BaseRepository<T>>
         extends IdentityProvider {
 
     protected final R repository;
+
+    @PersistenceContext
+    private EntityManager em;
 
     protected BaseModelService(R repository) {
         this.repository = repository;
     }
 
     @SuppressWarnings("unchecked")
-    protected BaseModelService<T, ID, R> self() {
-        return (BaseModelService<T, ID, R>) AopContext.currentProxy();
+    protected BaseModelService<T, R> self() {
+        return (BaseModelService<T, R>) AopContext.currentProxy();
     }
 
     /* -----------------------------------------------------------------
@@ -56,6 +62,7 @@ public abstract class BaseModelService<
     @Transactional
     public void create(T entity) {
         repository.saveAndFlush(entity);
+        em.refresh(entity);
     }
 
     /* -----------------------------------------------------------------
@@ -68,11 +75,13 @@ public abstract class BaseModelService<
      */
     @Transactional
     public void update(T entity) {
-        ID id = entity.getId();
+        var id = entity.getId();
         if (id == null || !repository.existsById(id)) {
-            throw new ResourceNotFoundException("Entity not found with id: " + id);
+            throw new ResourceNotFoundException("Entity not found with id: %s".formatted(id));
         }
         repository.saveAndFlush(entity);
+        log.info("Entity: {}", entity);
+        em.refresh(entity);
     }
 
     /**
@@ -95,7 +104,7 @@ public abstract class BaseModelService<
      * @throws ResourceNotFoundException if not present
      */
     @Transactional(readOnly = true)
-    public T findById(ID id) {
+    public T findById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Resource not found with id: " + id));
@@ -123,7 +132,7 @@ public abstract class BaseModelService<
      * primary-key order).</p>
      */
     @Transactional(readOnly = true)
-    public List<T> findAllById(List<ID> ids) {
+    public List<T> findAllById(List<Long> ids) {
         return repository.findAllById(ids);
     }
 
@@ -137,7 +146,7 @@ public abstract class BaseModelService<
             throw new UnsupportedOperationException("Repository does not support Specifications");
         }
         @SuppressWarnings("unchecked")
-        Page<T> result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo)
+        var result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo)
                 .findAll(spec, pageable);
         return result;
     }
@@ -150,8 +159,8 @@ public abstract class BaseModelService<
      * Delete the entity with the given primary key
      */
     @Transactional
-    public void delete(ID id) {
-        T entity = self().findById(id);
+    public void delete(Long id) {
+        var entity = self().findById(id);
         self().delete(entity);
     }
 

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class GuestService extends BaseModelService<Guest, Long, GuestRepository> {
+public class GuestService extends BaseModelService<Guest, GuestRepository> {
 
     @Autowired
     public GuestService(GuestRepository repository, ApplicationEventPublisher events) {

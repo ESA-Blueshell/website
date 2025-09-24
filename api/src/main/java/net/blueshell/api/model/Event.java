@@ -25,7 +25,7 @@ import java.util.Set;
 @SQLDelete(sql = "UPDATE events SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @EntityListeners(JpaListener.class)
-public class Event implements BaseModel<Long> {
+public class Event implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

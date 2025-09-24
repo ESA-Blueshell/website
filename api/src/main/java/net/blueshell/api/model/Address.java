@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 @SQLDelete(sql = "UPDATE addresses SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Data
-public class Address implements BaseModel<Long> {
+public class Address implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

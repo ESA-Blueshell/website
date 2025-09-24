@@ -18,9 +18,9 @@ spring:
 
 logging:
   level:
-    #    org.springframework.security: debug
-    #    org.springframework.expression: debug
-    #    org.springframework.web: debug
+    org.springframework.security: debug
+    org.springframework.expression: debug
+    org.springframework.web: debug
     org:
       hibernate:
         orm:

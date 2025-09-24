@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CommitteeRepository extends BaseRepository<Committee, Long> {
+public interface CommitteeRepository extends BaseRepository<Committee> {
     List<Committee> findALlByMembersUserIdEquals(Long userId);
 }

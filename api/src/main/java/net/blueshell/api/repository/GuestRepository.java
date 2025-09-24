@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface GuestRepository extends BaseRepository<Guest, Long> {
+public interface GuestRepository extends BaseRepository<Guest> {
 
     Optional<Guest> findByAccessToken(String accessToken);
 }

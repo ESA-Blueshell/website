@@ -25,25 +25,27 @@ public class CommitteeMemberEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void postInsert(PostPersistEvent<CommitteeMember> evt) {
+    public void postPersist(PostPersistEvent<CommitteeMember> evt) {
+        log.info("CommitteeMemberEventListener - postPersist");
         var c = evt.getSource();
-        users.addRole(c.getUser(), Role.COMMITTEE);
+        users.addRole(c.getUserId(), Role.COMMITTEE);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postUpdate(PostUpdateEvent<CommitteeMember> evt) {
+        log.info("CommitteeMemberEventListener - postUpdate");
         var c = evt.getSource();
-        users.addRole(c.getUser(), Role.COMMITTEE);
+        users.addRole(c.getUserId(), Role.COMMITTEE);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postDelete(PostRemoveEvent<CommitteeMember> evt) {
         var c = evt.getSource();
-        var u = c.getUser();
+        var u = users.findById(c.getUserId());
         if (u.getCommitteeMembers().isEmpty()) {
-            users.removeRole(c.getUser(), Role.COMMITTEE);
+            users.removeRole(c.getUserId(), Role.COMMITTEE);
         }
     }
 }

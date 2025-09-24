@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class EventSignUpService extends BaseModelService<EventSignUp, Long, EventSignUpRepository> {
+public class EventSignUpService extends BaseModelService<EventSignUp, EventSignUpRepository> {
 
     @Autowired
     public EventSignUpService(EventSignUpRepository repository) {

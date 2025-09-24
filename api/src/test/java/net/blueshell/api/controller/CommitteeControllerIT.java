@@ -43,11 +43,6 @@ class CommitteeControllerIT extends UserTestSupport {
     @Autowired
     private ObjectMapper mapper;
 
-    @Autowired
-    private CommitteeMemberService memberService;
-    @Autowired
-    private CommitteeService committeeService;
-
     private final Map<Role, User> userMap = new EnumMap<>(Role.class);
 
     @BeforeEach
@@ -58,17 +53,14 @@ class CommitteeControllerIT extends UserTestSupport {
 
     private Map<String, Object> examplePayload() {
         return Map.of(
-                "type", "AdvancedCommitteeDTO",
                 "name", "Test Committee",
                 "description", "A test committee for integration tests",
                 "members", List.of(
                         Map.of(
-                                "type", "CommitteeMemberDTO",
                                 "role", "Chair",
                                 "userId", userMap.get(Role.BOARD).getId()
                         ),
                         Map.of(
-                                "type", "CommitteeMemberDTO",
                                 "role", "Member",
                                 "userId", userMap.get(Role.MEMBER).getId()
                         )
@@ -165,15 +157,13 @@ class CommitteeControllerIT extends UserTestSupport {
         var member = userMap.get(Role.MEMBER);
 
         Map<String, Object> updatedPayload = Map.of(
-                "type", "AdvancedCommitteeDTO",
                 "name", "Updated Committee Name",
                 "description", "Updated description text",
                 "members", List.of(
                         Map.of(
-                                "type", "CommitteeMemberDTO",
+                                "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId(),
                                 "role", "Lead",
-                                "userId", board.getId(),
-                                "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId()
+                                "userId", board.getId()
                         )
                 )
         );

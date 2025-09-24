@@ -13,7 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FilePermission extends BasePermissionEvaluator<File, Long, FileService> {
+public class FilePermission extends BasePermissionEvaluator<File, FileService> {
 
     private final UserService userService;
     private final EventService eventService;

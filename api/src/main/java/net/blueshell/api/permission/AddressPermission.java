@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class AddressPermission extends BasePermissionEvaluator<Address, Long, AddressService> {
+public class AddressPermission extends BasePermissionEvaluator<Address, AddressService> {
 
     @Autowired
     public AddressPermission(AddressService service) {

@@ -57,7 +57,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     public EventSignUpDTO createEventSignup(@PathVariable("id") Long eventId, @Valid @RequestBody EventSignUpDTO dto) {
         dto.setEventId(eventId);
         var eventSignUp = mapper.fromDTO(dto);
-        service.create(eventSignUp);
+        eventSignUp = service.create(eventSignUp);
         return mapper.toDTO(eventSignUp);
     }
 
@@ -74,7 +74,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
         }
         var signUp = service.findById(signUpId);
         mapper.fromDTO(dto, signUp);
-        service.update(signUp);
+        signUp = service.update(signUp);
         return mapper.toDTO(signUp);
     }
 

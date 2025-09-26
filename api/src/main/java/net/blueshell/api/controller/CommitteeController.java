@@ -67,7 +67,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     @PostMapping("/committees")
     public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
         var committee = advancedMapper.fromDTO(advancedCommitteeDTO);
-        service.create(committee);
+        committee = service.create(committee);
         return advancedMapper.toDTO(committee);
     }
 
@@ -76,7 +76,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     public BaseDTO updateCommittee(@PathVariable("id") Long id, @Valid @RequestBody AdvancedCommitteeDTO dto) {
         var committee = service.findById(id);
         advancedMapper.fromDTO(dto, committee);
-        service.update(committee);
+        committee = service.update(committee);
         return advancedMapper.toDTO(committee);
     }
 

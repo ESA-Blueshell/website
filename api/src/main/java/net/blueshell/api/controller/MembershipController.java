@@ -34,7 +34,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     public MembershipDTO createMembership(@Validated(Creation.class) @RequestBody MembershipDTO dto
     ) {
         var membership = mapper.fromDTO(dto);
-        service.create(membership);
+        membership = service.create(membership);
         return mapper.toDTO(membership);
     }
 
@@ -43,7 +43,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     public MembershipDTO boardCreateMembership(@Validated(Administration.class) @RequestBody MembershipDTO dto
     ) {
         Membership membership = mapper.fromDTO(dto);
-        service.create(membership);
+        membership = service.create(membership);
         return mapper.toDTO(membership);
     }
 
@@ -52,7 +52,7 @@ public class MembershipController extends BaseController<MembershipService, Memb
     public MembershipDTO updateMembership(@PathVariable("id") Long id, @RequestBody MembershipDTO dto) {
         var membership = service.findById(id);
         mapper.fromDTO(dto, membership);
-        service.update(membership);
+        membership = service.update(membership);
         return mapper.toDTO(membership);
     }
 

@@ -30,7 +30,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
     @PostMapping("/events")
     public EventDTO createEvent(@Valid @RequestBody EventDTO eventDTO) {
         var event = mapper.fromDTO(eventDTO);
-        service.create(event);
+        event = service.create(event);
         return mapper.toDTO(event);
     }
 
@@ -39,7 +39,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
     public EventDTO updateEvent(@PathVariable("id") Long id, @Valid @RequestBody EventDTO dto) {
         var event = service.findById(id);
         mapper.fromDTO(dto, event);
-        service.update(event);
+        event = service.update(event);
         return mapper.toDTO(event);
     }
 

@@ -60,9 +60,10 @@ public abstract class BaseModelService<
      * {@code preCreate → save&flush → refresh → postCreate}</p>
      */
     @Transactional
-    public void create(T entity) {
-        repository.saveAndFlush(entity);
+    public T create(T entity) {
+        entity = repository.saveAndFlush(entity);
         em.refresh(entity);
+        return entity;
     }
 
     /* -----------------------------------------------------------------
@@ -74,14 +75,14 @@ public abstract class BaseModelService<
      * <p>Throws {@link ResourceNotFoundException} if the id is unknown.</p>
      */
     @Transactional
-    public void update(T entity) {
+    public T update(T entity) {
         var id = entity.getId();
         if (id == null || !repository.existsById(id)) {
             throw new ResourceNotFoundException("Entity not found with id: %s".formatted(id));
         }
-        repository.saveAndFlush(entity);
-        log.info("Entity: {}", entity);
+        entity = repository.saveAndFlush(entity);
         em.refresh(entity);
+        return entity;
     }
 
     /**
@@ -90,8 +91,8 @@ public abstract class BaseModelService<
      * the pre/post hooks and id-existence check.</p>
      */
     @Transactional
-    public void updateAll(List<T> entities) {
-        entities.forEach(this::update);
+    public List<T> updateAll(List<T> entities) {
+        return entities.stream().map(this::update).toList();
     }
 
     /* -----------------------------------------------------------------

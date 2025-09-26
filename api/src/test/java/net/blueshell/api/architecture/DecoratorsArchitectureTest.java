@@ -58,7 +58,7 @@ public class DecoratorsArchitectureTest {
             .should().beAnnotatedWith(Schema.class);
 
     @ArchTest
-    public final ArchRule controllerMethodsAreDecoratedWithPreAuthorizeOrPermitAll = methods()
+    public final ArchRule endpointsHaveAuthorizationDecorators = methods()
             .that().areDeclaredInClassesThat().resideInAnyPackage(CONTROLLER)
             .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
             .and().arePublic()

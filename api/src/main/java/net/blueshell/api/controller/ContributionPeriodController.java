@@ -42,7 +42,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     @PostMapping("/contributionPeriods")
     public ContributionPeriodDTO createContributionPeriod(@Valid @RequestBody ContributionPeriodDTO dto) {
         ContributionPeriod contributionPeriod = mapper.fromDTO(dto);
-        service.create(contributionPeriod);
+        contributionPeriod = service.create(contributionPeriod);
         return mapper.toDTO(contributionPeriod);
     }
 
@@ -52,7 +52,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
                                                           @Valid @RequestBody ContributionPeriodDTO dto) {
         var contributionPeriod = service.findById(id);
         mapper.fromDTO(dto, contributionPeriod);
-        service.update(contributionPeriod);
+        contributionPeriod = service.update(contributionPeriod);
         return mapper.toDTO(contributionPeriod);
     }
 

@@ -38,9 +38,6 @@ class BlogControllerIT extends UserTestSupport {
     @Autowired
     private ObjectMapper mapper;
 
-    @Autowired
-    private BlogService blogs;
-
     Map<String, Object> examplePayload = Map.of(
             "title", "New Blog",
             "publishedAt", "2025-07-01T12:00:00.000+00:00",
@@ -57,14 +54,11 @@ class BlogControllerIT extends UserTestSupport {
 
     @Test
     void postsAreCreatedCorrectly() throws Exception {
-        var response = mvc.perform(post("/blogs")
-                .with(bearer(userMap.get(Role.BOARD)))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsBytes(examplePayload)));
-        log.info("Blogs in db: {}", blogs.findAll());
-
-
-        response.andExpect(status().isOk())
+        mvc.perform(post("/blogs")
+                        .with(bearer(userMap.get(Role.BOARD)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(examplePayload)))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
                 .andExpect(jsonPath("$.title").value(examplePayload.get("title")))

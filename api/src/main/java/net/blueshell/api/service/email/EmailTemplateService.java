@@ -27,7 +27,7 @@ public class EmailTemplateService {
     private final HtmlRenderer renderer;
 
     public EmailTemplateService() {
-        List<Extension> extensions = List.of(TablesExtension.create());
+        var extensions = List.of(TablesExtension.create());
         this.parser = Parser.builder().extensions(extensions).build();
         this.renderer = HtmlRenderer.builder().extensions(extensions).build();
     }

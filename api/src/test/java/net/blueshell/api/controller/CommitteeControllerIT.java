@@ -138,6 +138,54 @@ class CommitteeControllerIT extends UserTestSupport {
     }
 
     @Test
+    void updatingCommitteesRemovesMembers() throws Exception {
+        // initial create
+        MvcResult createResult = mvc.perform(post("/committees")
+                        .with(bearer(userMap.get(Role.BOARD)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(examplePayload())))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        AdvancedCommitteeDTO created = mapper.readValue(
+                createResult.getResponse().getContentAsByteArray(),
+                AdvancedCommitteeDTO.class
+        );
+
+        // prepare updated payload (switch to a single member, using the existing MEMBER account)
+        var board = userMap.get(Role.BOARD);
+        var member = userMap.get(Role.MEMBER);
+
+        Map<String, Object> updatedPayload = Map.of(
+                "name", "Updated Committee Name",
+                "description", "Updated description text",
+                "members", List.of(
+                        Map.of(
+                                "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId(),
+                                "role", "No longer chair",
+                                "userId", board.getId()
+                        )
+                )
+        );
+
+        // perform update
+        mvc.perform(put("/committees/{id}", created.getId())
+                        .with(bearer(userMap.get(Role.BOARD)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(updatedPayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(created.getId().toString()))
+                .andExpect(jsonPath("$.name").value("Updated Committee Name"))
+                .andExpect(jsonPath("$.description").value("Updated description text"))
+                .andExpect(jsonPath("$.members", hasSize(1)))
+                .andExpect(jsonPath("$.members[0].role").value("No longer chair"))
+                .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()));
+
+        assertFalse(refreshUser(member).hasRole(Role.COMMITTEE));
+        assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));
+    }
+
+    @Test
     void updatingCommitteesUpdatesMembers() throws Exception {
         // initial create
         MvcResult createResult = mvc.perform(post("/committees")
@@ -162,8 +210,13 @@ class CommitteeControllerIT extends UserTestSupport {
                 "members", List.of(
                         Map.of(
                                 "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId(),
-                                "role", "Lead",
+                                "role", "No longer chair",
                                 "userId", board.getId()
+                        ),
+                        Map.of(
+                                "id", refreshUser(member).getCommitteeMembers().stream().findFirst().get().getId(),
+                                "role", "No longer member",
+                                "userId", member.getId()
                         )
                 )
         );
@@ -177,11 +230,12 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.id").value(created.getId().toString()))
                 .andExpect(jsonPath("$.name").value("Updated Committee Name"))
                 .andExpect(jsonPath("$.description").value("Updated description text"))
-                .andExpect(jsonPath("$.members", hasSize(1)))
-                .andExpect(jsonPath("$.members[0].role").value("Lead"))
-                .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()));
+                .andExpect(jsonPath("$.members", hasSize(2)))
+                .andExpect(jsonPath("$.members[0].role").value("No longer chair"))
+                .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()))
+                .andExpect(jsonPath("$.members[1].role").value("No longer member"))
+                .andExpect(jsonPath("$.members[1].user.id").value(member.getId().intValue()));
 
-        assertFalse(refreshUser(member).hasRole(Role.COMMITTEE));
         assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));
     }
 

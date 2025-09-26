@@ -33,7 +33,7 @@ public class Committee implements BaseModel {
             mappedBy = "committee",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.LAZY)
+            fetch = FetchType.EAGER)
     private Set<CommitteeMember> members = new HashSet<>();
 
     @Column(name = "deleted_at")

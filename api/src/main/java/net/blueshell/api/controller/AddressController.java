@@ -30,7 +30,7 @@ public class AddressController extends BaseController<AddressService, AddressMap
     @ResponseStatus(HttpStatus.CREATED)
     public AddressDTO createAddress(@Valid @RequestBody AddressDTO dto) {
         var address = mapper.fromDTO(dto);
-        service.create(address);
+        address = service.create(address);
         return mapper.toDTO(address);
     }
 

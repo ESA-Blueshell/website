@@ -36,7 +36,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PermitAll
     public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
-        service.create(user);
+        user = service.create(user);
         return advancedMapper.toDTO(user);
     }
 
@@ -44,7 +44,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PermitAll
     public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
-        service.create(user);
+        user = service.create(user);
         return advancedMapper.toDTO(user);
     }
 
@@ -52,7 +52,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PermitAll
     public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
         var user = simpleMapper.fromDTO(dto);
-        service.create(user);
+        user = service.create(user);
         return simpleMapper.toDTO(user);
     }
 
@@ -62,7 +62,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
                                       @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
         var user = service.findById(id);
         advancedMapper.fromDTO(dto, user);
-        service.update(user);
+        user = service.update(user);
         return advancedMapper.toDTO(user);
     }
 
@@ -88,7 +88,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PutMapping(value = "/users/{userId}/roles")
-    @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public AdvancedUserDTO toggleUserRole(@PathVariable("userId") Long userId,
                                           @RequestParam(value = "role") Role role) {
         var user = service.toggleRole(userId, role);

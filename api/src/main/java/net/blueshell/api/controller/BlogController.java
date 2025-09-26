@@ -30,16 +30,16 @@ public class BlogController extends BaseController<BlogService, BlogMapper> {
     @PreAuthorize("hasAuthority('BOARD')")
     public BlogDTO createBlog(@Valid @RequestBody BlogDTO dto) {
         var blog = mapper.fromDTO(dto);
-        service.create(blog);
+        blog = service.create(blog);
         return mapper.toDTO(blog);
     }
 
-    @PostMapping("/blogs/{:id}")
+    @PostMapping("/blogs/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     public BlogDTO updateBlog(@PathVariable("id") Long id, @Valid @RequestBody BlogDTO dto) {
         var blog = service.findById(id);
         mapper.fromDTO(dto, blog);
-        service.create(blog);
+        blog = service.create(blog);
         return mapper.toDTO(blog);
     }
 

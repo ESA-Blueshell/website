@@ -29,7 +29,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @PostMapping("/contributions")
     public ContributionDTO createContribution(@Valid @RequestBody ContributionDTO dto) {
         var contribution = mapper.fromDTO(dto);
-        service.create(contribution);
+        contribution = service.create(contribution);
         return mapper.toDTO(contribution);
     }
 
@@ -40,7 +40,7 @@ public class ContributionController extends BaseController<ContributionService, 
             @PathParam("paid") boolean paid) {
         var contribution = service.findById(id);
         contribution.setPaid(paid);
-        service.update(contribution);
+        contribution = service.update(contribution);
         return mapper.toDTO(contribution);
     }
 

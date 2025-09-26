@@ -27,7 +27,6 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
 
     @ObjectFactory
     public CommitteeMember create(CommitteeMemberDTO dto) {
-        log.info("Creating committee member for dto mapping: {}", dto);
         if (dto.getId() == null) {
             return new CommitteeMember();
         } else {

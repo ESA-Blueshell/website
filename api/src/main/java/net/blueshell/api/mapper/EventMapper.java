@@ -5,8 +5,6 @@ import net.blueshell.api.dto.EventDTO;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Event;
 import net.blueshell.api.model.File;
-import net.blueshell.api.service.CommitteeService;
-import net.blueshell.api.service.FileService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -16,7 +14,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {SimpleCommitteeMapper.class, FileMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     @Autowired
@@ -50,7 +48,16 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     }
 
     @Mapping(target = "startTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getStartTime()))")
-    @Mapping(target = "endTime",   expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getEndTime()))")
+    @Mapping(target = "endTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getEndTime()))")
+    @Mapping(target = "committeeId")
+    @Mapping(target = "committee")
+    @Mapping(target = "title")
+    @Mapping(target = "description")
+    @Mapping(target = "location")
+    @Mapping(target = "memberPrice")
+    @Mapping(target = "publicPrice")
+    @Mapping(target = "banner")
+    @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventDTO toDTO(Event event);
 

@@ -27,12 +27,12 @@ public class AccessArchitectureTest {
     private static final String VALIDATION = "net.blueshell.api.validation..";
 
     @ArchTest
-    public final ArchRule dtoOnlyAccessedByMapperAndController = classes()
+    public final ArchRule dtoOnlyAccessedAtApiBorder = classes()
             .that().resideInAnyPackage(DTO)
             .should().onlyBeAccessed().byAnyPackage(CONTROLLER, MAPPER, DTO, VALIDATOR);
 
     @ArchTest
-    public final ArchRule repositoryOnlyAccessedByServices = classes()
+    public final ArchRule repositoryOnlyAccessedByServicesAndValidation = classes()
             .that().resideInAnyPackage(REPOSITORY)
             .should().onlyBeAccessed().byAnyPackage(SERVICE, REPOSITORY, VALIDATION);
 }

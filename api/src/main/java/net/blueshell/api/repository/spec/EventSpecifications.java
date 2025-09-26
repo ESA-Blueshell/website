@@ -2,6 +2,7 @@ package net.blueshell.api.repository.spec;
 
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.SetJoin;
+import lombok.NoArgsConstructor;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.EventFilter;
 import net.blueshell.api.model.Committee;
@@ -12,10 +13,8 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
 public final class EventSpecifications {
-
-    private EventSpecifications() {
-    }
 
     public static Specification<Event> visible() {
         return (root, q, cb) -> cb.isTrue(root.get("visible"));

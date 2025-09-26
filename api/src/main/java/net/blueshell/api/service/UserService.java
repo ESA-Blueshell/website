@@ -5,10 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.exception.ResourceNotFoundException;
+import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
+import net.blueshell.api.repository.spec.UserSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -95,5 +99,12 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
 
     public User findByProfilePicture(File profilePicture) {
         return repository.findByProfilePicture(profilePicture).orElseThrow(() -> new NotFoundException("User not found for profile picture: " + profilePicture.getName()));
+    }
+
+    public Page<User> findByFilter(UserFilter filter, Pageable pageable) {
+        if (filter == null) filter = new UserFilter();
+        if (pageable == null) pageable = Pageable.unpaged();
+        var spec = UserSpecifications.fromFilter(filter, getPrincipal());
+        return repository.findAll(spec, pageable);
     }
 }

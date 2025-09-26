@@ -35,20 +35,14 @@
           />
         </v-col>
         <v-col cols="8">
-          <v-autocomplete
+          <user-select
             v-if="members"
-            v-model="member.userId"
-            :items="members"
-            :item-title="u => u.discord ? `${u.fullName} (${u.discord})` : u.fullName"
-            item-value="id"
+            v-model="member.user"
+            :users="members"
             :rules="[
-    (v) => !!v || 'Select a member',
-    (v) => !v || localCommittee.members.findIndex((ms, idx) => ms.userId === v && idx !== i) === -1 || 'Member already in this committee'
-  ]"
-            hide-details="auto"
-            auto-select-first
-            clearable
-            hide-no-data
+              (u: SimpleUser) => !!u || 'Select a member',
+              (u: SimpleUser) => !u || localCommittee.members.findIndex((ms: CommitteeMember, idx: number) => ms.user?.id === u.id && idx !== i) === -1 || 'Member already in this committee',
+            ]"
             label="Member name"
           >
             <template #append>
@@ -58,7 +52,7 @@
                 @click="removeMember(i)"
               />
             </template>
-          </v-autocomplete>
+          </user-select>
         </v-col>
       </v-row>
     </v-container>
@@ -92,6 +86,7 @@ import {
   type SimpleUser,
   updateCommittee
 } from "@/lib";
+import UserSelect from "@/components/select/UserSelect.vue";
 
 const props = defineProps<{
   committee: {
@@ -155,7 +150,7 @@ const submit = async () => {
       await updateCommittee({
         body: localCommittee.value,
         path: {
-          committeeId: localCommittee.value.id
+          id: localCommittee.value.id
         }
       })
     } else {

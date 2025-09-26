@@ -5,6 +5,7 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.mapper.user.AdvancedUserMapper;
@@ -14,7 +15,10 @@ import net.blueshell.api.service.UserService;
 import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -68,8 +72,8 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
-    public List<AdvancedUserDTO> findUsers() {
-        var users = service.findAll();
+    public Page<AdvancedUserDTO> findUsers(@ParameterObject UserFilter filter, @ParameterObject Pageable pageable) {
+        var users = service.findByFilter(filter, pageable);
         return advancedMapper.toDTOs(users);
     }
 

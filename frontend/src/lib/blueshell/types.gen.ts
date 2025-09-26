@@ -18,31 +18,6 @@ export type Membership = {
     incasso: boolean;
 };
 
-export type AdvancedUser = {
-    id?: number;
-    initials: string;
-    firstName: string;
-    prefix?: string;
-    lastName: string;
-    fullName?: string;
-    username: string;
-    discord: string;
-    email: string;
-    newsletter: boolean;
-    password: string;
-    roles?: Array<Role>;
-    dateOfBirth: string;
-    phoneNumber: string;
-    nationality: string;
-    photoConsent: boolean;
-    ehbo: boolean;
-    bhv: boolean;
-    enabled?: boolean;
-    createdAt?: string;
-    gender?: string;
-    studentNumber?: string;
-};
-
 export enum Role {
     ANONYMOUS = 'ANONYMOUS',
     GUEST = 'GUEST',
@@ -56,6 +31,30 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
+export type AdvancedUser = {
+    id?: number;
+    initials: string;
+    firstName: string;
+    prefix?: string;
+    lastName: string;
+    fullName?: string;
+    username: string;
+    discord: string;
+    email: string;
+    newsletter: boolean;
+    roles?: Array<Role>;
+    dateOfBirth: string;
+    phoneNumber: string;
+    nationality: string;
+    photoConsent: boolean;
+    ehbo: boolean;
+    bhv: boolean;
+    enabled?: boolean;
+    createdAt?: string;
+    gender?: string;
+    studentNumber?: string;
+};
+
 export type Sponsor = {
     id?: number;
     name: string;
@@ -64,7 +63,7 @@ export type Sponsor = {
 
 export type Event = {
     id?: number;
-    committeeId?: number;
+    committeeId: number;
     committee?: SimpleCommittee;
     title: string;
     startTime: string;
@@ -117,19 +116,40 @@ export type SimpleCommittee = {
 export type EventSignUp = {
     id?: number;
     eventId?: number;
-    fullName?: string;
-    discord?: string;
-    email?: string;
     formAnswers?: Array<{
         [key: string]: unknown;
     }>;
+    guest?: Guest;
+    user?: SimpleUser;
+};
+
+export type Guest = {
+    id?: number;
+    fullName: string;
+    discord: string;
+    email: string;
+    createdAt?: string;
+    accessToken?: string;
+};
+
+export type SimpleUser = {
+    id?: number;
+    initials: string;
+    firstName: string;
+    prefix?: string;
+    lastName: string;
+    fullName?: string;
+    username: string;
+    discord: string;
+    email: string;
+    newsletter: boolean;
 };
 
 export type Contribution = {
     id?: number;
-    userId?: number;
-    contributionPeriodId?: number;
-    paid?: boolean;
+    userId: number;
+    contributionPeriodId: number;
+    paid: boolean;
     remindedAt?: string;
 };
 
@@ -152,24 +172,10 @@ export type AdvancedCommittee = {
 
 export type CommitteeMember = {
     id?: number;
-    role?: string;
-    userId?: number;
+    userId: number;
+    committeeId: number;
+    role: string;
     user?: SimpleUser;
-    committeeId?: number;
-};
-
-export type SimpleUser = {
-    id?: number;
-    initials: string;
-    firstName: string;
-    prefix?: string;
-    lastName: string;
-    fullName?: string;
-    username: string;
-    discord: string;
-    email: string;
-    newsletter: boolean;
-    password: string;
 };
 
 export type BaseDto = {
@@ -178,11 +184,12 @@ export type BaseDto = {
 
 export type Address = {
     id?: number;
-    country?: string;
-    city?: string;
-    street?: string;
-    houseNumber?: string;
-    zipCode?: string;
+    userId: number;
+    country: string;
+    city: string;
+    street: string;
+    houseNumber: string;
+    zipCode: string;
     createdAt?: string;
 };
 
@@ -200,13 +207,11 @@ export type Telemetry = {
     createdAt?: string;
 };
 
-export type BlogDto = {
-    id?: string;
+export type Blog = {
+    id?: number;
     url?: string;
-    title?: string;
-    text?: string;
-    html?: string;
-    markdown?: string;
+    title: string;
+    html: string;
     publishedAt?: string;
 };
 
@@ -264,16 +269,16 @@ export type PageEvent = {
 export type PageableObject = {
     offset?: number;
     sort?: SortObject;
-    unpaged?: boolean;
     pageNumber?: number;
     paged?: boolean;
     pageSize?: number;
+    unpaged?: boolean;
 };
 
 export type SortObject = {
     empty?: boolean;
-    unsorted?: boolean;
     sorted?: boolean;
+    unsorted?: boolean;
 };
 
 export type FindMembershipByIdData = {
@@ -312,60 +317,6 @@ export type UpdateMembershipResponses = {
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
 
-export type DeleteUserByIdData = {
-    body?: never;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}';
-};
-
-export type DeleteUserByIdResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteUserByIdResponse = DeleteUserByIdResponses[keyof DeleteUserByIdResponses];
-
-export type FindUserByIdData = {
-    body?: never;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}';
-};
-
-export type FindUserByIdResponses = {
-    /**
-     * OK
-     */
-    200: AdvancedUser;
-};
-
-export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
-
-export type UpdateUserData = {
-    body: AdvancedUser;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}';
-};
-
-export type UpdateUserResponses = {
-    /**
-     * OK
-     */
-    200: AdvancedUser;
-};
-
-export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
-
 export type ToggleUserRoleData = {
     body?: never;
     path: {
@@ -385,6 +336,24 @@ export type ToggleUserRoleResponses = {
 };
 
 export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
+
+export type UpdateUserData = {
+    body: AdvancedUser;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/{id}';
+};
+
+export type UpdateUserResponses = {
+    /**
+     * OK
+     */
+    200: AdvancedUser;
+};
+
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
 export type DeleteSponsorByIdData = {
     body?: never;
@@ -422,7 +391,7 @@ export type FindSponsorByIdResponses = {
 
 export type FindSponsorByIdResponse = FindSponsorByIdResponses[keyof FindSponsorByIdResponses];
 
-export type CreateOrUpdateSponsorData = {
+export type UpdateSponsorData = {
     body: Sponsor;
     path: {
         id: number;
@@ -431,42 +400,40 @@ export type CreateOrUpdateSponsorData = {
     url: '/sponsors/{id}';
 };
 
-export type CreateOrUpdateSponsorResponses = {
+export type UpdateSponsorResponses = {
     /**
      * OK
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: Sponsor;
 };
 
-export type CreateOrUpdateSponsorResponse = CreateOrUpdateSponsorResponses[keyof CreateOrUpdateSponsorResponses];
+export type UpdateSponsorResponse = UpdateSponsorResponses[keyof UpdateSponsorResponses];
 
-export type DeleteEventByIdData = {
+export type FindEventByIdData = {
     body?: never;
     path: {
-        eventId: number;
+        id: number;
     };
     query?: never;
-    url: '/events/{eventId}';
+    url: '/events/{id}';
 };
 
-export type DeleteEventByIdResponses = {
+export type FindEventByIdResponses = {
     /**
-     * No Content
+     * OK
      */
-    204: void;
+    200: Event;
 };
 
-export type DeleteEventByIdResponse = DeleteEventByIdResponses[keyof DeleteEventByIdResponses];
+export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
 
 export type UpdateEventData = {
     body: Event;
     path: {
-        eventId: number;
+        id: number;
     };
     query?: never;
-    url: '/events/{eventId}';
+    url: '/events/{id}';
 };
 
 export type UpdateEventResponses = {
@@ -591,10 +558,10 @@ export type UpdateContributionPeriodResponse = UpdateContributionPeriodResponses
 export type DeleteCommitteeByIdData = {
     body?: never;
     path: {
-        committeeId: number;
+        id: number;
     };
     query?: never;
-    url: '/committees/{committeeId}';
+    url: '/committees/{id}';
 };
 
 export type DeleteCommitteeByIdResponses = {
@@ -606,31 +573,13 @@ export type DeleteCommitteeByIdResponses = {
 
 export type DeleteCommitteeByIdResponse = DeleteCommitteeByIdResponses[keyof DeleteCommitteeByIdResponses];
 
-export type FindCommitteeByIdData = {
-    body?: never;
-    path: {
-        committeeId: number;
-    };
-    query?: never;
-    url: '/committees/{committeeId}';
-};
-
-export type FindCommitteeByIdResponses = {
-    /**
-     * OK
-     */
-    200: BaseDto;
-};
-
-export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
-
 export type UpdateCommitteeData = {
     body: AdvancedCommittee;
     path: {
-        committeeId: number;
+        id: number;
     };
     query?: never;
-    url: '/committees/{committeeId}';
+    url: '/committees/{id}';
 };
 
 export type UpdateCommitteeResponses = {
@@ -642,31 +591,31 @@ export type UpdateCommitteeResponses = {
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
 
-export type DeleteAddressData = {
+export type DeleteAddressByIdData = {
     body?: never;
     path: {
-        addressId: number;
+        id: number;
     };
     query?: never;
-    url: '/addresses/{addressId}';
+    url: '/addresses/{id}';
 };
 
-export type DeleteAddressResponses = {
+export type DeleteAddressByIdResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteAddressResponse = DeleteAddressResponses[keyof DeleteAddressResponses];
+export type DeleteAddressByIdResponse = DeleteAddressByIdResponses[keyof DeleteAddressByIdResponses];
 
 export type FindAddressByIdData = {
     body?: never;
     path: {
-        addressId: number;
+        id: number;
     };
     query?: never;
-    url: '/addresses/{addressId}';
+    url: '/addresses/{id}';
 };
 
 export type FindAddressByIdResponses = {
@@ -681,10 +630,10 @@ export type FindAddressByIdResponse = FindAddressByIdResponses[keyof FindAddress
 export type UpdateAddressData = {
     body: Address;
     path: {
-        addressId: number;
+        id: number;
     };
     query?: never;
-    url: '/addresses/{addressId}';
+    url: '/addresses/{id}';
 };
 
 export type UpdateAddressResponses = {
@@ -783,7 +732,7 @@ export type DeleteRedirectData = {
     body?: never;
     path?: never;
     query: {
-        id: string;
+        id: number;
     };
     url: '/telemetry/redirect';
 };
@@ -801,7 +750,7 @@ export type CreateRedirectData = {
     body?: never;
     path?: never;
     query: {
-        id: string;
+        id: number;
     };
     url: '/telemetry/redirect';
 };
@@ -899,6 +848,18 @@ export type FindEventsData = {
     body?: never;
     path?: never;
     query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
         from?: string;
         to?: string;
         visible?: boolean;
@@ -964,9 +925,7 @@ export type FindContributionsResponses = {
     /**
      * OK
      */
-    200: {
-        parallel?: boolean;
-    };
+    200: Array<Contribution>;
 };
 
 export type FindContributionsResponse = FindContributionsResponses[keyof FindContributionsResponses];
@@ -1062,26 +1021,80 @@ export type FindBlogsResponses = {
     /**
      * OK
      */
-    200: Array<BlogDto>;
+    200: Array<Blog>;
 };
 
 export type FindBlogsResponse = FindBlogsResponses[keyof FindBlogsResponses];
 
-export type CreateData = {
-    body: BlogDto;
+export type CreateBlogData = {
+    body: Blog;
     path?: never;
     query?: never;
     url: '/blogs';
 };
 
-export type CreateResponses = {
+export type CreateBlogResponses = {
     /**
      * OK
      */
-    200: BlogDto;
+    200: Blog;
 };
 
-export type CreateResponse = CreateResponses[keyof CreateResponses];
+export type CreateBlogResponse = CreateBlogResponses[keyof CreateBlogResponses];
+
+export type DeleteByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/blogs/{id}';
+};
+
+export type DeleteByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteByIdResponse = DeleteByIdResponses[keyof DeleteByIdResponses];
+
+export type FindBlogByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/blogs/{id}';
+};
+
+export type FindBlogByIdResponses = {
+    /**
+     * OK
+     */
+    200: Blog;
+};
+
+export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];
+
+export type UpdateBlogData = {
+    body: Blog;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/blogs/{id}';
+};
+
+export type UpdateBlogResponses = {
+    /**
+     * OK
+     */
+    200: Blog;
+};
+
+export type UpdateBlogResponse = UpdateBlogResponses[keyof UpdateBlogResponses];
 
 export type AuthenticateData = {
     body: JwtRequest;
@@ -1173,6 +1186,42 @@ export type CreateAddressResponses = {
 
 export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
 
+export type DeleteUserByIdData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}';
+};
+
+export type DeleteUserByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteUserByIdResponse = DeleteUserByIdResponses[keyof DeleteUserByIdResponses];
+
+export type FindUserByIdData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}';
+};
+
+export type FindUserByIdResponses = {
+    /**
+     * OK
+     */
+    200: AdvancedUser;
+};
+
+export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
+
 export type DownloadProfilePictureData = {
     body?: never;
     path: {
@@ -1194,7 +1243,7 @@ export type DownloadProfilePictureResponse = DownloadProfilePictureResponses[key
 export type FindTelemetryByIdData = {
     body?: never;
     path: {
-        id: string;
+        id: number;
     };
     query?: never;
     url: '/telemetry/{id}';
@@ -1261,24 +1310,6 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
-
-export type FindEventByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/events/{id}';
-};
-
-export type FindEventByIdResponses = {
-    /**
-     * OK
-     */
-    200: Event;
-};
-
-export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
 
 export type DownloadBannerData = {
     body?: never;
@@ -1402,6 +1433,24 @@ export type FindCurrentContributionPeriodResponses = {
 
 export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
 
+export type FindCommitteeByIdData = {
+    body?: never;
+    path: {
+        committeeId: number;
+    };
+    query?: never;
+    url: '/committees/{committeeId}';
+};
+
+export type FindCommitteeByIdResponses = {
+    /**
+     * OK
+     */
+    200: BaseDto;
+};
+
+export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
+
 export type FindCommitteesForCurrentUserData = {
     body?: never;
     path?: never;
@@ -1417,42 +1466,6 @@ export type FindCommitteesForCurrentUserResponses = {
 };
 
 export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
-
-export type DeleteByIdData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/blogs/{id}';
-};
-
-export type DeleteByIdResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteByIdResponse = DeleteByIdResponses[keyof DeleteByIdResponses];
-
-export type FindBlogByIdData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/blogs/{id}';
-};
-
-export type FindBlogByIdResponses = {
-    /**
-     * OK
-     */
-    200: BlogDto;
-};
-
-export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];
 
 export type DownloadAssetData = {
     body?: never;
@@ -1471,6 +1484,24 @@ export type DownloadAssetResponses = {
 };
 
 export type DownloadAssetResponse = DownloadAssetResponses[keyof DownloadAssetResponses];
+
+export type DeleteEventByIdData = {
+    body?: never;
+    path: {
+        eventId: number;
+    };
+    query?: never;
+    url: '/events/{eventId}';
+};
+
+export type DeleteEventByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteEventByIdResponse = DeleteEventByIdResponses[keyof DeleteEventByIdResponses];
 
 export type DeleteEventSignupData = {
     body?: never;

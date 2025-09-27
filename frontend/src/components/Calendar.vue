@@ -1,7 +1,7 @@
 <template>
   <v-toolbar
-    color="transparent"
     class="px-0"
+    color="transparent"
   >
     <v-toolbar-title class="text-h5 ml-2">
       {{ monthTitle }}
@@ -35,32 +35,32 @@
     v-model="displayedMonth"
     :events="calendarEvents"
     :show-adjacent-months="true"
-    type="month"
     :weekdays="weekdays"
+    type="month"
     @click:event="showEvent"
   />
 
   <v-menu
     v-if="selectedEvent"
     v-model="selectedOpen"
-    :close-on-content-click="false"
     :activator="selectedElement"
+    :close-on-content-click="false"
     location="start"
   >
     <event-details :model-value="selectedEvent" />
   </v-menu>
 </template>
 
-<script setup lang="ts">
-import {useDisplay, useLocale} from 'vuetify'
-import {computed, onMounted, ref, watch} from 'vue'
-import {DateTime} from "luxon";
+<script lang="ts" setup>
+import {useDisplay, useLocale} from "vuetify"
+import {computed, onMounted, ref, watch} from "vue"
+import {DateTime} from "luxon"
 import type {Event, PageEvent} from "@/lib"
-import {findEvents} from "@/lib";
+import {findEvents} from "@/lib"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
-import type {CalendarWeekdays} from "vuetify/lib/composables/calendar";
+import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"
-import EventDetails from "@/components/events/EventDetails.vue";
+import EventDetails from "@/components/events/EventDetails.vue"
 
 // State
 const displayedMonth = ref<string>(DateTime.now().toISODate()!)
@@ -75,7 +75,7 @@ type CalendarEventEx = CalendarEvent & { raw: Event }
 
 // Localization
 const {current: localeCurrent} = useLocale()
-localeCurrent.value = 'en'
+localeCurrent.value = "en"
 
 // Responsive display
 const display = useDisplay()
@@ -85,7 +85,7 @@ const weekdays = computed(() => (isXs.value ? [1, 2, 3, 4, 5] : [1, 2, 3, 4, 5, 
 // Header title reads from displayedMonth so it updates on internal nav too
 const monthTitle = computed(() =>
   DateTime.fromISO(displayedMonth.value)
-    .setLocale(localeCurrent.value).toFormat("LLLL yyyy")
+    .setLocale(localeCurrent.value).toFormat("LLLL yyyy"),
 )
 
 // Nav helpers operate on displayedMonth, and also align focus (so your click handlers & watchers keep working)
@@ -116,7 +116,7 @@ const loadEventsForMonth = async (month: DateTime) => {
 
 // When the *visible* month changes (buttons or the calendar’s own arrows/swipes), fetch data & update
 watch(displayedMonth, (d: string) => {
-  const first = DateTime.fromISO(d);
+  const first = DateTime.fromISO(d)
   loadEventsForMonth(first)
 })
 
@@ -137,14 +137,16 @@ onMounted(() => {
 })
 
 // Event handling unchanged…
-const showEvent = (nativeEvent: any, { event }: { event: CalendarEventEx }) => {
+const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
   console.log("nativeEvent", typeof nativeEvent)
   const toggle = () => {
     selectedEvent.value = event.raw
     selectedElement.value = nativeEvent.target as HTMLElement
     selectedOpen.value = !selectedOpen.value
   }
-  if (selectedOpen.value) setTimeout(toggle, 10); else toggle()
+  if (selectedOpen.value) {
+    setTimeout(toggle, 10)
+  } else toggle()
   nativeEvent.stopPropagation()
 }
 </script>

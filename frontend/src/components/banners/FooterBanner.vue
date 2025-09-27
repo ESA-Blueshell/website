@@ -1,46 +1,46 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 
 const iconLinks = [
   {
-    icon: 'mdi-email',
-    href: 'mailto:board@blueshell.utwente.nl',
+    icon: "mdi-email",
+    href: "mailto:board@blueshell.utwente.nl",
   },
   {
-    icon: 'mdi-instagram',
-    href: 'https://www.instagram.com/esablueshell/',
+    icon: "mdi-instagram",
+    href: "https://www.instagram.com/esablueshell/",
   },
   {
-    icon: 'mdi-facebook',
-    href: 'https://www.facebook.com/BlueshellEsports/',
+    icon: "mdi-facebook",
+    href: "https://www.facebook.com/BlueshellEsports/",
   },
   {
-    icon: 'mdi-twitch',
-    href: 'https://www.twitch.tv/blueshellesports',
+    icon: "mdi-twitch",
+    href: "https://www.twitch.tv/blueshellesports",
   },
   {
-    icon: 'mdi-twitter',
-    href: 'https://twitter.com/BlueshellESA',
+    icon: "mdi-twitter",
+    href: "https://twitter.com/BlueshellESA",
   },
   {
-    icon: 'mdi-linkedin',
-    href: 'https://www.linkedin.com/company/blueshell-esports',
+    icon: "mdi-linkedin",
+    href: "https://www.linkedin.com/company/blueshell-esports",
   },
-];
+]
 
 const textLinks = [
   {
-    text: 'El Niño',
-    href: 'https://www.elnino.tech/',
+    text: "El Niño",
+    href: "https://www.elnino.tech/",
   },
   {
-    text: 'ETT',
-    href: 'https://esportsteamtwente.nl/',
+    text: "ETT",
+    href: "https://esportsteamtwente.nl/",
   },
   {
-    text: 'Predator Esports Lounge',
-    href: 'https://www.esportsloungetwente.nl/',
+    text: "Predator Esports Lounge",
+    href: "https://www.esportsloungetwente.nl/",
   },
-];
+]
 
 </script>
 
@@ -48,9 +48,9 @@ const textLinks = [
   <v-lazy>
     <v-footer
       v-if="$vuetify.display.mdAndUp"
-      theme="dark"
-      height="160"
       class="pa-8 justify-center"
+      height="160"
+      theme="dark"
     >
       <v-row
         align="center"
@@ -61,9 +61,9 @@ const textLinks = [
             v-for="link in iconLinks"
             :key="link.href"
             :href="link.href"
+            :icon="link.icon"
             target="_blank"
             variant="plain"
-            :icon="link.icon"
           />
         </div>
 
@@ -91,24 +91,24 @@ const textLinks = [
 
     <v-footer
       v-else-if="$vuetify.display.smAndDown"
-      theme="dark"
-      class="d-flex flex-column pa-4"
       :height="$vuetify.display.sm ? 216 : 304"
+      class="d-flex flex-column pa-4"
+      theme="dark"
     >
       <div>
         <v-btn
           v-for="link in iconLinks"
           :key="link.href"
           :href="link.href"
+          :icon="link.icon"
           target="_blank"
           variant="plain"
-          :icon="link.icon"
         />
       </div>
 
       <div
-        class="mt-4"
         :style="{ display: $vuetify.display.xs ? 'flex' : 'grid' }"
+        class="mt-4"
         style="flex-direction: column; grid-template-columns: repeat(2, 1fr); gap: 8px;"
       >
         <v-btn

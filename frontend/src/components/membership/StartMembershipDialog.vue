@@ -16,8 +16,8 @@
               v-model="membership.startDate"
               :max="new Date().toISOString()"
               label="Start Date"
-              type="date"
               required
+              type="date"
             />
           </v-row>
           <v-row>
@@ -33,15 +33,15 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          color="secondary"
           :disabled="isSubmitting"
+          color="secondary"
           @click="open = false"
         >
           Cancel
         </v-btn>
         <v-btn
-          color="primary"
           :loading="isSubmitting"
+          color="primary"
           @click="confirm()"
         >
           Confirm
@@ -51,14 +51,13 @@
   </v-dialog>
 </template>
 
-<script setup lang="ts">
-import {computed, type Ref, ref} from 'vue';
-import {DateTime} from 'luxon';
-import MemberTypeSelect from '@/components/select/MemberTypeSelect.vue';
-import {createMembership, type Membership, MemberType,} from '@/lib';
-import CountrySelect from "@/components/select/CountrySelect.vue";
-import type {VForm} from "vuetify/lib/components";
-import type {Country} from "world-countries";
+<script lang="ts" setup>
+import {computed, type Ref, ref} from "vue"
+import {DateTime} from "luxon"
+import MemberTypeSelect from "@/components/select/MemberTypeSelect.vue"
+import {createMembership, type Membership, MemberType} from "@/lib"
+import CountrySelect from "@/components/select/CountrySelect.vue"
+import type {VForm} from "vuetify/lib/components"
 
 interface Props {
   modelValue: boolean;
@@ -66,49 +65,49 @@ interface Props {
   userId: number;
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-}>();
+  (e: "update:modelValue", value: boolean): void;
+}>()
 
-const form: Ref<VForm | undefined> = ref();
+const form: Ref<VForm | undefined> = ref()
 
 // Local v-model proxy
 const open = computed({
   get: () => props.modelValue,
-  set: (val: boolean) => emit('update:modelValue', val),
-});
+  set: (val: boolean) => emit("update:modelValue", val),
+})
 
 // Local state for the dialog
 const membership = ref<Membership>({
   startDate: DateTime.now().toISODate(),
   memberType: MemberType.REGULAR,
   userId: props.userId,
-  city: '',
-  country: 'NL',
+  city: "",
+  country: "NL",
   incasso: false,
-});
+})
 
-const isSubmitting = ref(false);
+const isSubmitting = ref(false)
 
 const confirm = async () => {
   try {
     const validationResult = await form.value?.validate()
-    if (!validationResult?.valid) return;
+    if (!validationResult?.valid) return
 
-    isSubmitting.value = true;
+    isSubmitting.value = true
 
     const membershipData: Membership = membership.value
-    const response = await createMembership({body: membershipData});
+    const response = await createMembership({body: membershipData})
 
     if (response.data) {
 
-      open.value = false;
+      open.value = false
     }
   } catch (error) {
-    console.error('Failed to create membership:', error);
+    console.error("Failed to create membership:", error)
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 </script>

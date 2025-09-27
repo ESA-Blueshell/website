@@ -1,13 +1,13 @@
-<script setup lang="ts">
-import {useRoute, useRouter} from "vue-router";
-import TopBanner from "@/components/banners/TopBanner.vue";
-import axios from "axios";
-import {ref} from "vue";
-import EventListItem from "@/components/events/EventListItem.vue";
-import EventSignUpForm from "@/components/events/EventSignUpForm.vue";
-import {useStore} from "vuex";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
-import {$goto} from "@/plugins/goto";
+<script lang="ts" setup>
+import {useRoute, useRouter} from "vue-router"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import axios from "axios"
+import {ref} from "vue"
+import EventListItem from "@/components/events/EventListItem.vue"
+import EventSignUpForm from "@/components/events/EventSignUpForm.vue"
+import {useStore} from "vuex"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {$goto} from "@/plugins/goto"
 
 const route = useRoute()
 const router = useRouter()
@@ -28,18 +28,18 @@ axios.get(`events/signups/byAccessToken/${accessToken}`)
       .then(response => event.value = response.data)
   })
   .catch(e => e.response?.status === 404
-    ? router.push({name: 'NotFound'})
+    ? router.push({name: "NotFound"})
     : $handleNetworkError(e))
 
 
 async function submitForm({answers}) {
   submitting.value = true
 
-  const response = await axios.put(`events/${signUp.value.event}/signups/${signUp.value.id}`, JSON.stringify(answers.value), {headers: {'Content-Type': 'text/plain'}})
+  const response = await axios.put(`events/${signUp.value.event}/signups/${signUp.value.id}`, JSON.stringify(answers.value), {headers: {"Content-Type": "text/plain"}})
 
   submitting.value = false
 
-  store.commit('setStatusSnackbarMessage', 'Sign-up updated. See you at the event! :)')
+  store.commit("setStatusSnackbarMessage", "Sign-up updated. See you at the event! :)")
 }
 
 async function deleteSignUp() {
@@ -49,9 +49,9 @@ async function deleteSignUp() {
     await axios.delete(`events/${signUp.value.event}/signups/${signUp.value.id}`)
 
     deleting.value = false
-    store.commit('setStatusSnackbarMessage', 'Sign-up cancelled. You can always sign-up again if you change your mind :)')
+    store.commit("setStatusSnackbarMessage", "Sign-up cancelled. You can always sign-up again if you change your mind :)")
 
-    $goto('/events')
+    $goto("/events")
   } catch (e) {
     $handleNetworkError(e)
   }
@@ -83,17 +83,17 @@ async function deleteSignUp() {
 
             <event-sign-up-form
               v-if="signUp?.formAnswers"
-              :event="event"
               :answers-string="signUp.formAnswers"
               :button-loading="submitting"
+              :event="event"
               :show-guest-form="false"
               class="accent-bordered mt-8"
               @submit="submitForm"
             />
 
             <v-btn
-              class="mt-8"
               block
+              class="mt-8"
               color="error"
               variant="outlined"
             >
@@ -105,8 +105,8 @@ async function deleteSignUp() {
               >
                 <template #default="{ isActive }">
                   <v-card
-                    title="Cancel Sign-up"
                     text="Are you sure you want to cancel your sign-up for this event?"
+                    title="Cancel Sign-up"
                   >
                     <template #actions>
                       <v-spacer />

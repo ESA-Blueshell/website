@@ -1,35 +1,35 @@
-<script setup lang="ts">
-import {ref, computed} from 'vue';
-import EventSignUpFormEdit from '@/components/events/EventSignUpFormEdit.vue';
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import EventSignUpFormEdit from "@/components/events/EventSignUpFormEdit.vue"
 // ... existing code ...
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
-import {useStore} from 'vuex';
-import {DateTime} from 'luxon';
-import type {VForm} from "vuetify/components";
-import { createEvent, findCommittees, updateEvent, type Event, type Base } from '@/lib';
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {useStore} from "vuex"
+import {DateTime} from "luxon"
+import type {VForm} from "vuetify/components"
+import {type Base, createEvent, type Event, findCommittees, updateEvent} from "@/lib"
 
 // ... existing code ...
 const props = defineProps({
   initialEvent: {
     type: Object as () => Event,
-    default: () => null
+    default: () => null,
   },
   hasPromo: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
-const emits = defineEmits(['submit', 'title', 'success']);
+const emits = defineEmits(["submit", "title", "success"])
 
-const store = useStore();
+const store = useStore()
 // ... existing code ...
 
-const eventForm = ref<VForm>();
-const signUpForm = ref(null);
-const sameEndDate = ref(true);
-const valid = ref(true);
-const submitting = ref(false);
+const eventForm = ref<VForm>()
+const signUpForm = ref(null)
+const sameEndDate = ref(true)
+const valid = ref(true)
+const submitting = ref(false)
 
 // --------------------
 // 1) Initialize event
@@ -37,75 +37,75 @@ const submitting = ref(false);
 function getDefaultEvent(): Event {
   return {
     id: undefined,
-    title: '',
-    location: '',
-    description: '',
-    startTime: '',
-    endTime: '',
-    memberPrice: '',
-    publicPrice: '',
+    title: "",
+    location: "",
+    description: "",
+    startTime: "",
+    endTime: "",
+    memberPrice: "",
+    publicPrice: "",
     visible: false,
     membersOnly: false,
     signUp: false,
     banner: undefined,
     signUpForm: [],
     committeeId: undefined,
-    committee: undefined
-  };
+    committee: undefined,
+  }
 }
 
 function initializeEvent(): Event {
   return {
     ...getDefaultEvent(),
     ...(props.initialEvent || {}),
-  };
+  }
 }
 
-const event = ref<Event>(initializeEvent());
+const event = ref<Event>(initializeEvent())
 
 // -------------------------------------------------------------
 // 2) Convert existing ISO date/time → separate date + time vars
 // -------------------------------------------------------------
 const startDateTime = props.initialEvent?.startTime
   ? DateTime.fromISO(props.initialEvent.startTime)
-  : DateTime.local();
+  : DateTime.local()
 
 const endDateTime = props.initialEvent?.endTime
   ? DateTime.fromISO(props.initialEvent.endTime)
-  : DateTime.local();
+  : DateTime.local()
 
 // We store date/time as strings so they can bind to <v-text-field type="date/time">
-const startDate = ref(startDateTime.toFormat('yyyy-MM-dd'));
-const startTime = ref(startDateTime.toFormat('HH:mm'));
-const endDate = ref(endDateTime.toFormat('yyyy-MM-dd'));
-const endTime = ref(endDateTime.toFormat('HH:mm'));
+const startDate = ref(startDateTime.toFormat("yyyy-MM-dd"))
+const startTime = ref(startDateTime.toFormat("HH:mm"))
+const endDate = ref(endDateTime.toFormat("yyyy-MM-dd"))
+const endTime = ref(endDateTime.toFormat("HH:mm"))
 
 // We also track whether the user previously had signUp or signUpForm
 // so we can warn them about removing sign-ups if toggled off.
-const enableSignupForm = ref<boolean>(!!(event.value.signUpForm && event.value.signUpForm.length));
+const enableSignupForm = ref<boolean>(!!(event.value.signUpForm && event.value.signUpForm.length))
 
-const wasPublic = ref<boolean>(event.value.visible || false);
-const hadSignUp = ref<boolean>(event.value.signUp || false);
-const oldEnableSignUpForm = ref<boolean>(enableSignupForm.value);
+const wasPublic = ref<boolean>(event.value.visible || false)
+const hadSignUp = ref<boolean>(event.value.signUp || false)
+const oldEnableSignUpForm = ref<boolean>(enableSignupForm.value)
 
 // Committees
-const committees = ref<Base[]>([]);
-findCommittees().then((response) => (committees.value = response.data ?? [])).catch(() => (committees.value = []));
+const committees = ref<Base[]>([])
+findCommittees().then((response) => (committees.value = response.data ?? [])).catch(() => (committees.value = []))
 
 // Price rules
 const priceRules = [
-  (v: string) => !isNaN(Number(v)) || 'Price must be a number',
+  (v: string) => !isNaN(Number(v)) || "Price must be a number",
   (v: string) => Number(v) < 100 || "That's a little much no?",
-  (v: string) => Number(v) >= 0 || 'Negative prices? That would be weird',
-];
+  (v: string) => Number(v) >= 0 || "Negative prices? That would be weird",
+]
 
 // Compute for the end date field (only if user unchecks "sameEndDate")
 const endDateDisplay = computed({
   get: () => (sameEndDate.value ? startDate.value : endDate.value),
   set: (value: string) => {
-    endDate.value = value;
+    endDate.value = value
   },
-});
+})
 
 // ------------------------------------
 // 3) On submit → combine date + time
@@ -113,60 +113,60 @@ const endDateDisplay = computed({
 async function submit() {
   if (sameEndDate.value) {
     // If user checked "same start and end date"
-    endDate.value = startDate.value;
+    endDate.value = startDate.value
   }
 
-  const result = await eventForm.value?.validate();
-  if (!result || !result.valid) return;
+  const result = await eventForm.value?.validate()
+  if (!result || !result.valid) return
 
-  submitting.value = true;
+  submitting.value = true
 
   try {
     // Clone our event object
-    const payload: Event = {...event.value};
+    const payload: Event = {...event.value}
 
     // Combine date + time -> Luxon -> ISO
     payload.startTime = DateTime.fromFormat(
       `${startDate.value} ${startTime.value}`,
-      'yyyy-MM-dd HH:mm'
-    ).toISO() as string;
+      "yyyy-MM-dd HH:mm",
+    ).toISO() as string
 
     payload.endTime = DateTime.fromFormat(
       `${endDate.value} ${endTime.value}`,
-      'yyyy-MM-dd HH:mm'
-    ).toISO() as string;
+      "yyyy-MM-dd HH:mm",
+    ).toISO() as string
 
-    payload.signUpForm = event.value.signUpForm ?? [];
+    payload.signUpForm = event.value.signUpForm ?? []
 
     // Create vs update using generated client
     if (!payload.id) {
-      await createEvent({ body: payload });
+      await createEvent({body: payload})
     } else {
-      await updateEvent({ path: { eventId: payload.id }, body: payload });
+      await updateEvent({path: {eventId: payload.id}, body: payload})
     }
 
-    emits('success');
+    emits("success")
   } catch (e: unknown) {
-    $handleNetworkError(e);
+    $handleNetworkError(e)
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
 }
 
 // Toggles
 function toggleSignUp() {
-  event.value.signUp = !event.value.signUp;
+  event.value.signUp = !event.value.signUp
   // If user disables signUp, also disable signUpForm
   if (!event.value.signUp) {
-    enableSignupForm.value = false;
+    enableSignupForm.value = false
   }
 }
 
 function toggleSignUpForm() {
-  enableSignupForm.value = !enableSignupForm.value;
+  enableSignupForm.value = !enableSignupForm.value
   if (enableSignupForm.value) {
     // If enabling form, ensure signUp is also enabled
-    event.value.signUp = true;
+    event.value.signUp = true
   }
 }
 </script>
@@ -213,10 +213,10 @@ function toggleSignUpForm() {
             ref="description"
             v-model="event.description"
             :rules="[v => !!v || 'Description is required']"
-            label="Description"
-            variant="outlined"
             hide-details
+            label="Description"
             required
+            variant="outlined"
           />
         </v-col>
       </v-row>
@@ -329,19 +329,19 @@ function toggleSignUpForm() {
             :rules="[v => !!v || 'A representative committee is required']"
             item-title="name"
             item-value="id"
-            prepend-icon="mdi-account-group"
             label="Representative committee"
+            prepend-icon="mdi-account-group"
           />
         </v-col>
         <v-col>
           <v-file-input
             v-model="event.banner"
+            :hint="hasPromo ? 'This event already has a promo image; only choose a file if you want to overwrite it' : undefined"
             accept="image/jpeg"
+            clearable
             label="Promo image (Max 2MB)"
             persistent-hint
-            :hint="hasPromo ? 'This event already has a promo image; only choose a file if you want to overwrite it' : undefined"
             show-size
-            clearable
           />
         </v-col>
       </v-row>
@@ -351,16 +351,16 @@ function toggleSignUpForm() {
         <v-col>
           <v-checkbox
             :model-value="event.signUp"
-            label="Enable sign-up"
             hide-details
+            label="Enable sign-up"
             @click="toggleSignUp"
           />
         </v-col>
         <v-col>
           <v-checkbox
             :model-value="enableSignupForm"
-            label="Enable sign-up form"
             hide-details
+            label="Enable sign-up form"
             @click="toggleSignUpForm"
           />
         </v-col>
@@ -379,10 +379,10 @@ function toggleSignUpForm() {
       <v-expand-transition>
         <v-alert
           v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !enableSignupForm)"
-          type="warning"
-          prominent
-          variant="outlined"
           class="mt-4 mx-3"
+          prominent
+          type="warning"
+          variant="outlined"
         >
           Woah there! Looks like you changed sign-up settings. Once you submit, any existing sign-ups
           <b>will be removed</b>!

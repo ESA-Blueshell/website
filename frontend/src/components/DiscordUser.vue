@@ -1,26 +1,26 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 const props = defineProps([
-  'username',
-  'status',
-  'avatarUrl',
-  'halfWidth',
-  'customText',
+  "username",
+  "status",
+  "avatarUrl",
+  "halfWidth",
+  "customText",
 ])
 </script>
 
 <template>
   <v-col
     v-if="!customText"
+    :md="halfWidth ? 6 : 3"
     class="discord-membership-entry"
     cols="6"
     sm="4"
-    :md="halfWidth ? 6 : 3"
   >
     <div class="discord-membership-image-wrapper">
       <v-lazy
-        width="32px"
-        height="32px"
         :options="{'threshold':0.1}"
+        height="32px"
+        width="32px"
       >
         <img
           :alt="`${username}'s avatar`"
@@ -29,8 +29,8 @@ const props = defineProps([
         >
       </v-lazy>
       <span
-        class="discord-membership-status"
         :class="{ 'discord-membership-online': status==='online', 'discord-membership-idle': status==='idle', 'discord-membership-dnd': status==='dnd' }"
+        class="discord-membership-status"
       />
     </div>
     <span

@@ -91,13 +91,13 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$require} from "@/plugins/require.js";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$require} from "@/plugins/require.js"
 
 export default {
   name: "Connectworks",
   components: {TopBanner},
-  methods: {$require}
+  methods: {$require},
 }
 </script>
 

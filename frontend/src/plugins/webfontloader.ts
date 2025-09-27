@@ -1,4 +1,3 @@
-
 /**
  * plugins/webfontloader.ts
  *
@@ -16,11 +15,13 @@ interface WebFontLoader {
 }
 
 export async function loadFonts(): Promise<void> {
-  const webFontLoader = await import(/* webpackChunkName: "webfontloader" */'webfontloader') as { default: WebFontLoader }
+  const webFontLoader = await import(/* webpackChunkName: "webfontloader" */"webfontloader") as {
+    default: WebFontLoader
+  }
 
   webFontLoader.default.load({
     google: {
-      families: ['Roboto:100,300,400,500,700,900&display=swap'],
+      families: ["Roboto:100,300,400,500,700,900&display=swap"],
     },
   })
 }

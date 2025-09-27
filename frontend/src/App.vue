@@ -10,10 +10,10 @@
 
       <router-link to="/">
         <img
-          src="@/assets/topbarlogo.png"
           alt="Blueshell logo"
-          style="max-height: 64px;width: 100%"
           class="mr-2"
+          src="@/assets/topbarlogo.png"
+          style="max-height: 64px;width: 100%"
         >
       </router-link>
 
@@ -34,15 +34,15 @@
           Membership
         </v-btn>
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/aboutus"
+              v-bind="props"
             >
               Association
               <v-icon>mdi-chevron-down</v-icon>
@@ -69,15 +69,15 @@
 
 
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/events"
+              v-bind="props"
             >
               events
               <v-icon>mdi-chevron-down</v-icon>
@@ -103,15 +103,15 @@
 
 
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/esports/competitive-scene"
+              v-bind="props"
             >
               Esports
               <v-icon>mdi-chevron-down</v-icon>
@@ -139,15 +139,15 @@
           </v-list>
         </v-menu>
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/partners/become-a-partner"
+              v-bind="props"
             >
               Partners
               <v-icon>mdi-chevron-down</v-icon>
@@ -176,10 +176,10 @@
       <div style="height: 90%;display: flex;align-items: center;flex-wrap: nowrap;">
         <!--  Dark mode toggle    -->
         <v-btn
-          class="mr-2"
-          :icon="isDarkMode ? 'mdi-moon-waxing-crescent' : 'mdi-white-balance-sunny'"
-          :color="isDarkMode ? 'accent' : 'white'"
           :class="{'roll-on': isDarkMode,'roll-off': !isDarkMode }"
+          :color="isDarkMode ? 'accent' : 'white'"
+          :icon="isDarkMode ? 'mdi-moon-waxing-crescent' : 'mdi-white-balance-sunny'"
+          class="mr-2"
           @click="toggleDarkMode"
         />
 
@@ -198,8 +198,8 @@
           <template #activator="{ props }">
             <v-btn
               class="bar-button ma-0 mr-2"
-              variant="text"
               v-bind="props"
+              variant="text"
             >
               <v-icon size="x-large">
                 mdi-account
@@ -241,8 +241,8 @@
       temporary
     >
       <v-list
-        nav
         class="pa-2"
+        nav
       >
         <v-list-item to="/">
           Home
@@ -346,45 +346,45 @@
 
       <template #append>
         <v-btn
-          icon="mdi-email"
           href="mailto:board@blueshell.utwente.nl"
-          variant="plain"
+          icon="mdi-email"
           style="width: calc(100%/3)"
+          variant="plain"
         />
         <v-btn
-          icon="mdi-instagram"
           href="https://www.instagram.com/esablueshell/"
+          icon="mdi-instagram"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-facebook"
           href="https://www.facebook.com/BlueshellEsports/"
+          icon="mdi-facebook"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-twitch"
           href="https://www.twitch.tv/blueshellesports"
+          icon="mdi-twitch"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-twitter"
           href="https://twitter.com/BlueshellESA"
+          icon="mdi-twitter"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-linkedin"
           href="https://www.linkedin.com/company/blueshell-esports"
+          icon="mdi-linkedin"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
       </template>
     </v-navigation-drawer>
@@ -402,8 +402,8 @@
     >
       <audio
         v-if="poggers"
-        controls
         autoplay
+        controls
       >
         <source
           src="@/assets/blueshellanthem.mp3"
@@ -436,8 +436,8 @@
     >
       We're using cookies to keep you logged in. You can read more about how we use cookies in our
       <a
-        href="https://esa-blueshell.nl/api/download/bsCookiePolicy.pdf"
         class="text-decoration-none"
+        href="https://esa-blueshell.nl/api/download/bsCookiePolicy.pdf"
         target="_blank"
       >Cookie Policy</a>.
 
@@ -454,16 +454,16 @@
   </v-app>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
-import { useTheme, useDisplay } from 'vuetify'
+<script lang="ts" setup>
+import {computed, onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import {useRoute} from "vue-router"
+import {useDisplay, useTheme} from "vuetify"
 import FooterBanner from "@/components/banners/FooterBanner.vue"
-import { $goto } from "@/plugins/goto"
-import { $handleNetworkError } from "@/plugins/handleNetworkError"
+import {$goto} from "@/plugins/goto"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import DOMPurify from "dompurify"
-import {type AdvancedUser, findUserById} from "@/lib";
+import {type AdvancedUser, findUserById} from "@/lib"
 
 // Reactive state
 const drawer = ref<boolean>(false)
@@ -479,7 +479,7 @@ const display = useDisplay()
 // Computed properties
 const statusSnackbarMessage = computed({
   get: (): string => store.state.statusSnackbarMessage,
-  set: (message: string) => store.commit('setStatusSnackbarMessage', message)
+  set: (message: string) => store.commit("setStatusSnackbarMessage", message),
 })
 
 const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
@@ -491,16 +491,16 @@ const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 
 // Methods
 const checkPrefersColorScheme = (): void => {
-  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
     setDarkMode(true)
-  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+  } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
     setDarkMode(false)
   }
 }
 
 const setDarkMode = (dark: boolean): void => {
-  localStorage.setItem('esa-blueshell.nl:darkMode', dark.toString())
-  theme.change(dark ? 'dark' : 'light')
+  localStorage.setItem("esa-blueshell.nl:darkMode", dark.toString())
+  theme.change(dark ? "dark" : "light")
 }
 
 const toggleDarkMode = (): void => {
@@ -508,21 +508,21 @@ const toggleDarkMode = (): void => {
 }
 
 const logOut = (): void => {
-  document.cookie = 'login=;expires=Thu, 01 Jan 1970 00:00:01 GMT'
-  store.commit('logout')
+  document.cookie = "login=;expires=Thu, 01 Jan 1970 00:00:01 GMT"
+  store.commit("logout")
   if (route.meta.requiresAuth) {
-    $goto('/')
+    $goto("/")
   }
 }
 
 const acceptCookies = (): void => {
-  localStorage.setItem('esa-blueshell.nl:cookiesAccepted', 'true')
+  localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
   showCookieSnackbar.value = false
 }
 
 // Lifecycle
 onMounted(async () => {
-  if (localStorage.getItem('esa-blueshell.nl:cookiesAccepted') !== 'true') {
+  if (localStorage.getItem("esa-blueshell.nl:cookiesAccepted") !== "true") {
     showCookieSnackbar.value = true
   }
 
@@ -531,18 +531,18 @@ onMounted(async () => {
     try {
       const resp = await findUserById({
         path: {
-          userId: loginData.userId
-        }
-      });
+          userId: loginData.userId,
+        },
+      })
 
-      const userData: AdvancedUser = resp.data;
-      store.commit('setRoles', userData.roles)
+      const userData: AdvancedUser = resp.data
+      store.commit("setRoles", userData.roles)
     } catch (e: any) {
       if (e.response?.status === 401) {
-        store.commit('setStatusSnackbarMessage', 'Login expired. You have been logged out.')
-        store.commit('logout')
+        store.commit("setStatusSnackbarMessage", "Login expired. You have been logged out.")
+        store.commit("logout")
         if (route.meta.requiresAuth) {
-          $goto('/')
+          $goto("/")
         }
       } else {
         $handleNetworkError(e)
@@ -551,7 +551,7 @@ onMounted(async () => {
   }
 
   const keysPressed: string[] = []
-  window.addEventListener('keydown', (event: KeyboardEvent) => {
+  window.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key) {
       const key = event.key.toLowerCase()
       keysPressed.push(key)
@@ -562,14 +562,14 @@ onMounted(async () => {
     }
   })
 
-  if (!localStorage.getItem('esa-blueshell.nl:darkMode')) {
+  if (!localStorage.getItem("esa-blueshell.nl:darkMode")) {
     checkPrefersColorScheme()
   }
 
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => checkPrefersColorScheme())
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => checkPrefersColorScheme())
 
-  const savedTheme = localStorage.getItem('esa-blueshell.nl:darkMode')
-  theme.change(savedTheme === 'true' ? 'dark' : 'light')
+  const savedTheme = localStorage.getItem("esa-blueshell.nl:darkMode")
+  theme.change(savedTheme === "true" ? "dark" : "light")
 })
 </script>
 

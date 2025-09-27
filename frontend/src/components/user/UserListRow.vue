@@ -1,8 +1,8 @@
 <template>
   <start-membership-dialog
     v-model="showStartModal"
-    :user-id="user.id"
     :memberships="memberships"
+    :user-id="user.id"
   />
   <div>
     <v-list-item>
@@ -36,15 +36,15 @@
               <span class="mr-2">Enabled</span>
               <v-icon
                 v-if="user.enabled"
-                color="green"
                 class="mr-2"
+                color="green"
               >
                 mdi-check
               </v-icon>
               <v-icon
                 v-else
-                color="red"
                 class="mr-2"
+                color="red"
               >
                 mdi-close
               </v-icon>
@@ -70,16 +70,16 @@
                 <span class="mr-2">Paid</span>
                 <v-icon
                   v-if="contribution.paid"
-                  color="green"
                   class="mr-2"
+                  color="green"
                   @click.stop="changeContributionPaid(false)"
                 >
                   mdi-check
                 </v-icon>
                 <v-icon
                   v-else
-                  color="red"
                   class="mr-2"
+                  color="red"
                   @click.stop="changeContributionPaid(true)"
                 >
                   mdi-close
@@ -128,27 +128,28 @@
 
   <delete-confirmation-dialog
     v-model="deleteDialog"
-    title="Confirm User Deletion"
     :message="`Are you sure you want to delete ${user.fullName} (${user.username})?`"
+    title="Confirm User Deletion"
     @confirm="confirmDeleteUser"
   />
 </template>
 
-<script setup lang="ts">
-import {computed, ref} from 'vue';
-import AdvancedUserEdit from '@/components/user/AdvancedUserEdit.vue';
-import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue";
-import {DateTime} from 'luxon';
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
+import {DateTime} from "luxon"
 import {
   type AdvancedUser,
   type Contribution,
   createMembership,
   deleteUserById,
-  type Membership, MemberType,
+  type Membership,
+  MemberType,
   setContributionPaid,
-  updateMembership
-} from "@/lib";
-import StartMembershipDialog from "@/components/membership/StartMembershipDialog.vue";
+  updateMembership,
+} from "@/lib"
+import StartMembershipDialog from "@/components/membership/StartMembershipDialog.vue"
 
 interface Props {
   user: AdvancedUser;
@@ -159,11 +160,15 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'toggle-expanded', userId: number): void;
-  (e: 'user-changed', userData: AdvancedUser): void;
-  (e: 'contribution-changed', contribution: Contribution): void;
-  (e: 'membership-changed', membership: Membership): void;
-  (e: 'delete-user', user: AdvancedUser): void;
+  (e: "toggle-expanded", userId: number): void;
+
+  (e: "user-changed", userData: AdvancedUser): void;
+
+  (e: "contribution-changed", contribution: Contribution): void;
+
+  (e: "membership-changed", membership: Membership): void;
+
+  (e: "delete-user", user: AdvancedUser): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -171,87 +176,87 @@ const props = withDefaults(defineProps<Props>(), {
   memberships: () => [],
   expanded: null,
   isMemberList: false,
-});
+})
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
 // Reactive state
-const deleteDialog = ref(false);
-const showStartModal = ref(false);
-const startDate = ref(DateTime.now().toISODate());
-const memberType = ref<MemberType>(MemberType.REGULAR);
-const isSubmitting = ref(false);
+const deleteDialog = ref(false)
+const showStartModal = ref(false)
+const startDate = ref(DateTime.now().toISODate())
+const memberType = ref<MemberType>(MemberType.REGULAR)
+const isSubmitting = ref(false)
 
 const contribution = computed(() =>
-  props.contributions.find((c) => c.userId === props.user.id)
-);
+  props.contributions.find((c) => c.userId === props.user.id),
+)
 
 const membership = computed(() =>
-  props.memberships.find((m) => m.userId === props.user.id)
+  props.memberships.find((m) => m.userId === props.user.id),
 )
 
 const userModel = computed<AdvancedUser>({
-  get: () => props.user
-});
+  get: () => props.user,
+})
 
 const toggleExpanded = () => {
-  emit('toggle-expanded', props.user.id as number);
-};
+  emit("toggle-expanded", props.user.id as number)
+}
 
 const startMembership = () => {
-  showStartModal.value = true;
-};
+  showStartModal.value = true
+}
 
 const confirmStartMembership = async () => {
   try {
-    isSubmitting.value = true;
+    isSubmitting.value = true
 
     const membershipData: Membership = {
       userId: props.user.id as number,
       memberType: memberType.value,
       startDate: DateTime.fromISO(startDate.value).toISO() as string,
-      endDate: undefined
-    };
+      endDate: undefined,
+    }
 
     const response = await createMembership({
-      body: membershipData
-    });
+      body: membershipData,
+    })
 
     if (response.data) {
       const changedUser = {
         ...props.user,
-        membership: response.data
-      };
-      userChanged(changedUser);
-      showStartModal.value = false;
+        membership: response.data,
+      }
+      userChanged(changedUser)
+      showStartModal.value = false
     }
   } catch (error) {
-    console.error('Failed to create membership:', error);
+    console.error("Failed to create membership:", error)
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 const endMembership = async () => {
   try {
     const membershipData: Membership = {
       userId: props.user.id as number,
       ...membership,
-      endDate: DateTime.now().toISO()
-    };
+      endDate: DateTime.now().toISO(),
+    }
 
     const response = await updateMembership({
       path: {id: membershipData.id as number},
-      body: membershipData
-    });
+      body: membershipData,
+    })
 
     if (response.data) {
-      emit('membership-changed', response.data);
+      emit("membership-changed", response.data)
     }
   } catch (error) {
-    console.error('Failed to end membership:', error);
+    console.error("Failed to end membership:", error)
   }
-};
+}
 
 const resumeMembership = async () => {
   try {
@@ -259,60 +264,60 @@ const resumeMembership = async () => {
       id: 0,
       userId: props.user.id as number,
       ...membership,
-      endDate: undefined
-    };
+      endDate: undefined,
+    }
 
     const response = await updateMembership({
       path: {id: membershipData.id as number},
-      body: membershipData
-    });
+      body: membershipData,
+    })
 
     if (response.data) {
-      emit('membership-changed', response.data);
+      emit("membership-changed", response.data)
     }
   } catch (error) {
-    console.error('Failed to resume membership:', error);
+    console.error("Failed to resume membership:", error)
   }
-};
+}
 
 const deleteUser = () => {
-  deleteDialog.value = true;
-};
+  deleteDialog.value = true
+}
 
 const confirmDeleteUser = async () => {
   try {
-    deleteDialog.value = false;
+    deleteDialog.value = false
 
     await deleteUserById({
-      path: {userId: props.user.id as number}
-    });
+      path: {userId: props.user.id as number},
+    })
 
-    emit('delete-user', props.user);
+    emit("delete-user", props.user)
   } catch (error) {
-    console.error('Failed to delete user:', error);
+    console.error("Failed to delete user:", error)
   }
-};
+}
 
 const userChanged = (userData: AdvancedUser) => {
-  emit('user-changed', userData);
-};
+  emit("user-changed", userData)
+}
 
 const changeContributionPaid = async (paid: boolean) => {
   try {
     if (contribution.value) {
       const response = await setContributionPaid({
         path: {id: contribution.value.id as number},
-        query: {paid}
-      });
+        query: {paid},
+      })
 
       if (response.data) {
-        emit('contribution-changed', response.data);
+        emit("contribution-changed", response.data)
       }
     }
   } catch (error) {
-    console.error('Failed to change contribution paid status:', error);
+    console.error("Failed to change contribution paid status:", error)
   }
-};
+}
 </script>
 
 <style lang="scss">

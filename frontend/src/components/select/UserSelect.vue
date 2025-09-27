@@ -1,15 +1,15 @@
-<script setup lang="ts">
-import { ref, watch } from 'vue'
-import type { SimpleUser } from '@/lib'
-import {VAutocomplete} from "vuetify/lib/components";
+<script lang="ts" setup>
+import {ref, watch} from "vue"
+import type {AdvancedUser} from "@/lib"
+import {VAutocomplete} from "vuetify/components"
 
-type Rule = (v: SimpleUser | undefined) => true | string
+type Rule = (v: AdvancedUser | undefined) => true | string
 
 const props = defineProps<{
   /** Bind the selected user object */
-  modelValue?: SimpleUser | undefined
+  modelValue?: number | undefined
   /** List of available users */
-  users: SimpleUser[]
+  users: AdvancedUser[]
   /** Optional Vuetify-style rules coming from parent */
   rules?: Rule[]
   /** Optional label */
@@ -17,14 +17,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: SimpleUser | undefined]
+  "update:modelValue": [value: AdvancedUser | undefined]
 }>()
 
 /**
  * Internal selection mirrors the v-model. We use return-object on v-autocomplete,
  * so the value is the full SimpleUser.
  */
-const selectedUser = ref<SimpleUser | undefined>(props.modelValue)
+const selectedUser = ref<AdvancedUser | undefined>(props.users.find((u: AdvancedUser) => u.id == props.modelValue))
 const inputRef = ref<InstanceType<typeof VAutocomplete> | null>(null)
 
 /** Keep internal state in sync when parent changes v-model */
@@ -38,15 +38,14 @@ watch(
       return
     }
     // If the exact object exists in the current list, prefer that instance.
-    const match = props.users.find(u => u.id === val.id)
-    selectedUser.value = match ?? val
+    selectedUser.value = props.users.find(u => u.id === val)
   },
-  { immediate: true }
+  {immediate: true},
 )
 
 /** Emit full user back to parent whenever selection changes */
 watch(selectedUser, (val) => {
-  emit('update:modelValue', val)
+  emit("update:modelValue", val)
 })
 
 /** If the users list changes, keep selection pointing at the matching instance (or clear) */
@@ -57,45 +56,46 @@ watch(
     const match = list.find(u => u.id === selectedUser.value?.id)
     if (!match) selectedUser.value = undefined
     else if (match !== selectedUser.value) selectedUser.value = match
-  }
+  },
 )
 
 /** Title renderer */
-const itemTitle = (u: SimpleUser) =>
+const itemTitle = (u: AdvancedUser) =>
   u?.discord ? `${u.fullName} (${u.discord})` : u?.fullName
 
 /** Expose a small API so parent can validate/focus/reset */
 function validate() {
-  // Vuetify inputs expose validate() returning { valid: boolean }
   return inputRef.value?.validate?.()
 }
+
 function resetValidation() {
   inputRef.value?.resetValidation?.()
 }
+
 function focus() {
   inputRef.value?.focus?.()
 }
 
-defineExpose({ validate, resetValidation, focus })
+defineExpose({validate, resetValidation, focus})
 </script>
 
 <template>
   <v-autocomplete
     ref="inputRef"
     v-model="selectedUser"
-    :items="users"
     :item-title="itemTitle"
-    item-value="id"
-    return-object
-    :rules="rules ?? [(v: SimpleUser | undefined) => !!v || 'Select a user']"
-    hide-details="auto"
+    :items="users"
+    :label="label ?? 'User name'"
+    :rules="rules ?? [(v: AdvancedUser | undefined) => !!v || 'Select a user']"
     auto-select-first
     clearable
+    hide-details="auto"
     hide-no-data
-    :label="label ?? 'User name'"
+    item-value="id"
+    return-object
   />
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 /* add styles if needed */
 </style>

@@ -1,4 +1,3 @@
-
 <template>
   <div style="position:relative;overflow: hidden;">
     <p
@@ -27,23 +26,23 @@
         <div
           v-for="(game,j) in category.titles"
           :key="game.title"
-          class="mx-3 my-2 pa-2"
-          style="border-radius: 10px;z-index: 3;transition: .3s cubic-bezier(.25,.8,.5,1) !important;"
           :class="{ 'elevation-8': (showPopup || hoverCarousel) && currentGame!==null && i===currentGame.y && j===currentGame.x }"
           :style="{
             cursor: game.esportsLink ? 'pointer' : 'auto', 'background-color': !(theme.global.current.value.dark && (!showPopup && !hoverCarousel)) && ((!showPopup && !hoverCarousel) || (currentGame!==null && i===currentGame.y && j===currentGame.x )) ? '#F5F5F5aa' : '#F5F5F544',
             width: $vuetify.display.smAndUp ? '85px' : '70px',
             height: $vuetify.display.smAndUp ? '85px' : '70px',
           }"
+          class="mx-3 my-2 pa-2"
+          style="border-radius: 10px;z-index: 3;transition: .3s cubic-bezier(.25,.8,.5,1) !important;"
 
           @click="handleGameClick(game.esportsLink)"
           @mouseenter="hover(i,j)"
           @mouseleave="unhover"
         >
           <v-lazy
-            :width="$vuetify.display.smAndUp ? '69px' : '54px'"
             :height="$vuetify.display.smAndUp ? '69px' : '54px'"
             :options="{'threshold':0.1}"
+            :width="$vuetify.display.smAndUp ? '69px' : '54px'"
           >
             <v-img :src="game.icon" />
           </v-lazy>
@@ -77,8 +76,8 @@
         v-model="currentGameIndex"
         :show-arrows="false"
         hide-delimiters
-        theme="light"
         style="height: 100%;z-index: 1;"
+        theme="light"
       >
         <v-carousel-item
           v-for="game in games.map(it => it.titles).flat()"
@@ -105,10 +104,10 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-import { $goto } from "@/plugins/goto";
-import { useTheme } from 'vuetify';
+<script lang="ts" setup>
+import {ref} from "vue"
+import {$goto} from "@/plugins/goto"
+import {useTheme} from "vuetify"
 
 // Define types
 interface Game {
@@ -133,44 +132,44 @@ interface Props {
   games: GameCategory[];
 }
 
-const theme = useTheme();
+const theme = useTheme()
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 // Reactive state
-const showPopup = ref<number>(0);
-const currentGame = ref<CurrentGame | null>(null);
-const currentGameIndex = ref<number | null>(null);
-const hoverCarousel = ref<boolean>(false);
+const showPopup = ref<number>(0)
+const currentGame = ref<CurrentGame | null>(null)
+const currentGameIndex = ref<number | null>(null)
+const hoverCarousel = ref<boolean>(false)
 
 // Methods
 const handleGameClick = (esportsLink?: string): void => {
   if (esportsLink) {
-    $goto(esportsLink);
+    $goto(esportsLink)
   }
-};
+}
 
 const hover = (i: number | null, j: number | null): void => {
   setTimeout(() => {
-    showPopup.value++;
+    showPopup.value++
     if (i !== null && j !== null) {
-      currentGame.value = { y: i, x: j };
+      currentGame.value = {y: i, x: j}
 
-      let newIndex = 0;
+      let newIndex = 0
       for (let k = 0; k < i; k++) {
-        newIndex += props.games[k].titles.length;
+        newIndex += props.games[k].titles.length
       }
-      newIndex += j;
-      currentGameIndex.value = newIndex;
+      newIndex += j
+      currentGameIndex.value = newIndex
     }
-  }, 1);
-};
+  }, 1)
+}
 
 const unhover = (): void => {
   setTimeout(() => {
-    showPopup.value--;
-  }, 1000);
-};
+    showPopup.value--
+  }, 1000)
+}
 </script>
 
 <style lang="scss" scoped>

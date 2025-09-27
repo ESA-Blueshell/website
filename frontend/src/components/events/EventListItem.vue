@@ -1,20 +1,14 @@
-<script setup lang="ts">
-import $markdownToHtml from "@/plugins/markdownToHtml.ts";
-import { computed, nextTick, onMounted, ref } from "vue";
-import { createEvent as createIcsEvent } from "ics";
-import SignUpForm from "@/components/events/EventSignUpForm.vue";
-import store from "@/plugins/store.ts";
-import { $goto } from "@/plugins/goto";
-import { useRoute } from "vue-router";
-import { useTheme } from "vuetify";
-import { DateTime } from "luxon";
-import {
-  updateEventSignUp,
-  createEventSignup,
-  deleteEventSignup,
-  type Event,
-  type EventSignUp
-} from "@/lib/blueshell";
+<script lang="ts" setup>
+import $markdownToHtml from "@/plugins/markdownToHtml.ts"
+import {computed, nextTick, onMounted, ref} from "vue"
+import {createEvent as createIcsEvent} from "ics"
+import SignUpForm from "@/components/events/EventSignUpForm.vue"
+import store from "@/plugins/store.ts"
+import {$goto} from "@/plugins/goto"
+import {useRoute} from "vue-router"
+import {useTheme} from "vuetify"
+import {DateTime} from "luxon"
+import {createEventSignup, deleteEventSignup, type Event, type EventSignUp, updateEventSignUp} from "@/lib/blueshell"
 
 const props = defineProps({
   event: {
@@ -31,118 +25,118 @@ const props = defineProps({
       } as EventSignUp),
     required: false,
   },
-});
+})
 
-const event = ref<Event>(props.event);
+const event = ref<Event>(props.event)
 
 const signUp = ref<EventSignUp>({
   id: props.signUp?.id,
   eventId: props.event.id,
   formAnswers: props.signUp?.formAnswers ?? [],
   ...props.signUp,
-});
+})
 
-const route = useRoute();
-const theme = useTheme();
-const expanded = ref(false);
-const submitting = ref(false);
-const eventElement = ref<HTMLElement | null>(null);
+const route = useRoute()
+const theme = useTheme()
+const expanded = ref(false)
+const submitting = ref(false)
+const eventElement = ref<HTMLElement | null>(null)
 
-const isMember = computed<boolean>(() => store.getters.isMember);
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn);
+const isMember = computed<boolean>(() => store.getters.isMember)
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 
 async function submitSignUp() {
-  submitting.value = true;
+  submitting.value = true
   try {
     if (signUp.value?.id) {
       await updateEventSignUp({
-        path: { eventId: event.value.id as number },
+        path: {eventId: event.value.id as number},
         body: signUp.value,
-      });
+      })
     } else {
       await createEventSignup({
-        path: { id: event.value.id as number },
+        path: {id: event.value.id as number},
         body: {
           ...signUp.value,
           eventId: event.value.id as number,
         },
-      });
+      })
     }
-    signUp.value.formAnswers = [];
+    signUp.value.formAnswers = []
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
 }
 
 async function removeSignUp() {
   if (signUp.value?.id !== undefined) {
     await deleteEventSignup({
-      path: { eventSignupId: signUp.value.id as number },
-    });
+      path: {eventSignupId: signUp.value.id as number},
+    })
   }
   signUp.value = {
     id: undefined,
     eventId: event.value.id,
     formAnswers: [],
-  } as EventSignUp;
+  } as EventSignUp
 }
 
 onMounted(async () => {
   if (route.hash && event.value.id === Number(route.hash.replace("#", ""))) {
-    await nextTick();
-    eventElement.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+    await nextTick()
+    eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
   }
-});
+})
 
 async function submitSignUpForm(
   eventId: number,
-  payload: { answers: any; guestData: any }
+  payload: { answers: any; guestData: any },
 ) {
-  eventElement.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+  eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
 
-  signUp.value.formAnswers = payload.answers ?? [];
+  signUp.value.formAnswers = payload.answers ?? []
 
   if (isLoggedIn.value) {
     if (signUp.value?.id) {
       await updateEventSignUp({
-        path: { eventId },
+        path: {eventId},
         body: signUp.value,
-      });
+      })
     } else {
       await createEventSignup({
-        path: { id: eventId },
-        body: { ...signUp.value, eventId },
-      });
+        path: {id: eventId},
+        body: {...signUp.value, eventId},
+      })
     }
   } else {
-    store.commit("saveGuestData", payload.guestData?.value ?? payload.guestData);
+    store.commit("saveGuestData", payload.guestData?.value ?? payload.guestData)
     await createEventSignup({
-      path: { id: eventId },
-      body: { ...signUp.value, eventId },
-    });
+      path: {id: eventId},
+      body: {...signUp.value, eventId},
+    })
   }
 }
 
 function toggleExpanded() {
   if (!expanded.value) {
-    eventElement.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+    eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
   }
-  expanded.value = !expanded.value;
+  expanded.value = !expanded.value
 }
 
 function findLocation() {
   if (event.value.location && event.value.location.toLowerCase().includes("discord")) {
-    $goto("https://discord.gg/23YMFQy");
+    $goto("https://discord.gg/23YMFQy")
   } else if (event.value.location) {
     $goto(
-      encodeURI("https://www.google.com/maps/search/?api=1&query=" + event.value.location)
-    );
+      encodeURI("https://www.google.com/maps/search/?api=1&query=" + event.value.location),
+    )
   }
 }
 
 function downloadIcs() {
-  const start = DateTime.fromISO(event.value.startTime).toUTC();
-  const end = DateTime.fromISO(event.value.endTime).toUTC();
+  const start = DateTime.fromISO(event.value.startTime).toUTC()
+  const end = DateTime.fromISO(event.value.endTime).toUTC()
 
   createIcsEvent(
     {
@@ -154,34 +148,34 @@ function downloadIcs() {
     },
     (error, value) => {
       if (error) {
-        console.error(error);
-        return;
+        console.error(error)
+        return
       }
-      const element = document.createElement("a");
+      const element = document.createElement("a")
       element.setAttribute(
         "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(value || "")
-      );
-      element.setAttribute("download", `${event.value.title}.ics`);
-      element.style.display = "none";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-    }
-  );
+        "data:text/plain;charset=utf-8," + encodeURIComponent(value || ""),
+      )
+      element.setAttribute("download", `${event.value.title}.ics`)
+      element.style.display = "none"
+      document.body.appendChild(element)
+      element.click()
+      document.body.removeChild(element)
+    },
+  )
 }
 
 async function copyShareLink() {
-  const url = `${window.location.origin}${window.location.pathname}#${event.value.id}`;
-  await navigator.clipboard.writeText(url);
-  store.commit("setStatusSnackbarMessage", `Link for ${event.value.title} copied to clipboard`);
+  const url = `${window.location.origin}${window.location.pathname}#${event.value.id}`
+  await navigator.clipboard.writeText(url)
+  store.commit("setStatusSnackbarMessage", `Link for ${event.value.title} copied to clipboard`)
 }
 
 function formatEventTime() {
-  const startTime = DateTime.fromISO(event.value.startTime);
-  const endTime = DateTime.fromISO(event.value.endTime);
+  const startTime = DateTime.fromISO(event.value.startTime)
+  const endTime = DateTime.fromISO(event.value.endTime)
 
-  let result = "";
+  let result = ""
 
   result += startTime.toLocaleString({
     weekday: "long",
@@ -189,9 +183,9 @@ function formatEventTime() {
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-  });
+  })
 
-  result += " - ";
+  result += " - "
 
   if (
     startTime.day !== endTime.day ||
@@ -202,16 +196,16 @@ function formatEventTime() {
       weekday: "long",
       day: "numeric",
       month: "long",
-    });
-    result += " at ";
+    })
+    result += " at "
   }
 
   result += endTime.toLocaleString({
     hour: "2-digit",
     minute: "2-digit",
-  });
+  })
 
-  return result;
+  return result
 }
 </script>
 
@@ -224,15 +218,15 @@ function formatEventTime() {
           ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${event.banner})`
           : `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${event.banner})`
     }"
-    rounded="sm"
     class="py-4"
+    rounded="sm"
     style="background-size: cover; background-position: center; min-height: 240px;"
   >
     <div ref="eventElement">
       <v-container>
         <v-row
-          no-gutters
           align="start"
+          no-gutters
         >
           <v-col>
             <v-list-item-title class="text-h4">
@@ -245,7 +239,7 @@ function formatEventTime() {
             >
               {{ event.location }} <br>
               {{ formatEventTime() }} <br>
-              {{ event.membersOnly ? 'Members only' : '' }}
+              {{ event.membersOnly ? "Members only" : "" }}
             </div>
 
             <div v-html="event.description ? $markdownToHtml(event.description) : 'No description...'" />
@@ -262,11 +256,11 @@ function formatEventTime() {
                 >
                   <template #activator="{ props: tooltipProps }">
                     <v-btn
-                      icon="mdi-checkbox-marked"
-                      variant="plain"
-                      :loading="submitting"
                       :disabled="event.membersOnly && !isMember"
+                      :loading="submitting"
+                      icon="mdi-checkbox-marked"
                       v-bind="tooltipProps"
+                      variant="plain"
                       @click="removeSignUp()"
                     />
                   </template>
@@ -280,11 +274,11 @@ function formatEventTime() {
                 >
                   <template #activator="{ props: tooltipProps }">
                     <v-btn
-                      icon="mdi-checkbox-blank"
-                      variant="plain"
-                      :loading="submitting"
                       :disabled="event.membersOnly && !isMember"
+                      :loading="submitting"
+                      icon="mdi-checkbox-blank"
                       v-bind="tooltipProps"
+                      variant="plain"
                       @click="submitSignUp()"
                     />
                   </template>
@@ -300,11 +294,11 @@ function formatEventTime() {
                   >
                     <template #activator="{ props: tooltipProps }">
                       <v-btn
-                        icon="mdi-close"
-                        variant="plain"
-                        :loading="submitting"
                         :disabled="event.membersOnly && !isMember"
+                        :loading="submitting"
+                        icon="mdi-close"
                         v-bind="tooltipProps"
+                        variant="plain"
                         @click="removeSignUp()"
                       />
                     </template>
@@ -313,7 +307,6 @@ function formatEventTime() {
 
                 <v-row>
                   <v-tooltip
-                    location="left"
                     :text="
                       signUp?.id
                         ? 'Edit sign-up form'
@@ -321,14 +314,15 @@ function formatEventTime() {
                           ? 'Fill in sign-up form'
                           : 'Cancel filling in sign-up form'
                     "
+                    location="left"
                   >
                     <template #activator="{ props: tooltipProps }">
                       <v-btn
-                        icon="mdi-list-status"
-                        variant="plain"
-                        :loading="submitting"
                         :disabled="event.membersOnly && !isMember"
+                        :loading="submitting"
+                        icon="mdi-list-status"
                         v-bind="tooltipProps"
+                        variant="plain"
                         @click="toggleExpanded()"
                       />
                     </template>
@@ -339,14 +333,14 @@ function formatEventTime() {
 
             <v-row>
               <v-tooltip
-                text="Find location"
                 location="left"
+                text="Find location"
               >
                 <template #activator="{ props: tooltipProps }">
                   <v-btn
                     icon="mdi-google-maps"
-                    variant="plain"
                     v-bind="tooltipProps"
+                    variant="plain"
                     @click="findLocation()"
                   />
                 </template>
@@ -354,14 +348,14 @@ function formatEventTime() {
             </v-row>
             <v-row>
               <v-tooltip
-                text="Add to your calendar"
                 location="left"
+                text="Add to your calendar"
               >
                 <template #activator="{ props: tooltipProps }">
                   <v-btn
                     icon="mdi-calendar"
-                    variant="plain"
                     v-bind="tooltipProps"
+                    variant="plain"
                     @click="downloadIcs()"
                   />
                 </template>
@@ -369,14 +363,14 @@ function formatEventTime() {
             </v-row>
             <v-row>
               <v-tooltip
-                text="Copy share link"
                 location="left"
+                text="Copy share link"
               >
                 <template #activator="{ props: tooltipProps }">
                   <v-btn
                     icon="mdi-share-variant"
-                    variant="plain"
                     v-bind="tooltipProps"
+                    variant="plain"
                     @click="copyShareLink()"
                   />
                 </template>
@@ -391,10 +385,10 @@ function formatEventTime() {
               class="form-border mx-auto rounded-b"
             >
               <sign-up-form
-                :initial-form-answers="signUp?.formAnswers"
                 :event="event"
-                class="form mx-auto"
+                :initial-form-answers="signUp?.formAnswers"
                 :show-guest-form="!isLoggedIn"
+                class="form mx-auto"
                 @submit="({ answers, guestData }) => submitSignUpForm(event.id as number, { answers, guestData })"
               />
             </div>

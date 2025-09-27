@@ -10,8 +10,8 @@
         v-model="currentStep"
         :items="steps"
         class="mx-auto mt-10"
-        style="max-width: 800px"
         hide-actions
+        style="max-width: 800px"
       >
         <!-- Step 1: User Information -->
         <template #item.1>
@@ -19,16 +19,16 @@
             <advanced-user-edit
               ref="userEditRef"
               v-model="userData"
-              :editing="loggedIn"
               :creating="!loggedIn"
+              :editing="loggedIn"
             />
 
             <v-row class="mt-4">
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  color="primary"
                   :loading="saving"
+                  color="primary"
                   @click="nextStep"
                 >
                   Next
@@ -58,8 +58,8 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  color="primary"
                   :loading="saving"
+                  color="primary"
                   @click="nextStep"
                 >
                   Next
@@ -90,8 +90,8 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  color="primary"
                   :loading="saving"
+                  color="primary"
                   @click="completeMembership"
                 >
                   Complete Membership
@@ -110,9 +110,9 @@
     >
       <v-card class="pa-6 text-center">
         <v-icon
-          size="64"
-          color="success"
           class="mb-4"
+          color="success"
+          size="64"
         >
           mdi-check-circle
         </v-icon>
@@ -123,8 +123,8 @@
           Your membership form has been successfully submitted. Welcome to Blueshell E-Sports!
         </p>
         <v-btn
-          color="primary"
           class="mt-4"
+          color="primary"
           @click="$goto('/')"
         >
           Go to Homepage
@@ -134,254 +134,254 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, type Ref } from 'vue';
-import { DateTime } from 'luxon';
-import TopBanner from "@/components/banners/TopBanner.vue";
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
-import AddressEdit from "@/components/edit/AddressEdit.vue";
-import MembershipEdit from "@/components/edit/MembershipEdit.vue";
-import type { AdvancedUser, Address, Membership } from '@/lib';
-import { findUserById, updateUser, createUser } from '@/lib';
+<script lang="ts" setup>
+import {onMounted, ref, type Ref} from "vue"
+import {DateTime} from "luxon"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import AddressEdit from "@/components/edit/AddressEdit.vue"
+import MembershipEdit from "@/components/edit/MembershipEdit.vue"
+import type {Address, AdvancedUser, Membership} from "@/lib"
+import {createUser, findUserById, updateUser} from "@/lib"
 
-import store from '@/plugins/store';
-import { $handleNetworkError } from "@/plugins/handleNetworkError";
-import { $goto } from "@/plugins/goto";
+import store from "@/plugins/store"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {$goto} from "@/plugins/goto"
 
 // Reactive state
-const currentStep: Ref<number> = ref(1);
-const succeeded: Ref<boolean> = ref(false);
-const saving: Ref<boolean> = ref(false);
-const loggedIn: Ref<boolean> = ref(false);
+const currentStep: Ref<number> = ref(1)
+const succeeded: Ref<boolean> = ref(false)
+const saving: Ref<boolean> = ref(false)
+const loggedIn: Ref<boolean> = ref(false)
 
 // Form data
 const userData: Ref<AdvancedUser> = ref({
-  initials: '',
-  firstName: '',
-  lastName: '',
-  prefix: '',
-  email: '',
-  username: '',
-  phoneNumber: '',
-  dateOfBirth: '',
-  nationality: '',
-  discord: '',
+  initials: "",
+  firstName: "",
+  lastName: "",
+  prefix: "",
+  email: "",
+  username: "",
+  phoneNumber: "",
+  dateOfBirth: "",
+  nationality: "",
+  discord: "",
   newsletter: false,
   photoConsent: false,
   ehbo: false,
   bhv: false,
   incasso: false,
-  studentNumber: '',
-  gender: '',
-} as AdvancedUser);
+  studentNumber: "",
+  gender: "",
+} as AdvancedUser)
 
 const addressData: Ref<Address> = ref({
-  street: '',
-  houseNumber: '',
-  zipCode: '',
-  city: '',
-  country: '',
-} as Address);
+  street: "",
+  houseNumber: "",
+  zipCode: "",
+  city: "",
+  country: "",
+} as Address)
 
 const membershipData: Ref<Membership> = ref({
   userId: 0,
-  memberType: 'REGULAR',
-  city: '',
+  memberType: "REGULAR",
+  city: "",
   date: DateTime.now().toISODate(),
-} as Membership);
+} as Membership)
 
 // Template refs
-const userEditRef: Ref<any> = ref(null);
-const addressEditRef: Ref<any> = ref(null);
-const membershipEditRef: Ref<any> = ref(null);
+const userEditRef: Ref<any> = ref(null)
+const addressEditRef: Ref<any> = ref(null)
+const membershipEditRef: Ref<any> = ref(null)
 
 // Steps configuration
 const steps = [
-  { title: 'Personal Information', value: 1 },
-  { title: 'Address', value: 2 },
-  { title: 'Membership', value: 3 }
-];
+  {title: "Personal Information", value: 1},
+  {title: "Address", value: 2},
+  {title: "Membership", value: 3},
+]
 
 // Methods
 const nextStep = async (): Promise<void> => {
-  saving.value = true;
+  saving.value = true
 
   try {
     if (currentStep.value === 1) {
       // Validate and save user data
       if (!await validateAndSaveUserData()) {
-        return;
+        return
       }
     } else if (currentStep.value === 2) {
       // Validate and save address data
       if (!await validateAndSaveAddressData()) {
-        return;
+        return
       }
     }
 
-    currentStep.value += 1;
+    currentStep.value += 1
   } catch (error: unknown) {
-    $handleNetworkError(error);
+    $handleNetworkError(error)
   } finally {
-    saving.value = false;
+    saving.value = false
   }
-};
+}
 
 const previousStep = (): void => {
   if (currentStep.value > 1) {
-    currentStep.value -= 1;
+    currentStep.value -= 1
   }
-};
+}
 
 const validateAndSaveUserData = async (): Promise<boolean> => {
   // Validate the child component
   if (!userEditRef.value) {
-    return false;
+    return false
   }
 
-  const userEditValid = await userEditRef.value.validateForm();
+  const userEditValid = await userEditRef.value.validateForm()
   if (!userEditValid) {
-    return false;
+    return false
   }
 
   try {
-    let response: { data?: AdvancedUser };
+    let response: { data?: AdvancedUser }
 
     if (loggedIn.value && userData.value.id) {
       // Update existing user
       response = await updateUser({
-        path: { userId: userData.value.id },
+        path: {userId: userData.value.id},
         body: userData.value,
-        client
-      });
+        client,
+      })
     } else {
       // Create new user
       response = await createUser({
         body: userData.value,
-        client
-      });
+        client,
+      })
     }
 
     if (response.data) {
-      userData.value = response.data;
-      membershipData.value.userId = response.data.id!;
-      return true;
+      userData.value = response.data
+      membershipData.value.userId = response.data.id!
+      return true
     }
 
-    return false;
+    return false
   } catch (error: any) {
     if (error.response?.status === 400) {
-      store.commit('setStatusSnackbarMessage', error.response.data);
+      store.commit("setStatusSnackbarMessage", error.response.data)
     } else {
-      $handleNetworkError(error);
+      $handleNetworkError(error)
     }
-    return false;
+    return false
   }
-};
+}
 
 const validateAndSaveAddressData = async (): Promise<boolean> => {
   if (!addressEditRef.value) {
-    return false;
+    return false
   }
 
   // Validate address using child component validation
   if (!addressEditRef.value.validateAddress()) {
-    return false;
+    return false
   }
 
   try {
     // Save address using child component method
-    await addressEditRef.value.saveAddress();
+    await addressEditRef.value.saveAddress()
 
     // Link address to user if we have both IDs
     if (userData.value.id && addressData.value.id) {
       // Update user with address ID - this would typically be done on the backend
       // but we'll set it locally for now
-      (userData.value as any).addressId = addressData.value.id;
+      (userData.value as any).addressId = addressData.value.id
     }
 
-    return true;
+    return true
   } catch (error: unknown) {
-    $handleNetworkError(error);
-    return false;
+    $handleNetworkError(error)
+    return false
   }
-};
+}
 
 const completeMembership = async (): Promise<void> => {
-  saving.value = true;
+  saving.value = true
 
   try {
     if (!membershipEditRef.value) {
-      return;
+      return
     }
 
     // Validate and save membership using child component method
-    const membershipSaved = await membershipEditRef.value.saveMembership();
+    const membershipSaved = await membershipEditRef.value.saveMembership()
 
     if (!membershipSaved) {
-      return;
+      return
     }
 
     // Mark as succeeded
-    succeeded.value = true;
+    succeeded.value = true
 
     // Update user roles if logged in
     if (loggedIn.value && userData.value.id) {
       // Fetch updated user data to get new roles
       const response = await findUserById({
-        path: { userId: userData.value.id },
-        client
-      });
+        path: {userId: userData.value.id},
+        client,
+      })
 
       if (response.data) {
-        store.commit('setRoles', response.data.roles);
+        store.commit("setRoles", response.data.roles)
       }
     }
 
   } catch (error: any) {
     if (error.response?.status === 400) {
-      store.commit('setStatusSnackbarMessage', error.response.data);
+      store.commit("setStatusSnackbarMessage", error.response.data)
     } else {
-      $handleNetworkError(error);
+      $handleNetworkError(error)
     }
   } finally {
-    saving.value = false;
+    saving.value = false
   }
-};
+}
 
 // Lifecycle hooks
 onMounted(async () => {
-  const login = store.getters.getLogin;
-  loggedIn.value = !!login;
+  const login = store.getters.getLogin
+  loggedIn.value = !!login
 
   if (login && login.userId) {
     try {
       // Fetch existing user data
       const response = await findUserById({
-        path: { userId: login.userId },
-        client
-      });
+        path: {userId: login.userId},
+        client,
+      })
 
       if (response.data) {
-        userData.value = { ...response.data };
-        membershipData.value.userId = response.data.id!;
+        userData.value = {...response.data}
+        membershipData.value.userId = response.data.id!
 
         // If user has an address, fetch it
         if ((response.data as any).address) {
-          addressData.value = { ...(response.data as any).address };
+          addressData.value = {...(response.data as any).address}
         }
       }
     } catch (error: unknown) {
-      console.error('Failed to fetch user data:', error);
-      $handleNetworkError(error);
+      console.error("Failed to fetch user data:", error)
+      $handleNetworkError(error)
     }
   }
-});
+})
 </script>
 
 <style lang="scss" scoped>
 .v-stepper {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .v-card {

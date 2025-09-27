@@ -19,5 +19,4 @@ public class CommitteeMemberDTO extends BaseDTO {
     private Long committeeId;
     @NotBlank
     private String role;
-    private SimpleUserDTO user;
 }

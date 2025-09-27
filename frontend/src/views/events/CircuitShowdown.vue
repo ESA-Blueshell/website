@@ -75,45 +75,45 @@ export default {
       <div class="table-container">
         <v-table>
           <thead>
-            <tr>
-              <th>Group A</th>
-              <th>Score</th>
-            </tr>
+          <tr>
+            <th>Group A</th>
+            <th>Score</th>
+          </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="teamScore in groupAScores"
-              :key="teamScore.name"
-            >
-              <td class="table-cell--name">
-                {{ teamScore.name }}
-              </td>
-              <td class="table-cell--score">
-                {{ teamScore.score }}
-              </td>
-            </tr>
+          <tr
+            v-for="teamScore in groupAScores"
+            :key="teamScore.name"
+          >
+            <td class="table-cell--name">
+              {{ teamScore.name }}
+            </td>
+            <td class="table-cell--score">
+              {{ teamScore.score }}
+            </td>
+          </tr>
           </tbody>
         </v-table>
 
         <v-table>
           <thead>
-            <tr>
-              <th>Group B</th>
-              <th>Score</th>
-            </tr>
+          <tr>
+            <th>Group B</th>
+            <th>Score</th>
+          </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="teamScore in groupBScores"
-              :key="teamScore.name"
-            >
-              <td class="table-cell--name">
-                {{ teamScore.name }}
-              </td>
-              <td class="table-cell--score">
-                {{ teamScore.score }}
-              </td>
-            </tr>
+          <tr
+            v-for="teamScore in groupBScores"
+            :key="teamScore.name"
+          >
+            <td class="table-cell--name">
+              {{ teamScore.name }}
+            </td>
+            <td class="table-cell--score">
+              {{ teamScore.score }}
+            </td>
+          </tr>
           </tbody>
         </v-table>
       </div>
@@ -122,25 +122,25 @@ export default {
       <h4>Week 1</h4>
       <v-table>
         <thead>
-          <tr>
-            <th>Team 1</th>
-            <th>Score</th>
-            <th>Team 2</th>
-          </tr>
+        <tr>
+          <th>Team 1</th>
+          <th>Score</th>
+          <th>Team 2</th>
+        </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="match in playoffs"
-            :key="match.team1 + match.team2"
-          >
-            <td class="table-cell--match-team-name">
-              {{ match.team1 }}
-            </td>
-            <td>{{ match.score }}</td>
-            <td class="table-cell--match-team-name">
-              {{ match.team2 }}
-            </td>
-          </tr>
+        <tr
+          v-for="match in playoffs"
+          :key="match.team1 + match.team2"
+        >
+          <td class="table-cell--match-team-name">
+            {{ match.team1 }}
+          </td>
+          <td>{{ match.score }}</td>
+          <td class="table-cell--match-team-name">
+            {{ match.team2 }}
+          </td>
+        </tr>
         </tbody>
       </v-table>
     </div>

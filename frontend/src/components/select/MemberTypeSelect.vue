@@ -2,16 +2,16 @@
   <v-select
     v-model="selected"
     :items="memberTypeOptions"
-    label="Member Type"
     :rules="[requiredRule]"
-    item-value="value"
     item-title="text"
+    item-value="value"
+    label="Member Type"
   />
 </template>
 
-<script setup lang="ts">
-import { ref, watch } from 'vue'
-import { MemberType } from '@/lib'
+<script lang="ts" setup>
+import {ref, watch} from "vue"
+import {MemberType} from "@/lib"
 
 // Props & emits
 const props = withDefaults(defineProps<{
@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  (e: "update:modelValue", value: string): void
 }>()
 
 // Local state mirrors v-model
@@ -34,10 +34,10 @@ const memberTypeOptions = Object.values(MemberType).map((type: MemberType) => ({
 }))
 
 // Validation
-const requiredRule = (value: MemberType) => !!value || 'Member type is required'
+const requiredRule = (value: MemberType) => !!value || "Member type is required"
 
 // Keep prop and local state in sync (both directions)
-watch(selected, (val) => emit('update:modelValue', val))
+watch(selected, (val) => emit("update:modelValue", val))
 watch(() => props.modelValue, (val) => {
   if (val !== selected.value) selected.value = val
 })

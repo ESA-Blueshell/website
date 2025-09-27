@@ -1,4 +1,4 @@
-import type TeamMember from "./TeamMember";
+import type TeamMember from "./TeamMember"
 
 export default interface Team {
   name: string;

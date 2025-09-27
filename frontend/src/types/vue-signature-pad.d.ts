@@ -1,5 +1,5 @@
-declare module 'vue-signature-pad' {
-  import {Plugin} from 'vue'
+declare module "vue-signature-pad" {
+  import {Plugin} from "vue"
 
   interface SignaturePadOptions {
     dotSize?: number

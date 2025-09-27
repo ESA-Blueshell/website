@@ -1,57 +1,57 @@
-<script setup lang="ts">
-import {onMounted, ref} from 'vue';
-import {$handleNetworkError} from "@/plugins/handleNetworkError";
-import {DateTime} from 'luxon';
-import {type ContributionPeriod, findCurrentContributionPeriod} from "@/lib";
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {DateTime} from "luxon"
+import {type ContributionPeriod, findCurrentContributionPeriod} from "@/lib"
 
 // Reactive variables
-const contributionPeriod = ref<ContributionPeriod>(); // Initialize as null
-const currentPeriod = ref(false);
-const loading = ref(true); // Loading state
-const error = ref(null); // Error state
+const contributionPeriod = ref<ContributionPeriod>() // Initialize as null
+const currentPeriod = ref(false)
+const loading = ref(true) // Loading state
+const error = ref(null) // Error state
 
 // Number formatter for Euro currency
-const euros = new Intl.NumberFormat('nl-NL', {style: 'currency', currency: 'EUR'});
+const euros = new Intl.NumberFormat("nl-NL", {style: "currency", currency: "EUR"})
 
 // Function to format the period
 const formatPeriod = (period: ContributionPeriod) => {
-  if (!period || !period.startDate || !period.endDate) return 'N/A';
-  const start = DateTime.fromISO(period.startDate).toFormat('yyyy');
-  const end = DateTime.fromISO(period.endDate).toFormat('yyyy');
-  return currentPeriod.value ? `${start}/${end}` : `${start}/${end}*`;
-};
+  if (!period || !period.startDate || !period.endDate) return "N/A"
+  const start = DateTime.fromISO(period.startDate).toFormat("yyyy")
+  const end = DateTime.fromISO(period.endDate).toFormat("yyyy")
+  return currentPeriod.value ? `${start}/${end}` : `${start}/${end}*`
+}
 
 
 // Function to format currency
 const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined) return '€0.00';
-  return euros.format(amount);
-};
+  if (amount === null || amount === undefined) return "€0.00"
+  return euros.format(amount)
+}
 
 // Function to fetch the current contribution period
 const getContributionPeriod = async () => {
   try {
-    const response = await findCurrentContributionPeriod();
-    contributionPeriod.value = response.data;
+    const response = await findCurrentContributionPeriod()
+    contributionPeriod.value = response.data
 
-    const now = DateTime.now();
-    const startDate = DateTime.fromISO(contributionPeriod.value?.startDate as string);
-    const endDate = DateTime.fromISO(contributionPeriod.value?.endDate as string);
-    currentPeriod.value = now >= startDate && now <= endDate;
+    const now = DateTime.now()
+    const startDate = DateTime.fromISO(contributionPeriod.value?.startDate as string)
+    const endDate = DateTime.fromISO(contributionPeriod.value?.endDate as string)
+    currentPeriod.value = now >= startDate && now <= endDate
   } catch (err) {
     // Capture and set error message
-    error.value = err.response?.data?.message || err.message || 'Unknown error occurred.';
-    $handleNetworkError(err);
+    error.value = err.response?.data?.message || err.message || "Unknown error occurred."
+    $handleNetworkError(err)
   } finally {
     // Update loading state
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // Fetch the current contribution period on component mount
 onMounted(() => {
-  getContributionPeriod();
-});
+  getContributionPeriod()
+})
 </script>
 <template>
   <div>
@@ -102,13 +102,13 @@ onMounted(() => {
 </template>
 <script lang="ts">
 export default {
-  name: 'ContributionPeriodComponent',
+  name: "ContributionPeriodComponent",
   props: {
     isForm: {
       type: Boolean,
       defaultValue: false,
-    }
-  }
+    },
+  },
 }
 </script>
 <style lang="scss" scoped>

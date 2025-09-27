@@ -1,12 +1,12 @@
-<script setup lang="ts">
-import {reactive, watch} from "vue";
+<script lang="ts" setup>
+import {reactive, watch} from "vue"
 
 const props = defineProps({
   initialForm: {
     type: Object,
   },
 })
-const emits = defineEmits(['change'])
+const emits = defineEmits(["change"])
 
 // Form can be filled with objects. Each object will be a question/part of the question form
 // Four types are possible: 'description', 'open', 'checkbox' and 'radio'
@@ -17,29 +17,29 @@ const form = reactive(props.initialForm
   : [])
 
 watch(form, async (newForm) => {
-  emits('change', newForm)
+  emits("change", newForm)
 })
 
 
 // Adds a new question to the form
 function createQuestion(type) {
-  if (type === 'open' || type === 'description') {
-    form.push({type: type, prompt: ''})
+  if (type === "open" || type === "description") {
+    form.push({type: type, prompt: ""})
   } else {
-    form.push({type: type, prompt: '', options: ['', '']})
+    form.push({type: type, prompt: "", options: ["", ""]})
   }
 }
 
 // Moves the ith element one index up in the given array. This probably throws an exception if i == 0
 function moveUp(array, i) {
-  const temp = array[i];
+  const temp = array[i]
   array[i] = array[i - 1]
   array[i - 1] = temp
 }
 
 // Moves the ith element one index down in the given array. This probably throws an exception if i == array.length-1
 function moveDown(array, i) {
-  const temp = array[i];
+  const temp = array[i]
   array[i] = array[i + 1]
   array[i + 1] = temp
 }
@@ -55,9 +55,9 @@ function moveDown(array, i) {
       <template #activator="{ props }">
         <v-btn
           block
-          variant="outlined"
-          v-bind="props"
           class="mb-4"
+          v-bind="props"
+          variant="outlined"
         >
           Add question or text to sign-up form
         </v-btn>
@@ -93,14 +93,14 @@ function moveDown(array, i) {
           <!-- Button to add option (v-if question has options) -->
           <v-tooltip
             v-if="question.type === 'radio' || question.type === 'checkbox'"
-            text="Add option"
             location="top"
+            text="Add option"
           >
             <template #activator="{ props }">
               <v-btn
                 icon="mdi-plus"
-                variant="plain"
                 v-bind="props"
+                variant="plain"
                 @click="question.options.push('')"
               />
             </template>
@@ -108,15 +108,15 @@ function moveDown(array, i) {
 
           <!-- Buttons for moving the question up or down and remove button -->
           <v-btn
+            :disabled="i === form.length-1"
             icon="mdi-chevron-down"
             variant="plain"
-            :disabled="i === form.length-1"
             @click="moveDown(form, i)"
           />
           <v-btn
+            :disabled="i === 0"
             icon="mdi-chevron-up"
             variant="plain"
-            :disabled="i === 0"
             @click="moveUp(form, i)"
           />
           <v-btn
@@ -142,15 +142,15 @@ function moveDown(array, i) {
           <template #append>
             <!-- Buttons for moving the option up or down and remove button -->
             <v-btn
+              :disabled="j === question.options.length-1"
               icon="mdi-chevron-down"
               variant="plain"
-              :disabled="j === question.options.length-1"
               @click="moveDown(question.options, j)"
             />
             <v-btn
+              :disabled="j === 0"
               icon="mdi-chevron-up"
               variant="plain"
-              :disabled="j === 0"
               @click="moveUp(question.options, j)"
             />
             <v-btn
@@ -171,8 +171,8 @@ function moveDown(array, i) {
     <v-expand-transition>
       <v-alert
         v-if="initialForm !== undefined && initialForm !== null && JSON.stringify(initialForm) !== JSON.stringify(form)"
-        type="warning"
         prominent
+        type="warning"
         variant="outlined"
       >
         Woah there! Looks like you made some changes to the sign-up form. Keep in mind that when you submit any

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "axios"
 // import OpenAPIClientAxios from 'openapi-client-axios';
 
 const baseURL: string = "https://localhost/api"
@@ -7,8 +7,8 @@ const baseURL: string = "https://localhost/api"
 // const openApiClient = new OpenAPIClientAxios({ definition: baseURL + '/openapi.json' });
 
 const api = axios.create({
-  baseURL
+  baseURL,
 })
 
 
-export default api;
+export default api

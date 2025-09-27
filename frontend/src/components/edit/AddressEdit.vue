@@ -1,4 +1,3 @@
-
 <template>
   <v-sheet
     class="pa-4"
@@ -11,16 +10,16 @@
         <v-text-field
           ref="street"
           v-model="localAddress.street"
-          label="Street"
           :rules="streetRules"
+          label="Street"
         />
       </v-col>
       <v-col cols="4">
         <v-text-field
           ref="houseNumber"
           v-model="localAddress.houseNumber"
-          label="House Number"
           :rules="houseNumberRules"
+          label="House Number"
         />
       </v-col>
     </v-row>
@@ -30,16 +29,16 @@
         <v-text-field
           ref="zipCode"
           v-model="localAddress.zipCode"
-          label="Zipcode"
           :rules="zipCodeRules"
+          label="Zipcode"
         />
       </v-col>
       <v-col cols="6">
         <v-text-field
           ref="city"
           v-model="localAddress.city"
-          label="City"
           :rules="cityRules"
+          label="City"
         />
       </v-col>
     </v-row>
@@ -52,140 +51,140 @@
   </v-sheet>
 </template>
 
-<script setup lang="ts">
-import { ref, watch, type Ref } from 'vue';
-import type { Address } from '@/lib';
-import { createAddress, updateAddress } from '@/lib';
-import CountrySelect from "@/components/select/CountrySelect.vue";
+<script lang="ts" setup>
+import {ref, type Ref, watch} from "vue"
+import type {Address} from "@/lib"
+import {createAddress, updateAddress} from "@/lib"
+import CountrySelect from "@/components/select/CountrySelect.vue"
 
 interface Props {
   modelValue: Address;
 }
 
 interface Emits {
-  (e: 'update:modelValue', value: Address): void;
+  (e: "update:modelValue", value: Address): void;
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
 // Template refs
-const street: Ref<HTMLElement | null> = ref(null);
-const houseNumber: Ref<HTMLElement | null> = ref(null);
-const zipCode: Ref<HTMLElement | null> = ref(null);
-const city: Ref<HTMLElement | null> = ref(null);
-const country: Ref<HTMLElement | null> = ref(null);
+const street: Ref<HTMLElement | null> = ref(null)
+const houseNumber: Ref<HTMLElement | null> = ref(null)
+const zipCode: Ref<HTMLElement | null> = ref(null)
+const city: Ref<HTMLElement | null> = ref(null)
+const country: Ref<HTMLElement | null> = ref(null)
 
 // Reactive data
-const localAddress: Ref<Address> = ref({ ...props.modelValue });
+const localAddress: Ref<Address> = ref({...props.modelValue})
 
 // Validation rules
 const streetRules: Ref<Array<(v: any) => boolean | string>> = ref([
-  (v: any) => !!v || 'Street is required',
-  (v: string) => (v && v.length >= 2) || 'Street must be at least 2 characters'
-]);
+  (v: any) => !!v || "Street is required",
+  (v: string) => (v && v.length >= 2) || "Street must be at least 2 characters",
+])
 
 const houseNumberRules: Ref<Array<(v: any) => boolean | string>> = ref([
-  (v: any) => !!v || 'House number is required'
-]);
+  (v: any) => !!v || "House number is required",
+])
 
 const zipCodeRules: Ref<Array<(v: any) => boolean | string>> = ref([
-  (v: any) => !!v || 'Zipcode is required'
-]);
+  (v: any) => !!v || "Zipcode is required",
+])
 
 const cityRules: Ref<Array<(v: any) => boolean | string>> = ref([
-  (v: any) => !!v || 'City is required',
-  (v: string) => (v && v.length >= 2) || 'City must be at least 2 characters'
-]);
+  (v: any) => !!v || "City is required",
+  (v: string) => (v && v.length >= 2) || "City must be at least 2 characters",
+])
 
 const countryRules: Ref<Array<(v: any) => boolean | string>> = ref([
-  (v: any) => !!v || 'Country is required',
-  (v: string) => (v && v.length >= 2) || 'Country must be at least 2 characters'
-]);
+  (v: any) => !!v || "Country is required",
+  (v: string) => (v && v.length >= 2) || "Country must be at least 2 characters",
+])
 
 // Watch for prop changes
 watch(
   () => props.modelValue,
   (newVal: Address) => {
-    localAddress.value = { ...newVal };
+    localAddress.value = {...newVal}
   },
-  { deep: true, immediate: true }
-);
+  {deep: true, immediate: true},
+)
 
 // Watch for local changes and emit
 watch(
   localAddress,
   (newVal: Address) => {
-    emit('update:modelValue', newVal);
+    emit("update:modelValue", newVal)
   },
-  { deep: true }
-);
+  {deep: true},
+)
 
 // Methods
 const saveAddress = async (): Promise<void> => {
   try {
-    let response: { data?: Address };
+    let response: { data?: Address }
 
     if (localAddress.value.id) {
       // Update existing address
       response = await updateAddress({
-        path: { addressId: localAddress.value.id },
+        path: {addressId: localAddress.value.id},
         body: localAddress.value,
-        client
-      });
+        client,
+      })
     } else {
       // Create new address
       response = await createAddress({
         body: localAddress.value,
-        client
-      });
+        client,
+      })
     }
 
     if (response.data) {
-      localAddress.value = response.data;
-      emit('update:modelValue', response.data);
+      localAddress.value = response.data
+      emit("update:modelValue", response.data)
     }
   } catch (error: unknown) {
-    console.error('Failed to save address:', error);
-    throw error;
+    console.error("Failed to save address:", error)
+    throw error
   }
-};
+}
 
 const validateAddress = (): boolean => {
   const requiredFields = [
-    { value: localAddress.value.street, name: 'street' },
-    { value: localAddress.value.houseNumber, name: 'house number' },
-    { value: localAddress.value.zipCode, name: 'zip code' },
-    { value: localAddress.value.city, name: 'city' },
-    { value: localAddress.value.country, name: 'country' }
-  ];
+    {value: localAddress.value.street, name: "street"},
+    {value: localAddress.value.houseNumber, name: "house number"},
+    {value: localAddress.value.zipCode, name: "zip code"},
+    {value: localAddress.value.city, name: "city"},
+    {value: localAddress.value.country, name: "country"},
+  ]
 
   for (const field of requiredFields) {
     if (!field.value || field.value.trim().length === 0) {
-      console.error(`Validation failed: ${field.name} is required`);
-      return false;
+      console.error(`Validation failed: ${field.name} is required`)
+      return false
     }
   }
 
-  return true;
-};
+  return true
+}
 
 const clearAddress = (): void => {
   localAddress.value = {
-    street: '',
-    houseNumber: '',
-    zipCode: '',
-    city: '',
-    country: '',
-  };
-};
+    street: "",
+    houseNumber: "",
+    zipCode: "",
+    city: "",
+    country: "",
+  }
+}
 
 // Expose methods that might be called from parent components
 defineExpose({
   saveAddress,
   validateAddress,
-  clearAddress
-});
+  clearAddress,
+})
 </script>
 
 <style lang="scss" scoped>

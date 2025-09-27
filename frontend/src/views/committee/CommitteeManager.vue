@@ -8,11 +8,11 @@
       >
         <v-btn
           :loading="creatingLoading"
-          block
           :variant="creatingCommittee ? 'outlined' : 'text'"
+          block
           @click="creatingCommittee = !creatingCommittee"
         >
-          {{ creatingCommittee ? 'Stop creating committee' : 'Create new committee' }}
+          {{ creatingCommittee ? "Stop creating committee" : "Create new committee" }}
         </v-btn>
 
         <v-expand-transition>
@@ -22,8 +22,9 @@
             style="border-top-width: 0"
           >
             <committee-edit
-              class="form"
               :committee="{} as AdvancedCommittee"
+              :members="members"
+              class="form"
               @close="handleCreateClose"
               @submitting="creatingLoading = true"
             />
@@ -31,8 +32,8 @@
         </v-expand-transition>
 
         <v-dialog
-          width="auto"
           :model-value="!!committeeToDelete"
+          width="auto"
         >
           <template #activator="{ props: dialog }">
             <v-list :lines="'two'">
@@ -45,7 +46,9 @@
                     {{ committee.name }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    {{ committee.members?.length || 0 }} membership{{ (committee.members?.length || 0) === 1 ? '' : 's' }}
+                    {{ committee.members?.length || 0 }} membership{{
+                      (committee.members?.length || 0) === 1 ? "" : "s"
+                    }}
                   </v-list-item-subtitle>
 
                   <template #append>
@@ -55,9 +58,9 @@
                     >
                       <template #activator="{ props: tooltip }">
                         <v-btn
-                          v-bind="tooltip"
                           :loading="submittingId === committee.id"
                           icon="mdi-pencil"
+                          v-bind="tooltip"
                           variant="plain"
                           @click="toggleEditingCommittee(committee.id)"
                         />
@@ -70,8 +73,8 @@
                     >
                       <template #activator="{ props: tooltip }">
                         <v-btn
-                          v-bind="{ ...tooltip, ...dialog }"
                           icon="mdi-delete"
+                          v-bind="{ ...tooltip, ...dialog }"
                           variant="plain"
                           @click="committeeToDelete = committee"
                         />
@@ -88,6 +91,7 @@
                     <committee-edit
                       :committee="committee"
                       class="form"
+                      :members="members"
                       @close="handleEditClose"
                       @submitting="submittingId = committee.id"
                     />
@@ -106,7 +110,7 @@
             <v-card-title>
               <span class="text-h6">
                 Are you sure you want to delete this committee:
-                {{ committeeToDelete?.name || '' }}
+                {{ committeeToDelete?.name || "" }}
               </span>
             </v-card-title>
             <v-card-text>
@@ -140,111 +144,93 @@
   </v-main>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import TopBanner from '@/components/banners/TopBanner.vue'
-import CommitteeEdit from '@/views/committee/CommitteeEdit.vue'
-import { $require } from '@/plugins/require.js'
-import { $handleNetworkError } from '@/plugins/handleNetworkError.js'
-import {
-  findCommittees,
-  deleteCommitteeById,
-  type AdvancedCommittee
-} from '@/lib'
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import CommitteeEdit from "@/views/committee/CommitteeEdit.vue"
+import {$require} from "@/plugins/require.js"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import {type AdvancedCommittee, type AdvancedUser, deleteCommitteeById, findCommittees, findUsers} from "@/lib"
 
-interface Data {
-  committees: AdvancedCommittee[]
-  committeeToDelete: AdvancedCommittee | null
-  editingCommitteeId: number | null
-  submittingId: number | null
-  creatingCommittee: boolean
-  creatingLoading: boolean
-  noCommittees: boolean
+// state
+const committees = ref<AdvancedCommittee[]>([])
+const committeeToDelete = ref<AdvancedCommittee | null>(null)
+const editingCommitteeId = ref<number | null>(null)
+const submittingId = ref<number | null>(null)
+const creatingCommittee = ref(false)
+const creatingLoading = ref(false)
+const noCommittees = ref(false)
+const members = ref<AdvancedUser[]>([])
+
+// methods (same logic as before)
+async function fetchCommittees(): Promise<void> {
+  try {
+    const resp = await findCommittees()
+
+    if (resp.data?.length) {
+      committees.value = resp.data as AdvancedCommittee[] ?? []
+    } else {
+      noCommittees.value = true
+    }
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
 }
 
-export default defineComponent({
-  name: 'CommitteeManager',
-  components: {
-    CommitteeEdit,
-    TopBanner
-  },
-  data(): Data {
-    return {
-      committees: [],
-      committeeToDelete: null,
-      editingCommitteeId: null,
-      submittingId: null,
-      creatingCommittee: false,
-      creatingLoading: false,
-      noCommittees: false
-    }
-  },
-  mounted(): void {
-    this.fetchCommittees()
-  },
-  methods: {
-    $require,
-
-    async fetchCommittees(): Promise<void> {
-      try {
-        const response = await findCommittees()
-        const committeesData = response.data
-
-        if (committeesData && committeesData.length > 0) {
-          // Type assertion to ensure proper typing
-          this.committees = committeesData.filter(
-            (committee): committee is AdvancedCommittee =>
-              committee && typeof committee === 'object' && 'name' in committee
-          )
-        } else {
-          this.noCommittees = true
-        }
-      } catch (error: unknown) {
-        $handleNetworkError(error)
-      }
-    },
-
-    async deleteCommittee(): Promise<void> {
-      if (!this.committeeToDelete?.id) {
-        return
-      }
-
-      try {
-        await deleteCommitteeById({
-          path: {
-            committeeId: this.committeeToDelete.id
-          },
-          client
-        })
-
-        // Remove the committee from local state
-        this.committees = this.committees.filter(
-          committee => committee.id !== this.committeeToDelete?.id
-        )
-        this.committeeToDelete = null
-      } catch (error: unknown) {
-        $handleNetworkError(error)
-      }
-    },
-
-    toggleEditingCommittee(committeeId: number | undefined): void {
-      if (!committeeId) return
-
-      this.editingCommitteeId = this.editingCommitteeId === committeeId ? null : committeeId
-    },
-
-    handleCreateClose(): void {
-      this.fetchCommittees()
-      this.creatingCommittee = false
-      this.creatingLoading = false
-    },
-
-    handleEditClose(): void {
-      this.editingCommitteeId = null
-      this.submittingId = null
-      this.fetchCommittees()
-    }
+async function fetchMembers(): Promise<void> {
+  try {
+    const resp = await findUsers({
+      query: {
+        isMember: true,
+      },
+    })
+    members.value = resp.data?.content ?? []
+  } catch (error: unknown) {
+    $handleNetworkError(error)
   }
+}
+
+async function deleteCommittee(): Promise<void> {
+  if (!committeeToDelete.value?.id) return
+
+  try {
+    await deleteCommitteeById({
+      path: {id: committeeToDelete.value.id},
+    })
+
+    committees.value = committees.value.filter(
+      committee => committee.id !== committeeToDelete.value?.id,
+    )
+    committeeToDelete.value = null
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
+}
+
+function toggleEditingCommittee(committeeId: number | undefined): void {
+  if (!committeeId) return
+  editingCommitteeId.value =
+    editingCommitteeId.value === committeeId ? null : committeeId
+}
+
+function handleCreateClose(): void {
+  fetchCommittees()
+  creatingCommittee.value = false
+  creatingLoading.value = false
+}
+
+function handleEditClose(): void {
+  editingCommitteeId.value = null
+  submittingId.value = null
+  fetchCommittees()
+}
+
+// lifecycle
+onMounted(async () => {
+  await Promise.all([
+    fetchCommittees(),
+    fetchMembers(),
+  ])
 })
 </script>
 

@@ -16,16 +16,16 @@
           <div class="text-center mt-16">
             <p
               id="blueshell"
+              :style="$vuetify.display.mdAndUp?{ 'font-size': '175px !important'} : ($vuetify.display.smAndUp?{ 'font-size': '110px !important'}:{ 'font-size': '16vw !important' })"
               class="text-white text-h2 text-sm-h1 text-md-h1 text-lg-h1 text-xl-h1"
               style="height: 150px"
-              :style="$vuetify.display.mdAndUp?{ 'font-size': '175px !important'} : ($vuetify.display.smAndUp?{ 'font-size': '110px !important'}:{ 'font-size': '16vw !important' })"
             >
               BLUESHELL
             </p>
 
             <p
-              class="text-white font-weight-light font-italic"
               :class="{'text-h3': $vuetify.display.mdAndUp, 'text-h4': $vuetify.display.smAndDown}"
+              class="text-white font-weight-light font-italic"
             >
               Student esports and gaming association of the Twente region!
             </p>
@@ -33,8 +33,8 @@
               class="mt-5"
               color="primary"
               rounded
-              style="font-size: 30px;height: 50px;"
               size="x-large"
+              style="font-size: 30px;height: 50px;"
               @click="$goto('membership/signup')"
             >
               join now
@@ -47,10 +47,10 @@
 </template>
 
 <script lang="ts">
-import {$goto} from "@/plugins/goto";
+import {$goto} from "@/plugins/goto"
 
 export default {
-  name: 'MainBanner',
-  methods: {$goto}
+  name: "MainBanner",
+  methods: {$goto},
 }
 </script>

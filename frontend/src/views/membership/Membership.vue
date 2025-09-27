@@ -15,10 +15,10 @@
           <p class="text-body-1">
             You are definitely in the right place! If you are still unsure, be sure to check out the
             rest of our website, <a
-              href="https://discord.gg/23YMFQy"
-              target="_blank"
-              class="text-decoration-none"
-            >Discord server</a>,
+            class="text-decoration-none"
+            href="https://discord.gg/23YMFQy"
+            target="_blank"
+          >Discord server</a>,
             and social media accounts to find out more about Blueshell Esports! By obtaining
             Blueshell
             membership you get:
@@ -39,8 +39,8 @@
             class="mt-5"
             color="primary"
             rounded
-            style="font-size: 30px;height: 50px;"
             size="x-large"
+            style="font-size: 30px;height: 50px;"
             @click="$goto('membership/signup')"
           >
             Become a member!
@@ -54,8 +54,8 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$goto} from "@/plugins/goto";
-import ContributionPeriodComponent from "@/components/ContributionPeriodComponent.vue";
+<script lang="ts" setup>
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$goto} from "@/plugins/goto"
+import ContributionPeriodComponent from "@/components/ContributionPeriodComponent.vue"
 </script>

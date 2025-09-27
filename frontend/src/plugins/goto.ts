@@ -1,5 +1,5 @@
-import router from "@/plugins/router";
-import type { RouteLocationRaw } from "vue-router";
+import router from "@/plugins/router"
+import type {RouteLocationRaw} from "vue-router"
 
 /**
  * Navigate to a url or route.
@@ -8,16 +8,16 @@ import type { RouteLocationRaw } from "vue-router";
  */
 export function $goto(url: string | RouteLocationRaw): void {
   if (typeof url === "string" && /^https?:\/\//i.test(url)) {
-    const win = window.open(url, "_blank");
+    const win = window.open(url, "_blank")
     // Focus may fail if blocked by the browser; guard it.
     try {
-      win?.focus();
+      win?.focus()
     } catch {
       // noop
     }
-    return;
+    return
   }
 
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  router.push(url);
+  window.scrollTo({top: 0, left: 0, behavior: "auto"})
+  router.push(url)
 }

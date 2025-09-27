@@ -1,7 +1,7 @@
-<script setup lang="ts">
-import {ref, onMounted} from 'vue'
-import {useRoute} from 'vue-router'
-import {type Blog, findBlogById} from "@/lib";
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import {useRoute} from "vue-router"
+import {type Blog, findBlogById} from "@/lib"
 
 // Reactive reference to hold the single blog data
 const blog = ref<Blog | null>(null)
@@ -15,10 +15,10 @@ onMounted(async () => {
   try {
     const resp = await findBlogById({
       path: {
-        id: blogId
-      }
+        id: blogId,
+      },
     })
-    blog.value = resp.data ?? {};
+    blog.value = resp.data ?? {}
   } catch (error) {
     console.error(`Error fetching blog with id ${blogId}:`, error)
   }
@@ -42,8 +42,8 @@ onMounted(async () => {
       class="text-center py-10"
     >
       <v-progress-circular
-        indeterminate
         color="primary"
+        indeterminate
       />
     </div>
   </v-main>

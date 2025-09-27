@@ -64,7 +64,7 @@
               :key="response.discord"
             >
               <b>{{ response.fullName }}:</b>
-              {{ response.formAnswers[i].map((answer: number) => question.options[answer]).join(', ') }}
+              {{ response.formAnswers[i].map((answer: number) => question.options[answer]).join(", ") }}
             </p>
             <v-container>
               <div
@@ -111,17 +111,11 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import TopBanner from '@/components/banners/TopBanner.vue'
-import {
-  type Event,
-  type EventSignUp,
-  findEventById,
-  findEventSignUpsByEventId,
-  type FormQuestion
-} from "@/lib";
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import {useRoute} from "vue-router"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {type Event, type EventSignUp, findEventById, findEventSignUpsByEventId, type FormQuestion} from "@/lib"
 
 // Refs for reactive data
 const eventName = ref<string | null>(null)
@@ -150,14 +144,14 @@ onMounted(async () => {
     const [eventResp, signupsResp] = await Promise.all([
       findEventById({
         path: {
-          id: eventId
-        }
+          id: eventId,
+        },
       }),
       findEventSignUpsByEventId({
         path: {
-          eventId
-        }
-      })
+          eventId,
+        },
+      }),
     ])
 
     const event: Event = eventResp.data ?? {} as Event

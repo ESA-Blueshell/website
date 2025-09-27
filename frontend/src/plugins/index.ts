@@ -4,11 +4,11 @@
  * Automatically included in `./src/main.js`
  */
 
-import type { App } from 'vue'
+import type {App} from "vue"
 
 // Plugins
-import { loadFonts } from './webfontloader'
-import vuetify from './vuetify'
+import {loadFonts} from "./webfontloader"
+import vuetify from "./vuetify"
 
 export function registerPlugins(app: App): void {
   loadFonts()

@@ -8,9 +8,9 @@
       style="max-width: 800px"
     >
       <v-btn
-        class="mx-3"
-        block
         :disabled="noCommittees"
+        block
+        class="mx-3"
         to="create"
       >
         Create new event
@@ -22,8 +22,8 @@
           Non-public events (to be approved)
         </p>
         <event-manage-list
-          :initial-events="events.filter((e: Event) => !e.visible)"
           :initial-committees="committees"
+          :initial-events="events.filter((e: Event) => !e.visible)"
         />
       </template>
 
@@ -31,16 +31,16 @@
         Upcoming Events
       </p>
       <event-manage-list
-        :initial-events="events.filter((e: Event) => e.visible)"
         :initial-committees="committees"
+        :initial-events="events.filter((e: Event) => e.visible)"
       />
 
       <p class="mt-8 mx-3 mb-4 text-h3 text-center">
         Past Events
       </p>
       <event-manage-list
-        :initial-events="pastEvents"
         :initial-committees="committees"
+        :initial-events="pastEvents"
       />
 
       <p
@@ -68,14 +68,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import {computed, onMounted, ref} from 'vue'
-import {useStore} from 'vuex'
-import TopBanner from '@/components/banners/TopBanner.vue'
-import EventManageList from '@/components/events/EventManageList.vue'
-import {$require} from '@/plugins/require'
-import {DateTime} from 'luxon';
-import {type AdvancedCommittee, type Event, findCommittees, findEvents} from "@/lib";
+<script lang="ts" setup>
+import {computed, onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import EventManageList from "@/components/events/EventManageList.vue"
+import {$require} from "@/plugins/require"
+import {DateTime} from "luxon"
+import {type AdvancedCommittee, type Event, findCommittees, findEvents} from "@/lib"
 
 // Reactive references for data
 const events = ref<Event[]>([])
@@ -99,14 +99,14 @@ onMounted(async () => {
     const [upcomingResp, pastResp, committeesResp] = await Promise.all([
       findEvents({
         query: {
-          from: DateTime.local().startOf('day').toISO()
-        }
+          from: DateTime.local().startOf("day").toISO(),
+        },
       }),
       findEvents({
         query: {
-          from: DateTime.local().minus({months: 1}).startOf('day').toISO(),
-          to: DateTime.local().startOf('day').toISO()
-        }
+          from: DateTime.local().minus({months: 1}).startOf("day").toISO(),
+          to: DateTime.local().startOf("day").toISO(),
+        },
       }),
       findCommittees(),
     ])

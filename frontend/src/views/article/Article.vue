@@ -15,36 +15,36 @@
       <p v-html="DOMPurify.sanitize(news.content)" />
       <h5>
         By <b>{{ news.creatorUsername }}</b>,
-        {{ news.postedAt ? news.postedAt.slice(0, 10) : '' }}
+        {{ news.postedAt ? news.postedAt.slice(0, 10) : "" }}
       </h5>
       <v-btn
-        icon="mdi-twitter"
         :href="'https://twitter.com/share?text='+news.title+'&url='+thisURL()+'&hashtags='+news.newsType"
+        icon="mdi-twitter"
       />
       <v-btn
-        icon="mdi-facebook"
         :href="'https://www.facebook.com/sharer/sharer.php?u='+thisURL()+'&t='+news.title"
+        icon="mdi-facebook"
       />
     </div>
   </v-main>
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts";
-import DOMPurify from "dompurify";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import DOMPurify from "dompurify"
 
 export default {
   components: {TopBanner},
   data() {
     return {
       snackbar: "",
-      news: []
+      news: [],
     }
   },
   mounted() {
     this.$http
-      .get('news/' + this.$route.params.id)
+      .get("news/" + this.$route.params.id)
       .then(response => this.news = response.data)
       .catch(e => $handleNetworkError(e))
   },
@@ -52,8 +52,8 @@ export default {
     DOMPurify,
     thisURL() {
       return document.URL
-    }
-  }
+    },
+  },
 }
 </script>
 

@@ -2,27 +2,27 @@
   <v-autocomplete
     v-model="selectedCountry"
     v-model:search="searchText"
-    :items="countryItems"
+    :custom-filter="customFilter"
     :item-title="displayName"
-    item-value="cca2"
+    :items="countryItems"
     :label="label ?? 'Nationality'"
     clearable
-    :custom-filter="customFilter"
+    item-value="cca2"
   />
 </template>
 
-<script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import countries, { type Country } from 'world-countries'
-import type { InternalItem } from 'vuetify'
+<script lang="ts" setup>
+import {computed, onMounted, ref, watch} from "vue"
+import countries, {type Country} from "world-countries"
+import type {InternalItem} from "vuetify"
 
 // Props / emits unchanged: we still pass the 2-letter code (cca2) to parent
 const props = defineProps<{ modelValue?: string | null; label?: string }>()
-const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
+const emit = defineEmits<{ "update:modelValue": [value: string | null] }>()
 
 // === State ===
 const selectedCountry = ref<string | null>(props.modelValue ?? null) // holds cca2 (or null)
-const searchText = ref<string>('') // bound to the autocomplete's search field
+const searchText = ref<string>("") // bound to the autocomplete's search field
 
 // === Data / helpers ===
 const countryItems = computed<Country[]>(() =>
@@ -30,14 +30,14 @@ const countryItems = computed<Country[]>(() =>
     const ta = (a.demonyms?.eng?.m || a.name.common).toLowerCase()
     const tb = (b.demonyms?.eng?.m || b.name.common).toLowerCase()
     return ta.localeCompare(tb)
-  })
+  }),
 )
 
 const displayName = (c: Country) =>
-  c.flag + ' ' + (c.demonyms?.eng?.m || c.name?.common || c.name?.official)
+  c.flag + " " + (c.demonyms?.eng?.m || c.name?.common || c.name?.official)
 
 const deburrLower = (s: string) =>
-  s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
 
 const partsFor = (c: Country): string[] =>
   [
@@ -70,7 +70,7 @@ const findTopMatch = (query: string): Country | null => {
 
   const exact = items.find(c =>
     [c.cca2, c.cca3, c.cioc].filter(Boolean).some(code => deburrLower(String(code)) === q) ||
-    partsFor(c).some(p => p === q)
+    partsFor(c).some(p => p === q),
   )
   if (exact) return exact
 
@@ -122,7 +122,7 @@ const normalizeIncomingValue = (incoming: string | null | undefined) => {
 // === Wiring ===
 watch(selectedCountry, (newVal) => {
   // Emit cca2 (or null) to parent
-  emit('update:modelValue', newVal ?? null)
+  emit("update:modelValue", newVal ?? null)
 })
 
 watch(
@@ -133,7 +133,7 @@ watch(
       normalizeIncomingValue(newVal ?? null)
     }
   },
-  { immediate: true }
+  {immediate: true},
 )
 
 // If you want to force normalization once on mount even when parent

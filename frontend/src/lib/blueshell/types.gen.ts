@@ -175,7 +175,6 @@ export type CommitteeMember = {
     userId: number;
     committeeId: number;
     role: string;
-    user?: SimpleUser;
 };
 
 export type BaseDto = {
@@ -246,6 +245,35 @@ export type MemberActivationRequest = {
     password?: string;
 };
 
+export type PageAdvancedUser = {
+    totalElements?: number;
+    totalPages?: number;
+    size?: number;
+    content?: Array<AdvancedUser>;
+    number?: number;
+    sort?: SortObject;
+    pageable?: PageableObject;
+    numberOfElements?: number;
+    first?: boolean;
+    last?: boolean;
+    empty?: boolean;
+};
+
+export type PageableObject = {
+    offset?: number;
+    sort?: SortObject;
+    unpaged?: boolean;
+    pageNumber?: number;
+    paged?: boolean;
+    pageSize?: number;
+};
+
+export type SortObject = {
+    empty?: boolean;
+    unsorted?: boolean;
+    sorted?: boolean;
+};
+
 export type Redirect = {
     id?: string;
     createdAt?: string;
@@ -264,21 +292,6 @@ export type PageEvent = {
     first?: boolean;
     last?: boolean;
     empty?: boolean;
-};
-
-export type PageableObject = {
-    offset?: number;
-    sort?: SortObject;
-    pageNumber?: number;
-    paged?: boolean;
-    pageSize?: number;
-    unpaged?: boolean;
-};
-
-export type SortObject = {
-    empty?: boolean;
-    sorted?: boolean;
-    unsorted?: boolean;
 };
 
 export type FindMembershipByIdData = {
@@ -648,7 +661,21 @@ export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressRe
 export type FindUsersData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        isMember?: boolean;
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+    };
     url: '/users';
 };
 
@@ -656,7 +683,7 @@ export type FindUsersResponses = {
     /**
      * OK
      */
-    200: Array<AdvancedUser>;
+    200: PageAdvancedUser;
 };
 
 export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];

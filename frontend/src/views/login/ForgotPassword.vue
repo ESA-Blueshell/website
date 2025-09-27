@@ -43,9 +43,9 @@
             All right, you should get a mail with a link you can use to reset your password at the email address
             associated to your username. If you don't receive anything, please report it in the
             <a
+              class="text-decoration-none"
               href="https://discord.com/channels/324285132133629963/1020245710987350047"
               target="_blank"
-              class="text-decoration-none"
             >Sitecie suggestions channel on discord</a> and we'll help you out.
           </p>
         </div>
@@ -55,13 +55,13 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 
 export default {
   components: {TopBanner: TopBanner},
   data: () => ({
-    username: '',
+    username: "",
     valid: false,
     succeeded: false,
     loading: false,
@@ -74,18 +74,18 @@ export default {
       const {valid} = await this.$refs.form.validate()
 
       if (!valid) {
-        return;
+        return
       }
 
       this.loading = true
       // Send reset request
       this.$http.delete(
-        `users/password?username=${this.username}`
+        `users/password?username=${this.username}`,
       ).then(() => {
         this.succeeded = true
       }).catch(e => {
         if (e.response?.status === 404) {
-          this.$store.commit('setStatusSnackbarMessage', "Uhhh, we don't know that username... Maybe check the spelling?")
+          this.$store.commit("setStatusSnackbarMessage", "Uhhh, we don't know that username... Maybe check the spelling?")
         } else {
           $handleNetworkError(e)
         }
@@ -93,6 +93,6 @@ export default {
         this.loading = false
       })
     },
-  }
+  },
 }
 </script>

@@ -28,10 +28,10 @@
         </p>
         <p class="text-body-1 font-weight-bold">
           Mail: <a
-            href="mailto:external-affairs@blueshell.utwente.nl"
-            target="_blank"
-            class="text-decoration-none"
-          >external-affairs@blueshell.utwente.nl</a>
+          class="text-decoration-none"
+          href="mailto:external-affairs@blueshell.utwente.nl"
+          target="_blank"
+        >external-affairs@blueshell.utwente.nl</a>
         </p>
       </div>
     </div>
@@ -39,11 +39,11 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
+import TopBanner from "@/components/banners/TopBanner.vue"
 
 export default {
   name: "Partners",
-  components: {TopBanner}
+  components: {TopBanner},
 }
 </script>
 

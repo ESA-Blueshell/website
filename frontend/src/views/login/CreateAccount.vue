@@ -42,67 +42,67 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import {onMounted, ref} from 'vue';
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {createGuestUser, type SimpleUser} from '@/lib';
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {createGuestUser, type SimpleUser} from "@/lib"
 
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
-import store from '@/plugins/store';
-import type {AxiosError} from "axios";
-import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue";
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import store from "@/plugins/store"
+import type {AxiosError} from "axios"
+import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue"
 
 // Reactive state
-const loading = ref(false);
-const succeeded = ref(false);
+const loading = ref(false)
+const succeeded = ref(false)
 const form = ref<SimpleUser>({
-  username: '',
-  initials: '',
-  firstName: '',
-  lastName: '',
-  password: '',
-  email: '',
-  discord: '',
-  prefix: '',
+  username: "",
+  initials: "",
+  firstName: "",
+  lastName: "",
+  password: "",
+  email: "",
+  discord: "",
+  prefix: "",
   newsletter: true,
-});
+})
 
 // Component references
-const userEditComponent = ref();
+const userEditComponent = ref()
 
 onMounted(() => {
-  form.value.newsletter = true;
-});
+  form.value.newsletter = true
+})
 
 // Methods
 const createAccount = async () => {
   // Validate the UserEdit component
-  const isValid = await userEditComponent.value?.validateForm();
+  const isValid = await userEditComponent.value?.validateForm()
 
   if (!isValid) {
-    return;
+    return
   }
 
-  loading.value = true;
+  loading.value = true
 
   try {
     // Use the generated OpenAPI client to create user
     const response = await createGuestUser({
       body: form.value,
-      client
-    });
+      client,
+    })
 
     if (response.data) {
-      succeeded.value = true;
+      succeeded.value = true
     }
   } catch (error: AxiosError) {
     if (error?.response?.status === 400) {
-      store.commit('setStatusSnackbarMessage', error.response.data);
+      store.commit("setStatusSnackbarMessage", error.response.data)
     } else {
-      $handleNetworkError(error);
+      $handleNetworkError(error)
     }
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 </script>

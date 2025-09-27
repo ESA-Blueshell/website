@@ -17,85 +17,85 @@
       :key="team.name"
     >
       <team-details
-        :team="team"
         :name-right="true"
+        :team="team"
       />
     </template>
   </v-main>
 </template>
 
-<script setup lang="ts">
-import TopBanner from "../../components/banners/TopBanner.vue";
-import TeamDetails from "@/components/TeamDetails.vue";
+<script lang="ts" setup>
+import TopBanner from "../../components/banners/TopBanner.vue"
+import TeamDetails from "@/components/TeamDetails.vue"
 import type Team from "@/types/Team.ts"
 
-import {$require} from "@/plugins/require.js";
-import {ref} from 'vue';
+import {$require} from "@/plugins/require.js"
+import {ref} from "vue"
 
 const teams = ref<Team[]>([
   {
-    name: 'BS Oogway',
-    bg: $require('@/assets/rocketleagueesports.jpg'),
+    name: "BS Oogway",
+    bg: $require("@/assets/rocketleagueesports.jpg"),
     players: [
       {
-        name: 'Allard van der Hooft',
-        ign: 'Vdhooft_'
+        name: "Allard van der Hooft",
+        ign: "Vdhooft_",
       },
       {
-        name: 'Max Liebe',
-        ign: 'Amalox'
+        name: "Max Liebe",
+        ign: "Amalox",
       },
       {
-        name: 'Job de Ruijter',
-        ign: 'Job 404'
+        name: "Job de Ruijter",
+        ign: "Job 404",
       },
       {
-        name: 'Julian van den Nieuwenhuizen',
-        ign: 'Bak en Braad'
+        name: "Julian van den Nieuwenhuizen",
+        ign: "Bak en Braad",
       },
-    ]
+    ],
   },
   {
     name: "BS Squirtles",
-    bg: $require('@/assets/rocketleagueesports2.jpg'),
+    bg: $require("@/assets/rocketleagueesports2.jpg"),
     players: [
       {
         name: "Thomas Dekker",
-        ign: "ItIsIThomas"
+        ign: "ItIsIThomas",
       },
       {
         name: "Joy Verheijen",
-        ign: "Bluegy"
+        ign: "Bluegy",
       },
       {
         name: "Huub Hammink",
-        ign: "bosvruchtenthee"
+        ign: "bosvruchtenthee",
       },
-    ]
+    ],
   },
   {
     name: "BS Tadpole",
-    bg: $require('@/assets/rocketleagueesports2.jpg'),
+    bg: $require("@/assets/rocketleagueesports2.jpg"),
     players: [
       {
         name: "Stijn Dollenkamp",
-        ign: "SJAWID"
+        ign: "SJAWID",
       },
       {
         name: "Thijs Krosman",
-        ign: "JustDqnt"
+        ign: "JustDqnt",
       },
       {
         name: "Henry Slegers",
-        ign: "poopiejoe"
+        ign: "poopiejoe",
       },
       {
         name: "Thijs Willems",
-        ign: "Darkneoteric"
+        ign: "Darkneoteric",
       },
-    ]
-  }
-]);
+    ],
+  },
+])
 </script>
 
 <style lang="scss" scoped>

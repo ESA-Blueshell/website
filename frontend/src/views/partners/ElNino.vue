@@ -11,8 +11,8 @@
             <v-col>
               <v-img
                 :src="$require('@/assets/elnino.png')"
-                style="max-width: 450px"
                 class="mb-6"
+                style="max-width: 450px"
               />
             </v-col>
             <v-spacer />
@@ -67,20 +67,20 @@
         <p class="text-body-1">
           See for more information:
           <a
-            href="https://www.elnino.tech/vacatures"
             class="text-decoration-none"
+            href="https://www.elnino.tech/vacatures"
             target="_blank"
           >www.elnino.tech/vacatures</a>
           (Dutch) or
           <a
-            href="https://www.elnino.tech/getajob"
             class="text-decoration-none"
+            href="https://www.elnino.tech/getajob"
             target="_blank"
           >www.elnino.tech/getajob</a> (English).
           You can always contact Michael on WhatsApp:
           <a
-            href="https://wa.me/31626978392"
             class="text-decoration-none"
+            href="https://wa.me/31626978392"
             target="_blank"
           >+31626978392</a>.
           Don’t worry he won’t bite!
@@ -91,13 +91,13 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$require} from "@/plugins/require.js";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$require} from "@/plugins/require.js"
 
 export default {
   name: "ElNino",
   components: {TopBanner},
-  methods: {$require}
+  methods: {$require},
 }
 </script>
 

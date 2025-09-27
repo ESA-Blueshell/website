@@ -15,10 +15,10 @@
       ref="description"
       v-model="localCommittee.description"
       :rules="[(v: string) => !!v || 'Description is required']"
-      label="Description"
-      variant="outlined"
       hide-details
+      label="Description"
       required
+      variant="outlined"
     />
 
     <v-container>
@@ -38,11 +38,11 @@
           <user-select
             v-if="members"
             v-model="member.user"
-            :users="members"
             :rules="[
-              (u: SimpleUser) => !!u || 'Select a member',
-              (u: SimpleUser) => !u || localCommittee.members.findIndex((ms: CommitteeMember, idx: number) => ms.user?.id === u.id && idx !== i) === -1 || 'Member already in this committee',
+              (u: AdvancedUser) => !!u || 'Select a member',
+              (u: AdvancedUser) => !u || localCommittee.members.findIndex((ms: CommitteeMember, idx: number) => ms.user?.id === u.id && idx !== i) === -1 || 'Member already in this committee',
             ]"
+            :users="members"
             label="Member name"
           >
             <template #append>
@@ -59,8 +59,8 @@
 
     <v-btn
       block
-      variant="outlined"
       class="mb-4"
+      variant="outlined"
       @click="addMember"
     >
       Add member
@@ -75,18 +75,11 @@
   </v-form>
 </template>
 
-<script setup lang="ts">
-import {onMounted, ref} from 'vue';
-import type {VForm} from 'vuetify/components';
-import {
-  type AdvancedCommittee,
-  type CommitteeMember,
-  createCommittee,
-  findUsers,
-  type SimpleUser,
-  updateCommittee
-} from "@/lib";
-import UserSelect from "@/components/select/UserSelect.vue";
+<script lang="ts" setup>
+import {ref} from "vue"
+import type {VForm} from "vuetify/components"
+import {type AdvancedCommittee, type AdvancedUser, type CommitteeMember, createCommittee, updateCommittee} from "@/lib"
+import UserSelect from "@/components/select/UserSelect.vue"
 
 const props = defineProps<{
   committee: {
@@ -94,73 +87,66 @@ const props = defineProps<{
     type: AdvancedCommittee,
     required: false,
     default: () => AdvancedCommittee;
+  },
+  members: {
+    type: AdvancedUser[],
+    required: true,
   };
-}>();
+}>()
 
 const emit = defineEmits<{
-  (e: 'submitting'): void;
-  (e: 'close'): void;
-}>();
+  (e: "submitting"): void;
+  (e: "close"): void;
+}>()
 
-const valid = ref(false);
-const members = ref<SimpleUser[]>([]);
-const form = ref<VForm | null>(null);
+const valid = ref(false)
+const form = ref<VForm | null>(null)
 
 // Create a local copy of the committee to avoid direct prop mutation
 const localCommittee = ref<AdvancedCommittee>({
-  name: '',
+  name: "",
   ...props.committee,
   members: (props.committee?.members ?? []).map((m: CommitteeMember) => ({
     ...m,
     userId: m.userId ?? m.user?.id,
-    user: undefined
-  }))
-});
-
-// Fetch members on mount
-onMounted(async () => {
-  const resp = await findUsers({
-    query: {
-      isMember: true
-    }
-  });
-  members.value = resp.data ?? [];
-});
+    user: undefined,
+  })),
+})
 
 const addMember = () => {
-  localCommittee.value.members.push({
-    role: '',
-    committeeId: localCommittee.value.id,
-    userId: undefined,
-  });
-};
+  localCommittee.value.members!.push({
+    role: "",
+    committeeId: localCommittee.value.id as number,
+    userId: 0,
+  })
+}
 
 const removeMember = (index: number) => {
-  localCommittee.value.members.splice(index, 1);
-};
+  localCommittee.value.members!.splice(index, 1)
+}
 
 const submit = async () => {
-  const {valid: formValid} = await form.value?.validate() ?? {valid: false};
-  if (!formValid) return;
+  const {valid: formValid} = await form.value?.validate() ?? {valid: false}
+  if (!formValid) return
 
-  emit('submitting');
+  emit("submitting")
 
   try {
     if (localCommittee.value.id) {
       await updateCommittee({
         body: localCommittee.value,
         path: {
-          id: localCommittee.value.id
-        }
+          id: localCommittee.value.id,
+        },
       })
     } else {
       await createCommittee({
         body: localCommittee.value,
       })
     }
-    emit('close');
+    emit("close")
   } catch (error) {
-    console.error('Error saving committee:', error);
+    console.error("Error saving committee:", error)
   }
-};
+}
 </script>

@@ -1,4 +1,4 @@
-import type { Config } from '@/lib/blueshell/client/types.gen.ts';
+import type {Config} from "@/lib/blueshell/client/types.gen.ts"
 
 /**
  * The `createClientConfig()` function will be called on client initialization
@@ -9,9 +9,9 @@ export function createClientConfig(defaultConfig: Config): Config {
     ...defaultConfig,
     throwOnError: true,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-  };
+  }
 
-  return config as Config;
+  return config as Config
 }

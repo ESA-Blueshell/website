@@ -17,9 +17,9 @@
           If you would like to join a meeting to see if we are something for you, or if you have a
           question, feel free to contact the board at
           <a
+            class="text-decoration-none"
             href="mailto:internal-affairs@blueshell.utwente.nl"
             target="_blank"
-            class="text-decoration-none"
           >internal-affairs@blueshell.utwente.nl</a>
           . You could also ask us on Discord or in person at one of the events.
         </p>
@@ -45,22 +45,22 @@
   </v-main>
 </template>
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
-import $markdownToHtml from "@/plugins/markdownToHtml.ts";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 
 export default {
   components: {TopBanner: TopBanner},
   data: () => {
     return {
-      committees: []
+      committees: [],
     }
   },
   mounted() {
 
-    this.$http.get('committees')
+    this.$http.get("committees")
       .then(response => {
-        let data = response.data;
+        let data = response.data
         if (data.length > 0) {
           this.committees = data
         } else {
@@ -69,7 +69,7 @@ export default {
       })
       .catch(e => $handleNetworkError(e))
   },
-  methods: {$markdownToHtml}
+  methods: {$markdownToHtml},
 }
 </script>
 

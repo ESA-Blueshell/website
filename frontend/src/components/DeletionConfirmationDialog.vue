@@ -26,8 +26,8 @@
   </v-dialog>
 </template>
 
-<script setup lang="ts">
-import {computed} from 'vue';
+<script lang="ts" setup>
+import {computed} from "vue"
 
 interface Props {
   modelValue?: boolean;
@@ -37,25 +37,25 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
-  title: '',
-  message: '',
-});
+  title: "",
+  message: "",
+})
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'confirm'): void;
-}>();
+  (e: "update:modelValue", value: boolean): void;
+  (e: "confirm"): void;
+}>()
 
 const showDialog = computed({
   get: () => props.modelValue,
-  set: (value: boolean) => emit('update:modelValue', value),
-});
+  set: (value: boolean) => emit("update:modelValue", value),
+})
 
 const closeDialog = () => {
-  emit('update:modelValue', false);
-};
+  emit("update:modelValue", false)
+}
 
 const confirm = () => {
-  emit('confirm');
-};
+  emit("confirm")
+}
 </script>

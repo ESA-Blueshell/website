@@ -2,12 +2,12 @@
   <div :style="{background: $vuetify.theme.computedThemes[$vuetify.theme.global.name].colors.wallpaper }">
     <v-container class="pa-0">
       <v-row
-        class="mx-auto container flex-nowrap"
         align="center"
+        class="mx-auto container flex-nowrap"
       >
         <v-col
-          cols="auto"
           class="flex-shrink-1"
+          cols="auto"
         >
           <p
             class="text-white text-h5 text-sm-h4 font-weight-thin mb-0"
@@ -25,8 +25,8 @@
           >
             <img
               :src="$require('@/assets/discord.svg')"
-              style="width: 35px"
               alt="discord icon"
+              style="width: 35px"
             >
           </v-btn>
         </v-col>
@@ -36,8 +36,8 @@
         class="mx-auto pt-4 container"
       >
         <v-col
-          cols="12"
           :md="Object.entries(channels).length > 0 ? 5 : 12"
+          cols="12"
         >
           <p class="text-h6 text-sm-h5 text-white mb-2">
             {{ discordData.presence_count }} people now online on discord
@@ -55,10 +55,10 @@
                   <discord-user
                     v-for="membership in discordData.members"
                     :key="membership.username"
-                    :username="membership.username"
-                    :status="membership.status"
                     :avatar-url="membership.avatar_url"
                     :half-width="Object.entries(channels).length > 0"
+                    :status="membership.status"
+                    :username="membership.username"
                   />
                   <discord-user
                     v-if="discordData.members.length > 99"
@@ -96,9 +96,9 @@
               >
                 <v-icon
                   color="white"
+                  icon="mdi-volume-high"
                   size="20"
                   style="margin: 6px !important; margin-right: 10px !important;"
-                  icon="mdi-volume-high"
                 />
                 <span
                   class="text-h6 text-white font-italic font-weight-thin"
@@ -109,10 +109,10 @@
               <discord-user
                 v-for="membership in membersInVC[channelId]"
                 :key="membership.username"
-                :username="membership.username"
-                :status="membership.status"
                 :avatar-url="membership.avatar_url"
                 :half-width="true"
+                :status="membership.status"
+                :username="membership.username"
               />
             </v-row>
           </v-container>
@@ -123,8 +123,8 @@
 </template>
 
 <script lang="ts">
-import DiscordUser from "@/components/DiscordUser.vue";
-import {$require} from "@/plugins/require.js";
+import DiscordUser from "@/components/DiscordUser.vue"
+import {$require} from "@/plugins/require.js"
 
 export default {
   name: "DiscordBanner",
@@ -135,7 +135,7 @@ export default {
     membersInVC: {},
   }),
   mounted() {
-    this.$http.get('https://discordapp.com/api/guilds/324285132133629963/widget.json')
+    this.$http.get("https://discordapp.com/api/guilds/324285132133629963/widget.json")
       .then(response => {
         this.discordData = response.data
         this.shuffleArray(this.discordData.members)
@@ -143,7 +143,7 @@ export default {
         const membersInAChannel = this.discordData.members.filter(membership => membership.channel_id)
 
         this.discordData.channels.forEach(channel => {
-          const membersInThisChannel = membersInAChannel.filter(membership => membership.channel_id === channel.id);
+          const membersInThisChannel = membersInAChannel.filter(membership => membership.channel_id === channel.id)
           if (membersInThisChannel.length > 0) {
             this.channels[channel.id] = channel.name
             this.membersInVC[channel.id] = membersInThisChannel
@@ -157,14 +157,14 @@ export default {
     $require,
     shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = array[i]
+        array[i] = array[j]
+        array[j] = temp
       }
-    }
+    },
 
-  }
+  },
 }
 </script>
 

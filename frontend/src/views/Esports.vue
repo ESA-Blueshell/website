@@ -22,10 +22,10 @@
         </p>
         <p class="text-body-1">
           For more info contact the esports affairs (on discord) or send a mail to <b><a
-            href="mailto:esports@blueshell.utwente.nl"
-            target="_blank"
-            class="text-decoration-none"
-          >esports@blueshell.utwente.nl</a></b>
+          class="text-decoration-none"
+          href="mailto:esports@blueshell.utwente.nl"
+          target="_blank"
+        >esports@blueshell.utwente.nl</a></b>
         </p>
         <p class="text-body-1">
           Currently in Blueshell, there are teams for CS:GO, LoL and Rocket League. To find out the current teams in
@@ -55,8 +55,8 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$require} from "@/plugins/require.js";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$require} from "@/plugins/require.js"
 
 export default {
   components: {TopBanner: TopBanner},
@@ -64,26 +64,26 @@ export default {
     return {
       games: [
         {
-          icon: $require('@/assets/league.png'),
-          url: '/esports/league-of-legends'
+          icon: $require("@/assets/league.png"),
+          url: "/esports/league-of-legends",
         },
         {
-          icon: $require('@/assets/csgo.png'),
-          url: '/esports/counter-strike-2'
+          icon: $require("@/assets/csgo.png"),
+          url: "/esports/counter-strike-2",
         },
         {
-          icon: $require('@/assets/valorant.png'),
-          url: '/esports/valorant'
+          icon: $require("@/assets/valorant.png"),
+          url: "/esports/valorant",
         },
         {
-          icon: $require('@/assets/rocketleague.png'),
-          url: '/esports/rocketleague'
+          icon: $require("@/assets/rocketleague.png"),
+          url: "/esports/rocketleague",
         },
         {
-          icon: $require('@/assets/trackmania.png'),
-          url: '/esports/trackmania'
+          icon: $require("@/assets/trackmania.png"),
+          url: "/esports/trackmania",
         },
-      ]
+      ],
     }
   },
 }

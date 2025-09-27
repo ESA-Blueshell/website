@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 
 /*
   eventId is the id of the event that form will be submitted for.
@@ -26,11 +26,11 @@
 */
 
 
-import {ref} from 'vue'
-import {useStore} from 'vuex'
-import type {Event, FormQuestion} from "@/lib";
+import {ref} from "vue"
+import {useStore} from "vuex"
+import type {Event, FormQuestion} from "@/lib"
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(["submit"])
 
 interface Props {
   event: Event
@@ -52,10 +52,10 @@ const store = useStore()
 const formAnswers = ref(
   props.initialFormAnswers
   ?? props.event.signUpForm?.map((question: FormQuestion) => {
-    if (question.type === 'open') return ''
-    if (question.type === 'checkbox') return []
+    if (question.type === "open") return ""
+    if (question.type === "checkbox") return []
     return null // For radio or anything else
-  })
+  }),
 )
 
 /**
@@ -63,10 +63,10 @@ const formAnswers = ref(
  */
 const guestData = ref(
   store.getters.getGuestData ?? {
-    name: '',
-    discord: '',
-    email: ''
-  }
+    name: "",
+    discord: "",
+    email: "",
+  },
 )
 
 /**
@@ -84,9 +84,9 @@ async function validate() {
   const guestFormValid = guestForm.value ? (await guestForm.value.validate()).valid : true
 
   if (formValid && guestFormValid) {
-    emit('submit', {
+    emit("submit", {
       answers: formAnswers,
-      guestData: guestData
+      guestData: guestData,
     })
   }
 }
@@ -107,26 +107,26 @@ const guestForm = ref(null)
       class="mb-4"
     >
       <v-alert
+        class="mb-4"
         text="It seems you are not logged in. You can still sign up for this event, but we'll need some extra info from you."
         type="info"
-        class="mb-4"
         variant="outlined"
       />
       <v-text-field
         v-model="guestData.name"
-        label="Name"
         :rules="[v => !!v || 'Name is required']"
+        label="Name"
       />
       <v-text-field
         v-model="guestData.discord"
-        label="Discord username"
         :rules="[v => !!v || 'Discord username is required']"
+        label="Discord username"
       />
       <v-text-field
         v-model="guestData.email"
-        label="Email"
         :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
         hint="We'll use this to send you a link you can use to edit your sign-up form later"
+        label="Email"
       />
     </v-form>
 
@@ -187,7 +187,7 @@ const guestForm = ref(null)
       :loading="buttonLoading"
       @click="validate"
     >
-      {{ props.initialFormAnswers ? 'Update' : 'Save' }} sign-up form
+      {{ props.initialFormAnswers ? "Update" : "Save" }} sign-up form
     </v-btn>
   </div>
 </template>

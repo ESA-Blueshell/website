@@ -20,12 +20,12 @@
         />
         <v-text-field
           v-model="password"
+          :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
           :rules="passwordRules"
+          :type="showPass ? 'text' : 'password'"
+          hide-details
           label="Password"
           required
-          hide-details
-          :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="showPass ? 'text' : 'password'"
           @keydown.enter="login"
           @click:append="showPass = !showPass"
         />
@@ -33,9 +33,9 @@
           <v-spacer />
           <v-col cols="auto">
             <v-btn
-              variant="text"
-              size="small"
               :to="`login/forgor?username=${username}`"
+              size="small"
+              variant="text"
             >
               forgot password?
             </v-btn>
@@ -44,9 +44,9 @@
         <v-row>
           <v-col cols="auto">
             <v-btn
-              variant="outlined"
               color="accent"
               to="account/create"
+              variant="outlined"
             >
               Create Account
             </v-btn>
@@ -67,15 +67,15 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import {onMounted, ref} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {useStore} from 'vuex'
-import TopBanner from '@/components/banners/TopBanner.vue'
-import {$handleNetworkError} from '@/plugins/handleNetworkError.js'
-import {authenticate} from '@/lib'
-import type {JwtRequest, JwtResponse} from '@/lib'
-import type {State} from '@/plugins/store'
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import {useRoute, useRouter} from "vue-router"
+import {useStore} from "vuex"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import type {JwtRequest, JwtResponse} from "@/lib"
+import {authenticate} from "@/lib"
+import type {State} from "@/plugins/store"
 
 const router = useRouter()
 const route = useRoute()
@@ -83,23 +83,23 @@ const store = useStore<State>()
 
 const form = ref<any>(null)
 const usernameField = ref<any>(null)
-const username = ref<string>('')
-const password = ref<string>('')
+const username = ref<string>("")
+const password = ref<string>("")
 const valid = ref<boolean>(false)
 const loading = ref<boolean>(false)
 const showPass = ref<boolean>(false)
 
 const usernameRules = [
-  (v: string) => !!v || 'Username is required',
+  (v: string) => !!v || "Username is required",
 ]
 
 const passwordRules = [
-  (v: string) => !!v || 'Password is required',
+  (v: string) => !!v || "Password is required",
 ]
 
 onMounted(() => {
   if (!store.getters.tokenExpired) {
-    router.push('/account')
+    router.push("/account")
   }
 })
 
@@ -111,12 +111,12 @@ const login = async () => {
     try {
       const requestBody: JwtRequest = {
         username: username.value,
-        password: password.value
+        password: password.value,
       }
 
       const response = await authenticate<true>({
         body: requestBody,
-        throwOnError: true
+        throwOnError: true,
       })
 
       // Type the response data as JwtResponse
@@ -128,17 +128,17 @@ const login = async () => {
         username: jwtResponse.username!,
         roles: jwtResponse.roles!,
         token: jwtResponse.token!,
-        expiration: jwtResponse.expiration!
+        expiration: jwtResponse.expiration!,
       }
 
-      store.commit('setLogin', loginData)
+      store.commit("setLogin", loginData)
 
       // Go to redirect page or home page
-      await router.push(route.query.redirect?.toString() || '/')
+      await router.push(route.query.redirect?.toString() || "/")
     } catch (e: any) {
       // Show Incorrect login snackbar
       if (e.response?.status === 401) {
-        store.commit('setStatusSnackbarMessage', 'Incorrect login credentials. Please double check your username and password.')
+        store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
       } else {
         $handleNetworkError(e)
       }

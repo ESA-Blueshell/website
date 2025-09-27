@@ -1,13 +1,13 @@
 <template>
   <div :style="{background: $vuetify.theme.computedThemes[$vuetify.theme.global.name].colors.wallpaper}">
     <v-row
-      class="mx-auto container flex-nowrap"
       align="center"
+      class="mx-auto container flex-nowrap"
       justify="space-between"
     >
       <v-col
-        md="auto"
         cols="120"
+        md="auto"
       >
         <p
           class="text-white text-h4 font-weight-thin mb-0"
@@ -21,10 +21,10 @@
         <v-btn
           v-for="social in socials"
           :key="social.url"
+          :href="social.url"
+          class="ml-5 my-3"
           color="primary"
           target="_blank"
-          class="ml-5 my-3"
-          :href="social.url"
         >
           <v-icon style="--v-icon-size-multiplier: 1.7 ">
             {{ social.icon }}
@@ -42,28 +42,28 @@ export default {
     return {
       socials: [
         {
-          icon: 'mdi-instagram',
-          url: 'https://www.instagram.com/esablueshell/',
+          icon: "mdi-instagram",
+          url: "https://www.instagram.com/esablueshell/",
         },
         {
-          icon: 'mdi-facebook',
-          url: 'https://www.facebook.com/BlueshellEsports',
+          icon: "mdi-facebook",
+          url: "https://www.facebook.com/BlueshellEsports",
         },
         {
-          icon: 'mdi-twitch',
-          url: 'https://www.twitch.tv/blueshellesports',
+          icon: "mdi-twitch",
+          url: "https://www.twitch.tv/blueshellesports",
         },
         {
-          icon: 'mdi-twitter',
-          url: 'https://twitter.com/BlueshellESA',
+          icon: "mdi-twitter",
+          url: "https://twitter.com/BlueshellESA",
         },
         {
-          icon: 'mdi-linkedin',
-          url: 'https://www.instagram.com/esablueshell/',
+          icon: "mdi-linkedin",
+          url: "https://www.instagram.com/esablueshell/",
         },
-      ]
+      ],
     }
-  }
+  },
 }
 </script>
 

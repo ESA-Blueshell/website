@@ -26,10 +26,10 @@
         </p>
         <p class="text-body-1">
           You can add all our events to your personal Google Calendar agenda by clicking <a
-            href="https://calendar.google.com/calendar/u/1/r?cid=87r5v7ep7k9ronlrg8n2q9033s@group.calendar.google.com"
-            target="_blank"
-            class="text-decoration-none"
-          >here</a>! If you want to add only a single
+          class="text-decoration-none"
+          href="https://calendar.google.com/calendar/u/1/r?cid=87r5v7ep7k9ronlrg8n2q9033s@group.calendar.google.com"
+          target="_blank"
+        >here</a>! If you want to add only a single
           event, you can click on at and click on the "add to calendar" button. Beware that when you
           copy an event, it isn't synchronized with the Blueshell calendar anymore.
         </p>
@@ -39,11 +39,11 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
+import TopBanner from "@/components/banners/TopBanner.vue"
 import Calendar from "@/components/Calendar.vue"
-import EventList from "@/components/events/EventList.vue";
+import EventList from "@/components/events/EventList.vue"
 
 export default {
-  components: {EventList, TopBanner, Calendar}
+  components: {EventList, TopBanner, Calendar},
 }
 </script>

@@ -1,10 +1,10 @@
-<script setup lang="ts">
-import {computed, onMounted, ref} from 'vue'
-import {useStore} from 'vuex'
-import {useRoute} from 'vue-router'
-import EventListItem from '@/components/events/EventListItem.vue'
-import { findEvents, findEventSignUpsForCurrentUser, type Event, type EventSignUp } from '@/lib'
-import {DateTime} from "luxon";
+<script lang="ts" setup>
+import {computed, onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import {useRoute} from "vue-router"
+import EventListItem from "@/components/events/EventListItem.vue"
+import {type Event, type EventSignUp, findEvents, findEventSignUpsForCurrentUser} from "@/lib"
+import {DateTime} from "luxon"
 
 const events = ref<Event[] | null>(null)
 const eventSignups = ref<Record<number, EventSignUp>>({})
@@ -19,16 +19,15 @@ const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 onMounted(async () => {
   const [eventsResp, signupsResp] = await Promise.all([
     findEvents({
-      query: {
-        from: DateTime.now().startOf("day").toISO()!
+        query: {
+          from: DateTime.now().startOf("day").toISO()!,
 
-      }
-      }
-
+        },
+      },
     ),
     isLoggedIn.value
       ? findEventSignUpsForCurrentUser()
-      : Promise.resolve({ data: [] as EventSignUp[] }),
+      : Promise.resolve({data: [] as EventSignUp[]}),
   ])
 
   const fetchedEvents = eventsResp.data?.content ?? []
@@ -38,8 +37,8 @@ onMounted(async () => {
     const signups = signupsResp.data ?? []
     eventSignups.value = Object.fromEntries(
       signups
-        .filter(s => typeof s.eventId === 'number')
-        .map(s => [s.eventId as number, s])
+        .filter(s => typeof s.eventId === "number")
+        .map(s => [s.eventId as number, s]),
     )
   }
   events.value = fetchedEvents

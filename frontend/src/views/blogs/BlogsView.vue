@@ -1,22 +1,22 @@
-<script setup lang="ts">
-import {ref, onMounted} from 'vue';
-import TopBanner from '@/components/banners/TopBanner.vue';
-import { useRouter } from 'vue-router'
-import {DateTime} from "luxon";
-import {type Blog, findBlogs} from "@/lib";
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {useRouter} from "vue-router"
+import {DateTime} from "luxon"
+import {type Blog, findBlogs} from "@/lib"
 
 const router = useRouter()
 
-const blogs = ref<Blog[]>([]);
+const blogs = ref<Blog[]>([])
 
 onMounted(async () => {
   try {
-    const resp = await findBlogs();
-    blogs.value = resp.data ?? [];
+    const resp = await findBlogs()
+    blogs.value = resp.data ?? []
   } catch (error) {
-    console.error('Error fetching blog list:', error);
+    console.error("Error fetching blog list:", error)
   }
-});
+})
 
 const navigateToBlog = (blogId: string) => {
   router.push(`/blogs/${blogId}`)

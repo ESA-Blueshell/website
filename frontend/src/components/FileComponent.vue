@@ -1,58 +1,58 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
-import type {File} from "@/lib";
+import {ref} from "vue"
+import type {File} from "@/lib"
 
 // References and reactive state
-const fileInput = ref<HTMLInputElement | null>(null);
-const selectedFile = ref<File | null>(null);
-const previewUrl = ref<string | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null)
+const selectedFile = ref<File | null>(null)
+const previewUrl = ref<string | null>(null)
 // Default file type (can be changed via the select)
-const fileType = ref<'DOCUMENT' | 'SIGNATURE' | 'PROFILE_PICTURE' | 'EVENT_BANNER' | 'EVENT_PICTURE' | 'SPONSOR_PICTURE'>('DOCUMENT');
+const fileType = ref<"DOCUMENT" | "SIGNATURE" | "PROFILE_PICTURE" | "EVENT_BANNER" | "EVENT_PICTURE" | "SPONSOR_PICTURE">("DOCUMENT")
 
 // Called when a file is selected from the input element
 function onFileSelected(event: Event) {
-  const target = event.target as HTMLInputElement;
+  const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
-    const file = target.files[0];
-    const reader = new FileReader();
+    const file = target.files[0]
+    const reader = new FileReader()
     reader.onload = (e: ProgressEvent<FileReader>) => {
       if (e.target?.result) {
         // Save the base64 content for preview and upload
-        previewUrl.value = e.target.result as string;
+        previewUrl.value = e.target.result as string
         selectedFile.value = {
           name: file.name,
           fileName: file.name,
           fileType: fileType.value,
-          base64Content: previewUrl.value
+          base64Content: previewUrl.value,
           // Note: size, uploaderId, url, createdAt, id, and mediaType are not set on upload.
-        };
+        }
       }
-    };
-    reader.readAsDataURL(file);
+    }
+    reader.readAsDataURL(file)
   }
 }
 
 // Simulate an upload action (replace with an actual API call)
 function uploadFile() {
   if (selectedFile.value) {
-    console.log("Uploading file:", selectedFile.value);
+    console.log("Uploading file:", selectedFile.value)
     // e.g., await api.uploadFile(selectedFile.value);
   } else {
-    alert("Please select a file first.");
+    alert("Please select a file first.")
   }
 }
 
 // Create a download link and simulate a download
 function downloadFile() {
   if (selectedFile.value && selectedFile.value.base64Content) {
-    const link = document.createElement('a');
-    link.href = selectedFile.value.base64Content;
-    link.download = selectedFile.value.fileName || 'download';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const link = document.createElement("a")
+    link.href = selectedFile.value.base64Content
+    link.download = selectedFile.value.fileName || "download"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   } else {
-    alert("No file available for download.");
+    alert("No file available for download.")
   }
 }
 </script>
@@ -109,11 +109,11 @@ function downloadFile() {
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import {defineComponent} from "vue"
 
 export default defineComponent({
-  name: "FileComponent"
-});
+  name: "FileComponent",
+})
 </script>
 
 <style scoped>

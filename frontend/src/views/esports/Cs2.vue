@@ -22,52 +22,52 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import TeamDetails from "@/components/TeamDetails.vue";
-import { $require } from "@/plugins/require.js";
-import { ref } from 'vue';
-import type Team from "@/types/Team.ts";
+<script lang="ts" setup>
+import TopBanner from "@/components/banners/TopBanner.vue"
+import TeamDetails from "@/components/TeamDetails.vue"
+import {$require} from "@/plugins/require.js"
+import {ref} from "vue"
+import type Team from "@/types/Team.ts"
 
 const teams = ref<Team>([
   {
-    name: 'BS HyperS',
-    bg: $require('@/assets/csgoesports1.jpg'),
+    name: "BS HyperS",
+    bg: $require("@/assets/csgoesports1.jpg"),
     players: [
       {
-        name: 'Ivo Heitlager',
-        ign: 'BSKingCookie'
+        name: "Ivo Heitlager",
+        ign: "BSKingCookie",
       },
       {
-        name: 'Reinier Algra',
-        ign: 'Reign'
+        name: "Reinier Algra",
+        ign: "Reign",
       },
       {
-        name: 'Joran Hagen',
-        ign: 'MacVanish_'
+        name: "Joran Hagen",
+        ign: "MacVanish_",
       },
       {
-        name: 'Mario van der Wal Agraz',
-        ign: 'TheCheeser'
+        name: "Mario van der Wal Agraz",
+        ign: "TheCheeser",
       },
       {
-        name: 'Marijn de Boer',
-        ign: 'Marijn02'
+        name: "Marijn de Boer",
+        ign: "Marijn02",
       },
     ],
     coaches: [
       {
-        name: 'Bob Even',
-        ign: 'Bobbuz'
-      }
+        name: "Bob Even",
+        ign: "Bobbuz",
+      },
     ],
     substitutes: [
       {
-        name: 'Chris Wong',
-        ign: 'FetaBass'
-      }
-    ]
-  }
+        name: "Chris Wong",
+        ign: "FetaBass",
+      },
+    ],
+  },
 ])
 </script>
 

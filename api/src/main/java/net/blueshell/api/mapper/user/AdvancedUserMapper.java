@@ -20,6 +20,23 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Autowired
     private UserService users;
 
+    @Mapping(target = "id")
+    @Mapping(target = "initials")
+    @Mapping(target = "firstName")
+    @Mapping(target = "prefix")
+    @Mapping(target = "lastName")
+    @Mapping(target = "username")
+    @Mapping(target = "discord")
+    @Mapping(target = "email")
+    @Mapping(target = "dateOfBirth")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "nationality")
+    @Mapping(target = "photoConsent")
+    @Mapping(target = "bhv")
+    @Mapping(target = "enabled")
+    @Mapping(target = "createdAt")
+    @Mapping(target="gender")
+    @Mapping(target="studentNumber")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
     @BeanMapping(ignoreByDefault = true)

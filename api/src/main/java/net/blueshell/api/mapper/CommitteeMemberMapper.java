@@ -6,8 +6,6 @@ import net.blueshell.api.dto.CommitteeMemberDTO;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.CommitteeMember;
 import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.CommitteeService;
-import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -21,7 +19,6 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "role")
-    @Mapping(target = "user")
     @Mapping(target = "userId")
     public abstract CommitteeMemberDTO toDTO(CommitteeMember member);
 

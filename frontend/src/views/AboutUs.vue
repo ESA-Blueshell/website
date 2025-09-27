@@ -55,25 +55,25 @@
 </template>
 
 <script lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {DateTime} from "luxon";
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {DateTime} from "luxon"
 
 // Helper function to convert a number to its ordinal word
 function getOrdinalWord(n) {
   const ordinals = [
     "first", "second", "third", "fourth", "fifth",
     "sixth", "seventh", "eighth", "ninth", "tenth",
-    "eleventh", "twelfth"
-  ];
+    "eleventh", "twelfth",
+  ]
   if (n <= ordinals.length) {
-    return ordinals[n - 1];
+    return ordinals[n - 1]
   }
   // Fallback: append standard suffix if n is out of the predefined range
-  let suffix = "th";
-  if (n % 10 === 1 && n % 100 !== 11) suffix = "st";
-  else if (n % 10 === 2 && n % 100 !== 12) suffix = "nd";
-  else if (n % 10 === 3 && n % 100 !== 13) suffix = "rd";
-  return n + suffix;
+  let suffix = "th"
+  if (n % 10 === 1 && n % 100 !== 11) suffix = "st"
+  else if (n % 10 === 2 && n % 100 !== 12) suffix = "nd"
+  else if (n % 10 === 3 && n % 100 !== 13) suffix = "rd"
+  return n + suffix
 }
 
 export default {
@@ -82,14 +82,14 @@ export default {
   computed: {
     boardYear() {
       return Math.floor(
-        DateTime.now().diff(DateTime.fromISO("2017-12-12"), "years").years
-      );
+        DateTime.now().diff(DateTime.fromISO("2017-12-12"), "years").years,
+      )
     },
     boardYearOrdinal() {
-      return getOrdinalWord(this.boardYear);
-    }
-  }
-};
+      return getOrdinalWord(this.boardYear)
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>

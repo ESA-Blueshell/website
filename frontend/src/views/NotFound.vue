@@ -5,8 +5,8 @@
       style="max-width: 800px;"
     >
       <v-img
-        class="mx-auto"
         :src="$require('@/assets/shellyooooooooooooohhhhhhhhhhh.png')"
+        class="mx-auto"
         style="max-width: 800px"
       />
       <p class="mt-10 text-h6 text-sm-h5">
@@ -15,20 +15,20 @@
       </p>
       <p class="mt-5 text-h5 text-sm-h3">
         Click <a
-          href="/frontend/public"
-          class="text-decoration-none"
-        >here</a> to go back to the main page!
+        class="text-decoration-none"
+        href="/frontend/public"
+      >here</a> to go back to the main page!
       </p>
     </div>
   </v-main>
 </template>
 
 <script lang="ts">
-import {$require} from "@/plugins/require.js";
+import {$require} from "@/plugins/require.js"
 
 export default {
   name: "NotFound",
-  methods: {$require}
+  methods: {$require},
 }
 </script>
 

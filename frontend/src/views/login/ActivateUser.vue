@@ -7,7 +7,7 @@
         style="max-width: 800px"
       >
         <p class="text-h3">
-          Hello {{ user != null ? user.firstName : '' }}!
+          Hello {{ user != null ? user.firstName : "" }}!
         </p>
 
         <p>
@@ -22,7 +22,7 @@
         </p>
         <p v-if="store.getters.isActive">
           With the event manager, you can create and edit an upcoming event for one of the committees you're in. Once an
-          event is created it will have to be approved by board {{ store.getters.isBoard ? '(yes, you)' : '' }} before
+          event is created it will have to be approved by board {{ store.getters.isBoard ? "(yes, you)" : "" }} before
           it will go public.
         </p>
         <p v-if="store.getters.isBoard">
@@ -41,35 +41,35 @@
     </div>
   </v-main>
 </template>
-<script setup lang="ts">
-import {onMounted, ref} from 'vue';
-import {useStore} from 'vuex';
-import TopBanner from "@/components/banners/TopBanner.vue";
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js";
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
-import {findUserById} from "@/lib/index.js";
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import {findUserById} from "@/lib/index.js"
 
 
 // Reactive data
-const user = ref(null);
+const user = ref(null)
 
 // Store access
-const store = useStore();
+const store = useStore()
 
 // Lifecycle hook
 onMounted(async () => {
-  const login = store.getters.getLogin;
+  const login = store.getters.getLogin
 
   try {
     const response = await findUserById({
       path: {
-        userId: login.userId
-      }
-    });
+        userId: login.userId,
+      },
+    })
 
-    user.value = response.data;
+    user.value = response.data
   } catch (e) {
-    $handleNetworkError(e);
+    $handleNetworkError(e)
   }
-});
+})
 </script>

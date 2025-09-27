@@ -7,29 +7,29 @@
   >
     <v-text-field
       v-model="form.password"
-      :rules="passwordRules"
-      label="New Password"
       :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+      :rules="passwordRules"
       :type="showPass ? 'text' : 'password'"
+      label="New Password"
       @click:append-inner="showPass = !showPass"
     />
     <v-text-field
       v-model="passwordAgain"
-      :rules="passwordConfirmRules"
-      label="Repeat New Password"
       :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+      :rules="passwordConfirmRules"
       :type="showPass ? 'text' : 'password'"
+      label="Repeat New Password"
       @click:append-inner="showPass = !showPass"
     />
 
     <v-row
-      class="mt-2"
       align="center"
+      class="mt-2"
       justify="end"
     >
       <v-btn
-        :loading="loading"
         :disabled="!valid"
+        :loading="loading"
         color="primary"
         @click="submit"
       >
@@ -48,63 +48,63 @@
   </v-form>
 </template>
 
-<script setup lang="ts">
-import {onMounted, ref} from 'vue';
-import type {VForm} from 'vuetify/components';
-import {useRoute, useRouter} from 'vue-router';
-import {resetPassword} from '@/lib';
-import type {PasswordResetRequest} from '@/lib';
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import type {VForm} from "vuetify/components"
+import {useRoute, useRouter} from "vue-router"
+import type {PasswordResetRequest} from "@/lib"
+import {resetPassword} from "@/lib"
 
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
-const formRef = ref<VForm | null>(null);
-const valid = ref<boolean>(false);
-const loading = ref<boolean>(false);
-const succeeded = ref<boolean>(false);
-const showPass = ref<boolean>(false);
-const token = ref<string>('');
+const formRef = ref<VForm | null>(null)
+const valid = ref<boolean>(false)
+const loading = ref<boolean>(false)
+const succeeded = ref<boolean>(false)
+const showPass = ref<boolean>(false)
+const token = ref<string>("")
 
 const form = ref<PasswordResetRequest>({
-  token: '',
-  username: '',
-  password: ''
-});
+  token: "",
+  username: "",
+  password: "",
+})
 
 const passwordRules = [
-  (v: string) => !!v || 'Password is required',
-  (v: string) => v.length >= 8 || 'Password must be at least 8 characters',
-  (v: string) => /(?=.*[a-z])/.test(v) || 'Password must contain at least one lowercase letter',
-  (v: string) => /(?=.*[A-Z])/.test(v) || 'Password must contain at least one uppercase letter',
-  (v: string) => /(?=.*\d)/.test(v) || 'Password must contain at least one number',
-  (v: string) => /(?=.*[@$!%*?&])/.test(v) || 'Password must contain at least one special character (@$!%*?&)',
-];
-const passwordAgain = ref<string>('');
+  (v: string) => !!v || "Password is required",
+  (v: string) => v.length >= 8 || "Password must be at least 8 characters",
+  (v: string) => /(?=.*[a-z])/.test(v) || "Password must contain at least one lowercase letter",
+  (v: string) => /(?=.*[A-Z])/.test(v) || "Password must contain at least one uppercase letter",
+  (v: string) => /(?=.*\d)/.test(v) || "Password must contain at least one number",
+  (v: string) => /(?=.*[@$!%*?&])/.test(v) || "Password must contain at least one special character (@$!%*?&)",
+]
+const passwordAgain = ref<string>("")
 const passwordConfirmRules = [
-  (v: string) => !!v || 'Password confirmation is required',
-  (v: string) => v === form.value.password || 'Passwords do not match',
-];
+  (v: string) => !!v || "Password confirmation is required",
+  (v: string) => v === form.value.password || "Passwords do not match",
+]
 
 onMounted(() => {
-  token.value = (route.query.token as string) || '';
-  form.value.username = (route.query.username as string) || '';
+  token.value = (route.query.token as string) || ""
+  form.value.username = (route.query.username as string) || ""
   if (!token.value) {
-    router.push('/');
-    return;
+    router.push("/")
+    return
   }
-  form.value.token = token.value;
-});
+  form.value.token = token.value
+})
 
 const submit = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const result = await formRef.value?.validate();
-    if (!result || (typeof result === 'object' && 'valid' in result && !result.valid)) return;
+    const result = await formRef.value?.validate()
+    if (!result || (typeof result === "object" && "valid" in result && !result.valid)) return
 
-    await resetPassword({body: form.value});
-    succeeded.value = true;
+    await resetPassword({body: form.value})
+    succeeded.value = true
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 </script>

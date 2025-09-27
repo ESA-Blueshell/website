@@ -18,8 +18,8 @@
         <v-expand-transition>
           <div v-if="expanded === -1">
             <advanced-user-edit
-              class="mt-4"
               :model-value="{}"
+              class="mt-4"
               @user-changed="userChanged"
             />
           </div>
@@ -32,11 +32,11 @@
         :key="user.username"
       >
         <user-list-row
-          :user="user"
+          :contributions="contributions"
           :expanded="expanded"
           :is-member-list="isMemberList"
-          :contributions="contributions"
           :memberships="memberships"
+          :user="user"
           @toggle-expanded="toggleExpanded"
           @contribution-changed="contributionChanged"
           @membership-changed="membershipChanged"
@@ -49,11 +49,11 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import UserListRow from './UserListRow.vue';
-import type {AdvancedUser, Contribution, Membership} from '@/lib/blueshell/types.gen.ts';
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue";
-import {toRefs, watch} from "vue";
+<script lang="ts" setup>
+import UserListRow from "./UserListRow.vue"
+import type {AdvancedUser, Contribution, Membership} from "@/lib/blueshell/types.gen.ts"
+import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import {toRefs} from "vue"
 
 // Props
 const props = withDefaults(defineProps<{
@@ -68,38 +68,38 @@ const props = withDefaults(defineProps<{
   memberships: () => [],
   expanded: null,
   isMemberList: false,
-});
+})
 
-const { title, users, contributions, memberships, expanded, isMemberList } = toRefs(props);
+const {title, users, contributions, memberships, expanded, isMemberList} = toRefs(props)
 
 // Emits
 const emit = defineEmits<{
-  (e: 'toggle-expanded', userId: number): void;
-  (e: 'user-changed', user: AdvancedUser): void;
-  (e: 'delete-user', user: AdvancedUser): void;
-  (e: 'contribution-changed', contribution: Contribution): void;
-  (e: 'membership-changed', membership: Membership): void;
-}>();
+  (e: "toggle-expanded", userId: number): void;
+  (e: "user-changed", user: AdvancedUser): void;
+  (e: "delete-user", user: AdvancedUser): void;
+  (e: "contribution-changed", contribution: Contribution): void;
+  (e: "membership-changed", membership: Membership): void;
+}>()
 
 // Handlers
 const toggleExpanded = (userId: number) => {
-  emit('toggle-expanded', userId);
-};
+  emit("toggle-expanded", userId)
+}
 
 const contributionChanged = (contribution: Contribution) => {
-  emit('contribution-changed', contribution);
-};
+  emit("contribution-changed", contribution)
+}
 
 const membershipChanged = (membership: Membership) => {
-  emit('membership-changed', membership);
-};
+  emit("membership-changed", membership)
+}
 
 const userChanged = (user: AdvancedUser) => {
-  toggleExpanded(0);
-  emit('user-changed', user);
-};
+  toggleExpanded(0)
+  emit("user-changed", user)
+}
 
 const deleteUser = (user: AdvancedUser) => {
-  emit('delete-user', user);
-};
+  emit("delete-user", user)
+}
 </script>

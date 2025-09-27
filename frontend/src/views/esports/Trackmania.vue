@@ -23,29 +23,29 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import TopBanner from "@/components/banners/TopBanner.vue";
-import TeamDetails from "@/components/TeamDetails.vue";
+<script lang="ts" setup>
+import TopBanner from "@/components/banners/TopBanner.vue"
+import TeamDetails from "@/components/TeamDetails.vue"
 import type Team from "@/types/Team.ts"
-import {$require} from "@/plugins/require.js";
-import {ref} from "vue";
+import {$require} from "@/plugins/require.js"
+import {ref} from "vue"
 
 const teams = ref<Team[]>([
   {
-    name: '[ESABS]',
-    bg: $require('@/assets/trackmaniabg.jpg'),
+    name: "[ESABS]",
+    bg: $require("@/assets/trackmaniabg.jpg"),
     players: [
       {
-        name: 'Jarno',
-        ign: 'Poepboer'
+        name: "Jarno",
+        ign: "Poepboer",
       },
       {
-        name: 'Tim',
-        ign: 'Swordie'
+        name: "Tim",
+        ign: "Swordie",
       },
-    ]
-  }
-]);
+    ],
+  },
+])
 </script>
 <style lang="scss" scoped>
 </style>

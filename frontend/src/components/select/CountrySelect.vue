@@ -1,37 +1,37 @@
 <template>
   <v-autocomplete
     v-model="selectedCountry"
-    :items="countryItems"
+    :custom-filter="customFilter"
     :item-title="displayName"
-    item-value="cca2"
+    :items="countryItems"
     :label="label ?? 'Country'"
     clearable
-    :custom-filter="customFilter"
+    item-value="cca2"
   />
 </template>
 
-<script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import countries, { type Country } from 'world-countries'
-import type { InternalItem } from 'vuetify'
+<script lang="ts" setup>
+import {computed, ref, watch} from "vue"
+import countries, {type Country} from "world-countries"
+import type {InternalItem} from "vuetify"
 
 // Props / emits unchanged: we still pass the 2-letter code (cca2) to parent
 const props = defineProps<{ modelValue?: string | null; label?: string }>()
-const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
+const emit = defineEmits<{ "update:modelValue": [value: string | null] }>()
 
 const selectedCountry = ref<string | null>(props.modelValue ?? null)
 
 // Use countries as-is (optionally sort for nicer UX)
 const countryItems = computed<Country[]>(() =>
   [...countries].sort((a, b) => {
-    const ta =  a.name.common.toLowerCase()
+    const ta = a.name.common.toLowerCase()
     const tb = b.name.common.toLowerCase()
     return ta.localeCompare(tb)
-  })
+  }),
 )
 
 // Show demonym if present; otherwise the common name
-const displayName = (c: Country) => c.flag + ' ' + (c.name?.common || c.name?.official)
+const displayName = (c: Country) => c.flag + " " + (c.name?.common || c.name?.official)
 
 // Search by demonym, common/official name, or code (cca2/cca3/cioc)
 const customFilter = (_itemText: string, queryText: string, item: InternalItem<Country>) => {
@@ -57,7 +57,7 @@ const customFilter = (_itemText: string, queryText: string, item: InternalItem<C
 
 // v-model wiring unchanged
 watch(selectedCountry, (newVal) => {
-  emit('update:modelValue', newVal)
+  emit("update:modelValue", newVal)
 })
 
 watch(() => props.modelValue, (newVal) => {

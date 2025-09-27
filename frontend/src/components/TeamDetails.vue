@@ -4,18 +4,18 @@
   -->
   <div
     :style="{ 'background-image': `url(${team.bg})`}"
-    style="background-size: cover;background-position: center"
     class="team-wrapper"
+    style="background-size: cover;background-position: center"
   >
     <!--
       Here starts the team view on size medium and above
     -->
     <v-container
       v-if="display.mdAndUp"
+      :style="{background: theme.global.current.value.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
       class="py-16"
       fill-height
       fluid
-      :style="{background: theme.global.current.value.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
     >
       <v-row
         align="center"
@@ -46,7 +46,7 @@
               class="font-italic text-h6"
               cols="3"
             >
-              {{ i !== 0 ? '' : (team.players.length > 1 ? 'Players' : 'Player') }}
+              {{ i !== 0 ? "" : (team.players.length > 1 ? "Players" : "Player") }}
             </v-col>
             <v-col
               class="text-h6"
@@ -72,7 +72,7 @@
               class="font-italic text-h6"
               cols="3"
             >
-              {{ i !== 0 ? '' : (team.coaches.length > 1 ? 'Coaches' : 'Coach') }}
+              {{ i !== 0 ? "" : (team.coaches.length > 1 ? "Coaches" : "Coach") }}
             </v-col>
             <v-col
               class="text-h6"
@@ -96,7 +96,7 @@
               cols="3"
             >
               {{
-                i !== 0 ? '' : (team.substitutes.length > 1 ? 'Substitutes' : 'Substitute')
+                i !== 0 ? "" : (team.substitutes.length > 1 ? "Substitutes" : "Substitute")
               }}
             </v-col>
             <v-col
@@ -131,10 +131,10 @@
     -->
     <v-container
       v-else
+      :style="{background: theme.global.current.value.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
       class="py-16"
       fill-height
       fluid
-      :style="{background: theme.global.current.value.dark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'}"
     >
       <v-row justify="center">
         <p class="text-h2 font-italic text-center">
@@ -147,7 +147,7 @@
         justify="center"
       >
         <v-col class="font-italic text-h6 text-center">
-          {{ team.players.length > 1 ? 'Players' : 'Player' }}
+          {{ team.players.length > 1 ? "Players" : "Player" }}
         </v-col>
       </v-row>
       <v-row
@@ -182,7 +182,7 @@
         justify="center"
       >
         <p class="font-italic text-h6 text-center">
-          {{ team.coaches.length > 1 ? 'Coaches' : 'Coach' }}
+          {{ team.coaches.length > 1 ? "Coaches" : "Coach" }}
         </p>
       </v-row>
       <v-row
@@ -213,7 +213,7 @@
         justify="center"
       >
         <p class="font-italic text-h6 text-center">
-          {{ team.substitutes.length > 1 ? 'Substitutes' : 'Substitute' }}
+          {{ team.substitutes.length > 1 ? "Substitutes" : "Substitute" }}
         </p>
       </v-row>
       <v-row
@@ -240,8 +240,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import {useDisplay, useTheme} from 'vuetify';
+<script lang="ts" setup>
+import {useDisplay, useTheme} from "vuetify"
 import type Team from "@/types/Team.ts"
 
 // Props
@@ -250,10 +250,10 @@ interface Props {
   nameRight?: boolean;
 }
 
-defineProps<Props>();
+defineProps<Props>()
 
-const theme = useTheme();
-const display = useDisplay();
+const theme = useTheme()
+const display = useDisplay()
 
 </script>
 <style lang="scss" scoped>

@@ -55,7 +55,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PostMapping("/users/guest")
     @PermitAll
     public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
-        var user = simpleMapper.fromDTO(dto);
+        var user = simpleMapper.fromDTO(dto, new User());
         user = service.create(user);
         return simpleMapper.toDTO(user);
     }

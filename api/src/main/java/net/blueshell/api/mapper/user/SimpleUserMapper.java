@@ -24,11 +24,19 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "username")
     @Mapping(target = "discord")
     @Mapping(target = "email")
+    @Mapping(target = "newsletter")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     public abstract SimpleUserDTO toDTO(User user);
 
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
+    @Mapping(target = "initials")
+    @Mapping(target = "firstName")
+    @Mapping(target = "prefix")
+    @Mapping(target = "lastName")
+    @Mapping(target = "username")
+    @Mapping(target = "discord")
+    @Mapping(target = "email")
+    @Mapping(target = "newsletter")
     public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
 
     @AfterMapping

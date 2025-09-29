@@ -8,12 +8,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.group.Creation;
+import net.blueshell.api.validation.group.Update;
+import net.blueshell.api.validation.user.UniqueEmail;
 import net.blueshell.api.validation.user.UniqueUser;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@UniqueUser
 @Schema(name = "SimpleUser")
+@UniqueUser(groups = {Update.class, Creation.class})
 public class SimpleUserDTO extends BaseDTO {
 
     @JsonProperty

@@ -81,7 +81,12 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/**",
+                                "/events/signups/*/guest",
+                                "/users",
+                                "/users/guest"
+                                ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/events/**",
@@ -91,10 +96,6 @@ public class SecurityConfig {
                                 "/committees/**",
                                 "/contributionPeriods",
                                 "/health").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/events/signups/*/guest",
-                                "/users",
-                                "/users/guest").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();

@@ -1,137 +1,131 @@
 <template>
   <div>
-    <!-- VeeValidate form context (renders a <div>) -->
-    <Form as="div">
-      <v-form
-        ref="form"
-        v-model="valid"
+    <v-form
+      ref="form"
+      v-model="valid"
+    >
+      <v-row>
+        <v-col cols="4">
+          <v-text-field
+            v-model="userData.initials"
+            :rules="initialsRules"
+            :error-messages="err('initials')"
+            label="Initials"
+            @update:model-value="clear('initials')"
+          />
+        </v-col>
+        <v-col cols="8">
+          <v-text-field
+            v-model="userData.firstName"
+            :rules="firstNameRules"
+            :error-messages="err('firstName')"
+            label="First Name"
+            @update:model-value="clear('firstName')"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="4">
+          <v-text-field
+            v-model="userData.prefix"
+            :error-messages="err('prefix')"
+            label="SurPrefix"
+            @update:model-value="clear('prefix')"
+          />
+        </v-col>
+        <v-col cols="8">
+          <v-text-field
+            v-model="userData.lastName"
+            :rules="lastNameRules"
+            :error-messages="err('lastName')"
+            label="Surname"
+            @update:model-value="clear('lastName')"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="6">
+          <v-text-field
+            v-model="userData.username"
+            :rules="usernameRules"
+            :error-messages="err('username')"
+            label="Username"
+            @update:model-value="clear('username')"
+          />
+        </v-col>
+
+        <v-col cols="6">
+          <v-text-field
+            v-model="userData.discord"
+            :rules="discordRules"
+            :error-messages="err('discord')"
+            label="Discord"
+            @update:model-value="clear('discord')"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12">
+          <v-text-field
+            v-model="userData.email"
+            :rules="emailRules"
+            :error-messages="err('email')"
+            label="E-mail"
+            @update:model-value="clear('email')"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row v-if="showPasswords">
+        <v-col cols="6">
+          <v-text-field
+            v-model="userData.password"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :rules="passwordRules"
+            :type="showPass ? 'text' : 'password'"
+            :error-messages="err('password')"
+            label="Password"
+            @click:append-inner="showPass = !showPass"
+            @update:model-value="clear('password')"
+          />
+        </v-col>
+        <v-col cols="6">
+          <v-text-field
+            v-model="passwordAgain"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :rules="passwordConfirmRules"
+            :type="showPass ? 'text' : 'password'"
+            :error-messages="err('passwordAgain')"
+            label="Password (repeated)"
+            @click:append-inner="showPass = !showPass"
+            @update:model-value="clear('passwordAgain')"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row
+        align="center"
+        justify="space-evenly"
       >
-        <v-row>
-          <v-col cols="4">
-            <v-text-field
-              v-model="userData.initials"
-              :rules="initialsRules"
-              :error-messages="err('initials')"
-              label="Initials"
-              @update:model-value="clear('initials')"
-            />
-          </v-col>
-          <v-col cols="8">
-            <v-text-field
-              v-model="userData.firstName"
-              :rules="firstNameRules"
-              :error-messages="err('firstName')"
-              label="First Name"
-              @update:model-value="clear('firstName')"
-            />
-          </v-col>
-        </v-row>
-
-        <v-row>
-          <v-col cols="4">
-            <v-text-field
-              v-model="userData.prefix"
-              :error-messages="err('prefix')"
-              label="SurPrefix"
-              @update:model-value="clear('prefix')"
-            />
-          </v-col>
-          <v-col cols="8">
-            <v-text-field
-              v-model="userData.lastName"
-              :rules="lastNameRules"
-              :error-messages="err('lastName')"
-              label="Surname"
-              @update:model-value="clear('lastName')"
-            />
-          </v-col>
-        </v-row>
-
-        <v-row>
-          <v-col cols="6">
-            <v-text-field
-              v-model="userData.username"
-              :rules="usernameRules"
-              :error-messages="err('username')"
-              label="Username"
-              @update:model-value="clear('username')"
-            />
-          </v-col>
-
-          <v-col cols="6">
-            <v-text-field
-              v-model="userData.discord"
-              :rules="discordRules"
-              :error-messages="err('discord')"
-              label="Discord"
-              @update:model-value="clear('discord')"
-            />
-          </v-col>
-        </v-row>
-
-        <v-row>
-          <v-col cols="12">
-            <v-text-field
-              v-model="userData.email"
-              :rules="emailRules"
-              :error-messages="err('email')"
-              label="E-mail"
-              @update:model-value="clear('email')"
-            />
-          </v-col>
-        </v-row>
-
-        <v-row v-if="showPasswords">
-          <v-col cols="6">
-            <v-text-field
-              v-model="userData.password"
-              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :rules="passwordRules"
-              :type="showPass ? 'text' : 'password'"
-              :error-messages="err('password')"
-              label="Password"
-              @click:append-inner="showPass = !showPass"
-              @update:model-value="clear('password')"
-            />
-          </v-col>
-          <v-col cols="6">
-            <v-text-field
-              v-model="passwordAgain"
-              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :rules="passwordConfirmRules"
-              :type="showPass ? 'text' : 'password'"
-              :error-messages="err('passwordAgain')"
-              label="Password (repeated)"
-              @click:append-inner="showPass = !showPass"
-              @update:model-value="clear('passwordAgain')"
-            />
-          </v-col>
-        </v-row>
-
-        <v-row
-          align="center"
-          justify="space-evenly"
-        >
-          <v-col cols="auto">
-            <v-checkbox
-              v-model="userData.newsletter"
-              :hide-details="true"
-              label="Subscribe to newsletter"
-            />
-          </v-col>
-        </v-row>
-      </v-form>
-    </Form>
+        <v-col cols="auto">
+          <v-checkbox
+            v-model="userData.newsletter"
+            :hide-details="true"
+            label="Subscribe to newsletter"
+          />
+        </v-col>
+      </v-row>
+    </v-form>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, type Ref, watch } from "vue"
-import { Form } from "vee-validate"
-import { useBackendValidation } from "@/plugins/serverValidation"
-import { createGuestUser, type SimpleUser } from "@/lib"
-import type { VForm } from "vuetify/components"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {ref, type Ref, watch} from "vue"
+import {type SimpleUser} from "@/lib"
+import type {VForm} from "vuetify/components"
 
 interface Props {
   editing?: boolean;
@@ -141,7 +135,6 @@ interface Props {
 
 interface Emits {
   (e: "update:modelValue", user: SimpleUser): void;
-  (e: "user-changed", user: SimpleUser): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -151,26 +144,21 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const userData: Ref<SimpleUser> = ref({ ...props.modelValue })
+const userData: Ref<SimpleUser> = ref({...props.modelValue})
 const valid: Ref<boolean> = ref(true)
-const submitting: Ref<boolean> = ref(false)
 const form: Ref<VForm | undefined> = ref()
 
 const passwordAgain: Ref<string> = ref("")
 const showPass: Ref<boolean> = ref(false)
 
-// 🔗 VeeValidate server error helpers
-const { apply: applyBackendErrors, err, clear } = useBackendValidation()
-// If backend uses different names, you can pass a map: useBackendValidation(undefined, { last_name: "lastName" })
-
 watch(
   () => props.modelValue,
   (newVal) => {
     if (JSON.stringify(userData.value) !== JSON.stringify(newVal)) {
-      userData.value = { ...newVal }
+      userData.value = {...newVal}
     }
   },
-  { deep: true, immediate: true },
+  {deep: true, immediate: true},
 )
 
 watch(
@@ -189,7 +177,7 @@ watch(
     }
     emit("update:modelValue", cleanUserData)
   },
-  { deep: true },
+  {deep: true},
 )
 
 // ------- your existing rules unchanged -------
@@ -225,32 +213,20 @@ const validateForm = async (): Promise<boolean> => {
   return result.valid
 }
 
-const save = async (): Promise<void> => {
-  const isValid = await validateForm()
-  if (!isValid) return
-
-  submitting.value = true
-  try {
-    const response = await createGuestUser({ body: userData.value, client })
-    if (response.data) {
-      userData.value = response.data
-      emit("user-changed", userData.value)
-      emit("update:modelValue", userData.value)
-    }
-  } catch (error: unknown) {
-    if (!applyBackendErrors(error)) {
-      $handleNetworkError(error)
-    }
-  } finally {
-    submitting.value = false
-  }
-}
-
-defineExpose({ validateForm, save })
+defineExpose({validateForm})
 </script>
 
 <style lang="scss">
-.v-col:first-child { padding-left: 0; }
-.v-col:last-child { padding-right: 0; }
-.v-col { padding-bottom: 0; padding-top: 0; }
+.v-col:first-child {
+  padding-left: 0;
+}
+
+.v-col:last-child {
+  padding-right: 0;
+}
+
+.v-col {
+  padding-bottom: 0;
+  padding-top: 0;
+}
 </style>

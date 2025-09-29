@@ -7,7 +7,7 @@
       ref="title"
       v-model="localCommittee.name"
       :rules="[(v: string) => !!v || 'Name is required']"
-      label="Committee name"
+      label="Name"
       required
     />
 
@@ -34,25 +34,25 @@
             label="Role"
           />
         </v-col>
-        <v-col cols="8">
+        <v-col cols="7">
           <user-select
-            v-if="members"
-            v-model="member.user"
+            v-if="users"
+            v-model="member.userId"
             :rules="[
-              (u: AdvancedUser) => !!u || 'Select a member',
-              (u: AdvancedUser) => !u || localCommittee.members.findIndex((ms: CommitteeMember, idx: number) => ms.user?.id === u.id && idx !== i) === -1 || 'Member already in this committee',
+              (user: AdvancedUser) => !!user || 'Select a user',
+              (user: AdvancedUser) => !user || user.roles?.includes(Role.MEMBER) || 'Committee members must be members of the association',
+              (user: AdvancedUser) => !user || localCommittee.members.findIndex((ms: CommitteeMember, idx: number) => ms.userId === user.id && idx !== i) === -1 || 'Member already in this committee',
             ]"
-            :users="members"
+            :users="users"
             label="Member name"
-          >
-            <template #append>
-              <v-btn
-                icon="mdi-close"
-                variant="plain"
-                @click="removeMember(i)"
-              />
-            </template>
-          </user-select>
+          />
+        </v-col>
+        <v-col cols="1">
+          <v-btn
+            icon="mdi-close"
+            variant="plain"
+            @click="removeMember(i)"
+          />
         </v-col>
       </v-row>
     </v-container>
@@ -78,8 +78,16 @@
 <script lang="ts" setup>
 import {ref} from "vue"
 import type {VForm} from "vuetify/components"
-import {type AdvancedCommittee, type AdvancedUser, type CommitteeMember, createCommittee, updateCommittee} from "@/lib"
+import {
+  type AdvancedCommittee,
+  type AdvancedUser,
+  type CommitteeMember,
+  createCommittee,
+  Role,
+  updateCommittee,
+} from "@/lib"
 import UserSelect from "@/components/select/UserSelect.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const props = defineProps<{
   committee: {
@@ -88,7 +96,7 @@ const props = defineProps<{
     required: false,
     default: () => AdvancedCommittee;
   },
-  members: {
+  users: {
     type: AdvancedUser[],
     required: true,
   };
@@ -96,7 +104,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "submitting"): void;
-  (e: "close"): void;
+  (e: "success", ok: boolean): void;
 }>()
 
 const valid = ref(false)
@@ -105,12 +113,9 @@ const form = ref<VForm | null>(null)
 // Create a local copy of the committee to avoid direct prop mutation
 const localCommittee = ref<AdvancedCommittee>({
   name: "",
+  description: "",
   ...props.committee,
-  members: (props.committee?.members ?? []).map((m: CommitteeMember) => ({
-    ...m,
-    userId: m.userId ?? m.user?.id,
-    user: undefined,
-  })),
+  members: (props.committee?.members ?? []),
 })
 
 const addMember = () => {
@@ -144,9 +149,11 @@ const submit = async () => {
         body: localCommittee.value,
       })
     }
-    emit("close")
+    emit("success", true)
   } catch (error) {
     console.error("Error saving committee:", error)
+    $handleNetworkError(error)
+    emit("success", false)
   }
 }
 </script>

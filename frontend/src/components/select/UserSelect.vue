@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: AdvancedUser | undefined]
+  "update:modelValue": [value: number | undefined]
 }>()
 
 /**
@@ -43,9 +43,9 @@ watch(
   {immediate: true},
 )
 
-/** Emit full user back to parent whenever selection changes */
-watch(selectedUser, (val) => {
-  emit("update:modelValue", val)
+/** Emit user id back to parent whenever selection changes */
+watch(selectedUser, (val: AdvancedUser | undefined) => {
+  emit("update:modelValue", val?.id)
 })
 
 /** If the users list changes, keep selection pointing at the matching instance (or clear) */

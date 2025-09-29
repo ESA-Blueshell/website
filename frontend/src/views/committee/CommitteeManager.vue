@@ -7,7 +7,7 @@
         style="max-width: 800px"
       >
         <v-btn
-          :loading="creatingLoading"
+          :loading="loading"
           :variant="creatingCommittee ? 'outlined' : 'text'"
           block
           @click="creatingCommittee = !creatingCommittee"
@@ -23,10 +23,10 @@
           >
             <committee-edit
               :committee="{} as AdvancedCommittee"
-              :members="members"
+              :users="users"
               class="form"
               @close="handleCreateClose"
-              @submitting="creatingLoading = true"
+              @submitting="loading = true"
             />
           </div>
         </v-expand-transition>
@@ -46,7 +46,7 @@
                     {{ committee.name }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    {{ committee.members?.length || 0 }} membership{{
+                    {{ committee.members?.length || 0 }} member{{
                       (committee.members?.length || 0) === 1 ? "" : "s"
                     }}
                   </v-list-item-subtitle>
@@ -91,8 +91,14 @@
                     <committee-edit
                       :committee="committee"
                       class="form"
-                      :members="members"
-                      @close="handleEditClose"
+                      :users="users"
+                      @success="(ok: boolean) => {
+                        loading = false;
+                        if (ok) {
+                          loading = false;
+                          handleEditClose()
+                        }
+                      }"
                       @submitting="submittingId = committee.id"
                     />
                   </div>
@@ -158,11 +164,10 @@ const committeeToDelete = ref<AdvancedCommittee | null>(null)
 const editingCommitteeId = ref<number | null>(null)
 const submittingId = ref<number | null>(null)
 const creatingCommittee = ref(false)
-const creatingLoading = ref(false)
+const loading = ref(false)
 const noCommittees = ref(false)
-const members = ref<AdvancedUser[]>([])
+const users = ref<AdvancedUser[]>([])
 
-// methods (same logic as before)
 async function fetchCommittees(): Promise<void> {
   try {
     const resp = await findCommittees()
@@ -177,14 +182,10 @@ async function fetchCommittees(): Promise<void> {
   }
 }
 
-async function fetchMembers(): Promise<void> {
+async function fetchUsers(): Promise<void> {
   try {
-    const resp = await findUsers({
-      query: {
-        isMember: true,
-      },
-    })
-    members.value = resp.data?.content ?? []
+    const resp = await findUsers()
+    users.value = resp.data?.content ?? []
   } catch (error: unknown) {
     $handleNetworkError(error)
   }
@@ -214,22 +215,20 @@ function toggleEditingCommittee(committeeId: number | undefined): void {
 }
 
 function handleCreateClose(): void {
-  fetchCommittees()
   creatingCommittee.value = false
-  creatingLoading.value = false
+  loading.value = false
 }
 
 function handleEditClose(): void {
   editingCommitteeId.value = null
   submittingId.value = null
-  fetchCommittees()
 }
 
 // lifecycle
 onMounted(async () => {
   await Promise.all([
     fetchCommittees(),
-    fetchMembers(),
+    fetchUsers(),
   ])
 })
 </script>

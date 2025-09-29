@@ -17,7 +17,7 @@
           :creating="true"
         />
         <v-spacer />
-        <v-col cols="auto">
+        <v-row class="justify-end">
           <v-btn
             :loading="loading"
             color="primary"
@@ -25,7 +25,7 @@
           >
             Create account
           </v-btn>
-        </v-col>
+        </v-row>
       </v-form>
     </div>
 
@@ -51,6 +51,8 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import store from "@/plugins/store"
 import type {AxiosError} from "axios"
 import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
+const {apply: applyBackendErrors, err, clear} = useBackendValidation()
 
 // Reactive state
 const loading = ref(false)
@@ -89,17 +91,14 @@ const createAccount = async () => {
     // Use the generated OpenAPI client to create user
     const response = await createGuestUser({
       body: form.value,
-      client,
     })
 
     if (response.data) {
       succeeded.value = true
     }
-  } catch (error: AxiosError) {
-    if (error?.response?.status === 400) {
-      store.commit("setStatusSnackbarMessage", error.response.data)
-    } else {
-      $handleNetworkError(error)
+  } catch (error: unknown) {
+    if (!applyBackendErrors(error)) {
+      $handleNetworkError(error);
     }
   } finally {
     loading.value = false

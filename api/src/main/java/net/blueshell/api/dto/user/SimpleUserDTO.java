@@ -61,6 +61,6 @@ public class SimpleUserDTO extends BaseDTO {
             message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
             groups = {Creation.class}
     )
-    @JsonIgnore
+    @JsonProperty
     private String password;
 }

@@ -10,36 +10,37 @@
         style="max-width: 500px"
         @submit.prevent
       >
-        <v-text-field
-          ref="usernameField"
-          v-model="username"
-          :rules="usernameRules"
-          label="Username"
-          required
-          @keydown.enter="login"
-        />
-        <v-text-field
-          v-model="password"
-          :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-          :rules="passwordRules"
-          :type="showPass ? 'text' : 'password'"
-          hide-details
-          label="Password"
-          required
-          @keydown.enter="login"
-          @click:append="showPass = !showPass"
-        />
         <v-row>
-          <v-spacer />
-          <v-col cols="auto">
-            <v-btn
-              :to="`login/forgor?username=${username}`"
-              size="small"
-              variant="text"
-            >
-              forgot password?
-            </v-btn>
-          </v-col>
+          <v-text-field
+            ref="usernameField"
+            v-model="username"
+            :rules="usernameRules"
+            label="Username"
+            required
+            @keydown.enter="login"
+          />
+        </v-row>
+        <v-row>
+          <v-text-field
+            v-model="password"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :rules="passwordRules"
+            :type="showPass ? 'text' : 'password'"
+            hide-details
+            label="Password"
+            required
+            @keydown.enter="login"
+            @click:append-inner="showPass = !showPass"
+          />
+        </v-row>
+        <v-row class="justify-end">
+          <v-btn
+            :to="`login/forgor?username=${username}`"
+            size="small"
+            variant="text"
+          >
+            forgot password?
+          </v-btn>
         </v-row>
         <v-row>
           <v-col cols="auto">
@@ -73,7 +74,7 @@ import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import type {JwtRequest, JwtResponse} from "@/lib"
+import type {JwtRequest, Login} from "@/lib"
 import {authenticate} from "@/lib"
 import type {State} from "@/plugins/store"
 
@@ -120,7 +121,7 @@ const login = async () => {
       })
 
       // Type the response data as JwtResponse
-      const jwtResponse = response.data as JwtResponse
+      const jwtResponse = response.data as Login
 
       // Store response (convert JwtResponse to Login type expected by store)
       const loginData = {
@@ -135,9 +136,9 @@ const login = async () => {
 
       // Go to redirect page or home page
       await router.push(route.query.redirect?.toString() || "/")
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Show Incorrect login snackbar
-      if (e.response?.status === 401) {
+      if (e?.response?.status === 401) {
         store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
       } else {
         $handleNetworkError(e)
@@ -148,3 +149,5 @@ const login = async () => {
   }
 }
 </script>
+<style scoped lang="scss">
+</style>

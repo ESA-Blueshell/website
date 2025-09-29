@@ -1,118 +1,137 @@
 <template>
   <div>
-    <v-form
-      ref="form"
-      v-model="valid"
-    >
-      <v-row>
-        <v-col cols="4">
-          <v-text-field
-            v-model="userData.initials"
-            :rules="initialsRules"
-            label="Initials"
-          />
-        </v-col>
-        <v-col cols="8">
-          <v-text-field
-            v-model="userData.firstName"
-            :rules="firstNameRules"
-            label="First Name"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="4">
-          <v-text-field
-            v-model="userData.prefix"
-            label="SurPrefix"
-          />
-        </v-col>
-        <v-col cols="8">
-          <v-text-field
-            v-model="userData.lastName"
-            :rules="lastNameRules"
-            label="Surname"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col
-          cols="6"
-        >
-          <v-text-field
-            v-model="userData.username"
-            :rules="usernameRules"
-            label="Username"
-          />
-        </v-col>
-
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.discord"
-            :rules="discordRules"
-            label="Discord"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            v-model="userData.email"
-            :rules="emailRules"
-            label="E-mail"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- Password fields (only for user creation) -->
-      <v-row v-if="showPasswords">
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.password"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="passwordRules"
-            :type="showPass ? 'text' : 'password'"
-            label="Password"
-            @click:append-inner="showPass = !showPass"
-          />
-        </v-col>
-        <v-col cols="6">
-          <v-text-field
-            v-model="passwordAgain"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="passwordConfirmRules"
-            :type="showPass ? 'text' : 'password'"
-            label="Password (repeated)"
-            @click:append-inner="showPass = !showPass"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- Checkboxes -->
-      <v-row
-        align="center"
-        justify="space-evenly"
+    <!-- VeeValidate form context (renders a <div>) -->
+    <Form as="div">
+      <v-form
+        ref="form"
+        v-model="valid"
       >
-        <v-col cols="auto">
-          <v-checkbox
-            v-model="userData.newsletter"
-            :hide-details="true"
-            label="Subscribe to newsletter"
-          />
-        </v-col>
-      </v-row>
-    </v-form>
+        <v-row>
+          <v-col cols="4">
+            <v-text-field
+              v-model="userData.initials"
+              :rules="initialsRules"
+              :error-messages="err('initials')"
+              label="Initials"
+              @update:model-value="clear('initials')"
+            />
+          </v-col>
+          <v-col cols="8">
+            <v-text-field
+              v-model="userData.firstName"
+              :rules="firstNameRules"
+              :error-messages="err('firstName')"
+              label="First Name"
+              @update:model-value="clear('firstName')"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="4">
+            <v-text-field
+              v-model="userData.prefix"
+              :error-messages="err('prefix')"
+              label="SurPrefix"
+              @update:model-value="clear('prefix')"
+            />
+          </v-col>
+          <v-col cols="8">
+            <v-text-field
+              v-model="userData.lastName"
+              :rules="lastNameRules"
+              :error-messages="err('lastName')"
+              label="Surname"
+              @update:model-value="clear('lastName')"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="6">
+            <v-text-field
+              v-model="userData.username"
+              :rules="usernameRules"
+              :error-messages="err('username')"
+              label="Username"
+              @update:model-value="clear('username')"
+            />
+          </v-col>
+
+          <v-col cols="6">
+            <v-text-field
+              v-model="userData.discord"
+              :rules="discordRules"
+              :error-messages="err('discord')"
+              label="Discord"
+              @update:model-value="clear('discord')"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="12">
+            <v-text-field
+              v-model="userData.email"
+              :rules="emailRules"
+              :error-messages="err('email')"
+              label="E-mail"
+              @update:model-value="clear('email')"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row v-if="showPasswords">
+          <v-col cols="6">
+            <v-text-field
+              v-model="userData.password"
+              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+              :rules="passwordRules"
+              :type="showPass ? 'text' : 'password'"
+              :error-messages="err('password')"
+              label="Password"
+              @click:append-inner="showPass = !showPass"
+              @update:model-value="clear('password')"
+            />
+          </v-col>
+          <v-col cols="6">
+            <v-text-field
+              v-model="passwordAgain"
+              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+              :rules="passwordConfirmRules"
+              :type="showPass ? 'text' : 'password'"
+              :error-messages="err('passwordAgain')"
+              label="Password (repeated)"
+              @click:append-inner="showPass = !showPass"
+              @update:model-value="clear('passwordAgain')"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row
+          align="center"
+          justify="space-evenly"
+        >
+          <v-col cols="auto">
+            <v-checkbox
+              v-model="userData.newsletter"
+              :hide-details="true"
+              label="Subscribe to newsletter"
+            />
+          </v-col>
+        </v-row>
+      </v-form>
+    </Form>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {ref, type Ref, watch} from "vue"
-import {createGuestUser, type SimpleUser} from "@/lib"
-
-import type {VForm} from "vuetify/components"
+import { ref, type Ref, watch } from "vue"
+import { Form } from "vee-validate"
+import { useBackendValidation } from "@/plugins/serverValidation"
+import { createGuestUser, type SimpleUser } from "@/lib"
+import type { VForm } from "vuetify/components"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 interface Props {
   editing?: boolean;
@@ -122,7 +141,6 @@ interface Props {
 
 interface Emits {
   (e: "update:modelValue", user: SimpleUser): void;
-
   (e: "user-changed", user: SimpleUser): void;
 }
 
@@ -133,25 +151,26 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-// Reactive state
-const userData: Ref<SimpleUser> = ref({...props.modelValue})
+const userData: Ref<SimpleUser> = ref({ ...props.modelValue })
 const valid: Ref<boolean> = ref(true)
 const submitting: Ref<boolean> = ref(false)
 const form: Ref<VForm | undefined> = ref()
 
-// Password fields (only for user creation)
 const passwordAgain: Ref<string> = ref("")
 const showPass: Ref<boolean> = ref(false)
 
-// Watch for prop changes
+// 🔗 VeeValidate server error helpers
+const { apply: applyBackendErrors, err, clear } = useBackendValidation()
+// If backend uses different names, you can pass a map: useBackendValidation(undefined, { last_name: "lastName" })
+
 watch(
   () => props.modelValue,
   (newVal) => {
     if (JSON.stringify(userData.value) !== JSON.stringify(newVal)) {
-      userData.value = {...newVal}
+      userData.value = { ...newVal }
     }
   },
-  {deep: true, immediate: true},
+  { deep: true, immediate: true },
 )
 
 watch(
@@ -170,16 +189,14 @@ watch(
     }
     emit("update:modelValue", cleanUserData)
   },
-  {deep: true},
+  { deep: true },
 )
 
-// Validation rules
+// ------- your existing rules unchanged -------
 const usernameRules = [
   (v: string) => !!v || "Username is required",
   (v: string) => /^[a-zA-Z0-9]+$/.test(v) || "Username must only contain alphanumeric characters",
 ]
-
-// Enhanced password validation rules
 const passwordRules = [
   (v: string) => !!v || "Password is required",
   (v: string) => v.length >= 8 || "Password must be at least 8 characters",
@@ -188,17 +205,14 @@ const passwordRules = [
   (v: string) => /(?=.*\d)/.test(v) || "Password must contain at least one number",
   (v: string) => /(?=.*[@$!%*?&])/.test(v) || "Password must contain at least one special character (@$!%*?&)",
 ]
-
 const passwordConfirmRules = [
   (v: string) => !!v || "Password confirmation is required",
   (v: string) => v === userData.value.password || "Passwords do not match",
 ]
-
 const initialsRules = [(v: string) => !!v || "Initials are required"]
 const firstNameRules = [(v: string) => !!v || "First name is required"]
 const lastNameRules = [(v: string) => !!v || "Surname is required"]
 const discordRules = [(v: string) => !!v || "Discord Username is required"]
-
 const emailRules = [
   (v: string | undefined) => !!v || "Email is required",
   (v: string | undefined) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v || "") || "Enter a valid e-mail address",
@@ -216,45 +230,27 @@ const save = async (): Promise<void> => {
   if (!isValid) return
 
   submitting.value = true
-
   try {
-    let response
-    response = await createGuestUser({
-      body: userData.value,
-      client,
-    })
-
+    const response = await createGuestUser({ body: userData.value, client })
     if (response.data) {
       userData.value = response.data
       emit("user-changed", userData.value)
       emit("update:modelValue", userData.value)
     }
   } catch (error: unknown) {
-    console.error("Failed to save user:", error)
-    throw error
+    if (!applyBackendErrors(error)) {
+      $handleNetworkError(error)
+    }
   } finally {
     submitting.value = false
   }
 }
 
-// Expose methods
-defineExpose({
-  validateForm,
-  save,
-})
+defineExpose({ validateForm, save })
 </script>
 
 <style lang="scss">
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-
-.v-col {
-  padding-bottom: 0;
-  padding-top: 0;
-}
+.v-col:first-child { padding-left: 0; }
+.v-col:last-child { padding-right: 0; }
+.v-col { padding-bottom: 0; padding-top: 0; }
 </style>

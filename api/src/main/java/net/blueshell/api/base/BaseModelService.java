@@ -3,12 +3,14 @@ package net.blueshell.api.base;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.common.exception.ResourceNotFoundException;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.core.ResolvableType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -38,11 +40,21 @@ public abstract class BaseModelService<
 
     protected final R repository;
 
+    // Resolved simple name of the entity class (e.g., "User")
+    private final String entityLabel;
+
     @PersistenceContext
     private EntityManager em;
 
     protected BaseModelService(R repository) {
         this.repository = repository;
+        // Try to resolve T from the repository generic type for a nice label like "User"
+        Class<?> resolved = ResolvableType
+                .forClass(repository.getClass())
+                .as(BaseRepository.class)
+                .getGeneric(0)
+                .resolve();
+        this.entityLabel = resolved != null ? resolved.getSimpleName() : "Resource";
     }
 
     @SuppressWarnings("unchecked")
@@ -72,13 +84,16 @@ public abstract class BaseModelService<
 
     /**
      * Update an existing entity.
-     * <p>Throws {@link ResourceNotFoundException} if the id is unknown.</p>
+     * <p>Throws {@link ResponseStatusException} if the id is unknown.</p>
      */
     @Transactional
     public T update(T entity) {
         var id = entity.getId();
         if (id == null || !repository.existsById(id)) {
-            throw new ResourceNotFoundException("Entity not found with id: %s".formatted(id));
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "%s not found with id: %s".formatted(entityLabel, id)
+            );
         }
         entity = repository.saveAndFlush(entity);
         em.refresh(entity);
@@ -101,14 +116,15 @@ public abstract class BaseModelService<
 
     /**
      * Find one by its primary key.
-     *
-     * @throws ResourceNotFoundException if not present
+     * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)
     public T findById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Resource not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "%s not found with id: %s".formatted(entityLabel, id)
+                ));
     }
 
     /**

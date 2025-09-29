@@ -4,8 +4,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.common.exception.FileNotFoundException;
-import net.blueshell.api.common.exception.StorageException;
 import net.blueshell.api.config.StorageConfig;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
@@ -16,6 +14,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,7 +42,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
     @Transactional(readOnly = true)
     public File findByName(String name) {
         return repository.findByName(name).orElseThrow(() ->
-                new NotFoundException("File not found with name: " + name));
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(name)));
     }
 
     @PostConstruct
@@ -51,7 +50,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
-            throw new StorageException("Could not initialize storage location", e);
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -78,11 +77,10 @@ public class FileService extends BaseModelService<File, FileRepository> {
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
-                throw new FileNotFoundException(
-                        "Could not read file: " + file.getName());
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(file.getName()));
             }
         } catch (MalformedURLException e) {
-            throw new FileNotFoundException("Could not read file: " + file.getName(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(file.getName()));
         }
     }
 
@@ -93,11 +91,10 @@ public class FileService extends BaseModelService<File, FileRepository> {
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
-                throw new FileNotFoundException(
-                        "Could not read asset: " + filename);
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(filename));
             }
         } catch (MalformedURLException e) {
-            throw new FileNotFoundException("Could not read file: " + filename, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(filename));
         }
     }
 

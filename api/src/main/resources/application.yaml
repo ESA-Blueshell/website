@@ -45,6 +45,8 @@ spring:
 
   mvc:
     dispatch-options-request: true
+    problemdetails.enabled: true
+
 
   thymeleaf:
     prefix: classpath:/templates/
@@ -107,6 +109,13 @@ google:
     clientEmail: ${GOOGLE_CALENDAR_CLIENT_EMAIL}
     privateKeyPkcs8: ${GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8}
     privateKeyId: ${GOOGLE_CALENDAR_PRIVATE_KEY_ID}
+
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
 
 facebook:
   page:

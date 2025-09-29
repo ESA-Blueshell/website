@@ -24,6 +24,24 @@ public class OpenApiErrorConfig {
         return openApi -> {
             ensureSchemas(openApi);
 
+            ApiResponse unauthorized = new ApiResponse()
+                    .description("Unauthorized")
+                    .content(new Content().addMediaType(
+                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
+                            new MediaType()
+                                    .schema(refSchema("ApiError"))
+                                    .example(unauthorizedExample())
+                    ));
+
+            ApiResponse forbidden = new ApiResponse()
+                    .description("Forbidden (access denied)")
+                    .content(new Content().addMediaType(
+                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
+                            new MediaType()
+                                    .schema(refSchema("ApiError"))
+                                    .example(forbiddenExample())
+                    ));
+
             ApiResponse validationError = new ApiResponse()
                     .description("Validation error")
                     .content(new Content().addMediaType(
@@ -54,6 +72,14 @@ public class OpenApiErrorConfig {
             openApi.getPaths().values().forEach(pathItem ->
                     pathItem.readOperations().forEach(operation -> {
                         ApiResponses responses = operation.getResponses();
+                        // Security failures from @PreAuthorize / Spring Security
+                        if (!responses.containsKey("401")) {
+                            responses.addApiResponse("401", unauthorized);
+                        }
+                        if (!responses.containsKey("403")) {
+                            responses.addApiResponse("403", forbidden);
+                        }
+                        // Your existing global errors
                         if (!responses.containsKey("400")) {
                             responses.addApiResponse("400", validationError);
                         }
@@ -81,6 +107,36 @@ public class OpenApiErrorConfig {
 
     private Schema<?> refSchema(String name) {
         return new Schema<>().$ref("#/components/schemas/" + name);
+    }
+
+    // ───────────────────── Examples ─────────────────────
+
+    private Object unauthorizedExample() {
+        // Typical when not authenticated and hitting a @PreAuthorize-protected endpoint.
+        return """
+        {
+          "type": "about:blank",
+          "title": "Unauthorized",
+          "status": 401,
+          "detail": "Full authentication is required to access this resource",
+          "instance": "/api/users",
+          "traceId": "401401401401"
+        }
+        """;
+    }
+
+    private Object forbiddenExample() {
+        // Typical when authenticated but fails @PreAuthorize expression (AccessDeniedException).
+        return """
+        {
+          "type": "about:blank",
+          "title": "Forbidden",
+          "status": 403,
+          "detail": "Access is denied",
+          "instance": "/api/users",
+          "traceId": "403403403403"
+        }
+        """;
     }
 
     private Object validationExample() {

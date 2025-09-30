@@ -13,6 +13,10 @@ import {
 } from "@/lib"
 import {DateTime} from "luxon"
 
+const emit = defineEmits<{
+  (e: "deleted", id: number): void
+}>()
+
 const events = ref<Event[] | null>(null)
 const committees = ref<AdvancedCommittee[] | null>(null)
 const eventSignups = ref<EventSignUp[] | null>(null)
@@ -51,6 +55,11 @@ onMounted(async () => {
   events.value = fetchedEvents
 })
 
+function deleteEvent(id: number) {
+  events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
+  emit('deleted', id)
+}
+
 </script>
 <template>
   <!-- 1) If events is null, we're still loading -->
@@ -79,7 +88,7 @@ onMounted(async () => {
           :committees="committees"
           :sign-ups="eventSignups"
           class="event-list-item"
-          @deleted="(id: number) => events = events.filter((e: Event) => e.id !== id)"
+          @deleted="deleteEvent"
         />
         <!-- only show divider when there's another item after -->
         <v-divider v-if="i < events.length - 1" />

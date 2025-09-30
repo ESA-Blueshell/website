@@ -16,7 +16,7 @@
         <!-- Step 1: User Information -->
         <template #item.1>
           <v-card class="pa-4">
-            <advanced-user-edit
+            <advanced-user-form
               ref="userEditRef"
               v-model="userData"
               :creating="!loggedIn"
@@ -138,7 +138,7 @@
 import {onMounted, ref, type Ref} from "vue"
 import {DateTime} from "luxon"
 import TopBanner from "@/components/banners/TopBanner.vue"
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
 import AddressEdit from "@/components/edit/AddressEdit.vue"
 import MembershipEdit from "@/components/edit/MembershipEdit.vue"
 import type {Address, AdvancedUser, Membership} from "@/lib"

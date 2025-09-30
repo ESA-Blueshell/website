@@ -35,7 +35,7 @@
           class="mt-10"
         >
           <v-form ref="form">
-            <AdvancedUserEdit
+            <AdvancedUserForm
               v-model="user"
               editing
             />
@@ -53,7 +53,7 @@ import {onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
 import {type AdvancedUser, findUserById} from "@/lib/index.js"
 
 

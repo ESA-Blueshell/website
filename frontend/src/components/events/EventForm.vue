@@ -42,14 +42,14 @@ function getDefaultEvent(): Event {
     description: "",
     startTime: "",
     endTime: "",
-    memberPrice: "",
-    publicPrice: "",
+    memberPrice: 0,
+    publicPrice: 0,
     visible: false,
     membersOnly: false,
     signUp: false,
     banner: undefined,
     signUpForm: [],
-    committeeId: undefined,
+    committeeId: 0,
     committee: undefined,
   }
 }
@@ -142,10 +142,9 @@ async function submit() {
     if (!payload.id) {
       await createEvent({body: payload})
     } else {
-      await updateEvent({path: {eventId: payload.id}, body: payload})
+      await updateEvent({path: {id: payload.id}, body: payload})
     }
 
-    emits("success")
   } catch (e: unknown) {
     $handleNetworkError(e)
   } finally {

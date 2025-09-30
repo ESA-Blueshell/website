@@ -993,6 +993,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vee-validate/rules@npm:^4.15.1":
+  version: 4.15.1
+  resolution: "@vee-validate/rules@npm:4.15.1"
+  dependencies:
+    vee-validate: "npm:4.15.1"
+  checksum: 10c0/8a7575a3a79ca26982cea32e32eaaebcd363b5559695792c127ac0ebc98481895a5ad9def8aae7b3396900f08d06a460acd1505f63fba1c1f54f4ba95a443159
+  languageName: node
+  linkType: hard
+
 "@vitejs/plugin-vue@npm:^6.0.1":
   version: 6.0.1
   resolution: "@vitejs/plugin-vue@npm:6.0.1"
@@ -1432,6 +1441,7 @@ __metadata:
     "@types/node": "npm:^24.5.1"
     "@typescript-eslint/eslint-plugin": "npm:^8.44.0"
     "@typescript-eslint/parser": "npm:^8.44.0"
+    "@vee-validate/rules": "npm:^4.15.1"
     "@vitejs/plugin-vue": "npm:^6.0.1"
     "@vue/tsconfig": "npm:^0.8.1"
     "@vue/typescript-plugin": "npm:^3.0.7"
@@ -4751,7 +4761,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vee-validate@npm:^4.15.1":
+"vee-validate@npm:4.15.1, vee-validate@npm:^4.15.1":
   version: 4.15.1
   resolution: "vee-validate@npm:4.15.1"
   dependencies:

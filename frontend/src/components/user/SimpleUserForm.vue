@@ -199,7 +199,7 @@
 <script lang="ts" setup>
 import {ref, type Ref, watch} from "vue"
 import {type SimpleUser} from "@/lib"
-import {Field, Form, useForm} from "vee-validate"
+import {Field, Form} from "vee-validate"
 import type { FormContext } from "vee-validate"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 
@@ -260,7 +260,6 @@ const formRef = ref<FormContext>()
 
 const validateForm = async (): Promise<boolean> => {
   const result = await formRef.value?.validate()
-  console.log("valid in child:", result)
   return !!result?.valid
 }
 

@@ -6,7 +6,7 @@
         ref="form"
         v-model="valid"
       >
-        <SimpleUserEdit
+        <SimpleUserForm
           ref="simpleRef"
           :model-value="simpleModel"
           :show-passwords="creating"
@@ -185,7 +185,7 @@ import store from "@/plugins/store.ts"
 import {type AdvancedUser, type SimpleUser} from "@/lib"
 import type {VForm} from "vuetify/components"
 import {type CountryCode} from "libphonenumber-js/max"
-import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue"
+import SimpleUserForm from "@/components/user/SimpleUserForm.vue"
 import NationalitySelect from "@/components/select/NationalitySelect.vue"
 import {Form, Field, useForm} from "vee-validate"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
@@ -220,7 +220,7 @@ const userData: Ref<AdvancedUser> = ref({...props.modelValue})
 const country: Ref<CountryCode> = ref("NL")
 const valid: Ref<boolean> = ref(true)
 const form: Ref<VForm | undefined> = ref()
-const simpleRef = ref<InstanceType<typeof SimpleUserEdit> | null>(null)
+const simpleRef = ref<InstanceType<typeof SimpleUserForm> | null>(null)
 
 let simpleModel = computed<SimpleUser>({
   get: () => ({

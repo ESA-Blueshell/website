@@ -1,5 +1,5 @@
 
-package net.blueshell.api.job;
+package net.blueshell.api.job.brevo;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.User;

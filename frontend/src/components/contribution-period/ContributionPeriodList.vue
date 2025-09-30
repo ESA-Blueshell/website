@@ -56,10 +56,8 @@
 
     <!-- Contribution Period Dialog -->
     <contribution-period-dialog
-      v-model="showAddPeriodDialog"
-      :contribution-periods="contributionPeriods"
-      :is-editing="isEditing"
-      :selected-period="selectedPeriod"
+      v-model:show-dialog="showAddPeriodDialog"
+      :contribution-period="selectedPeriod"
       @delete="deleteContributionPeriod"
       @refresh-periods="getContributionPeriods"
     />
@@ -79,7 +77,7 @@ import {onMounted, ref} from "vue"
 import {DateTime} from "luxon"
 import ContributionPeriodDialog from "@/components/contribution-period/ContributionPeriodDialog.vue"
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
-import {type ContributionPeriod, findContributionPeriods} from "@/lib"
+import {type ContributionPeriod, deleteContributionPeriodById, findContributionPeriods} from "@/lib"
 
 defineOptions({name: "ContributionPeriodList"})
 
@@ -134,8 +132,13 @@ const deleteContributionPeriod = () => {
 const confirmDeleteContributionPeriod = async () => {
   isEditing.value = false
   deleteDialog.value = false
+  await deleteContributionPeriodById({
+    path: {
+      id: selectedPeriodId.value!,
+    },
+  })
   selectedPeriod.value = null
-  selectedPeriodId.value = null // ← clear selection
+  selectedPeriodId.value = null
   await getContributionPeriods()
 }
 

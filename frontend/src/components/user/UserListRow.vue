@@ -116,7 +116,7 @@
           v-if="expanded === user.id"
           @click.stop
         >
-          <AdvancedUserEdit
+          <AdvancedUserForm
             v-model="userModel"
             class="mt-6"
             @user-changed="userChanged"
@@ -136,7 +136,7 @@
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
 import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
 import {DateTime} from "luxon"
 import {

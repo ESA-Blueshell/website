@@ -65,7 +65,6 @@ export type Sponsor = {
 export type Event = {
     id?: number;
     committeeId: number;
-    committee?: SimpleCommittee;
     title: string;
     startTime: string;
     endTime: string;
@@ -108,12 +107,6 @@ export type FormQuestion = {
     options?: Array<string>;
 };
 
-export type SimpleCommittee = {
-    id?: number;
-    name?: string;
-    description?: string;
-};
-
 export type EventSignUp = {
     id?: number;
     eventId?: number;
@@ -121,7 +114,7 @@ export type EventSignUp = {
         [key: string]: unknown;
     }>;
     guest?: Guest;
-    user?: SimpleUser;
+    userId?: number;
 };
 
 export type Guest = {
@@ -131,20 +124,6 @@ export type Guest = {
     email: string;
     createdAt?: string;
     accessToken?: string;
-};
-
-export type SimpleUser = {
-    id?: number;
-    initials: string;
-    firstName: string;
-    prefix?: string;
-    lastName: string;
-    fullName?: string;
-    username: string;
-    discord: string;
-    email: string;
-    newsletter: boolean;
-    password: string;
 };
 
 export type Contribution = {
@@ -192,6 +171,20 @@ export type Address = {
     houseNumber: string;
     zipCode: string;
     createdAt?: string;
+};
+
+export type SimpleUser = {
+    id?: number;
+    initials: string;
+    firstName: string;
+    prefix?: string;
+    lastName: string;
+    fullName?: string;
+    username: string;
+    discord: string;
+    email: string;
+    newsletter: boolean;
+    password: string;
 };
 
 export enum PlatformType {
@@ -247,33 +240,16 @@ export type MemberActivationRequest = {
     password?: string;
 };
 
-export type PageAdvancedUser = {
+export type PageMetadata = {
+    size?: number;
+    number?: number;
     totalElements?: number;
     totalPages?: number;
-    size?: number;
+};
+
+export type PagedModelAdvancedUser = {
     content?: Array<AdvancedUser>;
-    number?: number;
-    sort?: SortObject;
-    pageable?: PageableObject;
-    numberOfElements?: number;
-    first?: boolean;
-    last?: boolean;
-    empty?: boolean;
-};
-
-export type PageableObject = {
-    offset?: number;
-    sort?: SortObject;
-    unpaged?: boolean;
-    paged?: boolean;
-    pageSize?: number;
-    pageNumber?: number;
-};
-
-export type SortObject = {
-    empty?: boolean;
-    sorted?: boolean;
-    unsorted?: boolean;
+    page?: PageMetadata;
 };
 
 export type Redirect = {
@@ -282,18 +258,9 @@ export type Redirect = {
     telemetry?: Telemetry;
 };
 
-export type PageEvent = {
-    totalElements?: number;
-    totalPages?: number;
-    size?: number;
+export type PagedModelEvent = {
     content?: Array<Event>;
-    number?: number;
-    sort?: SortObject;
-    pageable?: PageableObject;
-    numberOfElements?: number;
-    first?: boolean;
-    last?: boolean;
-    empty?: boolean;
+    page?: PageMetadata;
 };
 
 /**
@@ -1272,7 +1239,7 @@ export type FindUsersResponses = {
     /**
      * OK
      */
-    200: PageAdvancedUser;
+    200: PagedModelAdvancedUser;
 };
 
 export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
@@ -1789,7 +1756,7 @@ export type FindEventsResponses = {
     /**
      * OK
      */
-    200: PageEvent;
+    200: PagedModelEvent;
 };
 
 export type FindEventsResponse = FindEventsResponses[keyof FindEventsResponses];

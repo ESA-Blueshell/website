@@ -17,7 +17,7 @@
         </v-list-item>
         <v-expand-transition>
           <div v-if="expanded === -1">
-            <advanced-user-edit
+            <advanced-user-form
               :model-value="{}"
               class="mt-4"
               @user-changed="userChanged"
@@ -52,7 +52,7 @@
 <script lang="ts" setup>
 import UserListRow from "./UserListRow.vue"
 import type {AdvancedUser, Contribution, Membership} from "@/lib/blueshell/types.gen.ts"
-import AdvancedUserEdit from "@/components/user/AdvancedUserEdit.vue"
+import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
 import {toRefs} from "vue"
 
 // Props

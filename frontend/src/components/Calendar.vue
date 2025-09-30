@@ -116,6 +116,10 @@ const loadEventsForMonth = async (month: DateTime) => {
   }
 }
 
+function deleteEvent(id: number) {
+  events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
+}
+
 // When the *visible* month changes (buttons or the calendar’s own arrows/swipes), fetch data & update
 watch(displayedMonth, (d: string) => {
   const first = DateTime.fromISO(d)
@@ -152,6 +156,10 @@ const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
   } else toggle()
   nativeEvent.stopPropagation()
 }
+
+defineExpose({
+  deleteEvent,
+})
 </script>
 <style lang="scss">
 .v-calendar .v-event {

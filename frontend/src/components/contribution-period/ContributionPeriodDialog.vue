@@ -1,56 +1,103 @@
 <template>
   <v-dialog
     v-model="showDialog"
-    max-width="500"
+    max-width="600"
   >
     <v-card>
-      <v-card-title class="mx-7 mt-6  align-center justify-center">
-        <span class="text-h4">{{ isEditing ? "Edit Contribution Period" : "Add Contribution Period" }}</span>
+      <v-card-title class="mt-6 align-center justify-center text-center">
+        <span class="text-h4">{{ contributionPeriod?.id ? "Edit Contribution Period" : "Add Contribution Period" }}</span>
       </v-card-title>
       <v-card-text>
-        <v-form ref="formRef">
+        <Form
+          as="div"
+        >
           <v-row dense>
             <v-col cols="6">
-              <v-text-field
-                v-model="form.startDate"
-                :rules="startDateRules"
-                label="Start Date"
-                type="date"
-              />
+              <Field
+                v-slot="{ value, errors, handleChange, handleBlur }"
+                v-model="periodForm.startDate"
+                name="startDate"
+                rules="required|dateBefore:@endDate"
+              >
+                <v-text-field
+                  :model-value="value"
+                  :error-messages="errors"
+                  label="Start Date"
+                  type="date"
+                  @update:model-value="handleChange"
+                  @blur="handleBlur"
+                />
+              </Field>
             </v-col>
             <v-col cols="6">
-              <v-text-field
-                v-model="form.endDate"
-                :rules="endDateRules"
-                label="End Date"
-                type="date"
-              />
+              <Field
+                v-slot="{ value, errors, handleChange, handleBlur }"
+                v-model="periodForm.endDate"
+                name="endDate"
+                rules="required|dateAfter:@startDate"
+              >
+                <v-text-field
+                  :model-value="value"
+                  :error-messages="errors"
+                  label="End Date"
+                  type="date"
+                  @update:model-value="handleChange"
+                  @blur="handleBlur"
+                />
+              </Field>
             </v-col>
           </v-row>
-          <v-text-field
-            v-model.number="form.halfYearFee"
-            :rules="feeRules"
-            label="Half Year Fee"
-            type="number"
-          />
-          <v-text-field
-            v-model.number="form.fullYearFee"
-            :rules="feeRules"
-            label="Full Year Fee"
-            type="number"
-          />
-          <v-text-field
-            v-model.number="form.alumniFee"
-            :rules="feeRules"
-            label="Alumni Fee"
-            type="number"
-          />
-        </v-form>
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="periodForm.halfYearFee"
+            name="halfYearFee"
+            rules="required|minValue:0"
+          >
+            <v-text-field
+              label="Half Year Fee"
+              :model-value="value"
+              :error-messages="errors"
+              type="number"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="periodForm.fullYearFee"
+            name="fullYearFee"
+            rules="required|minValue:0"
+          >
+            <v-text-field
+              label="Full Year Fee"
+              :model-value="value"
+              :error-messages="errors"
+              type="number"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="periodForm.alumniFee"
+            name="alumniFee"
+            rules="required|minValue:0"
+          >
+            <v-text-field
+              label="Alumni Fee"
+              :model-value="value"
+              :error-messages="errors"
+              type="number"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
+        </Form>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
-          v-if="isEditing"
+          v-if="contributionPeriod?.id"
           color="red"
           @click="confirmDeletePeriod"
         >
@@ -60,7 +107,7 @@
           color="primary"
           @click="saveContributionPeriod"
         >
-          {{ isEditing ? "Save" : "Create" }}
+          {{ contributionPeriod?.id ? "Save" : "Create" }}
         </v-btn>
         <v-btn @click="closeDialog">
           Cancel
@@ -71,130 +118,103 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, reactive, ref, toRef, watch} from "vue"
-import {DateTime} from "luxon"
-import type {VForm} from "vuetify/components"
-import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/lib"
+import {computed, reactive, ref, watch} from "vue"
+import {
+  type ContributionPeriod,
+  createContributionPeriod,
+  updateContributionPeriod,
+} from "@/lib"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {Field, Form, type FormContext} from "vee-validate"
 
 defineOptions({name: "ContributionPeriodDialog"})
+const {apply} = useBackendValidation()
 
-type Props = {
-  modelValue: boolean;
-  isEditing: boolean;
-  selectedPeriod: ContributionPeriod | null;
-  contributionPeriods: ContributionPeriod[];
-};
-
-const props = defineProps<Props>()
-const emit = defineEmits<{
-  (e: "update:modelValue", value: boolean): void;
-  (e: "refresh-periods"): void;
-  (e: "delete"): void;
+const props = defineProps<{
+  contributionPeriod?: ContributionPeriod,
+  showDialog: boolean
 }>()
 
-const showDialog = computed({
-  get: () => props.modelValue,
-  set: (value: boolean) => emit("update:modelValue", value),
-})
-
-const formRef = ref<VForm | null>(null)
-
-const form = reactive<ContributionPeriod>({
+const emptyPeriod = (): ContributionPeriod => ({
   startDate: "",
   endDate: "",
   halfYearFee: 0,
   fullYearFee: 0,
   alumniFee: 0,
-} as ContributionPeriod)
+})
 
-const contributionPeriods = toRef(props, "contributionPeriods")
-const selectedPeriod = toRef(props, "selectedPeriod")
+const periodForm = reactive<ContributionPeriod>(emptyPeriod())
+const formRef = ref<FormContext>()
 
-const feeRules = [
-  (value: number | null) => (value !== null && value !== 0) || "Fee is required",
-]
+watch(
+  () => props.contributionPeriod,
+  (val) => {
+    Object.assign(periodForm, val ?? emptyPeriod())
+    formRef.value?.resetForm({ values: { ...periodForm } })
+  },
+  { immediate: true }
+)
 
-const startsAfterLatest = (startDate: string): boolean => {
-  if (!contributionPeriods.value || contributionPeriods.value.length === 0) return true
+watch(
+  () => props.showDialog,
+  (open) => {
+    if (open && !props.contributionPeriod) {
+      Object.assign(periodForm, emptyPeriod())
+      formRef.value?.resetForm({ values: { ...periodForm } })
+    }
+  }
+)
 
-  // Exclude the current period when editing
-  const otherPeriods = contributionPeriods.value.filter(
-    (p) => p.id !== selectedPeriod.value?.id,
-  )
+const emit = defineEmits<{
+  (e: "update:showDialog", value: boolean): void; // ← correct event
+  (e: "changed", value: ContributionPeriod): void;
+  (e: "delete", value: number): void;
+}>()
 
-  if (otherPeriods.length === 0) return true
+const showDialog = computed({
+  get: () => props.showDialog,
+  set: (value: boolean) => emit("update:showDialog", value),
+})
 
-  const latestEndDate = otherPeriods.reduce((latest, period) => {
-    const end = DateTime.fromISO(period.endDate)
-    return end > latest ? end : latest
-  }, DateTime.fromISO(otherPeriods[0].endDate))
-
-  return DateTime.fromISO(startDate) >= latestEndDate
-}
-
-const isValidStartDate = (startDate: string): boolean => {
-  if (!form.endDate) return true
-  return DateTime.fromISO(startDate) < DateTime.fromISO(form.endDate)
-}
-
-const isValidEndDate = (endDate: string): boolean => {
-  if (!form.startDate) return true
-  return DateTime.fromISO(endDate) > DateTime.fromISO(form.startDate)
-}
-
-const startDateRules = computed(() => [
-  (value: string) => !!value || "Start Date is required",
-  (value: string) => isValidStartDate(value) || "Start date must be before end date",
-  (value: string) =>
-    startsAfterLatest(value) ||
-    "The period must start after the latest contribution period",
-])
-
-const endDateRules = computed(() => [
-  (value: string) => !!value || "End Date is required",
-  (value: string) => isValidEndDate(value) || "End date must be after start date",
-])
 
 const closeDialog = () => {
-  emit("update:modelValue", false)
+  showDialog.value = false
 }
 
 const confirmDeletePeriod = () => {
-  emit("update:modelValue", false)
-  emit("delete")
+  showDialog.value = false
+  emit("delete", periodForm.id!)
 }
 
 const saveContributionPeriod = async () => {
   const result = await formRef.value?.validate()
   if (!result?.valid) return
 
-  try {
-    if (props.isEditing) {
-      await updateContributionPeriod({
-        body: form,
-        path: {id: form.id as number},
-      })
-    } else {
-      await createContributionPeriod({body: form})
+  if (periodForm?.id) {
+    const resp = await updateContributionPeriod({
+      body: periodForm,
+      path: {id: periodForm.id as number},
+    })
+
+    if (resp.status === 200) {
+      emit("changed", resp.data!)
+      closeDialog()
+    } else if (!apply(formRef.value!, resp)) {
+      $handleNetworkError(resp)
     }
-    emit("refresh-periods")
-    closeDialog()
-  } catch (e) {
-    $handleNetworkError(e)
+  } else {
+    const resp = await createContributionPeriod({body: periodForm})
+
+    if (resp.status === 201) {
+      emit("changed", resp.data!)
+      closeDialog()
+    } else if (!apply(formRef.value!, resp)) {
+      $handleNetworkError(resp)
+    }
   }
 }
 
-// Populate/reset when dialog opens
-watch(
-  () => showDialog.value,
-  (open) => {
-    if (!open) return
-    if (props.isEditing && props.selectedPeriod) {
-      Object.assign(form, props.selectedPeriod)
-    }
-  },
-)
 </script>
 
 <style lang="scss">

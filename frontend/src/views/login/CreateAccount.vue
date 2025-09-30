@@ -11,7 +11,7 @@
         class="mx-auto mt-10"
         style="max-width: 600px"
       >
-        <SimpleUserEdit
+        <SimpleUserForm
           ref="simpleRef"
           v-model="userForm"
         />
@@ -47,10 +47,7 @@ import TopBanner from "@/components/banners/TopBanner.vue"
 import {createGuestUser, type SimpleUser} from "@/lib"
 import {Form} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
-
-const {apply: applyBackendErrors} = useBackendValidation()
+import SimpleUserForm from "@/components/user/SimpleUserForm.vue"
 
 // Reactive state
 const loading = ref(false)
@@ -67,7 +64,7 @@ const userForm = ref<SimpleUser>({
   newsletter: true,
 })
 
-const simpleRef = ref<InstanceType<typeof SimpleUserEdit>>()
+const simpleRef = ref<InstanceType<typeof SimpleUserForm>>()
 
 
 // Methods
@@ -84,11 +81,9 @@ const createAccount = async () => {
       body: userForm.value,
     })
 
-    console.log(response)
-    console.log(response?.error)
     if (response.status === 201) {
       succeeded.value = true
-    } else if (!await simpleRef.value.applyErrors(response)) {
+    } else if (!await simpleRef.value?.applyErrors(response)) {
       $handleNetworkError(response)
     }
   } finally {

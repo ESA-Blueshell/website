@@ -1,7 +1,8 @@
 package net.blueshell.api.config;
 
 import net.blueshell.api.event.*;
-import net.blueshell.api.job.SyncContactJob;
+import net.blueshell.api.job.brevo.RemoveContactFromListJob;
+import net.blueshell.api.job.brevo.SyncContactJob;
 import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.ContributionPeriodService;
 import net.blueshell.api.service.UserService;
@@ -20,8 +21,8 @@ public class EventListenerConfig {
     }
 
     @Bean
-    public ContributionEventListener contributionEventListener(ContactService contacts) {
-        return new ContributionEventListener(contacts);
+    public ContributionEventListener contributionEventListener(ContactService contacts, RemoveContactFromListJob removeContactFromListJob) {
+        return new ContributionEventListener(contacts, removeContactFromListJob);
     }
 
     @Bean

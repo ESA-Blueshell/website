@@ -4,6 +4,7 @@ import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
+import net.blueshell.api.job.brevo.RemoveContactFromListJob;
 import net.blueshell.api.model.Contribution;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
@@ -16,9 +17,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ContributionEventListener {
 
     private final ContactService contacts;
+    private final RemoveContactFromListJob removeContactFromListJob;
 
-    public ContributionEventListener(ContactService contacts) {
+    public ContributionEventListener(ContactService contacts, RemoveContactFromListJob removeContactFromListJob) {
         this.contacts = contacts;
+        this.removeContactFromListJob = removeContactFromListJob;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -39,6 +42,6 @@ public class ContributionEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Contribution> evt) {
         var c = evt.getSource();
-        contacts.removeFromList(c.getContributionPeriod(), c.getUser());
+        removeContactFromListJob.removeFromList(c.getUserId(), c.getContributionPeriodId());
     }
 }

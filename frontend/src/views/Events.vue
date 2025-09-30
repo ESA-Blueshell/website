@@ -6,7 +6,7 @@
         class="mx-auto my-5"
         style="max-width: 1000px"
       >
-        <calendar />
+        <calendar ref="calendarRef" />
       </div>
       <div
         class="mx-auto mt-5"
@@ -15,7 +15,7 @@
         <p class="text-h4 font-weight-light">
           Upcoming events
         </p>
-        <event-list />
+        <event-list @deleted="onEventDeleted" />
       </div>
       <div
         class="mx-auto my-5"
@@ -38,12 +38,15 @@
   </v-main>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import TopBanner from "@/components/banners/TopBanner.vue"
 import Calendar from "@/components/Calendar.vue"
 import EventList from "@/components/events/EventList.vue"
+import { ref } from 'vue'
 
-export default {
-  components: {EventList, TopBanner, Calendar},
+const calendarRef = ref()
+
+function onEventDeleted(eventId: number) {
+  calendarRef.value?.deleteEvent?.(eventId)
 }
 </script>

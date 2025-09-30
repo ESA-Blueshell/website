@@ -15,7 +15,7 @@ import java.util.Set;
 @Entity
 @Table(name = "memberships")
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @Data
 @EntityListeners(JpaListener.class)
 public class Membership implements BaseModel {
@@ -46,7 +46,7 @@ public class Membership implements BaseModel {
     private MemberType memberType;
 
     @JoinColumn(name = "signature_id", updatable = false, insertable = false)
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private File signature;
 
     @OneToMany(mappedBy = "membership")

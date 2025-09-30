@@ -65,6 +65,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
+    @ResponseStatus(HttpStatus.CREATED)
     public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
         var committee = advancedMapper.fromDTO(advancedCommitteeDTO);
         committee = service.create(committee);

@@ -14,7 +14,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "guests")
 @SQLDelete(sql = "UPDATE guests SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @Data
 public class Guest implements BaseModel {
 
@@ -24,16 +24,20 @@ public class Guest implements BaseModel {
 
     @Column
     private String name;
+
     @Column
     private String discord;
+
     @Column
     private String email;
+
     @Column(name = "created_at")
     private Timestamp createdAt;
+
     @Column(name = "access_token")
     private String accessToken;
 
-    @OneToOne(mappedBy = "guest")
+    @OneToOne(mappedBy = "guest", cascade = CascadeType.ALL)
     private EventSignUp eventSignUp;
 
     public Guest() {

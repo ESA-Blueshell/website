@@ -9,11 +9,9 @@ import net.blueshell.api.dto.TelemetryDTO;
 import net.blueshell.api.mapper.TelemetryMapper;
 import net.blueshell.api.model.Telemetry;
 import net.blueshell.api.service.TelemetryService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -34,6 +32,7 @@ public class TelemetryController extends BaseController<TelemetryService, Teleme
 
     @PostMapping("/telemetry")
     @PreAuthorize("hasAuthority('BOARD')")
+    @ResponseStatus(HttpStatus.CREATED)
     public TelemetryDTO createTelemetry(@PathParam("platform") PlatformType platform, @PathParam("url") String url) {
         Telemetry telemetry = service.createTelemetry(platform, url);
         return mapper.toDTO(telemetry);

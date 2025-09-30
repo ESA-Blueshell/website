@@ -23,7 +23,7 @@ import java.util.Set;
 @Table(name = "events")
 @Data
 @SQLDelete(sql = "UPDATE events SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @EntityListeners(JpaListener.class)
 public class Event implements BaseModel {
 
@@ -80,13 +80,13 @@ public class Event implements BaseModel {
     @Column(name = "price_public")
     private Double publicPrice;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "event")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "event", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<EventFeedback> feedbacks;
 
-    @OneToMany(mappedBy = "event")
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<EventPicture> eventPictures;
+    private Set<EventPicture> pictures;
 
     @Column(name = "google_id")
     private String googleId;

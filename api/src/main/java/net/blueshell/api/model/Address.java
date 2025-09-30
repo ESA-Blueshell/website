@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "addresses")
 @SQLDelete(sql = "UPDATE addresses SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @Data
 public class Address implements BaseModel {
 

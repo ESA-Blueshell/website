@@ -10,12 +10,13 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Table(name = "telemetries")
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @Data
 @NoArgsConstructor
 public class Telemetry implements BaseModel {
@@ -33,6 +34,9 @@ public class Telemetry implements BaseModel {
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
+
+    @OneToMany(mappedBy = "telemetry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Redirect> redirects;
 
     public Telemetry(PlatformType platform, String url) {
         this.platform = platform;

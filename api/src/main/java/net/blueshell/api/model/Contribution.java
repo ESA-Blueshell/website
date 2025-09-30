@@ -18,7 +18,7 @@ import java.util.Objects;
 @Table(name = "contributions")
 @Data
 @SQLDelete(sql = "UPDATE contributions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @EntityListeners(JpaListener.class)
 public class Contribution implements BaseModel {
     @Id
@@ -27,7 +27,6 @@ public class Contribution implements BaseModel {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotFound(action = NotFoundAction.IGNORE)
     @ToString.Exclude
     private User user;

@@ -30,6 +30,7 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/sponsors")
+    @ResponseStatus(HttpStatus.CREATED)
     public SponsorDTO createSponsor(@Valid @RequestBody SponsorDTO dto) {
         var sponsor = mapper.fromDTO(dto);
         sponsor = service.create(sponsor);

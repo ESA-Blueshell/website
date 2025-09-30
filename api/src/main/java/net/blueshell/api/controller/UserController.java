@@ -38,6 +38,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @PostMapping("/users")
     @PermitAll
+    @ResponseStatus(HttpStatus.CREATED)
     public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
         user = service.create(user);
@@ -46,6 +47,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @PostMapping("/users/member")
     @PermitAll
+    @ResponseStatus(HttpStatus.CREATED)
     public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
         user = service.create(user);
@@ -54,6 +56,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
 
     @PostMapping("/users/guest")
     @PermitAll
+    @ResponseStatus(HttpStatus.CREATED)
     public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
         var user = simpleMapper.fromDTO(dto, new User());
         user = service.create(user);

@@ -40,6 +40,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
+    @ResponseStatus(HttpStatus.CREATED)
     public ContributionPeriodDTO createContributionPeriod(@Valid @RequestBody ContributionPeriodDTO dto) {
         ContributionPeriod contributionPeriod = mapper.fromDTO(dto);
         contributionPeriod = service.create(contributionPeriod);

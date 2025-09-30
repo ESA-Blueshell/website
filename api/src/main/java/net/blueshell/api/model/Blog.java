@@ -12,7 +12,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "blogs")
 @SQLDelete(sql = "UPDATE blogs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @Data
 public class Blog implements BaseModel {
 

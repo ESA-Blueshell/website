@@ -27,6 +27,7 @@ public class ContributionController extends BaseController<ContributionService, 
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributions")
+    @ResponseStatus(HttpStatus.CREATED)
     public ContributionDTO createContribution(@Valid @RequestBody ContributionDTO dto) {
         var contribution = mapper.fromDTO(dto);
         contribution = service.create(contribution);

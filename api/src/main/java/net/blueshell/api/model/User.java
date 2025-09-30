@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Entity
 @Table(name = "users")
 @SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @Data
 @EntityListeners(JpaListener.class)
 public class User implements UserDetails, BaseModel {
@@ -122,7 +122,7 @@ public class User implements UserDetails, BaseModel {
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<CommitteeMember> committeeMembers;
 
@@ -150,7 +150,7 @@ public class User implements UserDetails, BaseModel {
     @JsonIgnore
     private Set<Contribution> contributions;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private Membership membership;
 
@@ -162,6 +162,11 @@ public class User implements UserDetails, BaseModel {
 
     @Column(name = "creator_id")
     private Long creatorId;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @JsonIgnore
+    private Set<EventSignUp> eventSignUps;
 
     private static final int ACTIVATION_KEY_LENGTH = 15;
     private static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days

@@ -28,6 +28,10 @@ public interface UserRepository extends BaseRepository<User> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByDiscord(String discord);
+
+    boolean existsByDiscordAndIdNot(String discord, Long id);
+
     Optional<User> findByEmailAndIdNot(String email, Long id);
 
     boolean existsByEmailAndIdNot(String email, Long id);

@@ -26,6 +26,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
 
     @PostMapping("/telemetry/redirect")
     @PreAuthorize("hasAuthority('BOARD')")
+    @ResponseStatus(HttpStatus.CREATED)
     public String createRedirect(@RequestParam("id") Long telemetryId) {
         return service.createRedirect(telemetryId);
     }

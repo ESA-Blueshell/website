@@ -18,7 +18,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({FIELD})
 @Retention(RUNTIME)
 public @interface UniqueEmail {
-    String message() default "Email is already registered.";
+    String message() default "Email is already taken.";
 
     Class<?>[] groups() default {};
 

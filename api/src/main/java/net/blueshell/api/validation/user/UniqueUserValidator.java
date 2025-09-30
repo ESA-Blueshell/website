@@ -39,21 +39,28 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Simp
             boolean taken = (currentUserId == null)
                     ? userRepository.existsByUsername(dto.getUsername())
                     : userRepository.existsByUsernameAndIdNot(dto.getUsername(), currentUserId);
-            if (taken) { isValid = false; addViolation.accept("username", "Username is already taken."); }
+            if (taken) { isValid = false; addViolation.accept("username", "Username is taken."); }
         }
 
         if (StringUtils.hasText(dto.getEmail())) {
             boolean taken = (currentUserId == null)
                     ? userRepository.existsByEmail(dto.getEmail())
                     : userRepository.existsByEmailAndIdNot(dto.getEmail(), currentUserId);
-            if (taken) { isValid = false; addViolation.accept("email", "Email is already registered."); }
+            if (taken) { isValid = false; addViolation.accept("email", "Email is taken."); }
+        }
+
+        if (StringUtils.hasText(dto.getDiscord())) {
+            boolean taken = (currentUserId == null)
+                    ? userRepository.existsByDiscord(dto.getDiscord())
+                    : userRepository.existsByDiscordAndIdNot(dto.getDiscord(), currentUserId);
+            if (taken) { isValid = false; addViolation.accept("discord", "Discord is taken."); }
         }
 
         if (dto instanceof AdvancedUserDTO adv && StringUtils.hasText(adv.getPhoneNumber())) {
             boolean taken = (currentUserId == null)
                     ? userRepository.existsByPhoneNumber(adv.getPhoneNumber())
                     : userRepository.existsByPhoneNumberAndIdNot(adv.getPhoneNumber(), currentUserId);
-            if (taken) { isValid = false; addViolation.accept("phoneNumber", "Phone number is already in use."); }
+            if (taken) { isValid = false; addViolation.accept("phoneNumber", "Phone number is taken."); }
         }
 
         return isValid;

@@ -11,7 +11,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "boards")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
 public class Board implements BaseModel {
@@ -24,10 +24,10 @@ public class Board implements BaseModel {
     private String name;
 
     @JoinColumn(name = "picture_id")
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private File picture;
 
-    @OneToMany(mappedBy = "board")
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<BoardMember> members;
 
     @Column(name = "candidate")

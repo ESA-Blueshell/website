@@ -28,6 +28,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventDTO.committeeId, 'Committee', 'createEvent')")
     @PostMapping("/events")
+    @ResponseStatus(HttpStatus.CREATED)
     public EventDTO createEvent(@Valid @RequestBody EventDTO eventDTO) {
         var event = mapper.fromDTO(eventDTO);
         event = service.create(event);

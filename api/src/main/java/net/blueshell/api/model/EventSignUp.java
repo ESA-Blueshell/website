@@ -16,7 +16,7 @@ import java.util.List;
 @Table(name = "event_signups")
 @Data
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 public class EventSignUp implements BaseModel {
 
     @Id
@@ -39,7 +39,7 @@ public class EventSignUp implements BaseModel {
     @Column(name = "user_id")
     private Long userId;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "guest_id")
     private Guest guest;
 

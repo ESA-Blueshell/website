@@ -14,7 +14,7 @@ import java.util.Objects;
 @Table(name = "event_feedback")
 @Data
 @SQLDelete(sql = "UPDATE event_feedback SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at <= NOW()")
 public class EventFeedback implements BaseModel {
 
     @Id

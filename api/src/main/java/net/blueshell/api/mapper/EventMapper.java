@@ -3,17 +3,12 @@ package net.blueshell.api.mapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.EventDTO;
-import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.Event;
-import net.blueshell.api.model.File;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class, FormQuestionMapper.class})
@@ -38,8 +33,6 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     @AfterMapping
     protected void afterFromDTO(EventDTO dto, @MappingTarget Event event) {
-        log.info("Event: {}", event.getSignUpForm().toString());
-        log.info("Form: {}", dto.getSignUpForm().toString());
         if (event.getCreator() == null) {
             event.setCreatorId(getPrincipal().getId());
         }

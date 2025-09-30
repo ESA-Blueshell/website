@@ -463,7 +463,7 @@ function formatEventTime() {
           <v-expand-transition :key="event.id">
             <div
               v-if="expanded"
-              class="form-border mx-auto rounded-b"
+              class="form-border mx-auto rounded-b w-100"
             >
               <sign-up-form
                 :event="event"

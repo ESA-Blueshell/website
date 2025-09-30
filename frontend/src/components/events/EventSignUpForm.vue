@@ -29,6 +29,7 @@
 import {ref} from "vue"
 import {useStore} from "vuex"
 import type {Event, FormQuestion, Guest} from "@/lib"
+import {Field} from "vee-validate"
 
 const emit = defineEmits(["submit"])
 
@@ -79,7 +80,7 @@ const form = ref(props.event.signUpForm || null)
  * Validates both the answers form and the guest form, then emits "submit"
  * with the collected data if valid.
  */
-async function validate() {
+async function submit() {
   const formValid = answersForm.value ? (await answersForm.value.validate()).valid : true
   const guestFormValid = guestForm.value ? (await guestForm.value.validate()).valid : true
 
@@ -115,26 +116,27 @@ const guestForm = ref<Guest>()
       />
       <v-text-field
         v-model="guestData.name"
-        :rules="[v => !!v || 'Name is required']"
+        :rules="[(v: string) => !!v || 'Name is required']"
         label="Name"
       />
       <v-text-field
         v-model="guestData.discord"
-        :rules="[v => !!v || 'Discord username is required']"
+        :rules="[(v: string) => !!v || 'Discord username is required']"
         label="Discord username"
       />
       <v-text-field
         v-model="guestData.email"
-        :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
+        :rules="[(v: string) => !!v || 'Email is required', (v: string) => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
         hint="We'll use this to send you a link you can use to edit your sign-up form later"
         label="Email"
       />
     </v-form>
 
     <!-- ANSWERS FORM -->
-    <v-form
+    <Form
       v-if="formAnswers !== null"
       ref="answersForm"
+      as="div"
     >
       <div
         v-for="(question, i) in form"
@@ -146,19 +148,26 @@ const guestForm = ref<Guest>()
         </p>
 
         <!-- Open Question -->
-        <v-text-field
-          v-if="question.type === 'open'"
+        <Field
+          v-slot="{ value, errors, handleChange, handleBlur }"
           v-model="formAnswers[i]"
-          :rules="[v => !!v || 'An answer is required']"
-          class="pt-0"
-          hide-details="auto"
-        />
+          :name="`formAnswers.${i}`"
+          rules="required"
+        >
+          <v-text-field
+            v-if="question.type === 'open'"
+            :model-value="value"
+            :error-messages="errors"
+            @update:model-value="handleChange"
+            @blur="handleBlur"
+          />
+        </Field>
 
         <!-- Radio Question -->
         <v-radio-group
-          v-else-if="question.type === 'radio'"
+          v-if="question.type === 'radio'"
           v-model="formAnswers[i]"
-          :rules="[v => v != null || 'An answer is required']"
+          :rules="[(v: string) => v != null || 'An answer is required']"
           hide-details="auto"
         >
           <v-radio
@@ -180,13 +189,13 @@ const guestForm = ref<Guest>()
           hide-details
         />
       </div>
-    </v-form>
+    </Form>
 
     <!-- SUBMIT BUTTON -->
     <v-btn
       :block="true"
       :loading="buttonLoading"
-      @click="validate"
+      @click="submit"
     >
       {{ props.initialFormAnswers ? "Update" : "Save" }} sign-up form
     </v-btn>

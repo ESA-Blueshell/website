@@ -49,36 +49,6 @@ function moveDown(array, i) {
 <template>
   <div class="pa-4 form">
     <!--
-      Button adding a new question to the form
-    -->
-    <v-menu location="bottom">
-      <template #activator="{ props }">
-        <v-btn
-          block
-          class="mb-4"
-          v-bind="props"
-          variant="outlined"
-        >
-          Add question or text to sign-up form
-        </v-btn>
-      </template>
-      <v-list>
-        <v-list-item @click="createQuestion('description')">
-          Description without a question
-        </v-list-item>
-        <v-list-item @click="createQuestion('open')">
-          Open question
-        </v-list-item>
-        <v-list-item @click="createQuestion('radio')">
-          Multiple choice question
-        </v-list-item>
-        <v-list-item @click="createQuestion('checkbox')">
-          Question with checkboxes
-        </v-list-item>
-      </v-list>
-    </v-menu>
-
-    <!--
       The actual form
     -->
     <div
@@ -167,6 +137,36 @@ function moveDown(array, i) {
         class="mb-4"
       />
     </div>
+
+    <!--
+          Button adding a new question to the form
+        -->
+    <v-menu location="bottom">
+      <template #activator="{ props }">
+        <v-btn
+          block
+          class="mt-2"
+          v-bind="props"
+          variant="outlined"
+        >
+          Add question or text to sign-up form
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item @click="createQuestion('description')">
+          Description without a question
+        </v-list-item>
+        <v-list-item @click="createQuestion('open')">
+          Open question
+        </v-list-item>
+        <v-list-item @click="createQuestion('radio')">
+          Multiple choice question
+        </v-list-item>
+        <v-list-item @click="createQuestion('checkbox')">
+          Question with checkboxes
+        </v-list-item>
+      </v-list>
+    </v-menu>
 
     <v-expand-transition>
       <v-alert

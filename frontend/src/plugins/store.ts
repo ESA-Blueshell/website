@@ -1,9 +1,9 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type Authentication, Role} from "@/lib"
+import {type Login, Role} from "@/lib"
 
 export interface State {
-  login: Authentication | null;
+  login: Login | null;
   guestData: Record<string, unknown> | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
@@ -11,7 +11,7 @@ export interface State {
 }
 
 export interface Mutations {
-  setLogin(state: State, payload: Authentication): void;
+  setLogin(state: State, payload: Login): void;
 
   logout(state: State): void;
 
@@ -26,8 +26,8 @@ export interface Mutations {
 
 export interface Actions {
   login(context: {
-    commit: (type: keyof Mutations, payload?: Authentication) => void
-  }, payload: Authentication): Promise<void>;
+    commit: (type: keyof Mutations, payload?: Login) => void
+  }, payload: Login): Promise<void>;
 
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
 
@@ -35,7 +35,7 @@ export interface Actions {
 }
 
 export interface Getters {
-  getLogin(state: State): Authentication | null;
+  getLogin(state: State): Login | null;
 
   isLoggedIn(state: State): boolean;
 
@@ -67,7 +67,7 @@ export type TypedStore = Store<State> & {
 const store = createStore<State>({
   state(): State {
     return {
-      login: readJsonCookie<Authentication>("login"),
+      login: readJsonCookie<Login>("login"),
       guestData: readJsonCookie("guestData"),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
@@ -75,7 +75,7 @@ const store = createStore<State>({
     }
   },
   mutations: {
-    async setLogin(state: State, payload: Authentication) {
+    async setLogin(state: State, payload: Login) {
       state.login = payload
       writeJsonCookie("login", payload)
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`
@@ -107,7 +107,7 @@ const store = createStore<State>({
     },
   },
   getters: {
-    getLogin(state: State): Authentication | null {
+    getLogin(state: State): Login | null {
       return state.login
     },
     isLoggedIn(state: State): boolean {

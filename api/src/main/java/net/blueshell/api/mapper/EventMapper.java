@@ -14,24 +14,21 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {SimpleCommitteeMapper.class, FileMapper.class})
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
-    @Autowired
-    protected SimpleCommitteeMapper simpleCommitteeMapper;
-    @Autowired
-    protected FileMapper fileMapper;
-
     @Mapping(target = "id")
-    @Mapping(target = "startTime")
-    @Mapping(target = "endTime")
     @Mapping(target = "committeeId")
-    @Mapping(target = "committee")
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "location")
+    @Mapping(target = "startTime")
+    @Mapping(target = "endTime")
     @Mapping(target = "memberPrice")
     @Mapping(target = "publicPrice")
+    @Mapping(target = "visible")
+    @Mapping(target = "membersOnly")
+    @Mapping(target = "signUp")
     @Mapping(target = "banner")
     @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
@@ -43,47 +40,32 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
             event.setCreatorId(getPrincipal().getId());
         }
         event.setLastEditorId(getPrincipal().getId());
-
-        if (StringUtils.hasText(dto.getStartTime())) {
-            OffsetDateTime startTime = OffsetDateTime.parse(dto.getStartTime());
-            event.setStartTime(startTime.toLocalDateTime());
-        }
-        if (StringUtils.hasText(dto.getEndTime())) {
-            OffsetDateTime endTime = OffsetDateTime.parse(dto.getEndTime());
-            event.setEndTime(endTime.toLocalDateTime());
-        }
-
-        if (dto.getBanner() != null) {
-            File banner = fileMapper.fromDTO(dto.getBanner());
-            event.setBanner(banner);
-        }
     }
 
     @Mapping(target = "id")
-    @Mapping(target = "startTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getStartTime()))")
-    @Mapping(target = "endTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getEndTime()))")
     @Mapping(target = "committeeId")
-    @Mapping(target = "committee")
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "location")
+    @Mapping(target = "startTime")
+    @Mapping(target = "endTime")
     @Mapping(target = "memberPrice")
     @Mapping(target = "publicPrice")
+    @Mapping(target = "visible")
+    @Mapping(target = "membersOnly")
+    @Mapping(target = "signUp")
     @Mapping(target = "banner")
     @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventDTO toDTO(Event event);
 
-    static String toIso(LocalDateTime t) {
+    static LocalDateTime map(OffsetDateTime t) {
         return t == null ? null
-                : t.atZone(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                : t.toLocalDateTime();
     }
 
-    @AfterMapping
-    public void afterToDTO(Event event, @MappingTarget EventDTO dto) {
-        if (event.getCommittee() != null) {
-            dto.setCommittee(simpleCommitteeMapper.toDTO(event.getCommittee()));
-        }
+    static OffsetDateTime map(LocalDateTime t) {
+        return t == null ? null
+                : t.atZone(ZoneId.systemDefault()).toOffsetDateTime();
     }
 }

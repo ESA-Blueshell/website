@@ -102,7 +102,9 @@ const loadEventsForMonth = async (month: DateTime) => {
   const to: string = month.endOf("month").endOf("week").endOf("day").toISO()!
 
   if (collectedMonths.value.includes(from)) return
-  const {data} = await findEvents({query: {from, to}})
+  const {data} = await findEvents({
+    query: {from, to},
+  })
   const page = (data ?? {}) as PageEvent
 
   if (page.content) {

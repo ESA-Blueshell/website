@@ -31,7 +31,7 @@ public class Event implements BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
     @JsonIgnore
     private User creator;
@@ -39,7 +39,7 @@ public class Event implements BaseModel {
     @Column(name = "creator_Id")
     private Long creatorId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_editor_id", insertable = false, updatable = false)
     @JsonIgnore
     private User lastEditor;
@@ -47,7 +47,7 @@ public class Event implements BaseModel {
     @Column(name = "last_editor_id")
     private Long lastEditorId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
     @JsonIgnore
     private Committee committee;
@@ -108,19 +108,6 @@ public class Event implements BaseModel {
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
-
-    /**
-     * Get the next month
-     *
-     * @param month the month is formatted as "yyyy-MM"
-     * @return the next month in the format "yyyy-MM"
-     */
-    private static String nextMonth(String month) {
-        final String[] splitMonth = month.split("-");
-        if (splitMonth[1].equals("12"))
-            return (Integer.parseInt(splitMonth[0]) + 1) + "-01";
-        return splitMonth[0] + "-" + (Integer.parseInt(splitMonth[1]) + 1);
-    }
 
     @JsonProperty("creator")
     public long getCreatorId() {

@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
@@ -20,7 +21,6 @@ public class EventDTO extends BaseDTO {
     private Long id;
     @NotNull
     private Long committeeId;
-    private SimpleCommitteeDTO committee;
     @NotBlank(message = "Event title cannot be empty.")
     @Size(max = 200, message = "Event title cannot exceed 200 characters.")
     private String title;
@@ -29,10 +29,10 @@ public class EventDTO extends BaseDTO {
     private String description;
     @JsonProperty("location")
     private String location;
-    @NotBlank(message = "startTime is required (ISO-8601 string).")
-    private String startTime;
-    @NotBlank(message = "endTime is required (ISO-8601 string).")
-    private String endTime;
+    @NotNull
+    private OffsetDateTime startTime;
+    @NotNull
+    private OffsetDateTime endTime;
     private Double memberPrice;
     private Double publicPrice;
     private boolean visible;

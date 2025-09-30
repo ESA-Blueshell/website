@@ -34,6 +34,7 @@ onMounted(async () => {
     // Initialize a blank event object
     eventData.value = {
       id: undefined,
+      committeeId: undefined,
       title: "",
       description: "",
       location: "",
@@ -66,7 +67,7 @@ function onSuccess() {
           ref="form"
           :initial-event="eventData"
           @success="onSuccess"
-          @title="(newTitle) => headerTitle = isEditing ? `Edit ${newTitle}` : `Create ${newTitle}`"
+          @title="(newTitle: string) => headerTitle = isEditing ? `Edit ${newTitle}` : `Create ${newTitle}`"
         />
       </div>
     </div>

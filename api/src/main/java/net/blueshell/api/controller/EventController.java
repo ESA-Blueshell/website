@@ -58,7 +58,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
         return mapper.toDTOs(events);
     }
 
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'delete')")
+    @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/events/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventById(@PathVariable("eventId") Long eventId) {

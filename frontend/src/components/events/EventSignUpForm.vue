@@ -28,7 +28,7 @@
 
 import {ref} from "vue"
 import {useStore} from "vuex"
-import type {Event, FormQuestion} from "@/lib"
+import type {Event, FormQuestion, Guest} from "@/lib"
 
 const emit = defineEmits(["submit"])
 
@@ -93,9 +93,10 @@ async function validate() {
 
 /**
  * Refs pointing to <v-form> so we can call validate() on them
+ @submit="({ answers, guestData }): { answers: Array<{ [key: string]: unknown; }>; guestData: Guest } => submitSignUpForm(event.id as number, { answers, guestData })"
  */
-const answersForm = ref(null)
-const guestForm = ref(null)
+const answersForm = ref<Array<{ [key: string]: unknown; }>>()
+const guestForm = ref<Guest>()
 </script>
 
 <template>

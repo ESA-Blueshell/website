@@ -5,36 +5,70 @@ import {createEvent as createIcsEvent} from "ics"
 import SignUpForm from "@/components/events/EventSignUpForm.vue"
 import store from "@/plugins/store.ts"
 import {$goto} from "@/plugins/goto"
-import {useRoute} from "vue-router"
+import {useRoute, useRouter} from "vue-router"
 import {useTheme} from "vuetify"
 import {DateTime} from "luxon"
-import {createEventSignup, deleteEventSignup, type Event, type EventSignUp, updateEventSignUp} from "@/lib/blueshell"
+import {
+  type AdvancedCommittee,
+  createEventSignup,
+  deleteEventById,
+  deleteEventSignup,
+  type Event,
+  type EventSignUp,
+  updateEventSignUp,
+} from "@/lib"
+import DeletionConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
 
+const router = useRouter()
 const props = defineProps({
   event: {
     type: Object as () => Event,
     required: true,
   },
-  signUp: {
-    type: Object as () => EventSignUp,
-    default: () =>
-      ({
-        id: undefined,
-        eventId: undefined,
-        formAnswers: [],
-      } as EventSignUp),
+  signUps: {
+    type: Object as () => EventSignUp[],
     required: false,
+    default: () => [] as EventSignUp[],
+  },
+  committees: {
+    type: Object as () => AdvancedCommittee[],
+    required: false,
+    default: () => [] as AdvancedCommittee[],
   },
 })
 
-const event = ref<Event>(props.event)
+const showDeleteDialog = ref(false)
+const deletingEvent = ref(false)
+const emit = defineEmits<{
+  (e: "deleted", id: number): void
+}>()
 
-const signUp = ref<EventSignUp>({
-  id: props.signUp?.id,
-  eventId: props.event.id,
-  formAnswers: props.signUp?.formAnswers ?? [],
-  ...props.signUp,
-})
+async function confirmDeleteEvent() {
+  if (!event.value?.id) return
+  deletingEvent.value = true
+  try {
+    await deleteEventById({path: {eventId: event.value.id as number}})
+    store.commit("setStatusSnackbarMessage", `Deleted “${event.value.title}”`)
+    emit("deleted", event.value.id as number)
+  } catch (err) {
+    console.error(err)
+    store.commit("setStatusSnackbarMessage", `Couldn't delete “${event.value.title}”`)
+  } finally {
+    deletingEvent.value = false
+    showDeleteDialog.value = false
+  }
+}
+
+const event = ref<Event>(props.event)
+const signUp = computed(() => {
+    const signupProp = props.signUps.find((s: EventSignUp) => s.eventId == event.value.id) ?? {}
+    return {
+      id: signupProp?.id,
+      eventId: signupProp?.eventId,
+      formAnswers: signupProp?.formAnswers ?? [],
+    } as EventSignUp
+  },
+)
 
 const route = useRoute()
 const theme = useTheme()
@@ -44,6 +78,11 @@ const eventElement = ref<HTMLElement | null>(null)
 
 const isMember = computed<boolean>(() => store.getters.isMember)
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const isBoard = computed<boolean>(() => store.getters.isBoard)
+
+const committee = computed(() =>
+  props.committees.some((c: AdvancedCommittee) => event.value.committeeId == c.id),
+)
 
 async function submitSignUp() {
   submitting.value = true
@@ -74,11 +113,6 @@ async function removeSignUp() {
       path: {eventSignupId: signUp.value.id as number},
     })
   }
-  signUp.value = {
-    id: undefined,
-    eventId: event.value.id,
-    formAnswers: [],
-  } as EventSignUp
 }
 
 onMounted(async () => {
@@ -90,7 +124,7 @@ onMounted(async () => {
 
 async function submitSignUpForm(
   eventId: number,
-  payload: { answers: any; guestData: any },
+  payload,
 ) {
   eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
 
@@ -225,10 +259,11 @@ function formatEventTime() {
     <div ref="eventElement">
       <v-container>
         <v-row
-          align="start"
           no-gutters
+          class="align-stretch fill-height"
         >
-          <v-col>
+          <!-- Left: fills remaining width -->
+          <v-col class="flex-grow-1">
             <v-list-item-title class="text-h4">
               {{ event.title }}
             </v-list-item-title>
@@ -244,49 +279,99 @@ function formatEventTime() {
 
             <div v-html="event.description ? $markdownToHtml(event.description) : 'No description...'" />
           </v-col>
+
+          <!-- Right: only as wide as its content; full height; centered content -->
           <v-col
-            class="pa-0"
             cols="auto"
+            class="align-self-stretch d-flex"
           >
-            <template v-if="event.signUp">
-              <v-row v-if="isLoggedIn && !event.signUpForm?.length && signUp?.id">
+            <div class="d-flex flex-column align-center justify-center h-100">
+              <template v-if="committee">
                 <v-tooltip
                   location="left"
-                  text="Cancel sign-up"
+                  text="Check signups"
                 >
-                  <template #activator="{ props: tooltipProps }">
+                  <template #activator="{ props }">
                     <v-btn
-                      :disabled="event.membersOnly && !isMember"
-                      :loading="submitting"
-                      icon="mdi-checkbox-marked"
-                      v-bind="tooltipProps"
+                      :disabled="!event.signUp"
+                      icon="mdi-list-status"
+                      v-bind="props"
                       variant="plain"
-                      @click="removeSignUp()"
+                      @click="router.push(`/events/${event.id}/signups/`)"
                     />
                   </template>
                 </v-tooltip>
-              </v-row>
 
-              <v-row v-else-if="isLoggedIn && !event.signUpForm?.length && !signUp?.id">
                 <v-tooltip
                   location="left"
-                  text="Sign Up"
+                  text="Edit event"
                 >
-                  <template #activator="{ props: tooltipProps }">
+                  <template #activator="{ props }">
                     <v-btn
-                      :disabled="event.membersOnly && !isMember"
-                      :loading="submitting"
-                      icon="mdi-checkbox-blank"
-                      v-bind="tooltipProps"
+                      icon="mdi-pencil"
+                      v-bind="props"
                       variant="plain"
-                      @click="submitSignUp()"
+                      @click="router.push(`/events/edit/${event.id}`)"
                     />
                   </template>
                 </v-tooltip>
-              </v-row>
 
-              <template v-else-if="event.signUpForm && (isLoggedIn || !event.membersOnly)">
-                <v-row>
+                <template v-if="isBoard">
+                  <v-tooltip
+                    location="left"
+                    text="Delete event"
+                  >
+                    <template #activator="{ props: tooltip }">
+                      <v-btn
+                        icon="mdi-delete"
+                        v-bind="tooltip"
+                        variant="plain"
+                        @click="showDeleteDialog = true"
+                      />
+                    </template>
+                  </v-tooltip>
+                </template>
+              </template>
+
+              <!-- Sign-up controls -->
+              <template v-if="event.signUp">
+                <template v-if="isLoggedIn && !event.signUpForm?.length">
+                  <v-tooltip
+                    v-if="signUp?.id"
+                    location="left"
+                    text="Cancel sign-up"
+                  >
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        :disabled="event.membersOnly && !isMember"
+                        :loading="submitting"
+                        icon="mdi-checkbox-marked"
+                        v-bind="tooltipProps"
+                        variant="plain"
+                        @click="removeSignUp()"
+                      />
+                    </template>
+                  </v-tooltip>
+
+                  <v-tooltip
+                    v-else
+                    location="left"
+                    text="Sign Up"
+                  >
+                    <template #activator="{ props: tooltipProps }">
+                      <v-btn
+                        :disabled="event.membersOnly && !isMember"
+                        :loading="submitting"
+                        icon="mdi-checkbox-blank"
+                        v-bind="tooltipProps"
+                        variant="plain"
+                        @click="submitSignUp()"
+                      />
+                    </template>
+                  </v-tooltip>
+                </template>
+
+                <template v-else-if="event.signUpForm && (isLoggedIn || !event.membersOnly)">
                   <v-tooltip
                     v-if="isLoggedIn && signUp?.id !== undefined"
                     location="left"
@@ -303,9 +388,7 @@ function formatEventTime() {
                       />
                     </template>
                   </v-tooltip>
-                </v-row>
 
-                <v-row>
                   <v-tooltip
                     :text="
                       signUp?.id
@@ -327,11 +410,10 @@ function formatEventTime() {
                       />
                     </template>
                   </v-tooltip>
-                </v-row>
+                </template>
               </template>
-            </template>
 
-            <v-row>
+              <!-- Utility actions -->
               <v-tooltip
                 location="left"
                 text="Find location"
@@ -345,8 +427,7 @@ function formatEventTime() {
                   />
                 </template>
               </v-tooltip>
-            </v-row>
-            <v-row>
+
               <v-tooltip
                 location="left"
                 text="Add to your calendar"
@@ -360,8 +441,7 @@ function formatEventTime() {
                   />
                 </template>
               </v-tooltip>
-            </v-row>
-            <v-row>
+
               <v-tooltip
                 location="left"
                 text="Copy share link"
@@ -375,9 +455,10 @@ function formatEventTime() {
                   />
                 </template>
               </v-tooltip>
-            </v-row>
+            </div>
           </v-col>
         </v-row>
+
         <v-row>
           <v-expand-transition :key="event.id">
             <div
@@ -397,6 +478,12 @@ function formatEventTime() {
       </v-container>
     </div>
   </v-list-item>
+  <deletion-confirmation-dialog
+    v-model="showDeleteDialog"
+    :title="`Delete event`"
+    :message="`Are you sure you want to delete “${event.title}”? This can’t be undone.`"
+    @confirm="confirmDeleteEvent"
+  />
 </template>
 
 <style lang="scss" scoped>

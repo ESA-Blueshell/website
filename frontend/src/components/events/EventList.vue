@@ -3,11 +3,19 @@ import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import EventListItem from "@/components/events/EventListItem.vue"
-import {type Event, type EventSignUp, findEvents, findEventSignUpsForCurrentUser} from "@/lib"
+import {
+  type AdvancedCommittee,
+  type Event,
+  type EventSignUp,
+  findCommitteesForCurrentUser,
+  findEvents,
+  findEventSignUpsForCurrentUser,
+} from "@/lib"
 import {DateTime} from "luxon"
 
 const events = ref<Event[] | null>(null)
-const eventSignups = ref<Record<number, EventSignUp>>({})
+const committees = ref<AdvancedCommittee[] | null>(null)
+const eventSignups = ref<EventSignUp[] | null>(null)
 
 // Access route and store
 const route = useRoute()
@@ -17,29 +25,28 @@ const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 
 onMounted(async () => {
-  const [eventsResp, signupsResp] = await Promise.all([
+  const [eventsResp, signupsResp, committeesResp] = await Promise.all([
     findEvents({
         query: {
           from: DateTime.now().startOf("day").toISO()!,
-
+          sort: ["startTime", "asc"]
         },
       },
     ),
     isLoggedIn.value
       ? findEventSignUpsForCurrentUser()
       : Promise.resolve({data: [] as EventSignUp[]}),
+    isLoggedIn.value
+      ? findCommitteesForCurrentUser()
+      : Promise.resolve({data: [] as AdvancedCommittee[]}),
   ])
 
   const fetchedEvents = eventsResp.data?.content ?? []
 
   // Assign signups first, as otherwise event rendering happens before they're available
   if (isLoggedIn.value) {
-    const signups = signupsResp.data ?? []
-    eventSignups.value = Object.fromEntries(
-      signups
-        .filter(s => typeof s.eventId === "number")
-        .map(s => [s.eventId as number, s]),
-    )
+    eventSignups.value = signupsResp.data ?? []
+    committees.value = committeesResp.data as AdvancedCommittee[] ?? []
   }
   events.value = fetchedEvents
 })
@@ -69,8 +76,10 @@ onMounted(async () => {
       >
         <event-list-item
           :event="event"
-          :sign-up="eventSignups[event.id as number]"
+          :committees="committees"
+          :sign-ups="eventSignups"
           class="event-list-item"
+          @deleted="(id: number) => events = events.filter((e: Event) => e.id !== id)"
         />
         <!-- only show divider when there's another item after -->
         <v-divider v-if="i < events.length - 1" />

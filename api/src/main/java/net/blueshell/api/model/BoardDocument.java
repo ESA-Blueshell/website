@@ -8,7 +8,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "board_documents")
-@SQLRestriction("deleted_at <= NOW()")
+@SQLRestriction("deleted_at >= NOW()")
 @SQLDelete(sql = "UPDATE board_documents SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
 public class BoardDocument implements BaseModel {

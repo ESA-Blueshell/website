@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Table(name = "committees")
 @Data
 @SQLDelete(sql = "UPDATE committees SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at <= NOW()")
+@SQLRestriction("deleted_at >= NOW()")
 public class Committee implements BaseModel {
 
     @Id

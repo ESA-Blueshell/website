@@ -14,7 +14,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "guests")
 @SQLDelete(sql = "UPDATE guests SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at <= NOW()")
+@SQLRestriction("deleted_at >= NOW()")
 @Data
 public class Guest implements BaseModel {
 

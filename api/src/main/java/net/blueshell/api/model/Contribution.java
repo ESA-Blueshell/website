@@ -18,7 +18,7 @@ import java.util.Objects;
 @Table(name = "contributions")
 @Data
 @SQLDelete(sql = "UPDATE contributions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at <= NOW()")
+@SQLRestriction("deleted_at >= NOW()")
 @EntityListeners(JpaListener.class)
 public class Contribution implements BaseModel {
     @Id

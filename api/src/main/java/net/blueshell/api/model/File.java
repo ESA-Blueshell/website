@@ -15,7 +15,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "files")
 @SQLDelete(sql = "UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at <= NOW()")
+@SQLRestriction("deleted_at >= NOW()")
 @Data
 public class File implements BaseModel {
 

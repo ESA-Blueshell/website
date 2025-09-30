@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Entity
 @Table(name = "users")
 @SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at <= NOW()")
+@SQLRestriction("deleted_at >= NOW()")
 @Data
 @EntityListeners(JpaListener.class)
 public class User implements UserDetails, BaseModel {

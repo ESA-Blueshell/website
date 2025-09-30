@@ -46,8 +46,8 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PostMapping("/users/member")
-    @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('BOARD')")
     public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
         var user = advancedMapper.fromDTO(dto);
         user = service.create(user);
@@ -64,7 +64,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @PutMapping(value = "/users/{id}")
-    @PreAuthorize("#dto.id == #id && hasPermission(#id, 'User', 'write')")
+    @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     public AdvancedUserDTO updateUser(@PathVariable("id") Long id,
                                       @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
         var user = service.findById(id);
@@ -88,7 +88,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @DeleteMapping(value = "/users/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
+    @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUserById(@PathVariable("userId") Long userId) {
         service.delete(userId);

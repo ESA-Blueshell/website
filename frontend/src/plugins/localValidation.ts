@@ -42,7 +42,7 @@ defineRule('maxValue', (value: string, [max]: string[]) => {
 })
 
 // If you prefer your own email rule over the built-in, keep this and remove the built-in registration above.
-defineRule('emailStrict', (value?: string) => {
+defineRule('email', (value?: string) => {
   if (isEmpty(value)) return true
   const ok = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value!)
   return ok || 'Enter a valid e-mail address'
@@ -87,7 +87,8 @@ defineRule('dateBefore', (value: string, [other]: string[], ctx) => {
     dateTimeTarget = DateTime.fromISO(target)
   }
 
-  if (!dateTimeValue.isValid || !dateTimeTarget.isValid) return 'Enter a valid date'
+  if (!dateTimeValue.isValid) return 'Enter a valid date'
+  if (!dateTimeTarget.isValid) return true
   return dateTimeValue < dateTimeTarget || `Date must be before ${dateTimeTarget.toISODate()}`
 })
 
@@ -104,7 +105,8 @@ defineRule('dateAfter', (value: string, [other]: string[], ctx) => {
     dateTimeTarget = DateTime.fromISO(target)
   }
 
-  if (!dateTimeValue.isValid || !dateTimeTarget.isValid) return 'Enter a valid date'
+  if (!dateTimeValue.isValid) return 'Enter a valid date'
+  if (!dateTimeTarget.isValid) return true
   return dateTimeValue > dateTimeTarget || `Date must be after ${dateTimeTarget.toISODate()}`
 })
 

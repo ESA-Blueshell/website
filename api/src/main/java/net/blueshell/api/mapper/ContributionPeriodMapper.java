@@ -27,6 +27,12 @@ public abstract class ContributionPeriodMapper extends BaseMapper<ContributionPe
     public abstract ContributionPeriodDTO toDTO(ContributionPeriod contributionPeriod);
 
 
-    @InheritInverseConfiguration
+    @Mapping(target = "id")
+    @Mapping(target = "startDate")
+    @Mapping(target = "endDate")
+    @Mapping(target = "halfYearFee")
+    @Mapping(target = "fullYearFee")
+    @Mapping(target = "alumniFee")
+    @BeanMapping(ignoreByDefault = true)
     public abstract ContributionPeriod fromDTO(ContributionPeriodDTO dto, @MappingTarget ContributionPeriod contributionPeriod);
 }

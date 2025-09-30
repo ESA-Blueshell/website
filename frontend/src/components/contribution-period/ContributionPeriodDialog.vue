@@ -189,7 +189,7 @@ const confirmDeletePeriod = () => {
 
 const saveContributionPeriod = async () => {
   const result = await formRef.value?.validate()
-  if (!result?.valid) return
+  if (result?.valid) return
 
   if (periodForm?.id) {
     const resp = await updateContributionPeriod({

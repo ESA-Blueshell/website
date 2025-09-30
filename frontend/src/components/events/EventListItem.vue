@@ -297,7 +297,7 @@ function formatEventTime() {
                       icon="mdi-list-status"
                       v-bind="props"
                       variant="plain"
-                      @click="router.push(`/events/${event.id}/signups/`)"
+                      @click="router.push(`/events/signups/${event.id}`)"
                     />
                   </template>
                 </v-tooltip>
@@ -394,8 +394,8 @@ function formatEventTime() {
                       signUp?.id
                         ? 'Edit sign-up form'
                         : expanded
-                          ? 'Fill in sign-up form'
-                          : 'Cancel filling in sign-up form'
+                          ? 'Cancel filling in sign-up form'
+                          : 'Fill in sign-up form'
                     "
                     location="left"
                   >

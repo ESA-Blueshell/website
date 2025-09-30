@@ -82,7 +82,7 @@
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="userForm.username"
             name="username"
-            rules="required|alpha_num"
+            rules="required|alphaNum"
           >
             <v-text-field
               :model-value="value"
@@ -118,7 +118,7 @@
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="userForm.email"
             name="email"
-            rules="required|email|no_student_email"
+            rules="required|email|noStudentEmail"
           >
             <v-text-field
               :model-value="value"

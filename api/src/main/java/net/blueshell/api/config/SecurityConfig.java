@@ -46,11 +46,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public FilterRegistrationBean<JwtAuthFilter> jwtFilterRegistration(JwtAuthFilter f) {
-        return new FilterRegistrationBean<>(f);
-    }
-
-    @Bean
     public RoleHierarchy roleHierarchy() {
         String hierarchy = Arrays.stream(Role.values())
                 .sorted((a, b) -> b.getAuthorities().size() - a.getAuthorities().size())

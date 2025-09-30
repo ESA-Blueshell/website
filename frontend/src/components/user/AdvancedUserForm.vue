@@ -16,22 +16,22 @@
         <v-row class="mt-10">
           <v-col cols="12">
             <Field
-              v-slot="{ value, errorMessage, handleChange, handleBlur }"
+              v-slot="{ value, errors, handleChange, handleBlur }"
               v-model="userData.phoneNumber"
               name="phoneNumber"
-              :rules="`required|phone_mobile:${country}`"
+              :rules="`required|phoneMobile:${country}`"
             >
               <v-phone-input
                 ref="phoneInput"
                 :model-value="value"
                 :default-country="'NL'"
                 :disabled="disableEdit && !creating"
-                :error-messages="errorMessage ? [errorMessage] : []"
+                :error-messages="errors"
                 country-icon-mode="svg"
                 label="Phone Number"
                 mode="international"
                 placeholder="Phone Number"
-                @update:model-value="(v: string) => { handleChange(v); clear('phoneNumber') }"
+                @update:model-value="handleChange"
                 @update:country="updateCountry"
                 @blur="handleBlur"
               />
@@ -42,7 +42,7 @@
         <v-row>
           <v-col cols="6">
             <Field
-              v-slot="{ value, handleChange, handleBlur }"
+              v-slot="{ value, errors, handleChange, handleBlur }"
               v-model="userData.studentNumber"
               name="studentNumber"
             >
@@ -50,8 +50,8 @@
                 :model-value="value"
                 :disabled="disableEdit && !creating"
                 label="Student Number"
-                :error-messages="[]"
-                @update:model-value="(v: string) => { handleChange(v); clear('studentNumber') }"
+                :error-messages="errors"
+                @update:model-value="handleChange"
                 @blur="handleBlur"
               />
             </Field>
@@ -59,18 +59,18 @@
 
           <v-col cols="6">
             <Field
-              v-slot="{ value, errorMessage, handleChange, handleBlur }"
+              v-slot="{ value, errors, handleChange, handleBlur }"
               v-model="userData.dateOfBirth"
               name="dateOfBirth"
-              rules="date_required"
+              rules="dateRequired"
             >
               <v-text-field
                 :model-value="value"
                 :disabled="disableEdit && !creating"
                 label="Date of Birth"
                 type="date"
-                :error-messages="errorMessage ? [errorMessage] : []"
-                @update:model-value="(v: string) => { handleChange(v); clear('dateOfBirth') }"
+                :error-messages="errors"
+                @update:model-value="handleChange"
                 @blur="handleBlur"
               />
             </Field>
@@ -80,7 +80,7 @@
         <v-row>
           <v-col cols="6">
             <Field
-              v-slot="{ value, handleChange, handleBlur }"
+              v-slot="{ value, errors, handleChange, handleBlur }"
               v-model="userData.gender"
               name="gender"
             >
@@ -88,8 +88,8 @@
                 :model-value="value"
                 :disabled="disableEdit && !creating"
                 label="Gender"
-                :error-messages="[]"
-                @update:model-value="(v: string) => { handleChange(v); clear('gender') }"
+                :error-messages="errors"
+                @update:model-value="handleChange"
                 @blur="handleBlur"
               />
             </Field>
@@ -97,7 +97,7 @@
 
           <v-col cols="6">
             <Field
-              v-slot="{ value, errorMessage, handleChange, handleBlur }"
+              v-slot="{ value, errors, handleChange, handleBlur }"
               v-model="userData.nationality"
               name="nationality"
             >
@@ -105,8 +105,8 @@
                 :model-value="value"
                 :disabled="disableEdit && !creating"
                 label="Nationality"
-                :error-messages="errorMessage ? [errorMessage] : []"
-                @update:model-value="(v: string) => { handleChange(v); clear('nationality') }"
+                :error-messages="errors"
+                @update:model-value="handleChange"
                 @blur="handleBlur"
               />
             </Field>
@@ -188,8 +188,6 @@ import {type CountryCode} from "libphonenumber-js/max"
 import SimpleUserForm from "@/components/user/SimpleUserForm.vue"
 import NationalitySelect from "@/components/select/NationalitySelect.vue"
 import {Form, Field, useForm} from "vee-validate"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
-const {clear} = useBackendValidation()
 
 interface Props {
   editing?: boolean;
@@ -267,7 +265,7 @@ const validateForm = async (): Promise<boolean> => {
   const childValid = (await simpleRef.value?.validateForm?.()) ?? true
   if (!childValid) return false
   const { valid } = await vvValidate()
-  return !!valid
+  return valid
 }
 
 defineExpose({validateForm})

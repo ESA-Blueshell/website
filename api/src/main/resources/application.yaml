@@ -68,6 +68,9 @@ spring:
             enable: ${SMTP_USE_SSL}
           starttls:
             enable: ${SMTP_USE_TLS}
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
 springdoc:
   api-docs:
     path: /v3/api-docs

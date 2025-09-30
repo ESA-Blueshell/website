@@ -47,7 +47,7 @@ public class ContributionPeriodController extends BaseController<ContributionPer
         return mapper.toDTO(contributionPeriod);
     }
 
-    @PreAuthorize("hasAuthority('BOARD') && #dto.id == id")
+    @PreAuthorize("hasAuthority('BOARD') && #dto.id == #id")
     @PutMapping("/contributionPeriods/{id}")
     public ContributionPeriodDTO updateContributionPeriod(@PathVariable("id") Long id,
                                                           @Valid @RequestBody ContributionPeriodDTO dto) {

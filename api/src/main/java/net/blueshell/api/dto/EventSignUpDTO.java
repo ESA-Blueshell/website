@@ -25,5 +25,5 @@ public class EventSignUpDTO extends BaseDTO {
 
     private GuestDTO guest;
 
-    private SimpleUserDTO user;
+    private Long userId;
 }

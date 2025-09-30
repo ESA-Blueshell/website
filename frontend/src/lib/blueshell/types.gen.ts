@@ -272,8 +272,8 @@ export type PageableObject = {
 
 export type SortObject = {
     empty?: boolean;
-    unsorted?: boolean;
     sorted?: boolean;
+    unsorted?: boolean;
 };
 
 export type Redirect = {
@@ -1311,9 +1311,9 @@ export type CreateUserError = CreateUserErrors[keyof CreateUserErrors];
 
 export type CreateUserResponses = {
     /**
-     * OK
+     * Created
      */
-    200: AdvancedUser;
+    201: AdvancedUser;
 };
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
@@ -1352,9 +1352,9 @@ export type CreateMemberError = CreateMemberErrors[keyof CreateMemberErrors];
 
 export type CreateMemberResponses = {
     /**
-     * OK
+     * Created
      */
-    200: AdvancedUser;
+    201: AdvancedUser;
 };
 
 export type CreateMemberResponse = CreateMemberResponses[keyof CreateMemberResponses];
@@ -1393,9 +1393,9 @@ export type CreateGuestUserError = CreateGuestUserErrors[keyof CreateGuestUserEr
 
 export type CreateGuestUserResponses = {
     /**
-     * OK
+     * Created
      */
-    200: SimpleUser;
+    201: SimpleUser;
 };
 
 export type CreateGuestUserResponse = CreateGuestUserResponses[keyof CreateGuestUserResponses];
@@ -1437,9 +1437,9 @@ export type CreateTelemetryError = CreateTelemetryErrors[keyof CreateTelemetryEr
 
 export type CreateTelemetryResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Telemetry;
+    201: Telemetry;
 };
 
 export type CreateTelemetryResponse = CreateTelemetryResponses[keyof CreateTelemetryResponses];
@@ -1523,9 +1523,9 @@ export type CreateRedirectError = CreateRedirectErrors[keyof CreateRedirectError
 
 export type CreateRedirectResponses = {
     /**
-     * OK
+     * Created
      */
-    200: string;
+    201: string;
 };
 
 export type CreateRedirectResponse = CreateRedirectResponses[keyof CreateRedirectResponses];
@@ -1605,9 +1605,9 @@ export type CreateSponsorError = CreateSponsorErrors[keyof CreateSponsorErrors];
 
 export type CreateSponsorResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Sponsor;
+    201: Sponsor;
 };
 
 export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
@@ -1687,9 +1687,9 @@ export type CreateMembershipError = CreateMembershipErrors[keyof CreateMembershi
 
 export type CreateMembershipResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Membership;
+    201: Membership;
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
@@ -1728,9 +1728,9 @@ export type BoardCreateMembershipError = BoardCreateMembershipErrors[keyof Board
 
 export type BoardCreateMembershipResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Membership;
+    201: Membership;
 };
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
@@ -1828,9 +1828,9 @@ export type CreateEventError = CreateEventErrors[keyof CreateEventErrors];
 
 export type CreateEventResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Event;
+    201: Event;
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
@@ -1871,9 +1871,9 @@ export type CreateEventSignupError = CreateEventSignupErrors[keyof CreateEventSi
 
 export type CreateEventSignupResponses = {
     /**
-     * OK
+     * Created
      */
-    200: EventSignUp;
+    201: EventSignUp;
 };
 
 export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
@@ -1955,9 +1955,9 @@ export type CreateContributionError = CreateContributionErrors[keyof CreateContr
 
 export type CreateContributionResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Contribution;
+    201: Contribution;
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
@@ -2037,9 +2037,9 @@ export type CreateContributionPeriodError = CreateContributionPeriodErrors[keyof
 
 export type CreateContributionPeriodResponses = {
     /**
-     * OK
+     * Created
      */
-    200: ContributionPeriod;
+    201: ContributionPeriod;
 };
 
 export type CreateContributionPeriodResponse = CreateContributionPeriodResponses[keyof CreateContributionPeriodResponses];
@@ -2119,9 +2119,9 @@ export type CreateCommitteeError = CreateCommitteeErrors[keyof CreateCommitteeEr
 
 export type CreateCommitteeResponses = {
     /**
-     * OK
+     * Created
      */
-    200: AdvancedCommittee;
+    201: AdvancedCommittee;
 };
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
@@ -2201,9 +2201,9 @@ export type CreateBlogError = CreateBlogErrors[keyof CreateBlogErrors];
 
 export type CreateBlogResponses = {
     /**
-     * OK
+     * Created
      */
-    200: Blog;
+    201: Blog;
 };
 
 export type CreateBlogResponse = CreateBlogResponses[keyof CreateBlogResponses];

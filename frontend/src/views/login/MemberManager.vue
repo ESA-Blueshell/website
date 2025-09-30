@@ -77,11 +77,11 @@ if ("scrollRestoration" in window.history) {
 
 // Data loading
 const getUsers = async () => {
-  try {
-    const response = await findUsers()
-    users.value = response.data ?? []
-  } catch (error) {
-    console.error("Error fetching users:", error)
+  const response = await findUsers()
+  if (response.status === 200) {
+    users.value = response.data?.content ?? []
+  } else {
+    console.log(response.error)
   }
 }
 

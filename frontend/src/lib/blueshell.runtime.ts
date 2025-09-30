@@ -72,6 +72,5 @@ export function createClientConfig(defaultConfig: Config): Config {
   return {
     ...config,
     axios: axiosInstance,
-    throwOnError: true,
   } as Config
 }

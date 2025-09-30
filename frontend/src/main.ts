@@ -8,6 +8,7 @@ import VueSignaturePad from "vue-signature-pad"
 import VueAxios from "vue-axios"
 import vuetify from "@/plugins/vuetify.ts"
 import {loadFonts} from "@/plugins/webfontloader.ts"
+import "./plugins/localValidation.ts"
 
 Axios.defaults.baseURL = "https://localhost/api"
 

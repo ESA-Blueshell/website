@@ -1,108 +1,175 @@
 <template>
   <div>
-    <v-form
-      ref="form"
-      v-model="valid"
+    <!-- Provide a VeeValidate form context (render as a div to avoid nested <form> tags) -->
+    <Form
+      ref="formRef"
+      as="div"
     >
       <v-row>
         <v-col cols="4">
-          <v-text-field
-            v-model="userData.initials"
-            :rules="initialsRules"
-            :error-messages="err('initials')"
-            label="Initials"
-            @update:model-value="clear('initials')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.initials"
+            name="initials"
+            rules="required"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Initials"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
+
         <v-col cols="8">
-          <v-text-field
-            v-model="userData.firstName"
-            :rules="firstNameRules"
-            :error-messages="err('firstName')"
-            label="First Name"
-            @update:model-value="clear('firstName')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.firstName"
+            name="firstName"
+            rules="required"
+          >
+            <v-text-field
+              :model-value="value"
+              label="First Name"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="4">
-          <v-text-field
-            v-model="userData.prefix"
-            :error-messages="err('prefix')"
-            label="SurPrefix"
-            @update:model-value="clear('prefix')"
-          />
+          <Field
+            v-slot="{ value, handleChange, errors, handleBlur }"
+            v-model="userForm.prefix"
+            name="prefix"
+          >
+            <v-text-field
+              :model-value="value"
+              label="SurPrefix"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
+
         <v-col cols="8">
-          <v-text-field
-            v-model="userData.lastName"
-            :rules="lastNameRules"
-            :error-messages="err('lastName')"
-            label="Surname"
-            @update:model-value="clear('lastName')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.lastName"
+            name="lastName"
+            rules="required"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Surname"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <v-text-field
-            v-model="userData.username"
-            :rules="usernameRules"
-            :error-messages="err('username')"
-            label="Username"
-            @update:model-value="clear('username')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.username"
+            name="username"
+            rules="required|alpha_num"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Username"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
 
         <v-col cols="6">
-          <v-text-field
-            v-model="userData.discord"
-            :rules="discordRules"
-            :error-messages="err('discord')"
-            label="Discord"
-            @update:model-value="clear('discord')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.discord"
+            name="discord"
+            rules="required"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Discord"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="12">
-          <v-text-field
-            v-model="userData.email"
-            :rules="emailRules"
-            :error-messages="err('email')"
-            label="E-mail"
-            @update:model-value="clear('email')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.email"
+            name="email"
+            rules="required|email|no_student_email"
+          >
+            <v-text-field
+              :model-value="value"
+              label="E-mail"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <v-row v-if="showPasswords">
         <v-col cols="6">
-          <v-text-field
-            v-model="userData.password"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="passwordRules"
-            :type="showPass ? 'text' : 'password'"
-            :error-messages="err('password')"
-            label="Password"
-            @click:append-inner="showPass = !showPass"
-            @update:model-value="clear('password')"
-          />
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="userForm.password"
+            name="password"
+            rules="required|min_chars:8|max_chars:100|has_lower|has_upper|has_number|has_special"
+          >
+            <v-text-field
+              :model-value="value"
+              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+              :type="showPass ? 'text' : 'password'"
+              label="Password"
+              :error-messages="errors"
+              @click:append-inner="showPass = !showPass"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
+
         <v-col cols="6">
-          <v-text-field
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="passwordAgain"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="passwordConfirmRules"
-            :type="showPass ? 'text' : 'password'"
-            :error-messages="err('passwordAgain')"
-            label="Password (repeated)"
-            @click:append-inner="showPass = !showPass"
-            @update:model-value="clear('passwordAgain')"
-          />
+            name="passwordAgain"
+            rules="required|match:@password"
+          >
+            <v-text-field
+              :model-value="value"
+              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+              :type="showPass ? 'text' : 'password'"
+              label="Password (repeated)"
+              :error-messages="errors"
+              @click:append-inner="showPass = !showPass"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
@@ -111,21 +178,30 @@
         justify="space-evenly"
       >
         <v-col cols="auto">
-          <v-checkbox
-            v-model="userData.newsletter"
-            :hide-details="true"
-            label="Subscribe to newsletter"
-          />
+          <Field
+            v-slot="{ value, handleChange }"
+            v-model="userForm.newsletter"
+            name="newsletter"
+          >
+            <v-checkbox
+              :model-value="value"
+              :hide-details="true"
+              label="Subscribe to newsletter"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
       </v-row>
-    </v-form>
+    </Form>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {ref, type Ref, watch} from "vue"
 import {type SimpleUser} from "@/lib"
-import type {VForm} from "vuetify/components"
+import {Field, Form, useForm} from "vee-validate"
+import type { FormContext } from "vee-validate"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
 
 interface Props {
   editing?: boolean;
@@ -144,9 +220,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const userData: Ref<SimpleUser> = ref({...props.modelValue})
-const valid: Ref<boolean> = ref(true)
-const form: Ref<VForm | undefined> = ref()
+const userForm: Ref<SimpleUser> = ref({...props.modelValue})
 
 const passwordAgain: Ref<string> = ref("")
 const showPass: Ref<boolean> = ref(false)
@@ -154,17 +228,19 @@ const showPass: Ref<boolean> = ref(false)
 watch(
   () => props.modelValue,
   (newVal) => {
-    if (JSON.stringify(userData.value) !== JSON.stringify(newVal)) {
-      userData.value = {...newVal}
+    if (JSON.stringify(userForm.value) !== JSON.stringify(newVal)) {
+      userForm.value = {...newVal}
     }
   },
   {deep: true, immediate: true},
 )
 
+const {apply} = useBackendValidation()
+
 watch(
-  userData,
+  userForm,
   (newVal) => {
-    const cleanUserData: SimpleUser = {
+    const cleanuserForm: SimpleUser = {
       username: newVal.username,
       initials: newVal.initials,
       firstName: newVal.firstName,
@@ -175,45 +251,25 @@ watch(
       prefix: newVal.prefix,
       newsletter: newVal.newsletter,
     }
-    emit("update:modelValue", cleanUserData)
+    emit("update:modelValue", cleanuserForm)
   },
   {deep: true},
 )
 
-// ------- your existing rules unchanged -------
-const usernameRules = [
-  (v: string) => !!v || "Username is required",
-  (v: string) => /^[a-zA-Z0-9]+$/.test(v) || "Username must only contain alphanumeric characters",
-]
-const passwordRules = [
-  (v: string) => !!v || "Password is required",
-  (v: string) => v.length >= 8 || "Password must be at least 8 characters",
-  (v: string) => /(?=.*[a-z])/.test(v) || "Password must contain at least one lowercase letter",
-  (v: string) => /(?=.*[A-Z])/.test(v) || "Password must contain at least one uppercase letter",
-  (v: string) => /(?=.*\d)/.test(v) || "Password must contain at least one number",
-  (v: string) => /(?=.*[@$!%*?&])/.test(v) || "Password must contain at least one special character (@$!%*?&)",
-]
-const passwordConfirmRules = [
-  (v: string) => !!v || "Password confirmation is required",
-  (v: string) => v === userData.value.password || "Passwords do not match",
-]
-const initialsRules = [(v: string) => !!v || "Initials are required"]
-const firstNameRules = [(v: string) => !!v || "First name is required"]
-const lastNameRules = [(v: string) => !!v || "Surname is required"]
-const discordRules = [(v: string) => !!v || "Discord Username is required"]
-const emailRules = [
-  (v: string | undefined) => !!v || "Email is required",
-  (v: string | undefined) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v || "") || "Enter a valid e-mail address",
-  (v: string | undefined) => !/student/i.test(v || "") || "You may not use your student email to sign up",
-]
+const formRef = ref<FormContext>()
 
 const validateForm = async (): Promise<boolean> => {
-  if (!form.value) return false
-  const result = await form.value.validate()
-  return result.valid
+  const result = await formRef.value?.validate()
+  console.log("valid in child:", result)
+  return !!result?.valid
 }
 
-defineExpose({validateForm})
+const applyErrors = async (err: unknown): Promise<boolean> => {
+  if (!formRef.value) return false
+  return apply(formRef.value, err);
+}
+
+defineExpose({validateForm, applyErrors})
 </script>
 
 <style lang="scss">

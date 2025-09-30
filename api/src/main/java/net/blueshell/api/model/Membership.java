@@ -32,6 +32,9 @@ public class Membership implements BaseModel {
     @Column(name = "user_id")
     private Long userId;
 
+    @Column(name = "country")
+    private String country;
+
     @Column(name = "city")
     private String city;
 

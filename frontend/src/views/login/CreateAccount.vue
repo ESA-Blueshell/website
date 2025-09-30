@@ -6,15 +6,14 @@
       v-if="!succeeded"
       class="mx-3 pb-10"
     >
-      <v-form
-        ref="form"
+      <Form
+        as="div"
         class="mx-auto mt-10"
         style="max-width: 600px"
       >
         <SimpleUserEdit
-          ref="userEditComponent"
-          v-model="form"
-          :creating="true"
+          ref="simpleRef"
+          v-model="userForm"
         />
         <v-spacer />
         <v-row class="justify-end">
@@ -26,7 +25,7 @@
             Create account
           </v-btn>
         </v-row>
-      </v-form>
+      </Form>
     </div>
 
     <div
@@ -43,21 +42,20 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref} from "vue"
+import {ref} from "vue"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import {createGuestUser, type SimpleUser} from "@/lib"
-
+import {Form} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import store from "@/plugins/store"
-import type {AxiosError} from "axios"
 import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
-const {apply: applyBackendErrors, err, clear} = useBackendValidation()
+
+const {apply: applyBackendErrors} = useBackendValidation()
 
 // Reactive state
 const loading = ref(false)
 const succeeded = ref(false)
-const form = ref<SimpleUser>({
+const userForm = ref<SimpleUser>({
   username: "",
   initials: "",
   firstName: "",
@@ -69,36 +67,29 @@ const form = ref<SimpleUser>({
   newsletter: true,
 })
 
-// Component references
-const userEditComponent = ref()
+const simpleRef = ref<InstanceType<typeof SimpleUserEdit>>()
 
-onMounted(() => {
-  form.value.newsletter = true
-})
 
 // Methods
 const createAccount = async () => {
-  // Validate the UserEdit component
-  const isValid = await userEditComponent.value?.validateForm()
+  const isValid = await simpleRef.value?.validateForm()
 
-  if (!isValid) {
-    return
-  }
+  if (!isValid) return
 
   loading.value = true
 
   try {
     // Use the generated OpenAPI client to create user
     const response = await createGuestUser({
-      body: form.value,
+      body: userForm.value,
     })
 
-    if (response.data) {
+    console.log(response)
+    console.log(response?.error)
+    if (response.status === 201) {
       succeeded.value = true
-    }
-  } catch (error: unknown) {
-    if (!applyBackendErrors(error)) {
-      $handleNetworkError(error);
+    } else if (!await simpleRef.value.applyErrors(response)) {
+      $handleNetworkError(response)
     }
   } finally {
     loading.value = false

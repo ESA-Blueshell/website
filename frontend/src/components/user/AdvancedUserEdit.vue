@@ -1,117 +1,178 @@
 <template>
   <div>
-    <v-form
-      ref="form"
-      v-model="valid"
-    >
-      <SimpleUserEdit
-        ref="simpleRef"
-        :model-value="simpleModel"
-        :show-passwords="creating"
-        @update:model-value="(val: SimpleUser) => simpleModel = val"
-      />
-
-      <v-row class="mt-10">
-        <v-col cols="12">
-          <v-phone-input
-            ref="phoneInput"
-            v-model="userData.phoneNumber"
-            :default-country="'NL'"
-            :disabled="disableEdit && !creating"
-            :rules="phoneNumberRules"
-            :error-messages="err('phoneNumber')"
-            country-icon-mode="svg"
-            label="Phone Number"
-            mode="international"
-            placeholder="Phone Number"
-            @update:country="updateCountry"
-            @update:model-value="clear('phoneNumber')"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.studentNumber"
-            :disabled="disableEdit && !creating"
-            :error-messages="err('studentNumber')"
-            label="Student Number"
-            @update:model-value="clear('studentNumber')"
-          />
-        </v-col>
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.dateOfBirth"
-            :disabled="disableEdit && !creating"
-            :rules="dateOfBirthRules"
-            :error-messages="err('dateOfBirth')"
-            label="Date of Birth"
-            type="date"
-            @update:model-value="clear('dateOfBirth')"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="6">
-          <v-text-field
-            v-model="userData.gender"
-            :disabled="disableEdit && !creating"
-            :error-messages="err('gender')"
-            label="Gender"
-            @update:model-value="clear('gender')"
-          />
-        </v-col>
-        <v-col cols="6">
-          <nationality-select
-            v-model="userData.nationality"
-            :disabled="disableEdit && !creating"
-            :error-messages="err('nationality')"
-            label="Nationality"
-            @update:model-value="clear('nationality')"
-          />
-        </v-col>
-      </v-row>
-
-      <!-- Checkboxes (usually not validated server-side) -->
-      <v-row
-        align="center"
-        justify="space-evenly"
+    <!-- Provide a VeeValidate form context (render as a div to avoid nested <form> tags) -->
+    <Form as="div">
+      <v-form
+        ref="form"
+        v-model="valid"
       >
-        <v-col cols="auto">
-          <v-checkbox
-            v-model="userData.ehbo"
-            :disabled="disableEdit && !creating"
-            :hide-details="true"
-            label="EHBO Diploma"
-          />
-        </v-col>
-        <v-col cols="auto">
-          <v-checkbox
-            v-model="userData.bhv"
-            :disabled="disableEdit && !creating"
-            :hide-details="true"
-            label="BHV Diploma"
-          />
-        </v-col>
-      </v-row>
+        <SimpleUserEdit
+          ref="simpleRef"
+          :model-value="simpleModel"
+          :show-passwords="creating"
+          @update:model-value="(val: SimpleUser) => simpleModel = val"
+        />
 
-      <v-row
-        align="center"
-        class="mb-3"
-        justify="space-evenly"
-      >
-        <v-col cols="auto">
-          <v-checkbox
-            v-model="userData.photoConsent"
-            :disabled="disableEdit && !creating"
-            :hide-details="true"
-            label="Give consent for your photo to be taken at events"
-          />
-        </v-col>
-      </v-row>
-    </v-form>
+        <v-row class="mt-10">
+          <v-col cols="12">
+            <Field
+              v-slot="{ value, errorMessage, handleChange, handleBlur }"
+              v-model="userData.phoneNumber"
+              name="phoneNumber"
+              :rules="`required|phone_mobile:${country}`"
+            >
+              <v-phone-input
+                ref="phoneInput"
+                :model-value="value"
+                :default-country="'NL'"
+                :disabled="disableEdit && !creating"
+                :error-messages="errorMessage ? [errorMessage] : []"
+                country-icon-mode="svg"
+                label="Phone Number"
+                mode="international"
+                placeholder="Phone Number"
+                @update:model-value="(v: string) => { handleChange(v); clear('phoneNumber') }"
+                @update:country="updateCountry"
+                @blur="handleBlur"
+              />
+            </Field>
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="6">
+            <Field
+              v-slot="{ value, handleChange, handleBlur }"
+              v-model="userData.studentNumber"
+              name="studentNumber"
+            >
+              <v-text-field
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                label="Student Number"
+                :error-messages="[]"
+                @update:model-value="(v: string) => { handleChange(v); clear('studentNumber') }"
+                @blur="handleBlur"
+              />
+            </Field>
+          </v-col>
+
+          <v-col cols="6">
+            <Field
+              v-slot="{ value, errorMessage, handleChange, handleBlur }"
+              v-model="userData.dateOfBirth"
+              name="dateOfBirth"
+              rules="date_required"
+            >
+              <v-text-field
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                label="Date of Birth"
+                type="date"
+                :error-messages="errorMessage ? [errorMessage] : []"
+                @update:model-value="(v: string) => { handleChange(v); clear('dateOfBirth') }"
+                @blur="handleBlur"
+              />
+            </Field>
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="6">
+            <Field
+              v-slot="{ value, handleChange, handleBlur }"
+              v-model="userData.gender"
+              name="gender"
+            >
+              <v-text-field
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                label="Gender"
+                :error-messages="[]"
+                @update:model-value="(v: string) => { handleChange(v); clear('gender') }"
+                @blur="handleBlur"
+              />
+            </Field>
+          </v-col>
+
+          <v-col cols="6">
+            <Field
+              v-slot="{ value, errorMessage, handleChange, handleBlur }"
+              v-model="userData.nationality"
+              name="nationality"
+            >
+              <nationality-select
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                label="Nationality"
+                :error-messages="errorMessage ? [errorMessage] : []"
+                @update:model-value="(v: string) => { handleChange(v); clear('nationality') }"
+                @blur="handleBlur"
+              />
+            </Field>
+          </v-col>
+        </v-row>
+
+        <v-row
+          align="center"
+          justify="space-evenly"
+        >
+          <v-col cols="auto">
+            <Field
+              v-slot="{ value, handleChange }"
+              v-model="userData.ehbo"
+              name="ehbo"
+            >
+              <v-checkbox
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                :hide-details="true"
+                label="EHBO Diploma"
+                @update:model-value="handleChange"
+              />
+            </Field>
+          </v-col>
+
+          <v-col cols="auto">
+            <Field
+              v-slot="{ value, handleChange }"
+              v-model="userData.bhv"
+              name="bhv"
+            >
+              <v-checkbox
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                :hide-details="true"
+                label="BHV Diploma"
+                @update:model-value="handleChange"
+              />
+            </Field>
+          </v-col>
+        </v-row>
+
+        <v-row
+          align="center"
+          class="mb-3"
+          justify="space-evenly"
+        >
+          <v-col cols="auto">
+            <Field
+              v-slot="{ value, handleChange }"
+              v-model="userData.photoConsent"
+              name="photoConsent"
+            >
+              <v-checkbox
+                :model-value="value"
+                :disabled="disableEdit && !creating"
+                :hide-details="true"
+                label="Give consent for your photo to be taken at events"
+                @update:model-value="handleChange"
+              />
+            </Field>
+          </v-col>
+        </v-row>
+      </v-form>
+    </Form>
   </div>
 </template>
 
@@ -123,10 +184,12 @@ import {VPhoneInput} from "v-phone-input"
 import store from "@/plugins/store.ts"
 import {type AdvancedUser, type SimpleUser} from "@/lib"
 import type {VForm} from "vuetify/components"
-import {type CountryCode, parsePhoneNumber, type PhoneNumber} from "libphonenumber-js/max"
+import {type CountryCode} from "libphonenumber-js/max"
 import SimpleUserEdit from "@/components/user/SimpleUserEdit.vue"
 import NationalitySelect from "@/components/select/NationalitySelect.vue"
-import {useBackendValidation} from "@/plugins/serverValidation"
+import {Form, Field, useForm} from "vee-validate"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
+const {clear} = useBackendValidation()
 
 interface Props {
   editing?: boolean;
@@ -158,11 +221,6 @@ const country: Ref<CountryCode> = ref("NL")
 const valid: Ref<boolean> = ref(true)
 const form: Ref<VForm | undefined> = ref()
 const simpleRef = ref<InstanceType<typeof SimpleUserEdit> | null>(null)
-
-// 🔗 VeeValidate server error helpers
-// If you know the exact DTO name from backend (e.g. "createUserRequest"), pass it as 1st arg.
-// If your backend uses different field names, pass a 2nd arg map { backendName: "localName" }.
-const {err, clear} = useBackendValidation()
 
 let simpleModel = computed<SimpleUser>({
   get: () => ({
@@ -198,47 +256,25 @@ watch(
   {deep: true},
 )
 
-const dateOfBirthRules = [(v: string) => !!v || "Date of birth is required"]
-
-const phoneNumberRules = [
-  (v: string) => {
-    if (!v) return "Phone number is required"
-    try {
-      const phoneNumber: PhoneNumber = parsePhoneNumber(v, country.value)
-      if (!phoneNumber.isValid()) return "Enter a valid phone number"
-      return phoneNumber.getType() === "MOBILE" || "Enter a mobile phone number"
-    } catch {
-      return "Enter a valid phone number"
-    }
-  },
-]
-
 const updateCountry = (newCountry: string): void => {
   country.value = newCountry as CountryCode
 }
 
+// Use VeeValidate's form validation as the source of truth now
+const { validate: vvValidate } = useForm()
+
 const validateForm = async (): Promise<boolean> => {
-  // Validate child (SimpleUserEdit) and this form
   const childValid = (await simpleRef.value?.validateForm?.()) ?? true
-  if (!form.value) return false
-  const selfResult = await form.value.validate()
-  return childValid && selfResult.valid
+  if (!childValid) return false
+  const { valid } = await vvValidate()
+  return !!valid
 }
 
 defineExpose({validateForm})
 </script>
 
 <style lang="scss">
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-
-.v-col {
-  padding-bottom: 0;
-  padding-top: 0;
-}
+.v-col:first-child { padding-left: 0; }
+.v-col:last-child { padding-right: 0; }
+.v-col { padding-bottom: 0; padding-top: 0; }
 </style>

@@ -26,7 +26,7 @@ public class Contribution implements BaseModel {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     @NotFound(action = NotFoundAction.IGNORE)
     @ToString.Exclude
     private User user;
@@ -45,8 +45,11 @@ public class Contribution implements BaseModel {
     private Timestamp remindedAt;
 
     @ManyToOne
-    @JoinColumn(name = "contribution_period_id")
+    @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false)
     private ContributionPeriod contributionPeriod;
+
+    @Column(name = "contribution_period_id", insertable = false, updatable = false)
+    private Long contributionPeriodId;
 
     @Column(name = "deleted_at")
     private Timestamp deletedAt;

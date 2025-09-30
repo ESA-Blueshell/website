@@ -22,6 +22,18 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Autowired
     protected FileMapper fileMapper;
 
+    @Mapping(target = "id")
+    @Mapping(target = "startTime")
+    @Mapping(target = "endTime")
+    @Mapping(target = "committeeId")
+    @Mapping(target = "committee")
+    @Mapping(target = "title")
+    @Mapping(target = "description")
+    @Mapping(target = "location")
+    @Mapping(target = "memberPrice")
+    @Mapping(target = "publicPrice")
+    @Mapping(target = "banner")
+    @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract Event fromDTO(EventDTO dto, @MappingTarget Event event);
 
@@ -47,6 +59,7 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
         }
     }
 
+    @Mapping(target = "id")
     @Mapping(target = "startTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getStartTime()))")
     @Mapping(target = "endTime", expression = "java(net.blueshell.api.mapper.EventMapper.toIso(event.getEndTime()))")
     @Mapping(target = "committeeId")

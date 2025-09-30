@@ -122,6 +122,7 @@ watch(displayedMonth, (d: string) => {
 
 // (Keep your existing mapping from domain events to Vuetify events)
 watch(events, (list: Event[]) => {
+  console.log("list length:", list.length)
   calendarEvents.value = list
     .map((e): CalendarEventEx => {
       const start = DateTime.fromISO(e.startTime).toJSDate()!

@@ -15,11 +15,11 @@ import java.util.List;
 @Converter
 public class FormQuestionListConverter implements AttributeConverter<List<FormQuestion>, String> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private static final ObjectMapper MAPPER = JsonMapper.builder()
             .addModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public String convertToDatabaseColumn(List<FormQuestion> attribute) {

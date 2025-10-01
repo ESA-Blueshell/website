@@ -122,35 +122,6 @@ onMounted(async () => {
   }
 })
 
-async function submitSignUpForm(
-  eventId: number,
-  payload,
-) {
-  eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
-
-  signUp.value.formAnswers = payload.answers ?? []
-
-  if (isLoggedIn.value) {
-    if (signUp.value?.id) {
-      await updateEventSignUp({
-        path: {eventId},
-        body: signUp.value,
-      })
-    } else {
-      await createEventSignup({
-        path: {id: eventId},
-        body: {...signUp.value, eventId},
-      })
-    }
-  } else {
-    store.commit("saveGuestData", payload.guestData?.value ?? payload.guestData)
-    await createEventSignup({
-      path: {id: eventId},
-      body: {...signUp.value, eventId},
-    })
-  }
-}
-
 function toggleExpanded() {
   if (!expanded.value) {
     eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
@@ -241,6 +212,12 @@ function formatEventTime() {
 
   return result
 }
+
+function handleSignUpSubmit() {
+  eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
+  expanded.value = false
+}
+
 </script>
 
 <template v-if="event.id">
@@ -468,9 +445,10 @@ function formatEventTime() {
               <sign-up-form
                 :event="event"
                 :initial-form-answers="signUp?.formAnswers"
+                :initial-sign-up="signUp"
                 :show-guest-form="!isLoggedIn"
                 class="form mx-auto"
-                @submit="({ answers, guestData }) => submitSignUpForm(event.id as number, { answers, guestData })"
+                @submit="handleSignUpSubmit"
               />
             </div>
           </v-expand-transition>

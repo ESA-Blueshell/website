@@ -757,6 +757,49 @@ export type FindEventSignUpsByEventIdResponses = {
 
 export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdResponses[keyof FindEventSignUpsByEventIdResponses];
 
+export type CreateEventSignupData = {
+    body: EventSignUp;
+    path: {
+        eventId: number;
+    };
+    query?: never;
+    url: '/events/{eventId}/signups';
+};
+
+export type CreateEventSignupErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateEventSignupError = CreateEventSignupErrors[keyof CreateEventSignupErrors];
+
+export type CreateEventSignupResponses = {
+    /**
+     * Created
+     */
+    201: EventSignUp;
+};
+
+export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
+
 export type UpdateEventSignUpData = {
     body: EventSignUp;
     path: {
@@ -1801,49 +1844,6 @@ export type CreateEventResponses = {
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
-
-export type CreateEventSignupData = {
-    body: EventSignUp;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/events/{id}/signups';
-};
-
-export type CreateEventSignupErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateEventSignupError = CreateEventSignupErrors[keyof CreateEventSignupErrors];
-
-export type CreateEventSignupResponses = {
-    /**
-     * Created
-     */
-    201: EventSignUp;
-};
-
-export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
 
 export type FindContributionsData = {
     body?: never;

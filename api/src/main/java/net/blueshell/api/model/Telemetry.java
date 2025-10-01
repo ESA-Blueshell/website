@@ -11,7 +11,6 @@ import org.hibernate.annotations.SQLRestriction;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "telemetries")
@@ -32,8 +31,6 @@ public class Telemetry implements BaseModel {
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     @OneToMany(mappedBy = "telemetry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Redirect> redirects;

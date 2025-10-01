@@ -52,13 +52,13 @@ public interface UserRepository extends BaseRepository<User> {
     @Query("SELECT DISTINCT u FROM User u " +
             "JOIN u.roles r " +
             "WHERE r = 'COMMITTEE'" +
-            "AND NOT EXISTS (SELECT 1 FROM CommitteeMember cm WHERE cm.user = u AND cm.deletedAt IS NULL)")
+            "AND NOT EXISTS (SELECT 1 FROM CommitteeMember cm WHERE cm.user = u)")
     List<User> findUsersWithRoleWithoutActiveCommittees();
 
     // Find users who do NOT have COMMITTEE role but ARE active committee members
     @Query("SELECT DISTINCT u FROM User u " +
             "WHERE NOT EXISTS (SELECT 1 FROM u.roles r WHERE r = 'COMMITTEE') " +
-            "AND EXISTS (SELECT 1 FROM CommitteeMember cm WHERE cm.user = u AND cm.deletedAt IS NULL)")
+            "AND EXISTS (SELECT 1 FROM CommitteeMember cm WHERE cm.user = u)")
     List<User> findUsersWithoutRoleWithActiveCommittees();
 
     @Query("SELECT DISTINCT u FROM User u " +

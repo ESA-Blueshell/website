@@ -1,42 +1,18 @@
 <script lang="ts" setup>
-
-/*
-  eventId is the id of the event that form will be submitted for.
-
-  form is the event's sign-up form as an Object and is structured as follows:
-  [
-    {
-      prompt: 'question to be asked',
-      type: 'type of question',
-      options: [
-        'the options the user can select',
-        'this is only done for radio and checkbox questions',
-      ],
-    }, etc.
-  ]
-  The question's type will be either 'open' for open questions,
-  'radio' for a multiple choice question (named after the radio buttons it uses),
-  or 'checkbox' for a question with checkboxes.
-
-  Answers should be an Array, in this prop the answers to the form are stored.
-  Each question will have an entry in answers. The entry should be:
-  - a string for 'open' questions
-  - a Number from 0 to i-1 for i options (null if no value is selected)
-  - an array with the selected checkboxes. The array can contain any Number from 0 to i-1 for i options for each of the selected option
-*/
-import {ref} from "vue"
+import {computed, type Ref, ref} from "vue"
 import {useStore} from "vuex"
-import type {Event, FormQuestion, Guest} from "@/lib"
+import {createEventSignup, type Event, type EventSignUp, type FormQuestion, updateEventSignUp} from "@/lib"
 import {Field, Form} from "vee-validate"
+import type {VForm} from "vuetify/lib/components"
 
 const emit = defineEmits(["submit"])
 
 interface Props {
   event: Event
-  // If provided, we assume it's already a valid set of answers
   initialFormAnswers?: any[]
   showGuestForm: boolean
   buttonLoading?: boolean
+  initialSignUp?: EventSignUp
 }
 
 const props = defineProps<Props>()
@@ -48,7 +24,7 @@ const store = useStore()
  * Otherwise, if `props.event.signUpForm` is present, build an initial answers array according
  * to the question type. If neither is present, set answers to null.
  */
-const formAnswers = ref(
+const answersData = ref(
   props.initialFormAnswers
   ?? props.event.signUpForm?.map((question: FormQuestion) => {
     if (question.type === "open") return ""
@@ -68,42 +44,83 @@ const guestData = ref(
   },
 )
 
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const login = computed(() => store.getters.getLogin)
+
 /**
  * The sign-up form structure for the event.
  * We assume `props.event.signUpForm` is already an array of question objects.
  */
-const form = ref(props.event.signUpForm || null)
+const eventSignUpForm = computed(() => props.event.signUpForm ?? [])
+const signUp = computed(() => {
+    const signupProp = props.initialSignUp ?? {}
+    return {
+      id: signupProp?.id,
+      eventId: signupProp?.eventId,
+      formAnswers: signupProp?.formAnswers ?? [],
+    } as EventSignUp
+  },
+)
 
-/**
- * Validates both the answers form and the guest form, then emits "submit"
- * with the collected data if valid.
- */
+
+const answersForm: Ref<VForm | undefined> = ref()
+const guestForm: Ref<VForm | undefined> = ref()
+
 async function submit() {
-  const formValid = answersForm.value ? (await answersForm.value.validate()).valid : true
-  const guestFormValid = guestForm.value ? (await guestForm.value.validate()).valid : true
+  if (!isLoggedIn.value) {
+    const guestFormValid = await guestForm.value?.validate()
+    if (!guestFormValid) return
+    signUp.value.guest = guestData.value ?? {}
+  } else {
+    signUp.value.userId = login.value.userId
+  }
 
-  if (formValid && guestFormValid) {
-    emit("submit", {
-      answers: formAnswers,
-      guestData: guestData,
+  const formValid = await answersForm.value?.validate()
+  if (!formValid) return
+  signUp.value.formAnswers = answersData.value ?? []
+
+  if (isLoggedIn.value) {
+    if (signUp.value?.id) {
+      await updateEventSignUp({
+        path: {
+          eventId: props.event.id!,
+        },
+        body: signUp.value,
+      })
+    } else {
+      await createEventSignup({
+        path: {
+          eventId: props.event.id!,
+        },
+        body: {
+          ...signUp.value,
+          eventId: props.event.id!,
+        },
+      })
+    }
+  } else {
+    store.commit("saveGuestData", guestData.value)
+    await createEventSignup({
+      path: {
+        eventId: props.event.id!,
+      },
+      body: {
+        ...signUp.value,
+        eventId: props.event.id!,
+      },
     })
   }
+  emit('submit')
 }
 
-/**
- * Refs pointing to <v-form> so we can call validate() on them
- @submit="({ answers, guestData }): { answers: Array<{ [key: string]: unknown; }>; guestData: Guest } => submitSignUpForm(event.id as number, { answers, guestData })"
- */
-const answersForm = ref<Array<{ [key: string]: unknown; }>>()
-const guestForm = ref<Guest>()
 </script>
 
 <template>
   <div>
-    <!-- GUEST FORM (shown if user is not logged in) -->
-    <v-form
-      v-if="props.showGuestForm"
+    <Form
+      v-if="!isLoggedIn"
       ref="guestForm"
+      as="div"
       class="mb-4"
     >
       <v-alert
@@ -112,32 +129,59 @@ const guestForm = ref<Guest>()
         type="info"
         variant="outlined"
       />
-      <v-text-field
+      <Field
+        v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="guestData.name"
-        :rules="[(v: string) => !!v || 'Name is required']"
-        label="Name"
-      />
-      <v-text-field
+        name="name"
+        rules="required"
+      >
+        <v-text-field
+          :model-value="value"
+          :error-messages="errors"
+          label="Name"
+          @update:model-value="handleChange"
+          @blur="handleBlur"
+        />
+      </Field>
+      <Field
+        v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="guestData.discord"
-        :rules="[(v: string) => !!v || 'Discord username is required']"
-        label="Discord username"
-      />
-      <v-text-field
+        name="discord"
+        rules="required"
+      >
+        <v-text-field
+          :model-value="value"
+          :error-messages="errors"
+          label="Discord username"
+          @update:model-value="handleChange"
+          @blur="handleBlur"
+        />
+      </Field>
+      <Field
+        v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="guestData.email"
-        :rules="[(v: string) => !!v || 'Email is required', (v: string) => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
-        hint="We'll use this to send you a link you can use to edit your sign-up form later"
-        label="Email"
-      />
-    </v-form>
+        name="email"
+        rules="required|email|noStudentEmail"
+      >
+        <v-text-field
+          :model-value="value"
+          :error-messages="errors"
+          hint="We'll use this to send you a link you can use to edit your sign-up form later"
+          label="Email"
+          @update:model-value="handleChange"
+          @blur="handleBlur"
+        />
+      </Field>
+    </Form>
 
     <!-- ANSWERS FORM -->
     <Form
-      v-if="formAnswers !== null"
+      v-if="eventSignUpForm !== null"
       ref="answersForm"
       as="div"
     >
       <div
-        v-for="(question, i) in form"
+        v-for="(question, i) in eventSignUpForm"
         :key="i"
         class="mb-4"
       >
@@ -150,8 +194,8 @@ const guestForm = ref<Guest>()
         >
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="formAnswers[i]"
-            :name="`formAnswers.${i}`"
+            v-model="answersData[i]"
+            :name="`answersData.${i}`"
             rules="required"
           >
             <v-text-field
@@ -169,8 +213,8 @@ const guestForm = ref<Guest>()
         >
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="formAnswers[i]"
-            :name="`formAnswers.${i}`"
+            v-model="answersData[i]"
+            :name="`answersData.${i}`"
             rules="required"
           >
             <v-radio-group
@@ -197,8 +241,8 @@ const guestForm = ref<Guest>()
         >
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="formAnswers[i]"
-            :name="`formAnswers.${i}`"
+            v-model="answersData[i]"
+            :name="`answersData.${i}`"
             rules="required"
           >
             <v-checkbox

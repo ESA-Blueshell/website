@@ -51,8 +51,6 @@ public class Contribution implements BaseModel {
     @Column(name = "contribution_period_id", insertable = false, updatable = false)
     private Long contributionPeriodId;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     public Contribution(User user, ContributionPeriod contributionPeriod) {
         this.user = user;

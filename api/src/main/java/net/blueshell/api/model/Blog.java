@@ -7,7 +7,6 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
-import java.util.UUID;
 
 @Entity
 @Table(name = "blogs")
@@ -31,7 +30,4 @@ public class Blog implements BaseModel {
 
     @Column(name = "created_at")
     private Timestamp createdAt;
-
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 }

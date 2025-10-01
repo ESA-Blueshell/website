@@ -9,7 +9,6 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "redirects")
@@ -30,8 +29,6 @@ public class Redirect implements BaseModel {
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     public Redirect(Telemetry telemetry) {
         this.telemetry = telemetry;

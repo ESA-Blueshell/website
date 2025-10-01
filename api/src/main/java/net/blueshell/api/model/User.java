@@ -35,141 +35,98 @@ import java.util.stream.Collectors;
 @EntityListeners(JpaListener.class)
 public class User implements UserDetails, BaseModel {
 
+    private static final int ACTIVATION_KEY_LENGTH = 15;
+    private static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column
     private String username;
-
     @Column
     private String password;
-
     @Column(name = "first_name")
     private String firstName;
-
     @Column(name = "last_name")
     private String lastName;
-
     @Column
     private String prefix;
-
     @Column
     private String initials;
-
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
     @ToString.Exclude
     private Address address;
-
     @Column(name = "phone_number")
     private String phoneNumber;
-
     @Column
     private String email;
-
     @Column(name = "student_number")
     private String studentNumber;
-
     @Column(name = "date_of_birth")
     private Date dateOfBirth;
-
     @Column(name = "created_at")
     private Timestamp createdAt;
-
     @Column
     private String discord;
-
     @Column
     private String steamid;
-
     @Column
     private boolean newsletter;
-
     @Column
     private boolean enabled;
-
     @Column(name = "reset_key")
     private String resetKey;
-
     @Column(name = "reset_key_valid_until")
     private Timestamp resetKeyValidUntil;
-
     @Column(name = "reset_type")
     @Enumerated(EnumType.STRING)
     private ResetType resetType;
-
     @Column(name = "consent_privacy")
     private boolean consentPrivacy;
-
     @Column(name = "consent_gdpr")
     private boolean consentGdpr;
-
     @Column
     private String gender;
-
     @Column(name = "photo_consent")
     private boolean photoConsent;
-
     @Column
     private String nationality;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture", insertable = false, updatable = false)
     @JsonIgnore
     private File profilePicture;
-
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
-
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<CommitteeMember> committeeMembers;
-
-    public Set<CommitteeMember> getCommitteeMembers() {
-        return committeeMembers == null ? new HashSet<>() : committeeMembers;
-    }
-
     @JoinTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
     private Set<Role> roles;
-
     @Column(name = "ehbo")
     private boolean ehbo = false;
-
     @Column(name = "contact_id")
     private Long contactId;
-
     @Column(name = "bhv")
     private boolean bhv = false;
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @JsonIgnore
     private Set<Contribution> contributions;
-
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private Membership membership;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
     @JsonIgnore
     @ToString.Exclude
     private User creator;
-
     @Column(name = "creator_id")
     private Long creatorId;
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @JsonIgnore
     private Set<EventSignUp> eventSignUps;
-
-    private static final int ACTIVATION_KEY_LENGTH = 15;
-    private static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
 
     public User() {
         this.createdAt = Timestamp.from(Instant.now());
@@ -177,6 +134,10 @@ public class User implements UserDetails, BaseModel {
         this.resetKeyValidUntil = Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
         this.resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;
         addRole(Role.GUEST);
+    }
+
+    public Set<CommitteeMember> getCommitteeMembers() {
+        return committeeMembers == null ? new HashSet<>() : committeeMembers;
     }
 
     @JsonProperty("profilePicture")
@@ -281,7 +242,7 @@ public class User implements UserDetails, BaseModel {
 
     @Override
     public boolean isEnabled() {
-        return enabled && (getDeletedAt() == null || !TimeUtil.hasExpired(getDeletedAt()));
+        return enabled;
     }
 
     public String getFullName() {

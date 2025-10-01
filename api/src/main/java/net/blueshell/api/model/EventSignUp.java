@@ -8,7 +8,6 @@ import net.blueshell.api.model.converter.FormAnswerListConverter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,6 +50,5 @@ public class EventSignUp implements BaseModel {
     @Column(name = "signed_up_at")
     private LocalDateTime signedUpAt;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
+
 }

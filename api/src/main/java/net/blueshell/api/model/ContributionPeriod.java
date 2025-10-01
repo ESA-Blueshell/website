@@ -9,8 +9,6 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Set;
 
@@ -52,8 +50,6 @@ public class ContributionPeriod implements BaseModel {
     @Setter
     private Long listId;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     @Override
     public boolean equals(Object o) {

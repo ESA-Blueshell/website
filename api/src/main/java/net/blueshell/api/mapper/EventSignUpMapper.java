@@ -30,7 +30,10 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
     @Mapping(target = "eventId")
     @Mapping(target = "guest")
     @Mapping(target = "userId")
-    @Mapping(target = "signedUpAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(
+            target = "signedUpAt",
+            expression = "java(signUp.getSignedUpAt() == null ? java.time.LocalDateTime.now() : signUp.getSignedUpAt())"
+    )
     @Mapping(target = "formAnswers", source = "dto.formAnswers")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUp fromDTO(EventSignUpDTO dto, @MappingTarget EventSignUp signUp);

@@ -6,7 +6,6 @@ import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -36,8 +35,6 @@ public class Committee implements BaseModel {
             fetch = FetchType.EAGER)
     private Set<CommitteeMember> members = new HashSet<>();
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     public Committee() {
     }
@@ -60,8 +57,8 @@ public class Committee implements BaseModel {
         return getMembers().stream().anyMatch(cm -> cm.getUser().getId().equals(user.getId()));
     }
 
-     public Set<User> getUsers() {
-         return members == null ? Set.of() :
-             members.stream().map(CommitteeMember::getUser).filter(Objects::nonNull).collect(Collectors.toSet());
-     }
+    public Set<User> getUsers() {
+        return members == null ? Set.of() :
+                members.stream().map(CommitteeMember::getUser).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
 }

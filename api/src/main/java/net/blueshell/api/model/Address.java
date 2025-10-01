@@ -42,9 +42,6 @@ public class Address implements BaseModel {
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
-
     public Address() {
         this.createdAt = Timestamp.from(java.time.Instant.now());
     }

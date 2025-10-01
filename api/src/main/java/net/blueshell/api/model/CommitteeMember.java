@@ -7,7 +7,6 @@ import net.blueshell.api.base.JpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
@@ -33,8 +32,6 @@ public class CommitteeMember implements BaseModel {
     @JoinColumn(name = "committee_id", nullable = false)
     private Committee committee;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     @Column(name = "role")
     private String role;

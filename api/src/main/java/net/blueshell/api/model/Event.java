@@ -12,7 +12,6 @@ import net.blueshell.api.model.converter.FormQuestionListConverter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -106,8 +105,6 @@ public class Event implements BaseModel {
     @Convert(converter = FormQuestionListConverter.class)
     private List<FormQuestion> signUpForm;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
 
     @JsonProperty("creator")
     public long getCreatorId() {

@@ -110,7 +110,7 @@ async function submit() {
       },
     })
   }
-  emit('submit')
+  emit("submit")
 }
 
 </script>
@@ -261,13 +261,27 @@ async function submit() {
       </div>
     </Form>
 
+    <v-expand-transition
+      v-if="answersData.length > 0"
+      class="mb-3"
+    >
+      <v-alert
+        prominent
+        type="warning"
+        variant="outlined"
+      >
+        By submitting this form, you consent to share your name, username, email, Discord handle, phone number,
+        and your responses with members of the organizing committee.
+      </v-alert>
+    </v-expand-transition>
+
     <!-- SUBMIT BUTTON -->
     <v-btn
       :block="true"
       :loading="buttonLoading"
       @click="submit"
     >
-      {{ props.initialFormAnswers ? "Update" : "Save" }} sign-up form
+      {{ signUp.id ? "Update" : "Save" }} sign-up form
     </v-btn>
   </div>
 </template>

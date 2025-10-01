@@ -1,126 +1,12 @@
-<template>
-  <v-main>
-    <top-banner :title="eventName ? eventName + ' sign-ups' : 'Sign-ups'" />
-
-    <div class="mx-3">
-      <div
-        class="mx-auto my-10"
-        style="max-width: 800px"
-      >
-        <p class="text-h5">
-          Total signups: {{ responses.length }}
-        </p>
-
-        <p class="text-h4">
-          Summary
-        </p>
-
-        <div
-          v-for="(question, i) in signUpForm"
-          :key="i"
-        >
-          <!-- Prompt -->
-          <p :class="question.type === 'description' ? 'text-body-1' : 'text-h6 mb0'">
-            {{ question.prompt }}
-          </p>
-
-          <!-- Open-ended question -->
-          <template v-if="question.type === 'open'">
-            <p
-              v-for="response in responses"
-              :key="response.discord"
-            >
-              <b>{{ response.fullName }}:</b> {{ response.formAnswers[i] }}
-            </p>
-          </template>
-
-          <!-- Radio question -->
-          <template v-else-if="question.type === 'radio'">
-            <p
-              v-for="response in responses"
-              :key="response.discord"
-            >
-              <b>{{ response.fullName }}:</b> {{ response.formAnswers[i] }}
-            </p>
-            <v-container>
-              <v-row
-                v-for="(option, j) in question.options"
-                :key="j"
-              >
-                <v-col>
-                  {{ option }}
-                </v-col>
-                <v-col cols="1">
-                  {{ responses.filter(response => response.formAnswers[i] === j).length }}
-                </v-col>
-              </v-row>
-            </v-container>
-          </template>
-
-          <!-- Checkbox question -->
-          <template v-else-if="question.type === 'checkbox'">
-            <p
-              v-for="response in responses"
-              :key="response.discord"
-            >
-              <b>{{ response.fullName }}:</b>
-              {{ response.formAnswers[i].map((answer: number) => question.options[answer]).join(", ") }}
-            </p>
-            <v-container>
-              <div
-                v-for="(option, j) in question.options"
-                :key="j + 'key'"
-              >
-                <v-row
-                  :key="j"
-                  @click="toggle(i, j)"
-                >
-                  <v-col>
-                    {{ option }}
-                  </v-col>
-                  <v-col cols="1">
-                    {{ responses.filter(response => response.formAnswers[i].includes(j)).length }}
-                  </v-col>
-
-                  <!-- Expand transition for listing names under a chosen checkbox -->
-                  <v-container class="py-0 pl-16">
-                    <v-expand-transition>
-                      <div v-if="expandTab.includes(`${i}-${j}`)">
-                        <v-row
-                          v-for="response in responses.filter(response => response.formAnswers[i].includes(j))"
-                          :key="response.discord"
-                        >
-                          <v-col>
-                            {{ response.fullName }}
-                          </v-col>
-                          <v-col>
-                            {{ response.discord }}
-                          </v-col>
-                        </v-row>
-                      </div>
-                    </v-expand-transition>
-                  </v-container>
-                </v-row>
-                <v-divider :key="'div' + j" />
-              </div>
-            </v-container>
-          </template>
-        </div>
-      </div>
-    </div>
-  </v-main>
-</template>
-
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/banners/TopBanner.vue"
-import {type Event, type EventSignUp, findEventById, findEventSignUpsByEventId, type FormQuestion} from "@/lib"
+import {type Event, type EventSignUp, findEventById, findEventSignUpsByEventId} from "@/lib"
 
 // Refs for reactive data
-const eventName = ref<string | null>(null)
-const signUpForm = ref<FormQuestion[]>([])
-const responses = ref<EventSignUp[]>([])
+const event = ref<Event>()
+const eventSignUps = ref<EventSignUp[]>([])
 
 // This tracks expanded rows for the checkbox question
 // We'll store them as `'i-j'` strings
@@ -154,18 +40,202 @@ onMounted(async () => {
       }),
     ])
 
-    const event: Event = eventResp.data ?? {} as Event
-    const signups: EventSignUp[] = signupsResp.data ?? []
-
-    eventName.value = event.title
-    signUpForm.value = event.signUpForm ?? []
-    responses.value = signups
+    eventSignUps.value = signupsResp.data ?? []
+    event.value = eventResp.data ?? {} as Event
   } catch (err) {
     // Handle errors as desired
     console.error(err)
   }
 })
+
+// function personalDetails(eventSignUp: EventSignUp) {
+//   if (eventSignUp.guest) {
+//
+//   }
+//
+//   if (eventSignUp.user) {
+//
+//   }
+// }
 </script>
+
+<template>
+  <v-main>
+    <top-banner :title="event?.title ? event?.title + ' sign-ups' : 'Sign-ups'" />
+
+    <div class="mx-3">
+      <div
+        class="mx-auto my-10"
+        style="max-width: 800px"
+      >
+        <p class="text-h5">
+          Total signups: {{ eventSignUps.length }}
+        </p>
+
+        <p class="text-h4">
+          Summary
+        </p>
+
+        <div
+          v-for="(question, i) in event?.signUpForm"
+          :key="i"
+        >
+          <!-- Prompt -->
+          <p :class="question.type === 'description' ? 'text-body-1' : 'text-h6 mb0'">
+            {{ question.prompt }}
+          </p>
+
+          <!-- Open-ended question -->
+          <template v-if="question.type === 'open'">
+            <p
+              v-for="eventSignUp in eventSignUps"
+              :key="eventSignUp.discord"
+            >
+              <b>{{ eventSignUp.fullName }}:</b> {{ eventSignUp.formAnswers[i] }}
+            </p>
+          </template>
+
+          <!-- Radio question -->
+          <template v-else-if="question.type === 'radio'">
+            <p
+              v-for="eventSignUp in eventSignUps"
+              :key="eventSignUp.discord"
+            >
+              <b>{{ eventSignUp.fullName }}:</b> {{ eventSignUp.formAnswers[i] }}
+            </p>
+            <v-container>
+              <v-row
+                v-for="(option, j) in question.options"
+                :key="j"
+              >
+                <v-col>
+                  {{ option }}
+                </v-col>
+                <v-col cols="1">
+                  {{ eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.formAnswers![i] === j).length }}
+                </v-col>
+              </v-row>
+            </v-container>
+          </template>
+
+          <!-- Checkbox question -->
+          <!-- Checkbox question -->
+          <template v-else-if="question.type === 'checkbox'">
+            <!-- Per-person list of selected options -->
+            <p
+              v-for="eventSignUp in eventSignUps"
+              :key="eventSignUp.discord"
+            >
+              <b>{{ eventSignUp.fullName }}:</b>
+              {{
+                (Array.isArray(eventSignUp.formAnswers?.[i])
+                  ? eventSignUp.formAnswers[i]
+                  : []
+                )
+                  .map((answerIndex: number) => question.options?.[answerIndex])
+                  .filter((v) => v != null)
+                  .join(", ")
+              }}
+            </p>
+
+            <!-- Aggregated counts per option with expandable details -->
+            <v-container>
+              <div
+                v-for="(option, j) in question.options"
+                :key="`opt-${i}-${j}`"
+              >
+                <v-row
+                  class="cursor-pointer"
+                  @click="toggle(i, j)"
+                >
+                  <v-col>
+                    {{ option }}
+                  </v-col>
+                  <v-col cols="1">
+                    {{
+                      eventSignUps.filter((su) =>
+                        Array.isArray(su.formAnswers?.[i]) && su.formAnswers[i].includes(j),
+                      ).length
+                    }}
+                  </v-col>
+                </v-row>
+
+                <v-container class="py-0 pl-16">
+                  <v-expand-transition>
+                    <div v-if="expandTab.includes(`${i}-${j}`)">
+                      <v-row
+                        v-for="su in eventSignUps.filter((su: EventSignUp) =>
+                          Array.isArray(su.formAnswers?.[i]) && su.formAnswers[i].includes(j)
+                        )"
+                        :key="su.discord"
+                      >
+                        <v-col>
+                          {{ su.fullName }}
+                        </v-col>
+                        <v-col>
+                          {{ su.discord }}
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </v-expand-transition>
+                </v-container>
+              </div>
+            </v-container>
+          </template>
+
+          <!--          <template v-else-if="question.type === 'checkbox'">-->
+          <!--            <p-->
+          <!--              v-for="eventSignUp in eventSignUps"-->
+          <!--              :key="eventSignUp.discord"-->
+          <!--            >-->
+          <!--              <b>{{ eventSignUp.fullName }}:</b>-->
+          <!--              {{ eventSignUp.formAnswers[i].map((answer: number) => question.options[answer]).join(", ") }}-->
+          <!--            </p>-->
+          <!--            <v-container>-->
+          <!--              <div-->
+          <!--                v-for="(option, j) in question.options"-->
+          <!--                :key="j + 'key'"-->
+          <!--              >-->
+          <!--                <v-row-->
+          <!--                  :key="j"-->
+          <!--                  @click="toggle(i, j)"-->
+          <!--                >-->
+          <!--                  <v-col>-->
+          <!--                    {{ option }}-->
+          <!--                  </v-col>-->
+          <!--                  <v-col cols="1">-->
+          <!--                    {{ eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.formAnswers[i].includes(j)).length }}-->
+          <!--                  </v-col>-->
+
+          <!--                  &lt;!&ndash; Expand transition for listing names under a chosen checkbox &ndash;&gt;-->
+          <!--                  <v-container class="py-0 pl-16">-->
+          <!--                    <v-expand-transition>-->
+          <!--                      <div v-if="expandTab.includes(`${i}-${j}`)">-->
+          <!--                        <v-row-->
+          <!--                          v-for="eventSignUp in eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.formAnswers[i].includes(j))"-->
+          <!--                          :key="eventSignUp.discord"-->
+          <!--                        >-->
+          <!--                          <v-col>-->
+          <!--                            {{ eventSignUp.fullName }}-->
+          <!--                          </v-col>-->
+          <!--                          <v-col>-->
+          <!--                            {{ eventSignUp.discord }}-->
+          <!--                          </v-col>-->
+          <!--                        </v-row>-->
+          <!--                      </div>-->
+          <!--                    </v-expand-transition>-->
+          <!--                  </v-container>-->
+          <!--                </v-row>-->
+          <!--                <v-divider :key="'div' + j" />-->
+          <!--              </div>-->
+          <!--            </v-container>-->
+          <!--          </template>-->
+        </div>
+      </div>
+    </div>
+  </v-main>
+</template>
+
 
 <style lang="scss" scoped>
 /* Your styles here if needed */

@@ -67,13 +67,12 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     public EventSignUpDTO updateEventSignUp(@PathVariable("eventId") Long eventId,
                                             @Valid @RequestBody EventSignUpDTO dto,
                                             @RequestParam(value = "accessToken", required = false) String accessToken) {
-        long signUpId;
+        EventSignUp signUp;
         if (accessToken == null) {
-            signUpId = service.findByUserIdAndEventId(getPrincipal().getId(), eventId).getId();
+            signUp = service.findByUserIdAndEventId(getPrincipal().getId(), eventId);
         } else {
-            signUpId = service.findByGuestAccessToken(accessToken).getId();
+            signUp = service.findByGuestAccessToken(accessToken);
         }
-        var signUp = service.findById(signUpId);
         mapper.fromDTO(dto, signUp);
         signUp = service.update(signUp);
         return mapper.toDTO(signUp);
@@ -84,6 +83,6 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventSignup(@PathVariable("eventSignupId") Long eventSignupId,
                                   @RequestParam(value = "accessToken", required = false) String accessToken) {
-        service.deleteSignUp(eventSignupId, accessToken);
+        service.delete(eventSignupId);
     }
 }

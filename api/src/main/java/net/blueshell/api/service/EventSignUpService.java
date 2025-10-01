@@ -33,17 +33,6 @@ public class EventSignUpService extends BaseModelService<EventSignUp, EventSignU
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found for accessToken: %s".formatted(accessToken)));
     }
 
-    @Transactional(readOnly = true)
-    public void deleteSignUp(Long eventSignupId, String accessToken) {
-        EventSignUp signUp;
-        if (accessToken == null) {
-            signUp = self().findById(eventSignupId);
-        } else {
-            signUp = findByGuestAccessToken(accessToken);
-        }
-        self().delete(signUp.getId());
-    }
-
     public List<EventSignUp> findByUserId(Long userId) {
         return repository.findByUserId(userId);
     }

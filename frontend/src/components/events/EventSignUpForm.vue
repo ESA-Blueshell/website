@@ -24,12 +24,10 @@
   - a Number from 0 to i-1 for i options (null if no value is selected)
   - an array with the selected checkboxes. The array can contain any Number from 0 to i-1 for i options for each of the selected option
 */
-
-
 import {ref} from "vue"
 import {useStore} from "vuex"
 import type {Event, FormQuestion, Guest} from "@/lib"
-import {Field} from "vee-validate"
+import {Field, Form} from "vee-validate"
 
 const emit = defineEmits(["submit"])
 
@@ -146,48 +144,76 @@ const guestForm = ref<Guest>()
         <p :class="question.type === 'description' ? 'text-body-1' : 'text-h6 mb-0'">
           {{ question.prompt }}
         </p>
-
         <!-- Open Question -->
-        <Field
-          v-slot="{ value, errors, handleChange, handleBlur }"
-          v-model="formAnswers[i]"
-          :name="`formAnswers.${i}`"
-          rules="required"
+        <template
+          v-if="question.type === 'open'"
         >
-          <v-text-field
-            v-if="question.type === 'open'"
-            :model-value="value"
-            :error-messages="errors"
-            @update:model-value="handleChange"
-            @blur="handleBlur"
-          />
-        </Field>
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="formAnswers[i]"
+            :name="`formAnswers.${i}`"
+            rules="required"
+          >
+            <v-text-field
+              :model-value="value"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
+        </template>
 
         <!-- Radio Question -->
-        <v-radio-group
-          v-if="question.type === 'radio'"
-          v-model="formAnswers[i]"
-          :rules="[(v: string) => v != null || 'An answer is required']"
-          hide-details="auto"
+        <template
+          v-else-if="question.type === 'radio'"
         >
-          <v-radio
-            v-for="(option, j) in question.options"
-            :key="j"
-            :label="option"
-            :value="j"
-          />
-        </v-radio-group>
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="formAnswers[i]"
+            :name="`formAnswers.${i}`"
+            rules="required"
+          >
+            <v-radio-group
+              :model-value="value"
+              :error-messages="errors"
+              hide-details="auto"
+              @update:model-value="handleChange"
+            >
+              <v-radio
+                v-for="(option, j) in question.options"
+                :key="j"
+                :label="option"
+                :value="j"
+                @blur="handleBlur"
+              />
+            </v-radio-group>
+          </Field>
+        </template>
+
 
         <!-- Checkbox Question -->
-        <v-checkbox
-          v-for="(option, j) in question.options"
+        <template
           v-else-if="question.type === 'checkbox'"
-          :key="j"
-          v-model="formAnswers[i]"
-          :label="option"
-          :value="j"
-          hide-details
-        />
+        >
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="formAnswers[i]"
+            :name="`formAnswers.${i}`"
+            rules="required"
+          >
+            <v-checkbox
+              v-for="(option, j) in question.options"
+              :key="j"
+              :model-value="value"
+              :error-messages="errors"
+              :label="option"
+              :value="j"
+              hide-details
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
+        </template>
       </div>
     </Form>
 

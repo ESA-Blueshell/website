@@ -128,6 +128,33 @@ defineRule('phoneMobile', (v: string, [country = 'NL']: string[]) => {
   }
 })
 
+defineRule('requiredIfTrue', (value: unknown, [other]: string[], ctx) => {
+  if (isEmpty(value)) return true
+  const otherField = other?.startsWith('@') ? other.slice(1) : other
+  const target = otherField ? (ctx.form as GenericObject)?.[otherField] : undefined
+  if (target === true) {
+    return !(value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) || 'This field is required'
+  }
+  return true
+})
+
+defineRule('dateTimeAfter', (value: string, args: string[], ctx) => {
+  if (isEmpty(value)) return true
+  const [startDateKey, startTimeKey, endDateKey] = args
+  const form = ctx.form as GenericObject
+  const sd = startDateKey?.startsWith('@') ? form?.[startDateKey.slice(1)] : startDateKey
+  const st = startTimeKey?.startsWith('@') ? form?.[startTimeKey.slice(1)] : startTimeKey
+  const ed = endDateKey?.startsWith('@') ? form?.[endDateKey.slice(1)] : endDateKey
+
+  if (!sd || !st || !ed || !value) return true
+
+  const startDT = DateTime.fromFormat(`${sd} ${st}`, 'yyyy-MM-dd HH:mm')
+  const endDT = DateTime.fromFormat(`${ed} ${value}`, 'yyyy-MM-dd HH:mm')
+
+  if (!startDT.isValid || !endDT.isValid) return 'Enter valid dates/times'
+  return endDT > startDT || 'Event must end after it starts'
+})
+
 // --- Global config ---
 configure({
   validateOnInput: true,

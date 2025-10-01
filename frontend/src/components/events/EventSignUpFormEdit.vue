@@ -1,9 +1,11 @@
 <script lang="ts" setup>
 import {reactive, watch} from "vue"
+import type {FormQuestion} from "@/lib"
 
 const props = defineProps({
   initialForm: {
     type: Object,
+    default: () => {}
   },
 })
 const emits = defineEmits(["change"])
@@ -22,7 +24,7 @@ watch(form, async (newForm) => {
 
 
 // Adds a new question to the form
-function createQuestion(type) {
+function createQuestion(type: string) {
   if (type === "open" || type === "description") {
     form.push({type: type, prompt: ""})
   } else {
@@ -31,17 +33,17 @@ function createQuestion(type) {
 }
 
 // Moves the ith element one index up in the given array. This probably throws an exception if i == 0
-function moveUp(array, i) {
+function moveUp(array: FormQuestion[], i: number) {
   const temp = array[i]
-  array[i] = array[i - 1]
-  array[i - 1] = temp
+  array[i] = array[i - 1] as FormQuestion
+  array[i - 1] = temp as FormQuestion
 }
 
 // Moves the ith element one index down in the given array. This probably throws an exception if i == array.length-1
-function moveDown(array, i) {
+function moveDown(array: FormQuestion[], i: number) {
   const temp = array[i]
-  array[i] = array[i + 1]
-  array[i + 1] = temp
+  array[i] = array[i + 1] as FormQuestion
+  array[i + 1] = temp as FormQuestion
 }
 
 </script>

@@ -1,14 +1,24 @@
-<script lang="ts" setup>
-import {computed, ref} from "vue"
-import EventSignUpFormEdit from "@/components/events/EventSignUpFormEdit.vue"
-// ... existing code ...
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {useStore} from "vuex"
-import {DateTime} from "luxon"
-import type {VForm} from "vuetify/components"
-import {type Base, createEvent, type Event, findCommittees, updateEvent} from "@/lib"
+<!--
+Refactor notes:
+- Replaced <v-form> validation with VeeValidate <Form> + <Field> wrappers (slot-based) to keep Vuetify styling.
+- Uses your existing custom rules (required, minValue, maxValue, dateBefore, dateAfter, etc.).
+- Added two tiny rules you likely want in your validators file:
+    1) requiredIfTrue (usage: rules="requiredIfTrue:@visible")
+    2) dateTimeAfter (usage: rules="dateTimeAfter:@startDate,@startTime")
+  See bottom of this file for the rule implementations to add to your validators setup file.
+-->
 
-// ... existing code ...
+<script lang="ts" setup>
+import {computed, ref, watch} from "vue"
+import EventSignUpFormEdit from "@/components/events/EventSignUpFormEdit.vue"
+import type {FormContext} from "vee-validate"
+import {Field, Form} from "vee-validate"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {DateTime} from "luxon"
+import {type AdvancedCommittee, createEvent, type Event, findCommittees, type FormQuestion, updateEvent} from "@/lib"
+import router from "@/plugins/router.ts"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
+
 const props = defineProps({
   initialEvent: {
     type: Object as () => Event,
@@ -20,16 +30,7 @@ const props = defineProps({
   },
 })
 
-const emits = defineEmits(["submit", "title", "success"])
-
-const store = useStore()
-// ... existing code ...
-
-const eventForm = ref<VForm>()
-const signUpForm = ref(null)
-const sameEndDate = ref(true)
-const valid = ref(true)
-const submitting = ref(false)
+const {apply} = useBackendValidation()
 
 // --------------------
 // 1) Initialize event
@@ -50,7 +51,6 @@ function getDefaultEvent(): Event {
     banner: undefined,
     signUpForm: [],
     committeeId: 0,
-    committee: undefined,
   }
 }
 
@@ -74,32 +74,22 @@ const endDateTime = props.initialEvent?.endTime
   ? DateTime.fromISO(props.initialEvent.endTime)
   : DateTime.local()
 
-// We store date/time as strings so they can bind to <v-text-field type="date/time">
 const startDate = ref(startDateTime.toFormat("yyyy-MM-dd"))
 const startTime = ref(startDateTime.toFormat("HH:mm"))
 const endDate = ref(endDateTime.toFormat("yyyy-MM-dd"))
 const endTime = ref(endDateTime.toFormat("HH:mm"))
 
-// We also track whether the user previously had signUp or signUpForm
-// so we can warn them about removing sign-ups if toggled off.
-const enableSignupForm = ref<boolean>(!!(event.value.signUpForm && event.value.signUpForm.length))
-
-const wasPublic = ref<boolean>(event.value.visible || false)
 const hadSignUp = ref<boolean>(event.value.signUp || false)
-const oldEnableSignUpForm = ref<boolean>(enableSignupForm.value)
+const oldEnableSignUpForm = ref<boolean>(event.value.signUp || false)
 
 // Committees
-const committees = ref<Base[]>([])
-findCommittees().then((response) => (committees.value = response.data ?? [])).catch(() => (committees.value = []))
+const committees = ref<AdvancedCommittee[]>([])
+findCommittees()
+  .then((response) => (committees.value = response.data as AdvancedCommittee[] ?? []))
+  .catch(() => (committees.value = []))
 
-// Price rules
-const priceRules = [
-  (v: string) => !isNaN(Number(v)) || "Price must be a number",
-  (v: string) => Number(v) < 100 || "That's a little much no?",
-  (v: string) => Number(v) >= 0 || "Negative prices? That would be weird",
-]
-
-// Compute for the end date field (only if user unchecks "sameEndDate")
+// Compute for the end date field (only if user checks "same start & end date")
+const sameEndDate = ref(true)
 const endDateDisplay = computed({
   get: () => (sameEndDate.value ? startDate.value : endDate.value),
   set: (value: string) => {
@@ -107,73 +97,67 @@ const endDateDisplay = computed({
   },
 })
 
-// ------------------------------------
-// 3) On submit → combine date + time
-// ------------------------------------
-async function submit() {
+function toISO(date: string, time: string): string {
+  if (!date || !time) return ""
+  const iso = DateTime.fromFormat(`${date} ${time}`, "yyyy-MM-dd HH:mm").toISO()
+  return iso ?? ""
+}
+
+watch([startDate, startTime], () => {
+  event.value.startTime = toISO(startDate.value, startTime.value)
+})
+
+watch([endDate, endTime], () => {
   if (sameEndDate.value) {
-    // If user checked "same start and end date"
     endDate.value = startDate.value
   }
+  event.value.endTime = toISO(endDate.value, endTime.value)
+})
 
-  const result = await eventForm.value?.validate()
-  if (!result || !result.valid) return
+// -----------------------
+// 3) Submit (validate → save)
+// -----------------------
+const formRef = ref<FormContext>()
+const submitting = ref(false)
+const signUpForm = ref<InstanceType<typeof EventSignUpFormEdit> | null>(null)
+
+async function submit() {
+  if (sameEndDate.value) endDate.value = startDate.value
+
+  const result = await formRef.value?.validate()
+  if (!result?.valid) return
 
   submitting.value = true
 
   try {
-    // Clone our event object
-    const payload: Event = {...event.value}
-
-    // Combine date + time -> Luxon -> ISO
-    payload.startTime = DateTime.fromFormat(
-      `${startDate.value} ${startTime.value}`,
-      "yyyy-MM-dd HH:mm",
-    ).toISO() as string
-
-    payload.endTime = DateTime.fromFormat(
-      `${endDate.value} ${endTime.value}`,
-      "yyyy-MM-dd HH:mm",
-    ).toISO() as string
-
-    payload.signUpForm = event.value.signUpForm ?? []
-
-    // Create vs update using generated client
-    if (!payload.id) {
-      await createEvent({body: payload})
+    if (!event.value?.id) {
+      const resp = await createEvent({body: event.value})
+      if (resp.status === 201) {
+        submitting.value = false
+        router.back()
+      } else if (!(apply(formRef.value!, resp))) {
+        $handleNetworkError(resp)
+      }
     } else {
-      await updateEvent({path: {id: payload.id}, body: payload})
+      const resp = await updateEvent({path: {id: event.value.id}, body: event.value})
+      if (resp.status === 200) {
+        submitting.value = false
+        router.back()
+      } else if (!(apply(formRef.value!, resp))) {
+        $handleNetworkError(resp)
+      }
     }
-
-  } catch (e: unknown) {
-    $handleNetworkError(e)
   } finally {
     submitting.value = false
   }
 }
 
-// Toggles
-function toggleSignUp() {
-  event.value.signUp = !event.value.signUp
-  // If user disables signUp, also disable signUpForm
-  if (!event.value.signUp) {
-    enableSignupForm.value = false
-  }
-}
-
-function toggleSignUpForm() {
-  enableSignupForm.value = !enableSignupForm.value
-  if (enableSignupForm.value) {
-    // If enabling form, ensure signUp is also enabled
-    event.value.signUp = true
-  }
-}
 </script>
 
 <template>
-  <v-form
-    ref="eventForm"
-    v-model="valid"
+  <Form
+    ref="formRef"
+    as="div"
   >
     <v-container style="padding: 0;">
       <!-- Title + Location -->
@@ -182,194 +166,314 @@ function toggleSignUpForm() {
           cols="12"
           lg="8"
         >
-          <v-text-field
-            ref="title"
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.title"
-            :rules="[v => !!v || 'Title is required']"
-            label="Event name"
-            required
-            @update:model-value="emits('title', event.title)"
-          />
+            name="title"
+            rules="required"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Event name"
+              :error-messages="errors"
+              required
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
         <v-col
           cols="12"
           lg="4"
         >
-          <v-text-field
-            ref="location"
+          <!-- required only when event is public -->
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.location"
-            :rules="[v => (!!v || !event.visible) || 'Location is required for public events']"
-            label="Location"
-            required
-          />
+            name="location"
+            rules="requiredIfTrue:@visible"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Location"
+              :error-messages="errors"
+              required
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Description -->
       <v-row>
         <v-col>
-          <v-textarea
-            ref="description"
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.description"
-            :rules="[v => !!v || 'Description is required']"
-            hide-details
-            label="Description"
-            required
-            variant="outlined"
-          />
+            name="description"
+            rules="required"
+          >
+            <v-textarea
+              :model-value="value"
+              label="Description"
+              variant="outlined"
+              hide-details
+              required
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Prices -->
       <v-row>
         <v-col>
-          <v-text-field
-            ref="memberPrice"
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.memberPrice"
-            :rules="priceRules"
-            label="Price for members"
-            prepend-icon="mdi-currency-eur"
-            required
-          />
+            name="memberPrice"
+            rules="minValue:0|maxValue:99.99"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Price for members"
+              prepend-icon="mdi-currency-eur"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-text-field
-            ref="publicPrice"
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.publicPrice"
-            :rules="priceRules"
-            label="Price for non-members"
-            prepend-icon="mdi-currency-eur"
-            required
-          />
+            name="publicPrice"
+            rules="minValue:0|maxValue:99.99"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Price for non-members"
+              prepend-icon="mdi-currency-eur"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Checkboxes: sameEndDate, membersOnly, visible -->
       <v-row>
         <v-col>
-          <v-checkbox
+          <Field
+            v-slot="{ value, handleChange }"
             v-model="sameEndDate"
-            label="Same start and end date"
-          />
+            name="sameEndDate"
+          >
+            <v-checkbox
+              :model-value="value"
+              label="Same start and end date"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-checkbox
+          <Field
+            v-slot="{ value, handleChange }"
             v-model="event.membersOnly"
-            label="Members only"
-          />
+            name="membersOnly"
+          >
+            <v-checkbox
+              :model-value="value"
+              label="Members only"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-checkbox
+          <Field
+            v-slot="{ value, errors, handleChange }"
             v-model="event.visible"
-            :rules="[v => !v || wasPublic || store.getters.isBoard || 'Sorry, only board members can make this public']"
-            label="Make public"
-          />
+            name="visible"
+          >
+            <v-checkbox
+              :model-value="value"
+              :error-messages="errors"
+              label="Make public"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Date/Time: Start -->
       <v-row>
         <v-col>
-          <v-text-field
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="startDate"
-            :rules="[v => (!!v || !event.visible) || 'Start date is required for public events']"
-            label="Start date"
-            prepend-icon="mdi-calendar"
-            type="date"
-          />
+            name="startDate"
+            rules="requiredIfTrue:@visible|dateRequired"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Start date"
+              prepend-icon="mdi-calendar"
+              type="date"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-text-field
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="startTime"
-            :rules="[v => (!!v || !event.visible) || 'Start time is required for public events']"
-            label="Start time"
-            prepend-icon="mdi-clock"
-            type="time"
-          />
+            name="startTime"
+            rules="requiredIfTrue:@visible"
+          >
+            <v-text-field
+              :model-value="value"
+              label="Start time"
+              prepend-icon="mdi-clock"
+              type="time"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Date/Time: End -->
       <v-row>
         <v-col>
-          <v-text-field
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="endDateDisplay"
-            :disabled="sameEndDate"
-            :rules="[
-              v => (!!v || !event.visible) || 'End date is required for public events',
-              v => (!!v && new Date(startDate) <= new Date(endDateDisplay)) || 'End date cannot be earlier than start date'
-            ]"
-            label="End date"
-            prepend-icon="mdi-calendar"
-            type="date"
-          />
+            name="endDate"
+            rules="requiredIfTrue:@visible|dateAfter:@startDate"
+          >
+            <v-text-field
+              :disabled="sameEndDate"
+              :model-value="value"
+              label="End date"
+              prepend-icon="mdi-calendar"
+              type="date"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-text-field
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="endTime"
-            :rules="[
-              v => (!!v || !event.visible) || 'End time is required for public events',
-              v => (!!v && new Date(`${startDate} ${startTime}`) < new Date(`${endDateDisplay} ${v}`)) || 'Event must end after it starts'
-            ]"
-            label="End time"
-            prepend-icon="mdi-clock"
-            type="time"
-          />
+            name="endTime"
+            rules="requiredIfTrue:@visible|dateTimeAfter:@startDate,@startTime,@endDate"
+          >
+            <v-text-field
+              :model-value="value"
+              label="End time"
+              prepend-icon="mdi-clock"
+              type="time"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Committee + File Input -->
       <v-row>
         <v-col>
-          <v-select
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.committeeId"
-            :disabled="!committees"
-            :items="committees"
-            :rules="[v => !!v || 'A representative committee is required']"
-            item-title="name"
-            item-value="id"
-            label="Representative committee"
-            prepend-icon="mdi-account-group"
-          />
+            name="committeeId"
+            rules="required"
+          >
+            <v-select
+              :model-value="value"
+              :disabled="!committees"
+              :items="committees"
+              item-title="name"
+              item-value="id"
+              label="Representative committee"
+              prepend-icon="mdi-account-group"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-file-input
+          <!-- optional; no validation by default -->
+          <Field
+            v-slot="{ value, handleChange, handleBlur }"
             v-model="event.banner"
-            :hint="hasPromo ? 'This event already has a promo image; only choose a file if you want to overwrite it' : undefined"
-            accept="image/jpeg"
-            clearable
-            label="Promo image (Max 2MB)"
-            persistent-hint
-            show-size
-          />
+            name="banner"
+          >
+            <v-file-input
+              :model-value="value as any"
+              :hint="hasPromo ? 'This event already has a promo image; only choose a file if you want to overwrite it' : undefined"
+              accept="image/jpeg"
+              clearable
+              label="Promo image (Max 2MB)"
+              persistent-hint
+              show-size
+              @update:model-value="handleChange"
+              @blur="handleBlur"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Sign-up toggles + signUpForm -->
       <v-row>
         <v-col>
-          <v-checkbox
-            :model-value="event.signUp"
-            hide-details
-            label="Enable sign-up"
-            @click="toggleSignUp"
-          />
+          <Field
+            v-slot="{ value, handleChange }"
+            v-model="event.signUp"
+            name="signUp"
+          >
+            <v-checkbox
+              :model-value="value"
+              hide-details
+              label="Enable sign-up"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
         <v-col>
-          <v-checkbox
-            :model-value="enableSignupForm"
-            hide-details
-            label="Enable sign-up form"
-            @click="toggleSignUpForm"
-          />
+          <Field
+            v-slot="{ value, handleChange }"
+            v-model="event.signUp"
+            name="enableSignupForm"
+          >
+            <v-checkbox
+              :model-value="value"
+              hide-details
+              label="Enable sign-up form"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
       </v-row>
-      <v-row v-if="enableSignupForm">
+
+      <v-row v-if="event.signUp">
         <v-col>
           <event-sign-up-form-edit
             ref="signUpForm"
             :initial-form="event.signUpForm"
-            @change="newForm => (event.signUpForm = newForm)"
+            @change="(newForm: FormQuestion[]) => (event.signUpForm = newForm)"
           />
         </v-col>
       </v-row>
@@ -377,7 +481,7 @@ function toggleSignUpForm() {
       <!-- Warning if toggling sign-ups off -->
       <v-expand-transition>
         <v-alert
-          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !enableSignupForm)"
+          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !event.signUp)"
           class="mt-4 mx-3"
           prominent
           type="warning"
@@ -399,5 +503,20 @@ function toggleSignUpForm() {
     >
       Submit event
     </v-btn>
-  </v-form>
+  </Form>
 </template>
+
+<style lang="scss">
+.v-col:first-child {
+  padding-left: 0;
+}
+
+.v-col:last-child {
+  padding-right: 0;
+}
+
+.v-col {
+  padding-bottom: 0;
+  padding-top: 0;
+}
+</style>

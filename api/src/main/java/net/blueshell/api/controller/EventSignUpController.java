@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.EventSignUpDTO;
 import net.blueshell.api.mapper.EventSignUpMapper;
-import net.blueshell.api.model.EventSignUp;
+import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.service.EventSignUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

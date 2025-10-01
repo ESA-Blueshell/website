@@ -1,8 +1,8 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.Contribution;
-import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.model.contribution.Contribution;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

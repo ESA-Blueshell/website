@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.CommitteeMemberDTO;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.service.CommitteeMemberService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;

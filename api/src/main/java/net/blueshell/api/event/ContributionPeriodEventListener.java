@@ -2,8 +2,7 @@ package net.blueshell.api.event;
 
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.common.event.PrePersistEvent;
-import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.service.ContributionPeriodService;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;

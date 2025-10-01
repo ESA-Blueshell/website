@@ -1,4 +1,4 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,14 +7,15 @@ import lombok.Data;
 import lombok.Getter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
-import net.blueshell.api.model.converter.FormQuestion;
-import net.blueshell.api.model.converter.FormQuestionListConverter;
+import net.blueshell.api.model.committee.Committee;
+import net.blueshell.api.model.File;
+import net.blueshell.api.model.User;
+import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -54,12 +55,13 @@ public class Event implements BaseModel {
     @Column(name = "committee_id")
     private Long committeeId;
 
-    @JoinColumn(name = "title")
+    @Column(name = "title")
     private String title;
 
-    @JoinColumn(name = "description")
+    @Column(name = "description")
     private String description;
 
+    @Column(name = "location")
     private String location;
 
     @Column(name = "start_time")
@@ -98,13 +100,12 @@ public class Event implements BaseModel {
     @Column(name = "members_only")
     private boolean membersOnly;
 
-    @Column(name = "sign_up")
-    private boolean signUp;
-
-    @Column(name = "sign_up_form", columnDefinition = "JSON")
-    @Convert(converter = FormQuestionListConverter.class)
-    private List<FormQuestion> signUpForm;
-
+//    @JoinColumn(name = "sign_up_form_id", updatable = false, insertable = false)
+//    @OneToOne(fetch = FetchType.LAZY)
+//    private Survey signUpForm;
+//
+//    @Column(name = "sign_up_form_id")
+//    private Long signUpFormId;
 
     @JsonProperty("creator")
     public long getCreatorId() {

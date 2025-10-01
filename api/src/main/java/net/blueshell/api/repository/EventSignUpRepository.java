@@ -1,7 +1,7 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.EventSignUp;
+import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.model.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,8 +1,9 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.board;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.model.File;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 

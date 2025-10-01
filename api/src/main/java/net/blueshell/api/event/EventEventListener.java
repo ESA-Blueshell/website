@@ -3,7 +3,7 @@ package net.blueshell.api.event;
 import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
-import net.blueshell.api.model.Event;
+import net.blueshell.api.model.event.Event;
 import net.blueshell.api.service.google.CalendarService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;

@@ -3,7 +3,7 @@ package net.blueshell.api.mapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.EventDTO;
-import net.blueshell.api.model.Event;
+import net.blueshell.api.model.event.Event;
 import org.mapstruct.*;
 
 import java.time.LocalDateTime;

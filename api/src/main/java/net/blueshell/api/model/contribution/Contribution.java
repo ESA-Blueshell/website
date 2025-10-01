@@ -1,4 +1,4 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.contribution;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
+import net.blueshell.api.model.Membership;
+import net.blueshell.api.model.User;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.SQLDelete;

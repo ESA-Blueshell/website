@@ -1,7 +1,7 @@
 package net.blueshell.api.service;
 
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.repository.CommitteeMemberRepository;
 import org.springframework.stereotype.Service;
 

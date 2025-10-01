@@ -1,7 +1,7 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.model.committee.CommitteeMember;
 import org.springframework.stereotype.Repository;
 
 @Repository

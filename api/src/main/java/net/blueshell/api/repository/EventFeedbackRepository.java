@@ -1,7 +1,7 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.EventFeedback;
+import net.blueshell.api.model.event.EventFeedback;
 import org.springframework.stereotype.Repository;
 
 @Repository

@@ -4,15 +4,8 @@ package net.blueshell.api.mapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.EventSignUpDTO;
-import net.blueshell.api.mapper.user.SimpleUserMapper;
-import net.blueshell.api.model.EventSignUp;
-import net.blueshell.api.model.Guest;
-import net.blueshell.api.model.User;
+import net.blueshell.api.model.event.EventSignUp;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.ObjectUtils;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,

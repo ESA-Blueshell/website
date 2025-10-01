@@ -5,7 +5,7 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.service.UserService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;

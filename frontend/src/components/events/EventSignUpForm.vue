@@ -29,6 +29,7 @@ const answersData = ref(
   ?? props.event.signUpForm?.map((question: FormQuestion) => {
     if (question.type === "open") return ""
     if (question.type === "checkbox") return []
+    if (question.type === "radio") return Array(question.options?.length ?? 0).fill(false)
     return null // For radio or anything else
   }),
 )
@@ -207,30 +208,37 @@ async function submit() {
           </Field>
         </template>
 
-        <!-- Radio Question -->
-        <template
-          v-else-if="question.type === 'radio'"
-        >
+        <!-- Radio Question (multi-select as boolean array) -->
+        <template v-else-if="question.type === 'radio'">
           <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-slot="{ value = [], errors, handleChange, handleBlur }"
             v-model="answersData[i]"
             :name="`answersData.${i}`"
-            rules="required"
+            :rules="(val: boolean[]) => (val && val.some(Boolean)) || 'Select at least one option'"
           >
-            <v-radio-group
-              :model-value="value"
-              :error-messages="errors"
-              hide-details="auto"
-              @update:model-value="handleChange"
-            >
-              <v-radio
+            <div>
+              <v-checkbox
                 v-for="(option, j) in question.options"
                 :key="j"
                 :label="option"
-                :value="j"
+                :model-value="(value?.[j] ?? false)"
+                hide-details
+                @update:model-value="(checked: boolean) => {
+                  const next = Array.isArray(value)
+                    ? [...value]
+                    : Array(question.options.length).fill(false)
+                  next[j] = checked
+                  handleChange(next)
+                }"
                 @blur="handleBlur"
               />
-            </v-radio-group>
+              <div
+                v-if="errors?.length"
+                class="text-error text-caption mt-1"
+              >
+                {{ errors[0] }}
+              </div>
+            </div>
           </Field>
         </template>
 

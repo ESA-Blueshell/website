@@ -1,8 +1,8 @@
 package net.blueshell.api.service;
 
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.model.Contribution;
-import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.model.contribution.Contribution;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.repository.ContributionRepository;
 import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;

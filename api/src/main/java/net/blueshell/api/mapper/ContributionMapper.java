@@ -2,10 +2,8 @@ package net.blueshell.api.mapper;
 
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.ContributionDTO;
-import net.blueshell.api.model.Contribution;
-import net.blueshell.api.service.ContributionService;
+import net.blueshell.api.model.contribution.Contribution;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class ContributionMapper extends BaseMapper<Contribution, ContributionDTO> {

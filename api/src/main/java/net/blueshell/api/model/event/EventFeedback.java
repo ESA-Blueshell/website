@@ -1,4 +1,4 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

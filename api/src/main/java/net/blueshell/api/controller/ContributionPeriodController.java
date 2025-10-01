@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.ContributionPeriodDTO;
 import net.blueshell.api.mapper.ContributionPeriodMapper;
-import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.service.ContributionPeriodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

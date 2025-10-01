@@ -1,7 +1,7 @@
 package net.blueshell.api.service;
 
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.model.Committee;
+import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.repository.CommitteeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;

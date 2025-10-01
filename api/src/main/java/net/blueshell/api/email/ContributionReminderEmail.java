@@ -1,7 +1,7 @@
 package net.blueshell.api.email;
 
 import net.blueshell.api.base.BaseEmail;
-import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.model.User;
 
 public class ContributionReminderEmail extends BaseEmail {

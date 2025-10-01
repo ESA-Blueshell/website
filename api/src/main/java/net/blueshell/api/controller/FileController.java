@@ -6,6 +6,8 @@ import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.model.*;
+import net.blueshell.api.model.event.Event;
+import net.blueshell.api.model.event.EventPicture;
 import net.blueshell.api.repository.FileRepository;
 import net.blueshell.api.service.*;
 import org.springframework.beans.factory.annotation.Autowired;

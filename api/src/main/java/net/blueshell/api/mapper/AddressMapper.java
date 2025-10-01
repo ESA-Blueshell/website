@@ -2,14 +2,8 @@ package net.blueshell.api.mapper;
 
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.AddressDTO;
-import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.model.Address;
-import net.blueshell.api.model.ContributionPeriod;
-import net.blueshell.api.model.User;
-import net.blueshell.api.service.AddressService;
-import net.blueshell.api.service.ContributionPeriodService;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class AddressMapper extends BaseMapper<Address, AddressDTO> {

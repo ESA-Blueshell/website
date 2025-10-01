@@ -3,7 +3,7 @@ package net.blueshell.api.service;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.controller.filter.EventFilter;
-import net.blueshell.api.model.Event;
+import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.EventRepository;
 import net.blueshell.api.repository.spec.EventSpecifications;

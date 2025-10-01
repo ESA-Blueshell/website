@@ -10,7 +10,7 @@ import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
-import net.blueshell.api.model.Committee;
+import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.service.CommitteeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.Event;
+import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
 import org.jetbrains.annotations.NotNull;

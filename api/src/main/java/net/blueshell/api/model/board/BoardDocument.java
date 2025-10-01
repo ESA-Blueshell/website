@@ -1,17 +1,18 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.board;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.model.File;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
-@Table(name = "board_members")
+@Table(name = "board_documents")
 @SQLRestriction("deleted_at >= NOW()")
-@SQLDelete(sql = "UPDATE board_members SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE board_documents SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
-public class BoardMember implements BaseModel {
+public class BoardDocument implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,11 +22,10 @@ public class BoardMember implements BaseModel {
     @ManyToOne
     private Board board;
 
-    @JoinColumn(name = "user_id")
-    @ManyToOne
-    private User user;
+    @Column(name = "name")
+    private String name;
 
-    @JoinColumn(name = "picture_id")
+    @JoinColumn(name = "file_id")
     @OneToOne
-    private File picture;
+    private File file;
 }

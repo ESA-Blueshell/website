@@ -5,15 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.mapper.CommitteeMemberMapper;
-import net.blueshell.api.model.Committee;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.model.committee.Committee;
+import net.blueshell.api.model.committee.CommitteeMember;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Mapper(

@@ -1,11 +1,9 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.ContributionPeriod;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface ContributionPeriodRepository extends BaseRepository<ContributionPeriod> {

@@ -1,4 +1,4 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.contribution;
 
 import jakarta.persistence.*;
 import lombok.Data;

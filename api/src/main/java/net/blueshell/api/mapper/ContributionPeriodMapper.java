@@ -2,16 +2,9 @@ package net.blueshell.api.mapper;
 
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.ContributionDTO;
 import net.blueshell.api.dto.ContributionPeriodDTO;
-import net.blueshell.api.dto.user.AdvancedUserDTO;
-import net.blueshell.api.model.Contribution;
-import net.blueshell.api.model.ContributionPeriod;
-import net.blueshell.api.model.User;
-import net.blueshell.api.service.ContributionPeriodService;
-import net.blueshell.api.service.ContributionService;
+import net.blueshell.api.model.contribution.ContributionPeriod;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class ContributionPeriodMapper extends BaseMapper<ContributionPeriod, ContributionPeriodDTO> {

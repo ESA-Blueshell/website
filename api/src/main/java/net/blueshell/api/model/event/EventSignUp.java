@@ -1,15 +1,18 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.model.User;
 import net.blueshell.api.model.converter.FormAnswerListConverter;
+import net.blueshell.api.model.survey.Answer;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "event_signups")
@@ -42,13 +45,13 @@ public class EventSignUp implements BaseModel {
     @JoinColumn(name = "guest_id")
     private Guest guest;
 
-    @Column(name = "form_answers", columnDefinition = "JSON")
-    @Convert(converter = FormAnswerListConverter.class)
-    @JsonIgnore
-    private List<Object> formAnswers;
+    @OneToMany(
+            mappedBy = "eventSignUp",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<EventSignUpAnswer> answers;
 
     @Column(name = "signed_up_at")
     private LocalDateTime signedUpAt;
-
-
 }

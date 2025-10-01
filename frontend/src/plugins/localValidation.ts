@@ -4,7 +4,7 @@ import { parsePhoneNumber } from 'libphonenumber-js/max'
 import { DateTime } from 'luxon'
 
 // --- Helpers ---
-const isEmpty = (v: unknown) =>
+export const isEmpty = (v: unknown) =>
   v === null || v === undefined || (typeof v === 'string' && v.trim() === '')
 
 defineRule('required', (value: unknown) => {
@@ -164,15 +164,24 @@ defineRule('phoneMobile', (v: string, [country = 'NL']: string[]) => {
   }
 })
 
-// defineRule('requiredIfTrue', (value: unknown, [other]: string[], ctx) => {
-//   if (isEmpty(value)) return true
-//   const otherField = other?.startsWith('@') ? other.slice(1) : other
-//   const target = otherField ? (ctx.form as GenericObject)?.[otherField] : undefined
-//   if (target === true) {
-//     return !(value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) || 'This field is required'
-//   }
-//   return true
-// })
+defineRule('dateTimeAfter', (value: string, [other]: string[], ctx) => {
+  if (isEmpty(value)) return true
+  const dateTimeValue = DateTime.fromISO(value)
+
+  let dateTimeTarget: DateTime
+  if (!other?.startsWith('@')) {
+    dateTimeTarget = DateTime.fromISO(other!)
+  } else {
+    const otherField = other.slice(1)
+    const target = (ctx.form as GenericObject)?.[otherField]
+    dateTimeTarget = DateTime.fromISO(target)
+  }
+
+  if (!dateTimeValue.isValid) return 'Enter a valid date'
+  if (!dateTimeTarget.isValid) return true
+  return dateTimeValue >= dateTimeTarget || `Must be after ${dateTimeTarget.toFormat("dd/MM/yyyy HH:mm")}`
+})
+
 
 // --- Global config ---
 configure({

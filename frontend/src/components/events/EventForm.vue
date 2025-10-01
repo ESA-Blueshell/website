@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import EventSignUpFormEdit from "@/components/events/EventSignUpFormEdit.vue"
-import type {FormContext} from "vee-validate"
+import {defineRule, type FormContext, type GenericObject} from "vee-validate"
 import {Field, Form} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
 import {type AdvancedCommittee, createEvent, type Event, findCommittees, type FormQuestion, updateEvent} from "@/lib"
 import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {isEmpty} from "@/plugins/localValidation.ts"
 
 const props = defineProps({
   initialEvent: {
@@ -53,22 +54,6 @@ function initializeEvent(): Event {
 
 const event = ref<Event>(initializeEvent())
 
-// -------------------------------------------------------------
-// 2) Convert existing ISO date/time → separate date + time vars
-// -------------------------------------------------------------
-const startDateTime = props.initialEvent?.startTime
-  ? DateTime.fromISO(props.initialEvent.startTime)
-  : DateTime.local()
-
-const endDateTime = props.initialEvent?.endTime
-  ? DateTime.fromISO(props.initialEvent.endTime)
-  : DateTime.local()
-
-const startDate = ref(startDateTime.toFormat("yyyy-MM-dd"))
-const startTime = ref(startDateTime.toFormat("HH:mm"))
-const endDate = ref(endDateTime.toFormat("yyyy-MM-dd"))
-const endTime = ref(endDateTime.toFormat("HH:mm"))
-
 const hadSignUp = ref<boolean>(event.value.signUp || false)
 const oldEnableSignUpForm = ref<boolean>(event.value.signUp || false)
 
@@ -80,30 +65,32 @@ findCommittees()
 
 // Compute for the end date field (only if user checks "same start & end date")
 const sameEndDate = ref(true)
-const endDateDisplay = computed({
-  get: () => (sameEndDate.value ? startDate.value : endDate.value),
-  set: (value: string) => {
-    endDate.value = value
-  },
-})
 
-function toISO(date: string, time: string): string {
-  if (!date || !time) return ""
-  const iso = DateTime.fromFormat(`${date} ${time}`, "yyyy-MM-dd HH:mm").toISO()
-  return iso ?? ""
+function toISO({date, time, dateTime}: {
+  date?: string
+  time?: string
+  dateTime?: string
+}): string {
+  if (dateTime) {
+    const dt = DateTime.fromISO(dateTime)
+    date = date ?? dt.toFormat("yyyy-MM-dd")
+    time = time ?? dt.toFormat("HH:mm")
+  }
+
+  if (!date && !time) return ""
+
+  return (
+    DateTime.fromFormat(`${date ?? ""} ${time ?? ""}`.trim(), "yyyy-MM-dd HH:mm")
+      .toISO() ?? ""
+  )
 }
 
-watch([startDate, startTime], () => {
-  event.value.startTime = toISO(startDate.value, startTime.value)
-  console.log("startTime:", event.value.startTime)
-})
-
-watch([endDate, endTime], () => {
+watch([event, sameEndDate], () => {
   if (sameEndDate.value) {
-    endDate.value = startDate.value
+    const time = DateTime.fromISO(event.value.endTime).toFormat("HH:mm")
+    const dateTime = DateTime.fromISO(event.value.startTime).toISO()!
+    event.value.endTime = toISO({time, dateTime})
   }
-  event.value.endTime = toISO(endDate.value, endTime.value)
-  console.log("endTime:", event.value.endTime)
 })
 
 // -----------------------
@@ -114,8 +101,6 @@ const submitting = ref(false)
 const signUpForm = ref<InstanceType<typeof EventSignUpFormEdit> | null>(null)
 
 async function submit() {
-  if (sameEndDate.value) endDate.value = startDate.value
-
   const result = await formRef.value?.validate()
   if (!result?.valid) return
 
@@ -307,17 +292,17 @@ async function submit() {
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="startDate"
+            v-model="event.startTime"
             name="startDate"
             rules="required"
           >
             <v-text-field
-              :model-value="value"
+              :model-value="DateTime.fromISO(value).toFormat('yyyy-MM-dd')"
               label="Start date"
               prepend-icon="mdi-calendar"
               type="date"
               :error-messages="errors"
-              @update:model-value="handleChange"
+              @update:model-value="(date: string) => handleChange(toISO({date, dateTime: event.endTime}))"
               @blur="handleBlur"
             />
           </Field>
@@ -325,17 +310,17 @@ async function submit() {
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="startTime"
+            v-model="event.startTime"
             name="startTime"
             rules="required"
           >
             <v-text-field
-              :model-value="value"
+              :model-value="DateTime.fromISO(value).toFormat('HH:mm')"
               label="Start time"
               prepend-icon="mdi-clock"
               type="time"
               :error-messages="errors"
-              @update:model-value="handleChange"
+              @update:model-value="(time: string) => handleChange(toISO({time, dateTime: event.startTime}))"
               @blur="handleBlur"
             />
           </Field>
@@ -346,18 +331,18 @@ async function submit() {
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="endDateDisplay"
+            v-model="event.endTime"
             name="endDate"
-            rules="required|dateMin:@startDate"
+            rules="required|dateTimeAfter:@startDate"
           >
             <v-text-field
               :disabled="sameEndDate"
-              :model-value="value"
+              :model-value="DateTime.fromISO(value).toFormat('yyyy-MM-dd')"
               label="End date"
               prepend-icon="mdi-calendar"
               type="date"
               :error-messages="errors"
-              @update:model-value="handleChange"
+              @update:model-value="(date: string) => handleChange(toISO({date, dateTime: event.endTime}))"
               @blur="handleBlur"
             />
           </Field>
@@ -365,17 +350,17 @@ async function submit() {
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="endTime"
+            v-model="event.endTime"
             name="endTime"
-            :rules="`required|dateMin:${event.startTime}`"
+            :rules="`required|dateTimeAfter:@startTime`"
           >
             <v-text-field
-              :model-value="value"
+              :model-value="DateTime.fromISO(value).toFormat('HH:mm')"
               label="End time"
               prepend-icon="mdi-clock"
               type="time"
               :error-messages="errors"
-              @update:model-value="handleChange"
+              @update:model-value="(time: string) => handleChange(toISO({time, dateTime: event.endTime}))"
               @blur="handleBlur"
             />
           </Field>

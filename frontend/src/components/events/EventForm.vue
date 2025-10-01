@@ -1,13 +1,3 @@
-<!--
-Refactor notes:
-- Replaced <v-form> validation with VeeValidate <Form> + <Field> wrappers (slot-based) to keep Vuetify styling.
-- Uses your existing custom rules (required, minValue, maxValue, dateBefore, dateAfter, etc.).
-- Added two tiny rules you likely want in your validators file:
-    1) requiredIfTrue (usage: rules="requiredIfTrue:@visible")
-    2) dateTimeAfter (usage: rules="dateTimeAfter:@startDate,@startTime")
-  See bottom of this file for the rule implementations to add to your validators setup file.
--->
-
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import EventSignUpFormEdit from "@/components/events/EventSignUpFormEdit.vue"
@@ -105,6 +95,7 @@ function toISO(date: string, time: string): string {
 
 watch([startDate, startTime], () => {
   event.value.startTime = toISO(startDate.value, startTime.value)
+  console.log("startTime:", event.value.startTime)
 })
 
 watch([endDate, endTime], () => {
@@ -112,6 +103,7 @@ watch([endDate, endTime], () => {
     endDate.value = startDate.value
   }
   event.value.endTime = toISO(endDate.value, endTime.value)
+  console.log("endTime:", event.value.endTime)
 })
 
 // -----------------------
@@ -191,7 +183,7 @@ async function submit() {
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.location"
             name="location"
-            rules="requiredIfTrue:@visible"
+            rules="required"
           >
             <v-text-field
               :model-value="value"
@@ -317,7 +309,7 @@ async function submit() {
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="startDate"
             name="startDate"
-            rules="requiredIfTrue:@visible|dateRequired"
+            rules="required"
           >
             <v-text-field
               :model-value="value"
@@ -335,7 +327,7 @@ async function submit() {
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="startTime"
             name="startTime"
-            rules="requiredIfTrue:@visible"
+            rules="required"
           >
             <v-text-field
               :model-value="value"
@@ -350,14 +342,13 @@ async function submit() {
         </v-col>
       </v-row>
 
-      <!-- Date/Time: End -->
       <v-row>
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="endDateDisplay"
             name="endDate"
-            rules="requiredIfTrue:@visible|dateAfter:@startDate"
+            rules="required|dateMin:@startDate"
           >
             <v-text-field
               :disabled="sameEndDate"
@@ -376,7 +367,7 @@ async function submit() {
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="endTime"
             name="endTime"
-            rules="requiredIfTrue:@visible|dateTimeAfter:@startDate,@startTime,@endDate"
+            :rules="`required|dateMin:${event.startTime}`"
           >
             <v-text-field
               :model-value="value"

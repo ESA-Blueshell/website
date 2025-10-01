@@ -110,6 +110,42 @@ defineRule('dateAfter', (value: string, [other]: string[], ctx) => {
   return dateTimeValue > dateTimeTarget || `Date must be after ${dateTimeTarget.toISODate()}`
 })
 
+defineRule('dateMax', (value: string, [other]: string[], ctx) => {
+  if (isEmpty(value)) return true
+  const dateTimeValue = DateTime.fromISO(value)
+
+  let dateTimeTarget: DateTime
+  if (!other?.startsWith('@')) {
+    dateTimeTarget = DateTime.fromISO(other!)
+  } else {
+    const otherField = other.slice(1)
+    const target = (ctx.form as GenericObject)?.[otherField]
+    dateTimeTarget = DateTime.fromISO(target)
+  }
+
+  if (!dateTimeValue.isValid) return 'Enter a valid date'
+  if (!dateTimeTarget.isValid) return true
+  return dateTimeValue <= dateTimeTarget || `Date must be at most ${dateTimeTarget.toISODate()}`
+})
+
+defineRule('dateMin', (value: string, [other]: string[], ctx) => {
+  if (isEmpty(value)) return true
+  const dateTimeValue = DateTime.fromISO(value)
+
+  let dateTimeTarget: DateTime
+  if (!other?.startsWith('@')) {
+    dateTimeTarget = DateTime.fromISO(other!)
+  } else {
+    const otherField = other.slice(1)
+    const target = (ctx.form as GenericObject)?.[otherField]
+    dateTimeTarget = DateTime.fromISO(target)
+  }
+
+  if (!dateTimeValue.isValid) return 'Enter a valid date'
+  if (!dateTimeTarget.isValid) return true
+  return dateTimeValue >= dateTimeTarget || `Date must be at least ${dateTimeTarget.toISODate()}`
+})
+
 // --- Date required (from <input type="date">) ---
 defineRule('dateRequired', (v: string) => !!v || 'Date is required')
 
@@ -128,32 +164,15 @@ defineRule('phoneMobile', (v: string, [country = 'NL']: string[]) => {
   }
 })
 
-defineRule('requiredIfTrue', (value: unknown, [other]: string[], ctx) => {
-  if (isEmpty(value)) return true
-  const otherField = other?.startsWith('@') ? other.slice(1) : other
-  const target = otherField ? (ctx.form as GenericObject)?.[otherField] : undefined
-  if (target === true) {
-    return !(value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) || 'This field is required'
-  }
-  return true
-})
-
-defineRule('dateTimeAfter', (value: string, args: string[], ctx) => {
-  if (isEmpty(value)) return true
-  const [startDateKey, startTimeKey, endDateKey] = args
-  const form = ctx.form as GenericObject
-  const sd = startDateKey?.startsWith('@') ? form?.[startDateKey.slice(1)] : startDateKey
-  const st = startTimeKey?.startsWith('@') ? form?.[startTimeKey.slice(1)] : startTimeKey
-  const ed = endDateKey?.startsWith('@') ? form?.[endDateKey.slice(1)] : endDateKey
-
-  if (!sd || !st || !ed || !value) return true
-
-  const startDT = DateTime.fromFormat(`${sd} ${st}`, 'yyyy-MM-dd HH:mm')
-  const endDT = DateTime.fromFormat(`${ed} ${value}`, 'yyyy-MM-dd HH:mm')
-
-  if (!startDT.isValid || !endDT.isValid) return 'Enter valid dates/times'
-  return endDT > startDT || 'Event must end after it starts'
-})
+// defineRule('requiredIfTrue', (value: unknown, [other]: string[], ctx) => {
+//   if (isEmpty(value)) return true
+//   const otherField = other?.startsWith('@') ? other.slice(1) : other
+//   const target = otherField ? (ctx.form as GenericObject)?.[otherField] : undefined
+//   if (target === true) {
+//     return !(value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) || 'This field is required'
+//   }
+//   return true
+// })
 
 // --- Global config ---
 configure({

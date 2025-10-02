@@ -1,20 +1,20 @@
 <script lang="ts" setup>
-import {reactive, watch} from "vue"
-import type {FormQuestion} from "@/lib"
+import {type PropType, reactive, watch} from "vue"
+import {type Question, QuestionType} from "@/lib"
 
 const props = defineProps({
   initialForm: {
-    type: Object,
-    default: () => {}
+    type: Array as PropType<Question[]>,
+    default: () => [],
   },
 })
 const emits = defineEmits(["change"])
 
 // Form can be filled with objects. Each object will be a question/part of the question form
 // Four types are possible: 'description', 'open', 'checkbox' and 'radio'
-// Each object should have a 'prompt' attribute
-// For 'checkbox' and 'radio' a 'options' array of options should be included
-const form = reactive(props.initialForm
+// Each object should have a 'label' attribute
+// For 'checkbox' and 'radio' a 'choiceLabels' array of choiceLabels should be included
+const form = reactive<Question[]>(props.initialForm
   ? JSON.parse(JSON.stringify(props.initialForm))
   : [])
 
@@ -24,47 +24,42 @@ watch(form, async (newForm) => {
 
 
 // Adds a new question to the form
-function createQuestion(type: string) {
-  if (type === "open" || type === "description") {
-    form.push({type: type, prompt: ""})
+function createQuestion(type: QuestionType) {
+  if (type === QuestionType.OPEN || type === QuestionType.DESCRIPTION) {
+    form.push({type: type, label: ""})
   } else {
-    form.push({type: type, prompt: "", options: ["", ""]})
+    form.push({type: type, label: "", choiceLabels: ["", ""]})
   }
 }
 
-// Moves the ith element one index up in the given array. This probably throws an exception if i == 0
-function moveUp(array: FormQuestion[], i: number) {
+function moveUp(array: Question[], i: number) {
   const temp = array[i]
-  array[i] = array[i - 1] as FormQuestion
-  array[i - 1] = temp as FormQuestion
+  array[i] = array[i - 1] as Question
+  array[i - 1] = temp as Question
 }
 
-// Moves the ith element one index down in the given array. This probably throws an exception if i == array.length-1
-function moveDown(array: FormQuestion[], i: number) {
+function moveDown(array: Question[], i: number) {
   const temp = array[i]
-  array[i] = array[i + 1] as FormQuestion
-  array[i + 1] = temp as FormQuestion
+  array[i] = array[i + 1] as Question
+  array[i + 1] = temp as Question
 }
 
 </script>
 
 <template>
   <div class="pa-4 form">
-    <!--
-      The actual form
-    -->
     <div
       v-for="(question,i) in form"
       :key="i"
     >
       <v-text-field
-        v-model="question.prompt"
-        :label="`${question.type === 'description' ? `Description ${i+1}` : `Question ${i+1}`}`"
+        v-model="question.label"
+        :label="`${question.type === QuestionType.DESCRIPTION ? `Description ${i+1}` : `Question ${i+1}`}`"
       >
         <template #append>
-          <!-- Button to add option (v-if question has options) -->
+          <!-- Button to add option (v-if question has choiceLabels) -->
           <v-tooltip
-            v-if="question.type === 'radio' || question.type === 'checkbox'"
+            v-if="question.type === QuestionType.RADIO || question.type === QuestionType.CHECKBOX"
             location="top"
             text="Add option"
           >
@@ -73,7 +68,7 @@ function moveDown(array: FormQuestion[], i: number) {
                 icon="mdi-plus"
                 v-bind="props"
                 variant="plain"
-                @click="question.options.push('')"
+                @click="question.choiceLabels.push('')"
               />
             </template>
           </v-tooltip>
@@ -100,35 +95,35 @@ function moveDown(array: FormQuestion[], i: number) {
       </v-text-field>
 
       <!--
-        If the question has options, add some text-fields for those options
+        If the question has choiceLabels, add some text-fields for those choiceLabels
       -->
-      <div v-if="question.type === 'radio' || question.type === 'checkbox'">
+      <div v-if="question.type === QuestionType.RADIO || question.type === QuestionType.CHECKBOX">
         <v-text-field
-          v-for="(option, j) in question.options"
+          v-for="(option, j) in question.choiceLabels"
           :key="j"
-          v-model="question.options[j]"
+          v-model="question.choiceLabels[j]"
           :label="`Option ${j+1}`"
-          :prepend-icon="question.type==='radio' ? 'mdi-radiobox-marked' : 'mdi-checkbox-marked'"
+          :prepend-icon="question.type===QuestionType.RADIO ? 'mdi-radiobox-marked' : 'mdi-checkbox-marked'"
           density="compact"
         >
           <template #append>
             <!-- Buttons for moving the option up or down and remove button -->
             <v-btn
-              :disabled="j === question.options.length-1"
+              :disabled="j === question.choiceLabels.length-1"
               icon="mdi-chevron-down"
               variant="plain"
-              @click="moveDown(question.options, j)"
+              @click="moveDown(question.choiceLabels, j)"
             />
             <v-btn
               :disabled="j === 0"
               icon="mdi-chevron-up"
               variant="plain"
-              @click="moveUp(question.options, j)"
+              @click="moveUp(question.choiceLabels, j)"
             />
             <v-btn
               icon="mdi-close"
               variant="plain"
-              @click="question.options.splice(j,1)"
+              @click="question.choiceLabels.splice(j,1)"
             />
           </template>
         </v-text-field>
@@ -155,16 +150,16 @@ function moveDown(array: FormQuestion[], i: number) {
         </v-btn>
       </template>
       <v-list>
-        <v-list-item @click="createQuestion('description')">
+        <v-list-item @click="createQuestion(QuestionType.DESCRIPTION)">
           Description without a question
         </v-list-item>
-        <v-list-item @click="createQuestion('open')">
+        <v-list-item @click="createQuestion(QuestionType.OPEN)">
           Open question
         </v-list-item>
-        <v-list-item @click="createQuestion('radio')">
+        <v-list-item @click="createQuestion(QuestionType.RADIO)">
           Multiple choice question
         </v-list-item>
-        <v-list-item @click="createQuestion('checkbox')">
+        <v-list-item @click="createQuestion(QuestionType.CHECKBOX)">
           Question with checkboxes
         </v-list-item>
       </v-list>

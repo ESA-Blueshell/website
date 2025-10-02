@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {computed, type Ref, ref} from "vue"
 import {useStore} from "vuex"
-import {createEventSignup, type Event, type EventSignUp, type FormQuestion, updateEventSignUp} from "@/lib"
+import {createEventSignup, type Event, type EventSignUp, type Question, QuestionType, updateEventSignUp} from "@/lib"
 import {Field, Form} from "vee-validate"
 import type {VForm} from "vuetify/lib/components"
 
@@ -26,10 +26,10 @@ const store = useStore()
  */
 const answersData = ref(
   props.initialFormAnswers
-  ?? props.event.signUpForm?.map((question: FormQuestion) => {
-    if (question.type === "open") return ""
-    if (question.type === "checkbox") return []
-    if (question.type === "radio") return Array(question.options?.length ?? 0).fill(false)
+  ?? props.event.signUpForm?.questions.map((question: Question) => {
+    if (question.type === QuestionType.OPEN) return ""
+    if (question.type === QuestionType.RADIO) return []
+    if (question.type === QuestionType.CHECKBOX) return Array(question.choiceLabels?.length ?? 0).fill(false)
     return null // For radio or anything else
   }),
 )
@@ -58,7 +58,7 @@ const signUp = computed(() => {
     return {
       id: signupProp?.id,
       eventId: signupProp?.eventId,
-      formAnswers: signupProp?.formAnswers ?? [],
+      formAnswers: signupProp?.answers ?? [],
     } as EventSignUp
   },
 )
@@ -78,7 +78,7 @@ async function submit() {
 
   const formValid = await answersForm.value?.validate()
   if (!formValid) return
-  signUp.value.formAnswers = answersData.value ?? []
+  signUp.value.answers = answersData.value ?? []
 
   if (isLoggedIn.value) {
     if (signUp.value?.id) {

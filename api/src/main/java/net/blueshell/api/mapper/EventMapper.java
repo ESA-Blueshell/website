@@ -11,8 +11,18 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 @Slf4j
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class, FormQuestionMapper.class})
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
+
+    static LocalDateTime map(OffsetDateTime t) {
+        return t == null ? null
+                : t.toLocalDateTime();
+    }
+
+    static OffsetDateTime map(LocalDateTime t) {
+        return t == null ? null
+                : t.atZone(ZoneId.systemDefault()).toOffsetDateTime();
+    }
 
     @Mapping(target = "id")
     @Mapping(target = "committeeId")
@@ -25,9 +35,9 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "publicPrice")
     @Mapping(target = "visible")
     @Mapping(target = "membersOnly")
-    @Mapping(target = "signUp")
+//    @Mapping(target = "signUp")
     @Mapping(target = "banner")
-    @Mapping(target = "signUpForm")
+//    @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract Event fromDTO(EventDTO dto, @MappingTarget Event event);
 
@@ -50,19 +60,9 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "publicPrice")
     @Mapping(target = "visible")
     @Mapping(target = "membersOnly")
-    @Mapping(target = "signUp")
+//    @Mapping(target = "signUp")
     @Mapping(target = "banner")
-    @Mapping(target = "signUpForm")
+//    @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventDTO toDTO(Event event);
-
-    static LocalDateTime map(OffsetDateTime t) {
-        return t == null ? null
-                : t.toLocalDateTime();
-    }
-
-    static OffsetDateTime map(LocalDateTime t) {
-        return t == null ? null
-                : t.atZone(ZoneId.systemDefault()).toOffsetDateTime();
-    }
 }

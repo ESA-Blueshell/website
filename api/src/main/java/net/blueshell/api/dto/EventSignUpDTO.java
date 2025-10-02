@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
+import net.blueshell.api.model.survey.Answer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class EventSignUpDTO extends BaseDTO {
     private Long eventId;
 
     @Valid
-    private List<Object> formAnswers;
+    private List<Answer> answers;
 
     private GuestDTO guest;
 

@@ -4,19 +4,20 @@ package net.blueshell.api.mapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.EventSignUpDTO;
+import net.blueshell.api.mapper.survey.AnswerMapper;
 import net.blueshell.api.model.event.EventSignUp;
 import org.mapstruct.*;
 
 @Slf4j
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {GuestMapper.class})
+        uses = {GuestMapper.class, AnswerMapper.class})
 public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSignUpDTO> {
 
     @Mapping(target = "id")
     @Mapping(target = "eventId")
     @Mapping(target = "guest")
     @Mapping(target = "userId")
-    @Mapping(target = "formAnswers", source = "signUp.formAnswers")
+    @Mapping(target = "answers")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUpDTO toDTO(EventSignUp signUp);
 
@@ -27,7 +28,7 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
             target = "signedUpAt",
             expression = "java(signUp.getSignedUpAt() == null ? java.time.LocalDateTime.now() : signUp.getSignedUpAt())"
     )
-    @Mapping(target = "formAnswers", source = "dto.formAnswers")
+    @Mapping(target = "answers")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUp fromDTO(EventSignUpDTO dto, @MappingTarget EventSignUp signUp);
 }

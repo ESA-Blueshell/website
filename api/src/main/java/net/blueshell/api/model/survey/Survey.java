@@ -20,6 +20,12 @@ public class Survey {
     @OneToMany(mappedBy = "survey")
     private Set<Question> questions;
 
-    @OneToMany(mappedBy = "survey")
+    @OneToMany
+    @JoinTable(
+            name = "questions",
+            joinColumns = @JoinColumn(name = "survey_id"),
+            inverseJoinColumns = @JoinColumn(name = "id")
+    )
+    @JoinColumn(name = "question_id")
     private Set<Answer> answers;
 }

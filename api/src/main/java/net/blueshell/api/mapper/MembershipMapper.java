@@ -6,12 +6,10 @@ import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.MembershipDTO;
 import net.blueshell.api.model.Membership;
-import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Date;
 import java.time.Instant;
+import java.util.Date;
 
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 

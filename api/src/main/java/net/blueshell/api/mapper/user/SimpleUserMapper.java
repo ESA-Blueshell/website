@@ -2,7 +2,6 @@ package net.blueshell.api.mapper.user;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.model.User;
 import org.mapstruct.*;

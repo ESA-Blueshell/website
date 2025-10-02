@@ -32,16 +32,13 @@ public class BooleanListConverter implements AttributeConverter<List<Boolean>, S
 
     @Override
     public List<Boolean> convertToEntityAttribute(String dbData) {
-        log.info("Converting FormQuestion JSON from DB: {}", dbData);
         if (dbData == null || dbData.isBlank() || "null".equalsIgnoreCase(dbData)) {
             return new ArrayList<>();
         }
         try {
             var type = MAPPER.getTypeFactory()
-                    .constructCollectionType(List.class, FormQuestion.class);
-            List<Boolean> temp = MAPPER.readValue(dbData, type);
-            log.info("Converting FormQuestion JSON: {}", temp);
-            return temp;
+                    .constructCollectionType(List.class, Boolean.class);
+            return MAPPER.readValue(dbData, type);
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize JSON to List<FormQuestion>", e);
         }

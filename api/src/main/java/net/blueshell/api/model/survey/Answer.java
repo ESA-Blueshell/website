@@ -10,14 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "answers",
-        indexes = {
-                @Index(name = "ix_answers_question_id", columnList = "question_id"),
-                @Index(name = "ix_answers_survey_id", columnList = "survey_id"),
-                @Index(name = "ix_answers_user_id", columnList = "user_id")
-        }
-)
+@Table(name = "answers")
 @SQLRestriction("deleted_at >= NOW()")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data

@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
+import net.blueshell.api.dto.survey.QuestionDTO;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -40,5 +41,5 @@ public class EventDTO extends BaseDTO {
     private boolean signUp;
     private FileDTO banner;
     @Valid
-    private List<FormQuestionDTO> signUpForm;
+    private List<QuestionDTO> questions;
 }

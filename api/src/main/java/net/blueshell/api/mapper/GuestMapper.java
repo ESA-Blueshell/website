@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper;
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.EventSignUpDTO;
+import net.blueshell.api.dto.event.EventSignUpDTO;
 import net.blueshell.api.dto.GuestDTO;
 import net.blueshell.api.model.event.Guest;
 import org.mapstruct.BeanMapping;

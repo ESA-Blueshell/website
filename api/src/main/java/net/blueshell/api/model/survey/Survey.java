@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -28,4 +29,17 @@ public class Survey {
     )
     @JoinColumn(name = "question_id")
     private Set<Answer> answers;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Survey survey = (Survey) o;
+        return Objects.equals(id, survey.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

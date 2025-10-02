@@ -1,4 +1,4 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,8 +9,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
+import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.dto.survey.QuestionDTO;
+import net.blueshell.api.dto.survey.SurveyDTO;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -41,5 +42,5 @@ public class EventDTO extends BaseDTO {
     private boolean signUp;
     private FileDTO banner;
     @Valid
-    private List<QuestionDTO> questions;
+    private SurveyDTO signUpForm;
 }

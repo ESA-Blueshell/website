@@ -74,7 +74,7 @@ export type Event = {
     membersOnly?: boolean;
     signUp?: boolean;
     banner?: File;
-    signUpForm?: Array<FormQuestion>;
+    signUpForm?: Survey;
     description: string;
     location?: string;
 };
@@ -101,18 +101,37 @@ export enum FileType {
     SPONSOR_PICTURE = 'SPONSOR_PICTURE'
 }
 
-export type FormQuestion = {
-    prompt: string;
-    type: string;
-    options?: Array<string>;
+export type Question = {
+    id?: number;
+    surveyId: number;
+    type: QuestionType;
+    label?: string;
+    choiceLabels?: Array<string>;
+};
+
+export enum QuestionType {
+    OPEN = 'OPEN',
+    RADIO = 'RADIO',
+    CHECKBOX = 'CHECKBOX',
+    DESCRIPTION = 'DESCRIPTION'
+}
+
+export type Survey = {
+    id?: number;
+    questions: Array<Question>;
+};
+
+export type Answer = {
+    id?: number;
+    questionId: number;
+    optionSelections?: Array<boolean>;
+    textResponse?: string;
 };
 
 export type EventSignUp = {
     id?: number;
     eventId?: number;
-    formAnswers?: Array<{
-        [key: string]: unknown;
-    }>;
+    answers?: Array<Answer>;
     guest?: Guest;
     userId?: number;
 };

@@ -16,5 +16,5 @@ public class SurveyDTO extends BaseDTO {
     private Long id;
 
     @NotEmpty
-    private Set<Question> questions;
+    private Set<QuestionDTO> questions;
 }

@@ -2,12 +2,14 @@ package net.blueshell.api.model.survey;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import net.blueshell.api.model.File;
 import net.blueshell.api.model.converter.BooleanListConverter;
 import net.blueshell.api.model.event.EventSignUp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "answers")
@@ -32,4 +34,17 @@ public class Answer {
 
     @Column(name = "text_response")
     private String textResponse;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Answer answer = (Answer) o;
+        return Objects.equals(id, answer.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

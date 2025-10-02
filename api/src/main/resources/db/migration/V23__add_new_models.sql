@@ -59,7 +59,7 @@ CREATE TABLE memberships
     user_id      BIGINT                NULL,
     start_date   date                  NULL,
     end_date     date                  NULL,
-    type         VARCHAR(2555)         NULL,
+    type         VARCHAR(255)         NULL,
     city         VARCHAR(255)          NULL,
     incasso      tinyint(1)            NULL,
     signature_id BIGINT                NULL,

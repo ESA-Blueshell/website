@@ -1,4 +1,4 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.event;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

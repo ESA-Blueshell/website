@@ -3,7 +3,7 @@ package net.blueshell.api.mapper;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.EventSignUpDTO;
+import net.blueshell.api.dto.event.EventSignUpDTO;
 import net.blueshell.api.mapper.survey.AnswerMapper;
 import net.blueshell.api.model.event.EventSignUp;
 import org.mapstruct.*;

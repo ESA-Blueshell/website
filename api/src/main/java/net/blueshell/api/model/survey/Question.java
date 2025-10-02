@@ -9,12 +9,13 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
 @Table(
         name = "questions",
-        indexes = { @Index(name = "ix_questions_survey_id", columnList = "survey_id") }
+        indexes = {@Index(name = "ix_questions_survey_id", columnList = "survey_id")}
 )
 @SQLRestriction("deleted_at >= NOW()")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
@@ -35,6 +36,7 @@ public class Question implements BaseModel {
     private Set<Answer> answers;
 
     @Column(name = "type")
+    @Enumerated(EnumType.STRING)
     private QuestionType type;
 
     @Column(name = "label")
@@ -43,4 +45,17 @@ public class Question implements BaseModel {
     @Column(name = "choice_labels", columnDefinition = "JSON")
     @Convert(converter = StringListConverter.class)
     private List<String> choiceLabels;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Question question = (Question) o;
+        return Objects.equals(id, question.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

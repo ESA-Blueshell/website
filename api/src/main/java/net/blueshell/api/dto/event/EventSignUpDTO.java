@@ -1,11 +1,12 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.event;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.dto.user.SimpleUserDTO;
+import net.blueshell.api.dto.GuestDTO;
+import net.blueshell.api.dto.survey.AnswerDTO;
 import net.blueshell.api.model.survey.Answer;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +23,7 @@ public class EventSignUpDTO extends BaseDTO {
     private Long eventId;
 
     @Valid
-    private List<Answer> answers;
+    private List<AnswerDTO> answers;
 
     private GuestDTO guest;
 

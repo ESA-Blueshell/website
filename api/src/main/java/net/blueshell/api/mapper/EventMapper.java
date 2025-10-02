@@ -2,7 +2,8 @@ package net.blueshell.api.mapper;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.EventDTO;
+import net.blueshell.api.dto.event.EventDTO;
+import net.blueshell.api.dto.survey.SurveyDTO;
 import net.blueshell.api.model.event.Event;
 import org.mapstruct.*;
 
@@ -11,7 +12,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 @Slf4j
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class})
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class, SurveyDTO.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     static LocalDateTime map(OffsetDateTime t) {
@@ -35,9 +36,8 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "publicPrice")
     @Mapping(target = "visible")
     @Mapping(target = "membersOnly")
-//    @Mapping(target = "signUp")
     @Mapping(target = "banner")
-//    @Mapping(target = "signUpForm")
+    @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract Event fromDTO(EventDTO dto, @MappingTarget Event event);
 
@@ -60,9 +60,8 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "publicPrice")
     @Mapping(target = "visible")
     @Mapping(target = "membersOnly")
-//    @Mapping(target = "signUp")
     @Mapping(target = "banner")
-//    @Mapping(target = "signUpForm")
+    @Mapping(target = "signUpForm")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventDTO toDTO(Event event);
 }

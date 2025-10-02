@@ -100,12 +100,12 @@ public class Event implements BaseModel {
     @Column(name = "members_only")
     private boolean membersOnly;
 
-//    @JoinColumn(name = "sign_up_form_id", updatable = false, insertable = false)
-//    @OneToOne(fetch = FetchType.LAZY)
-//    private Survey signUpForm;
-//
-//    @Column(name = "sign_up_form_id")
-//    private Long signUpFormId;
+    @JoinColumn(name = "survey_id", updatable = false, insertable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    private Survey signUpForm;
+
+    @Column(name = "survey_id")
+    private Long signUpFormId;
 
     @JsonProperty("creator")
     public long getCreatorId() {
@@ -144,7 +144,7 @@ public class Event implements BaseModel {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Event event = (Event) o;
-        return id == event.id;
+        return Objects.equals(id, event.id);
     }
 
     @Override

@@ -26,29 +26,12 @@ public class Answer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
-    private Long userId;
-
     @Column(name = "question_id", nullable = false)
     private Long questionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", insertable = false, updatable = false)
     private Question question;
-
-    @Column(name = "survey_id", nullable = false, insertable = false, updatable = false)
-    private Long surveyId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "survey_id", insertable = false, updatable = false)
-    private Survey survey;
-
-    @Column(name = "event_sign_up_id", nullable = false, insertable = false, updatable = false)
-    private Long eventSignUpId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_sign_up_id", insertable = false, updatable = false)
-    private EventSignUp eventSignUp;
 
     @Column(name = "option_selections", columnDefinition = "JSON")
     @Convert(converter = BooleanListConverter.class)

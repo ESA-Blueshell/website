@@ -5,13 +5,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.User;
-import net.blueshell.api.model.converter.FormAnswerListConverter;
 import net.blueshell.api.model.survey.Answer;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -45,12 +43,13 @@ public class EventSignUp implements BaseModel {
     @JoinColumn(name = "guest_id")
     private Guest guest;
 
-    @OneToMany(
-            mappedBy = "eventSignUp",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "event_sign_up_answers",
+            joinColumns = @JoinColumn(name = "event_sign_up_id"),
+            inverseJoinColumns = @JoinColumn(name = "answer_id")
     )
-    private Set<EventSignUpAnswer> answers;
+    private Set<Answer> answers;
 
     @Column(name = "signed_up_at")
     private LocalDateTime signedUpAt;

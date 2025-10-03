@@ -3,7 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import EventForm from "@/components/events/EventForm.vue"
-import {type Event, findEventById} from "@/lib"
+import {type Event, findEventById, type Survey} from "@/lib"
 
 const route = useRoute()
 const router = useRouter()
@@ -34,7 +34,7 @@ onMounted(async () => {
     // Initialize a blank event object
     eventData.value = {
       id: undefined,
-      committeeId: undefined,
+      committeeId: 0,
       title: "",
       description: "",
       location: "",
@@ -44,7 +44,7 @@ onMounted(async () => {
       membersOnly: false,
       signUp: false,
       banner: undefined,
-      signUpForm: [],
+      signUpForm: {} as Survey,
     } as Event
   }
 })

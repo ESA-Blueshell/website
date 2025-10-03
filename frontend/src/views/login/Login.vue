@@ -74,15 +74,16 @@ import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import type {JwtRequest, Login} from "@/lib"
+import type {Login} from "@/lib"
 import {authenticate} from "@/lib"
 import type {State} from "@/plugins/store"
+import type {VForm} from "vuetify/lib/components"
 
 const router = useRouter()
 const route = useRoute()
 const store = useStore<State>()
 
-const form = ref<any>(null)
+const form = ref<VForm>()
 const usernameField = ref<any>(null)
 const username = ref<string>("")
 const password = ref<string>("")
@@ -106,45 +107,31 @@ onMounted(() => {
 
 const login = async () => {
   // Check if form is valid (meaning username and password are not empty)
-  if (form.value && form.value.validate()) {
+  if (form.value && (await form.value.validate()).valid) {
     loading.value = true
 
-    try {
-      const requestBody: JwtRequest = {
+    const response = await authenticate({
+      body: {
         username: username.value,
         password: password.value,
-      }
+      },
+      throwOnError: true,
+    })
 
-      const response = await authenticate<true>({
-        body: requestBody,
-        throwOnError: true,
-      })
+    loading.value = false
 
-      // Type the response data as JwtResponse
-      const jwtResponse = response.data as Login
-
-      // Store response (convert JwtResponse to Login type expected by store)
-      const loginData = {
-        userId: jwtResponse.userId!,
-        username: jwtResponse.username!,
-        roles: jwtResponse.roles!,
-        token: jwtResponse.token!,
-        expiration: jwtResponse.expiration!,
-      }
-
+    if (response.status === 200) {
+      const loginData = response.data as Login
       store.commit("setLogin", loginData)
 
       // Go to redirect page or home page
       await router.push(route.query.redirect?.toString() || "/")
-    } catch (e: unknown) {
-      // Show Incorrect login snackbar
-      if (e?.response?.status === 401) {
+    } else {
+      if (response?.status === 401) {
         store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
       } else {
-        $handleNetworkError(e)
+        $handleNetworkError(response)
       }
-    } finally {
-      loading.value = false
     }
   }
 }

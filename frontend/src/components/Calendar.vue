@@ -55,7 +55,7 @@
 import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import type {Event, PageEvent} from "@/lib"
+import type {Event} from "@/lib"
 import {findEvents} from "@/lib"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
@@ -105,7 +105,7 @@ const loadEventsForMonth = async (month: DateTime) => {
   const {data} = await findEvents({
     query: {from, to},
   })
-  const page = (data ?? {}) as PageEvent
+  const page = (data ?? {})
 
   if (page.content) {
     const newEvents = page.content.filter(e => !events.value.some(e2 => e2.id === e.id))

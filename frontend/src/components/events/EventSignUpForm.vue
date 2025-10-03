@@ -1,7 +1,15 @@
 <script lang="ts" setup>
 import {computed, type Ref, ref} from "vue"
 import {useStore} from "vuex"
-import {createEventSignup, type Event, type EventSignUp, type Question, QuestionType, updateEventSignUp} from "@/lib"
+import {
+  type Answer,
+  createEventSignup,
+  type Event,
+  type EventSignUp,
+  type Question,
+  QuestionType,
+  updateEventSignUp,
+} from "@/lib"
 import {Field, Form} from "vee-validate"
 import type {VForm} from "vuetify/lib/components"
 
@@ -9,7 +17,6 @@ const emit = defineEmits(["submit"])
 
 interface Props {
   event: Event
-  initialFormAnswers?: any[]
   showGuestForm: boolean
   buttonLoading?: boolean
   initialSignUp?: EventSignUp
@@ -24,14 +31,30 @@ const store = useStore()
  * Otherwise, if `props.event.signUpForm` is present, build an initial answers array according
  * to the question type. If neither is present, set answers to null.
  */
-const answersData = ref(
-  props.initialFormAnswers
-  ?? props.event.signUpForm?.questions.map((question: Question) => {
-    if (question.type === QuestionType.OPEN) return ""
-    if (question.type === QuestionType.RADIO) return []
-    if (question.type === QuestionType.CHECKBOX) return Array(question.choiceLabels?.length ?? 0).fill(false)
-    return null // For radio or anything else
-  }),
+
+const answersData = ref<Answer[]>(
+  props.initialSignUp?.answers
+  ?? props.event.signUpForm?.questions
+    .filter((q: Question) => q.type == QuestionType.DESCRIPTION).map((question: Question) => {
+        if (question.type === QuestionType.OPEN) {
+          return {
+            questionId: question.id!,
+            textResponse: "",
+          }
+        }
+        if (question.type === QuestionType.RADIO) {
+          return {
+            questionId: question.id!,
+            optionsSelections: Array(question.choiceLabels?.length ?? 0).fill(false),
+          }
+        }
+        return {
+          questionId: question.id!,
+          optionsSelections: Array(question.choiceLabels?.length ?? 0).fill(false),
+        }
+      },
+    )
+  ?? [],
 )
 
 /**

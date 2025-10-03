@@ -22,10 +22,10 @@
         </p>
         <p class="text-body-1">
           For more info contact the esports affairs (on discord) or send a mail to <b><a
-          class="text-decoration-none"
-          href="mailto:esports@blueshell.utwente.nl"
-          target="_blank"
-        >esports@blueshell.utwente.nl</a></b>
+            class="text-decoration-none"
+            href="mailto:esports@blueshell.utwente.nl"
+            target="_blank"
+          >esports@blueshell.utwente.nl</a></b>
         </p>
         <p class="text-body-1">
           Currently in Blueshell, there are teams for CS:GO, LoL and Rocket League. To find out the current teams in

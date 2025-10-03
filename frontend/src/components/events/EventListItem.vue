@@ -65,7 +65,7 @@ const signUp = computed(() => {
     return {
       id: signupProp?.id,
       eventId: signupProp?.eventId,
-      formAnswers: signupProp?.formAnswers ?? [],
+      formAnswers: signupProp?.answers ?? [],
     } as EventSignUp
   },
 )
@@ -94,14 +94,13 @@ async function submitSignUp() {
       })
     } else {
       await createEventSignup({
-        path: {id: event.value.id as number},
+        path: {eventId: event.value.id as number},
         body: {
           ...signUp.value,
           eventId: event.value.id as number,
         },
       })
     }
-    signUp.value.formAnswers = []
   } finally {
     submitting.value = false
   }
@@ -444,7 +443,7 @@ function handleSignUpSubmit() {
             >
               <sign-up-form
                 :event="event"
-                :initial-form-answers="signUp?.formAnswers"
+                :initial-form-answers="signUp?.answers"
                 :initial-sign-up="signUp"
                 :show-guest-form="!isLoggedIn"
                 class="form mx-auto"

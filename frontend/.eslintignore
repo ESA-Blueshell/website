@@ -1,2 +1,4 @@
 .eslintrc.js
 .gitignore
+/.yarn/
+/node_modules/

@@ -155,25 +155,7 @@ const saving: Ref<boolean> = ref(false)
 const loggedIn: Ref<boolean> = ref(false)
 
 // Form data
-const userData: Ref<AdvancedUser> = ref({
-  initials: "",
-  firstName: "",
-  lastName: "",
-  prefix: "",
-  email: "",
-  username: "",
-  phoneNumber: "",
-  dateOfBirth: "",
-  nationality: "",
-  discord: "",
-  newsletter: false,
-  photoConsent: false,
-  ehbo: false,
-  bhv: false,
-  incasso: false,
-  studentNumber: "",
-  gender: "",
-} as AdvancedUser)
+const userData: Ref<AdvancedUser | undefined> = ref()
 
 const addressData: Ref<Address> = ref({
   street: "",
@@ -183,12 +165,7 @@ const addressData: Ref<Address> = ref({
   country: "",
 } as Address)
 
-const membershipData: Ref<Membership> = ref({
-  userId: 0,
-  memberType: "REGULAR",
-  city: "",
-  date: DateTime.now().toISODate(),
-} as Membership)
+const membershipData: Ref<Membership | undefined> = ref()
 
 // Template refs
 const userEditRef: Ref<any> = ref(null)
@@ -250,15 +227,13 @@ const validateAndSaveUserData = async (): Promise<boolean> => {
     if (loggedIn.value && userData.value.id) {
       // Update existing user
       response = await updateUser({
-        path: {userId: userData.value.id},
+        path: {id: userData.value.id},
         body: userData.value,
-        client,
       })
     } else {
       // Create new user
       response = await createUser({
         body: userData.value,
-        client,
       })
     }
 
@@ -330,7 +305,6 @@ const completeMembership = async (): Promise<void> => {
       // Fetch updated user data to get new roles
       const response = await findUserById({
         path: {userId: userData.value.id},
-        client,
       })
 
       if (response.data) {
@@ -359,7 +333,6 @@ onMounted(async () => {
       // Fetch existing user data
       const response = await findUserById({
         path: {userId: login.userId},
-        client,
       })
 
       if (response.data) {

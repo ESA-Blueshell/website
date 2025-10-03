@@ -1,7 +1,19 @@
 .DS_Store
 node_modules
-.yarn
 /dist
+
+# Yarn Berry
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/patches
+
+# Ignore build/cache files
+.pnp.*.mjs
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
 
 
 # local env files

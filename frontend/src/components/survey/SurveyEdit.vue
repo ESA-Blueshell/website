@@ -16,7 +16,7 @@ import type {VForm} from "vuetify/lib/components"
 const emit = defineEmits(["submit"])
 
 interface Props {
-  event: Event
+  event?: Event
   showGuestForm: boolean
   buttonLoading?: boolean
   initialSignUp?: EventSignUp

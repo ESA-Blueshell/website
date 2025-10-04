@@ -59,7 +59,7 @@ function removeChoice(j: number) {
     v-slot="{ value, errors, handleChange, handleBlur }"
     :name="`survey.questions[${model.idx}].label`"
     rules="required"
-    :initial-value="model.label"
+    :model-value="model.label"
   >
     <v-text-field
       :model-value="value"

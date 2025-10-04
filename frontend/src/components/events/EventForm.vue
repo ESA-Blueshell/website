@@ -52,7 +52,7 @@ function initializeEvent(): Event {
 const event = ref<Event>(initializeEvent())
 
 const hadSignUp = ref<boolean>(event.value.signUp || false)
-const oldEnableSignUpForm = ref<boolean>(event.value.signUpForm || false)
+const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm || false)
 
 // Committees
 const committees = ref<AdvancedCommittee[]>([])

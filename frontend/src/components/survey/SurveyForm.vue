@@ -1,8 +1,12 @@
 <script lang="ts" setup>
 import { type Survey, type Question, QuestionType } from "@/lib"
 import QuestionField from "@/components/survey/QuestionField.vue"
+import {computed, ref} from "vue"
 
 const model = defineModel<Survey>({ default: { questions: [] } })
+const initialModel = ref<Survey>(JSON.parse(JSON.stringify(model.value)))
+const initialJson = ref(JSON.stringify(initialModel.value))
+const isDirty = computed(() => JSON.stringify(model.value) !== initialJson.value)
 
 function addQuestion(type: QuestionType) {
   const nextIdx = model.value.questions.length
@@ -96,7 +100,7 @@ function moveQuestionDown(i: number) {
 
     <v-expand-transition class="mt-4">
       <v-alert
-        v-if="Array.isArray(model.questions) && model.questions.length"
+        v-if="isDirty"
         prominent
         type="warning"
         variant="outlined"

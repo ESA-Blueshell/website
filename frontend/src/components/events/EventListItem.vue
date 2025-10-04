@@ -311,7 +311,7 @@ function handleSignUpSubmit() {
 
               <!-- Sign-up controls -->
               <template v-if="event.signUp">
-                <template v-if="isLoggedIn && !event.signUpForm?.length">
+                <template v-if="isLoggedIn && !event.signUpForm">
                   <v-tooltip
                     v-if="signUp?.id"
                     location="left"

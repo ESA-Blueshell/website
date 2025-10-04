@@ -111,7 +111,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 import MarqueeText from "vue-marquee-text-component"
-import {$goto} from "@/plugins/goto"
+import {$goto} from "@/plugins/goto.ts"
 import markdownToHtml from "@/plugins/markdownToHtml.ts"
 import type {Event, File} from "@/lib"
 

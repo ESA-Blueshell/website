@@ -60,7 +60,7 @@ import {findEvents} from "@/lib"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"
-import EventDetails from "@/components/events/EventDetails.vue"
+import EventDetails from "@/components/events-calendar/EventDetails.vue"
 import committees from "@/views/Committees.vue"
 
 // State

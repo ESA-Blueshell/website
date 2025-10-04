@@ -40,10 +40,9 @@ const props = defineProps({
 const showDeleteDialog = ref(false)
 const deletingEvent = ref(false)
 const emit = defineEmits<{
-  (e: "deleted", id: number): void,
-  (e: "updated", event: Event): void,
-  (e: "signUp:updated", signUp: EventSignUp): void,
-  (e: "signUp:deleted", signUpId: number): void,
+  (e: "delete:event", event: Event): void
+  (e: "update:signUp", signUp: EventSignUp): void,
+  (e: "delete:signUp", signUpId: number): void,
 }>()
 
 async function confirmDeleteEvent() {
@@ -52,7 +51,7 @@ async function confirmDeleteEvent() {
   try {
     await deleteEventById({path: {eventId: event.value.id as number}})
     store.commit("setStatusSnackbarMessage", `Deleted “${event.value.title}”`)
-    emit("deleted", event.value.id as number)
+    emit("delete:event", event.value.id as number)
   } catch (err) {
     console.error(err)
     store.commit("setStatusSnackbarMessage", `Couldn't delete “${event.value.title}”`)
@@ -110,7 +109,7 @@ async function submitSignUp() {
       updatedSignUp = resp.data
     }
 
-    emit("signUp:updated", updatedSignUp)
+    emit("update:signUp", updatedSignUp)
   } finally {
     submitting.value = false
   }
@@ -122,7 +121,7 @@ async function removeSignUp() {
       path: {eventSignupId: signUp.value.id as number},
       throwOnError: true,
     })
-    emit("signUp:deleted", signUp.value.id)
+    emit("delete:signUp", signUp.value.id)
   }
 }
 
@@ -226,7 +225,7 @@ function formatEventTime() {
 
 function handleUpdateSignUp(updatedSignUp: EventSignUp) {
   eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
-  emit("signUp:updated", updatedSignUp)
+  emit("update:signUp", updatedSignUp)
   expanded.value = false
 }
 

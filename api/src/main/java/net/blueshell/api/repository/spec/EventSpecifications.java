@@ -87,7 +87,7 @@ public final class EventSpecifications {
         // So we don't filter further
         if (user == null || !user.hasAuthority(Role.MEMBER)) {
             // For a non-member, only public events are visible
-            spec = spec.and(isPublicEvent().and(visible()));
+            spec = spec.and(visible());
         } else if (!user.hasAuthority(Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
             // And visible events are included

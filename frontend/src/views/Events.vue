@@ -1,3 +1,89 @@
+<script lang="ts" setup>
+import TopBanner from "@/components/banners/TopBanner.vue"
+import Calendar from "@/components/events-calendar/Calendar.vue"
+import EventList from "@/components/events/EventList.vue"
+import {
+  type AdvancedCommittee,
+  type Event,
+  type EventSignUp,
+  findCommitteesForCurrentUser,
+  findEvents,
+  findEventSignUps,
+  type Login,
+} from "@/lib"
+import {computed, onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import {DateTime} from "luxon"
+
+const store = useStore()
+const calendarRef = ref()
+
+
+const events = ref<Event[] | null>(null)
+const committees = ref<AdvancedCommittee[] | null>(null)
+const eventSignUps = ref<EventSignUp[] | null>(null)
+
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const login = computed<Login>(() => store.getters.getLogin)
+
+onMounted(async () => {
+  const [eventsResp, signupsResp, committeesResp] = await Promise.all([
+    findEvents({
+        query: {
+          from: DateTime.now().startOf("day").toISO()!,
+          sort: ["startTime", "asc"],
+        },
+      },
+    ),
+    isLoggedIn.value
+      ? findEventSignUps({
+        query: {
+          from: DateTime.now().startOf("day").toISO()!,
+          userId: login.value.userId,
+        },
+      })
+      : Promise.resolve({data: [] as EventSignUp[]}),
+    isLoggedIn.value
+      ? findCommitteesForCurrentUser()
+      : Promise.resolve({data: [] as AdvancedCommittee[]}),
+  ])
+
+  const fetchedEvents = eventsResp.data?.content ?? []
+
+  // Assign signups first, as otherwise event rendering happens before they're available
+  if (isLoggedIn.value) {
+    eventSignUps.value = signupsResp.data ?? []
+    committees.value = committeesResp.data as AdvancedCommittee[] ?? []
+  }
+  events.value = fetchedEvents
+})
+
+function deleteSignUp(signUpId: number): void {
+  eventSignUps.value = (eventSignUps.value ?? []).filter(
+    (es: EventSignUp) => es.id !== signUpId,
+  )
+}
+
+function updateSignUp(signUp: EventSignUp): void {
+  const list = eventSignUps.value ?? []
+  const idx = list.findIndex(es => es.id === signUp.id)
+  if (idx >= 0) {
+    eventSignUps.value = [
+      ...list.slice(0, idx),
+      signUp,
+      ...list.slice(idx + 1),
+    ]
+  } else {
+    eventSignUps.value = [...list, signUp]
+  }
+}
+
+function deleteEvent(id: number) {
+  events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
+  calendarRef.value?.deleteEvent?.(id)
+}
+
+</script>
 <template>
   <v-main>
     <top-banner title="Events" />
@@ -15,7 +101,14 @@
         <p class="text-h4 font-weight-light">
           Upcoming events
         </p>
-        <event-list @deleted="onEventDeleted" />
+        <event-list
+          :event-sign-ups="eventSignUps ?? []"
+          :events="events ?? []"
+          :committees="committees ?? []"
+          @delete:event="deleteEvent"
+          @delete:sign-up="deleteSignUp"
+          @update:sign-up="updateSignUp"
+        />
       </div>
       <div
         class="mx-auto my-5"
@@ -37,16 +130,3 @@
     </div>
   </v-main>
 </template>
-
-<script lang="ts" setup>
-import TopBanner from "@/components/banners/TopBanner.vue"
-import Calendar from "@/components/Calendar.vue"
-import EventList from "@/components/events/EventList.vue"
-import { ref } from 'vue'
-
-const calendarRef = ref()
-
-function onEventDeleted(eventId: number) {
-  calendarRef.value?.deleteEvent?.(eventId)
-}
-</script>

@@ -1,6 +1,7 @@
 package net.blueshell.api.service.google;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.DateTime;
@@ -15,6 +16,7 @@ import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.event.Event;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Service
 public class CalendarService {
 
@@ -72,17 +75,25 @@ public class CalendarService {
 
     public void add(Event event) throws IOException {
         var googleEvent = toGoogleEvent(event);
-        googleEvent = service.events()
-                .insert(calendarId, googleEvent)
-                .execute();
-        event.setGoogleId(googleEvent.getId());
+        try {
+            googleEvent = service.events()
+                    .insert(calendarId, googleEvent)
+                    .execute();
+            event.setGoogleId(googleEvent.getId());
+        } catch (GoogleJsonResponseException e) {
+            log.error("Google Calendar API returned HTTP response code during insert: {}", e.getStatusCode());
+        }
     }
 
     public void update(Event event) throws IOException {
-        var googleEvent = toGoogleEvent(event);
-        service.events()
-                .update(calendarId, event.getGoogleId(), googleEvent)
-                .execute();
+        try {
+            var googleEvent = toGoogleEvent(event);
+            service.events()
+                    .update(calendarId, event.getGoogleId(), googleEvent)
+                    .execute();
+        } catch (GoogleJsonResponseException e) {
+            log.error("Google Calendar API returned HTTP response code during update: {}", e.getStatusCode());
+        }
     }
 
     public void remove(Event event) throws IOException {
@@ -90,9 +101,13 @@ public class CalendarService {
             return;
         }
 
-        service.events()
-                .delete(calendarId, event.getGoogleId())
-                .execute();
+        try {
+            service.events()
+                    .delete(calendarId, event.getGoogleId())
+                    .execute();
+        } catch (GoogleJsonResponseException e) {
+            log.error("Google Calendar API returned HTTP response code during removal: {}", e.getStatusCode());
+        }
         event.setGoogleId(null);
     }
 

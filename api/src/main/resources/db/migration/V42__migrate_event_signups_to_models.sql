@@ -3,6 +3,7 @@ CREATE TABLE surveys
     id         BIGINT   NOT NULL AUTO_INCREMENT,
     deleted_at DATETIME NOT NULL DEFAULT '9999-12-31 23:59:59',
     event_id   BIGINT   NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id),
     KEY ix_surveys_deleted_at (deleted_at)
 ) ENGINE = InnoDB
@@ -17,6 +18,7 @@ CREATE TABLE questions
     label         TEXT        NULL,
     choice_labels JSON        NULL,
     idx           BIGINT      NOT NULL,
+    created_at    DATETIME    NOT NULL DEFAULT NOW(),
     deleted_at    DATETIME    NOT NULL DEFAULT '9999-12-31 23:59:59',
     PRIMARY KEY (id),
     KEY ix_questions_survey_deleted (survey_id, deleted_at),
@@ -35,6 +37,7 @@ CREATE TABLE answers
     option_selections        JSON     NULL,
     text_response            TEXT     NULL,
     event_sign_up_answers_id BIGINT   NULL,
+    created_at               DATETIME NOT NULL DEFAULT NOW(),
     deleted_at               DATETIME NOT NULL DEFAULT '9999-12-31 23:59:59',
     PRIMARY KEY (id),
     KEY ix_answers_question_deleted (question_id, deleted_at),
@@ -52,6 +55,7 @@ CREATE TABLE event_sign_up_answers
     question_id       BIGINT   NULL,
     option_selections JSON     NULL,
     text_response     TEXT     NULL,
+    created_at        DATETIME NOT NULL DEFAULT NOW(),
     deleted_at        DATETIME NOT NULL DEFAULT '9999-12-31 23:59:59',
     PRIMARY KEY (id),
     CONSTRAINT fk_event_sign_up_answers_answer

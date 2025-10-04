@@ -10,12 +10,12 @@ import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
+import net.blueshell.api.model.survey.Question;
 import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -105,42 +105,18 @@ public class Event implements BaseModel {
     private boolean signUp;
 
     @JoinColumn(name = "survey_id")
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Survey signUpForm;
 
     @Column(name = "survey_id", updatable = false, insertable = false)
     private Long signUpFormId;
 
-    @JsonProperty("creator")
     public long getCreatorId() {
         return getCreator() == null ? 0 : getCreator().getId();
     }
 
-    @JsonProperty("lastEditor")
-    public long getLastEditorId() {
-        return getLastEditor() == null ? 0 : getLastEditor().getId();
-    }
-
-    @JsonProperty("committee")
     public long getCommitteeId() {
         return getCommittee() == null ? 0 : getCommittee().getId();
-    }
-
-    @JsonProperty("banner")
-    public String getBannerId() {
-        return this.getBanner() == null ? null : this.getBanner().getUrl();
-    }
-
-    @JsonProperty("feedbacks")
-    public Set<Long> getFeedbackIds() {
-        Set<Long> set = new HashSet<>();
-        if (getFeedbacks() == null) {
-            return set;
-        }
-        for (EventFeedback ef : getFeedbacks()) {
-            set.add(ef.getId());
-        }
-        return set;
     }
 
     @Override

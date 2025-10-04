@@ -9,6 +9,7 @@ import org.mapstruct.*;
 @Slf4j
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class QuestionMapper extends BaseMapper<Question, QuestionDTO> {
+    @Mapping(target = "id")
     @Mapping(target = "label")
     @Mapping(target = "type")
     @Mapping(target = "idx")
@@ -16,6 +17,7 @@ public abstract class QuestionMapper extends BaseMapper<Question, QuestionDTO> {
     @BeanMapping(ignoreByDefault = true)
     public abstract Question fromDTO(QuestionDTO dto, @MappingTarget Question question);
 
+    @Mapping(target = "id")
     @Mapping(target = "label")
     @Mapping(target = "type")
     @Mapping(target = "idx")

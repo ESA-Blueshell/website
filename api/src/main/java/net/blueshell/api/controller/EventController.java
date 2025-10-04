@@ -57,8 +57,6 @@ public class EventController extends BaseController<EventService, EventMapper> {
     @PutMapping("/events/{id}")
     public EventDTO updateEvent(@PathVariable("id") Long id, @Valid @RequestBody EventDTO dto) {
         var event = service.findById(id);
-        log.info("Event: {}", event);
-        log.info("dto: {}", dto);
         mapper.fromDTO(dto, event);
         event = service.update(event);
         return mapper.toDTO(event);

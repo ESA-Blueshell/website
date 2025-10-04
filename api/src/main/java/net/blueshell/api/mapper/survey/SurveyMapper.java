@@ -7,7 +7,7 @@ import net.blueshell.api.model.survey.Survey;
 import org.mapstruct.*;
 
 @Slf4j
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {SurveyMapper.class})
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {QuestionMapper.class})
 public abstract class SurveyMapper extends BaseMapper<Survey, SurveyDTO> {
     @Mapping(target = "id")
     @Mapping(target = "questions")
@@ -18,4 +18,11 @@ public abstract class SurveyMapper extends BaseMapper<Survey, SurveyDTO> {
     @Mapping(target = "questions")
     @BeanMapping(ignoreByDefault = true)
     public abstract SurveyDTO toDTO(Survey survey);
+
+    @AfterMapping
+    protected void linkQuestions(@MappingTarget Survey survey) {
+        if (survey.getQuestions() != null) {
+            survey.getQuestions().forEach(q -> q.setSurvey(survey));
+        }
+    }
 }

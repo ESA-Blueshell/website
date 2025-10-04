@@ -2907,14 +2907,21 @@ export type DownloadBannerResponses = {
 
 export type DownloadBannerResponse = DownloadBannerResponses[keyof DownloadBannerResponses];
 
-export type FindEventSignUpsForCurrentUserData = {
+export type FindEventSignUpsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        from?: string;
+        to?: string;
+        userId?: number;
+        committeeId?: number;
+        visible?: boolean;
+        eventId?: number;
+    };
     url: '/events/signups';
 };
 
-export type FindEventSignUpsForCurrentUserErrors = {
+export type FindEventSignUpsErrors = {
     /**
      * Validation error
      */
@@ -2937,16 +2944,16 @@ export type FindEventSignUpsForCurrentUserErrors = {
     500: ApiError;
 };
 
-export type FindEventSignUpsForCurrentUserError = FindEventSignUpsForCurrentUserErrors[keyof FindEventSignUpsForCurrentUserErrors];
+export type FindEventSignUpsError = FindEventSignUpsErrors[keyof FindEventSignUpsErrors];
 
-export type FindEventSignUpsForCurrentUserResponses = {
+export type FindEventSignUpsResponses = {
     /**
      * OK
      */
     200: Array<EventSignUp>;
 };
 
-export type FindEventSignUpsForCurrentUserResponse = FindEventSignUpsForCurrentUserResponses[keyof FindEventSignUpsForCurrentUserResponses];
+export type FindEventSignUpsResponse = FindEventSignUpsResponses[keyof FindEventSignUpsResponses];
 
 export type FindEventSignUpByAccessTokenData = {
     body?: never;

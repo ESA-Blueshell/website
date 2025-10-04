@@ -1,4 +1,4 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.event;
 
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.event.EventPicture;

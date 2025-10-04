@@ -1,10 +1,17 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.event;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
+import net.blueshell.api.controller.filter.EventFilter;
+import net.blueshell.api.controller.filter.EventSignUpFilter;
+import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.repository.EventSignUpRepository;
+import net.blueshell.api.repository.spec.EventSignUpSpecifications;
+import net.blueshell.api.repository.spec.EventSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,5 +46,18 @@ public class EventSignUpService extends BaseModelService<EventSignUp, EventSignU
 
     public List<EventSignUp> findByEventId(Long eventId) {
         return repository.findByEventId(eventId);
+    }
+
+    public Page<EventSignUp> findByFilter(Pageable pageable, EventSignUpFilter filter) {
+        if (filter == null) filter = new EventSignUpFilter();
+        if (pageable == null) pageable = Pageable.unpaged();
+        var spec = EventSignUpSpecifications.fromFilter(filter, getPrincipal());
+        return repository.findAll(spec, pageable);
+    }
+
+    public List<EventSignUp> findByFilter(EventSignUpFilter filter) {
+        if (filter == null) filter = new EventSignUpFilter();
+        var spec = EventSignUpSpecifications.fromFilter(filter, getPrincipal());
+        return repository.findAll(spec);
     }
 }

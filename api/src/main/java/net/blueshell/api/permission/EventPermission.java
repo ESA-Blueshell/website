@@ -3,7 +3,7 @@ package net.blueshell.api.permission;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.event.Event;
-import net.blueshell.api.service.EventService;
+import net.blueshell.api.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;

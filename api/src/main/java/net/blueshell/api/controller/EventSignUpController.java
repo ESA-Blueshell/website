@@ -5,10 +5,12 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
+import net.blueshell.api.controller.filter.EventSignUpFilter;
 import net.blueshell.api.dto.event.EventSignUpDTO;
 import net.blueshell.api.mapper.event.EventSignUpMapper;
 import net.blueshell.api.model.event.EventSignUp;
-import net.blueshell.api.service.EventSignUpService;
+import net.blueshell.api.service.event.EventSignUpService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,19 +28,18 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     }
 
     @GetMapping(value = "/events/signups")
-    @PreAuthorize("principal != null")
-    public List<EventSignUpDTO> findEventSignUpsForCurrentUser() {
-        var user = getPrincipal();
-        if (user == null) {
-            throw new NotFoundException();
-        }
-
-        var eventSignUps = service.findByUserId(user.getId());
+    @PreAuthorize("""
+            hasAuthority('BOARD')
+            || (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read'))
+            || (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))
+            """)
+    public List<EventSignUpDTO> findEventSignUps(@ParameterObject EventSignUpFilter filter) {
+        var eventSignUps = service.findByFilter(filter);
         return mapper.toDTOs(eventSignUps.stream()).toList();
     }
 
     @GetMapping(value = "/events/signups/byAccessToken/{accessToken}")
-    @PreAuthorize("hasPermission(#accessToken, 'Guest', 'see')")
+    @PreAuthorize("hasPermission(#accessToken, 'Guest', 'read')")
     public EventSignUpDTO findEventSignUpByAccessToken(@PathVariable("accessToken") String accessToken) {
         var signUp = service.findByGuestAccessToken(accessToken);
         return mapper.toDTO(signUp);

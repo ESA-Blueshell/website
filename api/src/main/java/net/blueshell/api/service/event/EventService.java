@@ -1,4 +1,4 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.event;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;

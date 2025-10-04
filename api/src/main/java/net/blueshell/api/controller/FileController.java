@@ -10,6 +10,8 @@ import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.event.EventPicture;
 import net.blueshell.api.repository.FileRepository;
 import net.blueshell.api.service.*;
+import net.blueshell.api.service.event.EventPictureService;
+import net.blueshell.api.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;

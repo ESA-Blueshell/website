@@ -61,6 +61,7 @@ import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/events/EventDetails.vue"
+import committees from "@/views/Committees.vue"
 
 // State
 const displayedMonth = ref<string>(DateTime.now().toISODate()!)
@@ -128,12 +129,11 @@ watch(displayedMonth, (d: string) => {
 
 // (Keep your existing mapping from domain events to Vuetify events)
 watch(events, (list: Event[]) => {
-  console.log("list length:", list.length)
   calendarEvents.value = list
     .map((e): CalendarEventEx => {
       const start = DateTime.fromISO(e.startTime).toJSDate()!
       const end = DateTime.fromISO(e.endTime ?? e.startTime).toJSDate()!
-      return {name: e.title, start, end, color: "primary", category: e.committee?.name, raw: e}
+      return {name: e.title, start, end, color: "primary", category: e.title, raw: e}
     })
 })
 
@@ -145,7 +145,6 @@ onMounted(() => {
 
 // Event handling unchanged…
 const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
-  console.log("nativeEvent", typeof nativeEvent)
   const toggle = () => {
     selectedEvent.value = event.raw
     selectedElement.value = nativeEvent.target as HTMLElement

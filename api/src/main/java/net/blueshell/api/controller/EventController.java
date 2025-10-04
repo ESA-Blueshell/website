@@ -8,7 +8,7 @@ import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.event.EventDTO;
 import net.blueshell.api.controller.filter.EventFilter;
 import net.blueshell.api.mapper.event.EventMapper;
-import net.blueshell.api.service.EventService;
+import net.blueshell.api.service.event.EventService;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,7 +28,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
         super(service, mapper);
     }
 
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.committeeId, 'Committee', 'createEvent')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.committeeId, 'Committee', 'events')")
     @PostMapping("/events")
     @ResponseStatus(HttpStatus.CREATED)
     public EventDTO createEvent(@Valid @RequestBody EventDTO dto) {

@@ -2,7 +2,7 @@ package net.blueshell.api.permission;
 
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.model.event.EventSignUp;
-import net.blueshell.api.service.EventSignUpService;
+import net.blueshell.api.service.event.EventSignUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;

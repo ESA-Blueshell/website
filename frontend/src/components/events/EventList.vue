@@ -9,7 +9,7 @@ import {
   type EventSignUp,
   findCommitteesForCurrentUser,
   findEvents,
-  findEventSignUpsForCurrentUser,
+  findEventSignUps, type Login,
 } from "@/lib"
 import {DateTime} from "luxon"
 
@@ -27,6 +27,7 @@ const store = useStore()
 
 // Computed helpers
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const login = computed<Login>(() => store.getters.getLogin)
 
 onMounted(async () => {
   const [eventsResp, signupsResp, committeesResp] = await Promise.all([
@@ -38,7 +39,12 @@ onMounted(async () => {
       },
     ),
     isLoggedIn.value
-      ? findEventSignUpsForCurrentUser()
+      ? findEventSignUps({
+        query: {
+          from: DateTime.now().startOf("day").toISO()!,
+          userId: login.value.userId
+        },
+      })
       : Promise.resolve({data: [] as EventSignUp[]}),
     isLoggedIn.value
       ? findCommitteesForCurrentUser()
@@ -55,25 +61,25 @@ onMounted(async () => {
   events.value = fetchedEvents
 })
 
-function handleSignUpUpdate(signUp: EventSignUp): void {
-  if (eventSignups.value?.some((es: EventSignUp) => {
-    return es.id === signUp.id
-  })) {
-    eventSignups.value ??= []
-    const newEventSignUps = eventSignups.value
-      .filter((es: EventSignUp) => {
-        return es.id === signUp.id
-      })
-    newEventSignUps.push(signUp)
-    eventSignups.value = newEventSignUps
-  } else {
-    eventSignups.value?.push(signUp)
-  }
+function handleSignUpDelete(signUpId: number): void {
+  eventSignups.value = (eventSignups.value ?? []).filter(
+    (es: EventSignUp) => es.id !== signUpId,
+  )
 }
 
-function handleSignUpDelete(signUpId: number): void {
-  eventSignups.value ??= []
-  eventSignups.value = eventSignups.value.filter((es: EventSignUp) =>  es.id === signUpId)
+
+function handleSignUpUpdate(signUp: EventSignUp): void {
+  const list = eventSignups.value ?? []
+  const idx = list.findIndex(es => es.id === signUp.id)
+  if (idx >= 0) {
+    eventSignups.value = [
+      ...list.slice(0, idx),
+      signUp,
+      ...list.slice(idx + 1),
+    ]
+  } else {
+    eventSignups.value = [...list, signUp]
+  }
 }
 
 function deleteEvent(id: number) {

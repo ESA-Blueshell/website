@@ -6,15 +6,13 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 
 @Data
-public class EventFilter {
+public class EventSignUpFilter {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime from;
-
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime to;
-
-    private Boolean visible;
-
+    private Long userId;
     private Long committeeId;
-    private String titleContains;
+    private Boolean visible;
+    private Long eventId;
 }

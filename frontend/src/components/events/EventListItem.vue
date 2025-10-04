@@ -455,7 +455,7 @@ function handleSignUpSubmit() {
                 class="form-border mx-auto rounded-b w-100"
               >
                 <event-sign-up-edit
-                  event="event"
+                  :event="event"
                   :initial-form-answers="signUp?.answers"
                   :initial-sign-up="signUp"
                   :show-guest-form="!isLoggedIn"

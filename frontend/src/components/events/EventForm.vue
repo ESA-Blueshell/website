@@ -433,7 +433,7 @@ async function submit() {
               :model-value="value"
               hide-details
               label="Enable sign-up form"
-              @update:model-value="handleChange"
+              @update:model-value="(enable: boolean) => {event.signUp = enable; handleChange(enable)}"
             />
           </Field>
         </v-col>

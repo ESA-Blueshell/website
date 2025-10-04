@@ -1,50 +1,76 @@
 <script lang="ts" setup>
-import {Field} from "vee-validate"
-import {computed, watchEffect} from "vue"
-import {type Answer, type Question, QuestionType} from "@/lib"
+import { Field } from "vee-validate"
+import { computed, ref, watch, watchEffect } from "vue"
+import { type Answer, type Question, QuestionType } from "@/lib"
 
 interface Props {
   question: Question
+  /** Base vee-validate name, e.g. "answers[2]" */
   name: string
+  modelValue?: Answer | null
 }
-
 const props = defineProps<Props>()
-const model = defineModel<Answer>({required: true})
+const emit = defineEmits<{ (e: "update:modelValue", v: Answer): void }>()
 
-const choiceCount = computed<number>(() => props.question.choiceLabels?.length ?? 0)
+const choiceCount = computed(() => props.question.choiceLabels?.length ?? 0)
+const local = ref<Answer>({ questionId: props.question.id! })
 
-watchEffect(() => {
-  if (!model.value) {
-    model.value = {questionId: props.question.id!}
-  } else if (model.value.questionId !== props.question.id) {
-    model.value = {...model.value, questionId: props.question.id!}
+function normalizeForQuestion(a: Answer): Answer {
+  let next: Answer = { questionId: props.question.id!, ...a }
+
+  if (props.question.type === QuestionType.OPEN) {
+    if (typeof next.textResponse !== "string") next.textResponse = ""
+    delete next.optionSelections
   }
 
   if (props.question.type === QuestionType.RADIO || props.question.type === QuestionType.CHECKBOX) {
     const need = choiceCount.value
-    const curr = Array.isArray(model.value.optionSelections) ? model.value.optionSelections.slice() : []
+    const curr = Array.isArray(next.optionSelections) ? next.optionSelections.slice() : []
     while (curr.length < need) curr.push(false)
     if (curr.length > need) curr.length = need
-    model.value = {...model.value, optionSelections: curr}
+    next.optionSelections = curr
+    delete next.textResponse
+  }
+
+  return next
+}
+
+watch(
+  () => props.modelValue,
+  (v) => {
+    local.value = normalizeForQuestion(v ?? { questionId: props.question.id! })
+  },
+  { immediate: true, deep: true },
+)
+
+watchEffect(() => {
+  if (local.value.questionId !== props.question.id) {
+    local.value = normalizeForQuestion({ ...local.value, questionId: props.question.id! })
   }
 })
+
+function updateAndEmit(next: Answer) {
+  local.value = normalizeForQuestion(next)
+  emit("update:modelValue", local.value)
+}
 </script>
 
 <template>
-  <!-- Description questions are rendered outside in SurveyForm; nothing to answer here -->
+  <!-- Description: rendered by parent; no input here -->
+
   <template v-if="question.type === QuestionType.OPEN">
     <Field
       v-slot="{ value, errors, handleChange, handleBlur }"
       :name="`${name}.textResponse`"
       rules="required"
-      :model-value="model.textResponse ?? ''"
+      :model-value="local.textResponse ?? ''"
     >
       <v-text-field
         :model-value="value"
         :label="question.label || 'Answer'"
         :error-messages="errors"
         required
-        @update:model-value="(v: string) => { model = { ...model, textResponse: v }; handleChange(v) }"
+        @update:model-value="(v: string) => { updateAndEmit({ ...local, textResponse: v }); handleChange(v) }"
         @blur="handleBlur"
       />
     </Field>
@@ -54,7 +80,7 @@ watchEffect(() => {
     <Field
       v-slot="{ value = [], errors, handleChange, handleBlur }"
       :name="`${name}.optionSelections`"
-      :model-value="model.optionSelections ?? []"
+      :model-value="local.optionSelections ?? []"
       :rules="(val: boolean[]) => (Array.isArray(val) && val.some(Boolean)) || 'Select at least one option'"
     >
       <div>
@@ -63,23 +89,30 @@ watchEffect(() => {
           :key="j"
           :label="opt"
           :model-value="(value?.[j] ?? false)"
-          :error-messages="errors"
           hide-details
           @update:model-value="(checked: boolean) => {
             const next = Array.isArray(value) ? value.slice() : Array((question.choiceLabels?.length ?? 0)).fill(false)
 
             if (question.type === QuestionType.RADIO) {
+              // exclusive selection
               for (let k = 0; k < next.length; k++) next[k] = false
               next[j] = checked
             } else {
+              // multiple allowed
               next[j] = checked
             }
 
-            model = { ...model, optionSelections: next }
+            updateAndEmit({ ...local, optionSelections: next })
             handleChange(next)
           }"
           @blur="handleBlur"
         />
+        <div
+          v-if="errors?.length"
+          class="text-error text-caption mt-1"
+        >
+          {{ errors[0] }}
+        </div>
       </div>
     </Field>
   </template>

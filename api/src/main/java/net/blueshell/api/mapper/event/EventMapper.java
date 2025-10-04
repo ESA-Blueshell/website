@@ -1,8 +1,9 @@
-package net.blueshell.api.mapper;
+package net.blueshell.api.mapper.event;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.event.EventDTO;
+import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.mapper.survey.SurveyMapper;
 import net.blueshell.api.model.event.Event;
 import org.mapstruct.*;

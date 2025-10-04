@@ -29,17 +29,12 @@ public class UserEventListener {
         this.committeeMembers = committeeMembers;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void prePersist(PrePersistEvent<User> evt) {
-        User u = evt.getSource();
-        syncContactJob.sync(u.getId());
-    }
-
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postPersist(PostPersistEvent<User> evt) {
         User u = evt.getSource();
         email.activation(u);
+        syncContactJob.sync(u.getId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

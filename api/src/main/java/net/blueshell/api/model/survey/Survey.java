@@ -34,13 +34,12 @@ public class Survey {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Survey survey = (Survey) o;
-        return Objects.equals(id, survey.id);
+        if (!(o instanceof Survey other)) return false;
+        return id != null && id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return getClass().hashCode();
     }
 }

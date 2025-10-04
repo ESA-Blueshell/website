@@ -1,4 +1,4 @@
-package net.blueshell.api.mapper;
+package net.blueshell.api.mapper.event;
 
 import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.dto.event.EventDTO;

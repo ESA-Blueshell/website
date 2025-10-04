@@ -6,7 +6,7 @@ import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.event.EventSignUpDTO;
-import net.blueshell.api.mapper.EventSignUpMapper;
+import net.blueshell.api.mapper.event.EventSignUpMapper;
 import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.service.EventSignUpService;
 import org.springframework.beans.factory.annotation.Autowired;

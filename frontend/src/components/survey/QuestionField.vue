@@ -27,6 +27,12 @@ function ensureChoices(): string[] {
   return model.value.choiceLabels ?? []
 }
 
+function setChoiceLabel(j: number, v: string) {
+  const next = ensureChoices().slice()
+  next[j] = v
+  model.value = { ...model.value, choiceLabels: next }
+}
+
 function addChoice() {
   const next = [...ensureChoices(), ""]
   model.value = { ...model.value, choiceLabels: next }
@@ -35,14 +41,14 @@ function addChoice() {
 function moveChoiceUp(j: number) {
   const next = ensureChoices().slice()
   if (j <= 0) return
-  [next[j - 1]!, next[j]!] = [next[j]!, next[j - 1]!]
+    ;[next[j - 1]!, next[j]!] = [next[j]!, next[j - 1]!]
   model.value = { ...model.value, choiceLabels: next }
 }
 
 function moveChoiceDown(j: number) {
   const next = ensureChoices().slice()
   if (j >= next.length - 1) return
-  [next[j + 1]!, next[j]!] = [next[j]!, next[j + 1]!]
+    ;[next[j + 1]!, next[j]!] = [next[j]!, next[j + 1]!]
   model.value = { ...model.value, choiceLabels: next }
 }
 
@@ -106,17 +112,16 @@ function removeChoice(j: number) {
     </v-text-field>
   </Field>
 
-  <!-- OPTIONS with Field controlling the value -->
   <template v-if="model.type === QuestionType.RADIO || model.type === QuestionType.CHECKBOX">
     <template
-      v-for="(lbl, j) in (model.choiceLabels ?? [])"
+      v-for="(_choiceLabel, j) in (model.choiceLabels ?? [])"
       :key="j"
     >
       <Field
         v-slot="{ value, errors, handleChange, handleBlur }"
         :name="`survey.questions[${model.idx}].choiceLabels[${j}]`"
         rules="required"
-        :initial-value="lbl"
+        :model-value="model.choiceLabels?.[j] ?? ''"
       >
         <v-text-field
           :model-value="value"
@@ -125,12 +130,7 @@ function removeChoice(j: number) {
           density="compact"
           :error-messages="errors"
           required
-          @update:model-value="(val: string) => {
-            const next = (model.choiceLabels ?? []).slice()
-            next[j] = val
-            model = { ...model, choiceLabels: next }
-            handleChange(val)
-          }"
+          @update:model-value="(val: string) => { setChoiceLabel(j, val); handleChange(val) }"
           @blur="handleBlur"
         >
           <template #append>

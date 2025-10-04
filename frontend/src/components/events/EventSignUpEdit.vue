@@ -3,10 +3,14 @@ import {computed, ref, type Ref} from "vue"
 import {useStore} from "vuex"
 import {Field, Form} from "vee-validate"
 import type {VForm} from "vuetify/lib/components"
-import {type Answer, createEventSignup, type Event, type EventSignUp, updateEventSignUp} from "@/lib"
+import {type Answer, createEventSignup, type Event, type EventSignUp, type Guest, updateEventSignUp} from "@/lib"
 import SurveyForm from "@/components/survey/SurveyForm.vue"
 
-const emit = defineEmits(["submit"])
+interface Emits {
+  (e: "update:signUp", value: EventSignUp): void;
+}
+
+const emit = defineEmits<Emits>()
 
 interface Props {
   event: Event
@@ -70,29 +74,32 @@ async function submit() {
     payload.userId = login.value.userId
   }
 
+  var eventSignUp: EventSignUp;
+
   if (isLoggedIn.value && payload.id) {
-    await updateEventSignUp({
+    const resp = await updateEventSignUp({
       path: {eventId: props.event.id!},
       body: payload,
     })
+    eventSignUp = resp.data!
   } else {
-    await createEventSignup({
+    const resp = await createEventSignup({
       path: {eventId: props.event.id!},
       body: payload,
     })
+    eventSignUp = resp.data!
   }
 
   if (!isLoggedIn.value) {
-    store.commit("saveGuestData", guestData.value)
+    store.commit("saveGuestData", eventSignUp.guest!)
   }
 
-  emit("submit")
+  emit("update:signUp", eventSignUp)
 }
 </script>
 
 <template>
   <div>
-    <!-- Guest form (optional + only when not logged in) -->
     <Form
       v-if="showGuestForm && !isLoggedIn"
       ref="guestForm"
@@ -152,7 +159,6 @@ async function submit() {
       </Field>
     </Form>
 
-    <!-- Answers / Survey -->
     <survey-form
       v-if="eventSurvey"
       ref="surveyFormRef"

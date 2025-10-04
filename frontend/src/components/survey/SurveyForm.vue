@@ -9,7 +9,6 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-/** Parent still uses v-model on SurveyForm */
 const model = defineModel<Answer[]>({ default: [] })
 
 const formRef = ref<FormContext | undefined>()
@@ -59,12 +58,10 @@ watch(
   () => {
     if (!props.survey?.questions) return
     const allowedIds = new Set(questions.value.map(q => q.id))
-    // add missing
     const next = model.value.slice()
     for (const q of nonDescriptions.value) {
       if (!next.some(a => a.questionId === q.id)) next.push(makeDefault(q))
     }
-    // remove orphaned answers
     model.value = next.filter(a => allowedIds.has(a.questionId))
   },
   { deep: true },
@@ -81,7 +78,6 @@ watch(
       :key="q?.id ?? q?.idx ?? i"
       class="mb-4"
     >
-      <!-- Description block -->
       <p
         v-if="q.type === QuestionType.DESCRIPTION"
         class="text-body-1"
@@ -89,13 +85,11 @@ watch(
         {{ q.label }}
       </p>
 
-      <!-- Answerable -->
       <template v-else>
         <p class="text-h6 mb-2">
           {{ q.label }}
         </p>
 
-        <!-- No v-model on a function call! -->
         <answer-field
           :model-value="getAnswer(q)"
           :question="q"

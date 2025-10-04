@@ -17,7 +17,7 @@ import {
   updateEventSignUp,
 } from "@/lib"
 import DeletionConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
-import EventSignUpEdit from "@/components/survey/EventSignUpEdit.vue"
+import EventSignUpEdit from "@/components/events/EventSignUpEdit.vue"
 
 const router = useRouter()
 const props = defineProps({
@@ -68,7 +68,7 @@ const signUp = computed(() => {
     return {
       id: signupProp?.id,
       eventId: signupProp?.eventId,
-      formAnswers: signupProp?.answers ?? [],
+      answers: signupProp?.answers ?? [],
     } as EventSignUp
   },
 )
@@ -224,8 +224,9 @@ function formatEventTime() {
   return result
 }
 
-function handleSignUpSubmit() {
+function handleUpdateSignUp(updatedSignUp: EventSignUp) {
   eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
+  emit("signUp:updated", updatedSignUp)
   expanded.value = false
 }
 
@@ -460,7 +461,7 @@ function handleSignUpSubmit() {
                   :initial-sign-up="signUp"
                   :show-guest-form="!isLoggedIn"
                   class="form mx-auto"
-                  @submit="handleSignUpSubmit"
+                  @update:sign-up="handleUpdateSignUp"
                 />
               </div>
             </v-expand-transition>

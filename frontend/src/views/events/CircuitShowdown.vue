@@ -1,58 +1,36 @@
-<script>
+<script setup lang="ts">
+import { ref } from "vue";
 import TopBanner from "@/components/banners/TopBanner.vue";
 
-export default {
-  components: {TopBanner: TopBanner},
-  data() {
-    return {
-      groupAScores: [
-        {
-          name: 'NyperS',
-          score: '2-0-0',
-        },
-        {
-          name: 'Scaling',
-          score: '1-0-1',
-        },
-        {
-          name: 'Turtles',
-          score: '0-0-2',
-        },
-      ],
-      groupBScores: [
-        {
-          name: 'Waterboarders',
-          score: '1-1-0',
-        },
-        {
-          name: 'Hatsune Miku Fanclub',
-          score: '0-2-0',
-        },
-        {
-          name: 'Happy Hour',
-          score: '0-1-1',
-        },
-      ],
-      playoffs: [
-        {
-          team1: 'NyperS',
-          score: '-',
-          team2: 'Hatsune Miku Fanclub'
-        },
-        {
-          team1: 'Waterboarders',
-          score: '-',
-          team2: 'Scaling'
-        },
-        {
-          team1: 'Happy Hour',
-          score: '-',
-          team2: 'Turtles'
-        },
-      ]
-    }
-  }
-}
+type TeamScore = {
+  name: string;
+  // e.g. "2-0-0"
+  score: string;
+};
+
+type Matchup = {
+  team1: string;
+  score: string;
+  team2: string;
+};
+
+const groupAScores = ref<TeamScore[]>([
+  { name: "NyperS", score: "2-0-0" },
+  { name: "Scaling", score: "1-0-1" },
+  { name: "Turtles", score: "0-0-2" },
+]);
+
+const groupBScores = ref<TeamScore[]>([
+  { name: "Waterboarders", score: "1-1-0" },
+  { name: "Hatsune Miku Fanclub", score: "0-2-0" },
+  { name: "Happy Hour", score: "0-1-1" },
+]);
+
+const playoffs = ref<Matchup[]>([
+  { team1: "NyperS", score: "-", team2: "Hatsune Miku Fanclub" },
+  { team1: "Waterboarders", score: "-", team2: "Scaling" },
+  { team1: "Happy Hour", score: "-", team2: "Turtles" },
+]);
 </script>
 
 <template>
@@ -68,10 +46,10 @@ export default {
       <p class="text-body-1">
         This is a competition hosted within Blueshell where teams compete in the games that are currently competitively
         being played by the teams of Blueshell. Teams generally focus on their own game and it’s hard for them to
-        compete
-        among each other, this will be the opportunity to do so. All to prove what team is the best team in our
+        compete among each other, this will be the opportunity to do so. All to prove what team is the best team in our
         association.
       </p>
+
       <div class="table-container">
         <v-table>
           <thead>
@@ -148,7 +126,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-
 .table-container {
   display: flex;
   gap: 32px;
@@ -177,5 +154,4 @@ h2 {
 h4 {
   margin-bottom: 16px;
 }
-
 </style>

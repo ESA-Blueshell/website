@@ -27,7 +27,7 @@ import MemberManager from "@/views/login/MemberManager.vue"
 import RocketLeague from "@/views/esports/RocketLeague.vue"
 import ForgotPassword from "@/views/login/ForgotPassword.vue"
 import ResetPassword from "@/views/login/ResetPassword.vue"
-import EventSignUpEdit from "@/components/edit/EventSignUpEdit.vue"
+import EventSignUpEdit from "@/components/events/EventSignUpEdit.vue"
 
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
 import store from "./store"

@@ -51,9 +51,6 @@ const answersData = ref<Answer[]>(
   ?? [],
 )
 
-/**
- * If the user is not logged in, we allow them to enter temporary guest data
- */
 const guestData = ref(
   store.getters.getGuestData ?? {
     name: "",
@@ -65,17 +62,13 @@ const guestData = ref(
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed(() => store.getters.getLogin)
 
-/**
- * The sign-up form structure for the event.
- * We assume `props.event.signUpForm` is already an array of question objects.
- */
 const eventSignUpForm = computed(() => props.event.signUpForm ?? [])
 const signUp = computed(() => {
     const signupProp = props.initialSignUp ?? {}
     return {
       id: signupProp?.id,
       eventId: signupProp?.eventId,
-      formAnswers: signupProp?.answers ?? [],
+      answers: signupProp?.answers ?? [],
     } as EventSignUp
   },
 )
@@ -192,7 +185,6 @@ async function submit() {
       </Field>
     </Form>
 
-    <!-- ANSWERS FORM -->
     <Form
       v-if="eventSignUpForm !== null"
       ref="answersForm"
@@ -206,7 +198,6 @@ async function submit() {
         <p :class="question.type === 'description' ? 'text-body-1' : 'text-h6 mb-0'">
           {{ question.prompt }}
         </p>
-        <!-- Open Question -->
         <template
           v-if="question.type === 'open'"
         >
@@ -225,7 +216,6 @@ async function submit() {
           </Field>
         </template>
 
-        <!-- Radio Question (multi-select as boolean array) -->
         <template v-else-if="question.type === 'radio'">
           <Field
             v-slot="{ value = [], errors, handleChange, handleBlur }"
@@ -259,8 +249,6 @@ async function submit() {
           </Field>
         </template>
 
-
-        <!-- Checkbox Question -->
         <template
           v-else-if="question.type === 'checkbox'"
         >
@@ -300,7 +288,6 @@ async function submit() {
       </v-alert>
     </v-expand-transition>
 
-    <!-- SUBMIT BUTTON -->
     <v-btn
       :block="true"
       :loading="buttonLoading"

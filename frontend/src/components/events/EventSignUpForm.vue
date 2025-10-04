@@ -75,7 +75,7 @@ const signUp = computed(() => {
     return {
       id: signupProp?.id,
       eventId: signupProp?.eventId,
-      formAnswers: signupProp?.answers ?? [],
+      answers: signupProp?.answers ?? [],
     } as EventSignUp
   },
 )

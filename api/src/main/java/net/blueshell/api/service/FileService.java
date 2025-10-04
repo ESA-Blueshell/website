@@ -2,7 +2,6 @@ package net.blueshell.api.service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.config.StorageConfig;
 import net.blueshell.api.model.File;

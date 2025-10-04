@@ -1,9 +1,9 @@
 package net.blueshell.api.email;
 
 import net.blueshell.api.base.BaseEmail;
+import net.blueshell.api.model.User;
 import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.event.EventSignUp;
-import net.blueshell.api.model.User;
 
 public class EventSignupEmail extends BaseEmail {
 

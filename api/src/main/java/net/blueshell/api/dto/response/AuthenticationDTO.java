@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.base.BaseDTO;
+import net.blueshell.api.common.enums.Role;
 
 import java.io.Serial;
 import java.util.Set;

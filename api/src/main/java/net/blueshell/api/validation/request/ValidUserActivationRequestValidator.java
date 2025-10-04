@@ -4,7 +4,6 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.dto.request.UserActivationRequest;
-import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;

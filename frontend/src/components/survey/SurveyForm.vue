@@ -1,120 +1,97 @@
 <script lang="ts" setup>
-import { type Survey, type Question, QuestionType } from "@/lib"
-import QuestionField from "@/components/survey/QuestionField.vue"
-import {computed, ref} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
+import {Form, type FormContext} from "vee-validate"
+import AnswerField from "@/components/survey/AnswerField.vue"
+import {type Answer, type Question, QuestionType, type Survey} from "@/lib"
 
-const model = defineModel<Survey>({ default: { questions: [] } })
-const initialModel = ref<Survey>(JSON.parse(JSON.stringify(model.value)))
-const initialJson = ref(JSON.stringify(initialModel.value))
-const isDirty = computed(() => JSON.stringify(model.value) !== initialJson.value)
+interface Props {
+  survey?: Survey | null
+}
 
-function addQuestion(type: QuestionType) {
-  const nextIdx = model.value.questions.length
-  const base = { type, label: "", idx: nextIdx } as Question
-  const q: Question =
-    type === QuestionType.OPEN || type === QuestionType.DESCRIPTION
-      ? base
-      : { ...base, choiceLabels: ["", ""] }
+const props = defineProps<Props>()
+const model = defineModel<Answer[]>({default: []}) // v-model from parent
 
-  model.value = {
-    ...model.value,
-    questions: [...model.value.questions, q],
+const formRef = ref<FormContext | undefined>()
+defineExpose({
+  async validate() {
+    const result = await formRef.value?.validate()
+    return result?.valid ?? true
+  },
+})
+
+const nonDescriptionQuestions = computed<Question[]>(() =>
+  (props.survey?.questions ?? []).filter(q => q.type !== QuestionType.DESCRIPTION),
+)
+
+/**
+ * Ensure we have an Answer entry for a given questionId.
+ * If not present, we push a default-structured answer.
+ */
+function ensureAnswerFor(q: Question): Answer {
+  const i = model.value.findIndex(a => a.questionId === q.id)
+  if (i >= 0) return model.value[i]!
+
+  const base: Answer = {questionId: q.id!}
+  if (q.type === QuestionType.OPEN) {
+    base.textResponse = ""
   }
+  if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
+    base.optionSelections = Array(q.choiceLabels?.length ?? 0).fill(false)
+  }
+
+  model.value = [...model.value, base]
+  return base
 }
 
-function reindex(questions: Question[]) {
-  return questions.map((q, idx) => ({ ...q, idx }))
-}
+onMounted(() => {
+  // Create answers for all non-description questions if missing
+  for (const q of nonDescriptionQuestions.value) ensureAnswerFor(q)
+})
 
-function updateQuestion(i: number, updated: Question) {
-  const next = model.value.questions.slice()
-  next[i] = { ...updated, idx: i }
-  model.value = { ...model.value, questions: next }
-}
-
-function removeQuestion(i: number) {
-  const next = model.value.questions.slice()
-  next.splice(i, 1)
-  model.value = { ...model.value, questions: reindex(next) }
-}
-
-function moveQuestionUp(i: number) {
-  if (i <= 0) return
-  const next = model.value.questions.slice()
-  if (!next) return
-  [next[i - 1]!, next[i]!] = [next[i]!, next[i - 1]!]
-  model.value = { ...model.value, questions: reindex(next) }
-}
-
-function moveQuestionDown(i: number) {
-  if (i >= model.value.questions.length - 1) return
-  const next = model.value.questions.slice()
-  if (!next) return
-  [next[i + 1]!, next[i]!] = [next[i]!, next[i + 1]!]
-  model.value = { ...model.value, questions: reindex(next) }
-}
+// Keep answers aligned if survey changes (e.g., different questions)
+watch(
+  () => props.survey?.questions,
+  () => {
+    if (!props.survey?.questions) return
+    // Add missing
+    for (const q of nonDescriptionQuestions.value) ensureAnswerFor(q)
+    // Remove answers that no longer match any question
+    const allowedIds = new Set((props.survey?.questions ?? []).map(q => q.id))
+    model.value = model.value.filter(a => allowedIds.has(a.questionId))
+  },
+  {deep: true},
+)
 </script>
 
 <template>
-  <div class="pa-4 form">
-    <template
-      v-for="(q, i) in model.questions"
-      :key="q.idx"
+  <Form
+    ref="formRef"
+    as="div"
+  >
+    <div
+      v-for="(q, i) in (props.survey?.questions ?? [])"
+      :key="q.id ?? q.idx"
+      class="mb-4"
     >
-      <question-field
-        :model-value="q"
-        :can-move-up="i > 0"
-        :can-move-down="i < model.questions.length - 1"
-        @update:model-value="(val: Question) => updateQuestion(i, val)"
-        @move-up="moveQuestionUp(i)"
-        @move-down="moveQuestionDown(i)"
-        @remove="removeQuestion(i)"
-      />
-    </template>
-
-    <v-menu location="bottom">
-      <template #activator="{ props }">
-        <v-btn
-          block
-          v-bind="props"
-          variant="outlined"
-        >
-          Add question or text to sign-up form
-        </v-btn>
-      </template>
-      <v-list>
-        <v-list-item @click="addQuestion(QuestionType.DESCRIPTION)">
-          Description without a question
-        </v-list-item>
-        <v-list-item @click="addQuestion(QuestionType.OPEN)">
-          Open question
-        </v-list-item>
-        <v-list-item @click="addQuestion(QuestionType.RADIO)">
-          Multiple choice question
-        </v-list-item>
-        <v-list-item @click="addQuestion(QuestionType.CHECKBOX)">
-          Question with checkboxes
-        </v-list-item>
-      </v-list>
-    </v-menu>
-
-    <v-expand-transition class="mt-4">
-      <v-alert
-        v-if="isDirty"
-        prominent
-        type="warning"
-        variant="outlined"
+      <!-- Description block (no answer input) -->
+      <p
+        v-if="q.type === QuestionType.DESCRIPTION"
+        class="text-body-1"
       >
-        Editing the form will remove existing responses after submit.
-      </v-alert>
-    </v-expand-transition>
-  </div>
-</template>
+        {{ q.label }}
+      </p>
 
-<style lang="scss" scoped>
-@use '../../styles/settings';
-.form {
-  border-radius: settings.$border-radius-root;
-  border: 1px solid rgb(var(--v-theme-accent));
-}
-</style>
+      <!-- Answerable questions -->
+      <template v-else>
+        <p class="text-h6 mb-2">
+          {{ q.label }}
+        </p>
+        <answer-field
+          v-model="ensureAnswerFor(q)"
+          :question="q"
+          :name="`answers[${i}]`"
+        />
+      </template>
+    </div>
+  </Form>
+</template>

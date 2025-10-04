@@ -5,15 +5,12 @@ import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.Redirect;
 import net.blueshell.api.model.Telemetry;
 import net.blueshell.api.repository.RedirectRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @Slf4j
@@ -22,7 +19,7 @@ public class RedirectService extends BaseModelService<Redirect, RedirectReposito
     private final WebSocketMessageService webSocketMessageService;
 
     @Autowired
-    public RedirectService(RedirectRepository repository,  TelemetryService telemetryService,
+    public RedirectService(RedirectRepository repository, TelemetryService telemetryService,
                            WebSocketMessageService webSocketMessageService) {
         super(repository);
         this.telemetryService = telemetryService;

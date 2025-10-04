@@ -1,4 +1,3 @@
-
 package net.blueshell.api.job;
 
 import jakarta.mail.MessagingException;
@@ -21,10 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class SendEmailJob {
 
+    private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
     @Autowired
     private JavaMailSender mailSender;
-
-    private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
 
     @Async
     @Retryable(

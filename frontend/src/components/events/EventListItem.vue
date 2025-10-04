@@ -2,7 +2,6 @@
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {computed, nextTick, onMounted, ref} from "vue"
 import {createEvent as createIcsEvent} from "ics"
-import SignUpForm from "@/components/events/EventSignUpForm.vue"
 import store from "@/plugins/store.ts"
 import {$goto} from "@/plugins/goto"
 import {useRoute, useRouter} from "vue-router"
@@ -18,6 +17,7 @@ import {
   updateEventSignUp,
 } from "@/lib"
 import DeletionConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
+import EventSignUpEdit from "@/components/survey/EventSignUpEdit.vue"
 
 const router = useRouter()
 const props = defineProps({
@@ -454,8 +454,8 @@ function handleSignUpSubmit() {
                 v-if="expanded"
                 class="form-border mx-auto rounded-b w-100"
               >
-                <sign-up-form
-                  :event="event"
+                <event-sign-up-edit
+                  event="event"
                   :initial-form-answers="signUp?.answers"
                   :initial-sign-up="signUp"
                   :show-guest-form="!isLoggedIn"

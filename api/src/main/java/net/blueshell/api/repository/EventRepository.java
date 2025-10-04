@@ -1,9 +1,9 @@
 package net.blueshell.api.repository;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
+import net.blueshell.api.model.event.Event;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,6 +56,6 @@ public interface EventRepository extends BaseRepository<Event> {
             ORDER BY e.startTime DESC
             """)
     List<Event> findStartTimeBetweenAndVisibleToUser(@Param("from") LocalDateTime from,
-                                                     @Param("to")   LocalDateTime to,
+                                                     @Param("to") LocalDateTime to,
                                                      @Param("user") User user);
 }

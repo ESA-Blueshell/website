@@ -49,6 +49,7 @@ public interface UserRepository extends BaseRepository<User> {
     Optional<User> findByMembershipSignature(File signature);
 
     Optional<User> findByProfilePicture(File profilePicture);
+
     @Query("SELECT DISTINCT u FROM User u " +
             "JOIN u.roles r " +
             "WHERE r = 'COMMITTEE'" +

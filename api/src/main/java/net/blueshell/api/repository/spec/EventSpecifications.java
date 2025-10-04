@@ -5,10 +5,10 @@ import jakarta.persistence.criteria.SetJoin;
 import lombok.NoArgsConstructor;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.EventFilter;
+import net.blueshell.api.model.User;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.event.Event;
-import net.blueshell.api.model.User;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;

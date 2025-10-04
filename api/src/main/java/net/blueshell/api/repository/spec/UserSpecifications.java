@@ -4,8 +4,8 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.UserFilter;
-import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.User;
+import net.blueshell.api.model.event.Event;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.EnumSet;

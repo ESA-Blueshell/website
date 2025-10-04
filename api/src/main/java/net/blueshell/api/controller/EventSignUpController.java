@@ -2,7 +2,6 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.controller.filter.EventSignUpFilter;

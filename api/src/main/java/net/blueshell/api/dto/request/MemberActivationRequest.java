@@ -8,8 +8,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.validation.user.UniqueUsername;
 import net.blueshell.api.validation.request.ValidMemberActivationRequest;
+import net.blueshell.api.validation.user.UniqueUsername;
 
 @EqualsAndHashCode(callSuper = true)
 @Data

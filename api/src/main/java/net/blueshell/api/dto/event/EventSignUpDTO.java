@@ -7,7 +7,6 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.GuestDTO;
 import net.blueshell.api.dto.survey.AnswerDTO;
-import net.blueshell.api.model.survey.Answer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

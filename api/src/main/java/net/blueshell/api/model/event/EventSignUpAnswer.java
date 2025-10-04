@@ -4,10 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.survey.Answer;
-import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 

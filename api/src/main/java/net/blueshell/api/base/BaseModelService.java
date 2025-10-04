@@ -116,6 +116,7 @@ public abstract class BaseModelService<
 
     /**
      * Find one by its primary key.
+     *
      * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)

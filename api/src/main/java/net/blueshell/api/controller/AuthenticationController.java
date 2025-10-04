@@ -16,7 +16,6 @@ import net.blueshell.api.mapper.activation.UserActivationRequestMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.validation.annotation.Validated;

@@ -1,5 +1,7 @@
 package net.blueshell.api.controller.advice;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -9,8 +11,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ public class ValidationProblemDetailsAdvice {
         pd.setInstance(URI.create(request.getRequestURI()));
 
         List<Map<String, Object>> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> Map.<String, Object>of(
+                .map(fe -> Map.of(
                         "objectName", fe.getObjectName(),
                         "field", fe.getField(),
                         "rejectedValue", fe.getRejectedValue(),
@@ -50,7 +50,7 @@ public class ValidationProblemDetailsAdvice {
         pd.setInstance(URI.create(request.getRequestURI()));
 
         List<Map<String, Object>> errors = ex.getConstraintViolations().stream()
-                .map(cv -> Map.<String, Object>of(
+                .map(cv -> Map.of(
                         "objectName", cv.getRootBeanClass().getSimpleName(),
                         "field", cv.getPropertyPath().toString(),
                         "rejectedValue", cv.getInvalidValue(),

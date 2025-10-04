@@ -21,21 +21,18 @@ import java.util.concurrent.locks.ReentrantLock;
 @Slf4j
 public class RemoveContactFromListJob {
 
+    private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
     @Autowired
     private ContactService contactService;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private ContributionPeriodService contributionPeriodService;
 
-    private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
-
     @Async
     @Retryable(
-            retryFor = { Exception.class },
+            retryFor = {Exception.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000, multiplier = 2)
     )

@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.job.brevo.SyncContactJob;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.CommitteeMemberService;

@@ -9,7 +9,6 @@ import net.blueshell.api.base.BaseDTO;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -20,7 +19,7 @@ public class SurveyDTO extends BaseDTO {
     @NotEmpty
     private List<QuestionDTO> questions;
 
-    @JsonProperty("questions")      // ensures JSON uses the getter
+    @JsonProperty("questions")
     public List<QuestionDTO> getQuestionsSorted() {
         if (questions == null) return List.of();
         return questions.stream()

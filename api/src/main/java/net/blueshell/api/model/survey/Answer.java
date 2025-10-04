@@ -3,14 +3,11 @@ package net.blueshell.api.model.survey;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.model.File;
 import net.blueshell.api.model.converter.BooleanListConverter;
-import net.blueshell.api.model.event.EventSignUp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.List;
-import java.util.Objects;
 
 @Entity
 @Table(name = "answers")

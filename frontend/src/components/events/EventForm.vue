@@ -6,7 +6,7 @@ import {DateTime} from "luxon"
 import {type AdvancedCommittee, createEvent, type Event, findCommittees, updateEvent} from "@/lib"
 import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
-import SurveyForm from "@/components/survey/SurveyForm.vue"
+import SurveyEdit from "@/components/survey/SurveyEdit.vue"
 
 const props = defineProps({
   initialEvent: {
@@ -92,12 +92,11 @@ watch([event, sameEndDate], () => {
 
 const formRef = ref<FormContext>()
 const submitting = ref(false)
-const signUpForm = ref<InstanceType<typeof SurveyForm> | null>(null)
+const signUpForm = ref<InstanceType<typeof SurveyEdit> | null>(null)
 const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
 
 async function submit() {
   const result = await formRef.value?.validate()
-  console.log("valid?:", result)
   if (!result?.valid) return
 
   submitting.value = true
@@ -448,7 +447,7 @@ async function submit() {
             rules="notEmpty"
             name="signUpForm"
           >
-            <survey-form
+            <survey-edit
               v-model="event.signUpForm"
               :error-messages="errors"
               @update:model-value="handleChange"

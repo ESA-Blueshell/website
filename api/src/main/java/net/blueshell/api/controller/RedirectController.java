@@ -14,7 +14,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @Tag(name = "Redirects")

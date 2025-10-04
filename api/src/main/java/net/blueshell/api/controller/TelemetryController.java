@@ -13,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @RestController
 @Tag(name = "Telemetries")
 public class TelemetryController extends BaseController<TelemetryService, TelemetryMapper> {

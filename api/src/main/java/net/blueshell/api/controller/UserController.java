@@ -2,7 +2,6 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
-import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.UserFilter;
@@ -23,8 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping

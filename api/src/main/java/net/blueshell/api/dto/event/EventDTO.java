@@ -10,11 +10,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.FileDTO;
-import net.blueshell.api.dto.survey.QuestionDTO;
 import net.blueshell.api.dto.survey.SurveyDTO;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

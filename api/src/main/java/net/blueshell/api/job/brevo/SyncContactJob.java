@@ -1,4 +1,3 @@
-
 package net.blueshell.api.job.brevo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +20,12 @@ import java.util.concurrent.locks.ReentrantLock;
 @Slf4j
 public class SyncContactJob {
 
-    @Autowired
-    private ContactService contactService;
-
-    @Autowired
-    private UserService userService;
-
     private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
+    @Autowired
+    private ContactService contactService;
+    @Autowired
+    private UserService userService;
 
     @Async
     @Retryable(

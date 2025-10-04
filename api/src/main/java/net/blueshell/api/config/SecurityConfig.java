@@ -4,7 +4,6 @@ import net.blueshell.api.auth.JwtAuthFilter;
 import net.blueshell.api.auth.JwtAuthenticationEntryPoint;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.permission.CompositePermissionEvaluator;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -81,7 +80,7 @@ public class SecurityConfig {
                                 "/events/signups/*/guest",
                                 "/users",
                                 "/users/guest"
-                                ).permitAll()
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/events/**",

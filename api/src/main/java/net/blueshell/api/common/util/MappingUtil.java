@@ -1,7 +1,5 @@
 package net.blueshell.api.common.util;
 
-import net.blueshell.api.model.User;
-
 import java.security.SecureRandom;
 import java.util.function.BiConsumer;
 

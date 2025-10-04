@@ -10,10 +10,10 @@ import java.util.List;
 /**
  * Mirrors Spring Boot 3.x ProblemDetail JSON with binding errors included.
  * This matches the effect of:
- *   include-message: always
- *   include-binding-errors: always
- *   include-stacktrace: never
- *   include-exception: false
+ * include-message: always
+ * include-binding-errors: always
+ * include-stacktrace: never
+ * include-exception: false
  */
 @Schema(name = "ApiError", description = "Problem Details for HTTP APIs including validation errors.")
 public class ApiErrorDTO extends BaseDTO {

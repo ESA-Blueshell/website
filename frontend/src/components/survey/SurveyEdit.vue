@@ -1,318 +1,120 @@
 <script lang="ts" setup>
-import {computed, type Ref, ref} from "vue"
-import {useStore} from "vuex"
-import {
-  type Answer,
-  createEventSignup,
-  type Event,
-  type EventSignUp,
-  type Question,
-  QuestionType,
-  updateEventSignUp,
-} from "@/lib"
-import {Field, Form} from "vee-validate"
-import type {VForm} from "vuetify/lib/components"
+import { type Survey, type Question, QuestionType } from "@/lib"
+import QuestionField from "@/components/survey/QuestionField.vue"
+import {computed, ref} from "vue"
 
-const emit = defineEmits(["submit"])
+const model = defineModel<Survey>({ default: { questions: [] } })
+const initialModel = ref<Survey>(JSON.parse(JSON.stringify(model.value)))
+const initialJson = ref(JSON.stringify(initialModel.value))
+const isDirty = computed(() => JSON.stringify(model.value) !== initialJson.value)
 
-interface Props {
-  event?: Event
-  showGuestForm: boolean
-  buttonLoading?: boolean
-  initialSignUp?: EventSignUp
+function addQuestion(type: QuestionType) {
+  const nextIdx = model.value.questions.length
+  const base = { type, label: "", idx: nextIdx } as Question
+  const q: Question =
+    type === QuestionType.OPEN || type === QuestionType.DESCRIPTION
+      ? base
+      : { ...base, choiceLabels: ["", ""] }
+
+  model.value = {
+    ...model.value,
+    questions: [...model.value.questions, q],
+  }
 }
 
-const props = defineProps<Props>()
-
-const store = useStore()
-
-const answersData = ref<Answer[]>(
-  props.initialSignUp?.answers
-  ?? props.event.signUpForm?.questions
-    .filter((q: Question) => q.type == QuestionType.DESCRIPTION).map((question: Question) => {
-        if (question.type === QuestionType.OPEN) {
-          return {
-            questionId: question.id!,
-            textResponse: "",
-          }
-        }
-        if (question.type === QuestionType.RADIO) {
-          return {
-            questionId: question.id!,
-            optionsSelections: Array(question.choiceLabels?.length ?? 0).fill(false),
-          }
-        }
-        return {
-          questionId: question.id!,
-          optionsSelections: Array(question.choiceLabels?.length ?? 0).fill(false),
-        }
-      },
-    )
-  ?? [],
-)
-
-/**
- * If the user is not logged in, we allow them to enter temporary guest data
- */
-const guestData = ref(
-  store.getters.getGuestData ?? {
-    name: "",
-    discord: "",
-    email: "",
-  },
-)
-
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-const login = computed(() => store.getters.getLogin)
-
-/**
- * The sign-up form structure for the event.
- * We assume `props.event.signUpForm` is already an array of question objects.
- */
-const eventSignUpForm = computed(() => props.event.signUpForm ?? [])
-const signUp = computed(() => {
-    const signupProp = props.initialSignUp ?? {}
-    return {
-      id: signupProp?.id,
-      eventId: signupProp?.eventId,
-      formAnswers: signupProp?.answers ?? [],
-    } as EventSignUp
-  },
-)
-
-
-const answersForm: Ref<VForm | undefined> = ref()
-const guestForm: Ref<VForm | undefined> = ref()
-
-async function submit() {
-  if (!isLoggedIn.value) {
-    const guestFormValid = await guestForm.value?.validate()
-    if (!guestFormValid) return
-    signUp.value.guest = guestData.value ?? {}
-  } else {
-    signUp.value.userId = login.value.userId
-  }
-
-  const formValid = await answersForm.value?.validate()
-  if (!formValid) return
-  signUp.value.answers = answersData.value ?? []
-
-  if (isLoggedIn.value) {
-    if (signUp.value?.id) {
-      await updateEventSignUp({
-        path: {
-          eventId: props.event.id!,
-        },
-        body: signUp.value,
-      })
-    } else {
-      await createEventSignup({
-        path: {
-          eventId: props.event.id!,
-        },
-        body: {
-          ...signUp.value,
-          eventId: props.event.id!,
-        },
-      })
-    }
-  } else {
-    store.commit("saveGuestData", guestData.value)
-    await createEventSignup({
-      path: {
-        eventId: props.event.id!,
-      },
-      body: {
-        ...signUp.value,
-        eventId: props.event.id!,
-      },
-    })
-  }
-  emit("submit")
+function reindex(questions: Question[]) {
+  return questions.map((q, idx) => ({ ...q, idx }))
 }
 
+function updateQuestion(i: number, updated: Question) {
+  const next = model.value.questions.slice()
+  next[i] = { ...updated, idx: i }
+  model.value = { ...model.value, questions: next }
+}
+
+function removeQuestion(i: number) {
+  const next = model.value.questions.slice()
+  next.splice(i, 1)
+  model.value = { ...model.value, questions: reindex(next) }
+}
+
+function moveQuestionUp(i: number) {
+  if (i <= 0) return
+  const next = model.value.questions.slice()
+  if (!next) return
+  [next[i - 1]!, next[i]!] = [next[i]!, next[i - 1]!]
+  model.value = { ...model.value, questions: reindex(next) }
+}
+
+function moveQuestionDown(i: number) {
+  if (i >= model.value.questions.length - 1) return
+  const next = model.value.questions.slice()
+  if (!next) return
+  [next[i + 1]!, next[i]!] = [next[i]!, next[i + 1]!]
+  model.value = { ...model.value, questions: reindex(next) }
+}
 </script>
 
 <template>
-  <div>
-    <Form
-      v-if="!isLoggedIn"
-      ref="guestForm"
-      as="div"
-      class="mb-4"
+  <div class="pa-4 form">
+    <template
+      v-for="(q, i) in model.questions"
+      :key="q.idx"
     >
-      <v-alert
-        class="mb-4"
-        text="It seems you are not logged in. You can still sign up for this event, but we'll need some extra info from you."
-        type="info"
-        variant="outlined"
+      <question-field
+        :model-value="q"
+        :can-move-up="i > 0"
+        :can-move-down="i < model.questions.length - 1"
+        @update:model-value="(val: Question) => updateQuestion(i, val)"
+        @move-up="moveQuestionUp(i)"
+        @move-down="moveQuestionDown(i)"
+        @remove="removeQuestion(i)"
       />
-      <Field
-        v-slot="{ value, errors, handleChange, handleBlur }"
-        v-model="guestData.name"
-        name="name"
-        rules="required"
-      >
-        <v-text-field
-          :model-value="value"
-          :error-messages="errors"
-          label="Name"
-          @update:model-value="handleChange"
-          @blur="handleBlur"
-        />
-      </Field>
-      <Field
-        v-slot="{ value, errors, handleChange, handleBlur }"
-        v-model="guestData.discord"
-        name="discord"
-        rules="required"
-      >
-        <v-text-field
-          :model-value="value"
-          :error-messages="errors"
-          label="Discord username"
-          @update:model-value="handleChange"
-          @blur="handleBlur"
-        />
-      </Field>
-      <Field
-        v-slot="{ value, errors, handleChange, handleBlur }"
-        v-model="guestData.email"
-        name="email"
-        rules="required|email|noStudentEmail"
-      >
-        <v-text-field
-          :model-value="value"
-          :error-messages="errors"
-          hint="We'll use this to send you a link you can use to edit your sign-up form later"
-          label="Email"
-          @update:model-value="handleChange"
-          @blur="handleBlur"
-        />
-      </Field>
-    </Form>
+    </template>
 
-    <!-- ANSWERS FORM -->
-    <Form
-      v-if="eventSignUpForm !== null"
-      ref="answersForm"
-      as="div"
-    >
-      <div
-        v-for="(question, i) in eventSignUpForm"
-        :key="i"
-        class="mb-4"
-      >
-        <p :class="question.type === 'description' ? 'text-body-1' : 'text-h6 mb-0'">
-          {{ question.prompt }}
-        </p>
-        <!-- Open Question -->
-        <template
-          v-if="question.type === 'open'"
+    <v-menu location="bottom">
+      <template #activator="{ props }">
+        <v-btn
+          block
+          v-bind="props"
+          variant="outlined"
         >
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="answersData[i]"
-            :name="`answersData.${i}`"
-            rules="required"
-          >
-            <v-text-field
-              :model-value="value"
-              :error-messages="errors"
-              @update:model-value="handleChange"
-              @blur="handleBlur"
-            />
-          </Field>
-        </template>
+          Add question or text to sign-up form
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item @click="addQuestion(QuestionType.DESCRIPTION)">
+          Description without a question
+        </v-list-item>
+        <v-list-item @click="addQuestion(QuestionType.OPEN)">
+          Open question
+        </v-list-item>
+        <v-list-item @click="addQuestion(QuestionType.RADIO)">
+          Multiple choice question
+        </v-list-item>
+        <v-list-item @click="addQuestion(QuestionType.CHECKBOX)">
+          Question with checkboxes
+        </v-list-item>
+      </v-list>
+    </v-menu>
 
-        <!-- Radio Question (multi-select as boolean array) -->
-        <template v-else-if="question.type === 'radio'">
-          <Field
-            v-slot="{ value = [], errors, handleChange, handleBlur }"
-            v-model="answersData[i]"
-            :name="`answersData.${i}`"
-            :rules="(val: boolean[]) => (val && val.some(Boolean)) || 'Select at least one option'"
-          >
-            <div>
-              <v-checkbox
-                v-for="(option, j) in question.options"
-                :key="j"
-                :label="option"
-                :model-value="(value?.[j] ?? false)"
-                hide-details
-                @update:model-value="(checked: boolean) => {
-                  const next = Array.isArray(value)
-                    ? [...value]
-                    : Array(question.options.length).fill(false)
-                  next[j] = checked
-                  handleChange(next)
-                }"
-                @blur="handleBlur"
-              />
-              <div
-                v-if="errors?.length"
-                class="text-error text-caption mt-1"
-              >
-                {{ errors[0] }}
-              </div>
-            </div>
-          </Field>
-        </template>
-
-
-        <!-- Checkbox Question -->
-        <template
-          v-else-if="question.type === 'checkbox'"
-        >
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="answersData[i]"
-            :name="`answersData.${i}`"
-            rules="required"
-          >
-            <v-checkbox
-              v-for="(option, j) in question.options"
-              :key="j"
-              :model-value="value"
-              :error-messages="errors"
-              :label="option"
-              :value="j"
-              hide-details
-              @update:model-value="handleChange"
-              @blur="handleBlur"
-            />
-          </Field>
-        </template>
-      </div>
-    </Form>
-
-    <v-expand-transition
-      v-if="answersData.length > 0"
-      class="mb-3"
-    >
+    <v-expand-transition class="mt-4">
       <v-alert
+        v-if="isDirty"
         prominent
         type="warning"
         variant="outlined"
       >
-        By submitting this form, you consent to share your name, username, email, Discord handle, phone number,
-        and your responses with members of the organizing committee.
+        Editing the form will remove existing responses after submit.
       </v-alert>
     </v-expand-transition>
-
-    <!-- SUBMIT BUTTON -->
-    <v-btn
-      :block="true"
-      :loading="buttonLoading"
-      @click="submit"
-    >
-      {{ signUp.id ? "Update" : "Save" }} sign-up form
-    </v-btn>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.v-checkbox .v-selection-control {
-  min-height: 40px !important;
+@use '../../styles/settings';
+.form {
+  border-radius: settings.$border-radius-root;
+  border: 1px solid rgb(var(--v-theme-accent));
 }
 </style>

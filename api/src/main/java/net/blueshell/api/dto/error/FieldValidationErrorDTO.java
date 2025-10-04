@@ -2,7 +2,9 @@ package net.blueshell.api.dto.error;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/** One entry for each field/object error when validation fails. */
+/**
+ * One entry for each field/object error when validation fails.
+ */
 @Schema(name = "FieldValidationError", description = "Details about a single field/object validation error.")
 public class FieldValidationErrorDTO {
 

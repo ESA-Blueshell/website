@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Repository
 public interface RedirectRepository extends BaseRepository<Redirect> {

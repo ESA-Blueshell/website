@@ -1,7 +1,6 @@
 package net.blueshell.api.service.email;
 
 import net.blueshell.api.model.User;
-import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,20 +18,18 @@ import java.util.Map;
 @Service
 public class EmailTemplateService {
 
-    @Value("${frontend.url}")
-    private String appUrl;
-
     private final Parser parser;
     private final HtmlRenderer renderer;
+    @Value("${frontend.url}")
+    private String appUrl;
+    @Autowired
+    private TemplateEngine templateEngine;
 
     public EmailTemplateService() {
         var extensions = List.of(TablesExtension.create());
         this.parser = Parser.builder().extensions(extensions).build();
         this.renderer = HtmlRenderer.builder().extensions(extensions).build();
     }
-
-    @Autowired
-    private TemplateEngine templateEngine;
 
     private String processTemplate(String templateName, Map<String, Object> variables) {
         Context context = new Context();

@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.SponsorDTO;
 import net.blueshell.api.mapper.SponsorMapper;
-import net.blueshell.api.model.Sponsor;
 import net.blueshell.api.service.SponsorService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;

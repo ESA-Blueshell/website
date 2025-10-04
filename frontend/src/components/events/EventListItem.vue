@@ -280,11 +280,11 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     location="left"
                     text="Check signups"
                   >
-                    <template #activator="{ props }">
+                    <template #activator="{ props: checkSignUps }">
                       <v-btn
                         :disabled="!event.signUp"
                         icon="mdi-list-status"
-                        v-bind="props"
+                        v-bind="checkSignUps"
                         variant="plain"
                         @click="router.push(`/events/signups/${event.id}`)"
                       />
@@ -295,10 +295,10 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     location="left"
                     text="Edit event"
                   >
-                    <template #activator="{ props }">
+                    <template #activator="{ props: editEvent }">
                       <v-btn
                         icon="mdi-pencil"
-                        v-bind="props"
+                        v-bind="editEvent"
                         variant="plain"
                         @click="router.push(`/events/edit/${event.id}`)"
                       />

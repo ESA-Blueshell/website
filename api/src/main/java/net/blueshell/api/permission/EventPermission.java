@@ -24,9 +24,9 @@ public class EventPermission extends BasePermissionEvaluator<Event, EventService
         Event event = (Event) targetDomainObject;
         var principal = getPrincipal();
         return switch (permission) {
-            case "read" -> event.isVisible() || event.getCommittee().hasMember(principal);
+            case "read" -> event.isApproved() || event.getCommittee().hasMember(principal);
             case "write", "delete", "seeSignUps" -> event.getCommittee().hasMember(principal);
-            case "signUp" -> event.isVisible() && (!event.isMembersOnly() || hasAuthority(Role.MEMBER));
+            case "signUp" -> event.isApproved() && (!event.isMembersOnly() || hasAuthority(Role.MEMBER));
             default -> false;
         };
     }

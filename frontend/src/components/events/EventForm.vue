@@ -34,7 +34,7 @@ function getDefaultEvent(): Event {
     endTime: "",
     memberPrice: 0,
     publicPrice: 0,
-    visible: false,
+    approved: false,
     membersOnly: false,
     signUp: false,
     banner: undefined,
@@ -238,7 +238,7 @@ async function submit() {
         </v-col>
       </v-row>
 
-      <!-- Checkboxes: sameEndDate, membersOnly, visible -->
+      <!-- Checkboxes: sameEndDate, membersOnly, approved -->
       <v-row>
         <v-col>
           <Field
@@ -269,13 +269,13 @@ async function submit() {
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange }"
-            v-model="event.visible"
-            name="visible"
+            v-model="event.approved"
+            name="approved"
           >
             <v-checkbox
               :model-value="value"
               :error-messages="errors"
-              label="Make public"
+              label="Approved"
               @update:model-value="handleChange"
             />
           </Field>

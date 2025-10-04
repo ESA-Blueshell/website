@@ -21,15 +21,15 @@ public final class EventSignUpSpecifications extends IdentityProvider {
         };
     }
 
-    public static Specification<EventSignUp> visible() {
-        return visible(true);
+    public static Specification<EventSignUp> approved() {
+        return approved(true);
     }
 
-    public static Specification<EventSignUp> visible(Boolean value) {
+    public static Specification<EventSignUp> approved(Boolean value) {
         if (value == null) return (root, query, cb) -> cb.conjunction();
         return (root, q, cb) -> value
-                ? cb.isTrue(root.join("event", JoinType.INNER).get("visible"))
-                : cb.isFalse(root.join("event", JoinType.INNER).get("visible"));
+                ? cb.isTrue(root.join("event", JoinType.INNER).get("approved"))
+                : cb.isFalse(root.join("event", JoinType.INNER).get("approved"));
     }
 
     public static Specification<EventSignUp> startTimeFrom(LocalDateTime from) {
@@ -79,7 +79,7 @@ public final class EventSignUpSpecifications extends IdentityProvider {
             spec = spec.and(committeeId(f.getCommitteeId()));
         }
         if (!user.hasAuthority(Role.BOARD) && !user.getCommitteeIds().contains(f.getCommitteeId())) {
-            spec = spec.and(visible(true));
+            spec = spec.and(approved(true));
         }
         if (f.getEventId() != null) {
             spec = spec.and(eventId(f.getEventId()));

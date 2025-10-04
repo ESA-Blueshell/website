@@ -193,7 +193,7 @@ class EventControllerIT extends UserTestSupport {
         dto.setTitle("Updated Event");
         dto.setLocation("Updated Location");
         dto.setDescription("Updated Description");
-        dto.setVisible(false);
+        dto.setApproved(false);
         dto.setSignUp(false);
 
         mvc.perform(put("/events/{id}", dto.getId())

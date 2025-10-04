@@ -29,7 +29,7 @@ public class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onEventCreated(PrePersistEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
-        if (e.isVisible()) {
+        if (e.isApproved()) {
             calendars.add(e);
         }
     }
@@ -38,7 +38,7 @@ public class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onEventUpdated(PostUpdateEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
-        if (e.isVisible()) {
+        if (e.isApproved()) {
             calendars.sync(e);
         } else {
             // Remove from calendar if no longer visible

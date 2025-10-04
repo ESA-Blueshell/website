@@ -14,17 +14,24 @@ import {
 import EventList from "@/components/events/EventList.vue"
 
 const store = useStore()
-const calendarRef = ref()
 const login = computed<Login>(() => store.getters.getLogin)
 
 const events = ref<Event[] | null>(null)
 const committees = ref<AdvancedCommittee[] | null>(null)
 const eventSignUps = ref<EventSignUp[] | null>(null)
 
-function deleteSignUp(signUpId: number): void {
-  eventSignUps.value = (eventSignUps.value ?? []).filter(
-    (es: EventSignUp) => es.id !== signUpId,
-  )
+function updateEvent(event: Event): void {
+  const list = events.value ?? []
+  const idx = list.findIndex(es => es.id === event.id)
+  if (idx >= 0) {
+    events.value = [
+      ...list.slice(0, idx),
+      event,
+      ...list.slice(idx + 1),
+    ]
+  } else {
+    events.value = [...list, event]
+  }
 }
 
 function updateSignUp(signUp: EventSignUp): void {
@@ -43,6 +50,12 @@ function updateSignUp(signUp: EventSignUp): void {
 
 function deleteEvent(id: number) {
   events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
+}
+
+function deleteSignUp(signUpId: number): void {
+  eventSignUps.value = (eventSignUps.value ?? []).filter(
+    (es: EventSignUp) => es.id !== signUpId,
+  )
 }
 
 const pastEvents = ref<Event[]>([])
@@ -111,18 +124,19 @@ onMounted(async () => {
         Create new event
       </v-btn>
 
-      <!-- Only show non-public events if user is board AND there are non-visible events -->
-      <template v-if="isBoard && events.filter((e: Event) => !e.visible).length > 0">
+      <!-- Only show non-public events if user is board AND there are non-approved events -->
+      <template v-if="isBoard && events.filter((e: Event) => !e.approved).length > 0">
         <p class="mt-8 mx-3 text-h3 text-center">
           Non-public events (to be approved)
         </p>
         <event-list
           :committees="committees"
           :event-sign-ups="eventSignUps"
-          :events="events.filter((e: Event) => !e.visible)"
+          :events="events.filter((e: Event) => !e.approved)"
           @delete:event="deleteEvent"
-          @update:sign-up="updateSignUp"
+          @update:event="updateEvent"
           @delete:sign-up="deleteSignUp"
+          @update:sign-up="updateSignUp"
         />
       </template>
 
@@ -132,10 +146,11 @@ onMounted(async () => {
       <event-list
         :committees="committees"
         :event-sign-ups="eventSignUps"
-        :events="events.filter((e: Event) => e.visible)"
+        :events="events.filter((e: Event) => e.approved)"
         @delete:event="deleteEvent"
-        @update:sign-up="updateSignUp"
+        @update:event="updateEvent"
         @delete:sign-up="deleteSignUp"
+        @update:sign-up="updateSignUp"
       />
 
       <p class="mt-8 mx-3 mb-4 text-h3 text-center">

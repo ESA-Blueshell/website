@@ -5,9 +5,8 @@ import {type AdvancedCommittee, type Event, type EventSignUp} from "@/lib"
 
 interface Emits {
   (e: "delete:event", id: number): void,
-
   (e: "delete:signUp", id: number): void,
-
+  (e: "update:event", id: number): void,
   (e: "update:signUp", id: number): void,
 }
 
@@ -22,8 +21,8 @@ const props = defineProps<Props>()
 
 const route = useRoute()
 
-function deleteSignUp(signUpId: number): void {
-  emit("delete:signUp", signUpId)
+function updateEvent(event: Event): void {
+  emit("update:event", event)
 }
 
 function updateSignUp(signUp: EventSignUp): void {
@@ -33,6 +32,11 @@ function updateSignUp(signUp: EventSignUp): void {
 function deleteEvent(id: number) {
   emit("delete:event", id)
 }
+
+function deleteSignUp(signUpId: number): void {
+  emit("delete:signUp", signUpId)
+}
+
 
 </script>
 <template>
@@ -65,6 +69,7 @@ function deleteEvent(id: number) {
           @delete:event="deleteEvent"
           @delete:sign-up="deleteSignUp"
           @update:sign-up="updateSignUp"
+          @update:event="updateEvent"
         />
         <!-- only show divider when there's another item after -->
         <v-divider v-if="i < props.events.length - 1" />

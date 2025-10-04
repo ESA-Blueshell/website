@@ -13,7 +13,7 @@ public class EventFilter {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime to;
 
-    private Boolean visible;
+    private Boolean approved;
 
     private Long committeeId;
     private String titleContains;

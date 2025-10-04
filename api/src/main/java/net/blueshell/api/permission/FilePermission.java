@@ -48,7 +48,7 @@ public class FilePermission extends BasePermissionEvaluator<File, FileService> {
             }
             case EVENT_BANNER -> {
                 Event event = eventService.findByBanner(file);
-                yield event != null && (event.isVisible() || event.getCommittee().hasMember(principal));
+                yield event != null && (event.isApproved() || event.getCommittee().hasMember(principal));
             }
             case EVENT_PICTURE -> principal.hasAuthority(Role.MEMBER);
             case PROFILE_PICTURE, DOCUMENT, SPONSOR_PICTURE -> true;

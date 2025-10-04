@@ -13,8 +13,8 @@ import java.util.Set;
 
 public class UserSpecifications {
 
-    public static Specification<Event> visible() {
-        return (root, q, cb) -> cb.isTrue(root.get("visible"));
+    public static Specification<Event> approved() {
+        return (root, q, cb) -> cb.isTrue(root.get("approved"));
     }
 
     public static Specification<User> hasMemberAuthority() {

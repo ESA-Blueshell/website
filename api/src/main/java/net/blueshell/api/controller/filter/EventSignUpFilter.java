@@ -13,6 +13,6 @@ public class EventSignUpFilter {
     private LocalDateTime to;
     private Long userId;
     private Long committeeId;
-    private Boolean visible;
+    private Boolean approved;
     private Long eventId;
 }

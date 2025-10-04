@@ -28,34 +28,4 @@ public interface EventRepository extends BaseRepository<Event> {
     List<Event> findAll();
 
     Event findByBanner(File banner);
-
-    @Query("SELECT e FROM Event e WHERE e.startTime >= CURRENT_DATE ORDER BY e.startTime DESC")
-    List<Event> findUpcoming();
-
-    @Query("""
-            SELECT  e
-            FROM    Event e
-            LEFT JOIN CommitteeMember cm
-                   ON cm.committee = e.committee
-                  AND cm.user = :user
-            WHERE   (:from IS NULL OR e.startTime >= :from)
-              AND   (:to   IS NULL OR e.startTime <= :to)
-              AND   e.visible = TRUE
-              AND   (e.membersOnly = FALSE
-                     OR (
-                         cm IS NOT NULL
-                         AND EXISTS (
-                                SELECT 1
-                                FROM User u
-                                JOIN u.roles r
-                                WHERE u = :user
-                                  AND r in ('MEMBER', 'COMMITTEE', 'BOARD', 'TREASURER', 'ADMIN', 'SYSTEM')
-                             )
-                        )
-                    )
-            ORDER BY e.startTime DESC
-            """)
-    List<Event> findStartTimeBetweenAndVisibleToUser(@Param("from") LocalDateTime from,
-                                                     @Param("to") LocalDateTime to,
-                                                     @Param("user") User user);
 }

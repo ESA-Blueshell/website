@@ -40,7 +40,7 @@ onMounted(async () => {
       location: "",
       startTime: "",
       endTime: "",
-      visible: false,
+      approved: false,
       membersOnly: false,
       signUp: false,
       banner: undefined,

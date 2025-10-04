@@ -70,7 +70,7 @@ export type Event = {
     endTime: string;
     memberPrice?: number;
     publicPrice?: number;
-    visible?: boolean;
+    approved?: boolean;
     membersOnly?: boolean;
     signUp?: boolean;
     banner?: File;
@@ -733,6 +733,51 @@ export type UpdateEventResponses = {
 };
 
 export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
+
+export type ApproveEventData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query: {
+        approved: boolean;
+    };
+    url: '/events/{id}/approve';
+};
+
+export type ApproveEventErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApproveEventError = ApproveEventErrors[keyof ApproveEventErrors];
+
+export type ApproveEventResponses = {
+    /**
+     * OK
+     */
+    200: Event;
+};
+
+export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
 
 export type FindEventSignUpsByEventIdData = {
     body?: never;
@@ -1783,7 +1828,7 @@ export type FindEventsData = {
         sort?: Array<string>;
         from?: string;
         to?: string;
-        visible?: boolean;
+        approved?: boolean;
         committeeId?: number;
         titleContains?: string;
     };
@@ -2915,7 +2960,7 @@ export type FindEventSignUpsData = {
         to?: string;
         userId?: number;
         committeeId?: number;
-        visible?: boolean;
+        approved?: boolean;
         eventId?: number;
     };
     url: '/events/signups';

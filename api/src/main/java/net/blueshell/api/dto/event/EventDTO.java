@@ -35,7 +35,7 @@ public class EventDTO extends BaseDTO {
     private OffsetDateTime endTime;
     private Double memberPrice;
     private Double publicPrice;
-    private boolean visible;
+    private boolean approved;
     private boolean membersOnly;
     private boolean signUp;
     private FileDTO banner;

@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public final class EventSpecifications {
 
-    public static Specification<Event> visible() {
-        return (root, q, cb) -> cb.isTrue(root.get("visible"));
+    public static Specification<Event> approved() {
+        return (root, q, cb) -> cb.isTrue(root.get("approved"));
     }
 
-    public static Specification<Event> visible(Boolean value) {
+    public static Specification<Event> approved(Boolean value) {
         if (value == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) -> value ? cb.isTrue(root.get("visible")) : cb.isFalse(root.get("visible"));
+        return (root, q, cb) -> value ? cb.isTrue(root.get("approved")) : cb.isFalse(root.get("approved"));
     }
 
     public static Specification<Event> startTimeFrom(LocalDateTime from) {
@@ -72,8 +72,8 @@ public final class EventSpecifications {
         if (f.getFrom() != null || f.getTo() != null) {
             spec = spec.and(timeBetween(f.getFrom(), f.getTo()));
         }
-        if (f.getVisible() != null) {
-            spec = spec.and(visible(f.getVisible()));
+        if (f.getApproved() != null) {
+            spec = spec.and(approved(f.getApproved()));
         }
         if (f.getCommitteeId() != null) {
             spec = spec.and(committeeId(f.getCommitteeId()));
@@ -86,12 +86,12 @@ public final class EventSpecifications {
         // Board members can see all events
         // So we don't filter further
         if (user == null || !user.hasAuthority(Role.MEMBER)) {
-            // For a non-member, only public events are visible
-            spec = spec.and(visible());
+            // Only approved are visible
+            spec = spec.and(approved());
         } else if (!user.hasAuthority(Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
-            // And visible events are included
-            spec = spec.and(userIsCommitteeMember(user).or(visible()));
+            // And approved events are included
+            spec = spec.and(userIsCommitteeMember(user).or(approved()));
         }
 
         return spec;

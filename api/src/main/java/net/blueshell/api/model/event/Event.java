@@ -91,8 +91,8 @@ public class Event implements BaseModel {
     private String googleId;
 
     @Getter
-    @Column(name = "visible")
-    private boolean visible;
+    @Column(name = "approved")
+    private boolean approved;
 
     @Getter
     @Column(name = "members_only")

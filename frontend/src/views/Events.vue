@@ -78,6 +78,20 @@ function updateSignUp(signUp: EventSignUp): void {
   }
 }
 
+function updateEvent(event: Event): void {
+  const list = events.value ?? []
+  const idx = list.findIndex(e => e.id === event.id)
+  if (idx >= 0) {
+    events.value = [
+      ...list.slice(0, idx),
+      event,
+      ...list.slice(idx + 1),
+    ]
+  } else {
+    events.value = [...list, event]
+  }
+}
+
 function deleteEvent(id: number) {
   events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
   calendarRef.value?.deleteEvent?.(id)
@@ -107,6 +121,7 @@ function deleteEvent(id: number) {
           :committees="committees ?? []"
           @delete:event="deleteEvent"
           @delete:sign-up="deleteSignUp"
+          @update:event="updateEvent"
           @update:sign-up="updateSignUp"
         />
       </div>

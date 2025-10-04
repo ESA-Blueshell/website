@@ -14,6 +14,8 @@ import java.util.List;
 @Schema(name = "Question")
 public class QuestionDTO extends BaseDTO {
     private Long id;
+    @NotNull
+    private Long idx;
     private Long surveyId;
     @NotNull
     private QuestionType type;

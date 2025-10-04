@@ -1,14 +1,12 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
-import EventSignUpFormEdit from "@/components/events/EventSignUpFormEdit.vue"
-import {defineRule, type FormContext, type GenericObject} from "vee-validate"
-import {Field, Form} from "vee-validate"
+import {ref, watch} from "vue"
+import {Field, Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
-import {type AdvancedCommittee, createEvent, type Event, findCommittees, type FormQuestion, updateEvent} from "@/lib"
+import {type AdvancedCommittee, createEvent, type Event, findCommittees, updateEvent} from "@/lib"
 import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
-import {isEmpty} from "@/plugins/localValidation.ts"
+import SurveyForm from "@/components/survey/SurveyForm.vue"
 
 const props = defineProps({
   initialEvent: {
@@ -40,7 +38,6 @@ function getDefaultEvent(): Event {
     membersOnly: false,
     signUp: false,
     banner: undefined,
-    signUpForm: [],
     committeeId: 0,
   }
 }
@@ -55,7 +52,7 @@ function initializeEvent(): Event {
 const event = ref<Event>(initializeEvent())
 
 const hadSignUp = ref<boolean>(event.value.signUp || false)
-const oldEnableSignUpForm = ref<boolean>(event.value.signUp || false)
+const oldEnableSignUpForm = ref<boolean>(event.value.signUpForm || false)
 
 // Committees
 const committees = ref<AdvancedCommittee[]>([])
@@ -93,15 +90,14 @@ watch([event, sameEndDate], () => {
   }
 })
 
-// -----------------------
-// 3) Submit (validate → save)
-// -----------------------
 const formRef = ref<FormContext>()
 const submitting = ref(false)
-const signUpForm = ref<InstanceType<typeof EventSignUpFormEdit> | null>(null)
+const signUpForm = ref<InstanceType<typeof SurveyForm> | null>(null)
+const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
 
 async function submit() {
   const result = await formRef.value?.validate()
+  console.log("valid?:", result)
   if (!result?.valid) return
 
   submitting.value = true
@@ -183,7 +179,7 @@ async function submit() {
       </v-row>
 
       <!-- Description -->
-      <v-row>
+      <v-row class="mb-8">
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
@@ -431,8 +427,8 @@ async function submit() {
         <v-col>
           <Field
             v-slot="{ value, handleChange }"
-            v-model="event.signUp"
-            name="enableSignupForm"
+            v-model="enableSignUpForm"
+            name="enableSignUpForm"
           >
             <v-checkbox
               :model-value="value"
@@ -444,20 +440,27 @@ async function submit() {
         </v-col>
       </v-row>
 
-      <v-row v-if="event.signUp">
+      <v-row v-if="enableSignUpForm">
         <v-col>
-          <event-sign-up-form-edit
-            ref="signUpForm"
-            :initial-form="event.signUpForm"
-            @change="(newForm: FormQuestion[]) => (event.signUpForm = newForm)"
-          />
+          <Field
+            v-slot="{ errors, handleChange }"
+            v-model="event.signUpForm"
+            rules="notEmpty"
+            name="signUpForm"
+          >
+            <survey-form
+              v-model="event.signUpForm"
+              :error-messages="errors"
+              @update:model-value="handleChange"
+            />
+          </Field>
         </v-col>
       </v-row>
 
       <!-- Warning if toggling sign-ups off -->
       <v-expand-transition>
         <v-alert
-          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !event.signUp)"
+          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !event.signUpForm)"
           class="mt-4 mx-3"
           prominent
           type="warning"
@@ -470,15 +473,19 @@ async function submit() {
     </v-container>
 
     <!-- Submit button -->
-    <v-btn
-      :loading="submitting"
-      block
-      class="mt-4 mx-3"
-      color="primary"
-      @click="submit"
-    >
-      Submit event
-    </v-btn>
+    <v-row>
+      <v-col cols="12">
+        <v-btn
+          :loading="submitting"
+          block
+          class="mt-8 mx-auto"
+          color="primary"
+          @click="submit"
+        >
+          Submit event
+        </v-btn>
+      </v-col>
+    </v-row>
   </Form>
 </template>
 

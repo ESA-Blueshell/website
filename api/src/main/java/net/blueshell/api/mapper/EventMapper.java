@@ -38,6 +38,7 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "membersOnly")
     @Mapping(target = "banner")
     @Mapping(target = "signUpForm")
+    @Mapping(target = "signUp")
     @BeanMapping(ignoreByDefault = true)
     public abstract Event fromDTO(EventDTO dto, @MappingTarget Event event);
 
@@ -62,6 +63,7 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "membersOnly")
     @Mapping(target = "banner")
     @Mapping(target = "signUpForm")
+    @Mapping(target = "signUp")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventDTO toDTO(Event event);
 }

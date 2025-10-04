@@ -258,8 +258,7 @@ ALTER TABLE answers
     DROP event_sign_up_answers_id;
 
 ALTER TABLE events
-    DROP sign_up_form,
-    DROP sign_up;
+    DROP sign_up_form;
 
 ALTER TABLE event_signups
     DROP form_answers;

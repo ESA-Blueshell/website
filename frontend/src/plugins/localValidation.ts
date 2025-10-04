@@ -7,6 +7,11 @@ import { DateTime } from 'luxon'
 export const isEmpty = (v: unknown) =>
   v === null || v === undefined || (typeof v === 'string' && v.trim() === '')
 
+defineRule('notEmpty', (value: unknown[]) => {
+  if (!isEmpty(value)) return true
+  return "Must not be empty"
+})
+
 defineRule('required', (value: unknown) => {
   if (!isEmpty(value)) return true
   return 'This field is required'

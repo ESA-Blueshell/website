@@ -11,12 +11,14 @@ import org.mapstruct.*;
 public abstract class QuestionMapper extends BaseMapper<Question, QuestionDTO> {
     @Mapping(target = "label")
     @Mapping(target = "type")
+    @Mapping(target = "idx")
     @Mapping(target = "choiceLabels")
     @BeanMapping(ignoreByDefault = true)
     public abstract Question fromDTO(QuestionDTO dto, @MappingTarget Question question);
 
     @Mapping(target = "label")
     @Mapping(target = "type")
+    @Mapping(target = "idx")
     @Mapping(target = "choiceLabels")
     @BeanMapping(ignoreByDefault = true)
     public abstract QuestionDTO toDTO(Question question);

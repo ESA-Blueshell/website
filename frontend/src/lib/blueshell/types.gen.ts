@@ -103,6 +103,7 @@ export enum FileType {
 
 export type Question = {
     id?: number;
+    idx: number;
     surveyId?: number;
     type: QuestionType;
     label?: string;

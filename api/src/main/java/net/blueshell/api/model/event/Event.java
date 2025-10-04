@@ -47,7 +47,7 @@ public class Event implements BaseModel {
     @Column(name = "last_editor_id")
     private Long lastEditorId;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
     @JsonIgnore
     private Committee committee;
@@ -100,11 +100,15 @@ public class Event implements BaseModel {
     @Column(name = "members_only")
     private boolean membersOnly;
 
-    @JoinColumn(name = "survey_id", updatable = false, insertable = false)
+    @Getter
+    @Column(name = "sign_up")
+    private boolean signUp;
+
+    @JoinColumn(name = "survey_id")
     @OneToOne(fetch = FetchType.LAZY)
     private Survey signUpForm;
 
-    @Column(name = "survey_id")
+    @Column(name = "survey_id", updatable = false, insertable = false)
     private Long signUpFormId;
 
     @JsonProperty("creator")

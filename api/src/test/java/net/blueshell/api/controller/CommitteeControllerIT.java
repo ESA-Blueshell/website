@@ -80,14 +80,14 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.name").value("Test Committee"))
                 .andExpect(jsonPath("$.description").value("A test committee for integration tests"))
                 .andExpect(jsonPath("$.members", hasSize(2)))
                 .andExpect(jsonPath("$.members[*].role",
                         containsInAnyOrder("Chair", "Member")))
-                .andExpect(jsonPath("$.members[*].user.id",
+                .andExpect(jsonPath("$.members[*].userId",
                         containsInAnyOrder(board.getId().intValue(), member.getId().intValue())));
 
         // Refresh entities to get updated state from database
@@ -106,7 +106,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // fetch all
         mvc.perform(get("/committees").with(bearer(userMap.get(Role.BOARD))))
@@ -121,7 +121,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         AdvancedCommitteeDTO created = mapper.readValue(
@@ -146,7 +146,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         AdvancedCommitteeDTO created = mapper.readValue(
@@ -181,7 +181,7 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.description").value("Updated description text"))
                 .andExpect(jsonPath("$.members", hasSize(1)))
                 .andExpect(jsonPath("$.members[0].role").value("No longer chair"))
-                .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()));
+                .andExpect(jsonPath("$.members[0].userId").value(board.getId().intValue()));
 
         assertFalse(refreshUser(member).hasRole(Role.COMMITTEE));
         assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));
@@ -194,7 +194,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         AdvancedCommitteeDTO created = mapper.readValue(
@@ -234,9 +234,9 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.description").value("Updated description text"))
                 .andExpect(jsonPath("$.members", hasSize(2)))
                 .andExpect(jsonPath("$.members[0].role").value("No longer chair"))
-                .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()))
+                .andExpect(jsonPath("$.members[0].userId").value(board.getId().intValue()))
                 .andExpect(jsonPath("$.members[1].role").value("No longer member"))
-                .andExpect(jsonPath("$.members[1].user.id").value(member.getId().intValue()));
+                .andExpect(jsonPath("$.members[1].userId").value(member.getId().intValue()));
 
         assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));
     }
@@ -248,7 +248,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         AdvancedCommitteeDTO created = mapper.readValue(

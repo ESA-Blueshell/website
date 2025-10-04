@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.blueshell.api.base.BaseDTO;
+import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.survey.Answer;
 import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;
@@ -18,8 +20,8 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE event_sign_up_answers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at >= NOW()")
-public class EventSignUpAnswer {
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+public class EventSignUpAnswer implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

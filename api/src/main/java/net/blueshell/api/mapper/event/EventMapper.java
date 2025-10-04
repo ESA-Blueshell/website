@@ -11,6 +11,7 @@ import org.mapstruct.*;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 @Slf4j
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {FileMapper.class, SurveyMapper.class})
@@ -18,7 +19,7 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     static LocalDateTime map(OffsetDateTime t) {
         return t == null ? null
-                : t.toLocalDateTime();
+                : t.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     static OffsetDateTime map(LocalDateTime t) {

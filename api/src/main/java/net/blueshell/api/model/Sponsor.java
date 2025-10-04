@@ -13,7 +13,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "sponsors")
 @SQLDelete(sql = "UPDATE sponsors SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
 public class Sponsor implements BaseModel {
 

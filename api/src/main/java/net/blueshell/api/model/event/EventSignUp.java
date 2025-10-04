@@ -16,7 +16,7 @@ import java.util.Set;
 @Table(name = "event_signups")
 @Data
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 public class EventSignUp implements BaseModel {
 
     @Id

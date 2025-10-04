@@ -2,6 +2,7 @@ package net.blueshell.api.model.survey;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.converter.BooleanListConverter;
 import net.blueshell.api.model.event.EventSignUp;
@@ -13,10 +14,10 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "answers")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
-public class Answer {
+public class Answer implements BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

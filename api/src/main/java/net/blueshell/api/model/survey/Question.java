@@ -19,7 +19,7 @@ import java.util.Set;
         name = "questions",
         indexes = {@Index(name = "ix_questions_survey_id", columnList = "survey_id")}
 )
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
 public class Question implements BaseModel {

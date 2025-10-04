@@ -15,7 +15,7 @@ import java.util.Set;
 @Entity
 @Table(name = "telemetries")
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
 @NoArgsConstructor
 public class Telemetry implements BaseModel {

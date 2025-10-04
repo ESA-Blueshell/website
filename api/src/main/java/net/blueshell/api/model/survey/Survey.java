@@ -2,6 +2,7 @@ package net.blueshell.api.model.survey;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -11,25 +12,16 @@ import java.util.Set;
 
 @Entity
 @Table(name = "surveys")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE surveys SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
-public class Survey {
+public class Survey implements BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Question> questions = new HashSet<>();
-
-    @OneToMany
-    @JoinTable(
-            name = "questions",
-            joinColumns = @JoinColumn(name = "survey_id"),
-            inverseJoinColumns = @JoinColumn(name = "id")
-    )
-    @JoinColumn(name = "question_id")
-    private Set<Answer> answers = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {

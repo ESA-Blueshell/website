@@ -14,7 +14,7 @@ import java.util.Objects;
 @Table(name = "committee_members")
 @Data
 @SQLDelete(sql = "UPDATE committee_members SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
 public class CommitteeMember implements BaseModel {
 

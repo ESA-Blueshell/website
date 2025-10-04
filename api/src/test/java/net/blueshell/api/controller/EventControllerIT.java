@@ -1,6 +1,8 @@
 package net.blueshell.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
@@ -19,11 +21,11 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.*;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Integration tests for EventController.
@@ -98,27 +100,26 @@ class EventControllerIT extends UserTestSupport {
         questions.add(new HashMap<>(Map.of(
                 "type", "DESCRIPTION",
                 "label", "Description",
-                "idx", 3
+                "idx",  1
         )));
         questions.add(new HashMap<>(Map.of(
                 "type", "OPEN",
                 "label", "Open question",
-                "idx", 4
+                "idx", 2
         )));
         questions.add(new HashMap<>(Map.of(
                 "type", "RADIO",
                 "label", "Radio question",
-                "idx", 5,
+                "idx", 3,
                 "choiceLabels", List.of("a", "b", "c")
         )));
 
         signUpForm.put("questions", questions);
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("title", "Announcement Drink");
+        payload.put("title", "New Event");
         payload.put("location", "Esports Lounge Twente");
-        payload.put("description",
-                "Dear Member,\n\nTent Beer Mango here\nTent Beer Mango there \nDo you care? \nFor the Tent Beer and Mango might be fair.\nIs it here is it there?\nyou might find a bear!\nToday is not the day!\nBut a way  to know the way!\nWhat is this map?\nWhat kind of Pokémon, is this a trap?\nYou might get a kitty, dahm son that is litty.\nI like to go to Santo Domingo.\nIm kinda old might start a new bingo.\nVakanCie would like to invite you\nWe would be sad without you!\nSo will be seeing you on the 6th of October.\nYou might not be sober!\nFor we will be hosting an interest drink!\nTo reveal the picture we will give you wink.\n\n\nSo be at the Esport Lounge Twente\nPut in into your agenda\nIt will start at 19:00 sharp\nFeel free to bring Yannick some kwark\nGreetings VakanCie");
+        payload.put("description", "The best description");
         payload.put("startTime", "2025-10-05T19:00:00.000+02:00");
         payload.put("endTime", "2025-10-05T22:00:00.000+02:00");
         payload.put("memberPrice", 0);
@@ -142,15 +143,15 @@ class EventControllerIT extends UserTestSupport {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.committeeId").value(committeeId.intValue()))
-                .andExpect(jsonPath("$.title").value("Announcement Drink"))
+                .andExpect(jsonPath("$.title").value("New Event"))
                 .andExpect(jsonPath("$.location").value("Esports Lounge Twente"))
-                // Start/end times are mapped through LocalDateTime in the mapper; compare by prefix to avoid tz flakiness
+                .andExpect(jsonPath("$.description").value("The best description"))
                 .andExpect(jsonPath("$.startTime").value(containsString("2025-10-05T19:00:00+02:00")))
                 .andExpect(jsonPath("$.endTime").value(containsString("2025-10-05T22:00:00+02:00")))
                 .andExpect(jsonPath("$.visible").value(true))
                 .andExpect(jsonPath("$.membersOnly").value(true))
                 .andExpect(jsonPath("$.signUp").value(true))
-                .andExpect(jsonPath("$.signUpForm.questions", hasSize(6)))
+                .andExpect(jsonPath("$.signUpForm.questions", hasSize(4)))
                 .andReturn();
 
         return mapper.readValue(result.getResponse().getContentAsByteArray(), EventDTO.class);
@@ -173,32 +174,44 @@ class EventControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
+
     @Test
-    void updatingEventsWorks() throws Exception {
+    void updatesEvent() throws Exception {
         Long committeeId = createCommitteeAndReturnId();
-        EventDTO created = createEvent(committeeId);
+        EventDTO dto = createEvent(committeeId);
 
-        Map<String, Object> updated = new HashMap<>(exampleEventPayload(committeeId));
-        updated.put("title", "Updated Announcement");
-        updated.put("description", "Updated description text");
-        updated.put("visible", false);
-        updated.put("signUp", false);
-
-        mvc.perform(put("/events/{id}", created.getId())
+        mvc.perform(put("/events/{id}", dto.getId())
                         .with(bearer(userMap.get(Role.BOARD))))
-                .andExpect(status().is4xxClientError()); // ensure body missing triggers error
+                .andExpect(status().is4xxClientError());
 
-        mvc.perform(put("/events/{id}", created.getId())
+        dto.getSignUpForm().getQuestions().remove(
+                dto.getSignUpForm().getQuestions().stream()
+                        .skip(3)
+                        .findFirst()
+                        .orElse(null)
+        );
+        dto.setTitle("Updated Event");
+        dto.setLocation("Updated Location");
+        dto.setDescription("Updated Description");
+        dto.setVisible(false);
+        dto.setSignUp(false);
+
+        mvc.perform(put("/events/{id}", dto.getId())
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(updated)))
+                        .content(mapper.writeValueAsBytes(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(created.getId().toString()))
+                .andExpect(jsonPath("$.id").value(dto.getId().toString()))
                 .andExpect(jsonPath("$.committeeId").value(committeeId.intValue()))
-                .andExpect(jsonPath("$.title").value("Updated Announcement"))
-                .andExpect(jsonPath("$.description").value("Updated description text"))
+                .andExpect(jsonPath("$.title").value("Updated Event"))
+                .andExpect(jsonPath("$.location").value("Updated Location"))
+                .andExpect(jsonPath("$.description").value("Updated Description"))
                 .andExpect(jsonPath("$.visible").value(false))
-                .andExpect(jsonPath("$.signUp").value(false));
+                .andExpect(jsonPath("$.signUp").value(false))
+                .andExpect(jsonPath("$.signUpForm.questions", hasSize(3)))
+                .andExpect(jsonPath("$.signUpForm.questions[*].idx",
+                        containsInAnyOrder(0, 1, 2)))
+                .andReturn();
     }
 
     @Test

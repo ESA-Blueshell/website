@@ -11,7 +11,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "event_pictures")
 @Data
 @SQLDelete(sql = "UPDATE event_pictures SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at >= NOW()")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 public class EventPicture implements BaseModel {
 
     @Id

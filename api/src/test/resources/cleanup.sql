@@ -1,5 +1,7 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+TRUNCATE TABLE `addresses`;
+TRUNCATE TABLE `answers`;
 TRUNCATE TABLE `authorities`;
 TRUNCATE TABLE `blogs`;
 TRUNCATE TABLE `board_documents`;
@@ -12,13 +14,16 @@ TRUNCATE TABLE `contributions`;
 TRUNCATE TABLE `event_feedback`;
 TRUNCATE TABLE `event_pictures`;
 TRUNCATE TABLE `event_signups`;
+TRUNCATE TABLE `event_sign_up_answers`;
 TRUNCATE TABLE `events`;
 TRUNCATE TABLE `files`;
 TRUNCATE TABLE `guests`;
 TRUNCATE TABLE `memberships`;
 TRUNCATE TABLE `news`;
+TRUNCATE TABLE `questions`;
 TRUNCATE TABLE `redirects`;
 TRUNCATE TABLE `sponsors`;
+TRUNCATE TABLE `surveys`;
 TRUNCATE TABLE `telemetries`;
 TRUNCATE TABLE `users`;
 

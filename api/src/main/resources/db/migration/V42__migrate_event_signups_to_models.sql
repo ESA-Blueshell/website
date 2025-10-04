@@ -23,7 +23,6 @@ CREATE TABLE questions
     PRIMARY KEY (id),
     KEY ix_questions_survey_deleted (survey_id, deleted_at),
     KEY ix_questions_deleted (deleted_at),
-    CONSTRAINT uq_questions_survey_pos UNIQUE (survey_id, idx, deleted_at),
     CONSTRAINT fk_questions_survey
         FOREIGN KEY (survey_id) REFERENCES surveys (id)
             ON DELETE CASCADE ON UPDATE CASCADE

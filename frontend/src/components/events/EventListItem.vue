@@ -40,7 +40,10 @@ const props = defineProps({
 const showDeleteDialog = ref(false)
 const deletingEvent = ref(false)
 const emit = defineEmits<{
-  (e: "deleted", id: number): void
+  (e: "deleted", id: number): void,
+  (e: "updated", event: Event): void,
+  (e: "signUp:updated", signUp: EventSignUp): void,
+  (e: "signUp:deleted", signUpId: number): void,
 }>()
 
 async function confirmDeleteEvent() {
@@ -87,20 +90,27 @@ const committee = computed(() =>
 async function submitSignUp() {
   submitting.value = true
   try {
+    var updatedSignUp: EventSignUp
     if (signUp.value?.id) {
-      await updateEventSignUp({
+      const resp = await updateEventSignUp({
         path: {eventId: event.value.id as number},
         body: signUp.value,
+        throwOnError: true,
       })
+      updatedSignUp = resp.data
     } else {
-      await createEventSignup({
+      const resp = await createEventSignup({
         path: {eventId: event.value.id as number},
         body: {
           ...signUp.value,
           eventId: event.value.id as number,
         },
+        throwOnError: true,
       })
+      updatedSignUp = resp.data
     }
+
+    emit("signUp:updated", updatedSignUp)
   } finally {
     submitting.value = false
   }
@@ -110,7 +120,9 @@ async function removeSignUp() {
   if (signUp.value?.id !== undefined) {
     await deleteEventSignup({
       path: {eventSignupId: signUp.value.id as number},
+      throwOnError: true,
     })
+    emit("signUp:deleted", signUp.value.id)
   }
 }
 

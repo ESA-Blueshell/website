@@ -33,7 +33,7 @@ onMounted(async () => {
     findEvents({
         query: {
           from: DateTime.now().startOf("day").toISO()!,
-          sort: ["startTime", "asc"]
+          sort: ["startTime", "asc"],
         },
       },
     ),
@@ -55,9 +55,30 @@ onMounted(async () => {
   events.value = fetchedEvents
 })
 
+function handleSignUpUpdate(signUp: EventSignUp): void {
+  if (eventSignups.value?.some((es: EventSignUp) => {
+    return es.id === signUp.id
+  })) {
+    eventSignups.value ??= []
+    const newEventSignUps = eventSignups.value
+      .filter((es: EventSignUp) => {
+        return es.id === signUp.id
+      })
+    newEventSignUps.push(signUp)
+    eventSignups.value = newEventSignUps
+  } else {
+    eventSignups.value?.push(signUp)
+  }
+}
+
+function handleSignUpDelete(signUpId: number): void {
+  eventSignups.value ??= []
+  eventSignups.value = eventSignups.value.filter((es: EventSignUp) =>  es.id === signUpId)
+}
+
 function deleteEvent(id: number) {
   events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
-  emit('deleted', id)
+  emit("deleted", id)
 }
 
 </script>
@@ -89,6 +110,8 @@ function deleteEvent(id: number) {
           :sign-ups="eventSignups"
           class="event-list-item"
           @deleted="deleteEvent"
+          @sign-up:updated="handleSignUpUpdate"
+          @sign-up:deleted="handleSignUpDelete"
         />
         <!-- only show divider when there's another item after -->
         <v-divider v-if="i < events.length - 1" />

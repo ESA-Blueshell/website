@@ -45,7 +45,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     }
 
     @GetMapping(value = "/events/{eventId}/signups")
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'seeSignUps')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
     public List<EventSignUpDTO> findEventSignUpsByEventId(@PathVariable("eventId") Long eventId) {
         var eventSignUps = service.findByEventId(eventId);
         return mapper.toDTOs(eventSignUps);

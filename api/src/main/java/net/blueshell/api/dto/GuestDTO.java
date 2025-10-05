@@ -11,20 +11,8 @@ import java.sql.Timestamp;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "Guest")
-public class GuestDTO extends BaseDTO {
-
+public class GuestDTO extends PersonalInfoDTO {
     private Long id;
-
-    @NotNull
-    private String fullName;
-
-    @NotNull
-    private String discord;
-
-    @NotNull
-    private String email;
-
     private Timestamp createdAt;
-
     private String accessToken;
 }

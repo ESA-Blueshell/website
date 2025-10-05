@@ -29,7 +29,6 @@
     "marked": "^16.3.0",
     "node-emoji": "^2.2.0",
     "roboto-fontface": "^0.10.0",
-    "showdown": "^2.1.0",
     "v-phone-input": "^5.1.0",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.21",

@@ -1463,7 +1463,6 @@ __metadata:
     roboto-fontface: "npm:^0.10.0"
     sass: "npm:^1.92.1"
     serve: "npm:^14.2.5"
-    showdown: "npm:^2.1.0"
     typescript: "npm:^5.9.2"
     typescript-eslint: "npm:^8.44.0"
     v-phone-input: "npm:^5.1.0"
@@ -1765,13 +1764,6 @@ __metadata:
   version: 2.20.3
   resolution: "commander@npm:2.20.3"
   checksum: 10c0/74c781a5248c2402a0a3e966a0a2bba3c054aad144f5c023364be83265e796b20565aa9feff624132ff629aa64e16999fa40a743c10c12f7c61e96a794b99288
-  languageName: node
-  linkType: hard
-
-"commander@npm:^9.0.0":
-  version: 9.5.0
-  resolution: "commander@npm:9.5.0"
-  checksum: 10c0/5f7784fbda2aaec39e89eb46f06a999e00224b3763dc65976e05929ec486e174fe9aac2655f03ba6a5e83875bd173be5283dc19309b7c65954701c02025b3c1d
   languageName: node
   linkType: hard
 
@@ -4323,17 +4315,6 @@ __metadata:
   version: 3.0.0
   resolution: "shebang-regex@npm:3.0.0"
   checksum: 10c0/1dbed0726dd0e1152a92696c76c7f06084eb32a90f0528d11acd764043aacf76994b2fb30aa1291a21bd019d6699164d048286309a278855ee7bec06cf6fb690
-  languageName: node
-  linkType: hard
-
-"showdown@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "showdown@npm:2.1.0"
-  dependencies:
-    commander: "npm:^9.0.0"
-  bin:
-    showdown: bin/showdown.js
-  checksum: 10c0/8508e060874c42338b9ebfe884763e8042d9575185d9dd3a12f7380736732893a4738f37140add97bde0c4c87d6bad66ed0761505f310df6044ee3385e2ae349
   languageName: node
   linkType: hard
 

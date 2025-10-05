@@ -61,7 +61,6 @@ const RAW_RUNTIME_STATE =
           ["roboto-fontface", "npm:0.10.0"],\
           ["sass", "npm:1.92.1"],\
           ["serve", "npm:14.2.5"],\
-          ["showdown", "npm:2.1.0"],\
           ["typescript", "patch:typescript@npm%3A5.9.2#optional!builtin<compat/typescript>::version=5.9.2&hash=5786d5"],\
           ["typescript-eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.44.0"],\
           ["v-phone-input", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:5.1.0"],\
@@ -2018,7 +2017,6 @@ const RAW_RUNTIME_STATE =
           ["roboto-fontface", "npm:0.10.0"],\
           ["sass", "npm:1.92.1"],\
           ["serve", "npm:14.2.5"],\
-          ["showdown", "npm:2.1.0"],\
           ["typescript", "patch:typescript@npm%3A5.9.2#optional!builtin<compat/typescript>::version=5.9.2&hash=5786d5"],\
           ["typescript-eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.44.0"],\
           ["v-phone-input", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:5.1.0"],\
@@ -2359,13 +2357,6 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/commander-npm-2.20.3-d8dcbaa39b-74c781a524.zip/node_modules/commander/",\
         "packageDependencies": [\
           ["commander", "npm:2.20.3"]\
-        ],\
-        "linkType": "HARD"\
-      }],\
-      ["npm:9.5.0", {\
-        "packageLocation": "./.yarn/cache/commander-npm-9.5.0-993b3f2434-5f7784fbda.zip/node_modules/commander/",\
-        "packageDependencies": [\
-          ["commander", "npm:9.5.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -5184,16 +5175,6 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/shebang-regex-npm-3.0.0-899a0cd65e-1dbed0726d.zip/node_modules/shebang-regex/",\
         "packageDependencies": [\
           ["shebang-regex", "npm:3.0.0"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
-    ["showdown", [\
-      ["npm:2.1.0", {\
-        "packageLocation": "./.yarn/cache/showdown-npm-2.1.0-e325b389ea-8508e06087.zip/node_modules/showdown/",\
-        "packageDependencies": [\
-          ["commander", "npm:9.5.0"],\
-          ["showdown", "npm:2.1.0"]\
         ],\
         "linkType": "HARD"\
       }]\

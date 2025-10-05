@@ -2,14 +2,11 @@
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/banners/TopBanner.vue"
-import {type Event, type EventSignUp, findEventById, findEventSignUpsByEventId} from "@/lib"
+import {type Answer, type Event, type EventSignUp, findEventById, findEventSignUpsByEventId} from "@/lib"
 
-// Refs for reactive data
 const event = ref<Event>()
 const eventSignUps = ref<EventSignUp[]>([])
 
-// This tracks expanded rows for the checkbox question
-// We'll store them as `'i-j'` strings
 const expandTab = ref<string[]>([])
 
 const route = useRoute()
@@ -91,7 +88,7 @@ onMounted(async () => {
               v-for="eventSignUp in eventSignUps"
               :key="eventSignUp.discord"
             >
-              <b>{{ eventSignUp.fullName }}:</b> {{ eventSignUp.formAnswers[i] }}
+              <b>{{ eventSignUp.fullName }}:</b> {{ eventSignUp.answers[i] }}
             </p>
           </template>
 
@@ -101,7 +98,7 @@ onMounted(async () => {
               v-for="eventSignUp in eventSignUps"
               :key="eventSignUp.discord"
             >
-              <b>{{ eventSignUp.fullName }}:</b> {{ eventSignUp.formAnswers[i] }}
+              <b>{{ eventSignUp.fullName }}:</b> {{ eventSignUp.answers[i] }}
             </p>
             <v-container>
               <v-row
@@ -112,7 +109,7 @@ onMounted(async () => {
                   {{ option }}
                 </v-col>
                 <v-col cols="1">
-                  {{ eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.formAnswers![i] === j).length }}
+                  {{ eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.answers![i] === j).length }}
                 </v-col>
               </v-row>
             </v-container>
@@ -128,12 +125,12 @@ onMounted(async () => {
             >
               <b>{{ eventSignUp.fullName }}:</b>
               {{
-                (Array.isArray(eventSignUp.formAnswers?.[i])
-                  ? eventSignUp.formAnswers[i]
+                (Array.isArray(eventSignUp.answers?.[i])
+                  ? eventSignUp.answers[i]
                   : []
                 )
                   .map((answerIndex: number) => question.options?.[answerIndex])
-                  .filter((v) => v != null)
+                  .filter((v: Answer) => v != null)
                   .join(", ")
               }}
             </p>
@@ -153,8 +150,8 @@ onMounted(async () => {
                   </v-col>
                   <v-col cols="1">
                     {{
-                      eventSignUps.filter((su) =>
-                        Array.isArray(su.formAnswers?.[i]) && su.formAnswers[i].includes(j),
+                      eventSignUps.filter((su: EventSignUp) =>
+                        Array.isArray(su.answers?.[i]) && su.answers[i].includes(j),
                       ).length
                     }}
                   </v-col>
@@ -165,7 +162,7 @@ onMounted(async () => {
                     <div v-if="expandTab.includes(`${i}-${j}`)">
                       <v-row
                         v-for="su in eventSignUps.filter((su: EventSignUp) =>
-                          Array.isArray(su.formAnswers?.[i]) && su.formAnswers[i].includes(j)
+                          Array.isArray(su.answers?.[i]) && su.answers[i].includes(j)
                         )"
                         :key="su.discord"
                       >
@@ -189,7 +186,7 @@ onMounted(async () => {
           <!--              :key="eventSignUp.discord"-->
           <!--            >-->
           <!--              <b>{{ eventSignUp.fullName }}:</b>-->
-          <!--              {{ eventSignUp.formAnswers[i].map((answer: number) => question.options[answer]).join(", ") }}-->
+          <!--              {{ eventSignUp.answers[i].map((answer: number) => question.options[answer]).join(", ") }}-->
           <!--            </p>-->
           <!--            <v-container>-->
           <!--              <div-->
@@ -204,7 +201,7 @@ onMounted(async () => {
           <!--                    {{ option }}-->
           <!--                  </v-col>-->
           <!--                  <v-col cols="1">-->
-          <!--                    {{ eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.formAnswers[i].includes(j)).length }}-->
+          <!--                    {{ eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.answers[i].includes(j)).length }}-->
           <!--                  </v-col>-->
 
           <!--                  &lt;!&ndash; Expand transition for listing names under a chosen checkbox &ndash;&gt;-->
@@ -212,7 +209,7 @@ onMounted(async () => {
           <!--                    <v-expand-transition>-->
           <!--                      <div v-if="expandTab.includes(`${i}-${j}`)">-->
           <!--                        <v-row-->
-          <!--                          v-for="eventSignUp in eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.formAnswers[i].includes(j))"-->
+          <!--                          v-for="eventSignUp in eventSignUps.filter((eventSignUp: EventSignUp) => eventSignUp.answers[i].includes(j))"-->
           <!--                          :key="eventSignUp.discord"-->
           <!--                        >-->
           <!--                          <v-col>-->

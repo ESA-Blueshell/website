@@ -148,7 +148,7 @@ class EventControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.description").value("The best description"))
                 .andExpect(jsonPath("$.startTime").value(containsString("2025-10-05T19:00:00+02:00")))
                 .andExpect(jsonPath("$.endTime").value(containsString("2025-10-05T22:00:00+02:00")))
-                .andExpect(jsonPath("$.visible").value(true))
+                .andExpect(jsonPath("$.approved").value(true))
                 .andExpect(jsonPath("$.membersOnly").value(true))
                 .andExpect(jsonPath("$.signUp").value(true))
                 .andExpect(jsonPath("$.signUpForm.questions", hasSize(4)))
@@ -206,7 +206,7 @@ class EventControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.title").value("Updated Event"))
                 .andExpect(jsonPath("$.location").value("Updated Location"))
                 .andExpect(jsonPath("$.description").value("Updated Description"))
-                .andExpect(jsonPath("$.visible").value(false))
+                .andExpect(jsonPath("$.approved").value(false))
                 .andExpect(jsonPath("$.signUp").value(false))
                 .andExpect(jsonPath("$.signUpForm.questions", hasSize(3)))
                 .andExpect(jsonPath("$.signUpForm.questions[*].idx",

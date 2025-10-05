@@ -13,25 +13,18 @@
     <description>The API for the Blueshell Esports website</description>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
+        <java.version>24</java.version>
+        <maven.compiler.release>24</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.5.3</spring-boot.version>
-        <kotlin.version>1.9.22</kotlin.version>
-        <maven.compiler.version>3.14.0</maven.compiler.version>
-        <maven.surefire.version>3.5.3</maven.surefire.version>
-
-        <!-- Lint plugins -->
-        <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
-        <pmd.plugin.version>3.22.0</pmd.plugin.version>
-        <spotbugs.plugin.version>4.8.6.5</spotbugs.plugin.version>
-        <spotbugs.tool.version>4.8.6</spotbugs.tool.version>
+        <spring-boot.version>3.5.6</spring-boot.version>
+        <maven.compiler.version>3.14.1</maven.compiler.version>
+        <maven.surefire.version>3.5.4</maven.surefire.version>
 
         <!-- libs -->
         <mapstruct.version>1.6.3</mapstruct.version>
-        <lombok.version>1.18.32</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
 
-        <rest-assured.version>5.5.5</rest-assured.version>
+        <rest-assured.version>5.5.6</rest-assured.version>
         <db-rider.version>1.44.0</db-rider.version>
     </properties>
 
@@ -81,23 +74,23 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.47</version>
+            <version>10.5</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.11.5</version>
+            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.11.5</version>
+            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.5</version>
+            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -105,12 +98,12 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-calendar</artifactId>
-            <version>v3-rev20250115-2.0.0</version>
+            <version>v3-rev20250404-2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.30.0</version>
+            <version>1.39.1</version>
         </dependency>
 
         <!-- MapStruct & Lombok -->
@@ -130,13 +123,6 @@
             <artifactId>lombok-mapstruct-binding</artifactId>
             <version>0.2.0</version>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- Kotlin -->
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
-            <version>${kotlin.version}</version>
         </dependency>
 
         <!-- DB / Flyway -->
@@ -180,17 +166,17 @@
         <dependency>
             <groupId>be.woutschoovaerts</groupId>
             <artifactId>mollie</artifactId>
-            <version>4.6.3</version>
+            <version>4.6.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.3</version>
         </dependency>
         <dependency>
             <groupId>com.googlecode.libphonenumber</groupId>
             <artifactId>libphonenumber</artifactId>
-            <version>8.13.51</version>
+            <version>9.0.15</version>
         </dependency>
         <dependency>
             <groupId>com.github.scribejava</groupId>
@@ -221,7 +207,7 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
-            <version>11.3.4</version>
+            <version>11.13.2</version>
         </dependency>
 
         <dependency>
@@ -235,20 +221,20 @@
         <dependency>
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
-            <version>0.2.6</version>
+            <version>0.2.7</version>
         </dependency>
 
         <!-- MariaDB Driver -->
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.3.2</version>
+            <version>3.5.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.5</version>
+            <version>2.8.13</version>
         </dependency>
 
         <!-- Tests -->
@@ -285,7 +271,7 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-groupssettings</artifactId>
-            <version>v1-rev82-1.25.0</version>
+            <version>v1-rev20220614-2.0.0</version>
         </dependency>
 
         <!-- Mailing -->
@@ -350,32 +336,7 @@
                             <version>0.2.0</version>
                         </path>
                     </annotationProcessorPaths>
-                    <source>21</source>
-                    <target>21</target>
-                    <compilerArgs>--enable-preview</compilerArgs>
                 </configuration>
-            </plugin>
-
-            <!-- Kotlin -->
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile-kotlin</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>kapt</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <source>${project.build.directory}/generated-sources/annotations</source>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <!-- Unit tests -->

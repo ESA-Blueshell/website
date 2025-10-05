@@ -22,7 +22,7 @@ import java.util.List;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
-import static net.blueshell.api.architecture.GenericsPredicates.assignableToGeneric;
+import static net.blueshell.api.testsupport.GenericsPredicates.assignableToGeneric;
 import static net.blueshell.api.testsupport.ReturnTypeConditions.haveReturnType;
 import static net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnType;
 

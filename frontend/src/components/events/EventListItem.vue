@@ -275,187 +275,183 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               class="align-self-stretch d-flex"
             >
               <div class="right-rail d-flex flex-column align-end justify-start h-100 w-100">
-                <v-sheet
+                <div
                   v-if="committee"
-                  class="top-right-header"
-                  :elevation="1"
+                  class="mb-3"
                 >
-                  <span class="committee-name text-caption font-weight-medium font-weight-bold">
-                    {{ committee.name }}
-                  </span>
+                  <v-sheet
+                    class="top-right-header"
+                    :elevation="1"
+                  >
+                    <span class="committee-name text-caption font-weight-medium font-weight-bold">
+                      {{ committee.name }}
+                    </span>
 
-                  <!-- Right column: vertical stack of tooltips -->
-                  <div class="top-right-actions">
-                    <v-tooltip
-                      location="bottom"
-                      text="Check signups"
-                    >
-                      <template #activator="{ props: checkSignUpsProp }">
-                        <v-btn
-                          :disabled="!event.signUp"
-                          icon="mdi-list-status"
-                          v-bind="checkSignUpsProp"
-                          variant="plain"
-                          @click="router.push(`/events/signups/${event.id}`)"
-                        />
-                      </template>
-                    </v-tooltip>
+                    <div class="top-right-actions">
+                      <v-tooltip
+                        location="bottom"
+                        text="Check signups"
+                      >
+                        <template #activator="{ props: checkSignUpsProp }">
+                          <v-btn
+                            :disabled="!event.signUp"
+                            icon="mdi-list-status"
+                            v-bind="checkSignUpsProp"
+                            variant="plain"
+                            @click="router.push(`/events/signups/${event.id}`)"
+                          />
+                        </template>
+                      </v-tooltip>
 
-                    <v-tooltip
-                      location="bottom"
-                      text="Edit event"
-                    >
-                      <template #activator="{ props: editEventProps }">
-                        <v-btn
-                          icon="mdi-pencil"
-                          v-bind="editEventProps"
-                          variant="plain"
-                          @click="router.push(`/events/edit/${event.id}`)"
-                        />
-                      </template>
-                    </v-tooltip>
+                      <v-tooltip
+                        location="bottom"
+                        text="Edit event"
+                      >
+                        <template #activator="{ props: editEventProps }">
+                          <v-btn
+                            icon="mdi-pencil"
+                            v-bind="editEventProps"
+                            variant="plain"
+                            @click="router.push(`/events/edit/${event.id}`)"
+                          />
+                        </template>
+                      </v-tooltip>
 
-                    <v-tooltip
-                      location="bottom"
-                      text="Delete event"
-                    >
-                      <template #activator="{ props: deleteProps }">
-                        <v-btn
-                          icon="mdi-delete"
-                          v-bind="deleteProps"
-                          variant="plain"
-                          @click="showDeleteDialog = true"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </div>
-                </v-sheet>
-
-                <div class="right-rail d-flex flex-column align-end justify-start h-100 w-100 mt-4">
-                  <div class="middle-actions d-flex flex-column align-end justify-center flex-grow-1">
-                    <template v-if="event.signUp">
-                      <template v-if="isLoggedIn && !event.signUpForm">
-                        <v-tooltip
-                          v-if="signUp?.id"
-                          location="left"
-                          text="Cancel sign-up"
-                        >
-                          <template #activator="{ props: tooltipProps }">
-                            <v-btn
-                              :disabled="event.membersOnly && !isMember"
-                              :loading="submitting"
-                              icon="mdi-checkbox-marked"
-                              v-bind="tooltipProps"
-                              variant="plain"
-                              @click="removeSignUp()"
-                            />
-                          </template>
-                        </v-tooltip>
-
-                        <v-tooltip
-                          v-else
-                          location="left"
-                          text="Sign Up"
-                        >
-                          <template #activator="{ props: tooltipProps }">
-                            <v-btn
-                              :disabled="event.membersOnly && !isMember"
-                              :loading="submitting"
-                              icon="mdi-checkbox-blank"
-                              v-bind="tooltipProps"
-                              variant="plain"
-                              @click="submitSignUp()"
-                            />
-                          </template>
-                        </v-tooltip>
-                      </template>
-
-                      <template v-else-if="event.signUpForm && (isLoggedIn || !event.membersOnly)">
-                        <v-tooltip
-                          v-if="isLoggedIn && signUp?.id !== undefined"
-                          location="left"
-                          text="Cancel sign-up"
-                        >
-                          <template #activator="{ props: tooltipProps }">
-                            <v-btn
-                              :disabled="event.membersOnly && !isMember"
-                              :loading="submitting"
-                              icon="mdi-close"
-                              v-bind="tooltipProps"
-                              variant="plain"
-                              @click="removeSignUp()"
-                            />
-                          </template>
-                        </v-tooltip>
-
-                        <v-tooltip
-                          :text="
-                            signUp?.id
-                              ? 'Edit sign-up form'
-                              : expanded
-                                ? 'Cancel filling in sign-up form'
-                                : 'Fill in sign-up form'
-                          "
-                          location="left"
-                        >
-                          <template #activator="{ props: tooltipProps }">
-                            <v-btn
-                              :disabled="event.membersOnly && !isMember"
-                              :loading="submitting"
-                              icon="mdi-list-status"
-                              v-bind="tooltipProps"
-                              variant="plain"
-                              @click="toggleExpanded()"
-                            />
-                          </template>
-                        </v-tooltip>
-                      </template>
-                    </template>
-
-
-                    <v-tooltip
-                      location="left"
-                      text="Find location"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-btn
-                          icon="mdi-google-maps"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="findLocation()"
-                        />
-                      </template>
-                    </v-tooltip>
-
-                    <v-tooltip
-                      location="left"
-                      text="Add to your calendar"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-btn
-                          icon="mdi-calendar"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="downloadIcs()"
-                        />
-                      </template>
-                    </v-tooltip>
-
-                    <v-tooltip
-                      location="left"
-                      text="Copy share link"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-btn
-                          icon="mdi-share-variant"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="copyShareLink()"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </div>
+                      <v-tooltip
+                        location="bottom"
+                        text="Delete event"
+                      >
+                        <template #activator="{ props: deleteProps }">
+                          <v-btn
+                            icon="mdi-delete"
+                            v-bind="deleteProps"
+                            variant="plain"
+                            @click="showDeleteDialog = true"
+                          />
+                        </template>
+                      </v-tooltip>
+                    </div>
+                  </v-sheet>
                 </div>
+                <template v-if="event.signUp">
+                  <template v-if="isLoggedIn && !event.signUpForm">
+                    <v-tooltip
+                      v-if="signUp?.id"
+                      location="left"
+                      text="Cancel sign-up"
+                    >
+                      <template #activator="{ props: tooltipProps }">
+                        <v-btn
+                          :disabled="event.membersOnly && !isMember"
+                          :loading="submitting"
+                          icon="mdi-checkbox-marked"
+                          v-bind="tooltipProps"
+                          variant="plain"
+                          @click="removeSignUp()"
+                        />
+                      </template>
+                    </v-tooltip>
+
+                    <v-tooltip
+                      v-else
+                      location="left"
+                      text="Sign Up"
+                    >
+                      <template #activator="{ props: tooltipProps }">
+                        <v-btn
+                          :disabled="event.membersOnly && !isMember"
+                          :loading="submitting"
+                          icon="mdi-checkbox-blank"
+                          v-bind="tooltipProps"
+                          variant="plain"
+                          @click="submitSignUp()"
+                        />
+                      </template>
+                    </v-tooltip>
+                  </template>
+
+                  <template v-else-if="event.signUpForm && (isLoggedIn || !event.membersOnly)">
+                    <v-tooltip
+                      v-if="isLoggedIn && signUp?.id !== undefined"
+                      location="left"
+                      text="Cancel sign-up"
+                    >
+                      <template #activator="{ props: tooltipProps }">
+                        <v-btn
+                          :disabled="event.membersOnly && !isMember"
+                          :loading="submitting"
+                          icon="mdi-close"
+                          v-bind="tooltipProps"
+                          variant="plain"
+                          @click="removeSignUp()"
+                        />
+                      </template>
+                    </v-tooltip>
+
+                    <v-tooltip
+                      :text="
+                        signUp?.id
+                          ? (expanded ? 'Cancel editing sign-up form' : 'Edit sign-up form')
+                          : (expanded ? 'Cancel filling in sign-up form' : 'Fill in sign-up form')
+                      "
+                      location="left"
+                    >
+                      <template #activator="{ props: tooltipProps }">
+                        <v-btn
+                          :disabled="event.membersOnly && !isMember"
+                          :loading="submitting"
+                          icon="mdi-list-status"
+                          v-bind="tooltipProps"
+                          variant="plain"
+                          @click="toggleExpanded()"
+                        />
+                      </template>
+                    </v-tooltip>
+                  </template>
+                </template>
+
+
+                <v-tooltip
+                  location="left"
+                  text="Find location"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn
+                      icon="mdi-google-maps"
+                      v-bind="tooltipProps"
+                      variant="plain"
+                      @click="findLocation()"
+                    />
+                  </template>
+                </v-tooltip>
+
+                <v-tooltip
+                  location="left"
+                  text="Add to your calendar"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn
+                      icon="mdi-calendar"
+                      v-bind="tooltipProps"
+                      variant="plain"
+                      @click="downloadIcs()"
+                    />
+                  </template>
+                </v-tooltip>
+
+                <v-tooltip
+                  location="left"
+                  text="Copy share link"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn
+                      icon="mdi-share-variant"
+                      v-bind="tooltipProps"
+                      variant="plain"
+                      @click="copyShareLink()"
+                    />
+                  </template>
+                </v-tooltip>
               </div>
             </v-col>
           </v-row>

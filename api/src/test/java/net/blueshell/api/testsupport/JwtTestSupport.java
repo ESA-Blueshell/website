@@ -5,6 +5,7 @@ import net.blueshell.api.dto.request.JwtRequest;
 import net.blueshell.api.dto.response.AuthenticationDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -26,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * }
  * }</pre>
  */
+@Component
 public abstract class JwtTestSupport {
 
     @Autowired protected MockMvc mvc;

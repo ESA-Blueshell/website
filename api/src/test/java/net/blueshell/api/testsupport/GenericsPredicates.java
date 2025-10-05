@@ -1,4 +1,4 @@
-package net.blueshell.api.architecture;
+package net.blueshell.api.testsupport;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -31,7 +31,7 @@ public final class GenericsPredicates {
      */
     public static DescribedPredicate<JavaType> assignableToGeneric(Class<?> raw, boolean allowRaw, Class<?>... typeArgs) {
         String description = describe(raw, typeArgs);
-        return DescribedPredicate.describe(STR."assignable to \{description}", type -> {
+        return DescribedPredicate.describe("assignable to %s".formatted(description), type -> {
             JavaClass erasure = type.toErasure();
             if (!erasure.isAssignableTo(raw)) return false;
 
@@ -72,6 +72,6 @@ public final class GenericsPredicates {
     private static String describe(Class<?> raw, Class<?>... typeArgs) {
         if (typeArgs == null || typeArgs.length == 0) return raw.getSimpleName();
         String args = Arrays.stream(typeArgs).map(Class::getSimpleName).collect(Collectors.joining(", "));
-        return STR."\{raw.getSimpleName()}<\{args}>";
+        return "%s<%s>".formatted(raw.getSimpleName(), args);
     }
 }

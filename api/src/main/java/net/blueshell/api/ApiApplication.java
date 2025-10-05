@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableRetry
 @EnableScheduling
 public class ApiApplication {
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(ApiApplication.class, args);
     }
 }

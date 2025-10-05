@@ -104,7 +104,7 @@ function deleteEvent(id: number) {
     <div class="mx-3">
       <div
         class="mx-auto my-5"
-        style="max-width: 1000px"
+        style="max-width: 1200px"
       >
         <calendar ref="calendarRef" />
       </div>

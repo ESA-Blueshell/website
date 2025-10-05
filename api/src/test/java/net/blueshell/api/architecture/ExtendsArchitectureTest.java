@@ -9,7 +9,7 @@ import net.blueshell.api.testsupport.DoNotIncludeTestSupport;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
-import static net.blueshell.api.architecture.GenericsPredicates.assignableToGeneric;
+import static net.blueshell.api.testsupport.GenericsPredicates.assignableToGeneric;
 import static net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnType;
 
 /**

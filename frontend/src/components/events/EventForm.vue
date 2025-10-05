@@ -7,6 +7,7 @@ import {type AdvancedCommittee, createEvent, type Event, findCommittees, updateE
 import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import SurveyEdit from "@/components/survey/SurveyEdit.vue"
+import MarkdownField from "@/components/MarkdownField.vue"
 
 const props = defineProps({
   initialEvent: {
@@ -21,9 +22,6 @@ const props = defineProps({
 
 const {apply} = useBackendValidation()
 
-// --------------------
-// 1) Initialize event
-// --------------------
 function getDefaultEvent(): Event {
   return {
     id: undefined,
@@ -177,7 +175,6 @@ async function submit() {
         </v-col>
       </v-row>
 
-      <!-- Description -->
       <v-row class="mb-8">
         <v-col>
           <Field
@@ -186,12 +183,9 @@ async function submit() {
             name="description"
             rules="required"
           >
-            <v-textarea
+            <markdown-field
               :model-value="value"
               label="Description"
-              variant="outlined"
-              hide-details
-              required
               :error-messages="errors"
               @update:model-value="handleChange"
               @blur="handleBlur"
@@ -200,7 +194,6 @@ async function submit() {
         </v-col>
       </v-row>
 
-      <!-- Prices -->
       <v-row>
         <v-col>
           <Field

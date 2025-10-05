@@ -46,7 +46,7 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     @AfterMapping
     protected void afterFromDTO(EventDTO dto, @MappingTarget Event event) {
-        if (event.getCreator() == null) {
+        if (event.getCreatorId() == null) {
             event.setCreatorId(getPrincipal().getId());
         }
         event.setLastEditorId(getPrincipal().getId());

@@ -110,15 +110,7 @@ public class Event implements BaseModel {
     private Long signUpFormId;
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
-    private long signUpCount;
-
-    public long getCreatorId() {
-        return getCreator() == null ? 0 : getCreator().getId();
-    }
-
-    public long getCommitteeId() {
-        return getCommittee() == null ? 0 : getCommittee().getId();
-    }
+    private Long signUpCount;
 
     @Override
     public boolean equals(Object o) {

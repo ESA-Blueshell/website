@@ -5,8 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.model.User;
-import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.CommitteeService;
 import net.blueshell.api.testsupport.UserTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,10 +24,7 @@ import java.util.Map;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,13 +34,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("brevo-mock")
 class CommitteeControllerIT extends UserTestSupport {
 
+    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
     @Autowired
     private MockMvc mvc;
-
     @Autowired
     private ObjectMapper mapper;
-
-    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
 
     @BeforeEach
     void setup() {

@@ -43,26 +43,30 @@ const previewHtml = computed(() =>
 
 <template>
   <div class="md-editor">
-    <v-tabs
-      v-model="tab"
-      density="compact"
-      class="mb-2 pb-2"
-    >
-      <v-tab
-        value="write"
-        prepend-icon="mdi-pencil-outline"
-        class="rounded"
+    <div class="mb-3">
+      <v-tabs
+        v-model="tab"
+        density="compact"
+        selected-class="tab--active"
+        class="d-flex ga-4"
+        hide-slider
       >
-        Write
-      </v-tab>
-      <v-tab
-        value="preview"
-        class="rounded"
-        prepend-icon="mdi-eye-outline"
-      >
-        Preview
-      </v-tab>
-    </v-tabs>
+        <v-tab
+          value="write"
+          prepend-icon="mdi-pencil-outline"
+          class="rounded"
+        >
+          Write
+        </v-tab>
+        <v-tab
+          value="preview"
+          class="rounded"
+          prepend-icon="mdi-eye-outline"
+        >
+          Preview
+        </v-tab>
+      </v-tabs>
+    </div>
 
     <v-window v-model="tab">
       <v-window-item value="write">
@@ -84,7 +88,6 @@ const previewHtml = computed(() =>
         />
       </v-window-item>
 
-      <!-- PREVIEW -->
       <v-window-item value="preview">
         <v-card variant="outlined">
           <v-card-text>
@@ -113,6 +116,26 @@ const previewHtml = computed(() =>
     </div>
   </div>
 </template>
-<style scoped lang = "scss">
+<style scoped lang="scss">
+.md-editor {
+  :deep(.v-tabs),
+  :deep(.v-tab),
+  :deep(.v-window),
+  :deep(.v-card),
+  :deep(.v-textarea),
+  :deep(.v-field) {
+    overflow: visible;
+  }
+
+  .tab--active {
+    background: rgb(var(--v-theme-primary));
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+  }
+
+  :deep(.v-field--variant-outlined .v-field__field) {
+    padding-top: 4px;
+  }
+}
 
 </style>

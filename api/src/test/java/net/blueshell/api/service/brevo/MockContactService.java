@@ -11,22 +11,22 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 
-import java.util.Set;
-import java.util.Map;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * MockContactService: drop-in replacement for ContactService that never calls Brevo.
- *
+ * <p>
  * Activate with either `@ActiveProfiles("brevo-mock")` in tests or
  * `spring.profiles.active=brevo-mock` for local runs.
- *
+ * <p>
  * This class keeps all state in-memory:
- *  - contacts are keyed by email -> generated contactId
- *  - lists are keyed by listId -> set of contactIds
+ * - contacts are keyed by email -> generated contactId
+ * - lists are keyed by listId -> set of contactIds
  */
 @Slf4j
 @Service

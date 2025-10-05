@@ -12,12 +12,13 @@ import java.util.stream.Collectors;
 
 public final class GenericsPredicates {
 
-    private GenericsPredicates() {}
+    private GenericsPredicates() {
+    }
 
     /**
      * Matches types like {@code Raw<Arg1, Arg2, ...>} where:
-     *  - the erasure is assignable to {@code raw}, and
-     *  - each actual type argument is assignable to the corresponding {@code typeArgs[i]}.
+     * - the erasure is assignable to {@code raw}, and
+     * - each actual type argument is assignable to the corresponding {@code typeArgs[i]}.
      * Wildcards like {@code ? extends T} match {@code T}.
      * Raw (non-parameterized) types do NOT match (use allowRaw=true overload if you want that).
      */

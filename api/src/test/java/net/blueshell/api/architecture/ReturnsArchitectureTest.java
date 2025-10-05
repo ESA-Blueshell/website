@@ -1,30 +1,13 @@
 package net.blueshell.api.architecture;
 
-import com.tngtech.archunit.base.DescribedPredicate;
-import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaParameterizedType;
-import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport;
-import net.blueshell.api.testsupport.ReturnTypeConditions;
-import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.http.ResponseEntity;
-
-import java.util.List;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
-import static net.blueshell.api.testsupport.GenericsPredicates.assignableToGeneric;
-import static net.blueshell.api.testsupport.ReturnTypeConditions.haveReturnType;
-import static net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnType;
 
 /**
  * Ensures that only service-layer classes may depend on repository-layer classes.

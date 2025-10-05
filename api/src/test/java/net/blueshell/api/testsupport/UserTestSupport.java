@@ -1,10 +1,10 @@
 package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.config.SqlScriptTestExecutionListener;
 import net.blueshell.api.dto.request.JwtRequest;
 import net.blueshell.api.dto.response.AuthenticationDTO;
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,19 +32,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 }, mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 public abstract class UserTestSupport {
 
+    private static final String DEFAULT_PASSWORD = "Password123!";
     @Autowired
     protected MockMvc mvc;
-
     @Autowired
     protected ObjectMapper mapper;
-
     @Autowired
     protected UserRepository userRepository;
-
     @Autowired
     protected PasswordEncoder passwordEncoder;
-
-    private static final String DEFAULT_PASSWORD = "Password123!";
 
     /**
      * Create and persist a new user with the given role.

@@ -34,19 +34,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("brevo-mock")
 class BlogControllerIT extends UserTestSupport {
 
-    @Autowired
-    private MockMvc mvc;
-
-    @Autowired
-    private ObjectMapper mapper;
-
+    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
     Map<String, Object> examplePayload = Map.of(
             "title", "New Blog",
             "publishedAt", "2025-07-01T12:00:00.000+00:00",
             "html", "<div><span>cool story bro</span></div>"
     );
-
-    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
+    @Autowired
+    BlogService blogService;
+    @Autowired
+    private MockMvc mvc;
+    @Autowired
+    private ObjectMapper mapper;
 
     @BeforeEach
     void setup() {
@@ -83,9 +82,6 @@ class BlogControllerIT extends UserTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
     }
-
-    @Autowired
-    BlogService blogService;
 
     @Test
     void fetchingBlogsByIdWorks() throws Exception {

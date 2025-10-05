@@ -11,7 +11,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Super-class for tests that need an authenticated Bearer token.
@@ -30,13 +31,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Component
 public abstract class JwtTestSupport {
 
-    @Autowired protected MockMvc mvc;
-    @Autowired protected ObjectMapper mapper;
-
     /* lazily initialised, then reused */
     private static String cachedAdminToken;
+    @Autowired
+    protected MockMvc mvc;
+    @Autowired
+    protected ObjectMapper mapper;
 
-    /** Obtain (and cache) a JWT for the seeded <i>admin/admin</i> account. */
+    /**
+     * Obtain (and cache) a JWT for the seeded <i>admin/admin</i> account.
+     */
     protected String adminToken() throws Exception {
         if (cachedAdminToken != null) {
             return cachedAdminToken;
@@ -59,7 +63,9 @@ public abstract class JwtTestSupport {
         return cachedAdminToken = response.getToken();
     }
 
-    /** Convenience wrapper so you can write <code>.with(bearer())</code>. */
+    /**
+     * Convenience wrapper so you can write <code>.with(bearer())</code>.
+     */
     protected RequestPostProcessor bearer() throws Exception {
         String token = adminToken();
         return request -> {

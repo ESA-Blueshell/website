@@ -1,8 +1,6 @@
 package net.blueshell.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
@@ -38,13 +36,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("brevo-mock")
 class EventControllerIT extends UserTestSupport {
 
+    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
     @Autowired
     private MockMvc mvc;
-
     @Autowired
     private ObjectMapper mapper;
-
-    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
 
     @BeforeEach
     void setup() {
@@ -100,7 +96,7 @@ class EventControllerIT extends UserTestSupport {
         questions.add(new HashMap<>(Map.of(
                 "type", "DESCRIPTION",
                 "label", "Description",
-                "idx",  1
+                "idx", 1
         )));
         questions.add(new HashMap<>(Map.of(
                 "type", "OPEN",

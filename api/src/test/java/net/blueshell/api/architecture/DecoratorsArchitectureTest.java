@@ -7,19 +7,13 @@ import com.tngtech.archunit.lang.ArchRule;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
-import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport;
-import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
-
-import org.springframework.stereotype.Controller;
-
-import java.util.List;
 
 /**
  * Ensures that only service-layer classes may depend on repository-layer classes.

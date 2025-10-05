@@ -9,9 +9,12 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 public final class ReturnTypeConditions {
 
-    private ReturnTypeConditions() {}
+    private ReturnTypeConditions() {
+    }
 
-    /** Existing: passes if the return type matches the predicate */
+    /**
+     * Existing: passes if the return type matches the predicate
+     */
     public static ArchCondition<JavaMethod> haveReturnType(DescribedPredicate<? super JavaType> predicate) {
         String desc = "have return type %s".formatted(predicate.getDescription());
         return new ArchCondition<>(desc) {
@@ -28,7 +31,9 @@ public final class ReturnTypeConditions {
         };
     }
 
-    /** New: passes if the return type does NOT match the predicate */
+    /**
+     * New: passes if the return type does NOT match the predicate
+     */
     public static ArchCondition<JavaMethod> notHaveReturnType(DescribedPredicate<? super JavaType> predicate) {
         String desc = "not have return type %s".formatted(predicate.getDescription());
         return new ArchCondition<>(desc) {

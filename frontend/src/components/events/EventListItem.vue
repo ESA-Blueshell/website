@@ -25,7 +25,6 @@ const router = useRouter()
 const theme = useTheme()
 const route = useRoute()
 
-// ✅ Proper PropType usage, no local copies
 const props = defineProps({
   event: {
     type: Object as PropType<Event>,
@@ -104,7 +103,7 @@ async function submitSignUp() {
       })
       updatedSignUp = resp.data
     }
-    emit("update:signUp", updatedSignUp) // ✅ full object
+    emit("update:signUp", updatedSignUp)
   } finally {
     submitting.value = false
   }
@@ -113,7 +112,7 @@ async function submitSignUp() {
 async function removeSignUp() {
   if (signUp.value?.id === undefined) return
   await deleteEventSignup({path: {eventSignupId: signUp.value.id as number}, throwOnError: true})
-  emit("delete:signUp", signUp.value.id) // ✅ id number
+  emit("delete:signUp", signUp.value.id)
 }
 
 async function toggleEventApproved() {
@@ -122,10 +121,10 @@ async function toggleEventApproved() {
     query: {approved: !event.value.approved},
     throwOnError: true,
   })
-  emit("update:event", resp.data) // ✅ full event; parent replaces item -> child updates via prop
+  emit("update:event", resp.data)
 }
 
-// Keep scroll behavior; it runs once on mount (that’s fine)
+
 onMounted(async () => {
   if (route.hash && event.value.id === Number(route.hash.replace("#", ""))) {
     await nextTick()

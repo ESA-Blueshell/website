@@ -124,7 +124,7 @@ class EventControllerIT extends UserTestSupport {
         payload.put("endTime", "2025-10-05T22:00:00.000+02:00");
         payload.put("memberPrice", 0);
         payload.put("publicPrice", 0);
-        payload.put("visible", true);
+        payload.put("approved", true);
         payload.put("membersOnly", true);
         payload.put("signUp", true);
         payload.put("committeeId", committeeId);

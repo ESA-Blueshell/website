@@ -5,7 +5,14 @@ import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import MarkdownField from "@/components/MarkdownField.vue"
 import UserSelect from "@/components/select/UserSelect.vue"
-import {type AdvancedCommittee, type AdvancedUser, createCommittee, Role, updateCommittee} from "@/lib"
+import {
+  type AdvancedCommittee,
+  type AdvancedUser,
+  type CommitteeMember,
+  createCommittee,
+  Role,
+  updateCommittee,
+} from "@/lib"
 
 type Model = AdvancedCommittee
 
@@ -56,9 +63,9 @@ function addMember() {
   committee.value.members.push({role: "", userId: 1, committeeId: committee.value.id})
 }
 
-function removeMember(idx: number) {
+function removeMember(id) {
   committee.value.members ??= []
-  committee.value.members = committee.value.members.splice(idx, 1)
+  committee.value.members = committee.value.members.filter((m: CommitteeMember) => id !== m.userId)
 }
 
 async function submit() {
@@ -189,7 +196,7 @@ async function submit() {
             <v-btn
               icon="mdi-close"
               variant="plain"
-              @click="removeMember(values, i)"
+              @click="removeMember(committee.members[i].userId)"
             />
           </v-col>
         </v-row>
@@ -198,7 +205,7 @@ async function submit() {
           block
           class="mt-4"
           variant="outlined"
-          @click.prevent="addMember(values)"
+          @click.prevent="addMember()"
         >
           Add member
         </v-btn>

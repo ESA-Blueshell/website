@@ -5,6 +5,7 @@ import CommitteeEdit from "@/views/committee/CommitteeEdit.vue"
 import {$require} from "@/plugins/require.js"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import {type AdvancedCommittee, type AdvancedUser, deleteCommitteeById, findCommittees, findUsers} from "@/lib"
+import DeletionConfirmationDialog from "@/components/DeletionConfirmationDialog.vue"
 
 const committees = ref<AdvancedCommittee[]>([])
 const committeeToDelete = ref<AdvancedCommittee | null>(null)
@@ -18,9 +19,8 @@ const users = ref<AdvancedUser[]>([])
 async function fetchCommittees(): Promise<void> {
   try {
     const resp = await findCommittees()
-
     if (resp.data?.length) {
-      committees.value = resp.data as AdvancedCommittee[] ?? []
+      committees.value = (resp.data as AdvancedCommittee[]) ?? []
     } else {
       noCommittees.value = true
     }
@@ -40,18 +40,15 @@ async function fetchUsers(): Promise<void> {
 
 async function deleteCommittee(): Promise<void> {
   if (!committeeToDelete.value?.id) return
-
   try {
-    await deleteCommitteeById({
-      path: {id: committeeToDelete.value.id},
-    })
-
+    await deleteCommitteeById({path: {id: committeeToDelete.value.id}})
     committees.value = committees.value.filter(
-      committee => committee.id !== committeeToDelete.value?.id,
+      c => c.id !== committeeToDelete.value?.id,
     )
-    committeeToDelete.value = null
   } catch (error: unknown) {
     $handleNetworkError(error)
+  } finally {
+    committeeToDelete.value = null
   }
 }
 
@@ -64,15 +61,10 @@ function toggleEditingCommittee(committeeId: number | undefined): void {
 function updateCommittee(committee: AdvancedCommittee) {
   const list = committees.value
   const idx = list.findIndex(e => e.id === committee.id)
-  if (idx >= 0) {
-    committees.value = [
-      ...list.slice(0, idx),
-      committee,
-      ...list.slice(idx + 1),
-    ]
-  } else {
-    committees.value = [...list, committee]
-  }
+  committees.value =
+    idx >= 0
+      ? [...list.slice(0, idx), committee, ...list.slice(idx + 1)]
+      : [...list, committee]
   loading.value = false
   creatingCommittee.value = false
   editingCommitteeId.value = null
@@ -80,10 +72,7 @@ function updateCommittee(committee: AdvancedCommittee) {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchCommittees(),
-    fetchUsers(),
-  ])
+  await Promise.all([fetchCommittees(), fetchUsers()])
 })
 </script>
 
@@ -120,109 +109,82 @@ onMounted(async () => {
           </div>
         </v-expand-transition>
 
-        <v-dialog
-          :model-value="!!committeeToDelete"
-          width="auto"
-        >
-          <template #activator="{ props: dialog }">
-            <v-list :lines="'two'">
-              <div
-                v-for="(committee, i) in committees"
-                :key="committee.id || committee.name"
-              >
-                <v-list-item>
-                  <v-list-item-title class="text-h6">
-                    {{ committee.name }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ committee.members?.length || 0 }} member{{
-                      (committee.members?.length || 0) === 1 ? "" : "s"
-                    }}
-                  </v-list-item-subtitle>
+        <v-list :lines="'two'">
+          <div
+            v-for="(committee, i) in committees"
+            :key="committee.id || committee.name"
+          >
+            <v-list-item>
+              <v-list-item-title class="text-h6">
+                {{ committee.name }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                {{ committee.members?.length || 0 }}
+                member{{ (committee.members?.length || 0) === 1 ? "" : "s" }}
+              </v-list-item-subtitle>
 
-                  <template #append>
-                    <v-tooltip
-                      location="left"
-                      text="Edit committee"
-                    >
-                      <template #activator="{ props: tooltip }">
-                        <v-btn
-                          :loading="submittingId === committee.id"
-                          icon="mdi-pencil"
-                          v-bind="tooltip"
-                          variant="plain"
-                          @click="toggleEditingCommittee(committee.id)"
-                        />
-                      </template>
-                    </v-tooltip>
-                    <v-tooltip
-                      v-if="$store.getters.isBoard"
-                      location="left"
-                      text="Delete committee"
-                    >
-                      <template #activator="{ props: tooltip }">
-                        <v-btn
-                          icon="mdi-delete"
-                          v-bind="{ ...tooltip, ...dialog }"
-                          variant="plain"
-                          @click="committeeToDelete = committee"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </template>
-                </v-list-item>
-
-                <v-expand-transition>
-                  <div
-                    v-if="editingCommitteeId === committee.id"
-                    class="form-border mx-auto rounded-b"
-                  >
-                    <committee-edit
-                      :model-value="committee"
-                      class="form"
-                      :users="users"
-                      @update:model-value="updateCommittee"
-                      @submitting="(submitting: boolean) => submittingId = submitting ? committee.id : null"
+              <template #append>
+                <v-tooltip
+                  location="left"
+                  text="Edit committee"
+                >
+                  <template #activator="{ props: tooltip }">
+                    <v-btn
+                      :loading="submittingId === committee.id"
+                      icon="mdi-pencil"
+                      v-bind="tooltip"
+                      variant="plain"
+                      @click="toggleEditingCommittee(committee.id)"
                     />
-                  </div>
-                </v-expand-transition>
+                  </template>
+                </v-tooltip>
 
-                <v-divider
-                  v-if="i < committees.length - 1 && editingCommitteeId !== committee.id"
-                  :key="`divider-${i}`"
+                <v-tooltip
+                  v-if="$store.getters.isBoard"
+                  location="left"
+                  text="Delete committee"
+                >
+                  <template #activator="{ props: tooltip }">
+                    <v-btn
+                      icon="mdi-delete"
+                      v-bind="tooltip"
+                      variant="plain"
+                      @click="committeeToDelete = committee"
+                    />
+                  </template>
+                </v-tooltip>
+              </template>
+            </v-list-item>
+
+            <v-expand-transition>
+              <div
+                v-if="editingCommitteeId === committee.id"
+                class="form-border mx-auto rounded-b"
+              >
+                <committee-edit
+                  :model-value="committee"
+                  class="form"
+                  :users="users"
+                  @update:model-value="updateCommittee"
+                  @submitting="(submitting: boolean) => submittingId = submitting ? committee.id : null"
                 />
               </div>
-            </v-list>
-          </template>
+            </v-expand-transition>
 
-          <v-card>
-            <v-card-title>
-              <span class="text-h6">
-                Are you sure you want to delete this committee:
-                {{ committeeToDelete?.name || "" }}
-              </span>
-            </v-card-title>
-            <v-card-text>
-              There will be no undo
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer />
-              <v-btn
-                variant="text"
-                @click="committeeToDelete = null"
-              >
-                No
-              </v-btn>
-              <v-btn
-                color="error"
-                variant="text"
-                @click="deleteCommittee"
-              >
-                Yes
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
+            <v-divider
+              v-if="i < committees.length - 1 && editingCommitteeId !== committee.id"
+              :key="`divider-${i}`"
+            />
+          </div>
+        </v-list>
+
+        <deletion-confirmation-dialog
+          :model-value="!!committeeToDelete"
+          :title="`Delete committee: ${committeeToDelete?.name ?? ''}`"
+          message="There will be no undo."
+          @update:model-value="(open: boolean) => { if (!open) committeeToDelete = null }"
+          @confirm="deleteCommittee"
+        />
 
         <v-img
           v-if="noCommittees"

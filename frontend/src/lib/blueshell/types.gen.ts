@@ -10,9 +10,9 @@ export enum MemberType {
 export type Membership = {
     id?: number;
     userId: number;
-    memberType: MemberType;
-    city: string;
-    country: string;
+    memberType?: MemberType;
+    city?: string;
+    country?: string;
     startDate?: string;
     endDate?: string;
     incasso: boolean;
@@ -42,7 +42,7 @@ export type AdvancedUser = {
     discord: string;
     email: string;
     newsletter: boolean;
-    password: string;
+    password?: string;
     roles?: Array<Role>;
     dateOfBirth: string;
     phoneNumber: string;
@@ -174,12 +174,8 @@ export type AdvancedCommittee = {
 export type CommitteeMember = {
     id?: number;
     userId: number;
-    committeeId: number;
+    committeeId?: number;
     role: string;
-};
-
-export type BaseDto = {
-    [key: string]: unknown;
 };
 
 export type Address = {
@@ -282,6 +278,8 @@ export type PagedModelEvent = {
     content?: Array<Event>;
     page?: PageMetadata;
 };
+
+export type BaseDto = unknown;
 
 /**
  * Problem Details for HTTP APIs including validation errors.
@@ -1163,7 +1161,7 @@ export type UpdateCommitteeResponses = {
     /**
      * OK
      */
-    200: BaseDto;
+    200: AdvancedCommittee;
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];

@@ -1,4 +1,4 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.committee;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -14,7 +14,6 @@ public class CommitteeMemberDTO extends BaseDTO {
     private Long id;
     @NotBlank
     private Long userId;
-    @NotNull
     private Long committeeId;
     @NotBlank
     private String role;

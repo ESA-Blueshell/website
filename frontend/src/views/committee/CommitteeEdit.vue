@@ -1,100 +1,64 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {ref, watch} from "vue"
 import {defineRule, Field, Form, type FormContext} from "vee-validate"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import MarkdownField from "@/components/MarkdownField.vue"
 import UserSelect from "@/components/select/UserSelect.vue"
-import {
-  type AdvancedCommittee,
-  type AdvancedUser,
-  type CommitteeMember,
-  createCommittee,
-  Role,
-  updateCommittee,
-} from "@/lib"
+import {type AdvancedCommittee, type AdvancedUser, createCommittee, Role, updateCommittee} from "@/lib"
 
-type CommitteeFormMember = {
-  id?: number
-  userId: number | null
-  role: string
-}
+type Model = AdvancedCommittee
 
-type CommitteeForm = {
-  id?: number
-  name: string
-  description: string
-  members: CommitteeFormMember[]
-}
-
-const toForm = (ac?: AdvancedCommittee | undefined): CommitteeForm => ({
-  id: ac?.id,
-  name: ac?.name ?? "",
-  description: ac?.description ?? "",
-  members: (ac?.members ?? []).map(m => ({
-    id: m.id,
-    userId: typeof m.userId === "number" ? m.userId : null,
-    role: m.role ?? "",
-  })),
-})
-
-interface Props {
-  initialCommittee?: AdvancedCommittee
+const props = defineProps<{
+  modelValue: Model
   users: AdvancedUser[]
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  initialCommittee: () => ({
-    name: "",
-    description: "",
-    members: [],
-  }) as AdvancedCommittee,
-})
-
-const emit = defineEmits<{
-  (e: "submitting"): void
-  (e: "success", ok: boolean): void
 }>()
 
-defineRule("committeeUserIsMember", (userId: number | string) => {
+const emit = defineEmits<{
+  (e: "update:modelValue", value: Model): void
+  (e: "submitting", value: boolean): void
+  (e: "saved", value: Model): void
+}>()
+
+defineRule("committeeUserIsMember", (userId: number | string, _params, _ctx) => {
   if (!userId && userId !== 0) return "Select a user"
   const u = props.users.find(u => Number(u.id) === Number(userId))
   if (!u) return "Select a user"
   return u.roles?.includes?.(Role.MEMBER) || "Committee members must be members of the association"
 })
 
-defineRule("uniqueCommitteeMember", (userId: number | string, [idx]: string[], ctx) => {
+defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[], ctx) => {
   if (!userId && userId !== 0) return true
   const i = Number(idx)
-  const arr = ((ctx.form as AdvancedCommittee)?.members ?? []) as Array<CommitteeFormMember>
-  const dup = arr.some((m, pos) => pos !== i && Number(m?.userId) === Number(userId))
+  const members = (ctx?.form as any)?.members ?? []
+  const dup = members.some((m: any, pos: number) => pos !== i && Number(m?.userId) === Number(userId))
   return !dup || "Member already in this committee"
 })
 
-const formRef = ref<FormContext<CommitteeForm>>()
+const formRef = ref<FormContext>()
 const submitting = ref(false)
 const {apply} = useBackendValidation()
 
-const initialValues = computed<CommitteeForm>(() => toForm(props.initialCommittee))
+const committee = ref<Model>(
+  props.modelValue ?? ({name: "", description: "", members: []} as Model),
+)
 
 watch(
-  () => props.initialCommittee,
-  next => {
-    formRef.value?.resetForm({values: toForm(next)})
+  () => props.modelValue,
+  v => {
+    committee.value = v ?? ({name: "", description: "", members: []} as Model)
   },
   {deep: true},
 )
 
 function addMember() {
-  const values = formRef.value?.values as unknown as CommitteeForm | undefined
-  if (!values) return
-  values.members.push({role: "", userId: null})
+  committee.value.members ??= []
+  committee.value.members.push({role: "", userId: 1, committeeId: committee.value.id})
 }
 
-function removeMember(index: number) {
-  const values = formRef.value?.values as unknown as CommitteeForm | undefined
-  if (!values) return
-  values.members.splice(index, 1)
+function removeMember(idx: number) {
+  committee.value.members ??= []
+  committee.value.members = committee.value.members.splice(idx, 1)
 }
 
 async function submit() {
@@ -102,44 +66,32 @@ async function submit() {
   if (!result?.valid) return
 
   submitting.value = true
-  emit("submitting")
+  emit("submitting", true)
+
   try {
-    const values = formRef.value?.values as unknown as CommitteeForm
-    const mappedMembers = (values.members ?? []).map(m => ({
-      id: m.id,
-      userId: Number(m.userId),
-      role: (m.role ?? "").trim(),
-      ...(values.id ? {committeeId: values.id as number} : {}),
-    }))
-
-    const payload: AdvancedCommittee = {
-      ...(values.id ? {id: values.id} : {}),
-      name: (values.name ?? "").trim(),
-      description: values.description ?? "",
-      members: mappedMembers as unknown as CommitteeMember[],
-    }
-
-    if (!values.id) {
-      const resp = await createCommittee({body: payload})
+    if (!committee.value.id) {
+      const resp = await createCommittee({body: committee.value})
       if (resp.status === 201) {
-        emit("success", true)
+        emit("update:modelValue", resp.data!)
+        emit("saved", resp.data!)
         return
       }
       if (!apply(formRef.value!, resp)) $handleNetworkError(resp)
     } else {
-      const resp = await updateCommittee({path: {id: values.id}, body: payload})
+      const resp = await updateCommittee({
+        path: {id: committee.value.id!},
+        body: committee.value,
+      })
       if (resp.status === 200) {
-        emit("success", true)
+        emit("update:modelValue", resp.data!)
+        emit("saved", resp.data!)
         return
       }
       if (!apply(formRef.value!, resp)) $handleNetworkError(resp)
     }
-  } catch (err) {
-    console.error(err)
-    $handleNetworkError(err)
-    emit("success", false)
   } finally {
     submitting.value = false
+    emit("submitting", false)
   }
 }
 </script>
@@ -147,15 +99,14 @@ async function submit() {
 <template>
   <Form
     ref="formRef"
-    v-slot="{ values }"
     as="div"
-    :initial-values="initialValues"
   >
-    <v-container style="padding: 0;">
-      <v-row>
+    <v-container>
+      <v-row class="mt-1">
         <v-col cols="12">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="committee.name"
             name="name"
             rules="required|minChars:3|maxChars:100"
           >
@@ -171,10 +122,11 @@ async function submit() {
         </v-col>
       </v-row>
 
-      <v-row class="mb-8">
+      <v-row>
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="committee.description"
             name="description"
             rules="required|minChars:10|maxChars:10000"
           >
@@ -191,13 +143,16 @@ async function submit() {
 
       <v-container>
         <v-row
-          v-for="(member, i) in values.members"
+          v-for="(member, i) in committee.members ?? []"
           :key="member.id ?? i"
+          v-model="committee.members[i]"
           dense
+          class="mt-4"
         >
           <v-col cols="4">
             <Field
               v-slot="{ value, errors, handleChange, handleBlur }"
+              v-model="committee.members[i].role"
               :name="`members[${i}].role`"
               rules="maxChars:120"
             >
@@ -215,6 +170,7 @@ async function submit() {
           <v-col cols="7">
             <Field
               v-slot="{ value, errors, handleChange, handleBlur }"
+              v-model="committee.members[i].userId"
               :name="`members[${i}].userId`"
               :rules="`required|committeeUserIsMember|uniqueCommitteeMember:${i}`"
             >
@@ -233,28 +189,27 @@ async function submit() {
             <v-btn
               icon="mdi-close"
               variant="plain"
-              @click="removeMember(i)"
+              @click="removeMember(values, i)"
             />
           </v-col>
         </v-row>
+
+        <v-btn
+          block
+          class="mt-4"
+          variant="outlined"
+          @click.prevent="addMember(values)"
+        >
+          Add member
+        </v-btn>
       </v-container>
-
-      <v-btn
-        block
-        class="mb-4"
-        variant="outlined"
-        @click.prevent="addMember"
-      >
-        Add member
-      </v-btn>
     </v-container>
-
-    <v-row>
+    <v-row class="mb-1">
       <v-col cols="12">
         <v-btn
           :loading="submitting"
           block
-          class="mt-8 mx-auto"
+          class="mx-auto"
           color="primary"
           @click="submit"
         >
@@ -265,7 +220,7 @@ async function submit() {
   </Form>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .v-col:first-child {
   padding-left: 0;
 }

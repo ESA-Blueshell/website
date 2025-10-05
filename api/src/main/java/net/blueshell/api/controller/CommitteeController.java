@@ -74,7 +74,7 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
 
     @PreAuthorize("hasAuthority('BOARD') || (#id == dto.id && hasPermission(#id, 'Committee', 'write'))")
     @PutMapping(value = "/committees/{id}")
-    public BaseDTO updateCommittee(@PathVariable("id") Long id, @Valid @RequestBody AdvancedCommitteeDTO dto) {
+    public AdvancedCommitteeDTO updateCommittee(@PathVariable("id") Long id, @Valid @RequestBody AdvancedCommitteeDTO dto) {
         var committee = service.findById(id);
         advancedMapper.fromDTO(dto, committee);
         committee = service.update(committee);

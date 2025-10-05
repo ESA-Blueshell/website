@@ -52,13 +52,11 @@ const event = ref<Event>(initializeEvent())
 const hadSignUp = ref<boolean>(event.value.signUp || false)
 const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm || false)
 
-// Committees
 const committees = ref<AdvancedCommittee[]>([])
 findCommittees()
   .then((response) => (committees.value = response.data as AdvancedCommittee[] ?? []))
   .catch(() => (committees.value = []))
 
-// Compute for the end date field (only if user checks "same start & end date")
 const sameEndDate = ref(true)
 
 function toISO({date, time, dateTime}: {
@@ -90,7 +88,6 @@ watch([event, sameEndDate], () => {
 
 const formRef = ref<FormContext>()
 const submitting = ref(false)
-const signUpForm = ref<InstanceType<typeof SurveyEdit> | null>(null)
 const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
 
 async function submit() {

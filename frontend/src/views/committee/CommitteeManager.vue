@@ -1,3 +1,92 @@
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import TopBanner from "@/components/banners/TopBanner.vue"
+import CommitteeEdit from "@/views/committee/CommitteeEdit.vue"
+import {$require} from "@/plugins/require.js"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import {type AdvancedCommittee, type AdvancedUser, deleteCommitteeById, findCommittees, findUsers} from "@/lib"
+
+const committees = ref<AdvancedCommittee[]>([])
+const committeeToDelete = ref<AdvancedCommittee | null>(null)
+const editingCommitteeId = ref<number | null>(null)
+const submittingId = ref<number | null>(null)
+const creatingCommittee = ref(false)
+const loading = ref(false)
+const noCommittees = ref(false)
+const users = ref<AdvancedUser[]>([])
+
+async function fetchCommittees(): Promise<void> {
+  try {
+    const resp = await findCommittees()
+
+    if (resp.data?.length) {
+      committees.value = resp.data as AdvancedCommittee[] ?? []
+    } else {
+      noCommittees.value = true
+    }
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
+}
+
+async function fetchUsers(): Promise<void> {
+  try {
+    const resp = await findUsers()
+    users.value = resp.data?.content ?? []
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
+}
+
+async function deleteCommittee(): Promise<void> {
+  if (!committeeToDelete.value?.id) return
+
+  try {
+    await deleteCommitteeById({
+      path: {id: committeeToDelete.value.id},
+    })
+
+    committees.value = committees.value.filter(
+      committee => committee.id !== committeeToDelete.value?.id,
+    )
+    committeeToDelete.value = null
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
+}
+
+function toggleEditingCommittee(committeeId: number | undefined): void {
+  if (!committeeId) return
+  editingCommitteeId.value =
+    editingCommitteeId.value === committeeId ? null : committeeId
+}
+
+function updateCommittee(committee: AdvancedCommittee) {
+  const list = committees.value
+  const idx = list.findIndex(e => e.id === committee.id)
+  if (idx >= 0) {
+    committees.value = [
+      ...list.slice(0, idx),
+      committee,
+      ...list.slice(idx + 1),
+    ]
+  } else {
+    committees.value = [...list, committee]
+  }
+  loading.value = false
+  creatingCommittee.value = false
+  editingCommitteeId.value = null
+  submittingId.value = null
+}
+
+onMounted(async () => {
+  await Promise.all([
+    fetchCommittees(),
+    fetchUsers(),
+  ])
+})
+</script>
+
 <template>
   <v-main>
     <top-banner title="Committee Manager" />
@@ -22,11 +111,11 @@
             style="border-top-width: 0"
           >
             <committee-edit
-              :committee="{} as AdvancedCommittee"
-              :users="users"
+              :model-value="committee"
               class="form"
-              @close="handleCreateClose"
-              @submitting="loading = true"
+              :users="users"
+              @update:model-value="updateCommittee"
+              @submitting="(submitting: boolean) => loading = submitting"
             />
           </div>
         </v-expand-transition>
@@ -89,17 +178,11 @@
                     class="form-border mx-auto rounded-b"
                   >
                     <committee-edit
-                      :committee="committee"
+                      :model-value="committee"
                       class="form"
                       :users="users"
-                      @success="(ok: boolean) => {
-                        loading = false;
-                        if (ok) {
-                          loading = false;
-                          handleEditClose()
-                        }
-                      }"
-                      @submitting="submittingId = committee.id"
+                      @update:model-value="updateCommittee"
+                      @submitting="(submitting: boolean) => submittingId = submitting ? committee.id : null"
                     />
                   </div>
                 </v-expand-transition>
@@ -149,89 +232,6 @@
     </div>
   </v-main>
 </template>
-
-<script lang="ts" setup>
-import {onMounted, ref} from "vue"
-import TopBanner from "@/components/banners/TopBanner.vue"
-import CommitteeEdit from "@/views/committee/CommitteeEdit.vue"
-import {$require} from "@/plugins/require.js"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import {type AdvancedCommittee, type AdvancedUser, deleteCommitteeById, findCommittees, findUsers} from "@/lib"
-
-// state
-const committees = ref<AdvancedCommittee[]>([])
-const committeeToDelete = ref<AdvancedCommittee | null>(null)
-const editingCommitteeId = ref<number | null>(null)
-const submittingId = ref<number | null>(null)
-const creatingCommittee = ref(false)
-const loading = ref(false)
-const noCommittees = ref(false)
-const users = ref<AdvancedUser[]>([])
-
-async function fetchCommittees(): Promise<void> {
-  try {
-    const resp = await findCommittees()
-
-    if (resp.data?.length) {
-      committees.value = resp.data as AdvancedCommittee[] ?? []
-    } else {
-      noCommittees.value = true
-    }
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-  }
-}
-
-async function fetchUsers(): Promise<void> {
-  try {
-    const resp = await findUsers()
-    users.value = resp.data?.content ?? []
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-  }
-}
-
-async function deleteCommittee(): Promise<void> {
-  if (!committeeToDelete.value?.id) return
-
-  try {
-    await deleteCommitteeById({
-      path: {id: committeeToDelete.value.id},
-    })
-
-    committees.value = committees.value.filter(
-      committee => committee.id !== committeeToDelete.value?.id,
-    )
-    committeeToDelete.value = null
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-  }
-}
-
-function toggleEditingCommittee(committeeId: number | undefined): void {
-  if (!committeeId) return
-  editingCommitteeId.value =
-    editingCommitteeId.value === committeeId ? null : committeeId
-}
-
-function handleCreateClose(): void {
-  creatingCommittee.value = false
-  loading.value = false
-}
-
-function handleEditClose(): void {
-  editingCommitteeId.value = null
-  submittingId.value = null
-}
-
-// lifecycle
-onMounted(async () => {
-  await Promise.all([
-    fetchCommittees(),
-    fetchUsers(),
-  ])
-})
-</script>
 
 <style lang="scss" scoped>
 .form-border {

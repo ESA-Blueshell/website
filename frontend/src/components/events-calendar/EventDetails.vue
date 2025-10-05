@@ -92,17 +92,16 @@
         <br>
         {{ location }}
       </p>
-      <!-- Only show this part if there is a price for this event -->
       <v-divider
-        v-if="memberPrice !== undefined && memberPrice !== null"
+        v-if="!!memberPrice || !!publicPrice"
       />
       <p
-        v-if="memberPrice !== undefined && memberPrice !== null"
+        v-if="!!memberPrice || !!publicPrice"
         class="mt-4"
       >
         <b>Price</b><br>
-        Members: €{{ memberPrice }} <br>
-        Non-members: €{{ publicPrice }}
+        <span>Members: €{{ memberPrice }}</span><br>
+        <span v-if="!!publicPrice">Non-members: €{{ publicPrice }}</span>
       </p>
     </v-card-text>
   </v-card>

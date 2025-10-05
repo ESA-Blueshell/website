@@ -11,11 +11,13 @@ import org.mapstruct.*;
 public abstract class SurveyMapper extends BaseMapper<Survey, SurveyDTO> {
     @Mapping(target = "id")
     @Mapping(target = "questions")
+    @Mapping(target = "responseCount")
     @BeanMapping(ignoreByDefault = true)
     public abstract Survey fromDTO(SurveyDTO dto, @MappingTarget Survey survey);
 
     @Mapping(target = "id")
     @Mapping(target = "questions")
+    @Mapping(target = "responseCount")
     @BeanMapping(ignoreByDefault = true)
     public abstract SurveyDTO toDTO(Survey survey);
 

@@ -39,6 +39,7 @@ public class EventDTO extends BaseDTO {
     private boolean membersOnly;
     private boolean signUp;
     private FileDTO banner;
+    private Long signUpCount;
     @Valid
     private SurveyDTO signUpForm;
 }

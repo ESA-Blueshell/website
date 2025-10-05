@@ -13,20 +13,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+// Question.java
 @Entity
 @Table(
         name = "questions",
-        indexes = {@Index(name = "ix_questions_survey_id", columnList = "survey_id")}
+        indexes = {
+                @Index(name = "ix_questions_survey_id", columnList = "survey_id"),
+                @Index(name = "ix_questions_survey_idx", columnList = "survey_id, idx")
+        }
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
 public class Question implements BaseModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "idx")
+    @Column(name = "idx")           // 0- or 1-based, whichever you already use
     private Long idx;
 
     @Column(name = "survey_id", insertable = false, updatable = false)
@@ -34,15 +37,13 @@ public class Question implements BaseModel {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "survey_id")
-    @ToString.Exclude
     private Survey survey;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
     private Set<Answer> answers = new HashSet<>();
 
-    @Column(name = "type")
     @Enumerated(EnumType.STRING)
+    @Column(name = "type")
     private QuestionType type;
 
     @Column(name = "label")
@@ -52,15 +53,7 @@ public class Question implements BaseModel {
     @Convert(converter = StringListConverter.class)
     private List<String> choiceLabels;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Question other)) return false;
-        return id != null && id.equals(other.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
+    @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
+    private long answerCount;
 }
+

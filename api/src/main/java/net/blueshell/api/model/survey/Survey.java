@@ -15,12 +15,14 @@ import java.util.Set;
 @SQLDelete(sql = "UPDATE surveys SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
 public class Survey implements BaseModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Question> questions = new HashSet<>();
+
+    @Column(name = "response_count", nullable = false, updatable = false, insertable = false)
+    private long responseCount;
 
     @Override
     public boolean equals(Object o) {
@@ -28,9 +30,5 @@ public class Survey implements BaseModel {
         if (!(o instanceof Survey other)) return false;
         return id != null && id.equals(other.id);
     }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
+    @Override public int hashCode() { return getClass().hashCode(); }
 }

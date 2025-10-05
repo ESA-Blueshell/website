@@ -109,6 +109,9 @@ public class Event implements BaseModel {
     @Column(name = "survey_id", updatable = false, insertable = false)
     private Long signUpFormId;
 
+    @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
+    private long signUpCount;
+
     public long getCreatorId() {
         return getCreator() == null ? 0 : getCreator().getId();
     }

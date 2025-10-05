@@ -112,8 +112,8 @@ function deleteEvent(id: number) {
         class="mx-auto mt-5"
         style="max-width: 800px"
       >
-        <p class="text-h4 font-weight-light">
-          Upcoming events
+        <p class="mt-8 mx-3 mb-4 text-h3 text-center">
+          Upcoming Events
         </p>
         <event-list
           :event-sign-ups="eventSignUps"
@@ -134,7 +134,7 @@ function deleteEvent(id: number) {
         </p>
         <p class="text-body-1">
           You can add all our events to your personal Google Calendar agenda by clicking <a
-            class="text-decoration-none"
+            class="Upc&quot;text-decoration-none&quot;"
             href="https://calendar.google.com/calendar/u/1/r?cid=87r5v7ep7k9ronlrg8n2q9033s@group.calendar.google.com"
             target="_blank"
           >here</a>! If you want to add only a single

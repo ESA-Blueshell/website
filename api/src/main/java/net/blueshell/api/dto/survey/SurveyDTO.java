@@ -15,7 +15,7 @@ import java.util.List;
 @Schema(name = "Survey")
 public class SurveyDTO extends BaseDTO {
     private Long id;
-
+    private Long responseCount;
     @NotEmpty
     private List<QuestionDTO> questions;
 

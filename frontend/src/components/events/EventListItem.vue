@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
-import {computed, nextTick, onMounted, ref} from "vue"
+import type {PropType} from "vue"
+import {computed, nextTick, onMounted, ref, toRef} from "vue"
 import {createEvent as createIcsEvent} from "ics"
 import store from "@/plugins/store.ts"
 import {$goto} from "@/plugins/goto"
@@ -21,31 +22,51 @@ import DeletionConfirmationDialog from "@/components/DeletionConfirmationDialog.
 import EventSignUpEdit from "@/components/events/EventSignUpEdit.vue"
 
 const router = useRouter()
+const theme = useTheme()
+const route = useRoute()
+
+// ✅ Proper PropType usage, no local copies
 const props = defineProps({
   event: {
-    type: Object as () => Event,
+    type: Object as PropType<Event>,
     required: true,
   },
   signUps: {
-    type: Object as () => EventSignUp[],
-    required: false,
-    default: () => [] as EventSignUp[],
+    type: Array as PropType<EventSignUp[]>,
+    default: () => [],
   },
   committees: {
-    type: Object as () => AdvancedCommittee[],
-    required: false,
-    default: () => [] as AdvancedCommittee[],
+    type: Array as PropType<AdvancedCommittee[]>,
+    default: () => [],
   },
 })
 
+const emit = defineEmits<{
+  (e: "delete:event", id: number): void
+  (e: "update:event", event: Event): void
+  (e: "update:signUp", signUp: EventSignUp): void
+  (e: "delete:signUp", signUpId: number): void
+}>()
+
+const event = toRef(props, "event")
+
+const signUp = computed<EventSignUp | undefined>(() =>
+  props.signUps.find((s) => s.eventId === event.value.id),
+)
+
+const expanded = ref(false)
+const submitting = ref(false)
 const showDeleteDialog = ref(false)
 const deletingEvent = ref(false)
-const emit = defineEmits<{
-  (e: "delete:event", event: Event): void,
-  (e: "update:event", event: Event): void,
-  (e: "update:signUp", signUp: EventSignUp): void,
-  (e: "delete:signUp", signUpId: number): void,
-}>()
+const eventElement = ref<HTMLElement | null>(null)
+
+const isMember = computed<boolean>(() => store.getters.isMember)
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const isBoard = computed<boolean>(() => store.getters.isBoard)
+
+const committee = computed<AdvancedCommittee | undefined>(() =>
+  props.committees.find((c) => event.value.committeeId === c.id),
+)
 
 async function confirmDeleteEvent() {
   if (!event.value?.id) return
@@ -53,7 +74,7 @@ async function confirmDeleteEvent() {
   try {
     await deleteEventById({path: {eventId: event.value.id as number}})
     store.commit("setStatusSnackbarMessage", `Deleted “${event.value.title}”`)
-    emit("delete:event", event.value.id as number)
+    emit("delete:event", event.value.id as number) // ✅ id number
   } catch (err) {
     console.error(err)
     store.commit("setStatusSnackbarMessage", `Couldn't delete “${event.value.title}”`)
@@ -63,84 +84,48 @@ async function confirmDeleteEvent() {
   }
 }
 
-const event = ref<Event>(props.event)
-const signUp = computed(() => {
-  const signupProp = props.signUps.find((s: EventSignUp) => s.eventId == event.value.id) ?? {}
-  return {
-    id: signupProp?.id,
-    eventId: signupProp?.eventId,
-    answers: signupProp?.answers ?? [],
-  } as EventSignUp
-})
-
-const route = useRoute()
-const theme = useTheme()
-const expanded = ref(false)
-const submitting = ref(false)
-const eventElement = ref<HTMLElement | null>(null)
-
-const isMember = computed<boolean>(() => store.getters.isMember)
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-const isBoard = computed<boolean>(() => store.getters.isBoard)
-
-const committee = computed<AdvancedCommittee | undefined>(() =>
-  props.committees.find((c: AdvancedCommittee) => event.value.committeeId === c.id),
-)
-
 async function submitSignUp() {
+  if (!event.value?.id) return
   submitting.value = true
   try {
-    var updatedSignUp: EventSignUp
+    let updatedSignUp: EventSignUp
     if (signUp.value?.id) {
       const resp = await updateEventSignUp({
         path: {eventId: event.value.id as number},
-        body: signUp.value,
+        body: {...signUp.value},
         throwOnError: true,
       })
       updatedSignUp = resp.data
     } else {
       const resp = await createEventSignup({
         path: {eventId: event.value.id as number},
-        body: {
-          ...signUp.value,
-          eventId: event.value.id as number,
-        },
+        body: {eventId: event.value.id as number, answers: []},
         throwOnError: true,
       })
       updatedSignUp = resp.data
     }
-
-    emit("update:signUp", updatedSignUp)
+    emit("update:signUp", updatedSignUp) // ✅ full object
   } finally {
     submitting.value = false
   }
 }
 
 async function removeSignUp() {
-  if (signUp.value?.id !== undefined) {
-    await deleteEventSignup({
-      path: {eventSignupId: signUp.value.id as number},
-      throwOnError: true,
-    })
-    emit("delete:signUp", signUp.value.id)
-  }
+  if (signUp.value?.id === undefined) return
+  await deleteEventSignup({path: {eventSignupId: signUp.value.id as number}, throwOnError: true})
+  emit("delete:signUp", signUp.value.id) // ✅ id number
 }
 
 async function toggleEventApproved() {
-  console.log("event approved:", event.value.id)
   const resp = await approveEvent({
-    path: {
-      id: event.value.id,
-    },
-    query: {
-      approved: !event.value.approved,
-    },
+    path: {id: event.value.id},
+    query: {approved: !event.value.approved},
     throwOnError: true,
   })
-
-  emit("update:event", resp.data)
+  emit("update:event", resp.data) // ✅ full event; parent replaces item -> child updates via prop
 }
 
+// Keep scroll behavior; it runs once on mount (that’s fine)
 onMounted(async () => {
   if (route.hash && event.value.id === Number(route.hash.replace("#", ""))) {
     await nextTick()
@@ -159,16 +144,13 @@ function findLocation() {
   if (event.value.location && event.value.location.toLowerCase().includes("discord")) {
     $goto("https://discord.gg/23YMFQy")
   } else if (event.value.location) {
-    $goto(
-      encodeURI("https://www.google.com/maps/search/?api=1&query=" + event.value.location),
-    )
+    $goto(encodeURI("https://www.google.com/maps/search/?api=1&query=" + event.value.location))
   }
 }
 
 function downloadIcs() {
   const start = DateTime.fromISO(event.value.startTime).toUTC()
   const end = DateTime.fromISO(event.value.endTime).toUTC()
-
   createIcsEvent(
     {
       title: event.value.title,
@@ -178,15 +160,9 @@ function downloadIcs() {
       end: [end.year, end.month, end.day, end.hour, end.minute],
     },
     (error, value) => {
-      if (error) {
-        console.error(error)
-        return
-      }
+      if (error) return console.error(error)
       const element = document.createElement("a")
-      element.setAttribute(
-        "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(value || ""),
-      )
+      element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(value || ""))
       element.setAttribute("download", `${event.value.title}.ics`)
       element.style.display = "none"
       document.body.appendChild(element)
@@ -207,7 +183,6 @@ function formatEventTime() {
   const endTime = DateTime.fromISO(event.value.endTime)
 
   let result = ""
-
   result += startTime.toLocaleString({
     weekday: "long",
     day: "numeric",
@@ -215,33 +190,19 @@ function formatEventTime() {
     hour: "2-digit",
     minute: "2-digit",
   })
-
   result += " - "
-
-  if (
-    startTime.day !== endTime.day ||
-    startTime.month !== endTime.month ||
-    startTime.year !== endTime.year
-  ) {
-    result += endTime.toLocaleString({
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    })
+  if (startTime.hasSame(endTime, "day") && startTime.hasSame(endTime, "month") && startTime.hasSame(endTime, "year")) {
+    // same day
+  } else {
+    result += endTime.toLocaleString({weekday: "long", day: "numeric", month: "long"})
     result += " at "
   }
-
-  result += endTime.toLocaleString({
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-
+  result += endTime.toLocaleString({hour: "2-digit", minute: "2-digit"})
   return result
 }
 
 const isApproved = computed<boolean>(() => !!event.value?.approved)
-
-const approvedLabel = computed(() => (isApproved.value ? "Approved" : "Not approved"))
+const approvedLabel = computed(() => (isApproved.value ? "Approved" : "Awaiting approval"))
 const approvedIcon = computed(() => (isApproved.value ? "mdi-check-circle" : "mdi-close-circle"))
 const approvedColor = computed(() => (isApproved.value ? "success" : "warning"))
 
@@ -276,14 +237,15 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               <v-list-item-title class="text-h4 d-flex align-center ga-2">
                 {{ event.title }}
                 <v-tooltip
-                  v-if="isBoard && DateTime.fromISO(event.startTime) >= DateTime.now()"
+                  v-if="isBoard || committee"
                   location="bottom"
-                  :text="isApproved ? 'Mark as not approved' : 'Mark as approved'"
+                  :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
                 >
-                  <template #activator="{ props }">
+                  <template #activator="{ props: approveProps }">
                     <v-btn
-                      v-bind="props"
+                      v-bind="approveProps"
                       :prepend-icon="approvedIcon"
+                      :disabled="DateTime.fromISO(event.startTime) < DateTime.now()"
                       :color="approvedColor"
                       variant="tonal"
                       class="text-none"
@@ -313,57 +275,61 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               class="align-self-stretch d-flex"
             >
               <div class="right-rail d-flex flex-column align-end justify-start h-100 w-100">
-                <div
+                <v-sheet
                   v-if="committee"
-                  class="top-right-header d-flex align-center justify-end ga-2"
+                  class="top-right-header"
+                  :elevation="1"
                 >
-                  <span class="committee-name text-caption font-weight-medium me-2">
+                  <span class="committee-name text-caption font-weight-medium font-weight-bold">
                     {{ committee.name }}
                   </span>
 
-                  <v-tooltip
-                    location="bottom"
-                    text="Check signups"
-                  >
-                    <template #activator="{ props }">
-                      <v-btn
-                        :disabled="!event.signUp"
-                        icon="mdi-list-status"
-                        v-bind="props"
-                        variant="plain"
-                        @click="router.push(`/events/signups/${event.id}`)"
-                      />
-                    </template>
-                  </v-tooltip>
+                  <!-- Right column: vertical stack of tooltips -->
+                  <div class="top-right-actions">
+                    <v-tooltip
+                      location="bottom"
+                      text="Check signups"
+                    >
+                      <template #activator="{ props: checkSignUpsProp }">
+                        <v-btn
+                          :disabled="!event.signUp"
+                          icon="mdi-list-status"
+                          v-bind="checkSignUpsProp"
+                          variant="plain"
+                          @click="router.push(`/events/signups/${event.id}`)"
+                        />
+                      </template>
+                    </v-tooltip>
 
-                  <v-tooltip
-                    location="bottom"
-                    text="Edit event"
-                  >
-                    <template #activator="{ props }">
-                      <v-btn
-                        icon="mdi-pencil"
-                        v-bind="props"
-                        variant="plain"
-                        @click="router.push(`/events/edit/${event.id}`)"
-                      />
-                    </template>
-                  </v-tooltip>
+                    <v-tooltip
+                      location="bottom"
+                      text="Edit event"
+                    >
+                      <template #activator="{ props: editEventProps }">
+                        <v-btn
+                          icon="mdi-pencil"
+                          v-bind="editEventProps"
+                          variant="plain"
+                          @click="router.push(`/events/edit/${event.id}`)"
+                        />
+                      </template>
+                    </v-tooltip>
 
-                  <v-tooltip
-                    location="bottom"
-                    text="Delete event"
-                  >
-                    <template #activator="{ props: tooltip }">
-                      <v-btn
-                        icon="mdi-delete"
-                        v-bind="tooltip"
-                        variant="plain"
-                        @click="showDeleteDialog = true"
-                      />
-                    </template>
-                  </v-tooltip>
-                </div>
+                    <v-tooltip
+                      location="bottom"
+                      text="Delete event"
+                    >
+                      <template #activator="{ props: deleteProps }">
+                        <v-btn
+                          icon="mdi-delete"
+                          v-bind="deleteProps"
+                          variant="plain"
+                          @click="showDeleteDialog = true"
+                        />
+                      </template>
+                    </v-tooltip>
+                  </div>
+                </v-sheet>
 
                 <div class="right-rail d-flex flex-column align-end justify-start h-100 w-100 mt-4">
                   <div class="middle-actions d-flex flex-column align-end justify-center flex-grow-1">
@@ -541,11 +507,21 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 }
 
 .top-right-header {
-  align-self: flex-end;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px;
   border-width: 1px;
-  border-color: rgb(var(--v-theme-accent));
   border-style: solid;
-  border-radius: 5px;
+  border-radius: 6px;
+  padding: 3px 4px;
+}
+
+.top-right-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .committee-name {

@@ -19,9 +19,9 @@ const store = useStore()
 const calendarRef = ref()
 
 
-const events = ref<Event[] | null>(null)
-const committees = ref<AdvancedCommittee[] | null>(null)
-const eventSignUps = ref<EventSignUp[] | null>(null)
+const events = ref<Event[]>([])
+const committees = ref<AdvancedCommittee[]>([])
+const eventSignUps = ref<EventSignUp[]>([])
 
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed<Login>(() => store.getters.getLogin)
@@ -79,7 +79,7 @@ function updateSignUp(signUp: EventSignUp): void {
 }
 
 function updateEvent(event: Event): void {
-  const list = events.value ?? []
+  const list = events.value
   const idx = list.findIndex(e => e.id === event.id)
   if (idx >= 0) {
     events.value = [
@@ -116,13 +116,13 @@ function deleteEvent(id: number) {
           Upcoming events
         </p>
         <event-list
-          :event-sign-ups="eventSignUps ?? []"
-          :events="events ?? []"
-          :committees="committees ?? []"
-          @delete:event="deleteEvent"
-          @delete:sign-up="deleteSignUp"
+          :event-sign-ups="eventSignUps"
+          :events="events"
+          :committees="committees"
           @update:event="updateEvent"
+          @delete:event="deleteEvent"
           @update:sign-up="updateSignUp"
+          @delete:sign-up="deleteSignUp"
         />
       </div>
       <div

@@ -1,19 +1,19 @@
 <script lang="ts" setup>
-import {useRoute} from "vue-router"
+import { useRoute } from "vue-router"
 import EventListItem from "@/components/events/EventListItem.vue"
-import {type AdvancedCommittee, type Event, type EventSignUp} from "@/lib"
+import type { AdvancedCommittee, Event, EventSignUp } from "@/lib"
 
 interface Emits {
-  (e: "delete:event", id: number): void,
-  (e: "delete:signUp", id: number): void,
-  (e: "update:event", id: number): void,
-  (e: "update:signUp", id: number): void,
+  (e: "delete:event", id: number): void
+  (e: "delete:signUp", id: number): void
+  (e: "update:event", event: Event): void
+  (e: "update:signUp", signUp: EventSignUp): void
 }
 
 interface Props {
-  events: Event[],
-  eventSignUps: EventSignUp[],
-  committees: AdvancedCommittee[],
+  events: Event[]
+  eventSignUps: EventSignUp[]
+  committees: AdvancedCommittee[]
 }
 
 const emit = defineEmits<Emits>()
@@ -36,11 +36,10 @@ function deleteEvent(id: number) {
 function deleteSignUp(signUpId: number): void {
   emit("delete:signUp", signUpId)
 }
-
-
 </script>
+
 <template>
-  <!-- 1) If events is null, we're still loading -->
+  <!-- loader if parent chooses to pass null/undefined -->
   <v-progress-circular
     v-if="!props.events"
     indeterminate
@@ -50,13 +49,11 @@ function deleteSignUp(signUpId: number): void {
     v-else
     :disabled="!!route.hash"
   >
-    <!-- If empty -->
     <div v-if="props.events.length === 0">
       <p>No upcoming events found</p>
     </div>
 
-    <!-- Otherwise, we have events -->
-    <v-list v-if="props.events.length > 0">
+    <v-list v-else>
       <template
         v-for="(event, i) in props.events"
         :key="event.id"
@@ -71,11 +68,8 @@ function deleteSignUp(signUpId: number): void {
           @update:sign-up="updateSignUp"
           @update:event="updateEvent"
         />
-        <!-- only show divider when there's another item after -->
         <v-divider v-if="i < props.events.length - 1" />
       </template>
     </v-list>
   </v-expand-transition>
 </template>
-<style lang="scss" scoped>
-</style>

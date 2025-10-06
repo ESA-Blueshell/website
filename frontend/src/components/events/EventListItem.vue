@@ -73,7 +73,7 @@ async function confirmDeleteEvent() {
   try {
     await deleteEventById({path: {eventId: event.value.id as number}})
     store.commit("setStatusSnackbarMessage", `Deleted “${event.value.title}”`)
-    emit("delete:event", event.value.id as number) // ✅ id number
+    emit("delete:event", event.value.id as number)
   } catch (err) {
     console.error(err)
     store.commit("setStatusSnackbarMessage", `Couldn't delete “${event.value.title}”`)
@@ -334,7 +334,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                 </div>
 
                 <template v-if="event.signUp">
-                  <template v-if="isLoggedIn && !event.signUpForm">
+                  <template v-if="!event.signUpForm">
                     <v-tooltip
                       v-if="signUp?.id"
                       location="left"

@@ -55,14 +55,13 @@
 import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import type {Event} from "@/lib"
+import {type Event} from "@/lib"
 import {findEvents} from "@/lib"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/events-calendar/EventDetails.vue"
 
-// State
 const displayedMonth = ref<string>(DateTime.now().toISODate()!)
 const selectedEvent = ref<Event | null>(null)
 const selectedElement = ref<HTMLElement | null>(null)
@@ -73,22 +72,18 @@ const collectedMonths = ref<string[]>([])
 
 type CalendarEventEx = CalendarEvent & { raw: Event }
 
-// Localization
 const {current: localeCurrent} = useLocale()
 localeCurrent.value = "en"
 
-// Responsive display
 const display = useDisplay()
 const isXs = computed(() => display.xs.value)
 const weekdays = computed(() => (isXs.value ? [1, 2, 3, 4, 5] : [1, 2, 3, 4, 5, 6, 0] as CalendarWeekdays[]))
 
-// Header title reads from displayedMonth so it updates on internal nav too
 const monthTitle = computed(() =>
   DateTime.fromISO(displayedMonth.value)
     .setLocale(localeCurrent.value).toFormat("LLLL yyyy"),
 )
 
-// Nav helpers operate on displayedMonth, and also align focus (so your click handlers & watchers keep working)
 const setMonth = (d: DateTime) => {
   displayedMonth.value = d.toISODate()!
 }
@@ -96,7 +91,6 @@ const goPrevMonth = () => setMonth(DateTime.fromISO(displayedMonth.value).minus(
 const goNextMonth = () => setMonth(DateTime.fromISO(displayedMonth.value).plus({months: 1}))
 const goToCurrentMonth = () => setMonth(DateTime.now())
 
-// Fetch events for the month (with 1-week padding at both ends)
 const loadEventsForMonth = async (month: DateTime) => {
   const from: string = month.startOf("month").startOf("week").startOf("day").toISO()!
   const to: string = month.endOf("month").endOf("week").endOf("day").toISO()!
@@ -120,29 +114,46 @@ function deleteEvent(id: number) {
   events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
 }
 
-// When the *visible* month changes (buttons or the calendar’s own arrows/swipes), fetch data & update
+function updateEvent(event: Event): void {
+  const list = events.value
+  const idx = list.findIndex(e => e.id === event.id)
+  if (idx >= 0) {
+    events.value = [
+      ...list.slice(0, idx),
+      event,
+      ...list.slice(idx + 1),
+    ]
+  } else {
+    events.value = [...list, event]
+  }
+}
+
 watch(displayedMonth, (d: string) => {
   const first = DateTime.fromISO(d)
   loadEventsForMonth(first)
 })
 
-// (Keep your existing mapping from domain events to Vuetify events)
 watch(events, (list: Event[]) => {
   calendarEvents.value = list
     .map((e): CalendarEventEx => {
       const start = DateTime.fromISO(e.startTime).toJSDate()!
       const end = DateTime.fromISO(e.endTime ?? e.startTime).toJSDate()!
-      return {name: e.title, start, end, color: "primary", category: e.title, raw: e}
+      return {
+        name: e.title,
+        start,
+        end,
+        color: e.approved ? "primary" : "orange",
+        category:
+        e.title,
+        raw: e,
+      }
     })
 })
 
-// Initial load
 onMounted(() => {
-  const first = DateTime.now().startOf("month")!
-  loadEventsForMonth(first)
+  loadEventsForMonth(DateTime.now().startOf("month")!)
 })
 
-// Event handling unchanged…
 const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
   const toggle = () => {
     selectedEvent.value = event.raw
@@ -157,6 +168,7 @@ const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
 
 defineExpose({
   deleteEvent,
+  updateEvent,
 })
 </script>
 <style lang="scss">
@@ -180,7 +192,7 @@ defineExpose({
 }
 
 .v-calendar-weekly__day-label {
-  margin-top: 0px;
+  margin-top: 0;
 }
 
 .v-calendar-weekly__day {

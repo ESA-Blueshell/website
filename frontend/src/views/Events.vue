@@ -93,6 +93,7 @@ function updateEvent(event: Event): void {
   } else {
     events.value = [...list, event]
   }
+  calendarRef.value?.updateEvent(event)
 }
 
 function deleteEvent(id: number) {

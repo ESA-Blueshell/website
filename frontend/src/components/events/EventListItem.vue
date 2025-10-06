@@ -349,7 +349,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                           offset-y="8"
                         />
                         <v-btn
-                          :disabled="event.membersOnly && !isMember"
+                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
                           icon="mdi-checkbox-marked"
                           v-bind="tooltipProps"
@@ -372,7 +372,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                           offset-y="8"
                         />
                         <v-btn
-                          :disabled="event.membersOnly && !isMember"
+                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
                           icon="mdi-checkbox-blank"
                           v-bind="tooltipProps"
@@ -391,7 +391,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     >
                       <template #activator="{ props: tooltipProps }">
                         <v-btn
-                          :disabled="event.membersOnly && !isMember"
+                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
                           icon="mdi-close"
                           v-bind="tooltipProps"
@@ -417,7 +417,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                           offset-y="8"
                         />
                         <v-btn
-                          :disabled="event.membersOnly && !isMember"
+                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
                           icon="mdi-list-status"
                           v-bind="tooltipProps"

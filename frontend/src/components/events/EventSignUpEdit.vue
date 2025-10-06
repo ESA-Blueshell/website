@@ -3,7 +3,7 @@ import {computed, ref, type Ref} from "vue"
 import {useStore} from "vuex"
 import {Field, Form} from "vee-validate"
 import type {VForm} from "vuetify/lib/components"
-import {type Answer, createEventSignup, type Event, type EventSignUp, type Guest, updateEventSignUp} from "@/lib"
+import {type Answer, createEventSignup, type Event, type EventSignUp, updateEventSignUp} from "@/lib"
 import SurveyForm from "@/components/survey/SurveyForm.vue"
 
 interface Emits {
@@ -74,27 +74,33 @@ async function submit() {
     payload.userId = login.value.userId
   }
 
-  var eventSignUp: EventSignUp;
+  var eventSignUp: EventSignUp
 
   if (isLoggedIn.value && payload.id) {
     const resp = await updateEventSignUp({
       path: {eventId: props.event.id!},
       body: payload,
     })
-    eventSignUp = resp.data!
+    if (resp.status == 200) {
+      eventSignUp = resp.data!
+      emit("update:signUp", eventSignUp)
+      if (!isLoggedIn.value) {
+        store.commit("saveGuestData", eventSignUp.guest!)
+      }
+    }
   } else {
     const resp = await createEventSignup({
       path: {eventId: props.event.id!},
       body: payload,
     })
-    eventSignUp = resp.data!
+    if (resp.status == 201) {
+      eventSignUp = resp.data!
+      emit("update:signUp", eventSignUp)
+      if (!isLoggedIn.value) {
+        store.commit("saveGuestData", eventSignUp.guest!)
+      }
+    }
   }
-
-  if (!isLoggedIn.value) {
-    store.commit("saveGuestData", eventSignUp.guest!)
-  }
-
-  emit("update:signUp", eventSignUp)
 }
 </script>
 

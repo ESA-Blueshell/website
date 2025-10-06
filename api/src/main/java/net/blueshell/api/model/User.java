@@ -95,7 +95,6 @@ public class User implements UserDetails, BaseModel {
     private String nationality;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture", insertable = false, updatable = false)
-    @JsonIgnore
     private File profilePicture;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
@@ -113,21 +112,18 @@ public class User implements UserDetails, BaseModel {
     private boolean bhv = false;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
-    @JsonIgnore
     private Set<Contribution> contributions;
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private Membership membership;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    @JsonIgnore
     @ToString.Exclude
     private User creator;
     @Column(name = "creator_id")
     private Long creatorId;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
-    @JsonIgnore
     private Set<EventSignUp> eventSignUps;
 
     public User() {
@@ -142,12 +138,6 @@ public class User implements UserDetails, BaseModel {
         return committeeMembers == null ? new HashSet<>() : committeeMembers;
     }
 
-    @JsonProperty("profilePicture")
-    public Long getProfilePictureId() {
-        return getProfilePicture() == null ? 0 : getProfilePicture().getId();
-    }
-
-    @JsonProperty("committees")
     public Set<Long> getCommitteeIds() {
         Set<Long> set = new HashSet<>();
         if (getCommitteeMembers() == null) {
@@ -167,21 +157,6 @@ public class User implements UserDetails, BaseModel {
         return new HashSet<>(getRoles()
                 .stream()
                 .flatMap(role -> role.getAllInheritedRoles().stream()).toList());
-    }
-
-    @JsonProperty("roles")
-    public Set<String> getRoleStrings() {
-        return getInheritedRoles().stream().map(Objects::toString).collect(Collectors.toSet());
-    }
-
-    @JsonIgnore
-    public String getPassword() {
-        return password;
-    }
-
-    @JsonProperty("password")
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     @Override

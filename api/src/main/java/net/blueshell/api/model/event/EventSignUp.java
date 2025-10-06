@@ -25,7 +25,6 @@ public class EventSignUp implements BaseModel {
 
     @ManyToOne
     @JoinColumn(name = "event_id", insertable = false, updatable = false)
-    @JsonIgnore
     private Event event;
 
     @Column(name = "event_id")
@@ -33,7 +32,6 @@ public class EventSignUp implements BaseModel {
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    @JsonIgnore
     private User user;
 
     @Column(name = "user_id")

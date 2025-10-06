@@ -31,7 +31,6 @@ public class Event implements BaseModel {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    @JsonIgnore
     private User creator;
 
     @Column(name = "creator_Id")
@@ -39,7 +38,6 @@ public class Event implements BaseModel {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_editor_id", insertable = false, updatable = false)
-    @JsonIgnore
     private User lastEditor;
 
     @Column(name = "last_editor_id")
@@ -47,7 +45,6 @@ public class Event implements BaseModel {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
-    @JsonIgnore
     private Committee committee;
 
     @Column(name = "committee_id")
@@ -70,7 +67,6 @@ public class Event implements BaseModel {
 
     @OneToOne
     @JoinColumn(name = "banner_id")
-    @JsonIgnore
     private File banner;
 
     @Column(name = "price_member")
@@ -80,11 +76,9 @@ public class Event implements BaseModel {
     private Double publicPrice;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "event", fetch = FetchType.LAZY)
-    @JsonIgnore
     private Set<EventFeedback> feedbacks;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
     private Set<EventPicture> pictures;
 
     @Column(name = "google_id")

@@ -27,7 +27,6 @@ public class Sponsor implements BaseModel {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "logo_id")
-    @JsonIgnore
     private File picture;
 
     @JsonProperty("picture")

@@ -32,15 +32,15 @@ export enum Role {
 }
 
 export type AdvancedUser = {
+    fullName: string;
+    discord: string;
+    email: string;
     id?: number;
     initials: string;
     firstName: string;
     prefix?: string;
     lastName: string;
-    fullName?: string;
     username: string;
-    discord: string;
-    email: string;
     newsletter: boolean;
     password?: string;
     roles?: Array<Role>;
@@ -74,6 +74,7 @@ export type Event = {
     membersOnly?: boolean;
     signUp?: boolean;
     banner?: File;
+    signUpCount?: number;
     signUpForm?: Survey;
     description: string;
     location?: string;
@@ -119,6 +120,7 @@ export enum QuestionType {
 
 export type Survey = {
     id?: number;
+    responseCount?: number;
     questions: Array<Question>;
 };
 
@@ -138,10 +140,10 @@ export type EventSignUp = {
 };
 
 export type Guest = {
-    id?: number;
     fullName: string;
     discord: string;
     email: string;
+    id?: number;
     createdAt?: string;
     accessToken?: string;
 };
@@ -190,15 +192,15 @@ export type Address = {
 };
 
 export type SimpleUser = {
+    fullName: string;
+    discord: string;
+    email: string;
     id?: number;
     initials: string;
     firstName: string;
     prefix?: string;
     lastName: string;
-    fullName?: string;
     username: string;
-    discord: string;
-    email: string;
     newsletter: boolean;
     password: string;
 };
@@ -341,6 +343,12 @@ export type FieldValidationError = {
      * Validation code / constraint key.
      */
     code?: string;
+};
+
+export type PersonalInfo = {
+    fullName: string;
+    discord: string;
+    email: string;
 };
 
 export type FindMembershipByIdData = {

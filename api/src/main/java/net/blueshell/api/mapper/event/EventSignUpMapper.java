@@ -6,18 +6,19 @@ import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.event.EventSignUpDTO;
 import net.blueshell.api.mapper.GuestMapper;
 import net.blueshell.api.mapper.survey.AnswerMapper;
+import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.event.EventSignUp;
 import org.mapstruct.*;
 
 @Slf4j
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {GuestMapper.class, AnswerMapper.class})
+        uses = {GuestMapper.class, AnswerMapper.class, SimpleUserMapper.class})
 public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSignUpDTO> {
 
     @Mapping(target = "id")
     @Mapping(target = "eventId")
     @Mapping(target = "guest")
-    @Mapping(target = "userId")
+    @Mapping(target = "user")
     @Mapping(target = "answers")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUpDTO toDTO(EventSignUp signUp);

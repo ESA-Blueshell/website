@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.GuestDTO;
 import net.blueshell.api.dto.survey.AnswerDTO;
+import net.blueshell.api.dto.user.SimpleUserDTO;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -25,6 +26,8 @@ public class EventSignUpDTO extends BaseDTO {
     private List<AnswerDTO> answers;
 
     private GuestDTO guest;
+
+    private SimpleUserDTO user;
 
     private Long userId;
 }

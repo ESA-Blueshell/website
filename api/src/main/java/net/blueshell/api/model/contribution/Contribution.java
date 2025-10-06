@@ -62,11 +62,6 @@ public class Contribution implements BaseModel {
     public Contribution() {
     }
 
-    @JsonProperty("userId")
-    public Long getUserId() {
-        return user != null ? user.getId() : null;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

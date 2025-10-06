@@ -25,15 +25,9 @@ public class EventFeedback implements BaseModel {
 
     @ManyToOne
     @JoinColumn(name = "event_id")
-    @JsonIgnore
     private Event event;
 
     public EventFeedback() {
-    }
-
-    @JsonProperty("event")
-    public long getEventId() {
-        return getEvent() == null ? 0 : getEvent().getId();
     }
 
     @Override

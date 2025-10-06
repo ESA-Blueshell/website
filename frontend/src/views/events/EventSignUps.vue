@@ -2,10 +2,13 @@
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/banners/TopBanner.vue"
-import {type Answer, type Event, type EventSignUp, findEventById, findEventSignUpsByEventId} from "@/lib"
+import {type Answer, type Event, type EventSignUp, findEventById, findEventSignUpsByEventId, type Question, type PersonalInfo} from "@/lib"
 
 const event = ref<Event>()
 const eventSignUps = ref<EventSignUp[]>([])
+const questions = ref<Question[]>([])
+const answers = ref<Answer[]>([])
+const persons = ref<PersonalInfo[]>([])
 
 const expandTab = ref<string[]>([])
 
@@ -39,21 +42,13 @@ onMounted(async () => {
 
     eventSignUps.value = signupsResp.data ?? []
     event.value = eventResp.data ?? {} as Event
+
+
   } catch (err) {
-    // Handle errors as desired
     console.error(err)
   }
 })
 
-// function personalDetails(eventSignUp: EventSignUp) {
-//   if (eventSignUp.guest) {
-//
-//   }
-//
-//   if (eventSignUp.user) {
-//
-//   }
-// }
 </script>
 
 <template>

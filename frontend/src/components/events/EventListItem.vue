@@ -258,8 +258,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               </v-list-item-title>
 
               <div
-                class="text-subtitle-2 mb-2"
-                style="opacity: var(--v-medium-emphasis-opacity);"
+                class="text-subtitle-2 mb-2 medium-emphasis-opacity"
               >
                 {{ event.location }} <br>
                 {{ formatEventTime() }} <br>
@@ -547,5 +546,9 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 
 .middle-actions {
   align-self: stretch;
+}
+
+.medium-emphasis-opacity {
+  opacity: var(--v-medium-emphasis-opacity)
 }
 </style>

@@ -117,7 +117,7 @@ async function removeSignUp() {
 
 async function toggleEventApproved() {
   const resp = await approveEvent({
-    path: {id: event.value.id},
+    path: {id: event.value.id!},
     query: {approved: !event.value.approved},
     throwOnError: true,
   })
@@ -332,6 +332,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     </div>
                   </v-sheet>
                 </div>
+
                 <template v-if="event.signUp">
                   <template v-if="isLoggedIn && !event.signUpForm">
                     <v-tooltip
@@ -340,6 +341,13 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                       text="Cancel sign-up"
                     >
                       <template #activator="{ props: tooltipProps }">
+                        <v-badge
+                          v-if="event.signUpCount > 0"
+                          color="blue"
+                          :content="event.signUpCount"
+                          offset-x="8"
+                          offset-y="8"
+                        />
                         <v-btn
                           :disabled="event.membersOnly && !isMember"
                           :loading="submitting"
@@ -357,6 +365,12 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                       text="Sign Up"
                     >
                       <template #activator="{ props: tooltipProps }">
+                        <v-badge
+                          color="blue"
+                          :content="event.signUpCount"
+                          offset-x="8"
+                          offset-y="8"
+                        />
                         <v-btn
                           :disabled="event.membersOnly && !isMember"
                           :loading="submitting"
@@ -396,6 +410,12 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                       location="left"
                     >
                       <template #activator="{ props: tooltipProps }">
+                        <v-badge
+                          color="blue"
+                          :content="event.signUpCount"
+                          offset-x="8"
+                          offset-y="8"
+                        />
                         <v-btn
                           :disabled="event.membersOnly && !isMember"
                           :loading="submitting"

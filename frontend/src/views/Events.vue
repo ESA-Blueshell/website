@@ -59,6 +59,8 @@ onMounted(async () => {
 })
 
 function deleteSignUp(signUpId: number): void {
+  const signUp = eventSignUps.value.find((es) => es.id === signUpId)!
+  events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! -= 1
   eventSignUps.value = (eventSignUps.value ?? []).filter(
     (es: EventSignUp) => es.id !== signUpId,
   )
@@ -74,6 +76,7 @@ function updateSignUp(signUp: EventSignUp): void {
       ...list.slice(idx + 1),
     ]
   } else {
+    events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! += 1
     eventSignUps.value = [...list, signUp]
   }
 }

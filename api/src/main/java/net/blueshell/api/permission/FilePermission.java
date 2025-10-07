@@ -41,7 +41,7 @@ public class FilePermission extends BasePermissionEvaluator<File, FileService> {
     }
 
     private boolean handleReadPermission(File file, User principal) {
-        return switch (file.getFileType()) {
+        return switch (file.getType()) {
             case SIGNATURE -> {
                 User user = userService.findBySignature(file);
                 yield user != null && user.getId().equals(principal.getId());
@@ -56,7 +56,7 @@ public class FilePermission extends BasePermissionEvaluator<File, FileService> {
     }
 
     private boolean handleDeletePermission(File file, User principal) {
-        return switch (file.getFileType()) {
+        return switch (file.getType()) {
 //            case EVENT_PICTURE -> {
 //                Event event = eventService.findByPicture(file);
 //                yield event != null && event.getCommittee().hasMember(principal);

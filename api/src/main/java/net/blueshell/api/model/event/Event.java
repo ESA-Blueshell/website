@@ -65,9 +65,12 @@ public class Event implements BaseModel {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_id")
     private File banner;
+
+    @Column(name = "banner_id", insertable = false, updatable = false)
+    private Long bannerId;
 
     @Column(name = "price_member")
     private Double memberPrice;

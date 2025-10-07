@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import {ref, watch} from "vue"
-import {Field, Form, type FormContext} from "vee-validate"
+import {defineRule, Field, Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
-import {type AdvancedCommittee, createEvent, type Event, findCommittees, updateEvent} from "@/lib"
+import {type AdvancedCommittee, createEvent, type Event, findCommittees, updateEvent, uploadFile} from "@/lib"
 import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import SurveyEdit from "@/components/survey/SurveyEdit.vue"
@@ -95,6 +95,7 @@ async function submit() {
   if (!result?.valid) return
 
   submitting.value = true
+  console.log("event:", event.value)
 
   try {
     if (!event.value?.id) {
@@ -119,6 +120,46 @@ async function submit() {
   }
 }
 
+function getFirstFile(value: File | File[] | null | undefined): File | null {
+  if (Array.isArray(value)) return value[0] ?? null
+  return (value as File | null) ?? null
+}
+
+defineRule("fileSize", (value: File | File[] | null) => {
+  const f = getFirstFile(value)
+  if (!f) return true
+  return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
+})
+
+const selectedBanner = ref<File | null>(null)
+
+async function onBannerChange(val: File | File[] | null, handleChange: (v: File) => void) {
+  const file = getFirstFile(val)
+  if (!file) {
+    selectedBanner.value = null
+    event.value.banner = undefined
+    return
+  }
+
+  handleChange(file as File)
+  selectedBanner.value = file
+
+  const res = await formRef.value?.validateField("banner")
+  if (!res?.valid) return
+
+  const resp = await uploadFile({
+    body: {
+      file,
+    },
+  })
+
+  if (resp.status === 201) {
+    event.value.banner = resp.data
+  } else if (!apply(formRef.value!, resp)) {
+    $handleNetworkError(resp)
+  }
+}
+
 </script>
 
 <template>
@@ -126,7 +167,9 @@ async function submit() {
     ref="formRef"
     as="div"
   >
-    <v-container style="padding: 0;">
+    <v-container
+      style="padding: 0;"
+    >
       <!-- Title + Location -->
       <v-row>
         <v-col
@@ -376,21 +419,20 @@ async function submit() {
           </Field>
         </v-col>
         <v-col>
-          <!-- optional; no validation by default -->
           <Field
-            v-slot="{ value, handleChange, handleBlur }"
-            v-model="event.banner"
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="selectedBanner"
             name="banner"
+            rules="fileSize"
           >
             <v-file-input
               :model-value="value as any"
-              :hint="hasPromo ? 'This event already has a promo image; only choose a file if you want to overwrite it' : undefined"
-              accept="image/jpeg"
+              accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
               clearable
               label="Promo image (Max 2MB)"
-              persistent-hint
               show-size
-              @update:model-value="handleChange"
+              :error-messages="errors"
+              @update:model-value="(blob: File) => onBannerChange(blob, handleChange)"
               @blur="handleBlur"
             />
           </Field>

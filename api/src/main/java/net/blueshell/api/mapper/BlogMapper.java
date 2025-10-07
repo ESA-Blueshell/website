@@ -61,13 +61,11 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
         List<FileDTO> files = new ArrayList<>();
         for (Element img : doc.select("img")) {
             String src = img.attr("src");
-            String alt = img.attr("alt");
             if (src.isEmpty()) {
                 continue;
             }
             FileDTO fileDTO = new FileDTO();
             fileDTO.setUrl(src);
-            fileDTO.setFileName(alt);
             files.add(fileDTO);
         }
         return files;

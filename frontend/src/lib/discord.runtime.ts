@@ -8,9 +8,6 @@ export function createClientConfig(defaultConfig: Config): Config {
   const config: Partial<Config> = {
     ...defaultConfig,
     throwOnError: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
   }
 
   return config as Config

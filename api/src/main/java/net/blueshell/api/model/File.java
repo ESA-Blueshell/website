@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.common.enums.FileType;
 import org.hibernate.annotations.SQLDelete;
@@ -33,7 +34,11 @@ public class File implements BaseModel {
     @Getter
     private String url;
 
-    @Column(name = "uploader_id", insertable = false, updatable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploader_id", nullable = false, insertable = false, updatable = false)
+    private User uploader;
+
+    @Column(name = "uploader_id")
     private long uploaderId;
 
     @Column(name = "created_at")
@@ -47,7 +52,7 @@ public class File implements BaseModel {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
-    private FileType fileType;
+    private FileType type;
 
     @Override
     public boolean equals(Object o) {

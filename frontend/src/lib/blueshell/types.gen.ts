@@ -84,13 +84,9 @@ export type File = {
     id?: number;
     name?: string;
     url?: string;
-    uploaderId?: number;
-    createdAt?: string;
     mediaType?: string;
     size?: number;
-    fileName?: string;
-    fileType?: FileType;
-    base64Content?: string;
+    type?: FileType;
 };
 
 export enum FileType {
@@ -136,6 +132,7 @@ export type EventSignUp = {
     eventId?: number;
     answers?: Array<Answer>;
     guest?: Guest;
+    user?: SimpleUser;
     userId?: number;
 };
 
@@ -146,6 +143,20 @@ export type Guest = {
     id?: number;
     createdAt?: string;
     accessToken?: string;
+};
+
+export type SimpleUser = {
+    fullName: string;
+    discord: string;
+    email: string;
+    id?: number;
+    initials: string;
+    firstName: string;
+    prefix?: string;
+    lastName: string;
+    username: string;
+    newsletter: boolean;
+    password?: string;
 };
 
 export type Contribution = {
@@ -189,20 +200,6 @@ export type Address = {
     houseNumber: string;
     zipCode: string;
     createdAt?: string;
-};
-
-export type SimpleUser = {
-    fullName: string;
-    discord: string;
-    email: string;
-    id?: number;
-    initials: string;
-    firstName: string;
-    prefix?: string;
-    lastName: string;
-    username: string;
-    newsletter: boolean;
-    password: string;
 };
 
 export enum PlatformType {
@@ -1916,6 +1913,49 @@ export type CreateEventResponses = {
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
 
+export type UploadFileData = {
+    body?: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/events/banners';
+};
+
+export type UploadFileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadFileError = UploadFileErrors[keyof UploadFileErrors];
+
+export type UploadFileResponses = {
+    /**
+     * Created
+     */
+    201: File;
+};
+
+export type UploadFileResponse = UploadFileResponses[keyof UploadFileResponses];
+
 export type FindContributionsData = {
     body?: never;
     path?: never;
@@ -2701,49 +2741,6 @@ export type FindUserByIdResponses = {
 
 export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
 
-export type DownloadProfilePictureData = {
-    body?: never;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}/profilePicture';
-};
-
-export type DownloadProfilePictureErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadProfilePictureError = DownloadProfilePictureErrors[keyof DownloadProfilePictureErrors];
-
-export type DownloadProfilePictureResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadProfilePictureResponse = DownloadProfilePictureResponses[keyof DownloadProfilePictureResponses];
-
 export type FindTelemetryByIdData = {
     body?: never;
     path: {
@@ -2831,49 +2828,6 @@ export type FindRedirectsResponses = {
 
 export type FindRedirectsResponse = FindRedirectsResponses[keyof FindRedirectsResponses];
 
-export type DownloadSignatureData = {
-    body?: never;
-    path: {
-        membershipId: number;
-    };
-    query?: never;
-    url: '/memberships/{membershipId}/signature';
-};
-
-export type DownloadSignatureErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadSignatureError = DownloadSignatureErrors[keyof DownloadSignatureErrors];
-
-export type DownloadSignatureResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadSignatureResponse = DownloadSignatureResponses[keyof DownloadSignatureResponses];
-
 export type HealthCheckData = {
     body?: never;
     path?: never;
@@ -2914,49 +2868,6 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
-
-export type DownloadBannerData = {
-    body?: never;
-    path: {
-        eventId: number;
-    };
-    query?: never;
-    url: '/events/{eventId}/banner';
-};
-
-export type DownloadBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadBannerError = DownloadBannerErrors[keyof DownloadBannerErrors];
-
-export type DownloadBannerResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadBannerResponse = DownloadBannerResponses[keyof DownloadBannerResponses];
 
 export type FindEventSignUpsData = {
     body?: never;
@@ -3048,49 +2959,6 @@ export type FindEventSignUpByAccessTokenResponses = {
 };
 
 export type FindEventSignUpByAccessTokenResponse = FindEventSignUpByAccessTokenResponses[keyof FindEventSignUpByAccessTokenResponses];
-
-export type DownloadEventPictureData = {
-    body?: never;
-    path: {
-        eventPictureId: number;
-    };
-    query?: never;
-    url: '/eventPictures/{eventPictureId}';
-};
-
-export type DownloadEventPictureErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadEventPictureError = DownloadEventPictureErrors[keyof DownloadEventPictureErrors];
-
-export type DownloadEventPictureResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadEventPictureResponse = DownloadEventPictureResponses[keyof DownloadEventPictureResponses];
 
 export type DownloadFileData = {
     body?: never;

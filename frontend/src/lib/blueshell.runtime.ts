@@ -29,9 +29,6 @@ function isValidationError(
 export function createClientConfig(defaultConfig: Config): Config {
   const axiosInstance = axios.create({
     baseURL: resolveBaseURL(),
-    headers: {
-      "Content-Type": "application/json",
-    },
   })
 
   // Keep auth in sync per request (adds OR removes header)

@@ -24,8 +24,6 @@ public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, Adva
     @AfterMapping
     protected void wireBackRefs(AdvancedCommitteeDTO dto, @MappingTarget Committee committee) {
         if (committee.getMembers() != null) {
-            log.info("Committee members map: {}", committee.getMembers());
-            log.info("Committee members map dto: {}", dto.getMembers());
             for (CommitteeMember m : committee.getMembers()) {
                 m.setCommittee(committee);
             }

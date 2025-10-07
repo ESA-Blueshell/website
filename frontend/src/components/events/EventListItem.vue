@@ -277,7 +277,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     <v-btn
                       v-bind="approveProps"
                       :prepend-icon="approvedIcon"
-                      :disabled="DateTime.fromISO(event.startTime) < DateTime.now()"
+                      :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
                       :color="approvedColor"
                       variant="tonal"
                       class="text-none"

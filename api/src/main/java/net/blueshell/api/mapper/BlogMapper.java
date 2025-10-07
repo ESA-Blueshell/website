@@ -65,7 +65,6 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
                 continue;
             }
             FileDTO fileDTO = new FileDTO();
-            fileDTO.setUrl(src);
             files.add(fileDTO);
         }
         return files;

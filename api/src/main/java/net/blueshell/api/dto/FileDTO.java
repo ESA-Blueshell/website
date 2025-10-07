@@ -14,7 +14,6 @@ import java.sql.Timestamp;
 public class FileDTO extends BaseDTO {
     private Long id;
     private String name;
-    private String url;
     private String mediaType;
     private Long size;
     private FileType type;

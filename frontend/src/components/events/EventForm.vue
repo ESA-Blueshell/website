@@ -179,7 +179,13 @@ async function loadBanner() {
       responseType: "blob",
     })
 
-    banner.value = resp?.data as File
+    const blob = resp?.data as Blob
+    if (!blob) return
+
+    banner.value = new File([blob], event.value.banner.name!, {
+      type: blob.type || "application/octet-stream",
+      lastModified: Date.now(),
+    })
   } catch (e) {
     console.error("Failed to download event banner:", e)
   }
@@ -299,7 +305,6 @@ onMounted(loadBanner)
         </v-col>
       </v-row>
 
-      <!-- Checkboxes: sameEndDate, membersOnly, approved -->
       <v-row>
         <v-col>
           <Field
@@ -454,7 +459,7 @@ onMounted(loadBanner)
             rules="fileSize"
           >
             <v-file-input
-              :model-value="value as any"
+              :model-value="value as File"
               accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
               clearable
               label="Promo image (Max 2MB)"

@@ -7,7 +7,6 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,10 +16,6 @@ import java.time.Instant;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class FileMapper extends BaseMapper<File, FileDTO> {
-
-    @Value("${app.url}")
-    private String appUrl;
-
     /**
      * Build hashed filename from content hash + original name's extension.
      */
@@ -45,21 +40,22 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     /**
      * After a file has been stored, fill the entity and computed URL.
      */
-    public void populateAfterStore(@MappingTarget File file,
-                                   String storedName,
-                                   Path storedPath,
-                                   String mediaType,
-                                   String appUrl) {
-        file.setName(storedName);
+    public void populateAfterStore(
+            @MappingTarget File file,
+            String name,
+            Path path,
+            String mediaType
+    ) {
+        file.setName(name);
         file.setMediaType(mediaType);
         file.setCreatedAt(Timestamp.from(Instant.now()));
         file.setUploaderId(getPrincipal().getId());
         try {
-            file.setSize(Files.size(storedPath));
+            file.setSize(Files.size(path));
         } catch (IOException e) {
-            throw new RuntimeException("Could not read file size for: " + storedPath, e);
+            throw new RuntimeException("Could not read file size for: " + path, e);
         }
-        file.setUrl(downloadUrl(storedName, appUrl));
+        file.setPath(String.valueOf(path));
     }
 
     /**
@@ -81,19 +77,10 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "mediaType")
-    @Mapping(target = "url")
     @Mapping(target = "type")
     @Mapping(target = "size")
     @BeanMapping(ignoreByDefault = true)
     public abstract FileDTO toDTO(File file);
-
-    private String downloadUrl(String storedName, String baseUrl) {
-        return UriComponentsBuilder.fromUriString(baseUrl)
-                .path("/files/")
-                .path(storedName)
-                .toUriString()
-                .replace("http://", "https://");
-    }
 
     private String detectContentType(String filename, Resource resource) {
         try {

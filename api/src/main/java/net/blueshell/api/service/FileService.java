@@ -5,7 +5,6 @@ import jakarta.ws.rs.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.FileType;
-import net.blueshell.api.config.StorageConfig;
 import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
@@ -40,13 +39,16 @@ public class FileService extends BaseModelService<File, FileRepository> {
     private final FileMapper fileMapper;
     private final EventService events;
 
-    @Value("${app.url}")
-    private String appUrl;
 
     @Autowired
-    public FileService(FileRepository fileRepository, StorageConfig properties, FileMapper fileMapper, EventService events) {
+    public FileService(
+            FileRepository fileRepository,
+            FileMapper fileMapper,
+            EventService events,
+            @Value("${storage.location}") String storageLocation
+    ) {
         super(fileRepository);
-        this.rootLocation = Paths.get(properties.getLocation());
+        this.rootLocation = Paths.get(storageLocation);
         this.fileMapper = fileMapper;
         this.events = events;
     }
@@ -76,7 +78,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
         }
 
         try {
-            Files.createDirectories(rootLocation);
+            Files.createDirectories(rootLocation.resolve(type.toString().toLowerCase()));
 
             var tmp = Files.createTempFile(rootLocation, "upload-", ".tmp");
             var md = MessageDigest.getInstance("SHA-256");
@@ -89,27 +91,32 @@ public class FileService extends BaseModelService<File, FileRepository> {
             var sha256 = HexFormat.of().formatHex(md.digest());
 
             var hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.getOriginalFilename());
-            var fileName = type.toString().toLowerCase() + "/" + hashedFilename;
-            var finalPath = rootLocation.resolve(fileName).normalize();
-            log.info("finalPath: {}", fileName);
+            var path = rootLocation.resolve(type.toString().toLowerCase() + "/" + hashedFilename).normalize();
 
-            if (Files.exists(finalPath)) {
+            log.info("Storing file {} to location {}", multipart.getOriginalFilename(), path);
+
+            if (Files.exists(path)) {
                 Files.deleteIfExists(tmp);
             } else {
                 try {
-                    Files.move(tmp, finalPath, StandardCopyOption.ATOMIC_MOVE);
+                    Files.move(tmp, path, StandardCopyOption.ATOMIC_MOVE);
                 } catch (FileAlreadyExistsException ignore) {
                     Files.deleteIfExists(tmp);
                 }
             }
+
+            log.info("Moved file {} to location {}", multipart.getOriginalFilename(), path);
 
             var entity = repository.findByName(hashedFilename).orElse(null);
             if (entity == null) {
                 entity = new File();
             }
 
-            var mediaType = fileMapper.resolveMediaType(hashedFilename, finalPath, multipart.getContentType());
-            fileMapper.populateAfterStore(entity, hashedFilename, finalPath, mediaType, appUrl);
+            log.info("file find by name: {}", entity.getName());
+
+            var mediaType = fileMapper.resolveMediaType(hashedFilename, path, multipart.getContentType());
+            log.info("populate after store({}, {}, {}, {})", entity, multipart.getOriginalFilename(), path, mediaType);
+            fileMapper.populateAfterStore(entity, multipart.getOriginalFilename(), path, mediaType);
             entity.setType(type);
 
             return self().create(entity);
@@ -122,7 +129,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
 
     private Resource loadAsResource(File file) {
         try {
-            Path filePath = rootLocation.resolve(file.getName());
+            Path filePath = rootLocation.resolve(file.getPath());
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists() || resource.isReadable()) return resource;
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(file.getName()));

@@ -2,9 +2,6 @@ package net.blueshell.api.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.common.enums.FileType;
 import org.hibernate.annotations.SQLDelete;
@@ -20,19 +17,13 @@ import java.util.Objects;
 @Data
 public class File implements BaseModel {
 
-    @Getter
-    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Setter
-    @Getter
     private String name;
 
-    @Setter
-    @Getter
-    private String url;
+    private String path;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploader_id", nullable = false, insertable = false, updatable = false)

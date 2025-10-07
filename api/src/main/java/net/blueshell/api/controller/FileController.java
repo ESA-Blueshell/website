@@ -56,6 +56,7 @@ public class FileController extends BaseController<FileService, FileRepository> 
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('COMMITTEE')")
     public FileDTO uploadEventBanner(@RequestPart("file") MultipartFile file) {
         var stored = service.storeMultipart(file, FileType.EVENT_BANNER);
         return fileMapper.toDTO(stored);

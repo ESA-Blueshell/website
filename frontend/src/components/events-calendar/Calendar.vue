@@ -29,6 +29,22 @@
     >
       Today
     </v-btn>
+
+    <!-- New: Add-to-calendar button -->
+    <v-btn
+      class="ml-2"
+      size="small"
+      variant="text"
+      :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
+      target="_blank"
+      rel="noopener"
+      aria-label="Add the Blueshell events to my Google Calendar"
+    >
+      Subscribe to calendar
+      <v-icon end>
+        mdi-open-in-new
+      </v-icon>
+    </v-btn>
   </v-toolbar>
 
   <v-calendar
@@ -61,6 +77,9 @@ import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/events-calendar/EventDetails.vue"
+
+const GOOGLE_CALENDAR_SUBSCRIBE_URL =
+  "https://calendar.google.com/calendar/u/1/r?cid=87r5v7ep7k9ronlrg8n2q9033s@group.calendar.google.com"
 
 const displayedMonth = ref<string>(DateTime.now().toISODate()!)
 const selectedEvent = ref<Event | null>(null)
@@ -143,8 +162,7 @@ watch(events, (list: Event[]) => {
         start,
         end,
         color: e.approved ? "primary" : "orange",
-        category:
-        e.title,
+        category: e.title,
         raw: e,
       }
     })
@@ -171,6 +189,7 @@ defineExpose({
   updateEvent,
 })
 </script>
+
 <style lang="scss">
 .v-calendar .v-event {
   margin-left: 4px !important;
@@ -179,7 +198,6 @@ defineExpose({
 .v-calendar .v-event-summary {
   height: 28px;
 }
-
 
 .v-calendar.v-calendar-events .v-calendar-weekly__head-weekday {
   border-bottom: 0.5px solid #e0e0e0;
@@ -198,5 +216,4 @@ defineExpose({
 .v-calendar-weekly__day {
   min-height: 60px;
 }
-
 </style>

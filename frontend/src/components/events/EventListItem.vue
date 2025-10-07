@@ -212,7 +212,7 @@ async function loadBanner() {
   try {
     const resp = await downloadEventBanner({
       path: {
-        bannerId: event.value.banner.id!
+        bannerId: event.value.banner.id!,
       },
       throwOnError: true,
       responseType: "blob",
@@ -263,11 +263,13 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
         <v-container>
           <v-row
             no-gutters
-            class="align-stretch fill-height"
+            class="align-stretch fill-height flex-nowrap"
           >
             <v-col class="flex-grow-1 min-w-0">
               <v-list-item-title class="text-h4 d-flex align-center ga-2 title-row">
-                {{ event.title }}
+                <span class="title-text">
+                  {{ event.title }}
+                </span>
                 <v-tooltip
                   v-if="isBoard || committee"
                   location="bottom"
@@ -275,12 +277,12 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                 >
                   <template #activator="{ props: approveProps }">
                     <v-btn
+                      class="approve-btn text-none"
                       v-bind="approveProps"
                       :prepend-icon="approvedIcon"
                       :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
                       :color="approvedColor"
                       variant="tonal"
-                      class="text-none"
                       size="small"
                       @click="toggleEventApproved"
                     >
@@ -305,7 +307,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               cols="auto"
               class="align-self-stretch d-flex shrink-0"
             >
-              <div class="right-rail d-flex flex-column align-end justify-start h-100 w-100">
+              <div class="right-rail d-flex flex-column align-end justify-start h-100">
                 <div
                   v-if="committee"
                   class="mb-3"
@@ -537,7 +539,34 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
   </div>
 </template>
 
+
 <style lang="scss" scoped>
+.flex-nowrap {
+  flex-wrap: nowrap !important;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-text {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+  word-break: break-word;
+}
+
+.approve-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.right-rail {
+  inline-size: max-content;
+}
+
 .form-border {
   border-width: 1px;
   border-color: rgb(var(--v-theme-accent));
@@ -549,9 +578,6 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
   padding: 16px;
 }
 
-.right-rail {
-  position: relative;
-}
 
 .top-right-header {
   display: grid;

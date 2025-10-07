@@ -43,7 +43,8 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     public void populateAfterStore(
             @MappingTarget File file,
             String name,
-            Path path,
+            Path fullPath,
+            String path,
             String mediaType
     ) {
         file.setName(name);
@@ -51,7 +52,7 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
         file.setCreatedAt(Timestamp.from(Instant.now()));
         file.setUploaderId(getPrincipal().getId());
         try {
-            file.setSize(Files.size(path));
+            file.setSize(Files.size(fullPath));
         } catch (IOException e) {
             throw new RuntimeException("Could not read file size for: " + path, e);
         }

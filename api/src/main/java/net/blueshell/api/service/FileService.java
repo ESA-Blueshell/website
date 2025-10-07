@@ -91,21 +91,22 @@ public class FileService extends BaseModelService<File, FileRepository> {
             var sha256 = HexFormat.of().formatHex(md.digest());
 
             var hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.getOriginalFilename());
-            var path = rootLocation.resolve(type.toString().toLowerCase() + "/" + hashedFilename).normalize();
+            var path = type.toString().toLowerCase() + "/" + hashedFilename;
+            var fullPath = rootLocation.resolve(path).normalize();
 
-            log.info("Storing file {} to location {}", multipart.getOriginalFilename(), path);
+            log.info("Storing file {} to location {}", multipart.getOriginalFilename(), fullPath);
 
-            if (Files.exists(path)) {
+            if (Files.exists(fullPath)) {
                 Files.deleteIfExists(tmp);
             } else {
                 try {
-                    Files.move(tmp, path, StandardCopyOption.ATOMIC_MOVE);
+                    Files.move(tmp, fullPath, StandardCopyOption.ATOMIC_MOVE);
                 } catch (FileAlreadyExistsException ignore) {
                     Files.deleteIfExists(tmp);
                 }
             }
 
-            log.info("Moved file {} to location {}", multipart.getOriginalFilename(), path);
+            log.info("Moved file {} to location {}", multipart.getOriginalFilename(), fullPath);
 
             var entity = repository.findByName(hashedFilename).orElse(null);
             if (entity == null) {
@@ -114,9 +115,9 @@ public class FileService extends BaseModelService<File, FileRepository> {
 
             log.info("file find by name: {}", entity.getName());
 
-            var mediaType = fileMapper.resolveMediaType(hashedFilename, path, multipart.getContentType());
+            var mediaType = fileMapper.resolveMediaType(hashedFilename, fullPath, multipart.getContentType());
             log.info("populate after store({}, {}, {}, {})", entity, multipart.getOriginalFilename(), path, mediaType);
-            fileMapper.populateAfterStore(entity, multipart.getOriginalFilename(), path, mediaType);
+            fileMapper.populateAfterStore(entity, multipart.getOriginalFilename(), fullPath, path, mediaType);
             entity.setType(type);
 
             return self().create(entity);

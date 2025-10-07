@@ -8,6 +8,7 @@ import net.blueshell.api.model.User;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
@@ -69,4 +70,7 @@ public class CommitteeMember implements BaseModel {
         return String.format("CommitteeMember={id: %d, userId: %d, committeeId: %d, role: %s}",
                 id, getUser() != null ? getUser().getId() : getUserId(), getCommittee() != null ? getCommittee().getId() : null, role);
     }
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

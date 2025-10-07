@@ -65,4 +65,7 @@ public class Guest implements BaseModel {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

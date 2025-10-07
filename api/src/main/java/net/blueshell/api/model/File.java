@@ -3,6 +3,7 @@ package net.blueshell.api.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.FileType;
 import net.blueshell.api.model.event.EventBanner;
 import org.hibernate.annotations.SQLDelete;
@@ -16,6 +17,7 @@ import java.util.Objects;
 @SQLDelete(sql = "UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
+@EntityListeners(JpaListener.class)
 public class File implements BaseModel {
 
     @Id
@@ -61,4 +63,7 @@ public class File implements BaseModel {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

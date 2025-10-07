@@ -11,6 +11,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Set;
 
 @Entity
@@ -58,4 +59,7 @@ public class Membership implements BaseModel {
 
     @Column(name = "incasso", nullable = false)
     private boolean incasso;
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

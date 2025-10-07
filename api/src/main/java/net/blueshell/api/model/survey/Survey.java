@@ -6,6 +6,7 @@ import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,4 +32,7 @@ public class Survey implements BaseModel {
         return id != null && id.equals(other.id);
     }
     @Override public int hashCode() { return getClass().hashCode(); }
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

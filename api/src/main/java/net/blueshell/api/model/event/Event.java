@@ -14,6 +14,7 @@ import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
@@ -118,4 +119,7 @@ public class Event implements BaseModel {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

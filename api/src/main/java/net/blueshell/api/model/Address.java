@@ -54,4 +54,7 @@ public class Address implements BaseModel {
         this.houseNumber = houseNumber;
         this.zipCode = zipCode;
     }
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

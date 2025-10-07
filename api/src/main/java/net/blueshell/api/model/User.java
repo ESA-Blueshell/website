@@ -125,6 +125,8 @@ public class User implements UserDetails, BaseModel {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<EventSignUp> eventSignUps;
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 
     public User() {
         this.createdAt = Timestamp.from(Instant.now());

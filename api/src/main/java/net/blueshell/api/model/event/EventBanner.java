@@ -3,6 +3,7 @@ package net.blueshell.api.model.event;
 import jakarta.persistence.*;
 import lombok.*;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.File;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -23,8 +24,9 @@ import java.sql.Timestamp;
                 @Index(name = "idx_event_banners_file", columnList = "file_id"),
         }
 )
-@SQLDelete(sql = "UPDATE event_banners SET deleted_at = CURRENT_TIMESTAMP WHERE event_id = ? AND file_id = ?")
+@SQLDelete(sql = "UPDATE event_banners SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@EntityListeners(JpaListener.class)
 public class EventBanner implements BaseModel {
 
     @Id
@@ -35,7 +37,7 @@ public class EventBanner implements BaseModel {
     @Column(name = "event_id", nullable = false, insertable = false, updatable = false)
     private Long eventId;
 
-    @Column(name = "file_id", nullable = false)
+    @Column(name = "file_id", nullable = false, insertable = false, updatable = false)
     private Long fileId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
@@ -43,8 +45,8 @@ public class EventBanner implements BaseModel {
     @ToString.Exclude
     private Event event;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "file_id", nullable = false, insertable = false, updatable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.REMOVE)
+    @JoinColumn(name = "file_id", nullable = false)
     @ToString.Exclude
     private File file;
 

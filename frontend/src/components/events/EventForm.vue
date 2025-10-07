@@ -7,7 +7,8 @@ import {
   type AdvancedCommittee,
   createEvent,
   downloadEventBanner,
-  type Event, type EventBanner,
+  type Event,
+  type EventBanner,
   findCommittees,
   updateEvent,
   uploadEventBanner,
@@ -103,7 +104,6 @@ async function submit() {
   if (!result?.valid) return
 
   submitting.value = true
-  console.log("event:", event.value)
 
   try {
     if (!event.value?.id) {
@@ -115,6 +115,7 @@ async function submit() {
         $handleNetworkError(resp)
       }
     } else {
+      console.log("on submit value is:", event.value.banner)
       const resp = await updateEvent({path: {id: event.value.id}, body: event.value})
       if (resp.status === 200) {
         submitting.value = false
@@ -148,9 +149,6 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
     return
   }
 
-  handleChange(file as File)
-  banner.value = file
-
   const res = await formRef.value?.validateField("banner")
   if (!res?.valid) return
 
@@ -161,9 +159,8 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
   })
 
   if (resp.status === 201) {
-    event.value.banner = {
-      file: resp.data!,
-    } as EventBanner
+    event.value.banner = {file: resp.data!} as EventBanner
+    handleChange(file)
   } else if (!apply(formRef.value!, resp)) {
     $handleNetworkError(resp)
   }

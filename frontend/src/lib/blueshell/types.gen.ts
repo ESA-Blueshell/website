@@ -82,7 +82,6 @@ export type Event = {
 
 export type EventBanner = {
     id?: number;
-    fileId: number;
     file: File;
 };
 

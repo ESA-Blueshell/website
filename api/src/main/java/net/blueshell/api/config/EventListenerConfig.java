@@ -5,6 +5,7 @@ import net.blueshell.api.job.brevo.RemoveContactFromListJob;
 import net.blueshell.api.job.brevo.SyncContactJob;
 import net.blueshell.api.service.CommitteeMemberService;
 import net.blueshell.api.service.ContributionPeriodService;
+import net.blueshell.api.service.FileService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.email.EmailService;
@@ -38,5 +39,10 @@ public class EventListenerConfig {
     @Bean
     public UserEventListener userEventListener(EmailService emails, SyncContactJob syncContactJob, CommitteeMemberService committeeMembers) {
         return new UserEventListener(emails, syncContactJob, committeeMembers);
+    }
+
+    @Bean
+    public FileEventListener fileEventListener(FileService files) {
+        return new FileEventListener(files);
     }
 }

@@ -30,4 +30,7 @@ public class Blog implements BaseModel {
 
     @Column(name = "created_at")
     private Timestamp createdAt;
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

@@ -7,6 +7,8 @@ import net.blueshell.api.model.File;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
+
 @Entity
 @Table(name = "event_pictures")
 @Data
@@ -25,4 +27,7 @@ public class EventPicture implements BaseModel {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

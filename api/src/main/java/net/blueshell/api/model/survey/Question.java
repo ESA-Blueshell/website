@@ -9,6 +9,7 @@ import net.blueshell.api.model.converter.StringListConverter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,5 +56,8 @@ public class Question implements BaseModel {
 
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
     private long answerCount;
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }
 

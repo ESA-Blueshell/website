@@ -190,4 +190,16 @@ public class FileService extends BaseModelService<File, FileRepository> {
         return repository.findByEventBannerId(bannerId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Event banner not found with id: %s".formatted(bannerId)));
     }
+
+    public void deleteFromStorage(File file) {
+        var fullPath = rootLocation.resolve(file.getPath()).normalize();
+
+        try {
+            if (Files.exists(fullPath)) {
+                Files.deleteIfExists(fullPath);
+            }
+        } catch (IOException e) {
+            log.error("Failed to delete file {}", fullPath, e);
+        }
+    }
 }

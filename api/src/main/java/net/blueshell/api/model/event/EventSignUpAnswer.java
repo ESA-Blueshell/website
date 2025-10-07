@@ -9,6 +9,7 @@ import net.blueshell.api.model.survey.Answer;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -33,8 +34,8 @@ public class EventSignUpAnswer implements BaseModel {
     @JoinColumn(name = "answer_id", nullable = false)
     private Answer answer;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 
     @Override
     public boolean equals(Object o) {

@@ -27,7 +27,7 @@ public class EventEventListener {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onEventCreated(PrePersistEvent<Event> evt) throws IOException {
+    public void onPersist(PrePersistEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
         if (e.isApproved()) {
             calendars.add(e);
@@ -36,7 +36,7 @@ public class EventEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onEventUpdated(PostUpdateEvent<Event> evt) throws IOException {
+    public void onUpdate(PostUpdateEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
         if (e.isApproved()) {
             calendars.sync(e);
@@ -48,7 +48,7 @@ public class EventEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onEventDeleted(PostRemoveEvent<Event> evt) throws IOException {
+    public void onDelete(PostRemoveEvent<Event> evt) throws IOException {
         Event e = evt.getSource();
 
         calendars.remove(e);

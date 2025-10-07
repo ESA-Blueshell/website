@@ -21,7 +21,5 @@ import java.time.OffsetDateTime;
 public class EventBannerDTO extends BaseDTO {
     private Long id;
     @NotNull
-    private Long fileId;
-    @NotNull
     private FileDTO file;
 }

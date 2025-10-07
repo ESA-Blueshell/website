@@ -8,6 +8,8 @@ import net.blueshell.api.model.User;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.sql.Timestamp;
+
 @Entity
 @Table(name = "board_members")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -30,4 +32,7 @@ public class BoardMember implements BaseModel {
     @JoinColumn(name = "picture_id")
     @OneToOne
     private File picture;
+
+    @Column(name = "deleted_at", nullable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

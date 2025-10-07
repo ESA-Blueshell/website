@@ -1913,7 +1913,7 @@ export type CreateEventResponses = {
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
 
-export type UploadFileData = {
+export type UploadEventBannerData = {
     body?: {
         file: Blob | File;
     };
@@ -1922,7 +1922,7 @@ export type UploadFileData = {
     url: '/events/banners';
 };
 
-export type UploadFileErrors = {
+export type UploadEventBannerErrors = {
     /**
      * Validation error
      */
@@ -1945,16 +1945,16 @@ export type UploadFileErrors = {
     500: ApiError;
 };
 
-export type UploadFileError = UploadFileErrors[keyof UploadFileErrors];
+export type UploadEventBannerError = UploadEventBannerErrors[keyof UploadEventBannerErrors];
 
-export type UploadFileResponses = {
+export type UploadEventBannerResponses = {
     /**
      * Created
      */
     201: File;
 };
 
-export type UploadFileResponse = UploadFileResponses[keyof UploadFileResponses];
+export type UploadEventBannerResponse = UploadEventBannerResponses[keyof UploadEventBannerResponses];
 
 export type FindContributionsData = {
     body?: never;
@@ -2868,6 +2868,49 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type DownloadEventBannerData = {
+    body?: never;
+    path: {
+        eventId: number;
+    };
+    query?: never;
+    url: '/events/{eventId}/banners';
+};
+
+export type DownloadEventBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
+
+export type DownloadEventBannerResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
 
 export type FindEventSignUpsData = {
     body?: never;

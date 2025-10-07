@@ -44,12 +44,19 @@ public class FileController extends BaseController<FileService, FileRepository> 
         return service.prepareAssetResponse(filename);
     }
 
+    @GetMapping("/events/{eventId}/banners")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'read')")
+    public ResponseEntity<Resource> downloadEventBanner(@PathVariable("eventId") Long eventId) {
+        var file = service.findByEventId(eventId);
+        return service.prepareFileResponse(file);
+    }
+
     @PostMapping(
             value = "/events/banners",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     @ResponseStatus(HttpStatus.CREATED)
-    public FileDTO uploadFile(@RequestPart("file") MultipartFile file) {
+    public FileDTO uploadEventBanner(@RequestPart("file") MultipartFile file) {
         var stored = service.storeMultipart(file, FileType.EVENT_BANNER);
         return fileMapper.toDTO(stored);
     }

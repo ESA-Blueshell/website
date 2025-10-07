@@ -9,6 +9,7 @@ import net.blueshell.api.config.StorageConfig;
 import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
+import net.blueshell.api.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -37,15 +38,17 @@ public class FileService extends BaseModelService<File, FileRepository> {
     private final Path rootLocation;
     private final Path assetsLocation = Paths.get("assets");
     private final FileMapper fileMapper;
+    private final EventService events;
 
     @Value("${app.url}")
     private String appUrl;
 
     @Autowired
-    public FileService(FileRepository fileRepository, StorageConfig properties, FileMapper fileMapper) {
+    public FileService(FileRepository fileRepository, StorageConfig properties, FileMapper fileMapper, EventService events) {
         super(fileRepository);
         this.rootLocation = Paths.get(properties.getLocation());
         this.fileMapper = fileMapper;
+        this.events = events;
     }
 
     @Transactional(readOnly = true)
@@ -75,18 +78,20 @@ public class FileService extends BaseModelService<File, FileRepository> {
         try {
             Files.createDirectories(rootLocation);
 
-            Path tmp = Files.createTempFile(rootLocation, "upload-", ".tmp");
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            var tmp = Files.createTempFile(rootLocation, "upload-", ".tmp");
+            var md = MessageDigest.getInstance("SHA-256");
 
             try (InputStream in = multipart.getInputStream();
                  DigestInputStream dis = new DigestInputStream(in, md);
                  OutputStream out = Files.newOutputStream(tmp, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
                 dis.transferTo(out);
             }
-            String sha256 = HexFormat.of().formatHex(md.digest());
+            var sha256 = HexFormat.of().formatHex(md.digest());
 
-            String hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.getOriginalFilename());
-            Path finalPath = rootLocation.resolve(hashedFilename).normalize();
+            var hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.getOriginalFilename());
+            var fileName = type.toString().toLowerCase() + "/" + hashedFilename;
+            var finalPath = rootLocation.resolve(fileName).normalize();
+            log.info("finalPath: {}", fileName);
 
             if (Files.exists(finalPath)) {
                 Files.deleteIfExists(tmp);
@@ -98,17 +103,16 @@ public class FileService extends BaseModelService<File, FileRepository> {
                 }
             }
 
-            File entity = repository.findByName(hashedFilename).orElse(null);
+            var entity = repository.findByName(hashedFilename).orElse(null);
             if (entity == null) {
                 entity = new File();
             }
 
-            String mediaType = fileMapper.resolveMediaType(hashedFilename, finalPath, multipart.getContentType());
+            var mediaType = fileMapper.resolveMediaType(hashedFilename, finalPath, multipart.getContentType());
             fileMapper.populateAfterStore(entity, hashedFilename, finalPath, mediaType, appUrl);
             entity.setType(type);
 
             return self().create(entity);
-
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);
         } catch (NoSuchAlgorithmException e) {
@@ -159,5 +163,11 @@ public class FileService extends BaseModelService<File, FileRepository> {
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
                 .headers(headers)
                 .body(resource);
+    }
+
+    @Transactional(readOnly = true)
+    public File findByEventId(Long eventId) {
+        var event = events.findById(eventId);
+        return self().findById(event.getBannerId());
     }
 }

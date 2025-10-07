@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
-import type {PropType} from "vue"
-import {computed, nextTick, onMounted, ref, toRef} from "vue"
+import {computed, nextTick, onBeforeUnmount, onMounted, type PropType, ref, toRef} from "vue"
 import {createEvent as createIcsEvent} from "ics"
 import store from "@/plugins/store.ts"
 import {$goto} from "@/plugins/goto"
@@ -14,6 +13,7 @@ import {
   createEventSignup,
   deleteEventById,
   deleteEventSignup,
+  downloadEventBanner,
   type Event,
   type EventSignUp,
   updateEventSignUp,
@@ -205,6 +205,32 @@ const approvedLabel = computed(() => (isApproved.value ? "Approved" : "Awaiting 
 const approvedIcon = computed(() => (isApproved.value ? "mdi-check-circle" : "mdi-close-circle"))
 const approvedColor = computed(() => (isApproved.value ? "success" : "warning"))
 
+const bannerUrl = ref<string | null>(null)
+
+async function loadBanner() {
+  if (!event.value?.id || !event.value.banner) return
+  try {
+    const resp = await downloadEventBanner({
+      path: {eventId: event.value.id},
+      throwOnError: true,
+      responseType: "blob",
+    })
+
+    const blob = resp?.data as Blob
+    if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
+    bannerUrl.value = URL.createObjectURL(blob)
+    console.log("bannerUrl", bannerUrl.value)
+  } catch (e) {
+    console.error("Failed to download event banner:", e)
+  }
+}
+
+onMounted(loadBanner)
+
+onBeforeUnmount(() => {
+  if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
+})
+
 function handleUpdateSignUp(updatedSignUp: EventSignUp) {
   eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
   emit("update:signUp", updatedSignUp)
@@ -215,13 +241,19 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 <template v-if="event.id">
   <div>
     <v-list-item
-      :style="{
-        'background-image': !event.banner
-          ? ''
-          : theme.global.current.value.dark
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${event.banner})`
-            : `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${event.banner})`
-      }"
+      :style="bannerUrl
+        ? {
+          backgroundImage: theme.global.current.value.dark
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('${bannerUrl}')`
+            : `linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url('${bannerUrl}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '240px'
+        }
+        : {
+          minHeight: '240px'
+        }"
       class="py-4"
       rounded="sm"
       style="background-size: cover; background-position: center; min-height: 240px;"
@@ -279,6 +311,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                 >
                   <v-sheet
                     class="top-right-header"
+                    border
                     :elevation="1"
                   >
                     <span class="committee-name text-caption font-weight-medium font-weight-bold">

@@ -1,9 +1,17 @@
 <script lang="ts" setup>
-import {ref, watch} from "vue"
+import {onMounted, ref, watch} from "vue"
 import {defineRule, Field, Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
-import {type AdvancedCommittee, createEvent, type Event, findCommittees, updateEvent, uploadFile} from "@/lib"
+import {
+  type AdvancedCommittee,
+  createEvent,
+  downloadEventBanner,
+  type Event,
+  findCommittees,
+  updateEvent,
+  uploadEventBanner,
+} from "@/lib"
 import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import SurveyEdit from "@/components/survey/SurveyEdit.vue"
@@ -130,24 +138,23 @@ defineRule("fileSize", (value: File | File[] | null) => {
   if (!f) return true
   return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
 })
-
-const selectedBanner = ref<File | null>(null)
+const banner = ref<File | null>(null)
 
 async function onBannerChange(val: File | File[] | null, handleChange: (v: File) => void) {
   const file = getFirstFile(val)
   if (!file) {
-    selectedBanner.value = null
+    banner.value = null
     event.value.banner = undefined
     return
   }
 
   handleChange(file as File)
-  selectedBanner.value = file
+  banner.value = file
 
   const res = await formRef.value?.validateField("banner")
   if (!res?.valid) return
 
-  const resp = await uploadFile({
+  const resp = await uploadEventBanner({
     body: {
       file,
     },
@@ -159,6 +166,27 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
     $handleNetworkError(resp)
   }
 }
+
+
+async function loadBanner() {
+  if (!event.value?.id || !event.value.banner) return
+  try {
+    const resp = await downloadEventBanner({
+      path: {
+        eventId: event.value.id,
+      },
+      throwOnError: true,
+      responseType: "blob",
+    })
+
+    banner.value = resp?.data as File
+  } catch (e) {
+    console.error("Failed to download event banner:", e)
+  }
+}
+
+onMounted(loadBanner)
+
 
 </script>
 
@@ -421,7 +449,7 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
         <v-col>
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="selectedBanner"
+            v-model="banner"
             name="banner"
             rules="fileSize"
           >

@@ -269,27 +269,27 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               <v-list-item-title class="text-h4 d-flex align-center ga-2 title-row">
                 <span class="title-text">
                   {{ event.title }}
+                  <v-tooltip
+                    v-if="isBoard || committee"
+                    location="bottom"
+                    :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
+                  >
+                    <template #activator="{ props: approveProps }">
+                      <v-btn
+                        class="approve-btn text-none"
+                        v-bind="approveProps"
+                        :prepend-icon="approvedIcon"
+                        :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
+                        :color="approvedColor"
+                        variant="tonal"
+                        size="small"
+                        @click="toggleEventApproved"
+                      >
+                        {{ approvedLabel }}
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
                 </span>
-                <v-tooltip
-                  v-if="isBoard || committee"
-                  location="bottom"
-                  :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
-                >
-                  <template #activator="{ props: approveProps }">
-                    <v-btn
-                      class="approve-btn text-none"
-                      v-bind="approveProps"
-                      :prepend-icon="approvedIcon"
-                      :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
-                      :color="approvedColor"
-                      variant="tonal"
-                      size="small"
-                      @click="toggleEventApproved"
-                    >
-                      {{ approvedLabel }}
-                    </v-btn>
-                  </template>
-                </v-tooltip>
               </v-list-item-title>
 
               <div

@@ -2,6 +2,7 @@ package net.blueshell.api.mapper.event;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
+import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.event.EventDTO;
 import net.blueshell.api.mapper.survey.SurveyMapper;
 import net.blueshell.api.model.event.Event;
@@ -34,7 +35,6 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "endTime")
     @Mapping(target = "memberPrice")
     @Mapping(target = "publicPrice")
-    @Mapping(target = "approved")
     @Mapping(target = "membersOnly")
     @Mapping(target = "banner")
     @Mapping(target = "signUpForm")
@@ -51,6 +51,11 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
         event.setLastEditorId(getPrincipal().getId());
         if (event.getBanner() != null) {
             event.getBanner().setEvent(event);
+        }
+        if (hasAuthority(Role.BOARD)) {
+            event.setApproved(dto.isApproved());
+        } else {
+            event.setApproved(false);
         }
     }
 

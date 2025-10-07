@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onMounted, ref, watch} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import {defineRule, Field, Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
@@ -17,6 +17,7 @@ import router from "@/plugins/router.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import SurveyEdit from "@/components/survey/SurveyEdit.vue"
 import MarkdownField from "@/components/MarkdownField.vue"
+import {useStore} from "vuex"
 
 const props = defineProps({
   initialEvent: {
@@ -57,7 +58,7 @@ function initializeEvent(): Event {
 }
 
 const event = ref<Event>(initializeEvent())
-
+const store = useStore()
 const hadSignUp = ref<boolean>(event.value.signUp || false)
 const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm || false)
 
@@ -191,7 +192,9 @@ async function loadBanner() {
 }
 
 onMounted(loadBanner)
-
+const initialJson = ref(JSON.stringify(event.value))
+const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
+const isBoard = computed((): boolean => store.getters.isBoard)
 
 </script>
 
@@ -333,6 +336,7 @@ onMounted(loadBanner)
         </v-col>
         <v-col>
           <Field
+            v-if="isBoard"
             v-slot="{ value, errors, handleChange }"
             v-model="event.approved"
             name="approved"
@@ -534,6 +538,17 @@ onMounted(loadBanner)
         </v-alert>
       </v-expand-transition>
     </v-container>
+
+    <v-expand-transition class="mt-4">
+      <v-alert
+        v-if="isDirty && !isBoard"
+        prominent
+        type="warning"
+        variant="outlined"
+      >
+        Making changes to this event will cause it to be hidden from the calendar until a board member has re-approved it.
+      </v-alert>
+    </v-expand-transition>
 
     <!-- Submit button -->
     <v-row>

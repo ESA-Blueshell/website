@@ -187,7 +187,6 @@ defineRule('dateTimeAfter', (value: string, [other]: string[], ctx) => {
   return dateTimeValue >= dateTimeTarget || `Must be after ${dateTimeTarget.toFormat("dd/MM/yyyy HH:mm")}`
 })
 
-
 // --- Global config ---
 configure({
   validateOnInput: true,

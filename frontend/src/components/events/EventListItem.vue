@@ -265,8 +265,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
             no-gutters
             class="align-stretch fill-height"
           >
-            <v-col class="flex-grow-1">
-              <v-list-item-title class="text-h4 d-flex align-center ga-2">
+            <v-col class="flex-grow-1 min-w-0">
+              <v-list-item-title class="text-h4 d-flex align-center ga-2 title-row">
                 {{ event.title }}
                 <v-tooltip
                   v-if="isBoard || committee"
@@ -303,7 +303,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 
             <v-col
               cols="auto"
-              class="align-self-stretch d-flex"
+              class="align-self-stretch d-flex shrink-0"
             >
               <div class="right-rail d-flex flex-column align-end justify-start h-100 w-100">
                 <div

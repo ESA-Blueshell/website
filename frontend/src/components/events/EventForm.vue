@@ -376,7 +376,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.startTime"
             name="startTime"
-            rules="required"
+            :rules="`required|dateTimeAfter:${DateTime.now().toISO()}`"
           >
             <v-text-field
               :model-value="DateTime.fromISO(value).toFormat('HH:mm')"
@@ -550,6 +550,17 @@ const isBoard = computed((): boolean => store.getters.isBoard)
       </v-alert>
     </v-expand-transition>
 
+    <v-expand-transition class="mt-4">
+      <v-alert
+        v-if="event.id && DateTime.fromISO(event.startTime) < DateTime.now()"
+        prominent
+        type="error"
+        variant="outlined"
+      >
+        It is not allowed to make changes to events which have already started.
+      </v-alert>
+    </v-expand-transition>
+
     <!-- Submit button -->
     <v-row>
       <v-col cols="12">
@@ -558,6 +569,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
           block
           class="mt-8 mx-auto"
           color="primary"
+          :disabled="event.id && DateTime.fromISO(event.startTime) < DateTime.now()"
           @click="submit"
         >
           Submit event

@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.util.ArrayList;
 import java.util.List;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
 
     @Value("${frontend.url}")

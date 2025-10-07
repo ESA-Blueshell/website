@@ -12,8 +12,7 @@ import org.mapstruct.*;
 @Slf4j
 @Mapper(
         componentModel = "spring",
-        uses = {CommitteeMemberMapper.class},
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+        uses = {CommitteeMemberMapper.class}
 )
 public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, AdvancedCommitteeDTO> {
     @BeanMapping(ignoreByDefault = true)

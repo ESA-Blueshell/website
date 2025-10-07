@@ -9,8 +9,7 @@ import org.mapstruct.*;
 import java.util.HashMap;
 import java.util.Map;
 
-@Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface BrevoContactMapper {
 
     @Mapping(target = "email", source = "email")

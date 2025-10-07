@@ -18,10 +18,10 @@ public class FileEventListener {
         this.files = files;
     }
 
-//    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-//    @Transactional(propagation = Propagation.REQUIRES_NEW)
-//    public void onDelete(PostRemoveEvent<File> evt) {
-//        var f = evt.getSource();
-//        files.deleteFromStorage(f);
-//    }
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onDelete(PostRemoveEvent<File> evt) {
+        var f = evt.getSource();
+        files.deleteFromStorage(f);
+    }
 }

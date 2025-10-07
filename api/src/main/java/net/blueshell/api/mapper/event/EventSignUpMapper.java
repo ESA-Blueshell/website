@@ -11,7 +11,7 @@ import net.blueshell.api.model.event.EventSignUp;
 import org.mapstruct.*;
 
 @Slf4j
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+@Mapper(componentModel = "spring", 
         uses = {GuestMapper.class, AnswerMapper.class, SimpleUserMapper.class})
 public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSignUpDTO> {
 

@@ -5,7 +5,7 @@ import net.blueshell.api.dto.AddressDTO;
 import net.blueshell.api.model.Address;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class AddressMapper extends BaseMapper<Address, AddressDTO> {
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")

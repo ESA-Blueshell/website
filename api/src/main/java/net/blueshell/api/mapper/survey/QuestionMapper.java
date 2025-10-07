@@ -7,7 +7,7 @@ import net.blueshell.api.model.survey.Question;
 import org.mapstruct.*;
 
 @Slf4j
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class QuestionMapper extends BaseMapper<Question, QuestionDTO> {
     @Mapping(target = "id")
     @Mapping(target = "label")

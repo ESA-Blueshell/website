@@ -13,7 +13,7 @@ import java.util.Date;
 
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class MembershipMapper extends BaseMapper<Membership, MembershipDTO> {
 
     @BeanMapping(ignoreByDefault = true)

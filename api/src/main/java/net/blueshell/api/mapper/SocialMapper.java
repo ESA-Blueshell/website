@@ -6,7 +6,7 @@ import net.blueshell.api.model.Blog;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Value;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class SocialMapper {
 
     @Value("${frontend.url}")

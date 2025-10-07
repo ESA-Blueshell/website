@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     /**
      * Build hashed filename from content hash + original name's extension.

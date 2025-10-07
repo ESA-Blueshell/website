@@ -12,8 +12,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(
         componentModel = "spring",
-        uses = {CommitteeMemberMapper.class},
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+        uses = {CommitteeMemberMapper.class}
 )
 public abstract class SimpleCommitteeMapper extends BaseMapper<Committee, SimpleCommitteeDTO> {
     @Mapping(target = "name")

@@ -5,7 +5,7 @@ import net.blueshell.api.dto.SocialDTO;
 import net.blueshell.api.dto.event.EventDTO;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class EventSocialMapper {
 
     @Mapping(source = "description", target = "text")

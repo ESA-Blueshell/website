@@ -5,7 +5,7 @@ import net.blueshell.api.dto.request.UserActivationRequest;
 import net.blueshell.api.model.User;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class UserActivationRequestMapper extends BaseMapper<User, UserActivationRequest> {
 
     @BeanMapping(ignoreByDefault = true)

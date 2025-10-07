@@ -12,9 +12,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 @Slf4j
-@Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {EventBannerMapper.class, SurveyMapper.class})
+@Mapper(componentModel = "spring", uses = {EventBannerMapper.class, SurveyMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     static LocalDateTime map(OffsetDateTime t) {

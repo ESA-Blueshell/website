@@ -12,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 import static net.blueshell.api.common.util.MappingUtil.generatePassword;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDTO> {
 
     @Autowired

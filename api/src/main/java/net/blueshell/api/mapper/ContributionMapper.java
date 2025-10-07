@@ -5,7 +5,7 @@ import net.blueshell.api.dto.ContributionDTO;
 import net.blueshell.api.model.contribution.Contribution;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class ContributionMapper extends BaseMapper<Contribution, ContributionDTO> {
     @Mapping(target = "id")
     @Mapping(target = "userId")

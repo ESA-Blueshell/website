@@ -6,7 +6,7 @@ import net.blueshell.api.dto.ContributionPeriodDTO;
 import net.blueshell.api.model.contribution.ContributionPeriod;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class ContributionPeriodMapper extends BaseMapper<ContributionPeriod, ContributionPeriodDTO> {
 
     @Mapping(target = "id")

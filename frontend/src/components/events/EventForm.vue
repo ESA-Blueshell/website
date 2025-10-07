@@ -7,7 +7,7 @@ import {
   type AdvancedCommittee,
   createEvent,
   downloadEventBanner,
-  type Event,
+  type Event, type EventBanner,
   findCommittees,
   updateEvent,
   uploadEventBanner,
@@ -161,7 +161,9 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
   })
 
   if (resp.status === 201) {
-    event.value.banner = resp.data
+    event.value.banner = {
+      file: resp.data!,
+    } as EventBanner
   } else if (!apply(formRef.value!, resp)) {
     $handleNetworkError(resp)
   }
@@ -173,7 +175,7 @@ async function loadBanner() {
   try {
     const resp = await downloadEventBanner({
       path: {
-        eventId: event.value.id,
+        bannerId: event.value.banner.id!,
       },
       throwOnError: true,
       responseType: "blob",
@@ -182,7 +184,7 @@ async function loadBanner() {
     const blob = resp?.data as Blob
     if (!blob) return
 
-    banner.value = new File([blob], event.value.banner.name!, {
+    banner.value = new File([blob], event.value.banner.file.name!, {
       type: blob.type || "application/octet-stream",
       lastModified: Date.now(),
     })

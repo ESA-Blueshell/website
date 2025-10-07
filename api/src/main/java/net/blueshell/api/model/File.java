@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.common.enums.FileType;
+import net.blueshell.api.model.event.EventBanner;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -44,6 +45,9 @@ public class File implements BaseModel {
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private FileType type;
+
+    @OneToOne(mappedBy = "file")
+    private EventBanner eventBanner;
 
     @Override
     public boolean equals(Object o) {

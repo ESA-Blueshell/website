@@ -73,17 +73,22 @@ export type Event = {
     approved?: boolean;
     membersOnly?: boolean;
     signUp?: boolean;
-    banner?: File;
+    banner?: EventBanner;
     signUpCount?: number;
     signUpForm?: Survey;
     description: string;
     location?: string;
 };
 
+export type EventBanner = {
+    id?: number;
+    fileId: number;
+    file: File;
+};
+
 export type File = {
     id?: number;
     name?: string;
-    url?: string;
     mediaType?: string;
     size?: number;
     type?: FileType;
@@ -1914,7 +1919,7 @@ export type CreateEventResponses = {
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
 
 export type UploadEventBannerData = {
-    body?: {
+    body: {
         file: Blob | File;
     };
     path?: never;
@@ -2869,49 +2874,6 @@ export type HealthCheckResponses = {
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
 
-export type DownloadEventBannerData = {
-    body?: never;
-    path: {
-        eventId: number;
-    };
-    query?: never;
-    url: '/events/{eventId}/banners';
-};
-
-export type DownloadEventBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
-
-export type DownloadEventBannerResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
-
 export type FindEventSignUpsData = {
     body?: never;
     path?: never;
@@ -3002,6 +2964,49 @@ export type FindEventSignUpByAccessTokenResponses = {
 };
 
 export type FindEventSignUpByAccessTokenResponse = FindEventSignUpByAccessTokenResponses[keyof FindEventSignUpByAccessTokenResponses];
+
+export type DownloadEventBannerData = {
+    body?: never;
+    path: {
+        bannerId: number;
+    };
+    query?: never;
+    url: '/events/banners/{bannerId}';
+};
+
+export type DownloadEventBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
+
+export type DownloadEventBannerResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
 
 export type DownloadFileData = {
     body?: never;

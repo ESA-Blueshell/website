@@ -3,7 +3,6 @@ package net.blueshell.api.mapper.event;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.event.EventDTO;
-import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.mapper.survey.SurveyMapper;
 import net.blueshell.api.model.event.Event;
 import org.mapstruct.*;
@@ -15,7 +14,7 @@ import java.time.ZoneId;
 @Slf4j
 @Mapper(componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {FileMapper.class, SurveyMapper.class})
+        uses = {EventBannerMapper.class, SurveyMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     static LocalDateTime map(OffsetDateTime t) {
@@ -52,6 +51,9 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
             event.setCreatorId(getPrincipal().getId());
         }
         event.setLastEditorId(getPrincipal().getId());
+        if (event.getBanner() != null) {
+            event.getBanner().setEvent(event);
+        }
     }
 
     @Mapping(target = "id")

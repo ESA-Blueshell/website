@@ -8,6 +8,7 @@ import net.blueshell.api.common.enums.FileType;
 import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
+import net.blueshell.api.service.event.EventBannerService;
 import net.blueshell.api.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
     private final Path assetsLocation = Paths.get("assets");
     private final FileMapper fileMapper;
     private final EventService events;
+    private final EventBannerService banners;
 
 
     @Autowired
@@ -45,12 +47,14 @@ public class FileService extends BaseModelService<File, FileRepository> {
             FileRepository fileRepository,
             FileMapper fileMapper,
             EventService events,
+            EventBannerService banners,
             @Value("${storage.location}") String storageLocation
     ) {
         super(fileRepository);
         this.rootLocation = Paths.get(storageLocation);
         this.fileMapper = fileMapper;
         this.events = events;
+        this.banners = banners;
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +82,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
         }
 
         try {
-            Files.createDirectories(rootLocation.resolve(type.toString().toLowerCase()));
+            Files.createDirectories(rootLocation.resolve(type.getDirectory()));
 
             var tmp = Files.createTempFile(rootLocation, "upload-", ".tmp");
             var md = MessageDigest.getInstance("SHA-256");
@@ -91,8 +95,10 @@ public class FileService extends BaseModelService<File, FileRepository> {
             var sha256 = HexFormat.of().formatHex(md.digest());
 
             var hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.getOriginalFilename());
-            var path = type.toString().toLowerCase() + "/" + hashedFilename;
+            var path = type.getDirectory() + "/" + hashedFilename;
             var fullPath = rootLocation.resolve(path).normalize();
+
+            log.info("Storing {} at {}", multipart.getOriginalFilename(), fullPath);
 
             if (Files.exists(fullPath)) {
                 Files.deleteIfExists(tmp);
@@ -110,7 +116,6 @@ public class FileService extends BaseModelService<File, FileRepository> {
             }
 
             var mediaType = fileMapper.resolveMediaType(hashedFilename, fullPath, multipart.getContentType());
-            log.info("populate after store({}, {}, {}, {})", entity, multipart.getOriginalFilename(), path, mediaType);
             fileMapper.populateAfterStore(entity, multipart.getOriginalFilename(), fullPath, path, mediaType);
             entity.setType(type);
 
@@ -167,9 +172,22 @@ public class FileService extends BaseModelService<File, FileRepository> {
                 .body(resource);
     }
 
-    @Transactional(readOnly = true)
-    public File findByEventId(Long eventId) {
-        var event = events.findById(eventId);
-        return self().findById(event.getBannerId());
+    public void deleteFile(File file) {
+        var fullPath = rootLocation.resolve(file.getPath()).normalize();
+
+
+        try {
+            if (Files.exists(fullPath)) {
+                Files.deleteIfExists(fullPath);
+            }
+            self().delete(file);
+        } catch (IOException e) {
+            log.error("Failed to delete file {}", fullPath, e);
+        }
+    }
+
+    public File findByEventBannerId(Long bannerId) {
+        return repository.findByEventBannerId(bannerId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Event banner not found with id: %s".formatted(bannerId)));
     }
 }

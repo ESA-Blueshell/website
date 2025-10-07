@@ -25,6 +25,4 @@ public class EventPicture implements BaseModel {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
-
-
 }

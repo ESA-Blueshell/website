@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
+import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.File;
@@ -65,12 +66,8 @@ public class Event implements BaseModel {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "banner_id")
-    private File banner;
-
-    @Column(name = "banner_id", insertable = false, updatable = false)
-    private Long bannerId;
+    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private EventBanner banner;
 
     @Column(name = "price_member")
     private Double memberPrice;

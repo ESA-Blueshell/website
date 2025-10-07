@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.dto.survey.SurveyDTO;
+import net.blueshell.api.model.event.EventBanner;
 
 import java.time.OffsetDateTime;
 
@@ -38,7 +39,7 @@ public class EventDTO extends BaseDTO {
     private boolean approved;
     private boolean membersOnly;
     private boolean signUp;
-    private FileDTO banner;
+    private EventBannerDTO banner;
     private Long signUpCount;
     @Valid
     private SurveyDTO signUpForm;

@@ -10,6 +10,7 @@ import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.repository.FileRepository;
 import net.blueshell.api.service.FileService;
+import net.blueshell.api.validation.file.AllowedContentTypes;
 import net.blueshell.api.validation.file.FileSize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -46,10 +47,10 @@ public class FileController extends BaseController<FileService, FileRepository> 
         return service.prepareAssetResponse(filename);
     }
 
-    @GetMapping("/events/{eventId}/banners")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'read')")
-    public ResponseEntity<Resource> downloadEventBanner(@PathVariable("eventId") Long eventId) {
-        var file = service.findByEventId(eventId);
+    @GetMapping("/events/banners/{bannerId}")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
+    public ResponseEntity<Resource> downloadEventBanner(@PathVariable("bannerId") Long bannerId) {
+        var file = service.findByEventBannerId(bannerId);
         return service.prepareFileResponse(file);
     }
 
@@ -62,7 +63,8 @@ public class FileController extends BaseController<FileService, FileRepository> 
     public FileDTO uploadEventBanner(
             @RequestPart("file")
             @NotNull(message = "File is required")
-            @FileSize(max = 2 * 1024 * 1024, allowEmpty = false) // 2 banner size limit
+            @FileSize(max = 2 * 1024 * 1024)
+            @AllowedContentTypes({"image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"})
             MultipartFile file
     ) {
         var stored = service.storeMultipart(file, FileType.EVENT_BANNER);

@@ -211,7 +211,9 @@ async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
   try {
     const resp = await downloadEventBanner({
-      path: {eventId: event.value.id},
+      path: {
+        bannerId: event.value.banner.id!
+      },
       throwOnError: true,
       responseType: "blob",
     })
@@ -219,7 +221,6 @@ async function loadBanner() {
     const blob = resp?.data as Blob
     if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
     bannerUrl.value = URL.createObjectURL(blob)
-    console.log("bannerUrl", bannerUrl.value)
   } catch (e) {
     console.error("Failed to download event banner:", e)
   }

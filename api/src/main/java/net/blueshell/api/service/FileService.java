@@ -94,8 +94,6 @@ public class FileService extends BaseModelService<File, FileRepository> {
             var path = type.toString().toLowerCase() + "/" + hashedFilename;
             var fullPath = rootLocation.resolve(path).normalize();
 
-            log.info("Storing file {} to location {}", multipart.getOriginalFilename(), fullPath);
-
             if (Files.exists(fullPath)) {
                 Files.deleteIfExists(tmp);
             } else {
@@ -106,14 +104,10 @@ public class FileService extends BaseModelService<File, FileRepository> {
                 }
             }
 
-            log.info("Moved file {} to location {}", multipart.getOriginalFilename(), fullPath);
-
             var entity = repository.findByName(hashedFilename).orElse(null);
             if (entity == null) {
                 entity = new File();
             }
-
-            log.info("file find by name: {}", entity.getName());
 
             var mediaType = fileMapper.resolveMediaType(hashedFilename, fullPath, multipart.getContentType());
             log.info("populate after store({}, {}, {}, {})", entity, multipart.getOriginalFilename(), path, mediaType);

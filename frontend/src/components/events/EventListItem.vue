@@ -312,7 +312,6 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                   <v-sheet
                     class="top-right-header"
                     border
-                    :elevation="1"
                   >
                     <span class="committee-name text-caption font-weight-medium font-weight-bold">
                       {{ committee.name }}
@@ -584,4 +583,6 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 .medium-emphasis-opacity {
   opacity: var(--v-medium-emphasis-opacity)
 }
+
+
 </style>

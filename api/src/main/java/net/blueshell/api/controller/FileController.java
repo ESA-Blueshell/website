@@ -2,6 +2,7 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.common.enums.FileType;
@@ -9,6 +10,7 @@ import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.repository.FileRepository;
 import net.blueshell.api.service.FileService;
+import net.blueshell.api.validation.file.FileSize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -57,7 +59,12 @@ public class FileController extends BaseController<FileService, FileRepository> 
     )
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('COMMITTEE')")
-    public FileDTO uploadEventBanner(@RequestPart("file") MultipartFile file) {
+    public FileDTO uploadEventBanner(
+            @RequestPart("file")
+            @NotNull(message = "File is required")
+            @FileSize(max = 2 * 1024 * 1024, allowEmpty = false) // 2 banner size limit
+            MultipartFile file
+    ) {
         var stored = service.storeMultipart(file, FileType.EVENT_BANNER);
         return fileMapper.toDTO(stored);
     }

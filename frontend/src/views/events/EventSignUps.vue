@@ -11,16 +11,17 @@ import {
   type PersonalInfo,
   type Question,
   QuestionType,
+  type Survey,
 } from "@/lib"
 
 const event = ref<Event>()
 const eventSignUps = ref<EventSignUp[]>([])
 
-export type EventSignUpPersons = {
-  questionAnswers: Map<number, Answer>,
+export type Response = {
+  answers: Map<number, Answer>,
   person: PersonalInfo;
 };
-const eventSignUpPersons = ref<EventSignUpPersons[]>([])
+const responses = ref<Response[]>([])
 
 const route = useRoute()
 
@@ -35,34 +36,26 @@ onMounted(async () => {
     eventSignUps.value = signupsResp.data ?? []
     event.value = (eventResp.data ?? {}) as Event
 
-    // Build per-person map: personal info + answers keyed by questionId
-    // eventSignUps.value.forEach((es: EventSignUp) => {
-      // const grouped = [...Map.groupBy(es.answers ?? [], a => a.questionId)]
-      //   // .filter(([, arr]) => arr.length)
-      //   // .map(([k, arr]) => [k, arr[0]]) as Map<number, Answer>,
-      //
-      // console.log("grouped: ", grouped)
-      // eventSignUpPersons.value.push({
-      //   questionAnswers: grouped,
-      //   person: (es.guest ?? es.user)! as PersonalInfo,
-      // })
-    // })
+    responses.value = eventSignUps.value.map((es: EventSignUp) => {
+      const answers: Map<number, Answer> = new Map()
+      es.answers?.forEach((answer: Answer) => {
+        answers.set(answer.questionId, answer)
+      })
+
+      return {
+        answers,
+        person: (es.guest ?? es.user)! as PersonalInfo,
+      } as Response
+    })
   } catch (err) {
     console.error(err)
   }
 })
 
-const participants = computed(() =>
-  [...eventSignUpPersons.value].sort((a, b) =>
-    a.person.fullName.localeCompare(b.person.fullName),
-  ),
-)
-
 const allQuestions = computed<Question[]>(() => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sf: any = (event.value as any)?.signUpForm
+  const sf: Survey | undefined = event.value?.signUpForm
   if (!sf) return []
-  return Array.isArray(sf) ? (sf as Question[]) : Object.values(sf as Record<string, Question>)
+  return sf.questions
 })
 
 const checkboxQuestions = computed<Question[]>(() =>
@@ -78,46 +71,39 @@ const openQuestions = computed<Question[]>(() =>
 )
 
 watch(radioQuestions, (radioQuestions: Question[]) => {
-  console.log(radioQuestions)
+  console.log("radio questions:", radioQuestions)
 })
 watch(allQuestions, (allQuestions: Question[]) => {
   console.log("all questions: ", allQuestions)
 })
 
-
-/** Stable key for questions even if id is optional */
-function qKey(q: Question) {
-  return q.id ?? q.idx
-}
-
-/** Given a person + questionId, return boolean[] for option selections (safe-normalized) */
-function selectionsFor(esp: EventSignUpPersons, qid: number, optionCount: number): boolean[] {
-  const sel = esp.questionAnswers[qid]?.optionSelections ?? []
-  return Array.from({length: optionCount}, (_, i) => !!sel[i])
-}
-
-/** Totals per radio question (column sums) */
-const radioTotals = computed(() => {
-  const totals: Record<number, number[]> = {}
-  radioQuestions.value.forEach((q: Question) => {
-    const id = qKey(q) as number
-    const cols = q.choiceLabels?.length ?? 0
-    const init = Array.from({length: cols}, () => 0)
-    totals[id] = init
-    participants.value.forEach(esp => {
-      const sel = selectionsFor(esp, id, cols)
-      sel.forEach((v, idx) => {
-        if (v) totals[id][idx]++
-      })
-    })
-  })
-  return totals
+watch(responses, (responses: Response[]) => {
+  console.log("responses ", responses)
 })
 
-/** Open-answer text, empty if none */
-function openTextFor(esp: EventSignUpPersons, qid: number): string {
-  return esp.questionAnswers[qid]?.textResponse?.trim?.() ?? ""
+function totalForQuestion(question: Question): number[] | undefined {
+  if (!question) return
+
+  const answers: Answer[] = responses.value.flatMap((r: Response) =>
+    Array.from(r.answers.values())
+      .filter((a: Answer) => a.questionId === question.id),
+  )
+
+  if (question.type === QuestionType.CHECKBOX || question.type === QuestionType.RADIO) {
+    const selections: boolean[][] = answers.map(a => a.optionSelections ?? [])
+    const maxOptions = Math.max(...selections.map(arr => arr.length), 0)
+    const counts = new Array(maxOptions).fill(0)
+
+    selections.forEach(arr => {
+      arr.forEach((val, i) => {
+        if (val) counts[i] += 1
+      })
+    })
+
+    return counts
+  }
 }
+
 </script>
 
 <template>
@@ -129,14 +115,9 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
         class="mx-auto my-10"
         style="max-width: 1100px"
       >
-        <p class="text-h5 mb-6">
-          Total signups: {{ eventSignUps.length }}
-        </p>
-
-        <!-- ===================== Attendees ===================== -->
         <v-card class="mb-10">
           <v-card-title class="text-h5">
-            Attendees
+            Respondents
           </v-card-title>
           <v-card-text>
             <v-table
@@ -145,28 +126,34 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
             >
               <thead>
                 <tr>
-                  <th class="w-1/3">
+                  <th
+                    class="w-1/10"
+                  >
+                    #
+                  </th>
+                  <th class="w-3/10">
                     Name
                   </th>
-                  <th class="w-1/3">
+                  <th class="w-3/10">
                     Discord
                   </th>
-                  <th class="w-1/3">
+                  <th class="w-3/10">
                     Email
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="esp in participants"
-                  :key="esp.person.discord + esp.person.email"
+                  v-for="(response, idx) in responses"
+                  :key="response.person.discord + response.person.email"
                 >
-                  <td>{{ esp.person.fullName }}</td>
+                  <td>{{ idx + 1 }}</td>
+                  <td>{{ response.person.fullName }}</td>
                   <td class="font-mono">
-                    {{ esp.person.discord }}
+                    {{ response.person.discord }}
                   </td>
                   <td class="font-mono">
-                    {{ esp.person.email }}
+                    {{ response.person.email }}
                   </td>
                 </tr>
               </tbody>
@@ -175,17 +162,21 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
         </v-card>
 
         <template v-if="radioQuestions.length">
-          <h2 class="text-h5 mb-4">
-            Radio questions
+          <h2 class="text-h5">
+            Multiple choice questions
           </h2>
+          <v-divider class="mt-1 mb-3" />
 
           <v-card
-            v-for="rq in radioQuestions"
-            :key="qKey(rq)"
+            v-for="question in radioQuestions"
+            :key="question.id!"
             class="mb-8"
           >
-            <v-card-title class="text-h6">
-              {{ rq.label }}
+            <v-card-title
+              class="text-h6 text-wrap"
+              style="word-break: break-word"
+            >
+              {{ question.label }}
             </v-card-title>
 
             <v-card-text>
@@ -196,10 +187,10 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
                 <thead>
                   <tr>
                     <th class="sticky-col">
-                      User
+                      Name
                     </th>
                     <th
-                      v-for="(opt, idx) in rq.choiceLabels"
+                      v-for="(opt, idx) in question.choiceLabels"
                       :key="idx"
                       class="text-center"
                     >
@@ -210,20 +201,25 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
 
                 <tbody>
                   <tr
-                    v-for="esp in participants"
-                    :key="qKey(rq) + '-' + esp.person.email"
+                    v-for="response in responses"
+                    :key="question.id! + '-' + response.person.email"
                   >
                     <td class="sticky-col">
-                      {{ esp.person.fullName }}
+                      {{ response.person.fullName }}
                     </td>
                     <td
-                      v-for="(_, idx) in rq.choiceLabels"
+                      v-for="(selection, idx) in response.answers.get(question.id).optionSelections"
                       :key="idx"
                       class="text-center check-cell"
                     >
                       <v-icon
-                        v-if="selectionsFor(esp, qKey(rq) as number, rq.choiceLabels?.length ?? 0)[idx]"
+                        v-if="selection"
                         icon="mdi-check-bold"
+                        size="18"
+                      />
+                      <v-icon
+                        v-else
+                        icon="mdi-close-thick"
                         size="18"
                       />
                     </td>
@@ -236,11 +232,95 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
                       Totals
                     </td>
                     <td
-                      v-for="(_, idx) in rq.choiceLabels"
+                      v-for="(val, idx) in totalForQuestion(question)"
                       :key="'t-' + idx"
                       class="text-center font-weight-bold"
                     >
-                      {{ radioTotals[qKey(rq) as number]?.[idx] ?? 0 }}
+                      {{ val ?? 0 }}
+                    </td>
+                  </tr>
+                </tfoot>
+              </v-table>
+            </v-card-text>
+          </v-card>
+        </template>
+
+        <template v-if="checkboxQuestions.length">
+          <h2 class="text-h5">
+            Questions with checkboxes
+          </h2>
+          <v-divider class="mt-1 mb-3" />
+
+          <v-card
+            v-for="question in checkboxQuestions"
+            :key="question.id!"
+            class="mb-8"
+          >
+            <v-card-title
+              class="text-h6 text-wrap"
+              style="word-break: break-word"
+            >
+              {{ question.label }}
+            </v-card-title>
+
+            <v-card-text>
+              <v-table
+                density="comfortable"
+                class="rounded-lg radio-table"
+              >
+                <thead>
+                  <tr>
+                    <th class="sticky-col">
+                      Name
+                    </th>
+                    <th
+                      v-for="(opt, idx) in question.choiceLabels"
+                      :key="idx"
+                      class="text-center"
+                    >
+                      {{ opt }}
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr
+                    v-for="response in responses"
+                    :key="question.id! + '-' + response.person.email"
+                  >
+                    <td class="sticky-col">
+                      {{ response.person.fullName }}
+                    </td>
+                    <td
+                      v-for="(selection, idx) in response.answers.get(question.id).optionSelections"
+                      :key="idx"
+                      class="text-center check-cell"
+                    >
+                      <v-icon
+                        v-if="selection"
+                        icon="mdi-check-bold"
+                        size="18"
+                      />
+                      <v-icon
+                        v-else
+                        icon="mdi-close-thick"
+                        size="18"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+
+                <tfoot>
+                  <tr>
+                    <td class="font-weight-bold sticky-col">
+                      Totals
+                    </td>
+                    <td
+                      v-for="(val, idx) in totalForQuestion(question)"
+                      :key="'t-' + idx"
+                      class="text-center font-weight-bold"
+                    >
+                      {{ val ?? 0 }}
                     </td>
                   </tr>
                 </tfoot>
@@ -250,17 +330,21 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
         </template>
 
         <template v-if="openQuestions.length">
-          <h2 class="text-h5 mb-4">
+          <h2 class="text-h5">
             Open questions
           </h2>
+          <v-divider class="mt-1 mb-3" />
 
           <v-card
-            v-for="oq in openQuestions"
-            :key="qKey(oq)"
+            v-for="question in openQuestions"
+            :key="question.id"
             class="mb-8"
           >
-            <v-card-title class="text-h6">
-              {{ oq.label }}
+            <v-card-title
+              class="text-h6 text-wrap"
+              style="word-break: break-word"
+            >
+              {{ question.label }}
             </v-card-title>
 
             <v-card-text>
@@ -271,19 +355,19 @@ function openTextFor(esp: EventSignUpPersons, qid: number): string {
                 <thead>
                   <tr>
                     <th class="w-1/4">
-                      User
+                      Name
                     </th>
                     <th>Answer</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
-                    v-for="esp in participants"
-                    :key="qKey(oq) + '-' + esp.person.email"
+                    v-for="response in responses"
+                    :key="question.id + '-' + response.person.email"
                   >
-                    <td>{{ esp.person.fullName }}</td>
+                    <td>{{ response.person.fullName }}</td>
                     <td class="whitespace-pre-wrap">
-                      {{ openTextFor(esp, qKey(oq) as number) }}
+                      {{ response.answers.get(question.id)?.textResponse }}
                     </td>
                   </tr>
                 </tbody>

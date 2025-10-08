@@ -107,6 +107,7 @@ import SocialsBanner from "@/components/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/GamesWePlay.vue"
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
+import "@/assets/animalcrossing.png"
 
 export default {
   components: {

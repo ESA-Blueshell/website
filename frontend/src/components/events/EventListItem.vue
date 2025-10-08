@@ -379,7 +379,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     <v-tooltip
                       v-if="signUp?.id"
                       location="left"
-                      text="Cancel sign-up"
+                      text="Remove sign-up"
                     >
                       <template #activator="{ props: tooltipProps }">
                         <v-badge
@@ -445,8 +445,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     <v-tooltip
                       :text="
                         signUp?.id
-                          ? (expanded ? 'Cancel editing sign-up form' : 'Edit sign-up form')
-                          : (expanded ? 'Cancel filling in sign-up form' : 'Fill in sign-up form')
+                          ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
+                          : (expanded ? 'Cancel signing up' : 'Sign up')
                       "
                       location="left"
                     >

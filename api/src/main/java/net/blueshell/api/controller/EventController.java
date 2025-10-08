@@ -72,7 +72,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
     }
 
     @GetMapping("/events/{id}")
-    @PreAuthorize("hasPermission(#id, 'Event', 'read')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Event', 'read')")
     public EventDTO findEventById(@PathVariable("id") Long id) {
         var event = service.findById(id);
         return mapper.toDTO(event);

@@ -145,7 +145,7 @@ onMounted(async () => {
         <p class="mt-8 mx-3 text-h3 text-center">
           Non-public events (to be approved)
         </p>
-        <template v-if="!noCommittees">
+        <template v-if="noCommittees">
           <h3 class="text-center">
             There are no unapproved events.
           </h3>

@@ -1,12 +1,15 @@
 <script lang="ts" setup>
-import { useRoute } from "vue-router"
+import {useRoute} from "vue-router"
 import EventListItem from "@/components/events/EventListItem.vue"
-import type { AdvancedCommittee, Event, EventSignUp } from "@/lib"
+import type {AdvancedCommittee, Event, EventSignUp} from "@/lib"
 
 interface Emits {
   (e: "delete:event", id: number): void
+
   (e: "delete:signUp", id: number): void
+
   (e: "update:event", event: Event): void
+
   (e: "update:signUp", signUp: EventSignUp): void
 }
 
@@ -53,7 +56,10 @@ function deleteSignUp(signUpId: number): void {
       <p>No upcoming events found</p>
     </div>
 
-    <v-list v-else>
+    <v-list
+      v-else
+      class="mb-8"
+    >
       <template
         v-for="(event, i) in props.events"
         :key="event.id"

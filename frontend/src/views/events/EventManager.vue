@@ -9,7 +9,9 @@ import {
   type EventSignUp,
   findCommitteesForCurrentUser,
   findEvents,
-  findEventSignUps, type Login,
+  findEventSignUps,
+  type Login,
+  type PageMetadata,
 } from "@/lib"
 import EventList from "@/components/events/EventList.vue"
 
@@ -58,29 +60,43 @@ function deleteSignUp(signUpId: number): void {
   )
 }
 
+const PAST_PAGE_SIZE = 10
 const pastEvents = ref<Event[]>([])
+const pastPage = ref(1) // 1-based for the UI
+const pastPageMeta = ref<PageMetadata | null>(null)
+
 const noCommittees = ref(false)
 const isLoaded = ref(false)
 
 const isBoard = computed(() => store.getters.isBoard)
 
+async function loadPastEventsPage(pageOneIndexed = 1) {
+  const pageZeroIndexed = Math.max(0, pageOneIndexed - 1)
+
+  const resp = await findEvents({
+    query: {
+      to: DateTime.local().startOf("day").toISO(),
+      page: pageZeroIndexed,
+      size: PAST_PAGE_SIZE,
+      sort: ["startTime,desc"],
+    },
+  })
+
+  pastEvents.value = resp.data?.content ?? []
+  pastPageMeta.value = resp.data!.page!
+  pastPage.value = (pastPageMeta.value.number ?? 0) + 1
+}
+
 onMounted(async () => {
   try {
     const [
       upcomingResp,
-      pastResp,
       committeesResp,
       signUpsResp,
     ] = await Promise.all([
       findEvents({
         query: {
           from: DateTime.local().startOf("day").toISO(),
-        },
-      }),
-      findEvents({
-        query: {
-          from: DateTime.local().minus({months: 1}).startOf("day").toISO(),
-          to: DateTime.local().startOf("day").toISO(),
         },
       }),
       findCommitteesForCurrentUser(),
@@ -94,20 +110,20 @@ onMounted(async () => {
     ])
 
     events.value = upcomingResp.data?.content ?? []
-    pastEvents.value = pastResp.data?.content ?? []
     committees.value = committeesResp.data as AdvancedCommittee[] ?? []
     eventSignUps.value = signUpsResp.data ?? []
-    if (committees.value.length === 0) {
+    if ((committees.value?.length ?? 0) === 0) {
       noCommittees.value = true
     }
+
+    await loadPastEventsPage(1)
   } finally {
-    // Once everything is done, mark as loaded
     isLoaded.value = true
   }
 })
 </script>
+
 <template>
-  <!-- Render a loading indicator (or whatever you prefer) until data is fetched -->
   <v-main v-if="isLoaded">
     <top-banner title="Event Manager" />
 
@@ -124,25 +140,35 @@ onMounted(async () => {
         Create new event
       </v-btn>
 
-      <!-- Only show non-public events if user is board AND there are non-approved events -->
-      <template v-if="isBoard && events.filter((e: Event) => !e.approved).length > 0">
+      <template v-if="isBoard">
+        <v-divider class="mt-5 my-3" />
         <p class="mt-8 mx-3 text-h3 text-center">
           Non-public events (to be approved)
         </p>
-        <event-list
-          :committees="committees"
-          :event-sign-ups="eventSignUps"
-          :events="events.filter((e: Event) => !e.approved)"
-          @delete:event="deleteEvent"
-          @update:event="updateEvent"
-          @delete:sign-up="deleteSignUp"
-          @update:sign-up="updateSignUp"
-        />
+        <template v-if="!noCommittees">
+          <h3 class="text-center">
+            There are no unapproved events.
+          </h3>
+        </template>
+        <template v-else>
+          <event-list
+            :committees="committees"
+            :event-sign-ups="eventSignUps"
+            :events="events.filter((e: Event) => !e.approved)"
+            @delete:event="deleteEvent"
+            @update:event="updateEvent"
+            @delete:sign-up="deleteSignUp"
+            @update:sign-up="updateSignUp"
+          />
+        </template>
       </template>
 
-      <p class="mt-8 mx-3 mb-4 text-h3 text-center">
+      <v-divider class="mt-5 my-3" />
+
+      <p class="mx-3 mb-4 text-h3 text-center">
         Upcoming Events
       </p>
+
       <event-list
         :committees="committees"
         :event-sign-ups="eventSignUps"
@@ -153,9 +179,22 @@ onMounted(async () => {
         @update:sign-up="updateSignUp"
       />
 
-      <p class="mt-8 mx-3 mb-4 text-h3 text-center">
+      <v-divider class="my-3" />
+
+      <p class="mx-3 mb-2 text-h3 text-center">
         Past Events
       </p>
+
+      <v-divider class="my-3" />
+
+      <v-pagination
+        v-if="(pastPageMeta?.totalPages ?? 1) > 1"
+        v-model="pastPage"
+        :length="pastPageMeta?.totalPages ?? 1"
+        class="mx-3 mb-4"
+        @update:model-value="(p: number) => loadPastEventsPage(p)"
+      />
+
       <event-list
         :committees="committees"
         :event-sign-ups="eventSignUps"
@@ -177,17 +216,13 @@ onMounted(async () => {
     </div>
   </v-main>
 
-  <!-- Show a loading indicator (or placeholder) while fetching data -->
   <div
     v-else
     class="text-center mt-8"
   >
     <v-progress-circular indeterminate />
-    <!-- or you can just show some text: "Loading events..." -->
   </div>
 </template>
 
-
 <style lang="scss" scoped>
-
 </style>

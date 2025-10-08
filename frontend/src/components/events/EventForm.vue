@@ -38,8 +38,8 @@ function getDefaultEvent(): Event {
     title: "",
     location: "",
     description: "",
-    startTime: "",
-    endTime: "",
+    startTime: DateTime.now().plus({days: 1}).toISO(),
+    endTime: DateTime.now().plus({hours: 3}).toISO(),
     memberPrice: 0,
     publicPrice: 0,
     approved: false,
@@ -69,24 +69,47 @@ findCommittees()
 
 const sameEndDate = ref(true)
 
-function toISO({date, time, dateTime}: {
-  date?: string
-  time?: string
-  dateTime?: string
-}): string {
-  if (dateTime) {
-    const dt = DateTime.fromISO(dateTime)
-    date = date ?? dt.toFormat("yyyy-MM-dd")
-    time = time ?? dt.toFormat("HH:mm")
+function toISO({
+                 date,
+                 time,
+                 dateTime,
+               }: { date?: string; time?: string; dateTime?: string }): string {
+  const base = dateTime ? DateTime.fromISO(dateTime) : null
+  const hasValidBase = !!base && base.isValid
+
+  const d = date ?? (hasValidBase ? base!.toFormat("yyyy-MM-dd") : undefined)
+  const t = time ?? (hasValidBase ? base!.toFormat("HH:mm") : undefined)
+
+  if (!d && !t) return ""
+
+  if (d && t) {
+    const dt = DateTime.fromFormat(`${d} ${t}`, "yyyy-MM-dd HH:mm")
+    return dt.isValid ? dt.toISO()! : ""
   }
 
-  if (!date && !time) return ""
+  if (d) {
+    const dt = DateTime.fromFormat(d, "yyyy-MM-dd").set({
+      hour: hasValidBase ? base!.hour : 0,
+      minute: hasValidBase ? base!.minute : 0,
+    })
+    return dt.isValid ? dt.toISO()! : ""
+  }
 
-  return (
-    DateTime.fromFormat(`${date ?? ""} ${time ?? ""}`.trim(), "yyyy-MM-dd HH:mm")
-      .toISO() ?? ""
-  )
+  if (t) {
+    const ref = hasValidBase ? base! : DateTime.now()
+    const [h, m] = t.split(":").map((n) => Number(n))
+    const dt = ref.set({hour: h ?? 0, minute: m ?? 0})
+    return dt.isValid ? dt.toISO()! : ""
+  }
+
+  return ""
 }
+
+function safeFormatISO(iso: string, fmt: string) {
+  const dt = DateTime.fromISO(iso || "")
+  return dt.isValid ? dt.toFormat(fmt) : ""
+}
+
 
 watch([event, sameEndDate], () => {
   if (sameEndDate.value) {
@@ -190,6 +213,14 @@ async function loadBanner() {
     console.error("Failed to download event banner:", e)
   }
 }
+
+watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
+  if (!sameEndDate.value) return
+
+  const end = DateTime.fromISO(event.value.endTime)
+  const time = end.isValid ? end.toFormat("HH:mm") : "00:00"
+  event.value.endTime = toISO({time, dateTime: event.value.startTime})
+})
 
 onMounted(loadBanner)
 const initialJson = ref(JSON.stringify(event.value))
@@ -361,7 +392,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required"
           >
             <v-text-field
-              :model-value="DateTime.fromISO(value).toFormat('yyyy-MM-dd')"
+              :model-value="safeFormatISO(value, 'yyyy-MM-dd')"
               label="Start date"
               prepend-icon="mdi-calendar"
               type="date"
@@ -376,15 +407,15 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.startTime"
             name="startTime"
-            :rules="`required|dateTimeAfter:${DateTime.now().toISO()}`"
+            :rules="event.id ? 'required' : `required|dateTimeAfter:${DateTime.now().toISO()}`"
           >
             <v-text-field
-              :model-value="DateTime.fromISO(value).toFormat('HH:mm')"
+              :model-value="safeFormatISO(value, 'HH:mm')"
               label="Start time"
               prepend-icon="mdi-clock"
               type="time"
               :error-messages="errors"
-              @update:model-value="(time: string) => handleChange(toISO({time, dateTime: event.startTime}))"
+              @update:model-value="(time: string) => handleChange(toISO({ time, dateTime: event.startTime }))"
               @blur="handleBlur"
             />
           </Field>
@@ -401,7 +432,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
           >
             <v-text-field
               :disabled="sameEndDate"
-              :model-value="DateTime.fromISO(value).toFormat('yyyy-MM-dd')"
+              :model-value="safeFormatISO(value, 'yyyy-MM-dd')"
               label="End date"
               prepend-icon="mdi-calendar"
               type="date"
@@ -416,7 +447,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.endTime"
             name="endTime"
-            :rules="`required|dateTimeAfter:@startTime`"
+            rules="required|dateTimeAfter:@startTime"
           >
             <v-text-field
               :model-value="DateTime.fromISO(value).toFormat('HH:mm')"
@@ -487,7 +518,12 @@ const isBoard = computed((): boolean => store.getters.isBoard)
               :model-value="value"
               hide-details
               label="Enable sign-up"
-              @update:model-value="handleChange"
+              @update:model-value="(enable: boolean) => {
+                if (!event.signUpForm && !enable) {
+                  event.signUpForm = []
+                }
+                handleChange(enable)
+              }"
             />
           </Field>
         </v-col>
@@ -501,7 +537,12 @@ const isBoard = computed((): boolean => store.getters.isBoard)
               :model-value="value"
               hide-details
               label="Enable sign-up form"
-              @update:model-value="(enable: boolean) => {event.signUp = enable; handleChange(enable)}"
+              @update:model-value="(enable: boolean) => {
+                if (!event.signUp && enable) {
+                  event.signUp = true
+                }
+                handleChange(enable)
+              }"
             />
           </Field>
         </v-col>
@@ -546,7 +587,8 @@ const isBoard = computed((): boolean => store.getters.isBoard)
         type="warning"
         variant="outlined"
       >
-        Making changes to this event will cause it to be hidden from the calendar until a board member has re-approved it.
+        Making changes to this event will cause it to be hidden from the calendar until a board member has re-approved
+        it.
       </v-alert>
     </v-expand-transition>
 

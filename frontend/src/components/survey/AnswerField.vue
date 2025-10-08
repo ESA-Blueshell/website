@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { Field } from "vee-validate"
-import { computed, ref, watch, watchEffect } from "vue"
-import { type Answer, type Question, QuestionType } from "@/lib"
+import {Field} from "vee-validate"
+import {computed, ref, watch, watchEffect} from "vue"
+import {type Answer, type Question, QuestionType} from "@/lib"
 
 interface Props {
   question: Question
@@ -9,14 +9,15 @@ interface Props {
   name: string
   modelValue?: Answer | null
 }
+
 const props = defineProps<Props>()
 const emit = defineEmits<{ (e: "update:modelValue", v: Answer): void }>()
 
 const choiceCount = computed(() => props.question.choiceLabels?.length ?? 0)
-const local = ref<Answer>({ questionId: props.question.id! })
+const local = ref<Answer>({questionId: props.question.id!})
 
 function normalizeForQuestion(a: Answer): Answer {
-  let next: Answer = { questionId: props.question.id!, ...a }
+  let next: Answer = {...a}
 
   if (props.question.type === QuestionType.OPEN) {
     if (typeof next.textResponse !== "string") next.textResponse = ""
@@ -38,14 +39,14 @@ function normalizeForQuestion(a: Answer): Answer {
 watch(
   () => props.modelValue,
   (v) => {
-    local.value = normalizeForQuestion(v ?? { questionId: props.question.id! })
+    local.value = normalizeForQuestion(v ?? {questionId: props.question.id!})
   },
-  { immediate: true, deep: true },
+  {immediate: true, deep: true},
 )
 
 watchEffect(() => {
   if (local.value.questionId !== props.question.id) {
-    local.value = normalizeForQuestion({ ...local.value, questionId: props.question.id! })
+    local.value = normalizeForQuestion({...local.value, questionId: props.question.id!})
   }
 })
 
@@ -56,8 +57,6 @@ function updateAndEmit(next: Answer) {
 </script>
 
 <template>
-  <!-- Description: rendered by parent; no input here -->
-
   <template v-if="question.type === QuestionType.OPEN">
     <Field
       v-slot="{ value, errors, handleChange, handleBlur }"
@@ -84,35 +83,49 @@ function updateAndEmit(next: Answer) {
       :rules="(val: boolean[]) => (Array.isArray(val) && val.some(Boolean)) || 'Select at least one option'"
     >
       <div>
-        <v-checkbox
-          v-for="(opt, j) in (question.choiceLabels ?? [])"
-          :key="j"
-          :label="opt"
-          :model-value="(value?.[j] ?? false)"
-          hide-details
-          @update:model-value="(checked: boolean) => {
-            const next = Array.isArray(value) ? value.slice() : Array((question.choiceLabels?.length ?? 0)).fill(false)
+        <template v-if="question.type === QuestionType.RADIO">
+          <v-radio-group
+            :model-value="value.findIndex(Boolean)"
+            :error-messages="errors"
+            @update:model-value="(idx: number) => {
+              const next = Array(choiceCount).fill(false)
+              if (idx >= 0 && idx < choiceCount) next[idx] = true
+              updateAndEmit({ ...local, optionSelections: next })
+              handleChange(next)
+            }"
+            @blur="handleBlur"
+          >
+            <v-radio
+              v-for="(opt, j) in (question.choiceLabels ?? [])"
+              :key="j"
+              :label="opt"
+              :value="j"
+            />
+          </v-radio-group>
+        </template>
 
-            if (question.type === QuestionType.RADIO) {
-              // exclusive selection
-              for (let k = 0; k < next.length; k++) next[k] = false
+        <template v-else>
+          <v-checkbox
+            v-for="(opt, j) in (question.choiceLabels ?? [])"
+            :key="j"
+            :label="opt"
+            :model-value="(value?.[j] ?? false)"
+            hide-details
+            @update:model-value="(checked: boolean) => {
+              const next = Array.isArray(value) ? value.slice() : Array(choiceCount).fill(false)
               next[j] = checked
-            } else {
-              // multiple allowed
-              next[j] = checked
-            }
-
-            updateAndEmit({ ...local, optionSelections: next })
-            handleChange(next)
-          }"
-          @blur="handleBlur"
-        />
-        <div
-          v-if="errors?.length"
-          class="text-error text-caption mt-1"
-        >
-          {{ errors[0] }}
-        </div>
+              updateAndEmit({ ...local, optionSelections: next })
+              handleChange(next)
+            }"
+            @blur="handleBlur"
+          />
+          <div
+            v-if="errors?.length"
+            class="text-error text-caption mt-1"
+          >
+            {{ errors[0] }}
+          </div>
+        </template>
       </div>
     </Field>
   </template>

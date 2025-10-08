@@ -56,13 +56,15 @@ function deleteSignUp(signUpId: number): void {
       <p>No upcoming events found</p>
     </div>
 
-    <v-list
+    <div
       v-else
       class="mb-8"
     >
-      <template
-        v-for="(event, i) in props.events"
+      <v-card
+        v-for="event in props.events"
         :key="event.id"
+        class="my-3"
+        rounded="lg"
       >
         <event-list-item
           :event="event"
@@ -74,8 +76,7 @@ function deleteSignUp(signUpId: number): void {
           @update:sign-up="updateSignUp"
           @update:event="updateEvent"
         />
-        <v-divider v-if="i < props.events.length - 1" />
-      </template>
-    </v-list>
+      </v-card>
+    </div>
   </v-expand-transition>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Field } from "vee-validate"
 import { type Question, QuestionType } from "@/lib"
+import {ref, watch} from "vue"
 
 interface Props {
   canMoveUp?: boolean
@@ -58,6 +59,7 @@ function removeChoice(j: number) {
   next.splice(j, 1)
   model.value = { ...model.value, choiceLabels: next }
 }
+
 </script>
 
 <template>

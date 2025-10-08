@@ -266,8 +266,11 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
             class="align-stretch fill-height flex-nowrap"
           >
             <v-col class="flex-grow-1 min-w-0">
-              <v-list-item-title class="text-h4 d-flex align-center ga-2 title-row">
-                <span class="title-text">
+              <v-list-item-title class="text-h4 d-flex align-center ga-2">
+                <span
+                  class="text-wrap"
+                  style="word-break: break-word;"
+                >
                   {{ event.title }}
                   <v-tooltip
                     v-if="isBoard || committee"
@@ -300,7 +303,11 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                 {{ event.membersOnly ? "Members only" : "" }}
               </div>
 
-              <div v-html="event.description ? $markdownToHtml(event.description) : 'No description...'" />
+              <div
+                class="text-wrap"
+                style="word-break: break-word"
+                v-html="event.description ? $markdownToHtml(event.description) : 'No description...'"
+              />
             </v-col>
 
             <v-col
@@ -543,19 +550,6 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 <style lang="scss" scoped>
 .flex-nowrap {
   flex-wrap: nowrap !important;
-}
-
-.title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.title-text {
-  flex: 1 1 16rem;
-  min-inline-size: 0;
-  word-break: break-word;
 }
 
 .approve-btn {

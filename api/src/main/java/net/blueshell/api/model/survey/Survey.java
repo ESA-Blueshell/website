@@ -20,7 +20,7 @@ public class Survey implements BaseModel {
     private Long id;
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Question> questions = new HashSet<>();
+    private Set<Question> questions;
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)
     private long responseCount;

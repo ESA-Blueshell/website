@@ -5,7 +5,7 @@ import {computed, ref, watch} from "vue"
 
 const model = defineModel<Survey>({default: {questions: []}})
 const id = ref<number | undefined>(model.value.id)
-const initialQuestions = ref<Question[]>(JSON.parse(JSON.stringify(model.value.questions)))
+const initialQuestions = ref<Question[]>(JSON.parse(JSON.stringify(model.value.questions ?? [])))
 const initialJson = ref(JSON.stringify(initialQuestions.value))
 const isDirty = computed(() => JSON.stringify(model.value.questions) !== initialJson.value)
 
@@ -112,7 +112,7 @@ watch(isDirty, (dirty: boolean) => {
 
     <v-expand-transition class="mt-4">
       <v-alert
-        v-if="isDirty"
+        v-if="id && isDirty"
         prominent
         type="warning"
         variant="outlined"

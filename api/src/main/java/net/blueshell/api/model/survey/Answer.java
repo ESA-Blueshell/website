@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.converter.BooleanListConverter;
+import net.blueshell.api.model.event.EventSignUp;
+import net.blueshell.api.model.event.EventSignUpAnswer;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -33,6 +35,9 @@ public class Answer implements BaseModel {
 
     @Column(name = "text_response")
     private String textResponse;
+
+    @OneToOne(mappedBy = "answer", cascade = CascadeType.ALL)
+    private EventSignUpAnswer eventSignUpAnswer;
 
     @Override
     public boolean equals(Object o) {

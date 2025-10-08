@@ -19,8 +19,6 @@ public class QuestionDTO extends BaseDTO {
     private Long surveyId;
     @NotNull
     private QuestionType type;
-
     private String label;
-
     private List<String> choiceLabels;
 }

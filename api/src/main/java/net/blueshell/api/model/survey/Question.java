@@ -30,7 +30,7 @@ public class Question implements BaseModel {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "idx")           // 0- or 1-based, whichever you already use
+    @Column(name = "idx")
     private Long idx;
 
     @Column(name = "survey_id", insertable = false, updatable = false)
@@ -40,8 +40,8 @@ public class Question implements BaseModel {
     @JoinColumn(name = "survey_id")
     private Survey survey;
 
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Answer> answers = new HashSet<>();
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Answer> answers;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type")

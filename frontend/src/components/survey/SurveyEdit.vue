@@ -1,22 +1,23 @@
 <script lang="ts" setup>
-import { type Survey, type Question, QuestionType } from "@/lib"
+import {type Question, QuestionType, type Survey} from "@/lib"
 import QuestionField from "@/components/survey/QuestionField.vue"
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 
-const model = defineModel<Survey>({ default: { questions: [] } })
-const initialModel = ref<Survey>(JSON.parse(JSON.stringify(model.value)))
-const initialJson = ref(JSON.stringify(initialModel.value))
-const isDirty = computed(() => JSON.stringify(model.value) !== initialJson.value)
+const model = defineModel<Survey>({default: {questions: []}})
+const id = ref<number | undefined>(model.value.id)
+const initialQuestions = ref<Question[]>(JSON.parse(JSON.stringify(model.value.questions)))
+const initialJson = ref(JSON.stringify(initialQuestions.value))
+const isDirty = computed(() => JSON.stringify(model.value.questions) !== initialJson.value)
 
 function
 addQuestion(type: QuestionType) {
   model.value.questions ??= []
   const nextIdx = model.value.questions.length
-  const base = { type, label: "", idx: nextIdx } as Question
+  const base = {type, label: "", idx: nextIdx} as Question
   const q: Question =
     type === QuestionType.OPEN || type === QuestionType.DESCRIPTION
       ? base
-      : { ...base, choiceLabels: ["", ""] }
+      : {...base, choiceLabels: ["", ""]}
 
   model.value = {
     ...model.value,
@@ -25,19 +26,19 @@ addQuestion(type: QuestionType) {
 }
 
 function reindex(questions: Question[]) {
-  return questions.map((q, idx) => ({ ...q, idx }))
+  return questions.map((q, idx) => ({...q, idx}))
 }
 
 function updateQuestion(i: number, updated: Question) {
   const next = model.value.questions.slice()
-  next[i] = { ...updated, idx: i }
-  model.value = { ...model.value, questions: next }
+  next[i] = {...updated, idx: i}
+  model.value = {...model.value, questions: next}
 }
 
 function removeQuestion(i: number) {
   const next = model.value.questions.slice()
   next.splice(i, 1)
-  model.value = { ...model.value, questions: reindex(next) }
+  model.value = {...model.value, questions: reindex(next)}
 }
 
 function moveQuestionUp(i: number) {
@@ -45,7 +46,7 @@ function moveQuestionUp(i: number) {
   const next = model.value.questions.slice()
   if (!next) return
   [next[i - 1]!, next[i]!] = [next[i]!, next[i - 1]!]
-  model.value = { ...model.value, questions: reindex(next) }
+  model.value = {...model.value, questions: reindex(next)}
 }
 
 function moveQuestionDown(i: number) {
@@ -53,8 +54,17 @@ function moveQuestionDown(i: number) {
   const next = model.value.questions.slice()
   if (!next) return
   [next[i + 1]!, next[i]!] = [next[i]!, next[i + 1]!]
-  model.value = { ...model.value, questions: reindex(next) }
+  model.value = {...model.value, questions: reindex(next)}
 }
+
+watch(isDirty, (dirty: boolean) => {
+  if (dirty) {
+    model.value.id = undefined
+  } else {
+    model.value.id = id.value
+  }
+})
+
 </script>
 
 <template>
@@ -115,6 +125,7 @@ function moveQuestionDown(i: number) {
 
 <style lang="scss" scoped>
 @use '../../styles/settings';
+
 .form {
   border-radius: settings.$border-radius-root;
   border: 1px solid rgb(var(--v-theme-accent));

@@ -190,6 +190,27 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
   }
 }
 
+watch(
+  () => event.value.signUp,
+  (signUp) => {
+    if (!signUp) {
+      event.value.signUpForm = undefined
+      enableSignUpForm.value = false
+    }
+  }
+)
+
+watch(
+  enableSignUpForm,
+  (on) => {
+    if (!on) {
+      event.value.signUpForm = undefined
+    } else {
+      event.value.signUp = true
+    }
+  }
+)
+
 
 async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
@@ -518,12 +539,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
               :model-value="value"
               hide-details
               label="Enable sign-up"
-              @update:model-value="(enable: boolean) => {
-                if (!event.signUpForm && !enable) {
-                  event.signUpForm = []
-                }
-                handleChange(enable)
-              }"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -537,12 +553,7 @@ const isBoard = computed((): boolean => store.getters.isBoard)
               :model-value="value"
               hide-details
               label="Enable sign-up form"
-              @update:model-value="(enable: boolean) => {
-                if (!event.signUp && enable) {
-                  event.signUp = true
-                }
-                handleChange(enable)
-              }"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>

@@ -42,7 +42,7 @@ public class EventSignUp implements BaseModel {
     @JoinColumn(name = "guest_id")
     private Guest guest;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinTable(
             name = "event_sign_up_answers",
             joinColumns = @JoinColumn(name = "event_sign_up_id"),

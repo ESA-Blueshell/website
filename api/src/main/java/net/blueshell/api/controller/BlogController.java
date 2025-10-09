@@ -59,6 +59,6 @@ public class BlogController extends BaseController<BlogService, BlogMapper> {
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long id) {
-        service.delete(id);
+        service.deleteById(id);
     }
 }

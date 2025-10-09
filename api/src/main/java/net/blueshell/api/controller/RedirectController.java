@@ -34,7 +34,7 @@ public class RedirectController extends BaseController<RedirectService, Redirect
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('BOARD')")
     public void deleteRedirect(@RequestParam("id") Long telemetryId) {
-        service.delete(telemetryId);
+        service.deleteById(telemetryId);
     }
 
     @GetMapping("/telemetry/redirects")

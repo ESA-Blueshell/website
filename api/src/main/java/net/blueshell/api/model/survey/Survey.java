@@ -19,7 +19,7 @@ public class Survey implements BaseModel {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL)
     private Set<Question> questions;
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)

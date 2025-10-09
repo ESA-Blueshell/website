@@ -84,6 +84,6 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventSignup(@PathVariable("eventSignupId") Long eventSignupId,
                                   @RequestParam(value = "accessToken", required = false) String accessToken) {
-        service.delete(eventSignupId);
+        service.deleteById(eventSignupId);
     }
 }

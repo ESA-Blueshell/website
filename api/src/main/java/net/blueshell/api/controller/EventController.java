@@ -89,6 +89,6 @@ public class EventController extends BaseController<EventService, EventMapper> {
     @DeleteMapping("/events/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventById(@PathVariable("eventId") Long eventId) {
-        service.delete(eventId);
+        service.deleteById(eventId);
     }
 }

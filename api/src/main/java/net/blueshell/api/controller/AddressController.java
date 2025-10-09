@@ -59,6 +59,6 @@ public class AddressController extends BaseController<AddressService, AddressMap
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAddressById(@PathVariable("id") Long id) {
-        service.delete(id);
+        service.deleteById(id);
     }
 }

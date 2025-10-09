@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * <h2>Generic CRUD service</h2>
@@ -177,9 +178,16 @@ public abstract class BaseModelService<
      * Delete the entity with the given primary key
      */
     @Transactional
-    public void delete(Long id) {
+    public void deleteById(Long id) {
         var entity = self().findById(id);
         self().delete(entity);
+    }
+
+    @Transactional
+    public void deleteAllById(Set<Long> ids) {
+        for (var id : ids) {
+            self().deleteById(id);
+        }
     }
 
     /**
@@ -188,5 +196,12 @@ public abstract class BaseModelService<
     @Transactional
     public void delete(T entity) {
         repository.delete(entity);
+    }
+
+    @Transactional
+    public void deleteAll(Set<T> entities) {
+        for (var entity : entities) {
+            self().delete(entity);
+        }
     }
 }

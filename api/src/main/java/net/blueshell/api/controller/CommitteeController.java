@@ -85,6 +85,6 @@ public class CommitteeController extends AdvancedController<CommitteeService, Ad
     @DeleteMapping(value = "/committees/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCommitteeById(@PathVariable("id") Long id) {
-        service.delete(id);
+        service.deleteById(id);
     }
 }

@@ -88,7 +88,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUserById(@PathVariable("userId") Long userId) {
-        service.delete(userId);
+        service.deleteById(userId);
     }
 
     @PutMapping(value = "/users/{userId}/roles")

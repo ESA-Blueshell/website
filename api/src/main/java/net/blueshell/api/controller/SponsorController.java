@@ -55,6 +55,6 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
     @DeleteMapping(value = "/sponsors/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSponsorById(@PathVariable("id") Long id) {
-        service.delete(id);
+        service.deleteById(id);
     }
 }

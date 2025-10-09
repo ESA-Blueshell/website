@@ -57,16 +57,7 @@ function moveQuestionDown(i: number) {
   model.value = {...model.value, questions: reindex(next)}
 }
 
-watch(isDirty, (dirty: boolean) => {
-  if (dirty) {
-    model.value.id = undefined
-  } else {
-    model.value.id = id.value
-  }
-})
-
 </script>
-
 <template>
   <div class="pa-4 form">
     <template

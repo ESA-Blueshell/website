@@ -1,5 +1,6 @@
 package net.blueshell.api.mapper.survey;
 
+import io.micrometer.common.lang.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.survey.SurveyDTO;
@@ -11,9 +12,8 @@ import org.mapstruct.*;
 public abstract class SurveyMapper extends BaseMapper<Survey, SurveyDTO> {
     @Mapping(target = "id")
     @Mapping(target = "questions")
-    @Mapping(target = "responseCount")
     @BeanMapping(ignoreByDefault = true)
-    public abstract Survey fromDTO(SurveyDTO dto, @MappingTarget Survey survey);
+    public abstract Survey fromDTO(SurveyDTO dto);
 
     @Mapping(target = "id")
     @Mapping(target = "questions")

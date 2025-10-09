@@ -9,5 +9,5 @@ import java.util.Set;
 
 @Repository
 public interface AnswerRepository extends BaseRepository<Answer> {
-    Set<Answer> findBySurveyId(Long surveyId);
+    Set<Answer> findByQuestionSurveyId(Long surveyId);
 }

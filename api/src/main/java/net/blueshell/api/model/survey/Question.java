@@ -3,6 +3,7 @@ package net.blueshell.api.model.survey;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.QuestionType;
 import net.blueshell.api.model.converter.StringListConverter;
 import org.hibernate.annotations.SQLDelete;
@@ -23,6 +24,7 @@ import java.util.Set;
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
+@EntityListeners(JpaListener.class)
 public class Question implements BaseModel {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

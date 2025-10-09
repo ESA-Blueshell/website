@@ -19,6 +19,6 @@ public class AnswerService extends BaseModelService<Answer, AnswerRepository> {
 
 
     public Set<Answer> findBySurveyId(Long surveyId) {
-        return repository.findBySurveyId(surveyId);
+        return repository.findByQuestionSurveyId(surveyId);
     }
 }

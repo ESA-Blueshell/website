@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface EventSignUpRepository extends BaseRepository<EventSignUp> {
@@ -23,4 +24,6 @@ public interface EventSignUpRepository extends BaseRepository<EventSignUp> {
     List<EventSignUp> findByEventId(Long eventId);
 
     User user(User user);
+
+    Set<EventSignUp> findAllByEventSignUpFormId(Long surveyId);
 }

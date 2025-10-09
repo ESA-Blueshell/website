@@ -1,9 +1,11 @@
 package net.blueshell.api.event;
 
+import net.blueshell.api.common.enums.QuestionType;
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.model.survey.Question;
+import net.blueshell.api.service.event.EventSignUpService;
 import net.blueshell.api.service.survey.AnswerService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -15,9 +17,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class QuestionEventListener {
 
     private final AnswerService answers;
+    private final EventSignUpService signUps;
 
-    public QuestionEventListener(AnswerService answers) {
+    public QuestionEventListener(AnswerService answers, EventSignUpService signUps) {
         this.answers = answers;
+        this.signUps = signUps;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -25,8 +29,12 @@ public class QuestionEventListener {
     public void onPersist(PostPersistEvent<Question> evt) {
         var q = evt.getSource();
 
-        if (q.getSurveyId() != null) {
+        // If a new description is added, there is no need to clear the survey.
+        // If a new question is added, then we do need to wipe the answers and signups.
+        // This is because the surveys will need to be filled in again.
+        if (q.getType() != QuestionType.DESCRIPTION && q.getSurveyId() != null) {
             answers.deleteAll(answers.findBySurveyId(q.getSurveyId()));
+            signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()));
         }
     }
 
@@ -39,6 +47,7 @@ public class QuestionEventListener {
         // Therefore, all answers for the survey need to be wiped.
         if (q.getAnswers() != null && !q.getAnswers().isEmpty()) {
             answers.deleteAll(answers.findBySurveyId(q.getSurveyId()));
+            signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()));
         }
     }
 

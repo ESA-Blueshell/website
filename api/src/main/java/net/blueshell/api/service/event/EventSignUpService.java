@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -56,5 +57,9 @@ public class EventSignUpService extends BaseModelService<EventSignUp, EventSignU
         if (filter == null) filter = new EventSignUpFilter();
         var spec = EventSignUpSpecifications.fromFilter(filter, getPrincipal());
         return repository.findAll(spec);
+    }
+
+    public Set<EventSignUp> findBySurveyId(Long surveyId) {
+        return repository.findAllByEventSignUpFormId(surveyId);
     }
 }

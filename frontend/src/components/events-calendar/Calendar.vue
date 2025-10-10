@@ -34,7 +34,7 @@
     <v-btn
       class="ml-2"
       size="small"
-      variant="text"
+      variant="outlined"
       :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
       target="_blank"
       rel="noopener"

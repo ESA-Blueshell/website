@@ -14,113 +14,131 @@ import {
   type PageMetadata,
 } from "@/lib"
 import EventList from "@/components/events/EventList.vue"
+import {useRoute} from "vue-router"
 
 const store = useStore()
+const route = useRoute()
+
 const login = computed<Login>(() => store.getters.getLogin)
+const isBoard = computed<boolean>(() => store.getters.isBoard)
 
-const events = ref<Event[] | null>(null)
-const committees = ref<AdvancedCommittee[] | null>(null)
-const eventSignUps = ref<EventSignUp[] | null>(null)
+const events = ref<Event[]>([])
+const committees = ref<AdvancedCommittee[]>([])
+const eventSignUps = ref<EventSignUp[]>([])
 
-function updateEvent(event: Event): void {
-  const list = events.value ?? []
-  const idx = list.findIndex(es => es.id === event.id)
-  if (idx >= 0) {
-    events.value = [
-      ...list.slice(0, idx),
-      event,
-      ...list.slice(idx + 1),
-    ]
-  } else {
-    events.value = [...list, event]
-  }
-}
-
-function updateSignUp(signUp: EventSignUp): void {
-  const list = eventSignUps.value ?? []
-  const idx = list.findIndex(es => es.id === signUp.id)
-  if (idx >= 0) {
-    eventSignUps.value = [
-      ...list.slice(0, idx),
-      signUp,
-      ...list.slice(idx + 1),
-    ]
-  } else {
-    eventSignUps.value = [...list, signUp]
-  }
-}
-
-function deleteEvent(id: number) {
-  events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
-}
-
-function deleteSignUp(signUpId: number): void {
-  eventSignUps.value = (eventSignUps.value ?? []).filter(
-    (es: EventSignUp) => es.id !== signUpId,
-  )
-}
-
-const PAST_PAGE_SIZE = 10
 const pastEvents = ref<Event[]>([])
-const pastPage = ref(1) // 1-based for the UI
-const pastPageMeta = ref<PageMetadata | null>(null)
+const pastPageMeta = ref<PageMetadata>()
 
-const noCommittees = ref(false)
 const isLoaded = ref(false)
 
-const isBoard = computed(() => store.getters.isBoard)
+const initialPage = (() => {
+  const raw = Number(route.query.page ?? 1)
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 1
+})()
+const internalPage = ref<number>(initialPage)
 
-async function loadPastEventsPage(pageOneIndexed = 1) {
+
+const page = computed<number>({
+  get() {
+    return internalPage.value
+  },
+  set(p: number) {
+    const next = Number.isFinite(p) && p > 0 ? Math.floor(p) : 1
+    if (next === internalPage.value) return
+    internalPage.value = next
+    setUrlPage(next)
+    void loadPast(next)
+  },
+})
+
+function setUrlPage(nextPage: number) {
+  const url = new URL(window.location.href)
+  url.searchParams.set("page", String(nextPage))
+  window.history.replaceState(window.history.state, "", url)
+}
+
+async function loadPast(pageOneIndexed = 1) {
   const pageZeroIndexed = Math.max(0, pageOneIndexed - 1)
-
   const resp = await findEvents({
     query: {
       to: DateTime.local().startOf("day").toISO(),
       page: pageZeroIndexed,
-      size: PAST_PAGE_SIZE,
+      size: 10,
       sort: ["startTime,desc"],
     },
   })
-
   pastEvents.value = resp.data?.content ?? []
   pastPageMeta.value = resp.data!.page!
-  pastPage.value = (pastPageMeta.value.number ?? 0) + 1
+}
+
+type RefLike<V> = { value: V }
+
+type WithOptionalId = { id?: number }
+
+function upsert<T extends WithOptionalId>(
+  listRef: RefLike<T[] | undefined>,
+  item: T,
+) {
+  const list = listRef.value ?? []
+  const idx = list.findIndex(e => e.id === item.id)
+  listRef.value =
+    idx === -1
+      ? [...list, item]
+      : [...list.slice(0, idx), item, ...list.slice(idx + 1)]
+}
+
+function removeById<T extends WithOptionalId>(
+  listRef: RefLike<T[] | undefined>,
+  id: number,
+) {
+  const list = listRef.value ?? []
+  listRef.value = list.filter(e => e.id !== id)
+}
+
+function updateEvent(event: Event) {
+  upsert(events, event)
+}
+
+function deleteEvent(id: number) {
+  removeById<Event>(events, id)
+}
+
+function updateSignUp(su: EventSignUp) {
+  events.value.find((e: Event) => e.id === su.eventId)!.signUpCount! += 1
+  upsert(eventSignUps, su)
+}
+
+function deleteSignUp(id: number) {
+  const signUp = eventSignUps.value.find((es) => es.id === id)!
+  events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! -= 1
+  removeById<EventSignUp>(eventSignUps, id)
 }
 
 onMounted(async () => {
   try {
-    const [
-      upcomingResp,
-      committeesResp,
-      signUpsResp,
-    ] = await Promise.all([
-      findEvents({
-        query: {
-          from: DateTime.local().startOf("day").toISO(),
-        },
-      }),
+    const [upcomingResp, committeesResp, signUpsResp] = await Promise.all([
+      findEvents({query: {from: DateTime.local().startOf("day").toISO()}}),
       findCommitteesForCurrentUser(),
       findEventSignUps({
-          query: {
-            from: DateTime.local().minus({months: 1}).startOf("day").toISO(),
-            userId: login.value.userId,
-          },
+        query: {
+          from: DateTime.local().minus({months: 1}).startOf("day").toISO(),
+          userId: login.value.userId,
         },
-      ),
+      }),
     ])
 
     events.value = upcomingResp.data?.content ?? []
-    committees.value = committeesResp.data as AdvancedCommittee[] ?? []
+    committees.value = (committeesResp.data as AdvancedCommittee[]) ?? []
     eventSignUps.value = signUpsResp.data ?? []
-    if ((committees.value?.length ?? 0) === 0) {
-      noCommittees.value = true
-    }
 
-    await loadPastEventsPage(1)
+    setUrlPage(internalPage.value)
+
+    await loadPast(internalPage.value)
   } finally {
     isLoaded.value = true
   }
 })
+
 </script>
 
 <template>
@@ -132,7 +150,7 @@ onMounted(async () => {
       style="max-width: 800px"
     >
       <v-btn
-        :disabled="noCommittees"
+        :disabled="!committees.length"
         block
         class="mx-3"
         to="create"
@@ -145,7 +163,7 @@ onMounted(async () => {
         <p class="mt-8 mx-3 text-h3 text-center">
           Non-public events (to be approved)
         </p>
-        <template v-if="noCommittees">
+        <template v-if="!committees.length">
           <h3 class="text-center">
             There are no unapproved events.
           </h3>
@@ -168,7 +186,6 @@ onMounted(async () => {
       <p class="mx-3 mb-4 text-h3 text-center">
         Upcoming Events
       </p>
-
       <event-list
         :committees="committees"
         :event-sign-ups="eventSignUps"
@@ -184,15 +201,13 @@ onMounted(async () => {
       <p class="mx-3 mb-2 text-h3 text-center">
         Past Events
       </p>
-
       <v-divider class="my-3" />
 
       <v-pagination
         v-if="(pastPageMeta?.totalPages ?? 1) > 1"
-        v-model="pastPage"
+        v-model="page"
         :length="pastPageMeta?.totalPages ?? 1"
         class="mx-3 mb-4"
-        @update:model-value="(p: number) => loadPastEventsPage(p)"
       />
 
       <event-list
@@ -210,8 +225,8 @@ onMounted(async () => {
       </p>
 
       <v-img
-        v-if="noCommittees"
-        :src="myRequire('../@/assets/noCommittees.jpg')"
+        v-if="!committees.length"
+        :src="$require('@/assets/noCommittees.jpg')"
       />
     </div>
   </v-main>
@@ -224,5 +239,4 @@ onMounted(async () => {
   </div>
 </template>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

@@ -18,7 +18,6 @@ import {DateTime} from "luxon"
 const store = useStore()
 const calendarRef = ref()
 
-
 const events = ref<Event[]>([])
 const committees = ref<AdvancedCommittee[]>([])
 const eventSignUps = ref<EventSignUp[]>([])
@@ -50,7 +49,6 @@ onMounted(async () => {
 
   const fetchedEvents = eventsResp.data?.content ?? []
 
-  // Assign signups first, as otherwise event rendering happens before they're available
   if (isLoggedIn.value) {
     eventSignUps.value = signupsResp.data ?? []
     committees.value = committeesResp.data as AdvancedCommittee[] ?? []
@@ -58,47 +56,47 @@ onMounted(async () => {
   events.value = fetchedEvents
 })
 
-function deleteSignUp(signUpId: number): void {
-  const signUp = eventSignUps.value.find((es) => es.id === signUpId)!
-  events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! -= 1
-  eventSignUps.value = (eventSignUps.value ?? []).filter(
-    (es: EventSignUp) => es.id !== signUpId,
-  )
+type RefLike<V> = { value: V }
+
+type WithOptionalId = { id?: number }
+
+function upsert<T extends WithOptionalId>(
+  listRef: RefLike<T[] | undefined>,
+  item: T,
+) {
+  const list = listRef.value ?? []
+  const idx = list.findIndex(e => e.id === item.id)
+  listRef.value =
+    idx === -1
+      ? [...list, item]
+      : [...list.slice(0, idx), item, ...list.slice(idx + 1)]
 }
 
-function updateSignUp(signUp: EventSignUp): void {
-  const list = eventSignUps.value ?? []
-  const idx = list.findIndex(es => es.id === signUp.id)
-  if (idx >= 0) {
-    eventSignUps.value = [
-      ...list.slice(0, idx),
-      signUp,
-      ...list.slice(idx + 1),
-    ]
-  } else {
-    events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! += 1
-    eventSignUps.value = [...list, signUp]
-  }
+function removeById<T extends WithOptionalId>(
+  listRef: RefLike<T[] | undefined>,
+  id: number,
+) {
+  const list = listRef.value ?? []
+  listRef.value = list.filter(e => e.id !== id)
 }
 
-function updateEvent(event: Event): void {
-  const list = events.value
-  const idx = list.findIndex(e => e.id === event.id)
-  if (idx >= 0) {
-    events.value = [
-      ...list.slice(0, idx),
-      event,
-      ...list.slice(idx + 1),
-    ]
-  } else {
-    events.value = [...list, event]
-  }
-  calendarRef.value?.updateEvent(event)
+function updateEvent(event: Event) {
+  upsert(events, event)
 }
 
 function deleteEvent(id: number) {
-  events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
-  calendarRef.value?.deleteEvent?.(id)
+  removeById<Event>(events, id)
+}
+
+function updateSignUp(su: EventSignUp) {
+  events.value.find((e: Event) => e.id === su.eventId)!.signUpCount! += 1
+  upsert(eventSignUps, su)
+}
+
+function deleteSignUp(id: number) {
+  const signUp = eventSignUps.value.find((es) => es.id === id)!
+  events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! -= 1
+  removeById<EventSignUp>(eventSignUps, id)
 }
 
 </script>

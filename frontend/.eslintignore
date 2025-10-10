@@ -2,3 +2,4 @@
 .gitignore
 /.yarn/
 /node_modules/
+/src/lib/

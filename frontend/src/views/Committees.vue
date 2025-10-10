@@ -1,6 +1,7 @@
 <template>
   <v-main>
     <top-banner title="Committees" />
+
     <div
       class="mx-auto my-10"
       style="max-width: 800px"
@@ -27,16 +28,35 @@
           Do you have a great idea for an event or a new committee, then be sure to contact us!
         </p>
       </div>
-      <v-expansion-panels variant="accordion">
+
+      <div
+        v-if="loading"
+        class="mx-3 my-6"
+      >
+        <v-progress-circular indeterminate />
+      </div>
+
+      <div
+        v-else-if="!committees.length"
+        class="mx-3 my-6"
+      >
+        <p class="text-body-1">
+          No committees found.
+        </p>
+      </div>
+
+      <v-expansion-panels
+        v-else
+        variant="accordion"
+      >
         <v-expansion-panel
           v-for="committee in committees"
-          :key="committee.name"
+          :key="committee.id ?? committee.name"
         >
           <v-expansion-panel-title class="text-h5 font-weight-light">
             {{ committee.name }}
           </v-expansion-panel-title>
           <v-expansion-panel-text>
-            <!-- eslint-disable-next-line vue/no-v-html -->
             <p v-html="$markdownToHtml(committee.description)" />
           </v-expansion-panel-text>
         </v-expansion-panel>
@@ -44,32 +64,30 @@
     </div>
   </v-main>
 </template>
-<script lang="ts">
+
+<script setup lang="ts">
+import {onMounted, ref} from "vue"
 import TopBanner from "@/components/banners/TopBanner.vue"
+
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+
+import type {SimpleCommittee} from "@/lib"
+import {findCommittees} from "@/lib"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 
-export default {
-  components: {TopBanner: TopBanner},
-  data: () => {
-    return {
-      committees: [],
-    }
-  },
-  mounted() {
+const committees = ref<SimpleCommittee[]>([])
+const loading = ref<boolean>(false)
 
-    this.$http.get("committees")
-      .then(response => {
-        let data = response.data
-        if (data.length > 0) {
-          this.committees = data
-        } else {
-          this.noCommittees = true
-        }
-      })
-      .catch(e => $handleNetworkError(e))
-  },
-  methods: {$markdownToHtml},
-}
+onMounted(async () => {
+  loading.value = true
+  try {
+    const {data} = await findCommittees()
+    committees.value = (data ?? []) as SimpleCommittee[]
+  } catch (e) {
+    $handleNetworkError(e)
+    committees.value = []
+  } finally {
+    loading.value = false
+  }
+})
 </script>
-

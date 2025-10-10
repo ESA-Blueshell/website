@@ -352,6 +352,12 @@ export type PersonalInfo = {
     email: string;
 };
 
+export type SimpleCommittee = {
+    id?: number;
+    name?: string;
+    description?: string;
+};
+
 export type FindMembershipByIdData = {
     body?: never;
     path: {

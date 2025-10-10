@@ -1,11 +1,23 @@
-<script lang="ts" setup>
-const props = defineProps([
-  "username",
-  "status",
-  "avatarUrl",
-  "halfWidth",
-  "customText",
-])
+<script setup lang="ts">
+import type {WidgetMember} from "@/lib"
+
+type PresenceStatus = WidgetMember["status"] // string in your model; keep as-is
+
+interface Props {
+  username?: string
+  status?: PresenceStatus
+  avatarUrl?: string
+  halfWidth?: boolean
+  customText?: string
+}
+
+withDefaults(defineProps<Props>(), {
+  halfWidth: false,
+  status: undefined,
+  username: undefined,
+  avatarUrl: undefined,
+  customText: undefined,
+})
 </script>
 
 <template>
@@ -18,7 +30,7 @@ const props = defineProps([
   >
     <div class="discord-membership-image-wrapper">
       <v-lazy
-        :options="{'threshold':0.1}"
+        :options="{ threshold: 0.1 }"
         height="32px"
         width="32px"
       >
@@ -29,8 +41,12 @@ const props = defineProps([
         >
       </v-lazy>
       <span
-        :class="{ 'discord-membership-online': status==='online', 'discord-membership-idle': status==='idle', 'discord-membership-dnd': status==='dnd' }"
         class="discord-membership-status"
+        :class="{
+          'discord-membership-online': status === 'online',
+          'discord-membership-idle': status === 'idle',
+          'discord-membership-dnd': status === 'dnd'
+        }"
       />
     </div>
     <span
@@ -39,11 +55,12 @@ const props = defineProps([
     />
   </v-col>
 
-
   <v-col
     v-else
+    :md="halfWidth ? 6 : 3"
     class="discord-membership-entry"
-    cols="auto"
+    cols="6"
+    sm="4"
   >
     <span
       class="discord-membership-name"
@@ -53,13 +70,8 @@ const props = defineProps([
 </template>
 
 <style lang="scss" scoped>
-
 .discord-membership-entry {
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-align: center;
-  -ms-flex-align: center;
   align-items: center;
   margin: 6px 0;
   padding: 0 16px;
@@ -92,12 +104,9 @@ const props = defineProps([
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  -webkit-box-flex: 1;
-  -ms-flex: 1;
   flex: 1;
   color: white;
 }
-
 
 .discord-membership-online {
   background-color: hsl(139, 47.4%, 38%);

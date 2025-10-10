@@ -4,16 +4,13 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {DateTime} from "luxon"
 import {type ContributionPeriod, findCurrentContributionPeriod} from "@/lib"
 
-// Reactive variables
-const contributionPeriod = ref<ContributionPeriod>() // Initialize as null
+const contributionPeriod = ref<ContributionPeriod>()
 const currentPeriod = ref(false)
-const loading = ref(true) // Loading state
-const error = ref(null) // Error state
+const loading = ref(true)
+const error = ref(null)
 
-// Number formatter for Euro currency
 const euros = new Intl.NumberFormat("nl-NL", {style: "currency", currency: "EUR"})
 
-// Function to format the period
 const formatPeriod = (period: ContributionPeriod) => {
   if (!period || !period.startDate || !period.endDate) return "N/A"
   const start = DateTime.fromISO(period.startDate).toFormat("yyyy")
@@ -22,13 +19,11 @@ const formatPeriod = (period: ContributionPeriod) => {
 }
 
 
-// Function to format currency
-const formatCurrency = (amount) => {
+const formatCurrency = (amount: number | undefined) => {
   if (amount === null || amount === undefined) return "€0.00"
   return euros.format(amount)
 }
 
-// Function to fetch the current contribution period
 const getContributionPeriod = async () => {
   try {
     const response = await findCurrentContributionPeriod()
@@ -38,9 +33,7 @@ const getContributionPeriod = async () => {
     const startDate = DateTime.fromISO(contributionPeriod.value?.startDate as string)
     const endDate = DateTime.fromISO(contributionPeriod.value?.endDate as string)
     currentPeriod.value = now >= startDate && now <= endDate
-  } catch (err) {
-    // Capture and set error message
-    error.value = err.response?.data?.message || err.message || "Unknown error occurred."
+  } catch (err: unknown) {
     $handleNetworkError(err)
   } finally {
     // Update loading state
@@ -48,7 +41,6 @@ const getContributionPeriod = async () => {
   }
 }
 
-// Fetch the current contribution period on component mount
 onMounted(() => {
   getContributionPeriod()
 })

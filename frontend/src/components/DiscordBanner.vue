@@ -1,5 +1,5 @@
 <template>
-  <div :style="{background: $vuetify.theme.computedThemes[$vuetify.theme.global.name].colors.wallpaper }">
+  <div :style="backgroundStyle">
     <v-container class="pa-0">
       <v-row
         align="center"
@@ -16,7 +16,9 @@
             Join us on our Discord server
           </p>
         </v-col>
+
         <v-spacer />
+
         <v-col cols="auto">
           <v-btn
             color="primary"
@@ -24,24 +26,26 @@
             target="_blank"
           >
             <img
-              :src="$require('@/assets/discord.svg')"
+              :src="discordIconUrl"
               alt="discord icon"
               style="width: 35px"
             >
           </v-btn>
         </v-col>
       </v-row>
+
       <v-row
         v-if="discordData"
         class="mx-auto pt-4 container"
       >
         <v-col
-          :md="Object.entries(channels).length > 0 ? 5 : 12"
+          :md="hasChannels ? 5 : 12"
           cols="12"
         >
           <p class="text-h6 text-sm-h5 text-white mb-2">
-            {{ discordData.presence_count }} people now online on discord
+            {{ discordData!.presence_count }} people now online on discord
           </p>
+
           <div
             class="overflow-hidden"
             style="border: 1px solid #A8FF00;border-radius: 10px"
@@ -51,18 +55,19 @@
               style="max-height: 205px"
             >
               <v-container class="px-0 pt-2">
-                <v-row style="justify-content: center">
+                <v-row justify="start">
                   <discord-user
-                    v-for="membership in discordData.members"
+                    v-for="membership in discordData!.members"
                     :key="membership.username"
                     :avatar-url="membership.avatar_url"
-                    :half-width="Object.entries(channels).length > 0"
+                    :half-width="hasChannels"
                     :status="membership.status"
                     :username="membership.username"
                   />
                   <discord-user
-                    v-if="discordData.members.length > 99"
-                    :custom-text="'+ '+(discordData.presence_count - discordData.members.length)+' more'"
+                    v-if="discordData!.members.length > 99"
+                    :half-width="hasChannels"
+                    :custom-text="'+' + (discordData!.presence_count - discordData!.members.length) + ' more'"
                   />
                 </v-row>
               </v-container>
@@ -73,19 +78,20 @@
         <v-spacer />
 
         <v-col
-          v-if="Object.entries(channels).length > 0"
+          v-if="hasChannels"
           cols="12"
           md="5"
         >
           <p class="text-h5 text-white mb-2">
             Active public VCs
           </p>
+
           <v-container
             class="overflow-y-auto pa-0"
             style="max-height: 205px"
           >
             <v-row
-              v-for="[channelId,channelName] in Object.entries(channels)"
+              v-for="[channelId, channelName] in channelEntries"
               :key="channelId"
               class="mb-2"
               style="border: 1px solid #A8FF00;border-radius: 10px"
@@ -122,54 +128,73 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import {computed, onMounted, ref} from "vue"
+import axios from "axios"
+import {useTheme} from "vuetify"
 import DiscordUser from "@/components/DiscordUser.vue"
 import {$require} from "@/plugins/require.js"
+import type {SnowflakeType, WidgetChannel, WidgetMember, WidgetResponse} from "@/lib"
 
-export default {
-  name: "DiscordBanner",
-  components: {DiscordUser},
-  data: () => ({
-    discordData: null,
-    channels: {},
-    membersInVC: {},
-  }),
-  mounted() {
-    this.$http.get("https://discordapp.com/api/guilds/324285132133629963/widget.json")
-      .then(response => {
-        this.discordData = response.data
-        this.shuffleArray(this.discordData.members)
+const theme = useTheme()
 
-        const membersInAChannel = this.discordData.members.filter(membership => membership.channel_id)
+const backgroundStyle = computed(() => {
+  const colors = theme.current.value.colors as Record<string, string> | undefined
+  return {background: colors?.wallpaper ?? ""}
+})
 
-        this.discordData.channels.forEach(channel => {
-          const membersInThisChannel = membersInAChannel.filter(membership => membership.channel_id === channel.id)
-          if (membersInThisChannel.length > 0) {
-            this.channels[channel.id] = channel.name
-            this.membersInVC[channel.id] = membersInThisChannel
-          }
-        })
+const discordData = ref<WidgetResponse | null>(null)
+const channels = ref<Record<SnowflakeType, string>>({})
+const membersInVC = ref<Record<SnowflakeType, WidgetMember[]>>({})
 
-
-      })
-  },
-  methods: {
-    $require,
-    shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        const temp = array[i]
-        array[i] = array[j]
-        array[j] = temp
-      }
-    },
-
-  },
+function shuffleArray<T>(array: T[]): void {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i]!, array[j]!] = [array[j]!, array[i]!]
+  }
 }
+
+const channelEntries = computed<[SnowflakeType, string][]>(() =>
+  Object.entries(channels.value) as [SnowflakeType, string][],
+)
+const hasChannels = computed(() => channelEntries.value.length > 0)
+
+const discordIconUrl = $require("@/assets/discord.svg") as string
+
+onMounted(async () => {
+  try {
+    // (Optional) Keep your existing side-effect if needed:
+    // await getGuildWidget({ path: { guild_id: '324285132133629963' } })
+
+    const {data} = await axios.get<WidgetResponse>(
+      "https://discordapp.com/api/guilds/324285132133629963/widget.json",
+    )
+    discordData.value = data
+
+    if (discordData.value?.members) {
+      shuffleArray(discordData.value.members)
+    }
+
+    const membersInAChannel = (discordData.value?.members ?? []).filter(
+        (m: WidgetMember) => !!m.channel_id,
+      )
+
+    ;(discordData.value?.channels ?? []).forEach((channel: WidgetChannel) => {
+      const membersInThisChannel = membersInAChannel.filter(
+        (m: WidgetMember) => m.channel_id === channel.id,
+      )
+      if (membersInThisChannel.length > 0) {
+        channels.value[channel.id] = channel.name
+        membersInVC.value[channel.id] = membersInThisChannel
+      }
+    })
+  } catch (err) {
+    console.error("Failed to load Discord widget", err)
+  }
+})
 </script>
 
 <style lang="scss" scoped>
-
 .container {
   max-width: 1100px;
   height: 100%;
@@ -185,5 +210,4 @@ export default {
 .v-row {
   margin: 0;
 }
-
 </style>

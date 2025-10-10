@@ -1,12 +1,9 @@
 <template>
   <v-card max-width="350px">
-    <!-- Start of the toolbar in the selected event menu -->
-    <!-- Includes the event's title and the location and add to calendar buttons -->
     <v-toolbar
-      :color="toolbarColor || undefined"
+      :color="primary"
       dark
     >
-      <!-- Name of the event -->
       <v-toolbar-title
         v-if="eventTitle.length < 15"
         :text="eventTitle"
@@ -49,7 +46,6 @@
       </v-tooltip>
     </v-toolbar>
 
-    <!-- Promo image -->
     <img
       v-if="bannerUrl"
       :src="bannerUrl"
@@ -58,9 +54,7 @@
     >
 
     <v-card-text>
-      <!-- Description of the event -->
       <p v-if="description">
-        <!-- eslint-disable-next-line vue/no-v-html -->
         <span
           v-html="expand || !longDescription ? markdownToHtml(description) : markdownToHtml(firstHundredWords)+'...'"
         />
@@ -75,14 +69,12 @@
       <p v-else>
         No description...
       </p>
-      <!-- Starting time of the event -->
       <v-divider class="my-2" />
       <p>
         <b>When</b>
         <br>
         {{ formattedDate }}
       </p>
-      <!-- Only show this part if there is a location for this event -->
       <v-divider
         v-if="location"
         class="my-2"
@@ -126,8 +118,6 @@ const eventTitle = computed(() => {
   const title = (event.value.title as string | undefined)
   return title ?? ""
 })
-
-const toolbarColor = "primary";
 
 const description = computed(() => {
   return (event.value.description as string)

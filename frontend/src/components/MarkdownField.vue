@@ -46,22 +46,22 @@ const previewHtml = computed(() =>
     <div class="mb-3">
       <v-tabs
         v-model="tab"
-        density="compact"
-        selected-class="tab--active"
         class="d-flex ga-4"
+        density="compact"
         hide-slider
+        selected-class="tab--active"
       >
         <v-tab
-          value="write"
-          prepend-icon="mdi-pencil-outline"
           class="rounded"
+          prepend-icon="mdi-pencil-outline"
+          value="write"
         >
           Write
         </v-tab>
         <v-tab
-          value="preview"
           class="rounded"
           prepend-icon="mdi-eye-outline"
+          value="preview"
         >
           Preview
         </v-tab>
@@ -72,16 +72,16 @@ const previewHtml = computed(() =>
       <v-window-item value="write">
         <v-textarea
           v-model="value"
-          :label="label"
-          :placeholder="placeholder"
-          :variant="variant"
-          :density="density"
-          :rows="rows"
           :auto-grow="autoGrow"
+          :density="density"
           :disabled="disabled"
-          :readonly="readonly"
           :error-messages="errorMessages as any"
           :hide-details="hideDetails"
+          :label="label"
+          :placeholder="placeholder"
+          :readonly="readonly"
+          :rows="rows"
+          :variant="variant"
           v-bind="$attrs"
           @blur="emit('blur')"
           @focus="emit('focus')"
@@ -100,8 +100,8 @@ const previewHtml = computed(() =>
 
             <div
               v-else
-              class="markdown-body"
               :aria-live="previewAriaLive"
+              class="markdown-body"
               v-html="previewHtml"
             />
           </v-card-text>
@@ -116,7 +116,7 @@ const previewHtml = computed(() =>
     </div>
   </div>
 </template>
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .md-editor {
   :deep(.v-tabs),
   :deep(.v-tab),

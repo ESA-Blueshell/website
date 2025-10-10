@@ -262,8 +262,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
       <div ref="eventElement">
         <v-container>
           <v-row
-            no-gutters
             class="align-stretch fill-height flex-nowrap"
+            no-gutters
           >
             <v-col class="flex-grow-1 min-w-0">
               <v-list-item-title class="text-h4 d-flex align-center ga-2">
@@ -274,18 +274,18 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                   {{ event.title }}
                   <v-tooltip
                     v-if="isBoard || committee"
-                    location="bottom"
                     :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
+                    location="bottom"
                   >
                     <template #activator="{ props: approveProps }">
                       <v-btn
-                        class="approve-btn text-none"
-                        v-bind="approveProps"
-                        :prepend-icon="approvedIcon"
-                        :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
                         :color="approvedColor"
-                        variant="tonal"
+                        :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
+                        :prepend-icon="approvedIcon"
+                        class="approve-btn text-none"
                         size="small"
+                        v-bind="approveProps"
+                        variant="tonal"
                         @click="toggleEventApproved"
                       >
                         {{ approvedLabel }}
@@ -311,8 +311,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
             </v-col>
 
             <v-col
-              cols="auto"
               class="align-self-stretch d-flex shrink-0"
+              cols="auto"
             >
               <div class="right-rail d-flex flex-column align-end justify-start h-100">
                 <div
@@ -320,8 +320,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                   class="mb-3"
                 >
                   <v-sheet
-                    class="top-right-header"
                     border
+                    class="top-right-header"
                   >
                     <span class="committee-name text-caption font-weight-medium font-weight-bold">
                       {{ committee.name }}
@@ -384,8 +384,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                       <template #activator="{ props: tooltipProps }">
                         <v-badge
                           v-if="event.signUpCount > 0"
-                          color="blue"
                           :content="event.signUpCount"
+                          color="blue"
                           offset-x="8"
                           offset-y="8"
                         />
@@ -407,8 +407,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     >
                       <template #activator="{ props: tooltipProps }">
                         <v-badge
-                          color="blue"
                           :content="event.signUpCount"
+                          color="blue"
                           offset-x="8"
                           offset-y="8"
                         />
@@ -452,8 +452,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                     >
                       <template #activator="{ props: tooltipProps }">
                         <v-badge
-                          color="blue"
                           :content="event.signUpCount"
+                          color="blue"
                           offset-x="8"
                           offset-y="8"
                         />
@@ -539,8 +539,8 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
 
     <deletion-confirmation-dialog
       v-model="showDeleteDialog"
-      :title="`Delete event`"
       :message="`Are you sure you want to delete “${event.title}”? This can’t be undone.`"
+      :title="`Delete event`"
       @confirm="confirmDeleteEvent"
     />
   </div>

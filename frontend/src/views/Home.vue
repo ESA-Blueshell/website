@@ -97,7 +97,7 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {ref} from "vue"
 
 import MainBanner from "@/components/banners/MainBanner.vue"

@@ -46,11 +46,11 @@ const guestData = ref(
       rules="required"
     >
       <v-text-field
-        :model-value="value"
         :error-messages="errors"
+        :model-value="value"
         label="Name"
-        @update:model-value="handleChange"
         @blur="handleBlur"
+        @update:model-value="handleChange"
       />
     </Field>
     <Field
@@ -60,11 +60,11 @@ const guestData = ref(
       rules="required"
     >
       <v-text-field
-        :model-value="value"
         :error-messages="errors"
+        :model-value="value"
         label="Discord username"
-        @update:model-value="handleChange"
         @blur="handleBlur"
+        @update:model-value="handleChange"
       />
     </Field>
     <Field
@@ -74,12 +74,12 @@ const guestData = ref(
       rules="required|email|noStudentEmail"
     >
       <v-text-field
-        :model-value="value"
         :error-messages="errors"
+        :model-value="value"
         hint="We'll use this to send you a link you can use to edit your sign-up form later"
         label="Email"
-        @update:model-value="handleChange"
         @blur="handleBlur"
+        @update:model-value="handleChange"
       />
     </Field>
   </Form>

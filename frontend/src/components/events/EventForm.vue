@@ -197,7 +197,7 @@ watch(
       event.value.signUpForm = undefined
       enableSignUpForm.value = false
     }
-  }
+  },
 )
 
 watch(
@@ -208,7 +208,7 @@ watch(
     } else {
       event.value.signUp = true
     }
-  }
+  },
 )
 
 
@@ -271,12 +271,12 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Event name"
-              :error-messages="errors"
               required
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -292,12 +292,12 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Location"
-              :error-messages="errors"
               required
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -312,11 +312,11 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required"
           >
             <markdown-field
+              :error-messages="errors"
               :model-value="value"
               label="Description"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -331,12 +331,12 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="minValue:0|maxValue:99.99"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Price for members"
               prepend-icon="mdi-currency-eur"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -348,12 +348,12 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="minValue:0|maxValue:99.99"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Price for non-members"
               prepend-icon="mdi-currency-eur"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -394,8 +394,8 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             name="approved"
           >
             <v-checkbox
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="Approved"
               @update:model-value="handleChange"
             />
@@ -413,13 +413,13 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="safeFormatISO(value, 'yyyy-MM-dd')"
               label="Start date"
               prepend-icon="mdi-calendar"
               type="date"
-              :error-messages="errors"
-              @update:model-value="(date: string) => handleChange(toISO({date, dateTime: event.endTime}))"
               @blur="handleBlur"
+              @update:model-value="(date: string) => handleChange(toISO({date, dateTime: event.endTime}))"
             />
           </Field>
         </v-col>
@@ -427,17 +427,17 @@ const isBoard = computed((): boolean => store.getters.isBoard)
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
             v-model="event.startTime"
-            name="startTime"
             :rules="event.id ? 'required' : `required|dateTimeAfter:${DateTime.now().toISO()}`"
+            name="startTime"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="safeFormatISO(value, 'HH:mm')"
               label="Start time"
               prepend-icon="mdi-clock"
               type="time"
-              :error-messages="errors"
-              @update:model-value="(time: string) => handleChange(toISO({ time, dateTime: event.startTime }))"
               @blur="handleBlur"
+              @update:model-value="(time: string) => handleChange(toISO({ time, dateTime: event.startTime }))"
             />
           </Field>
         </v-col>
@@ -453,13 +453,13 @@ const isBoard = computed((): boolean => store.getters.isBoard)
           >
             <v-text-field
               :disabled="sameEndDate"
+              :error-messages="errors"
               :model-value="safeFormatISO(value, 'yyyy-MM-dd')"
               label="End date"
               prepend-icon="mdi-calendar"
               type="date"
-              :error-messages="errors"
-              @update:model-value="(date: string) => handleChange(toISO({date, dateTime: event.endTime}))"
               @blur="handleBlur"
+              @update:model-value="(date: string) => handleChange(toISO({date, dateTime: event.endTime}))"
             />
           </Field>
         </v-col>
@@ -471,13 +471,13 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required|dateTimeAfter:@startTime"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="DateTime.fromISO(value).toFormat('HH:mm')"
               label="End time"
               prepend-icon="mdi-clock"
               type="time"
-              :error-messages="errors"
-              @update:model-value="(time: string) => handleChange(toISO({time, dateTime: event.endTime}))"
               @blur="handleBlur"
+              @update:model-value="(time: string) => handleChange(toISO({time, dateTime: event.endTime}))"
             />
           </Field>
         </v-col>
@@ -493,16 +493,16 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="required"
           >
             <v-select
-              :model-value="value"
               :disabled="!committees"
+              :error-messages="errors"
               :items="committees"
+              :model-value="value"
               item-title="name"
               item-value="id"
               label="Representative committee"
               prepend-icon="mdi-account-group"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -514,14 +514,14 @@ const isBoard = computed((): boolean => store.getters.isBoard)
             rules="fileSize"
           >
             <v-file-input
+              :error-messages="errors"
               :model-value="value as File"
               accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
               clearable
               label="Promo image (Max 2MB)"
               show-size
-              :error-messages="errors"
-              @update:model-value="(blob: File) => onBannerChange(blob, handleChange)"
               @blur="handleBlur"
+              @update:model-value="(blob: File) => onBannerChange(blob, handleChange)"
             />
           </Field>
         </v-col>
@@ -564,8 +564,8 @@ const isBoard = computed((): boolean => store.getters.isBoard)
           <Field
             v-slot="{ errors, handleChange }"
             v-model="event.signUpForm"
-            rules="notEmpty"
             name="signUpForm"
+            rules="notEmpty"
           >
             <survey-edit
               v-model="event.signUpForm"
@@ -618,11 +618,11 @@ const isBoard = computed((): boolean => store.getters.isBoard)
     <v-row>
       <v-col cols="12">
         <v-btn
+          :disabled="event.id && DateTime.fromISO(event.startTime) < DateTime.now()"
           :loading="submitting"
           block
           class="mt-8 mx-auto"
           color="primary"
-          :disabled="event.id && DateTime.fromISO(event.startTime) < DateTime.now()"
           @click="submit"
         >
           Submit event

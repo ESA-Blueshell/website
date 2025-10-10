@@ -110,9 +110,9 @@ const deleteSignUp = (id: number) => {
           Upcoming Events
         </p>
         <event-list
+          :committees="committees"
           :event-sign-ups="eventSignUps"
           :events="events"
-          :committees="committees"
           @update:event="updateEvent"
           @delete:event="deleteEvent"
           @update:sign-up="updateSignUp"

@@ -15,9 +15,9 @@
       </p>
       <p class="mt-5 text-h5 text-sm-h3">
         Click <a
-          class="text-decoration-none"
-          href="/frontend/public"
-        >here</a> to go back to the main page!
+        class="text-decoration-none"
+        href="/frontend/public"
+      >here</a> to go back to the main page!
       </p>
     </div>
   </v-main>

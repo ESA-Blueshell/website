@@ -18,22 +18,22 @@
             <Field
               v-slot="{ value, errors, handleChange, handleBlur }"
               v-model="userData.phoneNumber"
-              name="phoneNumber"
               :rules="`required|phoneMobile:${country}`"
+              name="phoneNumber"
             >
               <v-phone-input
                 ref="phoneInput"
-                :model-value="value"
                 :default-country="'NL'"
                 :disabled="disableEdit && !creating"
                 :error-messages="errors"
+                :model-value="value"
                 country-icon-mode="svg"
                 label="Phone Number"
                 mode="international"
                 placeholder="Phone Number"
+                @blur="handleBlur"
                 @update:model-value="handleChange"
                 @update:country="updateCountry"
-                @blur="handleBlur"
               />
             </Field>
           </v-col>
@@ -47,12 +47,12 @@
               name="studentNumber"
             >
               <v-text-field
-                :model-value="value"
                 :disabled="disableEdit && !creating"
-                label="Student Number"
                 :error-messages="errors"
-                @update:model-value="handleChange"
+                :model-value="value"
+                label="Student Number"
                 @blur="handleBlur"
+                @update:model-value="handleChange"
               />
             </Field>
           </v-col>
@@ -65,13 +65,13 @@
               rules="dateRequired"
             >
               <v-text-field
-                :model-value="value"
                 :disabled="disableEdit && !creating"
+                :error-messages="errors"
+                :model-value="value"
                 label="Date of Birth"
                 type="date"
-                :error-messages="errors"
-                @update:model-value="handleChange"
                 @blur="handleBlur"
+                @update:model-value="handleChange"
               />
             </Field>
           </v-col>
@@ -85,12 +85,12 @@
               name="gender"
             >
               <v-text-field
-                :model-value="value"
                 :disabled="disableEdit && !creating"
-                label="Gender"
                 :error-messages="errors"
-                @update:model-value="handleChange"
+                :model-value="value"
+                label="Gender"
                 @blur="handleBlur"
+                @update:model-value="handleChange"
               />
             </Field>
           </v-col>
@@ -102,12 +102,12 @@
               name="nationality"
             >
               <nationality-select
-                :model-value="value"
                 :disabled="disableEdit && !creating"
-                label="Nationality"
                 :error-messages="errors"
-                @update:model-value="handleChange"
+                :model-value="value"
+                label="Nationality"
                 @blur="handleBlur"
+                @update:model-value="handleChange"
               />
             </Field>
           </v-col>
@@ -124,9 +124,9 @@
               name="ehbo"
             >
               <v-checkbox
-                :model-value="value"
                 :disabled="disableEdit && !creating"
                 :hide-details="true"
+                :model-value="value"
                 label="EHBO Diploma"
                 @update:model-value="handleChange"
               />
@@ -140,9 +140,9 @@
               name="bhv"
             >
               <v-checkbox
-                :model-value="value"
                 :disabled="disableEdit && !creating"
                 :hide-details="true"
+                :model-value="value"
                 label="BHV Diploma"
                 @update:model-value="handleChange"
               />
@@ -162,9 +162,9 @@
               name="photoConsent"
             >
               <v-checkbox
-                :model-value="value"
                 :disabled="disableEdit && !creating"
                 :hide-details="true"
+                :model-value="value"
                 label="Give consent for your photo to be taken at events"
                 @update:model-value="handleChange"
               />
@@ -187,7 +187,7 @@ import type {VForm} from "vuetify/components"
 import {type CountryCode} from "libphonenumber-js/max"
 import SimpleUserForm from "@/components/user/SimpleUserForm.vue"
 import NationalitySelect from "@/components/select/NationalitySelect.vue"
-import {Form, Field, useForm} from "vee-validate"
+import {Field, Form, useForm} from "vee-validate"
 
 interface Props {
   editing?: boolean;
@@ -259,12 +259,12 @@ const updateCountry = (newCountry: string): void => {
 }
 
 // Use VeeValidate's form validation as the source of truth now
-const { validate: vvValidate } = useForm()
+const {validate: vvValidate} = useForm()
 
 const validateForm = async (): Promise<boolean> => {
   const childValid = (await simpleRef.value?.validateForm?.()) ?? true
   if (!childValid) return false
-  const { valid } = await vvValidate()
+  const {valid} = await vvValidate()
   return valid
 }
 
@@ -272,7 +272,16 @@ defineExpose({validateForm})
 </script>
 
 <style lang="scss">
-.v-col:first-child { padding-left: 0; }
-.v-col:last-child { padding-right: 0; }
-.v-col { padding-bottom: 0; padding-top: 0; }
+.v-col:first-child {
+  padding-left: 0;
+}
+
+.v-col:last-child {
+  padding-right: 0;
+}
+
+.v-col {
+  padding-bottom: 0;
+  padding-top: 0;
+}
 </style>

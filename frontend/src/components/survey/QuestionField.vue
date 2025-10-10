@@ -1,15 +1,17 @@
-<script setup lang="ts">
-import { Field } from "vee-validate"
-import { type Question, QuestionType } from "@/lib"
-import {ref, watch} from "vue"
+<script lang="ts" setup>
+import {Field} from "vee-validate"
+import {type Question, QuestionType} from "@/lib"
 
 interface Props {
   canMoveUp?: boolean
   canMoveDown?: boolean
 }
+
 interface Emits {
   (e: "moveUp"): void;
+
   (e: "moveDown"): void;
+
   (e: "remove"): void;
 }
 
@@ -18,10 +20,10 @@ const props = withDefaults(defineProps<Props>(), {
   canMoveDown: true,
 })
 const emit = defineEmits<Emits>()
-const model = defineModel<Question>({ required: true })
+const model = defineModel<Question>({required: true})
 
 function setLabel(v: string) {
-  model.value = { ...model.value, label: v }
+  model.value = {...model.value, label: v}
 }
 
 function ensureChoices(): string[] {
@@ -31,33 +33,35 @@ function ensureChoices(): string[] {
 function setChoiceLabel(j: number, v: string) {
   const next = ensureChoices().slice()
   next[j] = v
-  model.value = { ...model.value, choiceLabels: next }
+  model.value = {...model.value, choiceLabels: next}
 }
 
 function addChoice() {
   const next = [...ensureChoices(), ""]
-  model.value = { ...model.value, choiceLabels: next }
+  model.value = {...model.value, choiceLabels: next}
 }
 
 function moveChoiceUp(j: number) {
   const next = ensureChoices().slice()
   if (j <= 0) return
-    ;[next[j - 1]!, next[j]!] = [next[j]!, next[j - 1]!]
-  model.value = { ...model.value, choiceLabels: next }
+    ;
+  [next[j - 1]!, next[j]!] = [next[j]!, next[j - 1]!]
+  model.value = {...model.value, choiceLabels: next}
 }
 
 function moveChoiceDown(j: number) {
   const next = ensureChoices().slice()
   if (j >= next.length - 1) return
-    ;[next[j + 1]!, next[j]!] = [next[j]!, next[j + 1]!]
-  model.value = { ...model.value, choiceLabels: next }
+    ;
+  [next[j + 1]!, next[j]!] = [next[j]!, next[j + 1]!]
+  model.value = {...model.value, choiceLabels: next}
 }
 
 function removeChoice(j: number) {
   const next = ensureChoices().slice()
   if (next.length <= 2) return
   next.splice(j, 1)
-  model.value = { ...model.value, choiceLabels: next }
+  model.value = {...model.value, choiceLabels: next}
 }
 
 </script>
@@ -65,17 +69,17 @@ function removeChoice(j: number) {
 <template>
   <Field
     v-slot="{ value, errors, handleChange, handleBlur }"
+    :model-value="model.label"
     :name="`survey.questions[${model.idx}].label`"
     rules="required"
-    :model-value="model.label"
   >
     <v-text-field
-      :model-value="value"
-      :label="`${model.type === QuestionType.DESCRIPTION ? `Description ${model.idx+1}` : `Question ${model.idx+1}`}`"
       :error-messages="errors"
+      :label="`${model.type === QuestionType.DESCRIPTION ? `Description ${model.idx+1}` : `Question ${model.idx+1}`}`"
+      :model-value="value"
       required
-      @update:model-value="(val: string) => { setLabel(val); handleChange(val) }"
       @blur="handleBlur"
+      @update:model-value="(val: string) => { setLabel(val); handleChange(val) }"
     >
       <template #append>
         <v-tooltip
@@ -121,19 +125,19 @@ function removeChoice(j: number) {
     >
       <Field
         v-slot="{ value, errors, handleChange, handleBlur }"
+        :model-value="model.choiceLabels?.[j] ?? ''"
         :name="`survey.questions[${model.idx}].choiceLabels[${j}]`"
         rules="required|maxChars:20"
-        :model-value="model.choiceLabels?.[j] ?? ''"
       >
         <v-text-field
-          :model-value="value"
+          :error-messages="errors"
           :label="`Option ${j+1}`"
+          :model-value="value"
           :prepend-icon="model.type===QuestionType.RADIO ? 'mdi-radiobox-marked' : 'mdi-checkbox-marked'"
           density="compact"
-          :error-messages="errors"
           required
-          @update:model-value="(val: string) => { setChoiceLabel(j, val); handleChange(val) }"
           @blur="handleBlur"
+          @update:model-value="(val: string) => { setChoiceLabel(j, val); handleChange(val) }"
         >
           <template #append>
             <v-btn

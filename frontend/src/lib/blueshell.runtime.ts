@@ -1,7 +1,7 @@
-import axios, { AxiosError, AxiosHeaders } from "axios"
-import type { Config } from "@/lib/blueshell/client/types.gen.ts"
+import axios, {AxiosError, AxiosHeaders} from "axios"
+import type {Config} from "@/lib/blueshell/client/types.gen.ts"
 import store from "@/plugins/store.ts"
-import type { ApiError as ApiErrorSchema } from "@/lib/blueshell/types.gen.ts"
+import type {ApiError as ApiErrorSchema} from "@/lib/blueshell/types.gen.ts"
 
 // Vite note: public env vars must be prefixed with VITE_*
 function resolveBaseURL(): string {
@@ -15,6 +15,7 @@ function resolveBaseURL(): string {
 }
 
 type ApiErrorWithMaybeErrors = ApiErrorSchema & { errors?: unknown }
+
 function isValidationError(
   data: unknown,
 ): data is ApiErrorWithMaybeErrors {
@@ -56,14 +57,14 @@ export function createClientConfig(defaultConfig: Config): Config {
       if (isValidationError(data)) {
         const errs = (data as any).errors
         if (errs && !Array.isArray(errs)) {
-          error.response!.data = { ...(data as any), errors: [errs] } as any
+          error.response!.data = {...(data as any), errors: [errs]} as any
         }
       }
       return Promise.reject(error)
     },
   )
 
-  const {baseURL, ...config} = defaultConfig;
+  const {baseURL, ...config} = defaultConfig
 
   // Return config to the generated client
   return {

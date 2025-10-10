@@ -14,11 +14,11 @@
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Initials"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -31,11 +31,11 @@
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="First Name"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -49,11 +49,11 @@
             name="prefix"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="SurPrefix"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -66,11 +66,11 @@
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Surname"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -85,11 +85,11 @@
             rules="required|alphaNum"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Username"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -102,11 +102,11 @@
             rules="required"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Discord"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -121,11 +121,11 @@
             rules="required|email|noStudentEmail"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="E-mail"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -140,14 +140,14 @@
             rules="required|min_chars:8|max_chars:100|has_lower|has_upper|has_number|has_special"
           >
             <v-text-field
-              :model-value="value"
               :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+              :error-messages="errors"
+              :model-value="value"
               :type="showPass ? 'text' : 'password'"
               label="Password"
-              :error-messages="errors"
+              @blur="handleBlur"
               @click:append-inner="showPass = !showPass"
               @update:model-value="handleChange"
-              @blur="handleBlur"
             />
           </Field>
         </v-col>
@@ -160,14 +160,14 @@
             rules="required|match:@password"
           >
             <v-text-field
-              :model-value="value"
               :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+              :error-messages="errors"
+              :model-value="value"
               :type="showPass ? 'text' : 'password'"
               label="Password (repeated)"
-              :error-messages="errors"
+              @blur="handleBlur"
               @click:append-inner="showPass = !showPass"
               @update:model-value="handleChange"
-              @blur="handleBlur"
             />
           </Field>
         </v-col>
@@ -184,8 +184,8 @@
             name="newsletter"
           >
             <v-checkbox
-              :model-value="value"
               :hide-details="true"
+              :model-value="value"
               label="Subscribe to newsletter"
               @update:model-value="handleChange"
             />
@@ -199,8 +199,8 @@
 <script lang="ts" setup>
 import {ref, type Ref, watch} from "vue"
 import {type SimpleUser} from "@/lib"
+import type {FormContext} from "vee-validate"
 import {Field, Form} from "vee-validate"
-import type { FormContext } from "vee-validate"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 
 interface Props {
@@ -265,7 +265,7 @@ const validateForm = async (): Promise<boolean> => {
 
 const applyErrors = async (err: unknown): Promise<boolean> => {
   if (!formRef.value) return false
-  return apply(formRef.value, err);
+  return apply(formRef.value, err)
 }
 
 defineExpose({validateForm, applyErrors})

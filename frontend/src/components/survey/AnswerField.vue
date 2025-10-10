@@ -60,17 +60,17 @@ function updateAndEmit(next: Answer) {
   <template v-if="question.type === QuestionType.OPEN">
     <Field
       v-slot="{ value, errors, handleChange, handleBlur }"
+      :model-value="local.textResponse ?? ''"
       :name="`${name}.textResponse`"
       rules="required"
-      :model-value="local.textResponse ?? ''"
     >
       <v-text-field
-        :model-value="value"
-        :label="question.label || 'Answer'"
         :error-messages="errors"
+        :label="question.label || 'Answer'"
+        :model-value="value"
         required
-        @update:model-value="(v: string) => { updateAndEmit({ ...local, textResponse: v }); handleChange(v) }"
         @blur="handleBlur"
+        @update:model-value="(v: string) => { updateAndEmit({ ...local, textResponse: v }); handleChange(v) }"
       />
     </Field>
   </template>
@@ -78,22 +78,22 @@ function updateAndEmit(next: Answer) {
   <template v-else-if="question.type === QuestionType.RADIO || question.type === QuestionType.CHECKBOX">
     <Field
       v-slot="{ value = [], errors, handleChange, handleBlur }"
-      :name="`${name}.optionSelections`"
       :model-value="local.optionSelections ?? []"
+      :name="`${name}.optionSelections`"
       :rules="(val: boolean[]) => (Array.isArray(val) && val.some(Boolean)) || 'Select at least one option'"
     >
       <div>
         <template v-if="question.type === QuestionType.RADIO">
           <v-radio-group
-            :model-value="value.findIndex(Boolean)"
             :error-messages="errors"
+            :model-value="value.findIndex(Boolean)"
+            @blur="handleBlur"
             @update:model-value="(idx: number) => {
               const next = Array(choiceCount).fill(false)
               if (idx >= 0 && idx < choiceCount) next[idx] = true
               updateAndEmit({ ...local, optionSelections: next })
               handleChange(next)
             }"
-            @blur="handleBlur"
           >
             <v-radio
               v-for="(opt, j) in (question.choiceLabels ?? [])"
@@ -111,13 +111,13 @@ function updateAndEmit(next: Answer) {
             :label="opt"
             :model-value="(value?.[j] ?? false)"
             hide-details
+            @blur="handleBlur"
             @update:model-value="(checked: boolean) => {
               const next = Array.isArray(value) ? value.slice() : Array(choiceCount).fill(false)
               next[j] = checked
               updateAndEmit({ ...local, optionSelections: next })
               handleChange(next)
             }"
-            @blur="handleBlur"
           />
           <div
             v-if="errors?.length"
@@ -131,7 +131,7 @@ function updateAndEmit(next: Answer) {
   </template>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .v-checkbox .v-selection-control {
   min-height: 40px !important;
 }

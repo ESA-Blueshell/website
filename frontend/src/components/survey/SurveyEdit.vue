@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {type Question, QuestionType, type Survey} from "@/lib"
 import QuestionField from "@/components/survey/QuestionField.vue"
-import {computed, ref, watch} from "vue"
+import {computed, ref} from "vue"
 
 const model = defineModel<Survey>({default: {questions: []}})
 const id = ref<number | undefined>(model.value.id)
@@ -65,13 +65,13 @@ function moveQuestionDown(i: number) {
       :key="q.idx"
     >
       <question-field
-        :model-value="q"
-        :can-move-up="i > 0"
         :can-move-down="i < model.questions.length - 1"
+        :can-move-up="i > 0"
+        :model-value="q"
+        @remove="removeQuestion(i)"
         @update:model-value="(val: Question) => updateQuestion(i, val)"
         @move-up="moveQuestionUp(i)"
         @move-down="moveQuestionDown(i)"
-        @remove="removeQuestion(i)"
       />
     </template>
 

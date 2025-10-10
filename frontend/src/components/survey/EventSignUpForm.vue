@@ -147,11 +147,11 @@ async function submit() {
         rules="required"
       >
         <v-text-field
-          :model-value="value"
           :error-messages="errors"
+          :model-value="value"
           label="Name"
-          @update:model-value="handleChange"
           @blur="handleBlur"
+          @update:model-value="handleChange"
         />
       </Field>
       <Field
@@ -161,11 +161,11 @@ async function submit() {
         rules="required"
       >
         <v-text-field
-          :model-value="value"
           :error-messages="errors"
+          :model-value="value"
           label="Discord username"
-          @update:model-value="handleChange"
           @blur="handleBlur"
+          @update:model-value="handleChange"
         />
       </Field>
       <Field
@@ -175,12 +175,12 @@ async function submit() {
         rules="required|email|noStudentEmail"
       >
         <v-text-field
-          :model-value="value"
           :error-messages="errors"
+          :model-value="value"
           hint="We'll use this to send you a link you can use to edit your sign-up form later"
           label="Email"
-          @update:model-value="handleChange"
           @blur="handleBlur"
+          @update:model-value="handleChange"
         />
       </Field>
     </Form>
@@ -208,10 +208,10 @@ async function submit() {
             rules="required"
           >
             <v-text-field
-              :model-value="value"
               :error-messages="errors"
-              @update:model-value="handleChange"
+              :model-value="value"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </template>
@@ -230,6 +230,7 @@ async function submit() {
                 :label="option"
                 :model-value="(value?.[j] ?? false)"
                 hide-details
+                @blur="handleBlur"
                 @update:model-value="(checked: boolean) => {
                   const next = Array.isArray(value)
                     ? [...value]
@@ -237,7 +238,6 @@ async function submit() {
                   next[j] = checked
                   handleChange(next)
                 }"
-                @blur="handleBlur"
               />
               <div
                 v-if="errors?.length"
@@ -261,13 +261,13 @@ async function submit() {
             <v-checkbox
               v-for="(option, j) in question.options"
               :key="j"
-              :model-value="value"
               :error-messages="errors"
               :label="option"
+              :model-value="value"
               :value="j"
               hide-details
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </template>

@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { onMounted, ref, watch } from "vue"
-import { DateTime } from "luxon"
-import { type AdvancedCommittee, type Event, type EventSignUp, findEvents, type PageMetadata } from "@/lib"
+import {onMounted, ref, watch} from "vue"
+import {DateTime} from "luxon"
+import {type AdvancedCommittee, type Event, type EventSignUp, findEvents, type PageMetadata} from "@/lib"
 import EventList from "@/components/events/EventList.vue"
-import { useRoute, useRouter } from "vue-router"
+import {useRoute, useRouter} from "vue-router"
 
 const props = defineProps<{
   committees: AdvancedCommittee[]
@@ -26,8 +26,8 @@ function coercePage(raw: unknown): number {
 }
 
 function replaceUrlQuerySilently(next: number) {
-  const q = { ...route.query, page: String(next) }
-  const href = router.resolve({ path: route.path, query: q }).href
+  const q = {...route.query, page: String(next)}
+  const href = router.resolve({path: route.path, query: q}).href
   window.history.replaceState(window.history.state, "", href)
 }
 
@@ -70,7 +70,7 @@ watch(
       currentPage.value = next
       void loadPast(next)
     }
-  }
+  },
 )
 </script>
 

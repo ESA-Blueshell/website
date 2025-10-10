@@ -67,8 +67,8 @@ function deleteSignUp(signUpId: number): void {
         rounded="lg"
       >
         <event-list-item
-          :event="event"
           :committees="props.committees"
+          :event="event"
           :sign-ups="props.eventSignUps"
           class="event-list-item"
           @delete:event="deleteEvent"

@@ -1,12 +1,9 @@
-import type { AxiosError } from "axios"
+import type {AxiosError} from "axios"
 
 // ⬇️ Use the generated schema types from your lib
-import type {
-  ApiError,
-  FieldValidationError,
-} from "@/lib"
+import type {ApiError, FieldValidationError} from "@/lib"
 
-import {type FormContext, useForm} from "vee-validate"
+import {type FormContext} from "vee-validate"
 
 type HeyApiException = {
   response?: {
@@ -74,5 +71,5 @@ export function useBackendValidation() {
     return true
   }
 
-  return { apply }
+  return {apply}
 }

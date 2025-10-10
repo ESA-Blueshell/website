@@ -101,10 +101,10 @@ onMounted(async () => {
           >
             <committee-edit
               :model-value="committee"
-              class="form"
               :users="users"
-              @update:model-value="updateCommittee"
+              class="form"
               @submitting="(submitting: boolean) => loading = submitting"
+              @update:model-value="updateCommittee"
             />
           </div>
         </v-expand-transition>
@@ -163,10 +163,10 @@ onMounted(async () => {
               >
                 <committee-edit
                   :model-value="committee"
-                  class="form"
                   :users="users"
-                  @update:model-value="updateCommittee"
+                  class="form"
                   @submitting="(submitting: boolean) => submittingId = submitting ? committee.id : null"
+                  @update:model-value="updateCommittee"
                 />
               </div>
             </v-expand-transition>
@@ -182,8 +182,8 @@ onMounted(async () => {
           :model-value="!!committeeToDelete"
           :title="`Delete committee: ${committeeToDelete?.name ?? ''}`"
           message="There will be no undo."
-          @update:model-value="(open: boolean) => { if (!open) committeeToDelete = null }"
           @confirm="deleteCommittee"
+          @update:model-value="(open: boolean) => { if (!open) committeeToDelete = null }"
         />
 
         <v-img

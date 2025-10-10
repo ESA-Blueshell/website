@@ -118,12 +118,12 @@ async function submit() {
             rules="required|minChars:3|maxChars:100"
           >
             <v-text-field
+              :error-messages="errors"
               :model-value="value"
               label="Committee name"
-              :error-messages="errors"
               required
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -138,11 +138,11 @@ async function submit() {
             rules="required|minChars:10|maxChars:10000"
           >
             <markdown-field
+              :error-messages="errors"
               :model-value="value"
               label="Description"
-              :error-messages="errors"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -153,8 +153,8 @@ async function submit() {
           v-for="(member, i) in committee.members ?? []"
           :key="member.id ?? i"
           v-model="committee.members[i]"
-          dense
           class="mt-4"
+          dense
         >
           <v-col cols="4">
             <Field
@@ -164,12 +164,12 @@ async function submit() {
               rules="maxChars:120"
             >
               <v-text-field
-                label="Role"
-                hide-details="auto"
-                :model-value="value"
                 :error-messages="errors"
-                @update:model-value="handleChange"
+                :model-value="value"
+                hide-details="auto"
+                label="Role"
                 @blur="handleBlur"
+                @update:model-value="handleChange"
               />
             </Field>
           </v-col>
@@ -182,12 +182,12 @@ async function submit() {
               :rules="`required|committeeUserIsMember|uniqueCommitteeMember:${i}`"
             >
               <user-select
+                :error-messages="errors"
+                :model-value="value"
                 :users="props.users"
                 label="Member name"
-                :model-value="value"
-                :error-messages="errors"
-                @update:model-value="handleChange"
                 @blur="handleBlur"
+                @update:model-value="handleChange"
               />
             </Field>
           </v-col>

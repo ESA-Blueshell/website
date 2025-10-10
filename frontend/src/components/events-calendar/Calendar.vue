@@ -32,13 +32,13 @@
 
     <!-- New: Add-to-calendar button -->
     <v-btn
-      class="ml-2"
-      size="small"
-      variant="outlined"
       :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
-      target="_blank"
-      rel="noopener"
       aria-label="Add the Blueshell events to my Google Calendar"
+      class="ml-2"
+      rel="noopener"
+      size="small"
+      target="_blank"
+      variant="outlined"
     >
       Subscribe to calendar
       <v-icon end>
@@ -71,8 +71,7 @@
 import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {type Event} from "@/lib"
-import {findEvents} from "@/lib"
+import {type Event, findEvents} from "@/lib"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"

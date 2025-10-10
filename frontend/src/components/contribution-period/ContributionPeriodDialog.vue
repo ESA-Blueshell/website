@@ -5,7 +5,9 @@
   >
     <v-card>
       <v-card-title class="mt-6 align-center justify-center text-center">
-        <span class="text-h4">{{ contributionPeriod?.id ? "Edit Contribution Period" : "Add Contribution Period" }}</span>
+        <span class="text-h4">{{
+          contributionPeriod?.id ? "Edit Contribution Period" : "Add Contribution Period"
+        }}</span>
       </v-card-title>
       <v-card-text>
         <Form
@@ -20,12 +22,12 @@
                 rules="required|dateBefore:@endDate"
               >
                 <v-text-field
-                  :model-value="value"
                   :error-messages="errors"
+                  :model-value="value"
                   label="Start Date"
                   type="date"
-                  @update:model-value="handleChange"
                   @blur="handleBlur"
+                  @update:model-value="handleChange"
                 />
               </Field>
             </v-col>
@@ -37,12 +39,12 @@
                 rules="required|dateAfter:@startDate"
               >
                 <v-text-field
-                  :model-value="value"
                   :error-messages="errors"
+                  :model-value="value"
                   label="End Date"
                   type="date"
-                  @update:model-value="handleChange"
                   @blur="handleBlur"
+                  @update:model-value="handleChange"
                 />
               </Field>
             </v-col>
@@ -54,12 +56,12 @@
             rules="required|minValue:0"
           >
             <v-text-field
-              label="Half Year Fee"
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
+              label="Half Year Fee"
               type="number"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
           <Field
@@ -69,12 +71,12 @@
             rules="required|minValue:0"
           >
             <v-text-field
-              label="Full Year Fee"
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
+              label="Full Year Fee"
               type="number"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
           <Field
@@ -84,12 +86,12 @@
             rules="required|minValue:0"
           >
             <v-text-field
-              label="Alumni Fee"
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
+              label="Alumni Fee"
               type="number"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </Form>
@@ -119,11 +121,7 @@
 
 <script lang="ts" setup>
 import {computed, reactive, ref, watch} from "vue"
-import {
-  type ContributionPeriod,
-  createContributionPeriod,
-  updateContributionPeriod,
-} from "@/lib"
+import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/lib"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {Field, Form, type FormContext} from "vee-validate"
@@ -151,9 +149,9 @@ watch(
   () => props.contributionPeriod,
   (val) => {
     Object.assign(periodForm, val ?? emptyPeriod())
-    formRef.value?.resetForm({ values: { ...periodForm } })
+    formRef.value?.resetForm({values: {...periodForm}})
   },
-  { immediate: true }
+  {immediate: true},
 )
 
 watch(
@@ -161,9 +159,9 @@ watch(
   (open) => {
     if (open && !props.contributionPeriod) {
       Object.assign(periodForm, emptyPeriod())
-      formRef.value?.resetForm({ values: { ...periodForm } })
+      formRef.value?.resetForm({values: {...periodForm}})
     }
-  }
+  },
 )
 
 const emit = defineEmits<{

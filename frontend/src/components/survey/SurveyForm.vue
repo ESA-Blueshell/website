@@ -1,15 +1,16 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from "vue"
-import { Form, type FormContext } from "vee-validate"
+import {computed, onMounted, ref, watch} from "vue"
+import {Form, type FormContext} from "vee-validate"
 import AnswerField from "@/components/survey/AnswerField.vue"
-import { type Answer, type Question, type Survey, QuestionType } from "@/lib"
+import {type Answer, type Question, QuestionType, type Survey} from "@/lib"
 
 interface Props {
   survey?: Survey | null
 }
+
 const props = defineProps<Props>()
 
-const model = defineModel<Answer[]>({ default: [] })
+const model = defineModel<Answer[]>({default: []})
 
 const formRef = ref<FormContext | undefined>()
 defineExpose({
@@ -23,7 +24,7 @@ const questions = computed<Question[]>(() => props.survey?.questions ?? [])
 const nonDescriptions = computed(() => questions.value.filter(q => q.type !== QuestionType.DESCRIPTION))
 
 function makeDefault(q: Question): Answer {
-  const base: Answer = { questionId: q.id! }
+  const base: Answer = {questionId: q.id!}
   if (q.type === QuestionType.OPEN) base.textResponse = ""
   if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
     base.optionSelections = Array(q.choiceLabels?.length ?? 0).fill(false)
@@ -64,7 +65,7 @@ watch(
     }
     model.value = next.filter(a => allowedIds.has(a.questionId))
   },
-  { deep: true },
+  {deep: true},
 )
 </script>
 
@@ -92,8 +93,8 @@ watch(
 
         <answer-field
           :model-value="getAnswer(q)"
-          :question="q"
           :name="`answers[${i}]`"
+          :question="q"
           @update:model-value="(val: Answer) => setAnswer(q.id!, val)"
         />
       </template>

@@ -82,11 +82,11 @@ import {type ContributionPeriod, deleteContributionPeriodById, findContributionP
 defineOptions({name: "ContributionPeriodList"})
 
 const emit = defineEmits<{
-  (e: "selected-period-id-changed", value: number | null): void;
+  (e: "selected-period-id-changed", value: number | undefined): void;
 }>()
 
 const contributionPeriods = ref<ContributionPeriod[]>([])
-const selectedPeriodId = ref<number | null>(null) // ← no default ID
+const selectedPeriodId = ref<number | undefined>()
 const hoveredPeriodId = ref<number | null>(null)
 const deleteDialog = ref(false)
 const selectedPeriod = ref<ContributionPeriod | null>(null)
@@ -104,18 +104,17 @@ const getContributionPeriods = async () => {
   const response = await findContributionPeriods()
   contributionPeriods.value = response.data ?? []
   if (contributionPeriods.value.length > 0) {
-    selectedPeriodId.value =
-      contributionPeriods.value[contributionPeriods.value.length - 1].id ?? null
+    selectedPeriodId.value = contributionPeriods.value[contributionPeriods.value.length - 1]!.id
     selectedPeriodIdChanged(selectedPeriodId.value)
   } else {
-    selectedPeriodId.value = null
-    selectedPeriodIdChanged(null)
+    selectedPeriodId.value = undefined
+    selectedPeriodIdChanged(undefined)
   }
 }
 
 const openAddPeriodDialog = () => {
   isEditing.value = false
-  selectedPeriod.value = null // ← blank object; dialog will initialize its own form
+  selectedPeriod.value = null
   showAddPeriodDialog.value = true
 }
 
@@ -138,11 +137,11 @@ const confirmDeleteContributionPeriod = async () => {
     },
   })
   selectedPeriod.value = null
-  selectedPeriodId.value = null
+  selectedPeriodId.value = undefined
   await getContributionPeriods()
 }
 
-const selectedPeriodIdChanged = (value: number | null) => {
+const selectedPeriodIdChanged = (value: number | undefined) => {
   emit("selected-period-id-changed", value)
 }
 

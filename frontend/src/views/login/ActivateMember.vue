@@ -75,7 +75,6 @@ const form = ref<MemberActivationRequest>({
   password: "",
 })
 
-// Same validations as UserEdit
 const usernameRules = [
   (v: string) => !!v || "Username is required",
   (v: string) => /^[a-zA-Z0-9]+$/.test(v) || "Username must only contain alphanumeric characters",

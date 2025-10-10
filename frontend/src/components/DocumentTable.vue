@@ -150,7 +150,7 @@ import {$require} from "@/plugins/require"
  * @param path - The path or URL of the file.
  * @param fileName - The desired file name for download.
  */
-function downloadFile(path, fileName) {
+function downloadFile(path: string, fileName: string) {
   const url = path.startsWith("http") ? path : $require(path)
   const link = document.createElement("a")
   link.href = url
@@ -166,7 +166,6 @@ function downloadFile(path, fileName) {
   background-color: #212121;
 }
 
-/* Ensure that the rounded corners clip child elements */
 .rounded-t {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;

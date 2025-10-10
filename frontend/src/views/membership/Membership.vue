@@ -15,10 +15,10 @@
           <p class="text-body-1">
             You are definitely in the right place! If you are still unsure, be sure to check out the
             rest of our website, <a
-            class="text-decoration-none"
-            href="https://discord.gg/23YMFQy"
-            target="_blank"
-          >Discord server</a>,
+              class="text-decoration-none"
+              href="https://discord.gg/23YMFQy"
+              target="_blank"
+            >Discord server</a>,
             and social media accounts to find out more about Blueshell Esports! By obtaining
             Blueshell
             membership you get:

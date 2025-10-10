@@ -56,14 +56,8 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
 import {type AdvancedUser, findUserById} from "@/lib/index.js"
 
-
-// Reactive data
 const user = ref<AdvancedUser>()
-
-// Store access
 const store = useStore()
-
-// Lifecycle hook
 onMounted(async () => {
   const login = store.getters.getLogin
 

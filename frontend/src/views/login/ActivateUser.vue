@@ -1,75 +1,126 @@
 <template>
-  <v-main>
-    <top-banner title="My account" />
-    <div class="mx-3">
-      <div
-        class="mx-auto my-10"
-        style="max-width: 800px"
+  <!-- Use VeeValidate as the single source of truth (avoid nested <form>) -->
+  <Form
+    v-slot="{ meta }"
+    as="div"
+  >
+    <v-form
+      ref="formRef"
+      v-model="vuetifyValid"
+      class="mx-auto"
+      style="max-width: 500px"
+    >
+      <Field
+        v-slot="{ value, errors, handleChange, handleBlur }"
+        v-model="form.username"
+        name="username"
+        label="Username"
+        rules="required|alphaNum"
       >
-        <p class="text-h3">
-          Hello {{ user != null ? user.firstName : "" }}!
-        </p>
+        <v-text-field
+          :error-messages="errors"
+          :model-value="value"
+          label="Username"
+          @blur="handleBlur"
+          @update:model-value="handleChange"
+        />
+      </Field>
 
-        <p>
-          On this page you can view your account data and edit it below. Fields like your name and e-mail address
-          cannot be changed. You should contact board or sitecie on discord if you would like to change any of these
-          fields
-        </p>
-        <p>
-          On the "Upcoming events" page you will find all of the events that have been planned. Here, you can sign up
-          for events that have it enabled, either by clicking the sign-up checkbox or filling in the sign-up form. (no
-          more google forms baybee)
-        </p>
-        <p v-if="store.getters.isActive">
-          With the event manager, you can create and edit an upcoming event for one of the committees you're in. Once an
-          event is created it will have to be approved by board {{ store.getters.isBoard ? "(yes, you)" : "" }} before
-          it will go public.
-        </p>
-        <p v-if="store.getters.isBoard">
-          Using the committee manager you can manage the committees in the association (duh). You can crate a committee,
-          give it a description and add any members to it.
-        </p>
+      <v-row
+        align="center"
+        class="mt-2"
+        justify="end"
+      >
+        <v-btn
+          :disabled="!meta.valid"
+          :loading="loading"
+          color="primary"
+          @click="submit"
+        >
+          Activate Member
+        </v-btn>
+      </v-row>
 
-        <div v-if="user">
-          <AdvancedUserForm
-            v-model="user"
-            editing
-          />
-        </div>
-        <v-progress-circular v-else />
+      <div
+        v-if="succeeded"
+        class="mt-6"
+      >
+        <p class="text-subtitle-1">
+          Membership activated! You can now log in.
+        </p>
       </div>
-    </div>
-  </v-main>
+    </v-form>
+  </Form>
 </template>
+
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
-import {useStore} from "vuex"
-import TopBanner from "@/components/banners/TopBanner.vue"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
-import {findUserById} from "@/lib/index.js"
+import type {VForm} from "vuetify/components"
+import {useRoute, useRouter} from "vue-router"
+import type {MemberActivationRequest} from "@/lib"
+import {memberActivate} from "@/lib"
+import {Field, Form, useForm} from "vee-validate"
 
+const route = useRoute()
+const router = useRouter()
 
-// Reactive data
-const user = ref(null)
+const formRef = ref<VForm | null>(null)
+const vuetifyValid = ref<boolean>(true)
 
-// Store access
-const store = useStore()
+const loading = ref<boolean>(false)
+const succeeded = ref<boolean>(false)
+const showPass = ref<boolean>(false)
+const token = ref<string>("")
 
-// Lifecycle hook
-onMounted(async () => {
-  const login = store.getters.getLogin
-
-  try {
-    const response = await findUserById({
-      path: {
-        userId: login.userId,
-      },
-    })
-
-    user.value = response.data
-  } catch (e) {
-    $handleNetworkError(e)
-  }
+const form = ref<MemberActivationRequest>({
+  token: "",
+  username: "",
+  password: "",
 })
+
+const passwordAgain = ref<string>("")
+
+const {validate: vvValidate} = useForm()
+
+onMounted(() => {
+  token.value = (route.query.token as string) || ""
+  form.value.username = (route.query.username as string) || ""
+  if (!token.value) {
+    router.push("/")
+    return
+  }
+  form.value.token = token.value
+})
+
+const submit = async () => {
+  loading.value = true
+  try {
+    const {valid} = await vvValidate()
+    if (!valid) return
+
+    await memberActivate({body: form.value})
+    succeeded.value = true
+  } finally {
+    loading.value = false
+  }
+}
 </script>
+
+
+<style lang="scss" scoped>
+.v-row {
+  background-color: #212121;
+}
+
+.rounded-t {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  overflow: hidden;
+}
+
+.rounded-b {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+}
+</style>

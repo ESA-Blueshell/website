@@ -1,51 +1,76 @@
 <template>
-  <v-form
-    ref="formRef"
-    v-model="valid"
-    class="mx-auto"
-    style="max-width: 500px"
+  <!-- Use VeeValidate as the single source of truth (avoid nested <form>) -->
+  <Form
+    v-slot="{ meta }"
+    as="div"
   >
-    <v-text-field
-      v-model="form.password"
-      :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-      :rules="passwordRules"
-      :type="showPass ? 'text' : 'password'"
-      label="New Password"
-      @click:append-inner="showPass = !showPass"
-    />
-    <v-text-field
-      v-model="passwordAgain"
-      :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-      :rules="passwordConfirmRules"
-      :type="showPass ? 'text' : 'password'"
-      label="Repeat New Password"
-      @click:append-inner="showPass = !showPass"
-    />
-
-    <v-row
-      align="center"
-      class="mt-2"
-      justify="end"
+    <v-form
+      ref="formRef"
+      v-model="vuetifyValid"
+      class="mx-auto"
+      style="max-width: 500px"
     >
-      <v-btn
-        :disabled="!valid"
-        :loading="loading"
-        color="primary"
-        @click="submit"
+      <Field
+        v-slot="{ value, errors, handleChange, handleBlur }"
+        v-model="form.password"
+        name="password"
+        rules="required|min_chars:8|has_lower|has_upper|has_number|has_special"
       >
-        Reset Password
-      </v-btn>
-    </v-row>
+        <v-text-field
+          :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+          :error-messages="errors"
+          :model-value="value"
+          :type="showPass ? 'text' : 'password'"
+          label="New Password"
+          @blur="handleBlur"
+          @click:append-inner="showPass = !showPass"
+          @update:model-value="handleChange"
+        />
+      </Field>
 
-    <div
-      v-if="succeeded"
-      class="mt-6"
-    >
-      <p class="text-subtitle-1">
-        Your password has been reset successfully.
-      </p>
-    </div>
-  </v-form>
+      <Field
+        v-slot="{ value, errors, handleChange, handleBlur }"
+        v-model="passwordAgain"
+        name="passwordAgain"
+        rules="required|match:@password"
+      >
+        <v-text-field
+          :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+          :error-messages="errors"
+          :model-value="value"
+          :type="showPass ? 'text' : 'password'"
+          label="Repeat New Password"
+          @blur="handleBlur"
+          @click:append-inner="showPass = !showPass"
+          @update:model-value="handleChange"
+        />
+      </Field>
+
+      <v-row
+        align="center"
+        class="mt-2"
+        justify="end"
+      >
+        <v-btn
+          :disabled="!meta.valid"
+          :loading="loading"
+          color="primary"
+          @click="submit"
+        >
+          Reset Password
+        </v-btn>
+      </v-row>
+
+      <div
+        v-if="succeeded"
+        class="mt-6"
+      >
+        <p class="text-subtitle-1">
+          Your password has been reset successfully.
+        </p>
+      </div>
+    </v-form>
+  </Form>
 </template>
 
 <script lang="ts" setup>
@@ -54,12 +79,14 @@ import type {VForm} from "vuetify/components"
 import {useRoute, useRouter} from "vue-router"
 import type {PasswordResetRequest} from "@/lib"
 import {resetPassword} from "@/lib"
+import {Field, Form, useForm} from "vee-validate"
 
 const route = useRoute()
 const router = useRouter()
 
 const formRef = ref<VForm | null>(null)
-const valid = ref<boolean>(false)
+const vuetifyValid = ref<boolean>(true) // keep Vuetify form happy; VeeValidate is source of truth
+
 const loading = ref<boolean>(false)
 const succeeded = ref<boolean>(false)
 const showPass = ref<boolean>(false)
@@ -71,19 +98,9 @@ const form = ref<PasswordResetRequest>({
   password: "",
 })
 
-const passwordRules = [
-  (v: string) => !!v || "Password is required",
-  (v: string) => v.length >= 8 || "Password must be at least 8 characters",
-  (v: string) => /(?=.*[a-z])/.test(v) || "Password must contain at least one lowercase letter",
-  (v: string) => /(?=.*[A-Z])/.test(v) || "Password must contain at least one uppercase letter",
-  (v: string) => /(?=.*\d)/.test(v) || "Password must contain at least one number",
-  (v: string) => /(?=.*[@$!%*?&])/.test(v) || "Password must contain at least one special character (@$!%*?&)",
-]
 const passwordAgain = ref<string>("")
-const passwordConfirmRules = [
-  (v: string) => !!v || "Password confirmation is required",
-  (v: string) => v === form.value.password || "Passwords do not match",
-]
+
+const {validate: vvValidate} = useForm()
 
 onMounted(() => {
   token.value = (route.query.token as string) || ""
@@ -98,8 +115,8 @@ onMounted(() => {
 const submit = async () => {
   loading.value = true
   try {
-    const result = await formRef.value?.validate()
-    if (!result || (typeof result === "object" && "valid" in result && !result.valid)) return
+    const {valid} = await vvValidate()
+    if (!valid) return
 
     await resetPassword({body: form.value})
     succeeded.value = true
@@ -108,3 +125,21 @@ const submit = async () => {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.v-row {
+  background-color: #212121;
+}
+
+.rounded-t {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  overflow: hidden;
+}
+
+.rounded-b {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+}
+</style>

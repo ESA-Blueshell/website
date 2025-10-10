@@ -5,12 +5,14 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
+import net.blueshell.api.validation.survey.ValidAnswer;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "Answer")
+@ValidAnswer
 public class AnswerDTO extends BaseDTO {
     private Long id;
 

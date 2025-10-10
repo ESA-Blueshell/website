@@ -23,7 +23,6 @@ import CommitteeManager from "@/views/committee/CommitteeManager.vue"
 import CreateAccount from "@/views/login/CreateAccount.vue"
 import MemberManager from "@/views/login/MemberManager.vue"
 import RocketLeague from "@/views/esports/RocketLeague.vue"
-import ForgotPassword from "@/views/login/ForgotPassword.vue"
 import ResetPassword from "@/views/login/ResetPassword.vue"
 import EventSignUpEdit from "@/components/events/EventSignUpEdit.vue"
 
@@ -35,6 +34,7 @@ import BlogsView from "@/views/blogs/BlogsView.vue"
 import ActivateMember from "@/views/login/ActivateMember.vue"
 import ActivateUser from "@/views/login/ActivateUser.vue"
 import Geoguessr from "@/views/esports/Geoguessr.vue"
+import ForgotPassword from "@/views/login/ForgotPassword.vue"
 
 const routes: RouteRecordRaw[] = [
   {

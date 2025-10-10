@@ -223,7 +223,7 @@ const validateAndSaveUserData = async (): Promise<boolean> => {
   try {
     let response: { data?: AdvancedUser }
 
-    if (loggedIn.value && userData.value.id) {
+    if (loggedIn.value && userData.value?.id) {
       // Update existing user
       response = await updateUser({
         path: {id: userData.value.id},
@@ -232,18 +232,18 @@ const validateAndSaveUserData = async (): Promise<boolean> => {
     } else {
       // Create new user
       response = await createUser({
-        body: userData.value,
+        body: userData.value!,
       })
     }
 
     if (response.data) {
       userData.value = response.data
-      membershipData.value.userId = response.data.id!
+      membershipData.value!.userId = response.data.id!
       return true
     }
 
     return false
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error.response?.status === 400) {
       store.commit("setStatusSnackbarMessage", error.response.data)
     } else {
@@ -266,13 +266,6 @@ const validateAndSaveAddressData = async (): Promise<boolean> => {
   try {
     // Save address using child component method
     await addressEditRef.value.saveAddress()
-
-    // Link address to user if we have both IDs
-    if (userData.value.id && addressData.value.id) {
-      // Update user with address ID - this would typically be done on the backend
-      // but we'll set it locally for now
-      (userData.value as any).addressId = addressData.value.id
-    }
 
     return true
   } catch (error: unknown) {
@@ -300,7 +293,7 @@ const completeMembership = async (): Promise<void> => {
     succeeded.value = true
 
     // Update user roles if logged in
-    if (loggedIn.value && userData.value.id) {
+    if (loggedIn.value && userData.value?.id) {
       // Fetch updated user data to get new roles
       const response = await findUserById({
         path: {userId: userData.value.id},
@@ -336,7 +329,7 @@ onMounted(async () => {
 
       if (response.data) {
         userData.value = {...response.data}
-        membershipData.value.userId = response.data.id!
+        membershipData.value!.userId = response.data.id!
 
         // If user has an address, fetch it
         if ((response.data as any).address) {

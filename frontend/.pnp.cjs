@@ -36,6 +36,7 @@ const RAW_RUNTIME_STATE =
           ["@originjs/vite-plugin-commonjs", "npm:1.0.3"],\
           ["@types/luxon", "npm:3.7.1"],\
           ["@types/node", "npm:24.5.1"],\
+          ["@types/webfontloader", "npm:1.6.38"],\
           ["@typescript-eslint/eslint-plugin", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.44.0"],\
           ["@typescript-eslint/parser", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.44.0"],\
           ["@vee-validate/rules", "npm:4.15.1"],\
@@ -1146,6 +1147,15 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["@types/webfontloader", [\
+      ["npm:1.6.38", {\
+        "packageLocation": "./.yarn/cache/@types-webfontloader-npm-1.6.38-7b35deb5c5-1239fc17e6.zip/node_modules/@types/webfontloader/",\
+        "packageDependencies": [\
+          ["@types/webfontloader", "npm:1.6.38"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["@typescript-eslint/eslint-plugin", [\
       ["npm:8.44.0", {\
         "packageLocation": "./.yarn/cache/@typescript-eslint-eslint-plugin-npm-8.44.0-3a3d745bcf-971796ac65.zip/node_modules/@typescript-eslint/eslint-plugin/",\
@@ -1992,6 +2002,7 @@ const RAW_RUNTIME_STATE =
           ["@originjs/vite-plugin-commonjs", "npm:1.0.3"],\
           ["@types/luxon", "npm:3.7.1"],\
           ["@types/node", "npm:24.5.1"],\
+          ["@types/webfontloader", "npm:1.6.38"],\
           ["@typescript-eslint/eslint-plugin", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.44.0"],\
           ["@typescript-eslint/parser", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.44.0"],\
           ["@vee-validate/rules", "npm:4.15.1"],\

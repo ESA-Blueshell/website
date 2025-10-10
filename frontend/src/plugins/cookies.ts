@@ -15,7 +15,7 @@ export function writeJsonCookie(
 
 export function readJsonCookie<T = unknown>(name: string): T | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
-  return match ? (JSON.parse(decodeURIComponent(match[1])) as T) : null
+  return match ? (JSON.parse(decodeURIComponent(match[1]!)) as T) : null
 }
 
 export function deleteCookie(name: string, path = "/") {

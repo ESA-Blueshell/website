@@ -16,7 +16,6 @@ import Partners from "@/views/partners/Partners.vue"
 import NotFound from "@/views/NotFound.vue"
 import Login from "@/views/login/Login.vue"
 import Account from "@/views/login/Account.vue"
-import ArticleEditor from "@/views/article/ArticleEditor.vue"
 import EventManager from "@/views/events/EventManager.vue"
 import EditEvent from "@/views/events/EditEvent.vue"
 import EventSignUps from "@/views/events/EventSignUps.vue"
@@ -166,12 +165,6 @@ const routes: RouteRecordRaw[] = [
     name: "activateUser",
     component: ActivateUser,
     props: true,
-  },
-  {
-    path: "/account/articleEditor",
-    name: "articleEditor",
-    component: ArticleEditor,
-    meta: {requiresAuth: true},
   },
   {
     path: "/events",

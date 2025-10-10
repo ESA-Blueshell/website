@@ -50,6 +50,7 @@
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@types/luxon": "^3.7.1",
     "@types/node": "^24.5.1",
+    "@types/webfontloader": "^1.6.38",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
     "@vitejs/plugin-vue": "^6.0.1",

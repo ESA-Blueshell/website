@@ -856,6 +856,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/webfontloader@npm:^1.6.38":
+  version: 1.6.38
+  resolution: "@types/webfontloader@npm:1.6.38"
+  checksum: 10c0/1239fc17e6705b7dcea5f8013a711bb2f9cb2f4dd637b414448949efdc97c8cc859e47bf44f31a24e8b9495ebaefa7086e35ea0b7072cde6410d5c36f81a460d
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:8.44.0, @typescript-eslint/eslint-plugin@npm:^8.44.0":
   version: 8.44.0
   resolution: "@typescript-eslint/eslint-plugin@npm:8.44.0"
@@ -1439,6 +1446,7 @@ __metadata:
     "@originjs/vite-plugin-commonjs": "npm:^1.0.3"
     "@types/luxon": "npm:^3.7.1"
     "@types/node": "npm:^24.5.1"
+    "@types/webfontloader": "npm:^1.6.38"
     "@typescript-eslint/eslint-plugin": "npm:^8.44.0"
     "@typescript-eslint/parser": "npm:^8.44.0"
     "@vee-validate/rules": "npm:^4.15.1"

@@ -1,9 +1,4 @@
 <template>
-  <start-membership-dialog
-    v-model="showStartModal"
-    :memberships="memberships"
-    :user-id="user.id"
-  />
   <div>
     <v-list-item>
       <div
@@ -125,7 +120,11 @@
       </v-expand-transition>
     </v-list-item>
   </div>
-
+  <start-membership-dialog
+    v-model="showStartModal"
+    :memberships="memberships"
+    :user-id="user.id"
+  />
   <delete-confirmation-dialog
     v-model="deleteDialog"
     :message="`Are you sure you want to delete ${user.fullName} (${user.username})?`"
@@ -142,10 +141,8 @@ import {DateTime} from "luxon"
 import {
   type AdvancedUser,
   type Contribution,
-  createMembership,
   deleteUserById,
   type Membership,
-  MemberType,
   setContributionPaid,
   updateMembership,
 } from "@/lib"
@@ -160,15 +157,15 @@ interface Props {
 }
 
 interface Emits {
-  (e: "toggle-expanded", userId: number): void;
+  (e: "delete:user", id: number): void
 
-  (e: "user-changed", userData: AdvancedUser): void;
+  (e: "update:user", user: AdvancedUser): void
 
-  (e: "contribution-changed", contribution: Contribution): void;
+  (e: "update:membership", membership: Membership): void
 
-  (e: "membership-changed", membership: Membership): void;
+  (e: "update:contribution", contribution: Contribution): void;
 
-  (e: "delete-user", user: AdvancedUser): void;
+  (e: "update:expanded", userId: number): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -180,18 +177,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-// Reactive state
 const deleteDialog = ref(false)
 const showStartModal = ref(false)
-const startDate = ref(DateTime.now().toISODate())
-const memberType = ref<MemberType>(MemberType.REGULAR)
-const isSubmitting = ref(false)
 
 const contribution = computed(() =>
   props.contributions.find((c) => c.userId === props.user.id),
 )
 
-const membership = computed(() =>
+const membership = computed<Membership | undefined>(() =>
   props.memberships.find((m) => m.userId === props.user.id),
 )
 
@@ -200,48 +193,18 @@ const userModel = computed<AdvancedUser>({
 })
 
 const toggleExpanded = () => {
-  emit("toggle-expanded", props.user.id as number)
+  emit("update:expanded", props.user.id as number)
 }
 
 const startMembership = () => {
   showStartModal.value = true
 }
 
-const confirmStartMembership = async () => {
-  try {
-    isSubmitting.value = true
-
-    const membershipData: Membership = {
-      userId: props.user.id as number,
-      memberType: memberType.value,
-      startDate: DateTime.fromISO(startDate.value).toISO() as string,
-      endDate: undefined,
-    }
-
-    const response = await createMembership({
-      body: membershipData,
-    })
-
-    if (response.data) {
-      const changedUser = {
-        ...props.user,
-        membership: response.data,
-      }
-      userChanged(changedUser)
-      showStartModal.value = false
-    }
-  } catch (error) {
-    console.error("Failed to create membership:", error)
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
 const endMembership = async () => {
   try {
     const membershipData: Membership = {
+      ...membership.value!,
       userId: props.user.id as number,
-      ...membership,
       endDate: DateTime.now().toISO(),
     }
 
@@ -251,7 +214,7 @@ const endMembership = async () => {
     })
 
     if (response.data) {
-      emit("membership-changed", response.data)
+      emit("update:membership", response.data)
     }
   } catch (error) {
     console.error("Failed to end membership:", error)
@@ -261,9 +224,8 @@ const endMembership = async () => {
 const resumeMembership = async () => {
   try {
     const membershipData: Membership = {
-      id: 0,
+      ...membership.value!,
       userId: props.user.id as number,
-      ...membership,
       endDate: undefined,
     }
 
@@ -273,7 +235,7 @@ const resumeMembership = async () => {
     })
 
     if (response.data) {
-      emit("membership-changed", response.data)
+      emit("update:membership", response.data)
     }
   } catch (error) {
     console.error("Failed to resume membership:", error)
@@ -292,14 +254,14 @@ const confirmDeleteUser = async () => {
       path: {userId: props.user.id as number},
     })
 
-    emit("delete-user", props.user)
+    emit("delete:user", props.user.id!)
   } catch (error) {
     console.error("Failed to delete user:", error)
   }
 }
 
 const userChanged = (userData: AdvancedUser) => {
-  emit("user-changed", userData)
+  emit("update:user", userData)
 }
 
 const changeContributionPaid = async (paid: boolean) => {
@@ -311,7 +273,7 @@ const changeContributionPaid = async (paid: boolean) => {
       })
 
       if (response.data) {
-        emit("contribution-changed", response.data)
+        emit("update:contribution", response.data)
       }
     }
   } catch (error) {

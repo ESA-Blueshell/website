@@ -4,7 +4,6 @@
       {{ title }} ({{ users.length }})
     </p>
     <v-list class="mt-3">
-      <!-- Add New User Row -->
       <div v-if="isMemberList">
         <v-list-item @click="toggleExpanded(-1)">
           <div
@@ -26,7 +25,6 @@
         </v-expand-transition>
         <v-divider />
       </div>
-      <!-- Existing Users -->
       <div
         v-for="user in users"
         :key="user.username"
@@ -37,11 +35,11 @@
           :is-member-list="isMemberList"
           :memberships="memberships"
           :user="user"
-          @toggle-expanded="toggleExpanded"
-          @contribution-changed="contributionChanged"
-          @membership-changed="membershipChanged"
-          @user-changed="userChanged"
-          @delete-user="deleteUser"
+          @update:expanded="toggleExpanded"
+          @update:contribution="contributionChanged"
+          @update:membership="membershipChanged"
+          @update:user="userChanged"
+          @delete:user="deleteUser"
         />
         <v-divider />
       </div>
@@ -74,32 +72,36 @@ const {title, users, contributions, memberships, expanded, isMemberList} = toRef
 
 // Emits
 const emit = defineEmits<{
-  (e: "toggle-expanded", userId: number): void;
-  (e: "user-changed", user: AdvancedUser): void;
-  (e: "delete-user", user: AdvancedUser): void;
-  (e: "contribution-changed", contribution: Contribution): void;
-  (e: "membership-changed", membership: Membership): void;
+  (e: "delete:user", id: number): void
+
+  (e: "update:user", user: AdvancedUser): void
+
+  (e: "update:membership", membership: Membership): void
+
+  (e: "update:contribution", contribution: Contribution): void;
+
+  (e: "update:expanded", userId: number): void
 }>()
 
 // Handlers
 const toggleExpanded = (userId: number) => {
-  emit("toggle-expanded", userId)
+  emit("update:expanded", userId)
 }
 
 const contributionChanged = (contribution: Contribution) => {
-  emit("contribution-changed", contribution)
+  emit("update:contribution", contribution)
 }
 
 const membershipChanged = (membership: Membership) => {
-  emit("membership-changed", membership)
+  emit("update:membership", membership)
 }
 
 const userChanged = (user: AdvancedUser) => {
   toggleExpanded(0)
-  emit("user-changed", user)
+  emit("update:user", user)
 }
 
 const deleteUser = (user: AdvancedUser) => {
-  emit("delete-user", user)
+  emit("update:user", user)
 }
 </script>

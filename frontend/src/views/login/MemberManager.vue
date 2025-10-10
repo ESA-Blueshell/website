@@ -23,11 +23,11 @@
           :selected-period-id="selectedPeriodId"
           :users="nonMembers"
           title="Non-member users"
-          @contribution-changed="contributionChanged"
-          @membership-changed="membershipChanged"
-          @toggle-expanded="toggleExpanded"
-          @user-changed="userChanged"
-          @delete-user="deleteUser"
+          @update:contribution="contributionChanged"
+          @update:membership="membershipChanged"
+          @update:expanded="toggleExpanded"
+          @update:user="userChanged"
+          @delete:user="deleteUser"
         />
 
         <user-list
@@ -38,10 +38,11 @@
           class="mt-5"
           is-member-list
           title="Members"
-          @contribution-changed="contributionChanged"
-          @toggle-expanded="toggleExpanded"
-          @user-changed="userChanged"
-          @delete-user="deleteUser"
+          @update:contribution="contributionChanged"
+          @update:membership="membershipChanged"
+          @update:expanded="toggleExpanded"
+          @update:user="userChanged"
+          @delete:user="deleteUser"
         />
       </div>
     </div>

@@ -54,42 +54,38 @@
   </v-main>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import {computed} from "vue"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import {DateTime} from "luxon"
 
-// Helper function to convert a number to its ordinal word
-function getOrdinalWord(n) {
+defineOptions({name: "AboutUs"})
+
+const getOrdinalWord = (n: number): string => {
   const ordinals = [
     "first", "second", "third", "fourth", "fifth",
     "sixth", "seventh", "eighth", "ninth", "tenth",
     "eleventh", "twelfth",
-  ]
+  ] as const
+
   if (n <= ordinals.length) {
-    return ordinals[n - 1]
+    return ordinals[n - 1]!
   }
-  // Fallback: append standard suffix if n is out of the predefined range
+
   let suffix = "th"
   if (n % 10 === 1 && n % 100 !== 11) suffix = "st"
   else if (n % 10 === 2 && n % 100 !== 12) suffix = "nd"
   else if (n % 10 === 3 && n % 100 !== 13) suffix = "rd"
-  return n + suffix
+  return `${n}${suffix}`
 }
 
-export default {
-  name: "AboutUs",
-  components: {TopBanner: TopBanner},
-  computed: {
-    boardYear() {
-      return Math.floor(
-        DateTime.now().diff(DateTime.fromISO("2017-12-12"), "years").years,
-      )
-    },
-    boardYearOrdinal() {
-      return getOrdinalWord(this.boardYear)
-    },
-  },
-}
+const FOUNDED = DateTime.fromISO("2017-12-12")
+
+const boardYear = computed<number>(() =>
+  Math.floor(DateTime.now().diff(FOUNDED, "years").years),
+)
+
+const boardYearOrdinal = computed<string>(() => getOrdinalWord(boardYear.value))
 </script>
 
 <style lang="scss" scoped>

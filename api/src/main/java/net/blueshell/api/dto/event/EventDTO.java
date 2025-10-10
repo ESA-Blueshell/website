@@ -43,4 +43,5 @@ public class EventDTO extends BaseDTO {
     private Long signUpCount;
     @Valid
     private SurveyDTO signUpForm;
+    private String googleId;
 }

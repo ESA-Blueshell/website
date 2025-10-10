@@ -76,6 +76,7 @@ export type Event = {
     banner?: EventBanner;
     signUpCount?: number;
     signUpForm?: Survey;
+    googleId?: string;
     description: string;
     location?: string;
 };

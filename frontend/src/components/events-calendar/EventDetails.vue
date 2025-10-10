@@ -27,10 +27,10 @@
         location="bottom"
         text="Find location"
       >
-        <template #activator="{ props }">
+        <template #activator="{ props: locationProps }">
           <v-btn
             icon="mdi-google-maps"
-            v-bind="props"
+            v-bind="locationProps"
             @click="findLocation"
           />
         </template>
@@ -39,10 +39,10 @@
         location="bottom"
         text="Add to calendar"
       >
-        <template #activator="{ props }">
+        <template #activator="{ props: calProps }">
           <v-btn
             icon="mdi-calendar"
-            v-bind="props"
+            v-bind="calProps"
             @click="addToCal"
           />
         </template>
@@ -108,47 +108,54 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, onMounted, ref} from "vue"
 import MarqueeText from "vue-marquee-text-component"
 import {$goto} from "@/plugins/goto.ts"
 import markdownToHtml from "@/plugins/markdownToHtml.ts"
-import type {Event, File} from "@/lib"
+import {downloadEventBanner, type Event} from "@/lib"
 
-// Props: accept object coming from calendar, normalize to Event shape for usage.
-// We keep the prop flexible to avoid breaking callers, but all internal types are aligned to generated types.
 const props = defineProps<{
   modelValue: Event
 }>()
 
-// Local state
 const expand = ref(false)
 
-// Normalization helpers
-const event = computed(() => props.modelValue as Record<string, unknown>)
+const event = computed(() => props.modelValue as Event)
 
-// Title: prefer Event.title, fallback to legacy "name"
 const eventTitle = computed(() => {
-  const title = (event.value.title as string | undefined) ?? (event.value.name as string | undefined)
+  const title = (event.value.title as string | undefined)
   return title ?? ""
 })
 
-// Color is not part of Event; allow passthrough if preeventnt
-const toolbarColor = computed(() => (event.value.color as string | undefined) ?? "")
+const toolbarColor = "primary";
 
-// Description: Event.description, fallback to legacy "details"
 const description = computed(() => {
-  return (event.value.description as string | undefined) ?? (event.value.details as string | undefined) ?? ""
+  return (event.value.description as string)
 })
 
-// Banner url: Event.banner is File with url field, or string in some backends
-const bannerUrl = computed(() => {
-  const banner = event.value.banner as File | string | undefined
-  if (!banner) return ""
-  if (typeof banner === "string") return banner
-  return banner.url ?? ""
-})
+const bannerUrl = ref<string | null>(null)
 
-// Dates: accept either Date (calendar local) or ISO strings (Event)
+async function loadBanner() {
+  if (!event.value?.id || !event.value.banner) return
+  try {
+    const resp = await downloadEventBanner({
+      path: {
+        bannerId: event.value.banner.id!,
+      },
+      throwOnError: true,
+      responseType: "blob",
+    })
+
+    const blob = resp?.data as Blob
+    if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
+    bannerUrl.value = URL.createObjectURL(blob)
+  } catch (e) {
+    console.error("Failed to download event banner:", e)
+  }
+}
+
+onMounted(loadBanner)
+
 function toDate(d: unknown): Date | null {
   if (!d) return null
   if (d instanceof Date) return d
@@ -160,17 +167,15 @@ function toDate(d: unknown): Date | null {
 }
 
 const startDate = computed<Date | null>(() => {
-  return toDate((event.value.start as unknown) ?? (event.value.startTime as unknown))
+  return toDate(event.value.startTime as unknown)
 })
 
 const endDate = computed<Date | null>(() => {
-  return toDate((event.value.end as unknown) ?? (event.value.endTime as unknown))
+  return toDate(event.value.endTime as unknown)
 })
 
-// Location
 const location = computed(() => (event.value.location as string | undefined) ?? "")
 
-// Prices (numbers in generated types)
 const memberPrice = computed<number | null>(() => {
   const mp = event.value.memberPrice as number | string | undefined
   if (mp === undefined || mp === null || mp === "") return null
@@ -182,7 +187,6 @@ const publicPrice = computed<number | null>(() => {
   return typeof pp === "string" ? Number(pp) : pp
 })
 
-// Formatting
 const formattedDate = computed(() => {
   const start = startDate.value
   const end = endDate.value

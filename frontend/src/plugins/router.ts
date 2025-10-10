@@ -36,6 +36,7 @@ import BlogView from "@/views/blogs/BlogView.vue"
 import BlogsView from "@/views/blogs/BlogsView.vue"
 import ActivateMember from "@/views/login/ActivateMember.vue"
 import ActivateUser from "@/views/login/ActivateUser.vue"
+import Geoguessr from "@/views/esports/Geoguessr.vue"
 
 const routes: RouteRecordRaw[] = [
   {
@@ -114,9 +115,9 @@ const routes: RouteRecordRaw[] = [
     component: RocketLeague,
   },
   {
-    path: "/esports/trackmania",
-    name: "trackmania",
-    component: Trackmania,
+    path: "/esports/geoguessr",
+    name: "geoguessr",
+    component: Geoguessr,
   },
   {
     path: "/partners/become-a-partner",

@@ -14,10 +14,13 @@
       </div>
     </div>
     <template
-      v-for="team in teams"
+      v-for="(team, i) in teams"
       :key="team.name"
     >
-      <team-details :team="team" />
+      <team-details
+        :name-right="i % 2 != 0"
+        :team="team"
+      />
     </template>
   </v-main>
 </template>
@@ -31,93 +34,56 @@ import type Team from "@/types/Team.ts"
 
 const teams = ref<Team[]>([
   {
-    name: "BS Tempra",
+    name: "BS Waterboarders",
     bg: $require("@/assets/valorantesports1.jpg"),
     players: [
-      {
-        name: "Chris Wong",
-        ign: "fetabass",
-      },
-      {
-        name: "Mudassar Jamil",
-        ign: "hazzY",
-      },
-      {
-        name: "Dylan Holkenborg",
-        ign: "Infory",
-      },
-      {
-        name: "Niels de Gruijl",
-        ign: "BigMonke778",
-      },
-      {
-        name: "Amir Kuanov",
-        ign: "seidukan",
-      },
+      {name: "Viktor Petrov", ign: "AriosFury"},
+      {name: "Raghavendran Srinivasan", ign: "BS Syched"},
+      {name: "Reini Strating", ign: "Loafine"},
+      {name: "Benyamin Unsurorlu", ign: "The Toilet Mage"},
+      {name: "Liam Beld", ign: "lyx"},
     ],
     substitutes: [
-      {
-        name: "Stefan Morriën",
-        ign: "stweebfan",
-      },
+      {name: "Harm Dreteler", ign: "BangForYourBucky"},
+      {name: "Mauro Foddis", ign: "Blackout"},
+      {name: "Ivo Heitlager", ign: "BS King Cookie"},
+      {name: "Joris Jonkers", ign: "DJundertaker25"},
     ],
   },
   {
     name: "BS SpicyWater",
     bg: $require("@/assets/valorantesports2.jpg"),
     players: [
-      {
-        name: "Michal Rokita",
-        ign: "udeyy",
-      },
-      {
-        name: "Thomas Dekker",
-        ign: "ItIsIThomas",
-      },
-      {
-        name: "Sanne van Kooten",
-        ign: "EternalScreams",
-      },
-      {
-        name: "Max Jansdam",
-        ign: "DwalendeDrol",
-      },
-      {
-        name: "Joris Jonkers",
-        ign: "DJundertaker25",
-      },
+      {name: "Shay Karim", ign: "Sony"},
+      {name: "Yoshua Ligt", ign: "JoshSyx"},
+      {name: "Stefan Borachev", ign: "Stefo"},
+      {name: "Thorranin Vudhidhanaseth", ign: "drSL"},
+      {name: "Thomas Dekker", ign: "ItIsIThomas"},
     ],
     substitutes: [
-      {
-        name: "Reinier Algra",
-        ign: "Reign",
-      },
+      {name: "Jesse van Gameren", ign: "Machom36"},
+      {name: "René Hammink", ign: "MrPancake"},
+      {name: "Michal Rokita", ign: "udeyy"},
+      {name: "Mitchell van Poecke", ign: "Tennissky"},
     ],
   },
   {
-    name: "BS IcyWater",
+    name: "BS G.G.C. Yaptown",
     bg: $require("@/assets/valorantesports1.jpg"),
     players: [
-      {
-        name: "Jesse van Gameren",
-        ign: "Machom36",
-      },
-      {
-        name: "Jelle van Wezep",
-        ign: "TheJellyMan",
-      },
-      {
-        name: "Mitchell van Poecke",
-        ign: "tennisky1",
-      },
-      {
-        name: "Yannick Sloot",
-        ign: "Yank",
-      },
-      {
-        name: "René Hammink",
-        ign: "Mr. Pancake",
-      },
+      {name: "Dóra Csiszár", ign: "Puffy71"},
+      {name: "Sanne van Kooten", ign: "EternalScreams"},
+      {name: "Sylwia Siekman", ign: "SylWorld"},
+      {name: "Yannick Sloot", ign: "Yank"},
+      {name: "Sacha Brienesse", ign: "cawa"},
+    ],
+    substitutes: [
+      {name: "Kim Wolf", ign: "kimic"},
+      {name: "Rosalin de Vos", ign: "Lyncxe"},
+      {name: "Veronika Sebaha", ign: "ronicats"},
+    ],
+    coaches: [
+      {name: "Reinier Algra", ign: "BSP Reign"},
     ],
   },
 ])

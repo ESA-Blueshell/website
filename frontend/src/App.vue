@@ -133,8 +133,8 @@
             <v-list-item to="/esports/rocketleague">
               Rocket League
             </v-list-item>
-            <v-list-item to="/esports/trackmania">
-              Trackmania
+            <v-list-item to="/esports/geoguessr">
+              Geoguessr
             </v-list-item>
           </v-list>
         </v-menu>

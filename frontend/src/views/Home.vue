@@ -45,9 +45,7 @@
             >
               {{ col.icon }}
             </v-icon>
-            <p
-              class="text-h3 ma-3 font-weight-thin"
-            >
+            <p class="text-h3 ma-3 font-weight-thin">
               {{ col.title }}
             </p>
           </a>
@@ -88,7 +86,7 @@
           sm="6"
         >
           <v-img
-            :src="$vuetify.theme.global.current.dark?partner.logoDark:partner.logo"
+            :src="$vuetify.theme.global.current.dark ? partner.logoDark : partner.logo"
             class="mx-auto expand"
             style="max-width: 450px"
             @click="$goto(partner.url)"
@@ -99,155 +97,174 @@
   </v-main>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import {ref} from "vue"
 
 import MainBanner from "@/components/banners/MainBanner.vue"
 import DiscordBanner from "@/components/DiscordBanner.vue"
 import SocialsBanner from "@/components/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/GamesWePlay.vue"
+
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
 import "@/assets/animalcrossing.png"
 
-export default {
-  components: {
-    GamesWePlay: GamesWePlay,
-    SocialsBanner: SocialsBanner,
-    DiscordBanner: DiscordBanner,
-    MainBanner: MainBanner,
-  },
-  data() {
-    return {
-      hoveredGame: null,
-      games: [
-        {
-          categoryName: "Competitive",
-          titles: [
-            {
-              title: "League of Legends",
-              bg: $require("@/assets/leaguebg.jpg"),
-              icon: $require("@/assets/league.png"),
-              esportsLink: "/esports/league-of-legends",
-            },
-            {
-              title: "Counter-Strike 2",
-              bg: $require("@/assets/csgobg.jpg"),
-              icon: $require("@/assets/csgo.png"),
-              esportsLink: "/esports/counter-strike-2",
-            },
-            {
-              title: "Valorant",
-              bg: $require("@/assets/valorantbg.jpg"),
-              icon: $require("@/assets/valorant.png"),
-              esportsLink: "/esports/valorant",
-            },
-            {
-              title: "Rocket League",
-              bg: $require("@/assets/rocketleaguebg.jpg"),
-              icon: $require("@/assets/rocketleague.png"),
-              esportsLink: "/esports/rocketleague",
-            },
-            {
-              title: "Trackmania",
-              bg: $require("@/assets/trackmaniabg.jpg"),
-              icon: $require("@/assets/trackmania.png"),
-              esportsLink: "/esports/trackmania",
-            },
-          ],
-        },
-        {
-          categoryName: "Community",
-          titles: [
-            {
-              title: "Dota 2",
-              bg: $require("@/assets/dota2bg.jpg"),
-              icon: $require("@/assets/dota2.png"),
-            },
-            {
-              title: "Minecraft",
-              bg: $require("@/assets/minecraftbg.jpg"),
-              icon: $require("@/assets/minecraft.png"),
-            },
-            {
-              title: "Pokémon",
-              bg: $require("@/assets/pokemonbg.jpg"),
-              icon: $require("@/assets/pokemon.png"),
-            },
-            {
-              title: "Overwatch",
-              bg: $require("@/assets/overwatchbg.jpg"),
-              icon: $require("@/assets/overwatch.png"),
-            },
-            {
-              title: "Super Smash Bros",
-              bg: $require("@/assets/smashbg.jpg"),
-              icon: $require("@/assets/smash.png"),
-            },
-            {
-              title: "Team Fight Tactics",
-              bg: $require("@/assets/tftbg.jpg"),
-              icon: $require("@/assets/tft.png"),
-            },
-            {
-              title: "Trackmania",
-              bg: $require("@/assets/trackmaniabg.jpg"),
-              icon: $require("@/assets/trackmania.png"),
-            },
-            {
-              title: "Valorant",
-              bg: $require("@/assets/valorantbg.jpg"),
-              icon: $require("@/assets/valorant.png"),
-            },
-            {
-              title: "World of Warcraft",
-              bg: $require("@/assets/wowbg.jpg"),
-              icon: $require("@/assets/wow.png"),
-            },
-          ],
-        },
-      ],
-      columns: [
-        {
-          icon: "mdi-account-group",
-          color: "red darken-2",
-          title: "About us",
-          url: "/aboutus",
-          text: "Despite its memberbase, Blueshell Esports is a relatively young student association with only 5 years since its inception. Learn all about our association by clicking above!",
-        },
-        {
-          icon: "mdi-trophy",
-          color: "yellow darken-2",
-          title: "Esports",
-          url: "/esports",
-          text: "As the name of our association suggests, esports is an integral part of Blueshell. Click the icon above to find more information on what we offer!",
-        },
-        {
-          icon: "mdi-calendar",
-          color: "blue darken-2",
-          title: "Events",
-          url: "/events",
-          text: "To keep our community entertained, Blueshell hosts events of many kinds with the help of member-run committees. Click above to see the upcoming events!",
-        },
-      ],
-      partners: [
-        {
-          logo: $require("@/assets/elnino.png"),
-          logoDark: $require("@/assets/elnino.png"),
-          url: "/partners/el-nino",
-        },
-        {
-          logo: $require("@/assets/ett.png"),
-          logoDark: $require("@/assets/ettdark.png"),
-          url: "https://esportsteamtwente.nl/",
-        },
-      ],
-    }
-  },
-  methods: {
-    $goto,
-  },
+interface GameTitle {
+  title: string
+  bg: string
+  icon: string
+  esportsLink?: string
 }
+
+interface GameCategory {
+  categoryName: string
+  titles: GameTitle[]
+}
+
+interface Column {
+  icon: string
+  color: string
+  title: string
+  url: string
+  text: string
+}
+
+interface Partner {
+  logo: string
+  logoDark: string
+  url: string
+}
+
+const games = ref<GameCategory[]>([
+  {
+    categoryName: "Competitive",
+    titles: [
+      {
+        title: "League of Legends",
+        bg: $require("@/assets/leaguebg.jpg"),
+        icon: $require("@/assets/league.png"),
+        esportsLink: "/esports/league-of-legends",
+      },
+      {
+        title: "Counter-Strike 2",
+        bg: $require("@/assets/csgobg.jpg"),
+        icon: $require("@/assets/csgo.png"),
+        esportsLink: "/esports/counter-strike-2",
+      },
+      {
+        title: "Valorant",
+        bg: $require("@/assets/valorantbg.jpg"),
+        icon: $require("@/assets/valorant.png"),
+        esportsLink: "/esports/valorant",
+      },
+      {
+        title: "Rocket League",
+        bg: $require("@/assets/rocketleaguebg.jpg"),
+        icon: $require("@/assets/rocketleague.png"),
+        esportsLink: "/esports/rocketleague",
+      },
+      {
+        title: "Geoguessr",
+        bg: $require("@/assets/geoguessrbg.jpg"),
+        icon: $require("@/assets/geoguessrlogo.webp"),
+        esportsLink: "/esports/geoguessr",
+      },
+    ],
+  },
+  {
+    categoryName: "Community",
+    titles: [
+      {
+        title: "Dota 2",
+        bg: $require("@/assets/dota2bg.jpg"),
+        icon: $require("@/assets/dota2.png"),
+      },
+      {
+        title: "Minecraft",
+        bg: $require("@/assets/minecraftbg.jpg"),
+        icon: $require("@/assets/minecraft.png"),
+      },
+      {
+        title: "Pokémon",
+        bg: $require("@/assets/pokemonbg.jpg"),
+        icon: $require("@/assets/pokemon.png"),
+      },
+      {
+        title: "Overwatch",
+        bg: $require("@/assets/overwatchbg.jpg"),
+        icon: $require("@/assets/overwatch.png"),
+      },
+      {
+        title: "Super Smash Bros",
+        bg: $require("@/assets/smashbg.jpg"),
+        icon: $require("@/assets/smash.png"),
+      },
+      {
+        title: "Team Fight Tactics",
+        bg: $require("@/assets/tftbg.jpg"),
+        icon: $require("@/assets/tft.png"),
+      },
+      {
+        title: "Trackmania",
+        bg: $require("@/assets/trackmaniabg.jpg"),
+        icon: $require("@/assets/trackmania.png"),
+      },
+      {
+        title: "Valorant",
+        bg: $require("@/assets/valorantbg.jpg"),
+        icon: $require("@/assets/valorant.png"),
+      },
+      {
+        title: "World of Warcraft",
+        bg: $require("@/assets/wowbg.jpg"),
+        icon: $require("@/assets/wow.png"),
+      },
+    ],
+  },
+])
+
+const columns = ref<Column[]>([
+  {
+    icon: "mdi-account-group",
+    color: "red darken-2",
+    title: "About us",
+    url: "/aboutus",
+    text:
+      "Despite its memberbase, Blueshell Esports is a relatively young student association with only 5 years since its inception. Learn all about our association by clicking above!",
+  },
+  {
+    icon: "mdi-trophy",
+    color: "yellow darken-2",
+    title: "Esports",
+    url: "/esports",
+    text:
+      "As the name of our association suggests, esports is an integral part of Blueshell. Click the icon above to find more information on what we offer!",
+  },
+  {
+    icon: "mdi-calendar",
+    color: "blue darken-2",
+    title: "Events",
+    url: "/events",
+    text:
+      "To keep our community entertained, Blueshell hosts events of many kinds with the help of member-run committees. Click above to see the upcoming events!",
+  },
+])
+
+const partners = ref<Partner[]>([
+  {
+    logo: $require("@/assets/elnino.png"),
+    logoDark: $require("@/assets/elnino.png"),
+    url: "/partners/el-nino",
+  },
+  {
+    logo: $require("@/assets/ett.png"),
+    logoDark: $require("@/assets/ettdark.png"),
+    url: "https://esportsteamtwente.nl/",
+  },
+])
+
 </script>
+
 <style lang="scss" scoped>
 .expand {
   transition: transform .2s;

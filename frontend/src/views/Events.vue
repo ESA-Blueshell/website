@@ -1,7 +1,12 @@
 <script lang="ts" setup>
+import {computed, onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import {DateTime} from "luxon"
+
 import TopBanner from "@/components/banners/TopBanner.vue"
 import Calendar from "@/components/events-calendar/Calendar.vue"
 import EventList from "@/components/events/EventList.vue"
+
 import {
   type AdvancedCommittee,
   type Event,
@@ -11,12 +16,8 @@ import {
   findEventSignUps,
   type Login,
 } from "@/lib"
-import {computed, onMounted, ref} from "vue"
-import {useStore} from "vuex"
-import {DateTime} from "luxon"
 
 const store = useStore()
-const calendarRef = ref()
 
 const events = ref<Event[]>([])
 const committees = ref<AdvancedCommittee[]>([])
@@ -25,21 +26,16 @@ const eventSignUps = ref<EventSignUp[]>([])
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed<Login>(() => store.getters.getLogin)
 
+const startOfTodayIso = DateTime.now().startOf("day").toISO()!
+
 onMounted(async () => {
   const [eventsResp, signupsResp, committeesResp] = await Promise.all([
     findEvents({
-        query: {
-          from: DateTime.now().startOf("day").toISO()!,
-          sort: ["startTime", "asc"],
-        },
-      },
-    ),
+      query: {from: startOfTodayIso, sort: ["startTime", "asc"]},
+    }),
     isLoggedIn.value
       ? findEventSignUps({
-        query: {
-          from: DateTime.now().startOf("day").toISO()!,
-          userId: login.value.userId,
-        },
+        query: {from: startOfTodayIso, userId: login.value.userId},
       })
       : Promise.resolve({data: [] as EventSignUp[]}),
     isLoggedIn.value
@@ -47,59 +43,55 @@ onMounted(async () => {
       : Promise.resolve({data: [] as AdvancedCommittee[]}),
   ])
 
-  const fetchedEvents = eventsResp.data?.content ?? []
-
+  events.value = eventsResp.data?.content ?? []
   if (isLoggedIn.value) {
     eventSignUps.value = signupsResp.data ?? []
-    committees.value = committeesResp.data as AdvancedCommittee[] ?? []
+    committees.value = (committeesResp.data as AdvancedCommittee[]) ?? []
   }
-  events.value = fetchedEvents
 })
 
-type RefLike<V> = { value: V }
-
 type WithOptionalId = { id?: number }
+type RefLike<T> = { value: T }
 
-function upsert<T extends WithOptionalId>(
-  listRef: RefLike<T[] | undefined>,
-  item: T,
-) {
+function upsert<T extends WithOptionalId>(listRef: RefLike<T[] | undefined>, item: T) {
   const list = listRef.value ?? []
   const idx = list.findIndex(e => e.id === item.id)
-  listRef.value =
-    idx === -1
-      ? [...list, item]
-      : [...list.slice(0, idx), item, ...list.slice(idx + 1)]
+  listRef.value = idx === -1 ? [...list, item] : [...list.slice(0, idx), item, ...list.slice(idx + 1)]
 }
 
-function removeById<T extends WithOptionalId>(
-  listRef: RefLike<T[] | undefined>,
-  id: number,
-) {
+function removeById<T extends WithOptionalId>(listRef: RefLike<T[] | undefined>, id: number) {
   const list = listRef.value ?? []
   listRef.value = list.filter(e => e.id !== id)
 }
 
-function updateEvent(event: Event) {
+const updateEvent = (event: Event) => {
   upsert(events, event)
 }
 
-function deleteEvent(id: number) {
+const deleteEvent = (id: number) => {
   removeById<Event>(events, id)
 }
 
-function updateSignUp(su: EventSignUp) {
-  events.value.find((e: Event) => e.id === su.eventId)!.signUpCount! += 1
+const updateSignUp = (su: EventSignUp) => {
+  const ev = events.value.find(e => e.id === su.eventId)
+  if (ev) {
+    ev.signUpCount ??= 0
+    ev.signUpCount += 1
+  }
   upsert(eventSignUps, su)
 }
 
-function deleteSignUp(id: number) {
-  const signUp = eventSignUps.value.find((es) => es.id === id)!
-  events.value.find((e: Event) => e.id === signUp.eventId)!.signUpCount! -= 1
+const deleteSignUp = (id: number) => {
+  const su = eventSignUps.value.find(es => es.id === id)
+  if (!su) return
+  const ev = events.value.find(e => e.id === su.eventId)
+  if (ev) {
+    ev.signUpCount! -= 1
+  }
   removeById<EventSignUp>(eventSignUps, id)
 }
-
 </script>
+
 <template>
   <v-main>
     <top-banner title="Events" />
@@ -108,7 +100,7 @@ function deleteSignUp(id: number) {
         class="mx-auto my-5"
         style="max-width: 1200px"
       >
-        <calendar ref="calendarRef" />
+        <calendar />
       </div>
       <div
         class="mx-auto mt-5"

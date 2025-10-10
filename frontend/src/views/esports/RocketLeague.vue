@@ -13,11 +13,11 @@
       </div>
     </div>
     <template
-      v-for="team in teams"
+      v-for="(team, i) in teams"
       :key="team.name"
     >
       <team-details
-        :name-right="true"
+        :name-right="i % 2 != 0"
         :team="team"
       />
     </template>
@@ -34,65 +34,24 @@ import {ref} from "vue"
 
 const teams = ref<Team[]>([
   {
-    name: "BS Oogway",
+    name: "BS Squirtles",
     bg: $require("@/assets/rocketleagueesports.jpg"),
     players: [
-      {
-        name: "Allard van der Hooft",
-        ign: "Vdhooft_",
-      },
-      {
-        name: "Max Liebe",
-        ign: "Amalox",
-      },
-      {
-        name: "Job de Ruijter",
-        ign: "Job 404",
-      },
-      {
-        name: "Julian van den Nieuwenhuizen",
-        ign: "Bak en Braad",
-      },
+      {name: "Thomas Dekker", ign: "ItIsIThomas"},
+      {name: "Joy Verheijen", ign: "bluegy"},
+      {name: "Huub Hammink", ign: "boscvruchten thee"},
+    ],
+    substitutes: [
+      {name: "René Hammink", ign: "Mr. Pancake^-^"},
     ],
   },
   {
-    name: "BS Squirtles",
+    name: "BS Turtles",
     bg: $require("@/assets/rocketleagueesports2.jpg"),
     players: [
-      {
-        name: "Thomas Dekker",
-        ign: "ItIsIThomas",
-      },
-      {
-        name: "Joy Verheijen",
-        ign: "Bluegy",
-      },
-      {
-        name: "Huub Hammink",
-        ign: "bosvruchtenthee",
-      },
-    ],
-  },
-  {
-    name: "BS Tadpole",
-    bg: $require("@/assets/rocketleagueesports2.jpg"),
-    players: [
-      {
-        name: "Stijn Dollenkamp",
-        ign: "SJAWID",
-      },
-      {
-        name: "Thijs Krosman",
-        ign: "JustDqnt",
-      },
-      {
-        name: "Henry Slegers",
-        ign: "poopiejoe",
-      },
-      {
-        name: "Thijs Willems",
-        ign: "Darkneoteric",
-      },
+      {name: "Robert Pantilie", ign: "robertP19"},
+      {name: "Finn Prinsenberg", ign: "Diagonize"},
+      {name: "Julian van den Nieuwenhuizen", ign: "Bak en Braad"},
     ],
   },
 ])

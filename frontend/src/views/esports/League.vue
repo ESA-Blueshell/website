@@ -15,10 +15,13 @@
     </div>
 
     <template
-      v-for="team in teams"
+      v-for="(team, i) in teams"
       :key="team.name"
     >
-      <team-details :team="team" />
+      <team-details
+        :name-right="i % 2 != 0"
+        :team="team"
+      />
     </template>
   </v-main>
 </template>
@@ -33,77 +36,30 @@ import {ref} from "vue"
 
 const teams = ref<Team[]>([
   {
-    name: "BS Scaling",
+    name: "BS Roestige Ridders",
     bg: $require("@/assets/leagueesportsbg1.jpg"),
     players: [
-      {
-        name: "Wilco Strijker",
-        ign: "Fill Main",
-      },
-      {
-        name: "Thomas van den Brink",
-        ign: "ThompieB",
-      },
-      {
-        name: "Bob Even",
-        ign: "Bobbus",
-      },
-      {
-        name: "Mark Ganzevles",
-        ign: "Magaera",
-      },
-      {
-        name: "Ivo Heitlager",
-        ign: "BS King Cookie",
-      },
-    ],
-    coaches: [
-      {
-        name: "Hielke Kleijsen",
-        ign: "OG Klutch",
-      },
+      {name: "Max Jansdam", ign: "DwalendeDrol"},
+      {name: "", ign: "fdghjkghsdfg"},
+      {name: "", ign: "Sword Dance"},
+      {name: "Arend Heijn", ign: "banaan9999"},
+      {name: "Marcus Caeyers", ign: "craezed"},
     ],
   },
   {
-    name: "BS Housecats",
+    name: "BS Pandora",
     bg: $require("@/assets/leagueesportsbg2.jpg"),
     players: [
-      {
-        name: "Mark Otter",
-        ign: "markdeotter",
-      },
-      {
-        name: "Mithell van Poecke",
-        ign: "tennissky1",
-      },
-      {
-        name: "Victor Barkey",
-        ign: "The RUde Unicorn",
-      },
-      {
-        name: "Jesse van Gameren",
-        ign: "Machom36",
-      },
-      {
-        name: "Jelle van Wezep",
-        ign: "TheJellyMan",
-      },
-    ],
-    coaches: [
-      {
-        name: "Max Jansdam",
-        ign: "DwalendeDrol",
-      },
+      {name: "Nicolás Pita", ign: "Rule64FatWillump"},
+      {name: "Taha Aydin", ign: "Talpa"},
+      {name: "Alen Mozes", ign: "Zalie"},
+      {name: "Liam Beld", ign: "lyx"},
+      {name: "Emma Dokter", ign: "Gibblegab"},
     ],
     substitutes: [
-      {
-        name: "Sylwia Siekman",
-        ign: "SylWorld",
-      },
-      {
-        name: "Roos Kruk",
-        ign: "ShadowSkyeWolf",
-      },
+      {name: "Mark Otter", ign: "markdeotter"},
+      {name: "joran Riemer", ign: "Hoodyboy"},
+      {name: "Razvan Morariu", ign: "Mora"},
     ],
   },
 ])

@@ -80,8 +80,8 @@ export default {
           url: "/esports/rocketleague",
         },
         {
-          icon: $require("@/assets/trackmania.png"),
-          url: "/esports/trackmania",
+          icon: $require("@/assets/geoguessrlogo.webp"),
+          url: "/esports/geoguessr",
         },
       ],
     }

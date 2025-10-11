@@ -12,7 +12,18 @@ import java.time.Instant;
 import java.util.Objects;
 
 @Entity
-@Table(name = "guests")
+@Table(
+        name = "guests",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_guests_email_deleted_at", columnNames = {"email", "deleted_at"}),
+                @UniqueConstraint(name = "uk_guests_access_token", columnNames = {"access_token"})
+        },
+        indexes = {
+                @Index(name = "idx_guests_name", columnList = "name"),
+                @Index(name = "idx_guests_discord", columnList = "discord"),
+                @Index(name = "idx_guests_created_at", columnList = "created_at")
+        }
+)
 @SQLDelete(sql = "UPDATE guests SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
@@ -66,6 +77,6 @@ public class Guest implements BaseModel {
         return Objects.hash(id);
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

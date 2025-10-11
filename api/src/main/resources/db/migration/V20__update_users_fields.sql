@@ -9,11 +9,6 @@ ALTER TABLE users
     DROP COLUMN in_brevo,
     ADD COLUMN contact_id BIGINT;
 
--- Remove columns related to study data which are no longer required
-ALTER TABLE users
-    DROP COLUMN study,
-    DROP COLUMN start_study_year;
-
 -- Update reset_key values to reflect the new account activation status
 UPDATE users
 SET reset_key = 'ACCOUNT_ACTIVATION'

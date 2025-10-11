@@ -15,7 +15,24 @@ import java.sql.Timestamp;
 import java.util.Set;
 
 @Entity
-@Table(name = "memberships")
+@Table(
+        name = "memberships",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_memberships_user_id_deleted_at",
+                        columnNames = {"user_id", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_memberships_user_id", columnList = "user_id"),
+                @Index(name = "idx_memberships_start_date", columnList = "start_date"),
+                @Index(name = "idx_memberships_end_date", columnList = "end_date"),
+                @Index(name = "idx_memberships_member_type", columnList = "type"),
+                @Index(name = "idx_memberships_incasso", columnList = "incasso"),
+                @Index(name = "idx_memberships_city", columnList = "city"),
+                @Index(name = "idx_memberships_country", columnList = "country")
+        }
+)
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
@@ -60,6 +77,6 @@ public class Membership implements BaseModel {
     @Column(name = "incasso", nullable = false)
     private boolean incasso;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

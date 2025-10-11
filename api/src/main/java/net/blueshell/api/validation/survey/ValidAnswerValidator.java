@@ -20,7 +20,8 @@ public class ValidAnswerValidator implements ConstraintValidator<ValidAnswer, An
     @Override
     public boolean isValid(AnswerDTO dto, ConstraintValidatorContext context) {
         if (dto.getQuestionId() == null) {
-            return false;
+            // Let @NotNull handle this
+            return true;
         }
 
         var question = questions.findById(dto.getQuestionId()).orElse(null);

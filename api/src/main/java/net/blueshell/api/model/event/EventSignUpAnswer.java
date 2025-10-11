@@ -1,6 +1,7 @@
 package net.blueshell.api.model.event;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,9 +15,20 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "event_sign_up_answers")
-@Getter
-@Setter
+@Table(
+        name = "event_sign_up_answers",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_event_sign_up_answers_signup_answer_deleted_at",
+                        columnNames = {"event_sign_up_id", "answer_id", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_event_sign_up_answers_event_sign_up_id", columnList = "event_sign_up_id"),
+                @Index(name = "idx_event_sign_up_answers_answer_id", columnList = "answer_id")
+        }
+)
+@Data
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE event_sign_up_answers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -34,7 +46,7 @@ public class EventSignUpAnswer implements BaseModel {
     @JoinColumn(name = "answer_id", nullable = false)
     private Answer answer;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 
     @Override

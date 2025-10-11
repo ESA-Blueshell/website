@@ -13,7 +13,18 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "files")
+@Table(
+        name = "files",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_files_path_deleted_at", columnNames = {"path", "deleted_at"})
+        },
+        indexes = {
+                @Index(name = "idx_files_uploader_id", columnList = "uploader_id"),
+                @Index(name = "idx_files_media_type", columnList = "media_type"),
+                @Index(name = "idx_files_type", columnList = "type"),
+                @Index(name = "idx_files_created_at", columnList = "created_at")
+        }
+)
 @SQLDelete(sql = "UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
@@ -64,6 +75,6 @@ public class File implements BaseModel {
         return Objects.hash(id);
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

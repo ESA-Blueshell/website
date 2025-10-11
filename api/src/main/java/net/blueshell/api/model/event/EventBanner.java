@@ -50,6 +50,6 @@ public class EventBanner implements BaseModel {
     @ToString.Exclude
     private File file;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

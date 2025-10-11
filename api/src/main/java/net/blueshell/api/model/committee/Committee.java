@@ -14,7 +14,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "committees")
+@Table(
+        name = "committee_members",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_committee_members_committee_user_deleted_at",
+                        columnNames = {"committee_id", "user_id", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_committee_members_committee_id", columnList = "committee_id"),
+                @Index(name = "idx_committee_members_user_id", columnList = "user_id"),
+                @Index(name = "idx_committee_members_committee_role", columnList = "committee_id, role")
+        }
+)
 @Data
 @SQLDelete(sql = "UPDATE committees SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -64,6 +77,6 @@ public class Committee implements BaseModel {
                 members.stream().map(CommitteeMember::getUser).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

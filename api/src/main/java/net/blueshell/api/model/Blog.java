@@ -9,7 +9,20 @@ import org.hibernate.annotations.SQLRestriction;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "blogs")
+@Table(
+        name = "blogs",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_blogs_title_deleted_at",
+                        columnNames = {"title", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_blogs_title", columnList = "title"),
+                @Index(name = "idx_blogs_published_at", columnList = "published_at"),
+                @Index(name = "idx_blogs_created_at", columnList = "created_at")
+        }
+)
 @SQLDelete(sql = "UPDATE blogs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
@@ -31,6 +44,6 @@ public class Blog implements BaseModel {
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

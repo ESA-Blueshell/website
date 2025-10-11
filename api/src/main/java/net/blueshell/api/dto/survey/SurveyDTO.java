@@ -2,10 +2,12 @@ package net.blueshell.api.dto.survey;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
+import net.blueshell.api.validation.survey.ValidQuestionList;
 
 import java.util.Comparator;
 import java.util.List;
@@ -16,8 +18,11 @@ import java.util.List;
 public class SurveyDTO extends BaseDTO {
     private Long id;
     private Long responseCount;
+
     @NotEmpty
-    private List<QuestionDTO> questions;
+    @ValidQuestionList
+    @Valid
+    List<QuestionDTO> questions;
 
     @JsonProperty("questions")
     public List<QuestionDTO> getQuestionsSorted() {

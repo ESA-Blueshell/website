@@ -16,9 +16,16 @@ import java.util.Set;
 @Entity
 @Table(
         name = "questions",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_questions_survey_idx_deleted_at",
+                        columnNames = {"survey_id", "idx", "deleted_at"}
+                )
+        },
         indexes = {
-                @Index(name = "ix_questions_survey_id", columnList = "survey_id"),
-                @Index(name = "ix_questions_survey_idx", columnList = "survey_id, idx")
+                @Index(name = "idx_questions_survey_id", columnList = "survey_id"),
+                @Index(name = "idx_questions_survey_idx", columnList = "survey_id, idx"),
+                @Index(name = "idx_questions_type", columnList = "type")
         }
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -56,7 +63,7 @@ public class Question implements BaseModel {
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
     private long answerCount;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }
 

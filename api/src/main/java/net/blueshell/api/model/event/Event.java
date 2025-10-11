@@ -1,13 +1,10 @@
 package net.blueshell.api.model.event;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
-import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
-import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.survey.Survey;
@@ -20,7 +17,23 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Table(name = "events")
+@Table(
+        name = "events",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_events_google_id_deleted_at", columnNames = {"google_id", "deleted_at"})
+        },
+        indexes = {
+                @Index(name = "idx_events_creator_id", columnList = "creator_id"),
+                @Index(name = "idx_events_last_editor_id", columnList = "last_editor_id"),
+                @Index(name = "idx_events_committee_id", columnList = "committee_id"),
+                @Index(name = "idx_events_start_time", columnList = "start_time"),
+                @Index(name = "idx_events_end_time", columnList = "end_time"),
+                @Index(name = "idx_events_title", columnList = "title"),
+                @Index(name = "idx_events_approved", columnList = "approved"),
+                @Index(name = "idx_events_members_only", columnList = "members_only"),
+                @Index(name = "idx_events_sign_up", columnList = "sign_up")
+        }
+)
 @Data
 @SQLDelete(sql = "UPDATE events SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -120,6 +133,6 @@ public class Event implements BaseModel {
         return Objects.hash(id);
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

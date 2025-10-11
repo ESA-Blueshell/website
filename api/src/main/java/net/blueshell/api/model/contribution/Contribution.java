@@ -1,6 +1,5 @@
 package net.blueshell.api.model.contribution;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -17,7 +16,22 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "contributions")
+@Table(
+        name = "contributions",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_contributions_user_period_deleted_at",
+                        columnNames = {"user_id", "contribution_period_id", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_contributions_user_id", columnList = "user_id"),
+                @Index(name = "idx_contributions_member_id", columnList = "member_id"),
+                @Index(name = "idx_contributions_contribution_period_id", columnList = "contribution_period_id"),
+                @Index(name = "idx_contributions_paid", columnList = "paid"),
+                @Index(name = "idx_contributions_reminded_at", columnList = "reminded_at")
+        }
+)
 @Data
 @SQLDelete(sql = "UPDATE contributions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -75,6 +89,6 @@ public class Contribution implements BaseModel {
         return getClass().hashCode();
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

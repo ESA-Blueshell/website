@@ -1,6 +1,5 @@
 package net.blueshell.api.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -12,7 +11,16 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "sponsors")
+@Table(
+        name = "sponsors",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_sponsors_name_deleted_at", columnNames = {"name", "deleted_at"})
+        },
+        indexes = {
+                @Index(name = "idx_sponsors_logo_id", columnList = "logo_id")
+        }
+)
+
 @SQLDelete(sql = "UPDATE sponsors SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
@@ -48,6 +56,6 @@ public class Sponsor implements BaseModel {
         return Objects.hash(id);
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

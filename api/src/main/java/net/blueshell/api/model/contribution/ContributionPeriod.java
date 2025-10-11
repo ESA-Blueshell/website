@@ -15,7 +15,20 @@ import java.util.Set;
 
 @Data
 @Entity
-@Table(name = "contribution_periods")
+@Table(
+        name = "contribution_periods",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_contribution_periods_start_end_deleted_at",
+                        columnNames = {"start_date", "end_date", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_contribution_periods_start_date", columnList = "start_date"),
+                @Index(name = "idx_contribution_periods_end_date", columnList = "end_date"),
+                @Index(name = "idx_contribution_periods_list_id", columnList = "list_id")
+        }
+)
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
@@ -65,6 +78,6 @@ public class ContributionPeriod implements BaseModel {
         return getClass().hashCode();
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

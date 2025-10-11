@@ -14,7 +14,12 @@ import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
-@Table(name = "answers")
+@Table(
+        name = "answers",
+        indexes = {
+                @Index(name = "idx_answers_question_id", columnList = "question_id")
+        }
+)
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
@@ -53,6 +58,6 @@ public class Answer implements BaseModel {
         return getClass().hashCode();
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

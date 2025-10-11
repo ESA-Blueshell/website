@@ -12,7 +12,24 @@ import java.util.Date;
 import java.util.Set;
 
 @Entity
-@Table(name = "boards")
+@Table(
+        name = "boards",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_boards_name_start_date_deleted_at",
+                        columnNames = {"name", "start_date", "deleted_at"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_boards_picture_deleted_at",
+                        columnNames = {"picture_id", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_boards_name", columnList = "name"),
+                @Index(name = "idx_boards_start_date", columnList = "start_date"),
+                @Index(name = "idx_boards_end_date", columnList = "end_date")
+        }
+)
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Data
@@ -44,6 +61,6 @@ public class Board implements BaseModel {
     @OneToMany(mappedBy = "board")
     private Set<BoardDocument> documents;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

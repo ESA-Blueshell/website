@@ -12,7 +12,12 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "event_feedback")
+@Table(
+        name = "event_feedback",
+        indexes = {
+                @Index(name = "idx_event_feedback_event_id", columnList = "event_id")
+        }
+)
 @Data
 @SQLDelete(sql = "UPDATE event_feedback SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -44,6 +49,6 @@ public class EventFeedback implements BaseModel {
         return Objects.hash(id);
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

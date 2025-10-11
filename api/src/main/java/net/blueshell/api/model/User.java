@@ -1,7 +1,6 @@
 package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -27,10 +26,26 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_users_username_deleted_at", columnNames = {"username", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_email_deleted_at", columnNames = {"email", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_student_number_deleted_at", columnNames = {"student_number", "deleted_at"})
+        },
+        indexes = {
+                @Index(name = "idx_users_created_at", columnList = "created_at"),
+                @Index(name = "idx_users_creator_id", columnList = "creator_id"),
+                @Index(name = "idx_users_enabled", columnList = "enabled"),
+                @Index(name = "idx_users_newsletter", columnList = "newsletter"),
+                @Index(name = "idx_users_reset_key", columnList = "reset_key"),
+                @Index(name = "idx_users_reset_key_valid_until", columnList = "reset_key_valid_until"),
+                @Index(name = "idx_users_last_name", columnList = "last_name"),
+                @Index(name = "idx_users_first_name", columnList = "first_name")
+        }
+)
 @SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
@@ -125,7 +140,7 @@ public class User implements UserDetails, BaseModel {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<EventSignUp> eventSignUps;
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 
     public User() {

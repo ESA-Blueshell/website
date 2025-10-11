@@ -1,6 +1,5 @@
 package net.blueshell.api.model.event;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
@@ -14,7 +13,25 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
-@Table(name = "event_signups")
+@Table(
+        name = "event_signups",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_event_signups_event_user_deleted_at",
+                        columnNames = {"event_id", "user_id", "deleted_at"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_event_signups_event_guest_deleted_at",
+                        columnNames = {"event_id", "guest_id", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_event_signups_event_id", columnList = "event_id"),
+                @Index(name = "idx_event_signups_user_id", columnList = "user_id"),
+                @Index(name = "idx_event_signups_guest_id", columnList = "guest_id"),
+                @Index(name = "idx_event_signups_signed_up_at", columnList = "signed_up_at")
+        }
+)
 @Data
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -53,6 +70,6 @@ public class EventSignUp implements BaseModel {
     @Column(name = "signed_up_at")
     private LocalDateTime signedUpAt;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

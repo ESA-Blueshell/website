@@ -12,7 +12,18 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "committee_members")
+@Table(
+        name = "committees",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_committees_name_deleted_at",
+                        columnNames = {"name", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_committees_name", columnList = "name")
+        }
+)
 @Data
 @SQLDelete(sql = "UPDATE committee_members SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -71,6 +82,6 @@ public class CommitteeMember implements BaseModel {
                 id, getUser() != null ? getUser().getId() : getUserId(), getCommittee() != null ? getCommittee().getId() : null, role);
     }
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
     private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
 }

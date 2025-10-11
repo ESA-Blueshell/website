@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.File;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -39,7 +41,7 @@ public class Board implements BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     private String name;
 
     @JoinColumn(name = "picture_id")
@@ -49,10 +51,10 @@ public class Board implements BaseModel {
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<BoardMember> members;
 
-    @Column(name = "candidate")
+    @Column(name = "candidate", nullable = false)
     private String candidate;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private Date startDate;
 
     @Column(name = "end_date")
@@ -62,5 +64,10 @@ public class Board implements BaseModel {
     private Set<BoardDocument> documents;
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

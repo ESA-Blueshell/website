@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.common.enums.PlatformType;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -37,13 +39,11 @@ public class Telemetry implements BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String url;
 
+    @Column(nullable = false)
     private PlatformType platform;
-
-    @Column(name = "created_at")
-    private Timestamp createdAt;
-
 
     @OneToMany(mappedBy = "telemetry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Redirect> redirects;
@@ -51,9 +51,13 @@ public class Telemetry implements BaseModel {
     public Telemetry(PlatformType platform, String url) {
         this.platform = platform;
         this.url = url;
-        this.createdAt = Timestamp.from(Instant.now());
     }
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

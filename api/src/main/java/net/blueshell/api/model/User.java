@@ -2,6 +2,9 @@ package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
@@ -13,8 +16,7 @@ import net.blueshell.api.common.util.Util;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.event.EventSignUp;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,7 +35,12 @@ import java.util.Set;
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_users_username_deleted_at", columnNames = {"username", "deleted_at"}),
                 @UniqueConstraint(name = "uk_users_email_deleted_at", columnNames = {"email", "deleted_at"}),
-                @UniqueConstraint(name = "uk_users_student_number_deleted_at", columnNames = {"student_number", "deleted_at"})
+                @UniqueConstraint(name = "uk_users_student_number_deleted_at", columnNames = {"student_number", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_discord_deleted_at", columnNames = {"discord", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_phone_number_deleted_at", columnNames = {"phone_number", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_reset_key_deleted_at", columnNames = {"reset_key", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_address_id_deleted_at", columnNames = {"address_id", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_profile_picture_id_deleted_at", columnNames = {"profile_picture_id", "deleted_at"})
         },
         indexes = {
                 @Index(name = "idx_users_created_at", columnList = "created_at"),
@@ -57,13 +64,13 @@ public class User implements UserDetails, BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column
+    @Column(nullable = false)
     private String username;
-    @Column
+    @Column(nullable = false)
     private String password;
-    @Column(name = "first_name")
+    @Column(name = "first_name", nullable = false)
     private String firstName;
-    @Column(name = "last_name")
+    @Column(name = "last_name", nullable = false)
     private String lastName;
     @Column
     private String prefix;
@@ -75,21 +82,19 @@ public class User implements UserDetails, BaseModel {
     private Address address;
     @Column(name = "phone_number")
     private String phoneNumber;
-    @Column
+    @Column(nullable = false)
     private String email;
-    @Column(name = "student_number")
+    @Column(name = "student_number", nullable = false)
     private String studentNumber;
     @Column(name = "date_of_birth")
     private Date dateOfBirth;
-    @Column(name = "created_at")
-    private Timestamp createdAt;
-    @Column
+    @Column(nullable = false)
     private String discord;
     @Column
     private String steamid;
-    @Column
+    @Column(nullable = false)
     private boolean newsletter;
-    @Column
+    @Column(nullable = false)
     private boolean enabled;
     @Column(name = "reset_key")
     private String resetKey;
@@ -109,7 +114,7 @@ public class User implements UserDetails, BaseModel {
     @Column
     private String nationality;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_picture", insertable = false, updatable = false)
+    @JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
     private File profilePicture;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
@@ -141,10 +146,18 @@ public class User implements UserDetails, BaseModel {
     @ToString.Exclude
     private Set<EventSignUp> eventSignUps;
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
+    @Column(name = "study")
+    private String study;
+    @Column(name = "start_study_year")
+    private Long startStudyYear;
 
     public User() {
-        this.createdAt = Timestamp.from(Instant.now());
         this.resetKey = Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH);
         this.resetKeyValidUntil = Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
         this.resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;

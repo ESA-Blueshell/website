@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import org.checkerframework.checker.units.qual.C;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -14,7 +17,8 @@ import java.util.Objects;
 @Table(
         name = "sponsors",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_sponsors_name_deleted_at", columnNames = {"name", "deleted_at"})
+                @UniqueConstraint(name = "uk_sponsors_name_deleted_at", columnNames = {"name", "deleted_at"}),
+                @UniqueConstraint(name = "uk_sponsors_logo_deleted_at", columnNames = {"logo_id", "deleted_at"})
         },
         indexes = {
                 @Index(name = "idx_sponsors_logo_id", columnList = "logo_id")
@@ -30,12 +34,14 @@ public class Sponsor implements BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String description;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "logo_id")
+    @JoinColumn(name = "logo_id", nullable = false)
     private File picture;
 
     @JsonProperty("picture")
@@ -57,5 +63,10 @@ public class Sponsor implements BaseModel {
     }
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

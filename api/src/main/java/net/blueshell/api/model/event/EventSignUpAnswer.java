@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.survey.Answer;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -21,6 +23,10 @@ import java.util.Objects;
                 @UniqueConstraint(
                         name = "uk_event_sign_up_answers_signup_answer_deleted_at",
                         columnNames = {"event_sign_up_id", "answer_id", "deleted_at"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_event_sign_up_answers_answer_deleted_at",
+                        columnNames = {"answer_id", "deleted_at"}
                 )
         },
         indexes = {
@@ -47,7 +53,12 @@ public class EventSignUpAnswer implements BaseModel {
     private Answer answer;
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 
     @Override
     public boolean equals(Object o) {

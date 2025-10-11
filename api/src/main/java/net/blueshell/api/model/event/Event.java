@@ -8,6 +8,8 @@ import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.survey.Survey;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -65,19 +67,19 @@ public class Event implements BaseModel {
     @Column(name = "committee_id")
     private Long committeeId;
 
-    @Column(name = "title")
+    @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     private String description;
 
-    @Column(name = "location")
+    @Column(name = "location", nullable = false)
     private String location;
 
-    @Column(name = "start_time")
+    @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 
-    @Column(name = "end_time")
+    @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
     @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -99,15 +101,15 @@ public class Event implements BaseModel {
     private String googleId;
 
     @Getter
-    @Column(name = "approved")
+    @Column(name = "approved", nullable = false)
     private boolean approved;
 
     @Getter
-    @Column(name = "members_only")
+    @Column(name = "members_only", nullable = false)
     private boolean membersOnly;
 
     @Getter
-    @Column(name = "sign_up")
+    @Column(name = "sign_up", nullable = false)
     private boolean signUp;
 
     @JoinColumn(name = "survey_id")
@@ -134,5 +136,10 @@ public class Event implements BaseModel {
     }
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

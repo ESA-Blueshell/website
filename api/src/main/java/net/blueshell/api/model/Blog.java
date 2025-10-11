@@ -2,7 +2,10 @@ package net.blueshell.api.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import net.blueshell.api.base.BaseModel;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -30,20 +33,23 @@ public class Blog implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Getter
     private Long id;
 
-    @Column(name = "title")
+    @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "html")
+    @Column(name = "html", nullable = false)
     private String html;
 
-    @Column(name = "published_at")
+    @Column(name = "published_at", nullable = false)
     private Timestamp publishedAt;
 
-    @Column(name = "created_at")
-    private Timestamp createdAt;
-
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

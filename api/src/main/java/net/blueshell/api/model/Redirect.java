@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.blueshell.api.base.BaseModel;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -29,12 +31,8 @@ public class Redirect implements BaseModel {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "telemetry_id")
+    @JoinColumn(name = "telemetry_id", nullable = false)
     private Telemetry telemetry;
-
-    @Column(name = "created_at")
-    private Timestamp createdAt;
-
 
     public Redirect(Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -42,5 +40,10 @@ public class Redirect implements BaseModel {
     }
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

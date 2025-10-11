@@ -7,6 +7,8 @@ import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.model.contribution.Contribution;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -21,6 +23,10 @@ import java.util.Set;
                 @UniqueConstraint(
                         name = "uk_memberships_user_id_deleted_at",
                         columnNames = {"user_id", "deleted_at"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_memberships_signature_deleted_at",
+                        columnNames = {"signature_id", "deleted_at"}
                 )
         },
         indexes = {
@@ -48,7 +54,7 @@ public class Membership implements BaseModel {
     @ToString.Exclude
     private User user;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Column(name = "country")
@@ -57,13 +63,13 @@ public class Membership implements BaseModel {
     @Column(name = "city")
     private String city;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private Date startDate;
 
     @Column(name = "end_date")
     private Date endDate;
 
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     private MemberType memberType;
 
@@ -78,5 +84,10 @@ public class Membership implements BaseModel {
     private boolean incasso;
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

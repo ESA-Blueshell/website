@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -40,7 +42,7 @@ public class ContributionPeriod implements BaseModel {
     @OneToMany(mappedBy = "contributionPeriod", cascade = CascadeType.ALL)
     private Set<Contribution> contributions;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     @Setter
     private Date startDate;
 
@@ -48,15 +50,15 @@ public class ContributionPeriod implements BaseModel {
     @Setter
     private Date endDate;
 
-    @Column(name = "half_year_fee")
+    @Column(name = "half_year_fee", nullable = false)
     @Setter
     private double halfYearFee;
 
-    @Column(name = "full_year_fee")
+    @Column(name = "full_year_fee", nullable = false)
     @Setter
     private double fullYearFee;
 
-    @Column(name = "alumni_fee")
+    @Column(name = "alumni_fee", nullable = false)
     @Setter
     private double alumniFee;
 
@@ -79,5 +81,10 @@ public class ContributionPeriod implements BaseModel {
     }
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

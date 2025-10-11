@@ -5,6 +5,8 @@ import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.survey.Answer;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -23,6 +25,10 @@ import java.util.Set;
                 @UniqueConstraint(
                         name = "uk_event_signups_event_guest_deleted_at",
                         columnNames = {"event_id", "guest_id", "deleted_at"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_event_signups_guest_deleted_at",
+                        columnNames = {"guest_id", "deleted_at"}
                 )
         },
         indexes = {
@@ -42,10 +48,10 @@ public class EventSignUp implements BaseModel {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "event_id", insertable = false, updatable = false)
+    @JoinColumn(name = "event_id", insertable = false, updatable = false, nullable = false)
     private Event event;
 
-    @Column(name = "event_id")
+    @Column(name = "event_id", nullable = false)
     private Long eventId;
 
     @ManyToOne
@@ -67,9 +73,14 @@ public class EventSignUp implements BaseModel {
     )
     private Set<Answer> answers;
 
-    @Column(name = "signed_up_at")
+    @Column(name = "signed_up_at", nullable = false)
     private LocalDateTime signedUpAt;
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

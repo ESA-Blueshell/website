@@ -5,6 +5,8 @@ import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -13,15 +15,17 @@ import java.util.Objects;
 
 @Entity
 @Table(
-        name = "committees",
+        name = "committee_members",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_committees_name_deleted_at",
-                        columnNames = {"name", "deleted_at"}
+                        name = "uk_committee_members_committee_user_deleted_at",
+                        columnNames = {"committee_id", "user_id", "deleted_at"}
                 )
         },
         indexes = {
-                @Index(name = "idx_committees_name", columnList = "name")
+                @Index(name = "idx_committee_members_committee_id", columnList = "committee_id"),
+                @Index(name = "idx_committee_members_user_id", columnList = "user_id"),
+                @Index(name = "idx_committee_members_committee_role", columnList = "committee_id, role")
         }
 )
 @Data
@@ -44,7 +48,6 @@ public class CommitteeMember implements BaseModel {
     @ManyToOne(optional = false)
     @JoinColumn(name = "committee_id", nullable = false)
     private Committee committee;
-
 
     @Column(name = "role")
     private String role;
@@ -83,5 +86,10 @@ public class CommitteeMember implements BaseModel {
     }
 
     @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 }

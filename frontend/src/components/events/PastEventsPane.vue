@@ -15,7 +15,7 @@ const route = useRoute()
 const router = useRouter()
 
 const pastEvents = ref<Event[]>([])
-const pastPageMeta = ref<PageMetadata>()
+const pageMeta = ref<PageMetadata>()
 const isLoading = ref(false)
 
 const currentPage = ref(1)
@@ -44,7 +44,7 @@ async function loadPast(pageOneIndexed = 1) {
       },
     })
     pastEvents.value = resp.data?.content ?? []
-    pastPageMeta.value = resp.data!.page!
+    pageMeta.value = resp.data!.page!
   } finally {
     isLoading.value = false
   }
@@ -81,12 +81,16 @@ watch(
     </p>
     <v-divider class="my-3" />
 
-    <v-pagination
-      v-if="(pastPageMeta?.totalPages ?? 1) > 1"
-      v-model="currentPage"
-      :length="pastPageMeta?.totalPages ?? 1"
-      class="mx-3 mb-4"
-    />
+    <div
+      v-if="(pageMeta?.totalPages ?? 1) > 1"
+      class="pagination-wrap mb-4 mx-4"
+    >
+      <v-pagination
+        v-model="currentPage"
+        :length="pageMeta?.totalPages ?? 1"
+        :total-visible="(currentPage > 5 && currentPage < (pageMeta?.totalPages - 4)) ? 9 : 10 "
+      />
+    </div>
 
     <event-list
       :committees="committees"
@@ -102,3 +106,10 @@ watch(
     </div>
   </div>
 </template>
+
+<style lang="scss">
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+}
+</style>

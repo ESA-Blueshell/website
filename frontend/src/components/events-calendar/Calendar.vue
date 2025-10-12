@@ -30,7 +30,6 @@
       Today
     </v-btn>
 
-    <!-- New: Add-to-calendar button -->
     <v-btn
       :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
       aria-label="Add the Blueshell events to my Google Calendar"

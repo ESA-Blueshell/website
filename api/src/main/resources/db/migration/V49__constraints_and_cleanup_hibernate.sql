@@ -36,6 +36,13 @@ WHERE files.type = 'EVENT_BANNER'
 ALTER TABLE committee_members
     MODIFY COLUMN role VARCHAR(255) NULL;
 
+-- Repair the old events which had their times offset by 1 hour
+UPDATE events
+SET
+    start_time = start_time + INTERVAL 1 HOUR,
+    end_time = IF(end_time IS NULL, NULL, end_time + INTERVAL 1 HOUR)
+WHERE DATE(start_time) < '2024-04-01';
+
 -- Update events without an end date, to end at the end of the day of the event
 UPDATE events
 SET end_time = DATE_ADD(DATE(start_time), INTERVAL 1 DAY) - INTERVAL 1 SECOND

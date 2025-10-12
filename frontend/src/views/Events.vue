@@ -16,6 +16,8 @@ import {
   findEventSignUps,
   type Login,
 } from "@/lib"
+import PastEventsPane from "@/components/events/PastEventsPane.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const store = useStore()
 
@@ -29,24 +31,28 @@ const login = computed<Login>(() => store.getters.getLogin)
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
 
 onMounted(async () => {
-  const [eventsResp, signupsResp, committeesResp] = await Promise.all([
-    findEvents({
-      query: {from: startOfTodayIso, sort: ["startTime", "asc"]},
-    }),
-    isLoggedIn.value
-      ? findEventSignUps({
-        query: {from: startOfTodayIso, userId: login.value.userId},
-      })
-      : Promise.resolve({data: [] as EventSignUp[]}),
-    isLoggedIn.value
-      ? findCommitteesForCurrentUser()
-      : Promise.resolve({data: [] as AdvancedCommittee[]}),
-  ])
+  try {
+    const [eventsResp, signupsResp, committeesResp] = await Promise.all([
+      findEvents({
+        query: {from: startOfTodayIso, sort: ["startTime", "asc"]},
+      }),
+      isLoggedIn.value
+        ? findEventSignUps({
+          query: {from: startOfTodayIso, userId: login.value.userId},
+        })
+        : Promise.resolve({data: [] as EventSignUp[]}),
+      isLoggedIn.value
+        ? findCommitteesForCurrentUser()
+        : Promise.resolve({data: [] as AdvancedCommittee[]}),
+    ])
 
-  events.value = eventsResp.data?.content ?? []
-  if (isLoggedIn.value) {
-    eventSignUps.value = signupsResp.data ?? []
-    committees.value = (committeesResp.data as AdvancedCommittee[]) ?? []
+    events.value = eventsResp.data?.content ?? []
+    if (isLoggedIn.value) {
+      eventSignUps.value = signupsResp.data ?? []
+      committees.value = (committeesResp.data as AdvancedCommittee[]) ?? []
+    }
+  } catch (e) {
+    $handleNetworkError(e)
   }
 })
 
@@ -117,6 +123,13 @@ const deleteSignUp = (id: number) => {
           @delete:event="deleteEvent"
           @update:sign-up="updateSignUp"
           @delete:sign-up="deleteSignUp"
+        />
+
+        <v-divider class="my-3" />
+
+        <past-events-pane
+          :committees="committees"
+          :event-sign-ups="eventSignUps"
         />
       </div>
     </div>

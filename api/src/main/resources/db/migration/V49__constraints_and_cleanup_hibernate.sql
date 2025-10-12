@@ -448,9 +448,6 @@ ALTER TABLE memberships
 ALTER TABLE questions
     MODIFY label VARCHAR(2047) NOT NULL;
 
-ALTER TABLE events
-    MODIFY location VARCHAR(255) NOT NULL;
-
 ALTER TABLE sponsors
     MODIFY logo_id BIGINT NOT NULL;
 
@@ -458,7 +455,11 @@ ALTER TABLE files
     MODIFY media_type VARCHAR(255) NOT NULL;
 
 ALTER TABLE contributions
-    MODIFY member_id BIGINT NOT NULL;
+    DROP CONSTRAINT fk_contributions_member_id,
+    DROP COLUMN member_id;
+
+ALTER TABLE contributions
+    MODIFY user_id BIGINT NOT NULL;
 
 ALTER TABLE events
     MODIFY members_only BIT(1) NOT NULL;
@@ -506,7 +507,7 @@ ALTER TABLE events
     MODIFY start_time datetime NOT NULL;
 
 ALTER TABLE users
-    MODIFY student_number VARCHAR(255) NOT NULL;
+    MODIFY student_number VARCHAR(255) NULL;
 
 ALTER TABLE redirects
     MODIFY telemetry_id BIGINT NOT NULL;

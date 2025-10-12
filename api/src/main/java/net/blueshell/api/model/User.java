@@ -84,7 +84,7 @@ public class User implements UserDetails, BaseModel {
     private String phoneNumber;
     @Column(nullable = false)
     private String email;
-    @Column(name = "student_number", nullable = false)
+    @Column(name = "student_number")
     private String studentNumber;
     @Column(name = "date_of_birth")
     private Date dateOfBirth;

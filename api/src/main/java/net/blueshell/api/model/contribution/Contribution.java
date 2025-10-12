@@ -49,10 +49,6 @@ public class Contribution implements BaseModel {
     @Column(name = "user_id", insertable = false, updatable = false, nullable = false)
     private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Membership membership;
-
     @Column(name = "paid", nullable = false)
     private Boolean paid;
 

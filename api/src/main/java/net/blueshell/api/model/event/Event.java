@@ -73,7 +73,7 @@ public class Event implements BaseModel {
     @Column(name = "description", length = 4095)
     private String description;
 
-    @Column(name = "location", nullable = false)
+    @Column(name = "location")
     private String location;
 
     @Column(name = "start_time", nullable = false)

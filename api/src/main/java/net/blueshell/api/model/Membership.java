@@ -77,9 +77,6 @@ public class Membership implements BaseModel {
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private File signature;
 
-    @OneToMany(mappedBy = "membership")
-    private Set<Contribution> contributions;
-
     @Column(name = "incasso", nullable = false)
     private boolean incasso;
 

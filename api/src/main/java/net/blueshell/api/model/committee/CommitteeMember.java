@@ -49,7 +49,7 @@ public class CommitteeMember implements BaseModel {
     @JoinColumn(name = "committee_id", nullable = false)
     private Committee committee;
 
-    @Column(name = "role")
+    @Column(name = "role", length = 255)
     private String role;
 
     public CommitteeMember() {

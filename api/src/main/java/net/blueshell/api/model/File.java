@@ -14,6 +14,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -61,8 +62,8 @@ public class File implements BaseModel {
     @Column(name = "type", nullable = false)
     private FileType type;
 
-    @OneToOne(mappedBy = "file")
-    private EventBanner eventBanner;
+    @OneToMany(mappedBy = "file")
+    private Set<EventBanner> eventBanners;
 
     @Override
     public boolean equals(Object o) {

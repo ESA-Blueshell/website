@@ -88,7 +88,7 @@ public class User implements UserDetails, BaseModel {
     private String studentNumber;
     @Column(name = "date_of_birth")
     private Date dateOfBirth;
-    @Column(nullable = false)
+    @Column
     private String discord;
     @Column
     private String steamid;

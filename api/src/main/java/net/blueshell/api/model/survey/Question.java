@@ -55,7 +55,7 @@ public class Question implements BaseModel {
     @Column(name = "type", nullable = false)
     private QuestionType type;
 
-    @Column(name = "label", nullable = false)
+    @Column(name = "label", nullable = false, length = 2047)
     private String label;
 
     @Column(name = "choice_labels", columnDefinition = "JSON")

@@ -17,8 +17,7 @@ import java.util.Objects;
 @Table(
         name = "guests",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_guests_email_deleted_at", columnNames = {"email", "deleted_at"}),
-                @UniqueConstraint(name = "uk_guests_access_token", columnNames = {"access_token"})
+                @UniqueConstraint(name = "uk_guests_access_token_deleted_at", columnNames = {"access_token", "deleted_at"})
         },
         indexes = {
                 @Index(name = "idx_guests_name", columnList = "name"),

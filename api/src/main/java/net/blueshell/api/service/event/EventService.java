@@ -21,10 +21,6 @@ public class EventService extends BaseModelService<Event, EventRepository> {
         super(repository);
     }
 
-    public Event findByBanner(File banner) {
-        return repository.findByBanner(banner);
-    }
-
     public Page<Event> findByFilter(Pageable pageable, EventFilter filter) {
         if (filter == null) filter = new EventFilter();
         if (pageable == null) pageable = Pageable.unpaged();

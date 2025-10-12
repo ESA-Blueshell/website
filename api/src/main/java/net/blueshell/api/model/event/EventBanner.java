@@ -46,8 +46,12 @@ public class EventBanner implements BaseModel {
     @ToString.Exclude
     private Event event;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.REMOVE)
-    @JoinColumn(name = "file_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "file_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_event_banners_file")
+    )
     @ToString.Exclude
     private File file;
 

@@ -1,3 +1,46 @@
+-- Remove duplicates from the events table, otherwise it's not possible to add new unique constraints
+DELETE e
+FROM events e
+         JOIN (SELECT google_id, title, MIN(id) AS keep_id
+               FROM events
+               GROUP BY google_id, title
+               HAVING COUNT(*) > 1) d
+              ON d.google_id = e.google_id
+                  AND d.title = e.title
+WHERE e.id <> d.keep_id;
+
+-- For files which share duplicate paths, relink the events banners to the same file
+-- This will help in having only one file instance in the DB per physical file.
+UPDATE event_banners eb
+    JOIN files f
+    ON f.id = eb.file_id
+        AND f.type = 'EVENT_BANNER'
+    JOIN (
+        SELECT path, MIN(id) AS keep_id
+        FROM files
+        WHERE type = 'EVENT_BANNER'
+        GROUP BY path
+        HAVING COUNT(*) > 1
+    ) k
+    ON k.path = f.path
+SET eb.file_id = k.keep_id
+WHERE eb.file_id <> k.keep_id;
+
+-- Delete unlinked event banners
+DELETE
+FROM files
+WHERE files.type = 'EVENT_BANNER'
+  AND files.id NOT IN (SELECT file_id FROM event_banners);
+
+-- Change the role column in committee members to be shorter
+ALTER TABLE committee_members
+    MODIFY COLUMN role VARCHAR(255) NULL;
+
+-- Update events without an end date, to end at the end of the day of the event
+UPDATE events
+SET end_time = DATE_ADD(DATE(start_time), INTERVAL 1 DAY) - INTERVAL 1 SECOND
+WHERE end_time IS NULL;
+
 ALTER TABLE events
     DROP FOREIGN KEY fk_events_banner_id;
 
@@ -155,10 +198,7 @@ ALTER TABLE files
     ADD CONSTRAINT uk_files_path_deleted_at UNIQUE (`path`, deleted_at);
 
 ALTER TABLE guests
-    ADD CONSTRAINT uk_guests_access_token UNIQUE (access_token);
-
-ALTER TABLE guests
-    ADD CONSTRAINT uk_guests_email_deleted_at UNIQUE (email, deleted_at);
+    ADD CONSTRAINT uk_guests_access_token_deleted_at UNIQUE (access_token, deleted_at);
 
 ALTER TABLE memberships
     ADD CONSTRAINT uk_memberships_signature_deleted_at UNIQUE (signature_id, deleted_at);
@@ -300,9 +340,6 @@ CREATE INDEX idx_users_reset_key_valid_until ON users (reset_key_valid_until);
 
 DROP TABLE news;
 
-ALTER TABLE authorities
-    DROP PRIMARY KEY;
-
 ALTER TABLE events
     DROP COLUMN banner_id;
 
@@ -317,9 +354,6 @@ ALTER TABLE blogs
 
 ALTER TABLE guests
     MODIFY access_token VARCHAR(255) NOT NULL;
-
-ALTER TABLE authorities
-    MODIFY authority VARCHAR(255) NULL;
 
 ALTER TABLE board_documents
     MODIFY board_id BIGINT NOT NULL;
@@ -373,19 +407,19 @@ ALTER TABLE users
     ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
 
 ALTER TABLE committees
-    MODIFY `description` VARCHAR(255) NOT NULL;
+    MODIFY `description` VARCHAR(4095) NOT NULL;
 
 ALTER TABLE events
-    MODIFY `description` VARCHAR(255) NOT NULL;
+    MODIFY `description` VARCHAR(4095) NULL;
 
 ALTER TABLE sponsors
-    MODIFY `description` VARCHAR(255) NOT NULL;
+    MODIFY `description` VARCHAR(4095) NOT NULL;
 
 ALTER TABLE guests
     MODIFY discord VARCHAR(255) NOT NULL;
 
 ALTER TABLE users
-    MODIFY discord VARCHAR(255) NOT NULL;
+    MODIFY discord VARCHAR(255) NULL;
 
 ALTER TABLE users
     MODIFY enabled BIT(1) NOT NULL;
@@ -412,7 +446,7 @@ ALTER TABLE memberships
     MODIFY incasso BIT(1) NOT NULL;
 
 ALTER TABLE questions
-    MODIFY label VARCHAR(255) NOT NULL;
+    MODIFY label VARCHAR(2047) NOT NULL;
 
 ALTER TABLE events
     MODIFY location VARCHAR(255) NOT NULL;

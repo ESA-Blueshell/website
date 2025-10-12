@@ -37,7 +37,7 @@ public class Sponsor implements BaseModel {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 4095)
     private String description;
 
     @OneToOne(cascade = CascadeType.ALL)

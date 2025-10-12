@@ -40,7 +40,7 @@ public class Committee implements BaseModel {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", nullable = false, length = 4095)
     private String description;
 
     @OneToMany(

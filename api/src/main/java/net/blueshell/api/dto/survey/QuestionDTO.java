@@ -1,7 +1,9 @@
 package net.blueshell.api.dto.survey;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
@@ -21,6 +23,8 @@ public class QuestionDTO extends BaseDTO {
     private Long surveyId;
     @NotNull
     private QuestionType type;
+    @NotBlank(message = "Label cannot be empty.")
+    @Size(max = 2055, message = "Label cannot exceed 2055 characters.")
     private String label;
     private List<String> choiceLabels;
 }

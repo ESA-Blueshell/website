@@ -23,10 +23,10 @@ public class EventDTO extends BaseDTO {
     @NotNull
     private Long committeeId;
     @NotBlank(message = "Event title cannot be empty.")
-    @Size(max = 200, message = "Event title cannot exceed 200 characters.")
+    @Size(max = 255, message = "Event title cannot exceed 255 characters.")
     private String title;
     @NotBlank(message = "Event description cannot be empty.")
-    @JsonProperty("description")
+    @Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
     private String description;
     @JsonProperty("location")
     private String location;

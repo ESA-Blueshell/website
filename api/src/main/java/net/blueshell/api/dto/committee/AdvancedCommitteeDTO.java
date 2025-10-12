@@ -21,13 +21,12 @@ public class AdvancedCommitteeDTO extends BaseDTO {
     private Long id;
 
     @NotBlank(message = "Committee name cannot be blank.")
-    @Size(max = 100, message = "Committee name cannot exceed 100 characters.")
+    @Size(max = 255, message = "Committee name cannot exceed 255 characters.")
     @JsonProperty("name")
     private String name;
 
-    @Size(max = 2000, message = "Committee description cannot exceed 500 characters.")
-    @JsonProperty("description")
-    @NotBlank
+    @NotBlank(message = "Committee description cannot be empty.")
+    @Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
     private String description;
 
     @JsonProperty("members")

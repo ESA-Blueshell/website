@@ -23,6 +23,4 @@ public interface EventRepository extends BaseRepository<Event> {
     @Query("SELECT e FROM Event e ORDER BY e.startTime DESC")
     @Override
     List<Event> findAll();
-
-    Event findByBanner(File banner);
 }

@@ -119,7 +119,11 @@ public class FileService extends BaseModelService<File, FileRepository> {
             fileMapper.populateAfterStore(entity, multipart.getOriginalFilename(), fullPath, path, mediaType);
             entity.setType(type);
 
-            return self().create(entity);
+            if (entity.getId() != null) {
+                return self().update(entity);
+            } else {
+                return self().create(entity);
+            }
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);
         } catch (NoSuchAlgorithmException e) {
@@ -172,22 +176,8 @@ public class FileService extends BaseModelService<File, FileRepository> {
                 .body(resource);
     }
 
-    public void deleteFile(File file) {
-        var fullPath = rootLocation.resolve(file.getPath()).normalize();
-
-
-        try {
-            if (Files.exists(fullPath)) {
-                Files.deleteIfExists(fullPath);
-            }
-            self().delete(file);
-        } catch (IOException e) {
-            log.error("Failed to delete file {}", fullPath, e);
-        }
-    }
-
     public File findByEventBannerId(Long bannerId) {
-        return repository.findByEventBannerId(bannerId).orElseThrow(() ->
+        return repository.findByEventBanners_Id(bannerId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Event banner not found with id: %s".formatted(bannerId)));
     }
 

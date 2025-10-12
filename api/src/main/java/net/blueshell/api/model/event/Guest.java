@@ -20,6 +20,7 @@ import java.util.Objects;
                 @UniqueConstraint(name = "uk_guests_access_token_deleted_at", columnNames = {"access_token", "deleted_at"})
         },
         indexes = {
+                @Index(name = "idx_guests_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_guests_name", columnList = "name"),
                 @Index(name = "idx_guests_discord", columnList = "discord"),
                 @Index(name = "idx_guests_created_at", columnList = "created_at")

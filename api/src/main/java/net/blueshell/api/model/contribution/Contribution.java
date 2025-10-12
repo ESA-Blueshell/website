@@ -24,8 +24,8 @@ import java.util.Objects;
                 )
         },
         indexes = {
+                @Index(name = "idx_contributions_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_contributions_user_id", columnList = "user_id"),
-                @Index(name = "idx_contributions_member_id", columnList = "member_id"),
                 @Index(name = "idx_contributions_contribution_period_id", columnList = "contribution_period_id"),
                 @Index(name = "idx_contributions_paid", columnList = "paid"),
                 @Index(name = "idx_contributions_reminded_at", columnList = "reminded_at")

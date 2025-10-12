@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
                 )
         },
         indexes = {
+                @Index(name = "idx_committees_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_committees_name", columnList = "name")
         }
 )

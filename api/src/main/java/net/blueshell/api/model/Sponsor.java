@@ -21,6 +21,7 @@ import java.util.Objects;
                 @UniqueConstraint(name = "uk_sponsors_logo_deleted_at", columnNames = {"logo_id", "deleted_at"})
         },
         indexes = {
+                @Index(name = "idx_sponsors_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_sponsors_logo_id", columnList = "logo_id")
         }
 )
@@ -54,7 +55,7 @@ public class Sponsor implements BaseModel {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Sponsor sponsor = (Sponsor) o;
-        return id == sponsor.id;
+        return Objects.equals(id, sponsor.id);
     }
 
     @Override

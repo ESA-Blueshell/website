@@ -25,6 +25,7 @@ import java.util.Set;
                 @UniqueConstraint(name = "uk_events_google_id_deleted_at", columnNames = {"google_id", "deleted_at"})
         },
         indexes = {
+                @Index(name = "idx_events_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_events_creator_id", columnList = "creator_id"),
                 @Index(name = "idx_events_last_editor_id", columnList = "last_editor_id"),
                 @Index(name = "idx_events_committee_id", columnList = "committee_id"),

@@ -21,6 +21,7 @@ import java.sql.Timestamp;
                 )
         },
         indexes = {
+                @Index(name = "idx_blogs_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_blogs_title", columnList = "title"),
                 @Index(name = "idx_blogs_published_at", columnList = "published_at"),
                 @Index(name = "idx_blogs_created_at", columnList = "created_at")

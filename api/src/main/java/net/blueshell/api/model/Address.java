@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 @Table(
         name = "addresses",
         indexes = {
+                @Index(name = "idx_addresses_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_addresses_city", columnList = "city"),
                 @Index(name = "idx_addresses_zip_code", columnList = "zip_code")
         }

@@ -24,6 +24,7 @@ import java.util.Set;
                 )
         },
         indexes = {
+                @Index(name = "idx_telemetries_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_telemetries_platform", columnList = "platform"),
                 @Index(name = "idx_telemetries_url", columnList = "url"),
                 @Index(name = "idx_telemetries_created_at", columnList = "created_at")

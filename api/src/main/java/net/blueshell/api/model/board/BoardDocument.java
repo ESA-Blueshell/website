@@ -25,6 +25,7 @@ import java.sql.Timestamp;
                 )
         },
         indexes = {
+                @Index(name = "idx_board_documents_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_board_documents_board_id", columnList = "board_id"),
                 @Index(name = "idx_board_documents_file_id", columnList = "file_id")
         }

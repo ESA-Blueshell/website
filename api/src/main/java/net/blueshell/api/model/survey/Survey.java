@@ -17,6 +17,7 @@ import java.util.Set;
 @Table(
         name = "surveys",
         indexes = {
+                @Index(name = "idx_surveys_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_surveys_response_count", columnList = "response_count")
         }
 )

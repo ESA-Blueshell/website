@@ -17,6 +17,7 @@ import java.util.Objects;
 @Table(
         name = "event_feedback",
         indexes = {
+                @Index(name = "idx_event_feedback_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_event_feedback_event_id", columnList = "event_id")
         }
 )

@@ -16,6 +16,7 @@ import java.time.Instant;
 @Table(
         name = "redirects",
         indexes = {
+                @Index(name = "idx_redirects_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_redirects_telemetry_id", columnList = "telemetry_id"),
                 @Index(name = "idx_redirects_created_at", columnList = "created_at")
         }

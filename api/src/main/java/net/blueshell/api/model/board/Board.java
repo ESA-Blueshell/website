@@ -27,6 +27,7 @@ import java.util.Set;
                 )
         },
         indexes = {
+                @Index(name = "idx_boards_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_boards_name", columnList = "name"),
                 @Index(name = "idx_boards_start_date", columnList = "start_date"),
                 @Index(name = "idx_boards_end_date", columnList = "end_date")

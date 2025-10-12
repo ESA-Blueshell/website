@@ -43,6 +43,7 @@ import java.util.Set;
                 @UniqueConstraint(name = "uk_users_profile_picture_id_deleted_at", columnNames = {"profile_picture_id", "deleted_at"})
         },
         indexes = {
+                @Index(name = "idx_users_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_users_created_at", columnList = "created_at"),
                 @Index(name = "idx_users_creator_id", columnList = "creator_id"),
                 @Index(name = "idx_users_enabled", columnList = "enabled"),

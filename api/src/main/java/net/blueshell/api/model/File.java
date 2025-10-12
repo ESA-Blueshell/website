@@ -23,6 +23,7 @@ import java.util.Set;
                 @UniqueConstraint(name = "uk_files_path_deleted_at", columnNames = {"path", "deleted_at"})
         },
         indexes = {
+                @Index(name = "idx_files_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_files_uploader_id", columnList = "uploader_id"),
                 @Index(name = "idx_files_media_type", columnList = "media_type"),
                 @Index(name = "idx_files_type", columnList = "type"),

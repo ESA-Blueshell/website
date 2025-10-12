@@ -21,6 +21,7 @@ import java.sql.Timestamp;
                 @UniqueConstraint(name = "uk_event_file", columnNames = {"event_id", "file_id", "deleted_at"})
         },
         indexes = {
+                @Index(name = "idx_event_banners_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_event_banners_event", columnList = "event_id"),
                 @Index(name = "idx_event_banners_file", columnList = "file_id"),
         }

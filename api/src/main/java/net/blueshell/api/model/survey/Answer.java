@@ -19,6 +19,7 @@ import java.util.List;
 @Table(
         name = "answers",
         indexes = {
+                @Index(name = "idx_answers_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_answers_question_id", columnList = "question_id")
         }
 )

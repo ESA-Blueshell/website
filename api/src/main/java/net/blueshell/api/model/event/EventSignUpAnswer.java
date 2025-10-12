@@ -30,6 +30,7 @@ import java.util.Objects;
                 )
         },
         indexes = {
+                @Index(name = "idx_event_sign_up_answers_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_event_sign_up_answers_event_sign_up_id", columnList = "event_sign_up_id"),
                 @Index(name = "idx_event_sign_up_answers_answer_id", columnList = "answer_id")
         }

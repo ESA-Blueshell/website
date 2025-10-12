@@ -59,7 +59,6 @@
     v-if="selectedEvent"
     v-model="selectedOpen"
     :activator="selectedElement"
-    :close-on-content-click="false"
     location="start"
   >
     <event-details :model-value="selectedEvent" />
@@ -113,19 +112,17 @@ const loadEventsForMonth = async (month: DateTime) => {
   const to: string = month.endOf("month").endOf("week").endOf("day").toISO()!
 
   if (collectedMonths.value.includes(from)) return
-  const {data} = await findEvents({
-    query: {from, to},
-  })
+  collectedMonths.value.push(from)
+
+  const {data} = await findEvents({query: {from, to}})
   const page = (data ?? {})
 
   if (page.content) {
     const newEvents = page.content.filter(e => !events.value.some(e2 => e2.id === e.id))
-    events.value = [
-      ...events.value,
-      ...newEvents,
-    ]
+    events.value = [...events.value, ...newEvents]
   }
 }
+
 
 function deleteEvent(id: number) {
   events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
@@ -170,7 +167,9 @@ onMounted(() => {
   loadEventsForMonth(DateTime.now().startOf("month")!)
 })
 
-const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
+
+const showEvent = (nativeEvent: MouseEvent, {event}: { event: CalendarEventEx }) => {
+  nativeEvent.stopPropagation()
   const toggle = () => {
     selectedEvent.value = event.raw
     selectedElement.value = nativeEvent.target as HTMLElement
@@ -179,8 +178,31 @@ const showEvent = (nativeEvent: any, {event}: { event: CalendarEventEx }) => {
   if (selectedOpen.value) {
     setTimeout(toggle, 10)
   } else toggle()
-  nativeEvent.stopPropagation()
 }
+//
+// const showEvent = async (nativeEvent: MouseEvent, {event}: { event: CalendarEventEx }) => {
+//   console.log("started event")
+//   nativeEvent.preventDefault()
+//   nativeEvent.stopPropagation()
+//
+//   const target = nativeEvent.target as HTMLElement
+//   const activator = (target.closest?.(".v-event") as HTMLElement) ?? target
+//
+//   const sameEvent = selectedEvent.value?.id === event.raw.id
+//   const sameActivator = selectedElement.value === activator
+//
+//   selectedEvent.value = event.raw
+//   selectedElement.value = activator
+//
+//   if (selectedOpen.value && sameEvent && sameActivator) return
+//
+//   if (selectedOpen.value) {
+//     selectedOpen.value = false
+//     await nextTick()
+//   }
+//   selectedOpen.value = true
+// }
+
 
 defineExpose({
   deleteEvent,

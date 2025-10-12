@@ -1,22 +1,22 @@
 <template>
   <v-card max-width="350px">
     <v-toolbar
-      :color="primary"
+      color="primary"
       dark
     >
-      <v-toolbar-title
-        v-if="eventTitle.length < 15"
-        :text="eventTitle"
-      />
+      <v-toolbar-title v-if="eventTitle.length < 15">
+        {{ eventTitle }}
+      </v-toolbar-title>
+
       <marquee-text
         v-else
+        :key="eventTitle"
         :duration="10"
         :repeat="3"
       >
-        <v-toolbar-title
-          :text="eventTitle"
-          class="mr-5"
-        />
+        <v-toolbar-title class="mr-5">
+          {{ eventTitle }}
+        </v-toolbar-title>
       </marquee-text>
 
       <v-spacer />
@@ -48,6 +48,7 @@
 
     <img
       v-if="bannerUrl"
+      :key="bannerUrl"
       :src="bannerUrl"
       alt="promo image for the event"
       style="width: 100%; object-fit: contain"
@@ -56,15 +57,8 @@
     <v-card-text>
       <p v-if="description">
         <span
-          v-html="expand || !longDescription ? markdownToHtml(description) : markdownToHtml(firstHundredWords)+'...'"
+          v-html="markdownToHtml(description)"
         />
-        <br v-if="!expand && longDescription">
-        <a
-          v-if="!expand && longDescription"
-          @click="expandWords"
-        >
-          <b style="cursor: pointer">read more</b>
-        </a>
       </p>
       <p v-else>
         No description...
@@ -100,41 +94,43 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, ref, toRef, watch} from "vue"
 import MarqueeText from "vue-marquee-text-component"
 import {$goto} from "@/plugins/goto.ts"
 import markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {downloadEventBanner, type Event} from "@/lib"
+import {DateTime} from "luxon"
 
-const props = defineProps<{
-  modelValue: Event
-}>()
+const props = defineProps<{ modelValue: Event }>()
+
+const event = toRef(props, "modelValue")
 
 const expand = ref(false)
 
-const event = computed(() => props.modelValue as Event)
-
-const eventTitle = computed(() => {
-  const title = (event.value.title as string | undefined)
-  return title ?? ""
-})
-
-const description = computed(() => {
-  return (event.value.description as string)
-})
+const eventTitle = computed(() => (event.value?.title as string | undefined) ?? "")
+const description = computed(() => (event.value?.description as string) ?? "")
 
 const bannerUrl = ref<string | null>(null)
+let lastBannerId: number | null = null
 
 async function loadBanner() {
-  if (!event.value?.id || !event.value.banner) return
+  const id = event.value?.banner?.id ?? null
+
+  if (!id) {
+    if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
+    bannerUrl.value = null
+    lastBannerId = null
+    return
+  }
+
+  lastBannerId = id
   try {
     const resp = await downloadEventBanner({
-      path: {
-        bannerId: event.value.banner.id!,
-      },
+      path: {bannerId: id},
       throwOnError: true,
       responseType: "blob",
     })
+    if (lastBannerId !== id) return
 
     const blob = resp?.data as Blob
     if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
@@ -144,24 +140,18 @@ async function loadBanner() {
   }
 }
 
-onMounted(loadBanner)
+watch(() => event.value?.banner?.id, loadBanner, {immediate: true})
 
-function toDate(d: unknown): Date | null {
-  if (!d) return null
-  if (d instanceof Date) return d
-  if (typeof d === "string") {
-    const dt = new Date(d)
-    return isNaN(dt.getTime()) ? null : dt
-  }
-  return null
-}
+onBeforeUnmount(() => {
+  if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
+})
 
 const startDate = computed<Date | null>(() => {
-  return toDate(event.value.startTime as unknown)
+  return event.value?.startTime ? DateTime.fromISO(event.value.startTime).toJSDate() : null
 })
 
 const endDate = computed<Date | null>(() => {
-  return toDate(event.value.endTime as unknown)
+  return event.value?.endTime ? DateTime.fromISO(event.value.endTime).toJSDate() : null
 })
 
 const location = computed(() => (event.value.location as string | undefined) ?? "")
@@ -207,18 +197,10 @@ const formattedDate = computed(() => {
   return `${startTime} - ${endTime}`
 })
 
-const longDescription = computed(() => (description.value?.split(/\s+/).length ?? 0) > 100)
-const firstHundredWords = computed(() => description.value.split(/\s+/).slice(0, 100).join(" "))
-
-// Methods
 function addToCal() {
   const googleId = event.value.googleId as string | undefined
   if (!googleId) return
   $goto(encodeURI(`https://calendar.google.com/event?action=TEMPLATE&tmeid=${googleId}&tmsrc=blueshellesports@gmail.com`))
-}
-
-function expandWords() {
-  expand.value = true
 }
 
 function findLocation() {

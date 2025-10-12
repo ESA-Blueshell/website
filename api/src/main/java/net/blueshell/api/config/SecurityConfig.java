@@ -88,7 +88,7 @@ public class SecurityConfig {
                                 "/swagger-ui**/**",
                                 "/download/**",
                                 "/committees/**",
-                                "/contributionPeriods",
+                                "/contributionPeriods/current",
                                 "/health").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));

@@ -11,7 +11,7 @@ const error = ref(null)
 
 const euros = new Intl.NumberFormat("nl-NL", {style: "currency", currency: "EUR"})
 
-const formatPeriod = (period: ContributionPeriod) => {
+const formatPeriod = (period: ContributionPeriod | undefined) => {
   if (!period || !period.startDate || !period.endDate) return "N/A"
   const start = DateTime.fromISO(period.startDate).toFormat("yyyy")
   const end = DateTime.fromISO(period.endDate).toFormat("yyyy")
@@ -74,9 +74,9 @@ onMounted(() => {
         {{ formatPeriod(contributionPeriod) }} are:
       </p>
       <ul>
-        <li><b>{{ formatCurrency(contributionPeriod.fullYearFee) }}</b> for a full year membership</li>
-        <li><b>{{ formatCurrency(contributionPeriod.halfYearFee) }}</b> for a half-year membership*</li>
-        <li><b>{{ formatCurrency(contributionPeriod.alumniFee) }}</b> for an Alumni membership</li>
+        <li><b>{{ formatCurrency(contributionPeriod?.fullYearFee) }}</b> for a full year membership</li>
+        <li><b>{{ formatCurrency(contributionPeriod?.halfYearFee) }}</b> for a half-year membership*</li>
+        <li><b>{{ formatCurrency(contributionPeriod?.alumniFee) }}</b> for an Alumni membership</li>
       </ul>
       <p class="text-body-1">
         <br>

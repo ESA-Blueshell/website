@@ -23,6 +23,19 @@
           :selected-period-id="selectedPeriodId"
           :users="nonMembers"
           title="Non-member users"
+          @update:membership="membershipChanged"
+          @update:expanded="toggleExpanded"
+          @update:user="userChanged"
+          @delete:user="deleteUser"
+        />
+
+        <user-list
+          :contributions="contributions"
+          :expanded="expanded"
+          :memberships="memberships"
+          :selected-period-id="selectedPeriodId"
+          :users="membersUnpaid"
+          title="Members contribution unpaid"
           @update:contribution="contributionChanged"
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"
@@ -34,11 +47,11 @@
           :contributions="contributions"
           :expanded="expanded"
           :memberships="memberships"
-          :users="members"
+          :users="membersPaid"
           class="mt-5"
           is-member-list
-          title="Members"
-          @update:contribution="contributionChanged"
+          title="Members contribution paid"
+          @delete:contribution="contributionDeleted"
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"
           @update:user="userChanged"
@@ -62,8 +75,8 @@ import {
   type Membership,
 } from "@/lib"
 
-// State
-const members = ref([] as AdvancedUser[])
+const membersPaid = ref([] as AdvancedUser[])
+const membersUnpaid = ref([] as AdvancedUser[])
 const nonMembers = ref([] as AdvancedUser[])
 const users = ref([] as AdvancedUser[])
 const contributions = ref([] as Contribution[])
@@ -76,7 +89,6 @@ if ("scrollRestoration" in window.history) {
   window.history.scrollRestoration = "manual"
 }
 
-// Data loading
 const getUsers = async () => {
   const response = await findUsers()
   if (response.status === 200) {
@@ -95,7 +107,6 @@ const getMemberships = async () => {
   }
 }
 
-// Helpers
 const isSearched = (user: AdvancedUser) => {
   if (!search.value) return true
 
@@ -107,23 +118,34 @@ const isSearched = (user: AdvancedUser) => {
   return searchTerms.every((term) => userValues.some((value) => value.includes(term)))
 }
 
-const updateMembers = () => {
-  members.value = users.value.filter(
-    (user: AdvancedUser) => memberships.value.some((m) => m.userId === user.id) && isSearched(user),
+const hasContributionThisPeriod = (userId: number) =>
+  contributions.value.some(
+    (c) => c.userId === userId && c.contributionPeriodId === selectedPeriodId.value,
   )
+
+const updateMembers = () => {
+  const allMembers = users.value.filter(
+    (user: AdvancedUser) =>
+      memberships.value.some((m) => m.userId === user.id) && isSearched(user),
+  )
+
+  membersPaid.value = allMembers.filter((u) => hasContributionThisPeriod(u.id!))
+  membersUnpaid.value = allMembers.filter((u) => !hasContributionThisPeriod(u.id!))
+
   nonMembers.value = users.value.filter(
-    (user: AdvancedUser) => !memberships.value.some((m) => m.userId === user.id) && isSearched(user),
+    (user: AdvancedUser) =>
+      !memberships.value.some((m) => m.userId === user.id) && isSearched(user),
   )
 }
 
-watch(search, () => {
+
+watch([contributions, memberships, users, selectedPeriodId, search], () => {
   updateMembers()
-})
+}, {deep: true})
 
 // Events
 const deleteUser = (user: AdvancedUser) => {
   users.value = users.value.filter((u) => u.id !== user.id)
-  updateMembers()
 }
 
 const toggleExpanded = (userId: number) => {
@@ -141,7 +163,6 @@ const userChanged = async (user: AdvancedUser) => {
       contributions.value = resp.data ?? []
     }
   }
-  updateMembers()
 }
 
 const contributionChanged = (updatedContribution: Contribution) => {
@@ -160,7 +181,6 @@ const membershipChanged = (updatedMembership: Membership) => {
   } else {
     memberships.value.push(updatedMembership)
   }
-  updateMembers()
 }
 
 const selectedPeriodIdChanged = async (periodId: number) => {
@@ -174,8 +194,6 @@ const selectedPeriodIdChanged = async (periodId: number) => {
 onMounted(async () => {
   try {
     await Promise.all([getUsers(), getMemberships()])
-
-    updateMembers()
   } catch (error) {
     console.error("Error fetching data:", error)
   }

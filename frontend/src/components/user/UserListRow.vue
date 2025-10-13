@@ -165,6 +165,8 @@ interface Emits {
 
   (e: "update:contribution", contribution: Contribution): void;
 
+  (e: "delete:contribution", id: number): void;
+
   (e: "update:expanded", userId: number): void
 }
 

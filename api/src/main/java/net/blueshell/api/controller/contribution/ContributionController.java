@@ -33,17 +33,6 @@ public class ContributionController extends BaseController<ContributionService, 
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @PutMapping("/contributions/{id}/paid")
-    public ContributionDTO setContributionPaid(
-            @PathVariable("id") Long id,
-            @PathParam("paid") boolean paid) {
-        var contribution = service.findById(id);
-        contribution.setPaid(paid);
-        contribution = service.update(contribution);
-        return mapper.toDTO(contribution);
-    }
-
-    @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributions")
     public List<ContributionDTO> findContributions(@RequestParam(required = false) Long contributionPeriodId) {
         var contributions = service.findByContributionPeriodId(contributionPeriodId);

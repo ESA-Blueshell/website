@@ -10,14 +10,12 @@ public abstract class ContributionMapper extends BaseMapper<Contribution, Contri
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "paid")
     @BeanMapping(ignoreByDefault = true)
     public abstract ContributionDTO toDTO(Contribution contribution);
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "paid")
     @BeanMapping(ignoreByDefault = true)
     public abstract Contribution fromDTO(ContributionDTO dto, @MappingTarget Contribution contribution);
 }

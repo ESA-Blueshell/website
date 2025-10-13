@@ -49,9 +49,6 @@ public class Contribution implements BaseModel {
     @Column(name = "user_id", insertable = false, updatable = false, nullable = false)
     private Long userId;
 
-    @Column(name = "paid", nullable = false)
-    private Boolean paid;
-
     @ManyToOne
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     private ContributionPeriod contributionPeriod;

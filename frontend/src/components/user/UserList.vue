@@ -37,6 +37,7 @@
           :user="user"
           @update:expanded="toggleExpanded"
           @update:contribution="contributionChanged"
+          @delete:contribution="contributionDeleted"
           @update:membership="membershipChanged"
           @update:user="userChanged"
           @delete:user="deleteUser"
@@ -78,6 +79,8 @@ const emit = defineEmits<{
 
   (e: "update:membership", membership: Membership): void
 
+  (e: "delete:contribution", id: number): void
+
   (e: "update:contribution", contribution: Contribution): void;
 
   (e: "update:expanded", userId: number): void
@@ -90,6 +93,10 @@ const toggleExpanded = (userId: number) => {
 
 const contributionChanged = (contribution: Contribution) => {
   emit("update:contribution", contribution)
+}
+
+const contributionDeleted = (id: number) => {
+  emit("delete:contribution", id)
 }
 
 const membershipChanged = (membership: Membership) => {

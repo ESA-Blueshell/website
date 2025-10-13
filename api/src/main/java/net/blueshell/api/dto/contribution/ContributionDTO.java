@@ -20,8 +20,5 @@ public class ContributionDTO extends BaseDTO {
     @NotNull
     private Long contributionPeriodId;
 
-    @NotNull
-    private Boolean paid;
-
     private Timestamp remindedAt;
 }

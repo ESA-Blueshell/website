@@ -46,21 +46,15 @@ public class Contribution implements BaseModel {
     @ToString.Exclude
     private User user;
 
-    @Column(name = "user_id", insertable = false, updatable = false, nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     private ContributionPeriod contributionPeriod;
 
-    @Column(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
+    @Column(name = "contribution_period_id", nullable = false)
     private Long contributionPeriodId;
-
-
-    public Contribution(User user, ContributionPeriod contributionPeriod) {
-        this.user = user;
-        this.contributionPeriod = contributionPeriod;
-    }
 
     public Contribution() {
     }

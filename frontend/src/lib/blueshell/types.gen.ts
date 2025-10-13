@@ -20,10 +20,10 @@ export type Membership = {
 
 export enum Role {
     ANONYMOUS = 'ANONYMOUS',
+    VEGAN = 'VEGAN',
     GUEST = 'GUEST',
     COMPANY = 'COMPANY',
     MEMBER = 'MEMBER',
-    VEGAN = 'VEGAN',
     COMMITTEE = 'COMMITTEE',
     BOARD = 'BOARD',
     TREASURER = 'TREASURER',
@@ -1624,7 +1624,10 @@ export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorRe
 export type FindMembershipsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        from?: string;
+        to?: string;
+    };
     url: '/memberships';
 };
 

@@ -82,7 +82,7 @@ import {type ContributionPeriod, deleteContributionPeriodById, findContributionP
 defineOptions({name: "ContributionPeriodList"})
 
 const emit = defineEmits<{
-  (e: "selected-period-id-changed", value: number | undefined): void;
+  (e: "update:contribution-period", value: ContributionPeriod | undefined): void;
 }>()
 
 const contributionPeriods = ref<ContributionPeriod[]>([])
@@ -141,8 +141,8 @@ const confirmDeleteContributionPeriod = async () => {
   await getContributionPeriods()
 }
 
-const selectedPeriodIdChanged = (value: number | undefined) => {
-  emit("selected-period-id-changed", value)
+const selectedPeriodIdChanged = (id: number | undefined) => {
+  emit("update:contribution-period", contributionPeriods.value.find((cp) => cp.id === id)!)
 }
 
 onMounted(() => {

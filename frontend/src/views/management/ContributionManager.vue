@@ -8,8 +8,9 @@
         style="max-width: 800px"
       >
         <contribution-period-list
-          @selected-period-id-changed="selectedPeriodIdChanged"
+          @update:contribution-period="contributionPeriodChanged"
         />
+
 
         <v-text-field
           v-model="search"
@@ -50,6 +51,7 @@ import ContributionUserList from "@/components/user/ContributionUserList.vue"
 import {
   type AdvancedUser,
   type Contribution,
+  type ContributionPeriod,
   findContributionsByPeriodId,
   findMemberships,
   findUsers,
@@ -64,6 +66,7 @@ const membersPaid = ref<AdvancedUser[]>([])
 const membersUnpaid = ref<AdvancedUser[]>([])
 
 const search = ref("")
+const contributionPeriod = ref<ContributionPeriod | undefined>()
 const selectedPeriodId = ref<number>(0)
 
 if ("scrollRestoration" in window.history) {
@@ -125,12 +128,14 @@ const contributionDeleted = (id: number) => {
   contributions.value = contributions.value.filter((c) => c.id !== id)
 }
 
-const selectedPeriodIdChanged = async (periodId: number) => {
-  if (!periodId) return
-  selectedPeriodId.value = periodId
-  const resp = await findContributionsByPeriodId({path: {periodId}})
+const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
+  if (!newPeriod) return
+  contributionPeriod.value = newPeriod
+  selectedPeriodId.value = newPeriod.id as number
+  const resp = await findContributionsByPeriodId({path: {periodId: newPeriod.id as number}})
   contributions.value = resp.data ?? []
 }
+
 
 // Lifecycle
 onMounted(async () => {

@@ -8,7 +8,7 @@
         style="max-width: 800px"
       >
         <contribution-period-list
-          @selected-period-id-changed="selectedPeriodIdChanged"
+          @update:contribution-period="contributionPeriodChanged"
         />
 
         <v-text-field
@@ -55,6 +55,7 @@ import MemberUserList from "@/components/user/MemberUserList.vue"
 import {
   type AdvancedUser,
   type Contribution,
+  type ContributionPeriod,
   findContributionsByPeriodId,
   findMemberships,
   findUsers,
@@ -69,6 +70,7 @@ const memberships = ref<Membership[]>([])
 const contributions = ref<Contribution[]>([])
 
 const selectedPeriodId = ref<number>(0)
+const contributionPeriod = ref<ContributionPeriod | undefined>()
 const expanded = ref<number>(0)
 const search = ref("")
 
@@ -138,16 +140,23 @@ const membershipChanged = (updatedMembership: Membership) => {
   }
 }
 
-const selectedPeriodIdChanged = async (periodId: number) => {
-  if (!periodId) return
-  selectedPeriodId.value = periodId
-  const resp = await findContributionsByPeriodId({path: {periodId}})
-  contributions.value = resp.data ?? []
+const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
+  if (!newPeriod) return
+  contributionPeriod.value = newPeriod
+  selectedPeriodId.value = newPeriod.id as number
+  const [membershipsResp, contributionsResp ] = await Promise.all([
+      findMemberships({query: {from: newPeriod.startDate, to: newPeriod.endDate}}),
+      findContributionsByPeriodId({path: {periodId: newPeriod.id as number}}),
+    ],
+  )
+
+  memberships.value = membershipsResp.data ?? []
+  contributions.value = contributionsResp.data ?? []
 }
 
 onMounted(async () => {
   try {
-    await Promise.all([getUsers(), getMemberships()])
+    await getUsers()
   } catch (error) {
     console.error("Error fetching data:", error)
   }

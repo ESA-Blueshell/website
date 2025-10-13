@@ -2,12 +2,14 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import net.blueshell.api.base.BaseController;
+import net.blueshell.api.controller.filter.MembershipFilter;
 import net.blueshell.api.dto.MembershipDTO;
 import net.blueshell.api.mapper.MembershipMapper;
 import net.blueshell.api.model.Membership;
 import net.blueshell.api.service.MembershipService;
 import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -26,8 +28,8 @@ public class MembershipController extends BaseController<MembershipService, Memb
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
-    public List<MembershipDTO> findMemberships() {
-        return mapper.toDTOs(service.findAll());
+    public List<MembershipDTO> findMemberships(@ParameterObject MembershipFilter filter) {
+        return mapper.toDTOs(service.findByFilter(filter));
     }
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.userId, 'User', 'write')")

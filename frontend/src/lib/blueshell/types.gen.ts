@@ -66,6 +66,7 @@ export type Event = {
     id?: number;
     committeeId: number;
     title: string;
+    description: string;
     startTime: string;
     endTime: string;
     memberPrice?: number;
@@ -77,7 +78,6 @@ export type Event = {
     signUpCount?: number;
     signUpForm?: Survey;
     googleId?: string;
-    description: string;
     location?: string;
 };
 
@@ -108,7 +108,7 @@ export type Question = {
     idx: number;
     surveyId?: number;
     type: QuestionType;
-    label?: string;
+    label: string;
     choiceLabels?: Array<string>;
 };
 
@@ -135,7 +135,7 @@ export type Answer = {
 export type EventSignUp = {
     id?: number;
     eventId?: number;
-    answers?: Array<Answer>;
+    answers: Array<Answer>;
     guest?: Guest;
     user?: SimpleUser;
     userId?: number;
@@ -183,9 +183,9 @@ export type ContributionPeriod = {
 };
 
 export type AdvancedCommittee = {
+    description: string;
     id?: number;
     name: string;
-    description: string;
     members: Array<CommitteeMember>;
 };
 
@@ -219,6 +219,13 @@ export type Telemetry = {
     url?: string;
     platform?: PlatformType;
     createdAt?: string;
+};
+
+export type ContributionReminder = {
+    id?: number;
+    userId: number;
+    contributionPeriodId: number;
+    remindedAt?: string;
 };
 
 export type Blog = {
@@ -347,16 +354,16 @@ export type FieldValidationError = {
     code?: string;
 };
 
-export type PersonalInfo = {
-    fullName: string;
-    discord: string;
-    email: string;
-};
-
 export type SimpleCommittee = {
     id?: number;
     name?: string;
     description?: string;
+};
+
+export type PersonalInfo = {
+    fullName: string;
+    discord: string;
+    email: string;
 };
 
 export type FindMembershipByIdData = {
@@ -968,47 +975,6 @@ export type SetContributionPaidResponses = {
 };
 
 export type SetContributionPaidResponse = SetContributionPaidResponses[keyof SetContributionPaidResponses];
-
-export type SendContributionReminderData = {
-    body?: never;
-    path: {
-        periodId: number;
-    };
-    query?: never;
-    url: '/contributionPeriods/{periodId}/contributions/remind';
-};
-
-export type SendContributionReminderErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SendContributionReminderError = SendContributionReminderErrors[keyof SendContributionReminderErrors];
-
-export type SendContributionReminderResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
 
 export type DeleteContributionPeriodByIdData = {
     body?: never;
@@ -2050,6 +2016,131 @@ export type CreateContributionResponses = {
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
+
+export type FindContributionRemindersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        contributionPeriodId?: number;
+    };
+    url: '/contributionReminders';
+};
+
+export type FindContributionRemindersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindContributionRemindersError = FindContributionRemindersErrors[keyof FindContributionRemindersErrors];
+
+export type FindContributionRemindersResponses = {
+    /**
+     * OK
+     */
+    200: Array<ContributionReminder>;
+};
+
+export type FindContributionRemindersResponse = FindContributionRemindersResponses[keyof FindContributionRemindersResponses];
+
+export type SendContributionReminderData = {
+    body: ContributionReminder;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders';
+};
+
+export type SendContributionReminderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendContributionReminderError = SendContributionReminderErrors[keyof SendContributionReminderErrors];
+
+export type SendContributionReminderResponses = {
+    /**
+     * Created
+     */
+    201: ContributionReminder;
+};
+
+export type SendContributionReminderResponse = SendContributionReminderResponses[keyof SendContributionReminderResponses];
+
+export type SendContributionReminderBatchData = {
+    body: Array<ContributionReminder>;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders/batch';
+};
+
+export type SendContributionReminderBatchErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendContributionReminderBatchError = SendContributionReminderBatchErrors[keyof SendContributionReminderBatchErrors];
+
+export type SendContributionReminderBatchResponses = {
+    /**
+     * Created
+     */
+    201: Array<ContributionReminder>;
+};
+
+export type SendContributionReminderBatchResponse = SendContributionReminderBatchResponses[keyof SendContributionReminderBatchResponses];
 
 export type FindContributionPeriodsData = {
     body?: never;

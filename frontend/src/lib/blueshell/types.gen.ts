@@ -164,14 +164,6 @@ export type SimpleUser = {
     password?: string;
 };
 
-export type Contribution = {
-    id?: number;
-    userId: number;
-    contributionPeriodId: number;
-    paid: boolean;
-    remindedAt?: string;
-};
-
 export type ContributionPeriod = {
     id?: number;
     startDate: string;
@@ -219,6 +211,13 @@ export type Telemetry = {
     url?: string;
     platform?: PlatformType;
     createdAt?: string;
+};
+
+export type Contribution = {
+    id?: number;
+    userId: number;
+    contributionPeriodId: number;
+    remindedAt?: string;
 };
 
 export type ContributionReminder = {
@@ -930,51 +929,6 @@ export type UpdateEventSignUpResponses = {
 };
 
 export type UpdateEventSignUpResponse = UpdateEventSignUpResponses[keyof UpdateEventSignUpResponses];
-
-export type SetContributionPaidData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query: {
-        paid: boolean;
-    };
-    url: '/contributions/{id}/paid';
-};
-
-export type SetContributionPaidErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetContributionPaidError = SetContributionPaidErrors[keyof SetContributionPaidErrors];
-
-export type SetContributionPaidResponses = {
-    /**
-     * OK
-     */
-    200: Contribution;
-};
-
-export type SetContributionPaidResponse = SetContributionPaidResponses[keyof SetContributionPaidResponses];
 
 export type DeleteContributionPeriodByIdData = {
     body?: never;

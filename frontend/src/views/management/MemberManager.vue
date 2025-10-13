@@ -7,6 +7,10 @@
         class="mx-auto my-10"
         style="max-width: 800px"
       >
+        <contribution-period-list
+          @selected-period-id-changed="selectedPeriodIdChanged"
+        />
+
         <v-text-field
           v-model="search"
           label="Search for a user"
@@ -15,6 +19,7 @@
         <member-user-list
           :users="nonMembers"
           :memberships="memberships"
+          :contributions="contributions"
           :expanded="expanded"
           title="Non-member users"
           enable-delete
@@ -27,6 +32,7 @@
         <member-user-list
           :users="members"
           :memberships="memberships"
+          :contributions="contributions"
           :expanded="expanded"
           class="mt-5"
           title="Members"
@@ -46,7 +52,15 @@ import {onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import MemberUserList from "@/components/user/MemberUserList.vue"
 
-import {type AdvancedUser, type Contribution, findMemberships, findUsers, type Membership} from "@/lib"
+import {
+  type AdvancedUser,
+  type Contribution,
+  findContributionsByPeriodId,
+  findMemberships,
+  findUsers,
+  type Membership,
+} from "@/lib"
+import ContributionPeriodList from "@/components/contribution-period/ContributionPeriodList.vue"
 
 const members = ref<AdvancedUser[]>([])
 const nonMembers = ref<AdvancedUser[]>([])
@@ -54,6 +68,7 @@ const users = ref<AdvancedUser[]>([])
 const memberships = ref<Membership[]>([])
 const contributions = ref<Contribution[]>([])
 
+const selectedPeriodId = ref<number>(0)
 const expanded = ref<number>(0)
 const search = ref("")
 
@@ -123,7 +138,13 @@ const membershipChanged = (updatedMembership: Membership) => {
   }
 }
 
-// Lifecycle
+const selectedPeriodIdChanged = async (periodId: number) => {
+  if (!periodId) return
+  selectedPeriodId.value = periodId
+  const resp = await findContributionsByPeriodId({path: {periodId}})
+  contributions.value = resp.data ?? []
+}
+
 onMounted(async () => {
   try {
     await Promise.all([getUsers(), getMemberships()])

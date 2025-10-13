@@ -20,8 +20,8 @@
           title="Contribution paid"
           :users="membersPaid"
           :contributions="contributions"
-          :selected-period-id="selectedPeriodId"
           :disabled="!selectedPeriodId"
+          :contribution-period-id="selectedPeriodId"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"
         />
@@ -31,8 +31,8 @@
           title="Contribution unpaid"
           :users="membersUnpaid"
           :contributions="contributions"
-          :selected-period-id="selectedPeriodId"
           :disabled="!selectedPeriodId"
+          :contribution-period-id="selectedPeriodId"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"
         />

@@ -36,17 +36,29 @@
 
           <v-chip
             v-if="!!user?.roles?.at(-1)"
-            class="mr-3"
+            class="mr-3 d-flex justify-center align-center text-capitalize"
             size="small"
+            style="width: 80px"
             variant="flat"
           >
-            {{ user.roles.at(-1) }}
+            {{ user.roles.at(-1).toLocaleLowerCase() }}
           </v-chip>
 
-          <!-- Delete user -->
+
+          <v-chip
+            class="mr-3 d-flex justify-center align-center"
+            size="small"
+            style="width: 50px"
+            :color="hasContribution ? 'green' : 'red'"
+            variant="flat"
+          >
+            {{ hasContribution ? 'Paid' : 'Unpaid' }}
+          </v-chip>
+
+
           <v-btn
+            v-if="enableDelete"
             :disabled="user?.roles?.includes('ADMIN')"
-            :v-if="enableDelete"
             color="red"
             variant="text"
             @click.stop="openDelete"
@@ -54,7 +66,7 @@
             Delete
           </v-btn>
 
-          <!-- Membership controls -->
+
           <template v-if="membership">
             <v-btn
               v-if="membership.endDate"
@@ -122,17 +134,19 @@ import DeleteConfirmationDialog from "@/components/DeletionConfirmationDialog.vu
 import {DateTime} from "luxon"
 import StartMembershipDialog from "@/components/membership/StartMembershipDialog.vue"
 
-import {type AdvancedUser, deleteUserById, type Membership, updateMembership} from "@/lib"
+import {type AdvancedUser, type Contribution, deleteUserById, type Membership, updateMembership} from "@/lib"
 
 interface Props {
   user: AdvancedUser
   memberships?: Array<Membership>
+  contributions?: Array<Contribution>
   expanded?: number | null
   enableDelete?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   memberships: () => [],
+  contributions: () => [],
   expanded: null,
   enableDelete: () => false,
 })
@@ -150,6 +164,15 @@ const showStartModal = ref(false)
 const membership = computed<Membership | undefined>(() =>
   props.memberships.find((m) => m.userId === props.user.id),
 )
+
+
+const contribution = computed<Contribution | undefined>(() =>
+  props.contributions.find(
+    (c) => c.userId === props.user.id,
+  ),
+)
+
+const hasContribution = computed(() => !!contribution.value)
 
 const userModel = computed<AdvancedUser>({
   get: () => props.user,

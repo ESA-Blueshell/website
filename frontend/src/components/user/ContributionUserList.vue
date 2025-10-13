@@ -11,8 +11,8 @@
         <contribution-user-list-row
           :user="user"
           :contributions="contributions"
-          :selected-period-id="selectedPeriodId"
           :disabled="disabled"
+          :contribution-period-id="contributionPeriodId"
           @update:contribution="contributionChanged"
           @delete:contribution="contributionDeleted"
         />
@@ -24,21 +24,21 @@
 
 <script lang="ts" setup>
 import ContributionUserListRow from "./ContributionUserListRow.vue"
-import type {AdvancedUser, Contribution} from "@/lib/types.gen.ts"
+import type {AdvancedUser, Contribution} from "@/lib"
 import {toRefs} from "vue"
 
 const props = withDefaults(defineProps<{
   title: string
   users: AdvancedUser[]
+  contributionPeriodId: number
   contributions?: Contribution[]
-  selectedPeriodId?: number
   disabled?: boolean
 }>(), {
   contributions: () => [],
   selectedPeriodId: 0,
   disabled: false,
 })
-const {title, users, contributions, selectedPeriodId, disabled} = toRefs(props)
+const {title, users, contributions, disabled} = toRefs(props)
 
 const emit = defineEmits<{
   (e: "delete:contribution", id: number): void

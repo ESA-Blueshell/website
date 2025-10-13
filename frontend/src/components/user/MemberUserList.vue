@@ -35,6 +35,7 @@
         <member-user-list-row
           :user="user"
           :memberships="memberships"
+          :contributions="contributions"
           :expanded="expanded"
           :enable-delete="enableDelete"
           @update:expanded="toggleExpanded"
@@ -51,18 +52,20 @@
 <script lang="ts" setup>
 import MemberUserListRow from "./MemberUserListRow.vue"
 import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
-import type {AdvancedUser, Membership} from "@/lib"
+import type {AdvancedUser, Contribution, Membership} from "@/lib"
 import {toRefs} from "vue"
 
 const props = withDefaults(defineProps<{
   title: string
   memberships?: Membership[]
+  contributions?: Contribution[]
   users: AdvancedUser[]
   expanded?: number | null
   allowCreate?: boolean
   enableDelete?: boolean
 }>(), {
   memberships: () => [],
+  contributions: () => [],
   expanded: null,
   allowCreate: false,
   enableDelete: false,
@@ -86,7 +89,7 @@ const userChanged = (user: AdvancedUser) => emit("update:user", user)
 const deleteUser = (user: AdvancedUser) => emit("delete:user", user)
 
 const createdUserChanged = (user: AdvancedUser) => {
-  emit("update:expanded", 0) // close create panel
+  emit("update:expanded", 0)
   emit("update:user", user)
 }
 </script>

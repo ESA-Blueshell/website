@@ -17,11 +17,12 @@
           <div class="d-flex align-center mr-4">
             <v-chip
               v-if="!!user?.roles?.at(-1)"
-              class="mr-3"
+              class="mr-3 d-flex justify-center align-center text-capitalize"
               size="small"
+              style="width: 80px"
               variant="flat"
             >
-              {{ user.roles.at(-1) }}
+              {{ user.roles.at(-1).toLocaleLowerCase() }}
             </v-chip>
 
             <v-btn
@@ -46,12 +47,11 @@ import {type AdvancedUser, type Contribution, createContribution, deleteContribu
 
 const props = withDefaults(defineProps<{
   user: AdvancedUser
+  contributionPeriodId: number
   contributions?: Array<Contribution>
-  selectedPeriodId?: number
   disabled?: boolean
 }>(), {
   contributions: () => [],
-  selectedPeriodId: 0,
   disabled: false,
 })
 
@@ -64,20 +64,20 @@ const saving = ref(false)
 
 const contribution = computed<Contribution | undefined>(() =>
   props.contributions.find(
-    (c) => c.userId === props.user.id && c.contributionPeriodId === props.selectedPeriodId,
+    (c) => c.userId === props.user.id,
   ),
 )
 
 const hasContribution = computed(() => !!contribution.value)
 
 const markPaid = async () => {
-  if (!props.selectedPeriodId || props.disabled || saving.value) return
+  if (!props.contributionPeriodId || props.disabled || saving.value) return
   saving.value = true
   try {
     const response = await createContribution({
       body: {
         userId: props.user.id as number,
-        contributionPeriodId: props.selectedPeriodId as number,
+        contributionPeriodId: props.contributionPeriodId as number,
       },
     })
     if (response.data) emit("update:contribution", response.data)

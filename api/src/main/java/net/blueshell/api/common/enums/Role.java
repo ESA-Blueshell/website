@@ -9,10 +9,10 @@ import java.util.stream.Collectors;
 @Schema(enumAsRef = true)
 public enum Role {
     ANONYMOUS("ANONYMOUS"),
+    VEGAN("VEGAN"),
     GUEST("GUEST", ANONYMOUS),
     COMPANY("COMPANY"),
     MEMBER("MEMBER", GUEST),
-    VEGAN("VEGAN"),
     COMMITTEE("COMMITTEE", MEMBER),
     BOARD("BOARD", COMMITTEE),
     TREASURER("TREASURER", BOARD),
@@ -39,30 +39,12 @@ public enum Role {
         return res;
     }
 
-    /**
-     * Names as stored by @Enumerated(EnumType.STRING) (i.e., enum constants).
-     */
-    public static Set<String> allThatInheritNames(Role base) {
-        return allThatInherit(base).stream()
-                .map(Enum::name)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * Optional: display strings, if you need the human-readable labels.
-     */
-    public static Set<String> allThatInheritRepr(Role base) {
-        return allThatInherit(base).stream()
-                .map(r -> r.reprString)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
     public boolean matchesRole(Role role) {
         return role == this || Arrays.stream(inheritedRoles).anyMatch(r -> r.matchesRole(role));
     }
 
     /**
-     * Depth- (or breadth idk) first search for all inherited roles of this Role.
+     * Search for all inherited roles of this Role.
      */
     public Set<Role> getAllInheritedRoles() {
         Set<Role> res = new HashSet<>();

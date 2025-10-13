@@ -7,19 +7,29 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.dto.survey.QuestionDTO;
 import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "AdvancedUser")
 public class AdvancedUserDTO extends SimpleUserDTO {
 
-    @JsonProperty
     private Set<Role> roles;
+
+    @JsonProperty("roles")
+    public List<Role> getRolesSorted() {
+        if (roles == null || roles.isEmpty()) return new ArrayList<>();
+
+        return roles.stream()
+                .sorted(Comparator.comparingInt(Enum::ordinal))
+                .toList();
+    }
 
     @JsonProperty
     @NotNull

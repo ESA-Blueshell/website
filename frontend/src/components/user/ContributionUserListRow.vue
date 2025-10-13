@@ -1,0 +1,109 @@
+<template>
+  <div>
+    <v-list-item>
+      <div
+        class="d-flex justify-space-between align-center"
+        style="width: 100%;"
+      >
+        <div class="flex-grow-1">
+          <v-list-item-title>{{ user.fullName }}</v-list-item-title>
+          <v-list-item-subtitle>{{ user.username }}</v-list-item-subtitle>
+        </div>
+
+        <div
+          class="d-flex align-center"
+          style="flex-shrink: 0;"
+        >
+          <div class="d-flex align-center mr-4">
+            <v-chip
+              v-if="!!user?.roles?.at(-1)"
+              class="mr-3"
+              size="small"
+              variant="flat"
+            >
+              {{ user.roles.at(-1) }}
+            </v-chip>
+
+            <v-btn
+              size="small"
+              variant="tonal"
+              :loading="saving"
+              :disabled="disabled || saving"
+              @click.stop="hasContribution ? unmarkPaid() : markPaid()"
+            >
+              {{ hasContribution ? "Mark unpaid" : "Mark paid" }}
+            </v-btn>
+          </div>
+        </div>
+      </div>
+    </v-list-item>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import {type AdvancedUser, type Contribution, createContribution, deleteContribution} from "@/lib"
+
+const props = withDefaults(defineProps<{
+  user: AdvancedUser
+  contributions?: Array<Contribution>
+  selectedPeriodId?: number
+  disabled?: boolean
+}>(), {
+  contributions: () => [],
+  selectedPeriodId: 0,
+  disabled: false,
+})
+
+const emit = defineEmits<{
+  (e: "update:contribution", contribution: Contribution): void
+  (e: "delete:contribution", id: number): void
+}>()
+
+const saving = ref(false)
+
+const contribution = computed<Contribution | undefined>(() =>
+  props.contributions.find(
+    (c) => c.userId === props.user.id && c.contributionPeriodId === props.selectedPeriodId,
+  ),
+)
+
+const hasContribution = computed(() => !!contribution.value)
+
+const markPaid = async () => {
+  if (!props.selectedPeriodId || props.disabled || saving.value) return
+  saving.value = true
+  try {
+    const response = await createContribution({
+      body: {
+        userId: props.user.id as number,
+        contributionPeriodId: props.selectedPeriodId as number,
+      },
+    })
+    if (response.data) emit("update:contribution", response.data)
+  } catch (e) {
+    console.error("Failed to mark as paid:", e)
+  } finally {
+    saving.value = false
+  }
+}
+
+const unmarkPaid = async () => {
+  if (!contribution.value || props.disabled || saving.value) return
+  saving.value = true
+  try {
+    await deleteContribution({path: {id: contribution.value.id as number}})
+    emit("delete:contribution", contribution.value.id as number)
+  } catch (e) {
+    console.error("Failed to unmark as paid:", e)
+  } finally {
+    saving.value = false
+  }
+}
+</script>
+
+<style lang="scss">
+span {
+  font-weight: bold;
+}
+</style>

@@ -218,6 +218,12 @@
             </v-list-item>
             <v-list-item
               v-if="isBoard"
+              to="/contributions/manage"
+            >
+              Manage contributions
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
               to="/committees/manage"
             >
               Manage committees

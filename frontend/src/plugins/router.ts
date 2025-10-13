@@ -21,7 +21,8 @@ import EditEvent from "@/views/events/EditEvent.vue"
 import EventSignUps from "@/views/events/EventSignUps.vue"
 import CommitteeManager from "@/views/committee/CommitteeManager.vue"
 import CreateAccount from "@/views/login/CreateAccount.vue"
-import MemberManager from "@/views/login/MemberManager.vue"
+import MemberManager from "@/views/management/MemberManager.vue"
+import ContributionManager from "@/views/management/ContributionManager.vue"
 import RocketLeague from "@/views/esports/RocketLeague.vue"
 import ResetPassword from "@/views/login/ResetPassword.vue"
 import EventSignUpEdit from "@/components/events/EventSignUpEdit.vue"
@@ -213,6 +214,12 @@ const routes: RouteRecordRaw[] = [
     path: "/members/manage",
     name: "memberManager",
     component: MemberManager,
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/contributions/manage",
+    name: "contributionManager",
+    component: ContributionManager,
     meta: {requiresAuth: true},
   },
   {

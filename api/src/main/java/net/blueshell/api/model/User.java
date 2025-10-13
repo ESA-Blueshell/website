@@ -2,9 +2,6 @@ package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
@@ -16,7 +13,10 @@ import net.blueshell.api.common.util.Util;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.event.EventSignUp;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -120,11 +120,11 @@ public class User implements UserDetails, BaseModel {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<CommitteeMember> committeeMembers;
-    @JoinTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
+    @CollectionTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
-    private Set<Role> roles;
+    private Set<Role> roles = new HashSet<>();
     @Column(name = "ehbo")
     private boolean ehbo = false;
     @Column(name = "contact_id")
@@ -146,7 +146,7 @@ public class User implements UserDetails, BaseModel {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<EventSignUp> eventSignUps;
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
@@ -161,8 +161,18 @@ public class User implements UserDetails, BaseModel {
     public User() {
         this.resetKey = Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH);
         this.resetKeyValidUntil = Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
-        this.resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;
-        addRole(Role.GUEST);
+        this.resetType = ResetType.USER_ACTIVATION;
+    }
+
+    @PrePersist
+    private void prePersist() {
+        if (roles == null || roles.isEmpty()) {
+            roles = new HashSet<>();
+            roles.add(Role.GUEST);
+        }
+        if (resetType == null) {
+            resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;
+        }
     }
 
     public Set<CommitteeMember> getCommitteeMembers() {
@@ -181,7 +191,8 @@ public class User implements UserDetails, BaseModel {
     }
 
     public Set<Role> getRoles() {
-        return roles == null ? new HashSet<>() : roles;
+        if (roles == null) roles = new HashSet<>();
+        return roles;
     }
 
     public Set<Role> getInheritedRoles() {
@@ -227,21 +238,11 @@ public class User implements UserDetails, BaseModel {
     }
 
     public void addRole(Role role) {
-        var roles = getRoles();
-        if (roles == null) {
-            roles = new HashSet<>();
-        }
-        roles.add(role);
-        setRoles(roles);
+        getRoles().add(role);
     }
 
     public void removeRole(Role role) {
-        var roles = getRoles();
-        if (roles == null) {
-            return;
-        }
-        roles.remove(role);
-        setRoles(roles);
+        getRoles().remove(role);
     }
 
     public void setEmail(String email) {

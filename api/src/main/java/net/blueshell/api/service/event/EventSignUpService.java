@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.controller.filter.EventSignUpFilter;
 import net.blueshell.api.model.event.EventSignUp;
-import net.blueshell.api.repository.EventSignUpRepository;
+import net.blueshell.api.repository.event.EventSignUpRepository;
 import net.blueshell.api.repository.spec.EventSignUpSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

@@ -2,7 +2,7 @@ package net.blueshell.api.job.brevo;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.User;
-import net.blueshell.api.service.ContributionPeriodService;
+import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;

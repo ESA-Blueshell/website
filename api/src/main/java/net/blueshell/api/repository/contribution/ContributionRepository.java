@@ -1,4 +1,4 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository.contribution;
 
 import net.blueshell.api.base.BaseRepository;
 import net.blueshell.api.model.contribution.Contribution;
@@ -18,6 +18,4 @@ public interface ContributionRepository extends BaseRepository<Contribution> {
     void deleteByContributionPeriod(@Param("contributionPeriod") ContributionPeriod contributionPeriod);
 
     List<Contribution> findByContributionPeriod(ContributionPeriod contributionPeriod);
-
-    List<Contribution> findByContributionPeriodAndPaid(ContributionPeriod contributionPeriod, Boolean paid);
 }

@@ -1,4 +1,4 @@
-package net.blueshell.api.controller;
+package net.blueshell.api.controller.event;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;

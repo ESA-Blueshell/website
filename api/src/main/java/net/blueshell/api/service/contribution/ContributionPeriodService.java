@@ -1,8 +1,8 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.contribution;
 
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.repository.ContributionPeriodRepository;
+import net.blueshell.api.repository.contribution.ContributionPeriodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;

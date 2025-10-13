@@ -1,9 +1,9 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.contribution;
 
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.repository.ContributionRepository;
+import net.blueshell.api.repository.contribution.ContributionRepository;
 import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -30,20 +31,5 @@ public class ContributionService extends BaseModelService<Contribution, Contribu
     public List<Contribution> findByContributionPeriodId(Long contributionPeriodId) {
         ContributionPeriod contributionPeriod = periodService.findById(contributionPeriodId);
         return repository.findByContributionPeriod(contributionPeriod);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Contribution> findByContributionPeriodIdAndPaid(Long periodId, Boolean paid) {
-        ContributionPeriod contributionPeriod = periodService.findById(periodId);
-        return repository.findByContributionPeriodAndPaid(contributionPeriod, paid);
-    }
-
-    @Transactional
-    public void sendReminder(Long periodId) {
-        List<Contribution> unpaidContributions = findByContributionPeriodIdAndPaid(periodId, false);
-        emails.contributionReminders(unpaidContributions);
-        Timestamp remindedAt = Timestamp.from(Instant.now());
-        unpaidContributions.forEach(contribution -> contribution.setRemindedAt(remindedAt));
-        self().updateAll(unpaidContributions);
     }
 }

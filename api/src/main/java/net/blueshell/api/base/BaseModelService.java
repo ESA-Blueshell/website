@@ -79,6 +79,18 @@ public abstract class BaseModelService<
         return entity;
     }
 
+
+    /**
+     * Create a collection of entities.
+     * <p>Each element is processed individually, so every item still triggers
+     * the pre/post hooks and id-existence check.</p>
+     */
+    @Transactional
+    public List<T> createAll(List<T> entities) {
+        return entities.stream().map(this::create).toList();
+    }
+
+
     /* -----------------------------------------------------------------
      * UPDATE (single + batch)
      * ----------------------------------------------------------------- */

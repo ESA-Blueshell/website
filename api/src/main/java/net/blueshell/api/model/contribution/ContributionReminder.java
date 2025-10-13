@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
-import net.blueshell.api.model.Membership;
 import net.blueshell.api.model.User;
 import org.hibernate.annotations.*;
 
@@ -16,26 +15,25 @@ import java.util.Objects;
 
 @Entity
 @Table(
-        name = "contributions",
+        name = "contribution_reminders",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_contributions_user_period_deleted_at",
+                        name = "uk_contribution_reminders_user_period_deleted_at",
                         columnNames = {"user_id", "contribution_period_id", "deleted_at"}
                 )
         },
         indexes = {
-                @Index(name = "idx_contributions_deleted_at", columnList = "deleted_at"),
-                @Index(name = "idx_contributions_user_id", columnList = "user_id"),
-                @Index(name = "idx_contributions_contribution_period_id", columnList = "contribution_period_id"),
-                @Index(name = "idx_contributions_paid", columnList = "paid"),
-                @Index(name = "idx_contributions_reminded_at", columnList = "reminded_at")
+                @Index(name = "idx_contribution_reminders_deleted_at", columnList = "deleted_at"),
+                @Index(name = "idx_contribution_reminders_created_at", columnList = "deleted_at"),
+                @Index(name = "idx_contribution_reminders_user_id", columnList = "user_id"),
+                @Index(name = "idx_contribution_reminders_contribution_period_id", columnList = "contribution_period_id"),
         }
 )
 @Data
-@SQLDelete(sql = "UPDATE contributions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE contribution_reminders SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
-public class Contribution implements BaseModel {
+public class ContributionReminder implements BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,9 +47,6 @@ public class Contribution implements BaseModel {
     @Column(name = "user_id", insertable = false, updatable = false, nullable = false)
     private Long userId;
 
-    @Column(name = "paid", nullable = false)
-    private Boolean paid;
-
     @ManyToOne
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     private ContributionPeriod contributionPeriod;
@@ -59,20 +54,11 @@ public class Contribution implements BaseModel {
     @Column(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     private Long contributionPeriodId;
 
-
-    public Contribution(User user, ContributionPeriod contributionPeriod) {
-        this.user = user;
-        this.contributionPeriod = contributionPeriod;
-    }
-
-    public Contribution() {
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Contribution that = (Contribution) o;
+        ContributionReminder that = (ContributionReminder) o;
         return id != null && Objects.equals(id, that.id);
     }
 

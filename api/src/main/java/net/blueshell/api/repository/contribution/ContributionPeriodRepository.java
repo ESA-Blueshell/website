@@ -1,4 +1,4 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository.contribution;
 
 import net.blueshell.api.base.BaseRepository;
 import net.blueshell.api.model.contribution.ContributionPeriod;

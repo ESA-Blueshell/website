@@ -1,7 +1,6 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository.event;
 
 import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.File;
 import net.blueshell.api.model.event.Event;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;

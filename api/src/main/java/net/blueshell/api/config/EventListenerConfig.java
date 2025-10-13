@@ -4,7 +4,7 @@ import net.blueshell.api.event.*;
 import net.blueshell.api.job.brevo.RemoveContactFromListJob;
 import net.blueshell.api.job.brevo.SyncContactJob;
 import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.ContributionPeriodService;
+import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.FileService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.brevo.ContactService;

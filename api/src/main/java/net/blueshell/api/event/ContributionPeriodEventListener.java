@@ -3,7 +3,7 @@ package net.blueshell.api.event;
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.service.ContributionPeriodService;
+import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;

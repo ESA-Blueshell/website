@@ -1,4 +1,4 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto.contribution;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

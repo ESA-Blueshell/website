@@ -1,12 +1,12 @@
-package net.blueshell.api.controller;
+package net.blueshell.api.controller.contribution;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.BaseController;
-import net.blueshell.api.dto.ContributionDTO;
-import net.blueshell.api.mapper.ContributionMapper;
-import net.blueshell.api.service.ContributionService;
+import net.blueshell.api.dto.contribution.ContributionDTO;
+import net.blueshell.api.mapper.contribution.ContributionMapper;
+import net.blueshell.api.service.contribution.ContributionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -56,12 +56,6 @@ public class ContributionController extends BaseController<ContributionService, 
     public void deleteContribution(@PathVariable("id") Long id) {
         var contribution = service.findById(id);
         service.delete(contribution);
-    }
-
-    @PreAuthorize("hasAuthority('BOARD')")
-    @PutMapping("contributionPeriods/{periodId}/contributions/remind")
-    public void sendContributionReminder(@PathVariable("periodId") Long periodId) {
-        service.sendReminder(periodId);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

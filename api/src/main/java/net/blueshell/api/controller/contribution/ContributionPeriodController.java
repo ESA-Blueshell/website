@@ -1,13 +1,13 @@
-package net.blueshell.api.controller;
+package net.blueshell.api.controller.contribution;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
-import net.blueshell.api.dto.ContributionPeriodDTO;
-import net.blueshell.api.mapper.ContributionPeriodMapper;
+import net.blueshell.api.dto.contribution.ContributionPeriodDTO;
+import net.blueshell.api.mapper.contribution.ContributionPeriodMapper;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.service.ContributionPeriodService;
+import net.blueshell.api.service.contribution.ContributionPeriodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;

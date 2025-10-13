@@ -6,6 +6,7 @@ import net.blueshell.api.email.*;
 import net.blueshell.api.job.SendEmailJob;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.contribution.Contribution;
+import net.blueshell.api.model.contribution.ContributionReminder;
 import net.blueshell.api.model.event.EventSignUp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,20 +53,20 @@ public class EmailService {
         scheduleEmail(email);
     }
 
-    public void contributionReminder(Contribution contribution) {
+    public void contributionReminder(ContributionReminder reminder) {
         var email = new ContributionReminderEmail(
-                contribution.getUser(),
+                reminder.getUser(),
                 frontendUrl,
                 appUrl,
-                contribution.getContributionPeriod()
+                reminder.getContributionPeriod()
         );
 
         scheduleEmail(email);
     }
 
-    public void contributionReminders(List<Contribution> contributions) {
-        for (var contribution : contributions) {
-            contributionReminder(contribution);
+    public void contributionReminders(List<ContributionReminder> reminders) {
+        for (var reminder : reminders) {
+            contributionReminder(reminder);
         }
     }
 

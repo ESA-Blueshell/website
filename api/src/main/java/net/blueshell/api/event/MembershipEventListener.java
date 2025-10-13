@@ -6,7 +6,7 @@ import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
 import net.blueshell.api.model.Membership;
-import net.blueshell.api.service.ContributionPeriodService;
+import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.email.EmailService;
 import org.springframework.stereotype.Component;

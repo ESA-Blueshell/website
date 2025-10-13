@@ -1,4 +1,4 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository.committee;
 
 import net.blueshell.api.base.BaseRepository;
 import net.blueshell.api.model.committee.CommitteeMember;

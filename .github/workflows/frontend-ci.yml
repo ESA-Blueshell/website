@@ -28,36 +28,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Setup Node & Yarn
+        uses: ./.github/actions/setup-node-yarn
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: frontend/yarn.lock
-
-      - name: Enable Yarn via Corepack (use Yarn Berry)
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-          yarn --version
-
-      - name: Restore Yarn cache (Yarn Berry / PnP or node-modules)
-        id: yarn-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            frontend/.yarn/cache
-            frontend/.yarn/install-state.gz
-            frontend/.pnp.*
-            frontend/node_modules
-          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
-
-      - name: Install dependencies (only on cache miss)
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+          yarn-version: ${{ env.YARN_VERSION }}
 
   typecheck:
     name: Typecheck
-    needs: setup
+    needs: [ setup ]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -66,39 +45,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Setup Node & Yarn
+        uses: ./.github/actions/setup-node-yarn
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
-          cache-dependency-path: frontend/yarn.lock
-
-      - name: Enable Yarn via Corepack
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-
-      - name: Restore Yarn cache
-        id: yarn-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            frontend/.yarn/cache
-            frontend/.yarn/install-state.gz
-            frontend/.pnp.*
-            frontend/node_modules
-          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
-
-      - name: Install dependencies (only on cache miss)
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+          yarn-version: ${{ env.YARN_VERSION }}
 
       - name: Run typecheck
         run: yarn typecheck
 
   lint:
     name: Lint
-    needs: setup
+    needs: [ setup ]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -107,32 +65,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Setup Node & Yarn
+        uses: ./.github/actions/setup-node-yarn
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
-          cache-dependency-path: frontend/yarn.lock
-
-      - name: Enable Yarn via Corepack
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-
-      - name: Restore Yarn cache
-        id: yarn-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            frontend/.yarn/cache
-            frontend/.yarn/install-state.gz
-            frontend/.pnp.*
-            frontend/node_modules
-          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
-
-      - name: Install dependencies (only on cache miss)
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+          yarn-version: ${{ env.YARN_VERSION }}
 
       - name: Run lint
         run: yarn lint

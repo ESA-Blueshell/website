@@ -1,0 +1,44 @@
+name: Setup Node & Yarn (Corepack)
+description: Install Node with actions/setup-node and activate Yarn via Corepack
+inputs:
+  node-version:
+    description: Node.js version (e.g. "24")
+    required: true
+  yarn-version:
+    description: Yarn version (e.g. "4.9.4")
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache-dependency-path: |
+          'yarn.lock'
+          '.yarnrc.yml'
+
+    - name: Enable Yarn via Corepack
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        corepack enable
+        corepack prepare yarn@${{ inputs.yarn-version }} --activate
+        echo "Yarn $(yarn --version) activated"
+
+    - name: Restore Yarn cache
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          .yarn/cache
+          .yarn/install-state.gz
+          .pnp.*
+          node_modules
+        key: ${{ runner.os }}-node${{ inputs.node-version }}-yarn${{ inputs.yarn-version }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: yarn install --immutable

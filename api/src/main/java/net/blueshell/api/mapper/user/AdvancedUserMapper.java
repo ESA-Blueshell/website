@@ -66,6 +66,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
         applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
         applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
         applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
+        applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
 
         // If a user is creating their account, set the password.
         // Then return

@@ -1,7 +1,7 @@
 import type {AxiosError} from "axios"
 
 // ⬇️ Use the generated schema types from your lib
-import type {ApiError, FieldValidationError} from "@/lib"
+import type {ApiError, FieldValidationError} from "@/services/api"
 
 import {type FormContext} from "vee-validate"
 

@@ -3,7 +3,7 @@ import {defineConfig} from "@hey-api/openapi-ts"
 export default defineConfig({
   input: "../openapi/discord.json",
   output: {
-    path: "src/lib/discord",
+    path: "src/services/api/discord",
   },
   parser: {
     filters: {

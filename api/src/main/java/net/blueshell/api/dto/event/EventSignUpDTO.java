@@ -20,18 +20,12 @@ import java.util.List;
 @Schema(name = "EventSignUp")
 public class EventSignUpDTO extends BaseDTO {
     private Long id;
-
     @NotNull
     private Long eventId;
-
-    @NotEmpty
     @ValidAnswerList
     @Valid
     private List<AnswerDTO> answers;
-
     private GuestDTO guest;
-
     private SimpleUserDTO user;
-
     private Long userId;
 }

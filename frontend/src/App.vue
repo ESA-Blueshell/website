@@ -465,11 +465,11 @@ import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import {useDisplay, useTheme} from "vuetify"
-import FooterBanner from "@/components/banners/FooterBanner.vue"
+import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import DOMPurify from "dompurify"
-import {type AdvancedUser, findUserById, type Login} from "@/lib"
+import {type AdvancedUser, findUserById, type Login} from "@/services/api"
 
 // Reactive state
 const drawer = ref<boolean>(false)
@@ -518,6 +518,8 @@ const logOut = (): void => {
   store.commit("logout")
   if (route.meta.requiresAuth) {
     $goto("/")
+  } else {
+    globalThis.location.reload()
   }
 }
 

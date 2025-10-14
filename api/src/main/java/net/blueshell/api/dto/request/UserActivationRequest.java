@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.request.ValidUserActivationRequest;
-import net.blueshell.api.validation.user.ExistingUsername;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -18,6 +17,5 @@ public class UserActivationRequest extends BaseDTO {
     private String token;
 
     @NotBlank
-    @ExistingUsername
     private String username;
 }

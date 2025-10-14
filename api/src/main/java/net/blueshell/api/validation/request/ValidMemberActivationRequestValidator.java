@@ -8,6 +8,10 @@ import net.blueshell.api.repository.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDateTime;
+
 @Component
 public class ValidMemberActivationRequestValidator implements ConstraintValidator<ValidMemberActivationRequest, MemberActivationRequest> {
 

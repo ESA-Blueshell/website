@@ -129,6 +129,10 @@ ALTER TABLE event_signups
 ALTER TABLE event_signups
     MODIFY created_at datetime NOT NULL;
 
+UPDATE event_signups
+SET created_at = signed_up_at
+WHERE signed_up_at IS NOT NUll;
+
 ALTER TABLE events
     ADD created_at datetime DEFAULT NOW() NULL;
 
@@ -281,8 +285,6 @@ CREATE INDEX idx_contribution_periods_start_date ON contribution_periods (start_
 CREATE INDEX idx_contributions_paid ON contributions (paid);
 
 CREATE INDEX idx_contributions_reminded_at ON contributions (reminded_at);
-
-CREATE INDEX idx_event_signups_signed_up_at ON event_signups (signed_up_at);
 
 CREATE INDEX idx_events_approved ON events (approved);
 
@@ -500,9 +502,6 @@ ALTER TABLE telemetries
 
 ALTER TABLE blogs
     MODIFY published_at datetime NOT NULL;
-
-ALTER TABLE event_signups
-    MODIFY signed_up_at datetime NOT NULL;
 
 ALTER TABLE boards
     MODIFY start_date datetime NOT NULL;

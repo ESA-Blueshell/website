@@ -1,0 +1,337 @@
+<template>
+  <v-main>
+    <top-banner title="Membership Form" />
+
+    <div
+      v-if="!succeeded"
+      class="mx-3 pb-10"
+    >
+      <v-stepper
+        v-model="currentStep"
+        :items="steps"
+        class="mx-auto mt-10"
+        hide-actions
+        style="max-width: 800px"
+      >
+        <!-- Step 1: User Information -->
+        <template #item.1>
+          <v-card class="pa-4">
+            <advanced-user-form
+              ref="userEditRef"
+              v-model="userData"
+              :creating="!loggedIn"
+              :editing="loggedIn"
+            />
+
+            <v-row class="mt-4">
+              <v-spacer />
+              <v-col cols="auto">
+                <v-btn
+                  :loading="saving"
+                  color="primary"
+                  @click="nextStep"
+                >
+                  Next
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </template>
+
+        <!-- Step 2: Address Information -->
+        <template #item.2>
+          <v-card class="pa-4">
+            <address-form
+              ref="AddressFormRef"
+              v-model="addressData"
+            />
+
+            <v-row class="mt-4">
+              <v-col cols="auto">
+                <v-btn
+                  variant="outlined"
+                  @click="previousStep"
+                >
+                  Previous
+                </v-btn>
+              </v-col>
+              <v-spacer />
+              <v-col cols="auto">
+                <v-btn
+                  :loading="saving"
+                  color="primary"
+                  @click="nextStep"
+                >
+                  Next
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </template>
+
+        <!-- Step 3: Membership Information -->
+        <template #item.3>
+          <v-card class="pa-4">
+            <v-card-title>Membership Agreement</v-card-title>
+            <membership-form
+              ref="MembershipFormRef"
+              v-model="membershipData"
+            />
+
+            <v-row class="mt-4">
+              <v-col cols="auto">
+                <v-btn
+                  variant="outlined"
+                  @click="previousStep"
+                >
+                  Previous
+                </v-btn>
+              </v-col>
+              <v-spacer />
+              <v-col cols="auto">
+                <v-btn
+                  :loading="saving"
+                  color="primary"
+                  @click="completeMembership"
+                >
+                  Complete Membership
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </template>
+      </v-stepper>
+    </div>
+
+    <div
+      v-else-if="succeeded"
+      class="mx-auto my-10"
+      style="max-width: 600px"
+    >
+      <v-card class="pa-6 text-center">
+        <v-icon
+          class="mb-4"
+          color="success"
+          size="64"
+        >
+          mdi-check-circle
+        </v-icon>
+        <p class="text-h6 font-weight-medium mb-2">
+          Membership Complete!
+        </p>
+        <p class="text-body-1 text-medium-emphasis">
+          Your membership form has been successfully submitted. Welcome to Blueshell E-Sports!
+        </p>
+        <v-btn
+          class="mt-4"
+          color="primary"
+          @click="$goto('/')"
+        >
+          Go to Homepage
+        </v-btn>
+      </v-card>
+    </div>
+  </v-main>
+</template>
+
+<script lang="ts" setup>
+import {onMounted, ref, type Ref} from "vue"
+import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
+import AddressForm from "@/components/form/AddressForm.vue"
+import MembershipForm from "@/components/form/MembershipForm.vue"
+import {
+  type Address,
+  type AdvancedUser,
+  createUser,
+  findAddressById,
+  findUserById,
+  type Membership,
+  updateUser,
+} from "@/services/api"
+
+import store from "@/plugins/store"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {$goto} from "@/plugins/goto"
+import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
+
+// Reactive state
+const currentStep: Ref<number> = ref(1)
+const succeeded: Ref<boolean> = ref(false)
+const saving: Ref<boolean> = ref(false)
+const loggedIn: Ref<boolean> = ref(false)
+
+// Form data
+const userData: Ref<AdvancedUser | undefined> = ref()
+
+const addressData: Ref<Address> = ref({
+  street: "",
+  houseNumber: "",
+  zipCode: "",
+  city: "",
+  country: "",
+} as Address)
+
+const membershipData: Ref<Membership | undefined> = ref()
+
+// Template refs
+const userEditRef = ref<InstanceType<typeof AdvancedUserForm>>()
+const AddressFormRef: Ref = ref(null)
+const MembershipFormRef: Ref = ref(null)
+
+// Steps configuration
+const steps = [
+  {title: "Personal Information", value: 1},
+  {title: "Address", value: 2},
+  {title: "Membership", value: 3},
+]
+
+// Methods
+const nextStep = async (): Promise<void> => {
+  saving.value = true
+
+  try {
+    if (currentStep.value === 1) {
+      // Validate and save user data
+      if (!await saveUser()) {
+        return
+      }
+    } else if (currentStep.value === 2) {
+      // Validate and save address data
+      if (!await validateAndSaveAddressData()) {
+        return
+      }
+    }
+
+    currentStep.value += 1
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  } finally {
+    saving.value = false
+  }
+}
+
+const previousStep = (): void => {
+  if (currentStep.value > 1) {
+    currentStep.value -= 1
+  }
+}
+
+const saveUser = async (): Promise<boolean> => {
+  if (!userEditRef.value) return false;
+  const user = await userEditRef.value.save()
+
+  if (user) {
+    userData.value = user
+    membershipData.value!.userId = user.id!
+    return true
+  } else {
+    return false
+  }
+}
+
+const validateAndSaveAddressData = async (): Promise<boolean> => {
+  if (!AddressFormRef.value) {
+    return false
+  }
+
+  // Validate address using child component validation
+  if (!AddressFormRef.value.validateAddress()) {
+    return false
+  }
+
+  try {
+    // Save address using child component method
+    await AddressFormRef.value.saveAddress()
+
+    return true
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+    return false
+  }
+}
+
+const completeMembership = async (): Promise<void> => {
+  saving.value = true
+
+  try {
+    if (!MembershipFormRef.value) {
+      return
+    }
+
+    // Validate and save membership using child component method
+    const membershipSaved = await MembershipFormRef.value.saveMembership()
+
+    if (!membershipSaved) {
+      return
+    }
+
+    // Mark as succeeded
+    succeeded.value = true
+
+    // Update user roles if logged in
+    if (loggedIn.value && userData.value?.id) {
+      // Fetch updated user data to get new roles
+      const response = await findUserById({
+        path: {userId: userData.value.id},
+        throwOnError: true,
+      })
+
+      if (response.data) {
+        store.commit("setRoles", response.data.roles)
+      }
+    }
+
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  } finally {
+    saving.value = false
+  }
+}
+
+// Lifecycle hooks
+onMounted(async () => {
+  const login = store.getters.getLogin
+  loggedIn.value = !!login
+
+  if (login && login.userId) {
+    try {
+      // Fetch existing user data
+      const response = await findUserById({
+        path: {userId: login.userId},
+      })
+
+      if (response.data) {
+        userData.value = {...response.data}
+        membershipData.value!.userId = response.data.id!
+
+        if (userData.value?.addressId) {
+          const addResp = await findAddressById({path: {id: userData.value.addressId}, throwOnError: true})
+          addressData.value = addResp.data!
+        }
+      }
+    } catch (error: unknown) {
+      console.error("Failed to fetch user data:", error)
+      $handleNetworkError(error)
+    }
+  }
+})
+</script>
+
+<style lang="scss" scoped>
+.v-stepper {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.v-card {
+  border-radius: 12px;
+}
+
+.v-col:first-child {
+  padding-left: 0;
+}
+
+.v-col:last-child {
+  padding-right: 0;
+}
+</style>

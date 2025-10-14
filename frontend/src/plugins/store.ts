@@ -1,6 +1,6 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type Login, Role} from "@/lib"
+import {type Login, Role} from "@/services/api"
 
 export interface State {
   login: Login | null;

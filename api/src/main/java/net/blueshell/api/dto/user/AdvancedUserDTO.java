@@ -22,32 +22,19 @@ import java.util.Set;
 public class AdvancedUserDTO extends SimpleUserDTO {
 
     private Set<Role> roles;
-    @JsonProperty
     @NotNull
     private Date dateOfBirth;
-    @JsonProperty
-    @NotBlank
-    @ValidMobilePhoneNumber
-    private String phoneNumber;
-    @JsonProperty
     @NotBlank
     private String nationality;
-    @JsonProperty
     @NotNull
     private boolean photoConsent;
-    @JsonProperty
     @NotNull
     private boolean ehbo;
-    @JsonProperty
     @NotNull
     private boolean bhv;
-    @JsonProperty
     private boolean enabled;
-    @JsonProperty
     private Timestamp createdAt;
-    @JsonProperty
     private String gender;
-    @JsonProperty
     private String studentNumber;
     private Long addressId;
 

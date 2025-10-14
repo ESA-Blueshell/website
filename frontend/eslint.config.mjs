@@ -13,8 +13,7 @@ export default [
             '.pnp*',
             'node_modules/**',
             'src/assets/**',
-            'src/lib/discord/**',
-            'src/lib/blueshell/**',
+            'src/services/api/**',
         ]
     },
     js.configs.recommended,

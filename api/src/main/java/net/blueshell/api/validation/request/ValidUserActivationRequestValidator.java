@@ -8,6 +8,9 @@ import net.blueshell.api.repository.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+
 @Component
 public class ValidUserActivationRequestValidator implements ConstraintValidator<ValidUserActivationRequest, UserActivationRequest> {
 
@@ -19,36 +22,40 @@ public class ValidUserActivationRequestValidator implements ConstraintValidator<
 
     @Override
     public boolean isValid(UserActivationRequest request, ConstraintValidatorContext context) {
-        // 1) If username or token is missing, let @NotBlank handle it.
+        // Let @NotBlank on fields handle empty values.
         if (!StringUtils.hasText(request.getUsername()) || !StringUtils.hasText(request.getToken())) {
             return true;
         }
 
-        var user = userRepository.findByUsername(request.getUsername()).orElse(null);
-        if (user == null) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("Unknown username.")
-                    .addPropertyNode("username")
-                    .addConstraintViolation();
-            return false;
+        var userOpt = userRepository.findByUsername(request.getUsername());
+        if (userOpt.isEmpty()) {
+            return reject(context, "We couldn’t verify your activation link. It may be invalid or already used.");
         }
 
+        var user = userOpt.get();
+
+        // Wrong flow (e.g., not an activation token)
         if (user.getResetType() != ResetType.USER_ACTIVATION) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("Invalid reset type.")
-                    .addPropertyNode("resetType")
-                    .addConstraintViolation();
-            return false;
+            return reject(context, "We couldn’t verify your activation link. It may be invalid or already used.");
         }
 
+        // Expired token
+        if (user.getResetKeyValidUntil() != null
+                && user.getResetKeyValidUntil().before(Timestamp.from(Instant.now()))) {
+            return reject(context, "Your activation link has expired. Please request a new activation email.");
+        }
+
+        // Token mismatch
         if (!request.getToken().equals(user.getResetKey())) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("Invalid token.")
-                    .addPropertyNode("token")
-                    .addConstraintViolation();
-            return false;
+            return reject(context, "We couldn’t verify your activation link. It may be invalid or already used.");
         }
 
         return true;
+    }
+
+    private boolean reject(ConstraintValidatorContext context, String message) {
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
+        return false;
     }
 }

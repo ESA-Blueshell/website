@@ -35,7 +35,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
     public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
-        var user = advancedMapper.fromDTO(dto);
+        var user = advancedMapper.fromDTO(dto, new User());
         user = service.create(user);
         return advancedMapper.toDTO(user);
     }

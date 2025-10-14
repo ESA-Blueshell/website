@@ -3,7 +3,7 @@ import { defineConfig } from '@hey-api/openapi-ts';
 export default defineConfig({
   input: '../openapi/blueshell.json',
   output: {
-    path: 'src/lib/blueshell',
+    path: 'src/services/api/blueshell',
   },
   plugins: [
     {

@@ -44,6 +44,9 @@ public class Guest implements BaseModel {
     @Column(nullable = false)
     private String email;
 
+    @Column
+    private String phoneNumber;
+
     @Column(name = "access_token", nullable = false)
     private String accessToken;
 

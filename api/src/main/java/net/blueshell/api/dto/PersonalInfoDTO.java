@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
+import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -21,4 +22,8 @@ public class PersonalInfoDTO extends BaseDTO {
     @NotBlank
     @Email
     private String email;
+
+    @NotBlank
+    @ValidMobilePhoneNumber
+    private String phoneNumber;
 }

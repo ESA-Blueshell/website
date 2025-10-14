@@ -13,42 +13,50 @@ concurrency:
   group: frontend-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '24'
+  YARN_VERSION: '4.9.4'
+
 jobs:
   setup:
-    name: Setup
+    name: Setup (cache deps)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: yarn
           cache-dependency-path: frontend/yarn.lock
 
-      - name: Enable Yarn via Corepack
+      - name: Enable Yarn via Corepack (use Yarn Berry)
         run: |
           corepack enable
-          corepack prepare yarn@4.9.4 --activate
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
           yarn --version
 
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Upload install artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Restore Yarn cache (Yarn Berry / PnP or node-modules)
+        id: yarn-cache
+        uses: actions/cache@v4
         with:
-          name: frontend-install
           path: |
-            frontend/.yarn
+            frontend/.yarn/cache
+            frontend/.yarn/install-state.gz
             frontend/.pnp.*
             frontend/node_modules
-          if-no-files-found: ignore
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-
+
+      - name: Install dependencies (only on cache miss)
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install --immutable
 
   typecheck:
     name: Typecheck
@@ -57,27 +65,37 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: yarn
           cache-dependency-path: frontend/yarn.lock
 
       - name: Enable Yarn via Corepack
         run: |
           corepack enable
-          corepack prepare yarn@4.9.4 --activate
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
 
-      - name: Restore install artifacts
-        uses: actions/download-artifact@v4
+      - name: Restore Yarn cache
+        id: yarn-cache
+        uses: actions/cache@v4
         with:
-          name: frontend-install
-          path: frontend
+          path: |
+            frontend/.yarn/cache
+            frontend/.yarn/install-state.gz
+            frontend/.pnp.*
+            frontend/node_modules
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-
 
-      - name: Ensure deps present (no-op if restored)
+      - name: Install dependencies (only on cache miss)
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn install --immutable
 
       - name: Run typecheck
@@ -90,27 +108,37 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: yarn
           cache-dependency-path: frontend/yarn.lock
 
       - name: Enable Yarn via Corepack
         run: |
           corepack enable
-          corepack prepare yarn@4.9.4 --activate
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
 
-      - name: Restore install artifacts
-        uses: actions/download-artifact@v4
+      - name: Restore Yarn cache
+        id: yarn-cache
+        uses: actions/cache@v4
         with:
-          name: frontend-install
-          path: frontend
+          path: |
+            frontend/.yarn/cache
+            frontend/.yarn/install-state.gz
+            frontend/.pnp.*
+            frontend/node_modules
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-
 
-      - name: Ensure deps present (no-op if restored)
+      - name: Install dependencies (only on cache miss)
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn install --immutable
 
       - name: Run lint

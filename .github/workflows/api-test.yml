@@ -82,7 +82,7 @@ jobs:
           set -e
           if [ -f api/env/init.sql ]; then
             echo "Applying api/env/init.sql..."
-            mysql -h 127.0.0.1 -uroot -p"${MYSQL_PASSWORD}" < api/env/init.sql
+            mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" < api/env/init.sql
           else
             echo "No api/env/init.sql found. Skipping seed."
           fi

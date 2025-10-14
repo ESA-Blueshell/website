@@ -10,12 +10,12 @@ import net.blueshell.api.dto.request.MemberActivationRequest;
 import net.blueshell.api.dto.request.PasswordResetRequest;
 import net.blueshell.api.dto.request.UserActivationRequest;
 import net.blueshell.api.dto.response.AuthenticationDTO;
+import net.blueshell.api.job.email.PasswordResetEmailJob;
 import net.blueshell.api.mapper.activation.MemberActivationRequestMapper;
 import net.blueshell.api.mapper.activation.PasswordResetRequestMapper;
 import net.blueshell.api.mapper.activation.UserActivationRequestMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,10 +30,10 @@ public class AuthenticationController extends JWTAuthBase {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService users;
-    private final EmailService emails;
     private final MemberActivationRequestMapper memberActivationMapper;
     private final UserActivationRequestMapper userActivationMapper;
     private final PasswordResetRequestMapper passwordResetMapper;
+    private final PasswordResetEmailJob resetEmailJob;
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
@@ -41,18 +41,18 @@ public class AuthenticationController extends JWTAuthBase {
     public AuthenticationController(
             AuthenticationManager authenticationManager,
             JwtTokenUtil jwtTokenUtil,
-            UserService users, EmailService emails,
+            UserService users,
             MemberActivationRequestMapper memberActivationMapper,
             UserActivationRequestMapper userActivationMapper,
-            PasswordResetRequestMapper passwordResetMapper
+            PasswordResetRequestMapper passwordResetMapper, PasswordResetEmailJob resetEmailJob
     ) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
         this.users = users;
-        this.emails = emails;
         this.memberActivationMapper = memberActivationMapper;
         this.userActivationMapper = userActivationMapper;
         this.passwordResetMapper = passwordResetMapper;
+        this.resetEmailJob = resetEmailJob;
     }
 
 
@@ -68,9 +68,7 @@ public class AuthenticationController extends JWTAuthBase {
     @PermitAll
     public void resetPassword(@Validated @RequestParam String username) {
         var user = users.findByUsername(username);
-        users.resetPassword(user);
-        users.update(user);
-        emails.passwordReset(user);
+        users.reset(user);
     }
 
     @PostMapping("/auth/member/activate")

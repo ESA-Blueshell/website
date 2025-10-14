@@ -6,7 +6,8 @@ import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.util.Util;
 import net.blueshell.api.controller.filter.UserFilter;
-import net.blueshell.api.model.File;
+import net.blueshell.api.job.email.ActivationEmailJob;
+import net.blueshell.api.job.email.PasswordResetEmailJob;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
 import net.blueshell.api.repository.spec.UserSpecifications;
@@ -30,9 +31,14 @@ import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
 @Service
 public class UserService extends BaseModelService<User, UserRepository> implements UserDetailsService {
 
+    private final ActivationEmailJob activationEmailJob;
+    private final PasswordResetEmailJob passwordResetEmailJob;
+
     @Autowired
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, ActivationEmailJob activationEmailJob, PasswordResetEmailJob passwordResetEmailJob) {
         super(repository);
+        this.activationEmailJob = activationEmailJob;
+        this.passwordResetEmailJob = passwordResetEmailJob;
     }
 
     @Override
@@ -46,14 +52,6 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
 
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
-    }
-
-    public User findByResetKey(String resetKey) {
-        return repository.findByResetKey(resetKey).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with reset key: %s".formatted(resetKey)));
-    }
-
-    public User findByEmail(String email) {
-        return repository.findByEmail(email).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with email: %s".formatted(email)));
     }
 
     public boolean existsByEmail(String email) {
@@ -103,10 +101,23 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
         return repository.findAll(spec, pageable);
     }
 
-    public void resetPassword(User user) {
-        user.setResetType(ResetType.PASSWORD_RESET);
+    public void reset(User user) {
         user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
         user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS)));
-        user.setEnabled(false);
+
+        if (user.getResetType() == null) {
+            user.setResetType(ResetType.PASSWORD_RESET);
+        }
+
+        self().update(user);
+
+        switch (user.getResetType()) {
+            case PASSWORD_RESET:
+                passwordResetEmailJob.send(user.getId());
+                break;
+            case USER_ACTIVATION, MEMBER_ACTIVATION:
+                activationEmailJob.send(user.getId());
+                break;
+        }
     }
 }

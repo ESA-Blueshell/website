@@ -1,6 +1,7 @@
 package net.blueshell.api.service.contribution;
 
 import net.blueshell.api.base.BaseModelService;
+import net.blueshell.api.job.email.ContributionReminderEmailJob;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.model.contribution.ContributionReminder;
@@ -21,12 +22,14 @@ public class ContributionReminderService extends BaseModelService<ContributionRe
 
     private final ContributionPeriodService periodService;
     private final EmailService emails;
+    private final ContributionReminderEmailJob reminderEmailJob;
 
     @Autowired
-    public ContributionReminderService(ContributionReminderRepository repository, EmailService emails, ContributionPeriodService periodService) {
+    public ContributionReminderService(ContributionReminderRepository repository, EmailService emails, ContributionPeriodService periodService, ContributionReminderEmailJob reminderEmailJob) {
         super(repository);
         this.emails = emails;
         this.periodService = periodService;
+        this.reminderEmailJob = reminderEmailJob;
     }
 
     @Transactional(readOnly = true)
@@ -36,10 +39,12 @@ public class ContributionReminderService extends BaseModelService<ContributionRe
     }
 
     public void sendReminder(ContributionReminder reminder) {
-        emails.contributionReminder(reminder);
+        reminderEmailJob.send(reminder.getId());
     }
 
     public void sendReminders(List<ContributionReminder> reminders) {
-        emails.contributionReminders(reminders);
+        for (var reminder : reminders) {
+            sendReminder(reminder);
+        }
     }
 }

@@ -4,99 +4,106 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.base.EmailContent;
 import net.blueshell.api.email.*;
-import net.blueshell.api.job.SendEmailJob;
 import net.blueshell.api.model.User;
-import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.contribution.ContributionReminder;
 import net.blueshell.api.model.event.EventSignUp;
-import org.springframework.beans.factory.annotation.Autowired;
+import net.blueshell.api.service.UserService;
+import net.blueshell.api.service.contribution.ContributionReminderService;
+import net.blueshell.api.service.event.EventSignUpService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
 public class EmailService {
 
-    @Autowired
-    private SendEmailJob sendEmailJob;
+    private final EmailTemplateService templateService;
+    private final EmailDeliveryService mailDelivery;
+    private final UserService users;
+    private final ContributionReminderService reminders;
+    private final EventSignUpService eventSignUps;
+    private final String frontendUrl;
+    private final String appUrl;
 
-    @Autowired
-    private EmailTemplateService templateService;
+    public EmailService(EmailTemplateService templateService,
+                        EmailDeliveryService mailDelivery,
+                        UserService users,
+                        ContributionReminderService reminders,
+                        EventSignUpService eventSignUps,
+                        @Value("${frontend.url}") String frontendUrl,
+                        @Value("${app.url}") String appUrl) {
 
-    @Value("${frontend.url}")
-    private String frontendUrl;
+        this.templateService = templateService;
+        this.mailDelivery = mailDelivery;
+        this.users = users;
+        this.reminders = reminders;
+        this.eventSignUps = eventSignUps;
+        this.frontendUrl = frontendUrl;
+        this.appUrl = appUrl;
+    }
 
-    @Value("${app.url}")
-    private String appUrl;
-
-    public void activation(User user) {
-        BaseEmail email = switch (user.getResetType()) {
-            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
-            case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
-            case null, default -> null;
-        };
-
-        if (email == null) {
+    /**
+     * Activation: decide template based on user's resetType
+     */
+    public void sendActivationEmail(Long userId) {
+        User user = users.findById(userId);
+        if (user == null || user.getResetType() == null) {
+            log.info("Activation skipped: user={} or resetType missing", userId);
             return;
         }
 
-        scheduleEmail(email);
+        BaseEmail email = switch (user.getResetType()) {
+            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
+            case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
+            default -> null;
+        };
+        if (email == null) return;
+
+        deliver(email);
     }
 
-    public void passwordReset(User user) {
-        log.info("Sending password reset to email: {}", user.getEmail());
-        var email = new PasswordResetEmail(
-                user,
-                frontendUrl,
-                appUrl
-        );
+    public void sendPasswordResetEmail(Long userId) {
+        User user = users.findById(userId);
+        if (user == null) return;
 
-        scheduleEmail(email);
+        BaseEmail email = new PasswordResetEmail(user, frontendUrl, appUrl);
+        deliver(email);
     }
 
-    public void contributionReminder(ContributionReminder reminder) {
-        var email = new ContributionReminderEmail(
+    public void sendContributionReminderEmail(Long reminderId) {
+        ContributionReminder reminder = reminders.findById(reminderId);
+        if (reminder == null || reminder.getUser() == null) return;
+
+        BaseEmail email = new ContributionReminderEmail(
                 reminder.getUser(),
                 frontendUrl,
                 appUrl,
                 reminder.getContributionPeriod()
         );
-
-        scheduleEmail(email);
+        deliver(email);
     }
 
-    public void contributionReminders(List<ContributionReminder> reminders) {
-        for (var reminder : reminders) {
-            contributionReminder(reminder);
-        }
-    }
+    public void sendEventSignupEmail(Long eventSignUpId) {
+        EventSignUp eventSignUp = eventSignUps.findById(eventSignUpId);
+        if (eventSignUp == null) return;
 
-    public void eventSignUp(EventSignUp eventSignUp) {
-        var email = new EventSignupEmail(
-                eventSignUp,
-                frontendUrl,
-                appUrl
-        );
-
-        scheduleEmail(email);
+        BaseEmail email = new EventSignupEmail(eventSignUp, frontendUrl, appUrl);
+        deliver(email);
     }
 
     /**
-     * Schedule any email using the BaseEmail abstraction to be sent asynchronously
+     * Render via template service and send via delivery service
      */
-    private void scheduleEmail(BaseEmail email) {
+    private void deliver(BaseEmail email) {
         EmailContent content = email.buildEmailContent();
 
         String htmlContent = templateService.createEmail(
-                email.getRecipient(),
+                content.recipient(),
                 content.subject(),
                 content.markdownContent()
         );
 
-        // Schedule the email to be sent asynchronously via SendEmailJob
-        sendEmailJob.sendHtmlEmail(
+        mailDelivery.sendHtmlEmail(
                 content.recipient().getEmail(),
                 content.subject(),
                 htmlContent,

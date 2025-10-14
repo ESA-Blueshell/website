@@ -1,8 +1,8 @@
 package net.blueshell.api.event;
 
 import net.blueshell.api.common.event.PrePersistEvent;
+import net.blueshell.api.job.email.EventSignupEmailJob;
 import net.blueshell.api.model.event.EventSignUp;
-import net.blueshell.api.service.email.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,10 +12,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class EventSignUpEventListener {
 
-    private final EmailService emails;
+    private final EventSignupEmailJob emailJob;
 
-    public EventSignUpEventListener(EmailService emails) {
-        this.emails = emails;
+    public EventSignUpEventListener(EventSignupEmailJob emailJob) {
+        this.emailJob = emailJob;
     }
 
     /**
@@ -27,7 +27,7 @@ public class EventSignUpEventListener {
         var e = evt.getSource();
 
         if (e.getGuest() != null) {
-            emails.eventSignUp(e);
+            emailJob.send(e.getId());
         }
     }
 }

@@ -62,31 +62,6 @@ jobs:
         run: mvn install -q -DskipTests
         working-directory: api
 
-      - name: Install MariaDB client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mariadb-client
-
-      - name: Wait for DB
-        run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 --silent; then
-              echo "DB is up"; break
-            fi
-            echo "Waiting for DB ($i/30)..."
-            sleep 2
-          done
-
-      - name: Run DB init SQL if present
-        run: |
-          set -e
-          if [ -f api/env/init.sql ]; then
-            echo "Applying api/env/init.sql..."
-            mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" < api/env/init.sql
-          else
-            echo "No api/env/init.sql found. Skipping seed."
-          fi
-
       - name: Maven - clean verify
         run: mvn -B -DskipTests=false clean verify
         working-directory: api

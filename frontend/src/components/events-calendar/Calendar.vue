@@ -179,30 +179,6 @@ const showEvent = (nativeEvent: MouseEvent, {event}: { event: CalendarEventEx })
     setTimeout(toggle, 10)
   } else toggle()
 }
-//
-// const showEvent = async (nativeEvent: MouseEvent, {event}: { event: CalendarEventEx }) => {
-//   console.log("started event")
-//   nativeEvent.preventDefault()
-//   nativeEvent.stopPropagation()
-//
-//   const target = nativeEvent.target as HTMLElement
-//   const activator = (target.closest?.(".v-event") as HTMLElement) ?? target
-//
-//   const sameEvent = selectedEvent.value?.id === event.raw.id
-//   const sameActivator = selectedElement.value === activator
-//
-//   selectedEvent.value = event.raw
-//   selectedElement.value = activator
-//
-//   if (selectedOpen.value && sameEvent && sameActivator) return
-//
-//   if (selectedOpen.value) {
-//     selectedOpen.value = false
-//     await nextTick()
-//   }
-//   selectedOpen.value = true
-// }
-
 
 defineExpose({
   deleteEvent,

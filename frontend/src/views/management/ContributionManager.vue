@@ -69,8 +69,8 @@ const search = ref("")
 const contributionPeriod = ref<ContributionPeriod | undefined>()
 const selectedPeriodId = ref<number>(0)
 
-if ("scrollRestoration" in window.history) {
-  window.history.scrollRestoration = "manual"
+if ("scrollRestoration" in globalThis.history) {
+  globalThis.history.scrollRestoration = "manual"
 }
 
 const getUsers = async () => {
@@ -101,7 +101,7 @@ const isSearched = (user: AdvancedUser) => {
 }
 
 const hasContribution = (userId: number) =>
-  !!contributions.value.find(
+  contributions.value.some(
     (c) => c.userId === userId && c.contributionPeriodId === selectedPeriodId.value,
   )
 
@@ -117,10 +117,10 @@ watch([contributions, memberships, users, selectedPeriodId, search], () => {
 
 const contributionAddedOrUpdated = (updated: Contribution) => {
   const idx = contributions.value.findIndex((c) => c.id === updated.id)
-  if (idx !== -1) {
-    contributions.value.splice(idx, 1, updated)
-  } else {
+  if (idx === -1) {
     contributions.value.push(updated)
+  } else {
+    contributions.value.splice(idx, 1, updated)
   }
 }
 

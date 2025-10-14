@@ -68,38 +68,33 @@ async function submit() {
     answers: answersData.value ?? [],
   }
 
-  if (!isLoggedIn.value) {
-    payload.guest = guestData.value ?? {}
-  } else {
+  if (isLoggedIn.value) {
     payload.userId = login.value.userId
+  } else {
+    payload.guest = guestData.value ?? {}
   }
 
-  var eventSignUp: EventSignUp
+  let eventSignUp: EventSignUp
 
   if (isLoggedIn.value && payload.id) {
     const resp = await updateEventSignUp({
       path: {eventId: props.event.id!},
       body: payload,
+      throwOnError: true,
     })
-    if (resp.status == 200) {
-      eventSignUp = resp.data!
-      emit("update:signUp", eventSignUp)
-      if (!isLoggedIn.value) {
-        store.commit("saveGuestData", eventSignUp.guest!)
-      }
-    }
+    eventSignUp = resp.data!
   } else {
     const resp = await createEventSignup({
       path: {eventId: props.event.id!},
       body: payload,
+      throwOnError: true,
     })
-    if (resp.status == 201) {
-      eventSignUp = resp.data!
-      emit("update:signUp", eventSignUp)
-      if (!isLoggedIn.value) {
-        store.commit("saveGuestData", eventSignUp.guest!)
-      }
-    }
+    eventSignUp = resp.data!
+  }
+
+  emit("update:signUp", eventSignUp)
+  if (!isLoggedIn.value) {
+    store.commit("saveGuestData", eventSignUp.guest!)
   }
 }
 </script>

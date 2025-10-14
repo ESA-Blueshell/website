@@ -31,7 +31,3 @@ export default {
   methods: {$require},
 }
 </script>
-
-<style lang="scss" scoped>
-
-</style>

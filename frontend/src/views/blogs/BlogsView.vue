@@ -63,6 +63,3 @@ const navigateToBlog = (blogId: string) => {
     </div>
   </v-main>
 </template>
-
-<style lang="scss" scoped>
-</style>

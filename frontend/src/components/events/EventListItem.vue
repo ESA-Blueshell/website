@@ -166,13 +166,13 @@ function downloadIcs() {
       element.style.display = "none"
       document.body.appendChild(element)
       element.click()
-      document.body.removeChild(element)
+      element.remove()
     },
   )
 }
 
 async function copyShareLink() {
-  const url = `${window.location.origin}${window.location.pathname}#${event.value.id}`
+  const url = `${globalThis.location.origin}${globalThis.location.pathname}#${event.value.id}`
   await navigator.clipboard.writeText(url)
   store.commit("setStatusSnackbarMessage", `Link for ${event.value.title} copied to clipboard`)
 }

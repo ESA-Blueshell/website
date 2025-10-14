@@ -497,9 +497,9 @@ const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 
 // Methods
 const checkPrefersColorScheme = (): void => {
-  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+  if (globalThis.matchMedia("(prefers-color-scheme: dark)").matches) {
     setDarkMode(true)
-  } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+  } else if (globalThis.matchMedia("(prefers-color-scheme: light)").matches) {
     setDarkMode(false)
   }
 }
@@ -550,7 +550,7 @@ onMounted(async () => {
   }
 
   const keysPressed: string[] = []
-  window.addEventListener("keydown", (event: KeyboardEvent) => {
+  globalThis.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key) {
       const key = event.key.toLowerCase()
       keysPressed.push(key)
@@ -565,7 +565,7 @@ onMounted(async () => {
     checkPrefersColorScheme()
   }
 
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => checkPrefersColorScheme())
+  globalThis.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => checkPrefersColorScheme())
 
   const savedTheme = localStorage.getItem("esa-blueshell.nl:darkMode")
   theme.change(savedTheme === "true" ? "dark" : "light")

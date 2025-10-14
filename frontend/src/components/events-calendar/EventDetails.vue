@@ -50,7 +50,7 @@
       v-if="bannerUrl"
       :key="bannerUrl"
       :src="bannerUrl"
-      alt="promo image for the event"
+      alt="promo for the event"
       style="width: 100%; object-fit: contain"
     >
 

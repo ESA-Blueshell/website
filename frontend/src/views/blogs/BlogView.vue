@@ -34,7 +34,7 @@ onMounted(async () => {
     >
       <iframe
         :srcdoc="blog.html"
-        frameborder="0"
+        title="Blog content"
         style="width: 100%; height: 100vh;"
       />
     </div>
@@ -49,7 +49,3 @@ onMounted(async () => {
     </div>
   </v-main>
 </template>
-
-<style lang="scss" scoped>
-
-</style>

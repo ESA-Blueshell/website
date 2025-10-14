@@ -53,7 +53,7 @@ function getDefaultEvent(): Event {
 function initializeEvent(): Event {
   return {
     ...getDefaultEvent(),
-    ...(props.initialEvent || {}),
+    ...(props.initialEvent),
   }
 }
 
@@ -63,9 +63,6 @@ const hadSignUp = ref<boolean>(event.value.signUp || false)
 const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm || false)
 
 const committees = ref<AdvancedCommittee[]>([])
-findCommittees()
-  .then((response) => (committees.value = response.data as AdvancedCommittee[] ?? []))
-  .catch(() => (committees.value = []))
 
 const sameEndDate = ref(true)
 
@@ -97,7 +94,7 @@ function toISO({
 
   if (t) {
     const ref = hasValidBase ? base! : DateTime.now()
-    const [h, m] = t.split(":").map((n) => Number(n))
+    const [h, m] = t.split(":").map(Number)
     const dt = ref.set({hour: h ?? 0, minute: m ?? 0})
     return dt.isValid ? dt.toISO()! : ""
   }
@@ -130,23 +127,16 @@ async function submit() {
   submitting.value = true
 
   try {
-    if (!event.value?.id) {
-      const resp = await createEvent({body: event.value})
-      if (resp.status === 201) {
-        submitting.value = false
-        router.back()
-      } else if (!(apply(formRef.value!, resp))) {
-        $handleNetworkError(resp)
-      }
+    if (event.value?.id) {
+      await updateEvent({path: {id: event.value.id}, body: event.value, throwOnError: true})
     } else {
-      console.log("on submit value is:", event.value.banner)
-      const resp = await updateEvent({path: {id: event.value.id}, body: event.value})
-      if (resp.status === 200) {
-        submitting.value = false
-        router.back()
-      } else if (!(apply(formRef.value!, resp))) {
-        $handleNetworkError(resp)
-      }
+      await createEvent({body: event.value, throwOnError: true})
+    }
+    submitting.value = false
+    router.back()
+  } catch (e: unknown) {
+    if (!(apply(formRef.value!, e))) {
+      $handleNetworkError(e)
     }
   } finally {
     submitting.value = false
@@ -176,11 +166,7 @@ async function onBannerChange(val: File | File[] | null, handleChange: (v: File)
   const res = await formRef.value?.validateField("banner")
   if (!res?.valid) return
 
-  const resp = await uploadEventBanner({
-    body: {
-      file,
-    },
-  })
+  const resp = await uploadEventBanner({body: {file}})
 
   if (resp.status === 201) {
     event.value.banner = {file: resp.data!} as EventBanner
@@ -203,10 +189,10 @@ watch(
 watch(
   enableSignUpForm,
   (on) => {
-    if (!on) {
-      event.value.signUpForm = undefined
-    } else {
+    if (on) {
       event.value.signUp = true
+    } else {
+      event.value.signUpForm = undefined
     }
   },
 )
@@ -235,6 +221,16 @@ async function loadBanner() {
   }
 }
 
+async function fetchCommittees() {
+  const resp = await findCommittees()
+
+  if (resp.status === 200) {
+    committees.value = (resp.data ?? []) as AdvancedCommittee[]
+  } else {
+    $handleNetworkError(resp)
+  }
+}
+
 watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
   if (!sameEndDate.value) return
 
@@ -243,7 +239,13 @@ watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () 
   event.value.endTime = toISO({time, dateTime: event.value.startTime})
 })
 
-onMounted(loadBanner)
+onMounted(async () => {
+  await Promise.all([
+    loadBanner(),
+    fetchCommittees(),
+  ])
+})
+
 const initialJson = ref(JSON.stringify(event.value))
 const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
 const isBoard = computed((): boolean => store.getters.isBoard)

@@ -46,7 +46,3 @@ export default {
   components: {TopBanner},
 }
 </script>
-
-<style lang="scss" scoped>
-
-</style>

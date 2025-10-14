@@ -37,7 +37,7 @@ const displayName = (c: Country) =>
   c.flag + " " + (c.demonyms?.eng?.m || c.name?.common || c.name?.official)
 
 const deburrLower = (s: string) =>
-  s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+  s.normalize("NFD").replaceAll(/\p{M}/gu, "").toLowerCase()
 
 const partsFor = (c: Country): string[] =>
   [
@@ -70,7 +70,7 @@ const findTopMatch = (query: string): Country | null => {
 
   const exact = items.find(c =>
     [c.cca2, c.cca3, c.cioc].filter(Boolean).some(code => deburrLower(String(code)) === q) ||
-    partsFor(c).some(p => p === q),
+    partsFor(c).includes(q),
   )
   if (exact) return exact
 

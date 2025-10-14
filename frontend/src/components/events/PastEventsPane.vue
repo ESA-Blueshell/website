@@ -28,7 +28,7 @@ function coercePage(raw: unknown): number {
 function replaceUrlQuerySilently(next: number) {
   const q = {...route.query, page: String(next)}
   const href = router.resolve({path: route.path, query: q}).href
-  window.history.replaceState(window.history.state, "", href)
+  globalThis.history.replaceState(globalThis.history.state, "", href)
 }
 
 async function loadPast(pageOneIndexed = 1) {

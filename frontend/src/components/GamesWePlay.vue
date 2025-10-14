@@ -177,7 +177,6 @@ const unhover = (): void => {
   bottom: 0;
   height: 60px;
   width: 100%;
-  //z-index: 500;
   background-color: rgba(0, 0, 0, 0.5);
   border-radius: 30px;
   overflow: hidden;

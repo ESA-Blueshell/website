@@ -61,6 +61,7 @@
             <iframe
               :style="{filter: theme.global.current.value.dark ? 'invert(90%)' : ''}"
               allowfullscreen=""
+              title="Map"
               height="450"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"

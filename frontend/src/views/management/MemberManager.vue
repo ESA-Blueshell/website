@@ -75,8 +75,8 @@ const contributionPeriod = ref<ContributionPeriod | undefined>()
 const expanded = ref<number>(0)
 const search = ref("")
 
-if ("scrollRestoration" in window.history) {
-  window.history.scrollRestoration = "manual"
+if ("scrollRestoration" in globalThis.history) {
+  globalThis.history.scrollRestoration = "manual"
 }
 
 const getUsers = async () => {
@@ -117,19 +117,19 @@ const toggleExpanded = (userId: number) => {
 
 const userChanged = (user: AdvancedUser) => {
   const index = users.value.findIndex((u) => u.id === user.id)
-  if (index !== -1) {
-    users.value.splice(index, 1, user)
-  } else {
+  if (index === -1) {
     users.value.push(user)
+  } else {
+    users.value.splice(index, 1, user)
   }
 }
 
 const membershipChanged = async (updatedMembership: Membership) => {
   const index = memberships.value.findIndex((m) => m.id === updatedMembership.id)
-  if (index !== -1) {
-    memberships.value.splice(index, 1, updatedMembership)
-  } else {
+  if (index === -1) {
     memberships.value.push(updatedMembership)
+  } else {
+    memberships.value.splice(index, 1, updatedMembership)
   }
   const resp = await findUserById({path: {userId: updatedMembership.userId!}})
   if (resp.data) userChanged(resp.data)

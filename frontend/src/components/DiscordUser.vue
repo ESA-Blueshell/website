@@ -37,7 +37,7 @@ withDefaults(defineProps<Props>(), {
         <img
           :alt="`${username}'s avatar`"
           :src="avatarUrl"
-          class="discord-membership-image"
+          class="discord-membership"
         >
       </v-lazy>
       <span
@@ -84,7 +84,7 @@ withDefaults(defineProps<Props>(), {
   margin-right: 4px;
 }
 
-.discord-membership-image {
+.discord-membership {
   width: 32px;
   height: 32px;
   border-radius: 16px;

@@ -56,7 +56,3 @@ const teams = ref<Team[]>([
   },
 ])
 </script>
-
-<style lang="scss" scoped>
-
-</style>

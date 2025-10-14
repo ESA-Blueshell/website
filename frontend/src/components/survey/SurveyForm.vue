@@ -27,7 +27,7 @@ function makeDefault(q: Question): Answer {
   const base: Answer = {questionId: q.id!}
   if (q.type === QuestionType.OPEN) base.textResponse = ""
   if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
-    base.optionSelections = Array(q.choiceLabels?.length ?? 0).fill(false)
+    base.optionSelections = new Array(q.choiceLabels?.length ?? 0).fill(false)
   }
   return base
 }

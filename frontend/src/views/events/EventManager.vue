@@ -174,5 +174,3 @@ onMounted(async () => {
     <v-progress-circular indeterminate />
   </div>
 </template>
-
-<style lang="scss" scoped></style>

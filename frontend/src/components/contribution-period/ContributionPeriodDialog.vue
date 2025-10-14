@@ -214,6 +214,3 @@ const saveContributionPeriod = async () => {
 }
 
 </script>
-
-<style lang="scss">
-</style>

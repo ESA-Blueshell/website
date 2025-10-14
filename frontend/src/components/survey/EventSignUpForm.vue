@@ -39,12 +39,12 @@ const answersData = ref<Answer[]>(
         if (question.type === QuestionType.RADIO) {
           return {
             questionId: question.id!,
-            optionsSelections: Array(question.choiceLabels?.length ?? 0).fill(false),
+            optionsSelections: new Array(question.choiceLabels?.length ?? 0).fill(false),
           }
         }
         return {
           questionId: question.id!,
-          optionsSelections: Array(question.choiceLabels?.length ?? 0).fill(false),
+          optionsSelections: new Array(question.choiceLabels?.length ?? 0).fill(false),
         }
       },
     )
@@ -78,12 +78,12 @@ const answersForm: Ref<VForm | undefined> = ref()
 const guestForm: Ref<VForm | undefined> = ref()
 
 async function submit() {
-  if (!isLoggedIn.value) {
+  if (isLoggedIn.value) {
+    signUp.value.userId = login.value.userId
+  } else {
     const guestFormValid = await guestForm.value?.validate()
     if (!guestFormValid) return
     signUp.value.guest = guestData.value ?? {}
-  } else {
-    signUp.value.userId = login.value.userId
   }
 
   const formValid = await answersForm.value?.validate()

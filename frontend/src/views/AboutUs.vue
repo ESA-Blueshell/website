@@ -88,5 +88,3 @@ const boardYear = computed<number>(() =>
 const boardYearOrdinal = computed<string>(() => getOrdinalWord(boardYear.value))
 </script>
 
-<style lang="scss" scoped>
-</style>

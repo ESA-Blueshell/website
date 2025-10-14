@@ -115,7 +115,6 @@ const login = async () => {
         username: username.value,
         password: password.value,
       },
-      throwOnError: true,
     })
 
     loading.value = false
@@ -126,15 +125,11 @@ const login = async () => {
 
       // Go to redirect page or home page
       await router.push(route.query.redirect?.toString() || "/")
+    } else if (response?.status === 401) {
+      store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
     } else {
-      if (response?.status === 401) {
-        store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
-      } else {
-        $handleNetworkError(response)
-      }
+      $handleNetworkError(response)
     }
   }
 }
 </script>
-<style lang="scss" scoped>
-</style>

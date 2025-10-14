@@ -63,7 +63,7 @@ function addMember() {
   committee.value.members.push({role: "", userId: 1, committeeId: committee.value.id})
 }
 
-function removeMember(id) {
+function removeMember(id: number) {
   committee.value.members ??= []
   committee.value.members = committee.value.members.filter((m: CommitteeMember) => id !== m.userId)
 }

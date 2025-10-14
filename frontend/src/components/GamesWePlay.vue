@@ -80,7 +80,7 @@
         theme="light"
       >
         <v-carousel-item
-          v-for="game in games.map(it => it.titles).flat()"
+          v-for="game in games.map((gc: GameCategory) => gc.titles).flat()"
           :key="game.title"
           style="z-index: 1;"
           @mouseenter="hover(null,null)"
@@ -142,7 +142,6 @@ const currentGame = ref<CurrentGame | null>(null)
 const currentGameIndex = ref<number | null>(null)
 const hoverCarousel = ref<boolean>(false)
 
-// Methods
 const handleGameClick = (esportsLink?: string): void => {
   if (esportsLink) {
     $goto(esportsLink)
@@ -157,7 +156,7 @@ const hover = (i: number | null, j: number | null): void => {
 
       let newIndex = 0
       for (let k = 0; k < i; k++) {
-        newIndex += props.games[k].titles.length
+        newIndex += props.games[k]!.titles.length
       }
       newIndex += j
       currentGameIndex.value = newIndex

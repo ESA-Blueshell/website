@@ -162,9 +162,7 @@ const contribution = computed<Contribution | undefined>(() =>
 
 const hasContribution = computed(() => !!contribution.value)
 
-const userModel = computed<AdvancedUser>({
-  get: () => props.user,
-})
+const userModel = computed<AdvancedUser>(() => props.user)
 
 const toggleExpanded = () => emit("update:expanded", props.user.id as number)
 const startMembership = () => {

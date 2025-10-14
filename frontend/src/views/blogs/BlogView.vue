@@ -8,7 +8,7 @@ const blog = ref<Blog | null>(null)
 
 // Grab the "id" from the route (assuming your route is set up with :id)
 const route = useRoute()
-const blogId = String(route.params.id)
+const blogId = Number(route.params.id)
 
 // Fetch the blog when component mounts
 onMounted(async () => {
@@ -17,8 +17,9 @@ onMounted(async () => {
       path: {
         id: blogId,
       },
+      throwOnError: true
     })
-    blog.value = resp.data ?? {}
+    blog.value = resp.data!
   } catch (error) {
     console.error(`Error fetching blog with id ${blogId}:`, error)
   }

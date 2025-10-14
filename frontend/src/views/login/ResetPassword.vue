@@ -77,8 +77,7 @@
 import {onMounted, ref} from "vue"
 import type {VForm} from "vuetify/components"
 import {useRoute, useRouter} from "vue-router"
-import type {PasswordResetRequest} from "@/lib"
-import {resetPassword} from "@/lib"
+import {type PasswordResetRequest, setPassword} from "@/lib"
 import {Field, Form, useForm} from "vee-validate"
 
 const route = useRoute()
@@ -118,7 +117,7 @@ const submit = async () => {
     const {valid} = await vvValidate()
     if (!valid) return
 
-    await resetPassword({body: form.value})
+    await setPassword({body: form.value})
     succeeded.value = true
   } finally {
     loading.value = false

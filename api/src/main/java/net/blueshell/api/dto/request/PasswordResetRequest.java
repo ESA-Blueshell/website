@@ -24,7 +24,7 @@ public class PasswordResetRequest extends BaseDTO {
     @ExistingUsername
     private String username;
 
-    @JsonProperty
+    @NotBlank
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",

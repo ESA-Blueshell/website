@@ -64,7 +64,7 @@ const login = computed(() => store.getters.getLogin)
 
 const eventSignUpForm = computed(() => props.event.signUpForm ?? [])
 const signUp = computed(() => {
-    const signupProp = props.initialSignUp ?? {}
+    const signupProp = props.initialSignUp
     return {
       id: signupProp?.id,
       eventId: signupProp?.eventId,

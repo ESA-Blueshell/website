@@ -44,7 +44,7 @@ const answersData = ref<Answer[]>(
 const surveyFormRef = ref<InstanceType<typeof SurveyForm> | null>(null)
 
 const signUp = computed<EventSignUp>(() => {
-  const s = props.initialSignUp ?? {}
+  const s = props.initialSignUp
   return {
     id: s?.id,
     eventId: props.event.id!,

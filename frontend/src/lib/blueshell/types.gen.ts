@@ -32,7 +32,7 @@ export enum Role {
 }
 
 export type AdvancedUser = {
-    fullName: string;
+    fullName?: string;
     discord: string;
     email: string;
     id?: number;
@@ -120,9 +120,9 @@ export enum QuestionType {
 }
 
 export type Survey = {
+    questions: Array<Question>;
     id?: number;
     responseCount?: number;
-    questions: Array<Question>;
 };
 
 export type Answer = {
@@ -151,7 +151,7 @@ export type Guest = {
 };
 
 export type SimpleUser = {
-    fullName: string;
+    fullName?: string;
     discord: string;
     email: string;
     id?: number;
@@ -257,7 +257,7 @@ export type UserActivationRequest = {
 export type PasswordResetRequest = {
     token: string;
     username: string;
-    password?: string;
+    password: string;
 };
 
 export type MemberActivationRequest = {
@@ -353,16 +353,16 @@ export type FieldValidationError = {
     code?: string;
 };
 
-export type SimpleCommittee = {
-    id?: number;
-    name?: string;
-    description?: string;
-};
-
 export type PersonalInfo = {
     fullName: string;
     discord: string;
     email: string;
+};
+
+export type SimpleCommittee = {
+    id?: number;
+    name?: string;
+    description?: string;
 };
 
 export type FindMembershipByIdData = {

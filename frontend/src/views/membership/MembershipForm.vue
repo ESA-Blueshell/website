@@ -167,9 +167,9 @@ const addressData: Ref<Address> = ref({
 const membershipData: Ref<Membership | undefined> = ref()
 
 // Template refs
-const userEditRef: Ref<any> = ref(null)
-const addressEditRef: Ref<any> = ref(null)
-const membershipEditRef: Ref<any> = ref(null)
+const userEditRef: Ref = ref(null)
+const addressEditRef: Ref = ref(null)
+const membershipEditRef: Ref = ref(null)
 
 // Steps configuration
 const steps = [
@@ -228,11 +228,13 @@ const validateAndSaveUserData = async (): Promise<boolean> => {
       response = await updateUser({
         path: {id: userData.value.id},
         body: userData.value,
+        throwOnError: true,
       })
     } else {
       // Create new user
       response = await createUser({
         body: userData.value!,
+        throwOnError: true,
       })
     }
 
@@ -244,11 +246,7 @@ const validateAndSaveUserData = async (): Promise<boolean> => {
 
     return false
   } catch (error: unknown) {
-    if (error.response?.status === 400) {
-      store.commit("setStatusSnackbarMessage", error.response.data)
-    } else {
-      $handleNetworkError(error)
-    }
+    $handleNetworkError(error)
     return false
   }
 }
@@ -297,6 +295,7 @@ const completeMembership = async (): Promise<void> => {
       // Fetch updated user data to get new roles
       const response = await findUserById({
         path: {userId: userData.value.id},
+        throwOnError: true,
       })
 
       if (response.data) {
@@ -304,12 +303,8 @@ const completeMembership = async (): Promise<void> => {
       }
     }
 
-  } catch (error: any) {
-    if (error.response?.status === 400) {
-      store.commit("setStatusSnackbarMessage", error.response.data)
-    } else {
-      $handleNetworkError(error)
-    }
+  } catch (error: unknown) {
+    $handleNetworkError(error)
   } finally {
     saving.value = false
   }

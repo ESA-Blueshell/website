@@ -22,6 +22,8 @@ public class SimpleUserDTO extends PersonalInfoDTO {
     @JsonProperty
     private Long id;
 
+    private String fullName;
+
     @JsonProperty
     @NotBlank
     private String initials;

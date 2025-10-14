@@ -1,5 +1,6 @@
 package net.blueshell.api.listener.jpa;
 
+import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.event.job.AddEventToCalendarEvent;
 import net.blueshell.api.common.event.job.RemoveEventFromCalendarEvent;
 import net.blueshell.api.common.event.job.SyncEventToCalendarEvent;
@@ -15,13 +16,10 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
+@RequiredArgsConstructor
 public class EventEventListener {
 
     private final ApplicationEventPublisher eventPublisher;
-
-    public EventEventListener(ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
 
     /**
      * After commit, enqueue add if approved

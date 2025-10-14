@@ -6,7 +6,6 @@ import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.AddressDTO;
 import net.blueshell.api.mapper.AddressMapper;
 import net.blueshell.api.service.AddressService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +17,6 @@ import java.util.List;
 @Tag(name = "Addresses")
 public class AddressController extends BaseController<AddressService, AddressMapper> {
 
-    @Autowired
     public AddressController(AddressService service, AddressMapper mapper) {
         super(service, mapper);
     }

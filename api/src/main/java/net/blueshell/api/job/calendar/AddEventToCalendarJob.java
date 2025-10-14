@@ -1,5 +1,6 @@
 package net.blueshell.api.job.calendar;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.event.Event;
 import net.blueshell.api.service.CalendarService;
@@ -19,15 +20,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AddEventToCalendarJob {
 
     private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
 
-    @Autowired
-    private CalendarService calendarService;
-    @Autowired
-    private EventService eventService;
+    private final CalendarService calendarService;
+    private final EventService eventService;
 
     @Async
     @Retryable(retryFor = {Exception.class, UncheckedIOException.class}, maxAttempts = 3,

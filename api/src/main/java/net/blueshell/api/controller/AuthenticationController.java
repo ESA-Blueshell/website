@@ -2,6 +2,7 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.auth.JWTAuthBase;
 import net.blueshell.api.auth.JwtTokenUtil;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @Tag(name = "Authentication")
+@RequiredArgsConstructor
 public class AuthenticationController extends JWTAuthBase {
 
     private final AuthenticationManager authenticationManager;
@@ -35,23 +37,6 @@ public class AuthenticationController extends JWTAuthBase {
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
-
-    public AuthenticationController(
-            AuthenticationManager authenticationManager,
-            JwtTokenUtil jwtTokenUtil,
-            UserService users,
-            MemberActivationRequestMapper memberActivationMapper,
-            UserActivationRequestMapper userActivationMapper,
-            PasswordResetRequestMapper passwordResetMapper
-    ) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenUtil = jwtTokenUtil;
-        this.users = users;
-        this.memberActivationMapper = memberActivationMapper;
-        this.userActivationMapper = userActivationMapper;
-        this.passwordResetMapper = passwordResetMapper;
-    }
-
 
     @PostMapping("/auth/user/activate")
     @PermitAll

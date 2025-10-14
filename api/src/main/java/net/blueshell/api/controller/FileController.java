@@ -28,7 +28,6 @@ public class FileController extends BaseController<FileService, FileRepository> 
 
     private final FileMapper fileMapper;
 
-    @Autowired
     public FileController(FileService service, FileRepository repository, FileMapper fileMapper) {
         super(service, repository);
         this.fileMapper = fileMapper;

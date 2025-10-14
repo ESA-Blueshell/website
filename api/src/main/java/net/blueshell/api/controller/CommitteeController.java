@@ -24,7 +24,6 @@ import java.util.List;
 @Tag(name = "Committees")
 public class CommitteeController extends AdvancedController<CommitteeService, AdvancedCommitteeMapper, SimpleCommitteeMapper> {
 
-    @Autowired
     public CommitteeController(CommitteeService service, AdvancedCommitteeMapper advancedCommitteeMapper, SimpleCommitteeMapper simpleCommitteeMapper) {
         super(service, advancedCommitteeMapper, simpleCommitteeMapper);
     }

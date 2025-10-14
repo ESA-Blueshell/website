@@ -1,5 +1,6 @@
 package net.blueshell.api.job.contact;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.ContactService;
@@ -19,16 +20,15 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RemoveContactFromListJob {
 
     private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
-    @Autowired
-    private ContactService contacts;
-    @Autowired
-    private UserService users;
-    @Autowired
-    private ContributionPeriodService contributionPeriods;
+
+    private final ContactService contacts;
+    private final UserService users;
+    private final ContributionPeriodService contributionPeriods;
 
     @Async
     @Retryable(

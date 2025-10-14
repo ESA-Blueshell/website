@@ -1,5 +1,6 @@
 package net.blueshell.api.job.email;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserResetEmailJob {
 
     private static final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
 
-    @Autowired
-    private EmailService emails;
+    private final EmailService emails;
 
     @Async
     @Retryable(retryFor = {Exception.class}, maxAttempts = 3,

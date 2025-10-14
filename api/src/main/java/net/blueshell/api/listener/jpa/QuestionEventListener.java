@@ -1,5 +1,6 @@
 package net.blueshell.api.listener.jpa;
 
+import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.QuestionType;
 import net.blueshell.api.common.event.jpa.PostPersistEvent;
 import net.blueshell.api.common.event.jpa.PostRemoveEvent;
@@ -14,15 +15,11 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
+@RequiredArgsConstructor
 public class QuestionEventListener {
 
     private final AnswerService answers;
     private final EventSignUpService signUps;
-
-    public QuestionEventListener(AnswerService answers, EventSignUpService signUps) {
-        this.answers = answers;
-        this.signUps = signUps;
-    }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)

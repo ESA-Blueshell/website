@@ -81,6 +81,10 @@ public class SecurityConfig {
                                 "/users",
                                 "/users/guest"
                         ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/auth/password"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/events/**",

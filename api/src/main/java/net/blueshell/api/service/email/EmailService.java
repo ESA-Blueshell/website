@@ -89,6 +89,8 @@ public class EmailService {
         if (user == null || user.getResetType() == null) {
             log.info("Activation skipped: user={} or resetType missing", userId);
             return;
+        } else {
+            log.info("Sending {} email for user={}", user.getResetType(), userId);
         }
 
         BaseEmail email = switch (user.getResetType()) {

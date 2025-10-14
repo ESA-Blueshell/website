@@ -1,5 +1,6 @@
 package net.blueshell.api.listener.jpa;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.jpa.PostRemoveEvent;
@@ -15,13 +16,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class MembershipEventListener {
 
     private final UserService users;
-
-    public MembershipEventListener(UserService users) {
-        this.users = users;
-    }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)

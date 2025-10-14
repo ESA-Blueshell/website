@@ -20,7 +20,6 @@ import java.util.List;
 @Tag(name = "Blogs")
 public class BlogController extends BaseController<BlogService, BlogMapper> {
 
-    @Autowired
     public BlogController(BlogService blogService, BlogMapper blogMapper) {
         super(blogService, blogMapper);
     }

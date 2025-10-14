@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users")
 public class UserController extends AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper> {
 
-    @Autowired
     public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper) {
         super(service, advancedUserMapper, simpleUserMapper);
     }

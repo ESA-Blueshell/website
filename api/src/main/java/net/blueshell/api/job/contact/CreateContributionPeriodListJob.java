@@ -1,5 +1,6 @@
 package net.blueshell.api.job.contact;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.service.ContactService;
@@ -17,14 +18,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class CreateContributionPeriodListJob {
 
     private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
 
-    @Autowired
-    private ContactService contacts;
-    @Autowired
-    private ContributionPeriodService contributionPeriods;
+    private final ContactService contacts;
+    private final ContributionPeriodService contributionPeriods;
 
     @Async
     @Retryable(retryFor = {Exception.class}, maxAttempts = 3,

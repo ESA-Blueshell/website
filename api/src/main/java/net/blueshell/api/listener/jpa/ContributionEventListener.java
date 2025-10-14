@@ -1,5 +1,6 @@
 package net.blueshell.api.listener.jpa;
 
+import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.event.job.AddContactToListEvent;
 import net.blueshell.api.common.event.job.RemoveContactFromListEvent;
 import net.blueshell.api.common.event.jpa.PostPersistEvent;
@@ -14,13 +15,10 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
+@RequiredArgsConstructor
 public class ContributionEventListener {
 
     private final ApplicationEventPublisher eventPublisher;
-
-    public ContributionEventListener(ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)

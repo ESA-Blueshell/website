@@ -1,4 +1,4 @@
-package net.blueshell.api.mapper;
+package net.blueshell.api.mapper.committee;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;

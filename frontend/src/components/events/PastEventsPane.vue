@@ -99,6 +99,17 @@ watch(
     />
 
     <div
+      v-if="(pageMeta?.totalPages ?? 1) > 1"
+      class="pagination-wrap mb-4 mx-4"
+    >
+      <v-pagination
+        v-model="currentPage"
+        :length="pageMeta?.totalPages ?? 1"
+        :total-visible="(currentPage > 5 && currentPage < (pageMeta?.totalPages - 4)) ? 9 : 10 "
+      />
+    </div>
+
+    <div
       v-if="isLoading"
       class="text-center my-4"
     >

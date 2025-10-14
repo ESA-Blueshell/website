@@ -4,7 +4,6 @@ package net.blueshell.api.mapper.committee;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
-import net.blueshell.api.mapper.CommitteeMemberMapper;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.committee.CommitteeMember;
 import org.mapstruct.*;

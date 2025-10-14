@@ -29,6 +29,9 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import static net.blueshell.api.common.util.Util.ACTIVATION_KEY_LENGTH;
+import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
+
 @Entity
 @Table(
         name = "users",
@@ -59,9 +62,6 @@ import java.util.Set;
 @Data
 @EntityListeners(JpaListener.class)
 public class User implements UserDetails, BaseModel {
-
-    private static final int ACTIVATION_KEY_LENGTH = 15;
-    private static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -134,9 +134,9 @@ public class User implements UserDetails, BaseModel {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<Contribution> contributions;
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
-    private Membership membership;
+    private Set<Membership> memberships;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
     @ToString.Exclude
@@ -259,13 +259,5 @@ public class User implements UserDetails, BaseModel {
             return firstName + " " + lastName;
         }
         return firstName + " " + prefix + " " + lastName;
-    }
-
-    public MemberType getMemberType() {
-        return getMembership() != null ? getMembership().getMemberType() : null;
-    }
-
-    public boolean getIncasso() {
-        return getMembership() != null && getMembership().isIncasso();
     }
 }

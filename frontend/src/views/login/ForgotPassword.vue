@@ -1,7 +1,7 @@
+<!-- ForgotPassword.vue -->
 <template>
   <v-main>
     <top-banner title="Forgot Password" />
-
 
     <div class="mx-3">
       <div
@@ -12,23 +12,25 @@
           <p>
             Enter your username, and we'll send you an email with a link to reset your password.
           </p>
+
           <v-form
             ref="form"
             v-model="valid"
             @submit.prevent
           >
             <v-text-field
-              ref="username"
+              ref="usernameInput"
               v-model="username"
-              :rules="[v => !!v || 'Username is required']"
+              :rules="[(v: string) => !!v || 'Username is required']"
               label="Username"
               @keydown.enter="sendResetMail"
             />
+
             <v-row>
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :disabled="!valid"
+                  :disabled="!valid || !username"
                   :loading="loading"
                   @click="sendResetMail"
                 >
@@ -38,6 +40,7 @@
             </v-row>
           </v-form>
         </div>
+
         <div v-else>
           <p>
             All right, you should get a mail with a link you can use to reset your password at the email address
@@ -54,45 +57,61 @@
   </v-main>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import {onMounted, ref} from "vue"
+import {useRoute} from "vue-router"
+import {useStore} from "vuex"
 import TopBanner from "@/components/banners/TopBanner.vue"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 
-export default {
-  components: {TopBanner: TopBanner},
-  data: () => ({
-    username: "",
-    valid: false,
-    succeeded: false,
-    loading: false,
-  }),
-  mounted() {
-    this.username = this.$route.query.username
-  },
-  methods: {
-    async sendResetMail() {
-      const {valid} = await this.$refs.form.validate()
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {resetPassword} from "@/lib"
 
-      if (!valid) {
-        return
-      }
+type VFormValidateResult = { valid: boolean }
+type VFormRef = {
+  validate: () => Promise<VFormValidateResult> | VFormValidateResult
+  resetValidation?: () => void
+}
 
-      this.loading = true
-      // Send reset request
-      this.$http.delete(
-        `users/password?username=${this.username}`,
-      ).then(() => {
-        this.succeeded = true
-      }).catch(e => {
-        if (e.response?.status === 404) {
-          this.$store.commit("setStatusSnackbarMessage", "Uhhh, we don't know that username... Maybe check the spelling?")
-        } else {
-          $handleNetworkError(e)
-        }
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-  },
+const route = useRoute()
+const store = useStore()
+
+const username = ref<string>("")
+const valid = ref<boolean>(false)
+const succeeded = ref<boolean>(false)
+const loading = ref<boolean>(false)
+
+const form = ref<VFormRef | null>(null)
+const usernameInput = ref<HTMLInputElement | null>(null)
+
+onMounted(() => {
+  const q = route.query.username
+  if (typeof q === "string") {
+    username.value = q
+  }
+})
+
+const sendResetMail = async () => {
+  const result = await form.value?.validate()
+  if (!result?.valid) return
+
+  loading.value = true
+  try {
+    await resetPassword({query: {username: username.value}, throwOnError: true})
+
+    succeeded.value = true
+  } catch (e: unknown) {
+    // The generated client surfaces HTTP status on e.response?.status (Axios-style).
+    const anyErr = e as { response?: { status?: number } }
+    if (anyErr?.response?.status === 404) {
+      store.commit(
+        "setStatusSnackbarMessage",
+        "Uhhh, we don't know that username... Maybe check the spelling?",
+      )
+    } else {
+      $handleNetworkError(e)
+    }
+  } finally {
+    loading.value = false
+  }
 }
 </script>

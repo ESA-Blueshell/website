@@ -21,7 +21,7 @@
           :memberships="memberships"
           :contributions="contributions"
           :expanded="expanded"
-          title="Non-member users"
+          title="Non-members"
           enable-delete
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"
@@ -57,7 +57,7 @@ import {
   type Contribution,
   type ContributionPeriod,
   findContributionsByPeriodId,
-  findMemberships,
+  findMemberships, findUserById,
   findUsers,
   type Membership,
 } from "@/lib"
@@ -87,15 +87,6 @@ const getUsers = async () => {
   }
 }
 
-const getMemberships = async () => {
-  try {
-    const response = await findMemberships()
-    memberships.value = response.data ?? []
-  } catch (error) {
-    console.error("Error fetching memberships:", error)
-  }
-}
-
 const isSearched = (user: AdvancedUser) => {
   if (!search.value) return true
   const searchTerms = search.value.toLowerCase().split(" ").filter(Boolean)
@@ -106,10 +97,11 @@ const isSearched = (user: AdvancedUser) => {
 }
 
 const updateLists = () => {
-  const hasMembership = (u: AdvancedUser) => memberships.value.some((m) => m.userId === u.id)
+  const hasActiveMembership = (u: AdvancedUser) => memberships.value.some((m) => m.userId === u.id && !m.endDate)
 
-  members.value = users.value.filter((u) => hasMembership(u) && isSearched(u))
-  nonMembers.value = users.value.filter((u) => !hasMembership(u) && isSearched(u))
+  const filtered = users.value.filter((v) => isSearched(v))
+  members.value = filtered.filter((u) => hasActiveMembership(u))
+  nonMembers.value = filtered.filter((u) => !hasActiveMembership(u))
 }
 
 watch([memberships, users, search], () => updateLists(), {deep: true})
@@ -131,13 +123,15 @@ const userChanged = (user: AdvancedUser) => {
   }
 }
 
-const membershipChanged = (updatedMembership: Membership) => {
+const membershipChanged = async (updatedMembership: Membership) => {
   const index = memberships.value.findIndex((m) => m.id === updatedMembership.id)
   if (index !== -1) {
     memberships.value.splice(index, 1, updatedMembership)
   } else {
     memberships.value.push(updatedMembership)
   }
+  const resp = await findUserById({path: {userId: updatedMembership.userId!}})
+  if (resp.data) userChanged(resp.data)
 }
 
 const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {

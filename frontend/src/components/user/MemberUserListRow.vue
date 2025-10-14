@@ -15,28 +15,9 @@
           class="d-flex align-center"
           style="flex-shrink: 0;"
         >
-          <!--          TODO: Uncomment, and restrict visibility to admins-->
-          <!--          <div class="d-flex align-center mr-4">-->
-          <!--            <span class="mr-2">Enabled</span>-->
-          <!--            <v-icon-->
-          <!--              v-if="user.enabled"-->
-          <!--              class="mr-2"-->
-          <!--              color="green"-->
-          <!--            >-->
-          <!--              mdi-check-->
-          <!--            </v-icon>-->
-          <!--            <v-icon-->
-          <!--              v-else-->
-          <!--              class="mr-2"-->
-          <!--              color="red"-->
-          <!--            >-->
-          <!--              mdi-close-->
-          <!--            </v-icon>-->
-          <!--          </div>-->
-
           <v-chip
             v-if="!!user?.roles?.at(-1)"
-            class="mr-3 d-flex justify-center align-center text-capitalize"
+            class="mx-3 d-flex justify-center align-center text-capitalize"
             size="small"
             style="width: 80px"
             variant="flat"
@@ -52,7 +33,7 @@
             :color="hasContribution ? 'green' : 'red'"
             variant="flat"
           >
-            {{ hasContribution ? 'Paid' : 'Unpaid' }}
+            {{ hasContribution ? "Paid" : "Unpaid" }}
           </v-chip>
 
 
@@ -61,16 +42,20 @@
             :disabled="user?.roles?.includes('ADMIN')"
             color="red"
             variant="text"
+            class="btn-tight"
             @click.stop="openDelete"
           >
             Delete
           </v-btn>
 
 
-          <template v-if="membership">
+          <template
+            v-if="membership"
+          >
             <v-btn
               v-if="membership.endDate"
               variant="text"
+              class="btn-tight"
               @click.stop="resumeMembership"
             >
               Resume Membership
@@ -78,6 +63,7 @@
             <v-btn
               v-else
               variant="text"
+              class="btn-tight"
               :disabled="user.roles.includes('COMMITTEE')"
               @click.stop="endMembership"
             >
@@ -87,6 +73,7 @@
           <template v-else>
             <v-btn
               variant="text"
+              class="btn-tight"
               @click.stop="startMembership"
             >
               Start Membership
@@ -116,6 +103,7 @@
     v-model="showStartModal"
     :memberships="memberships"
     :user-id="user.id"
+    @update:membership="membershipChanged"
   />
 
   <!-- Delete confirm -->
@@ -189,7 +177,7 @@ const endMembership = async () => {
     const membershipData: Membership = {
       ...membership.value,
       userId: props.user.id as number,
-      endDate: DateTime.now().toISO(),
+      endDate: DateTime.now().toISODate(),
     }
     const response = await updateMembership({path: {id: membershipData.id as number}, body: membershipData})
     if (response.data) emit("update:membership", response.data)
@@ -211,6 +199,10 @@ const resumeMembership = async () => {
   } catch (error) {
     console.error("Failed to resume membership:", error)
   }
+}
+
+const membershipChanged = (value: Membership): void => {
+  emit("update:membership", value)
 }
 
 const openDelete = () => {
@@ -235,5 +227,10 @@ const userChanged = (userData: AdvancedUser) => {
 <style lang="scss">
 span {
   font-weight: bold;
+}
+
+.btn-tight {
+  padding-inline: 6px !important;
+  min-width: auto !important;
 }
 </style>

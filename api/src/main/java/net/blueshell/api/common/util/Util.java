@@ -6,11 +6,13 @@ import java.util.Random;
 public class Util {
 
     private static final Random random = new SecureRandom();
+    public static final int ACTIVATION_KEY_LENGTH = 30;
+    public static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
 
     public static String getRandomCapitalString(int length) {
         StringBuilder randKey = new StringBuilder();
 
-        String options = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String options = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
         for (int i = 1; i <= length; i++) {
             options = options.toUpperCase();

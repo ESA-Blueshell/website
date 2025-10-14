@@ -56,6 +56,6 @@ public class PasswordResetEmail extends BaseEmail {
 
     @Override
     public String getSenderAddress() {
-        return "security@blueshell.utwente.nl";
+        return "jorisjonkers@blueshell.utwente.nl";
     }
 }

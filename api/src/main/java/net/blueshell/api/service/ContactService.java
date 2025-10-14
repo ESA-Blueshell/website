@@ -1,4 +1,4 @@
-package net.blueshell.api.service.brevo;
+package net.blueshell.api.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.mapper.BrevoContactMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.service.UserService;
 import net.blueshell.clients.brevo.api.ContactsApi;
 import net.blueshell.clients.brevo.invoker.ApiClient;
 import net.blueshell.clients.brevo.model.*;

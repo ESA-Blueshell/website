@@ -1,9 +1,9 @@
-package net.blueshell.api.job.brevo;
+package net.blueshell.api.job.contact;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.brevo.ContactService;
+import net.blueshell.api.service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -23,9 +23,9 @@ public class SyncContactJob {
     private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
     @Autowired
-    private ContactService contactService;
+    private ContactService contacts;
     @Autowired
-    private UserService userService;
+    private UserService users;
 
     @Async
     @Retryable(
@@ -48,13 +48,13 @@ public class SyncContactJob {
             lock.lock();
             log.info("Processing contact sync job for user ID: {}", userId);
 
-            User user = userService.findById(userId);
+            User user = users.findById(userId);
 
             // Perform the contact synchronization
-            contactService.sync(user);
+            contacts.sync(user);
 
             // Update the user in the database with the potentially new contactId
-            userService.update(user);
+            users.update(user);
 
             log.info("Successfully synchronized contact for user: {} (ID: {})", user.getEmail(), userId);
 

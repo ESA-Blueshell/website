@@ -3,54 +3,64 @@ package net.blueshell.api.event;
 import net.blueshell.api.common.event.PostRemoveEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
 import net.blueshell.api.common.event.PrePersistEvent;
+import net.blueshell.api.job.calendar.AddEventToCalendarJob;
+import net.blueshell.api.job.calendar.RemoveEventFromCalendarJob;
+import net.blueshell.api.job.calendar.SyncEventToCalendarJob;
 import net.blueshell.api.model.event.Event;
-import net.blueshell.api.service.google.CalendarService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.io.IOException;
-
 @Component
 public class EventEventListener {
 
-    private final CalendarService calendars;
+    private final AddEventToCalendarJob addJob;
+    private final SyncEventToCalendarJob syncJob;
+    private final RemoveEventFromCalendarJob removeJob;
 
-    public EventEventListener(CalendarService calendars) {
-        this.calendars = calendars;
+    public EventEventListener(AddEventToCalendarJob addJob,
+                              SyncEventToCalendarJob syncJob,
+                              RemoveEventFromCalendarJob removeJob) {
+        this.addJob = addJob;
+        this.syncJob = syncJob;
+        this.removeJob = removeJob;
     }
 
     /**
-     * send e-mail only if the transaction COMMITTED successfully
+     * After commit, enqueue add if approved
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onPersist(PrePersistEvent<Event> evt) throws IOException {
+    public void onPersist(PrePersistEvent<Event> evt) {
         Event e = evt.getSource();
         if (e.isApproved()) {
-            calendars.add(e);
+            addJob.add(e.getId());
         }
     }
 
+    /**
+     * After commit, enqueue sync if approved, otherwise remove
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onUpdate(PostUpdateEvent<Event> evt) throws IOException {
+    public void onUpdate(PostUpdateEvent<Event> evt) {
         Event e = evt.getSource();
         if (e.isApproved()) {
-            calendars.sync(e);
+            syncJob.sync(e.getId());
         } else {
-            // Remove from calendar if no longer visible
-            calendars.remove(e);
+            removeJob.remove(e.getId());
         }
     }
 
+    /**
+     * After commit, enqueue remove
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onDelete(PostRemoveEvent<Event> evt) throws IOException {
+    public void onDelete(PostRemoveEvent<Event> evt) {
         Event e = evt.getSource();
-
-        calendars.remove(e);
+        removeJob.remove(e.getId());
     }
 }

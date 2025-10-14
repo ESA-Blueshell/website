@@ -14,6 +14,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
@@ -51,7 +52,7 @@ public class Membership implements BaseModel {
     private Long id;
 
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @ToString.Exclude
     private User user;
 
@@ -65,10 +66,10 @@ public class Membership implements BaseModel {
     private String city;
 
     @Column(name = "start_date", nullable = false)
-    private Date startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private Date endDate;
+    private LocalDate endDate;
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)

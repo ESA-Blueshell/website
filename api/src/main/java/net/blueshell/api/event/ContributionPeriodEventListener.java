@@ -2,9 +2,8 @@ package net.blueshell.api.event;
 
 import net.blueshell.api.common.event.PostPersistEvent;
 import net.blueshell.api.common.event.PostUpdateEvent;
+import net.blueshell.api.job.contact.CreateContributionPeriodListJob;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.service.contribution.ContributionPeriodService;
-import net.blueshell.api.service.brevo.ContactService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,24 +13,18 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class ContributionPeriodEventListener {
 
-    private final ContactService contacts;
-    private final ContributionPeriodService periods;
+    private final CreateContributionPeriodListJob createListJob;
 
-    public ContributionPeriodEventListener(ContactService contacts, ContributionPeriodService periods) {
-        this.contacts = contacts;
-        this.periods = periods;
+    public ContributionPeriodEventListener(CreateContributionPeriodListJob createListJob) {
+        this.createListJob = createListJob;
     }
-
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onUpdate(PostUpdateEvent<ContributionPeriod> evt) {
         var c = evt.getSource();
         if (c.getListId() != null) return;
-
-        var listId = contacts.createList(c);
-        c.setListId(listId);
-        periods.update(c);
+        createListJob.createList(c.getId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -39,9 +32,6 @@ public class ContributionPeriodEventListener {
     public void onCreate(PostPersistEvent<ContributionPeriod> evt) {
         var c = evt.getSource();
         if (c.getListId() != null) return;
-
-        var listId = contacts.createList(c);
-        c.setListId(listId);
-        periods.update(c);
+        createListJob.createList(c.getId());
     }
 }

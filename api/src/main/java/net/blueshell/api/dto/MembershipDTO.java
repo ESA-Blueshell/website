@@ -12,8 +12,10 @@ import net.blueshell.api.validation.date.Today;
 import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.membership.NoExistingMembershipForUserId;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.sql.Date;
+import java.time.LocalDate;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -35,11 +37,13 @@ public class MembershipDTO extends BaseDTO {
     @NotNull(groups = {Creation.class})
     private String country;
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @PastOrPresent(groups = {Administration.class})
     @Today(groups = {Creation.class})
-    private Date startDate;
+    private LocalDate startDate;
 
-    private Date endDate;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate endDate;
 
     @JsonProperty
     @NotNull

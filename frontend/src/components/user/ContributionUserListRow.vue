@@ -16,13 +16,14 @@
         >
           <div class="d-flex align-center mr-4">
             <v-chip
-              v-if="!!user?.roles?.at(-1)"
+              v-if="!!user?.roles?.length"
               class="mr-3 d-flex justify-center align-center text-capitalize"
               size="small"
-              style="width: 80px"
+              style="width: 60px"
+              :color="user.roles.includes('MEMBER') ? 'primary' : 'grey'"
               variant="flat"
             >
-              {{ user.roles.at(-1).toLocaleLowerCase() }}
+              {{ user.roles.includes('MEMBER') ? 'Member' : 'User' }}
             </v-chip>
 
             <v-btn

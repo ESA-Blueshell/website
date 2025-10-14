@@ -1,15 +1,18 @@
 package net.blueshell.api.config;
 
 import net.blueshell.api.event.*;
-import net.blueshell.api.job.brevo.RemoveContactFromListJob;
-import net.blueshell.api.job.brevo.SyncContactJob;
+import net.blueshell.api.job.calendar.AddEventToCalendarJob;
+import net.blueshell.api.job.calendar.RemoveEventFromCalendarJob;
+import net.blueshell.api.job.calendar.SyncEventToCalendarJob;
+import net.blueshell.api.job.contact.AddContactToListJob;
+import net.blueshell.api.job.contact.CreateContributionPeriodListJob;
+import net.blueshell.api.job.contact.RemoveContactFromListJob;
+import net.blueshell.api.job.contact.SyncContactJob;
 import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.FileService;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.brevo.ContactService;
 import net.blueshell.api.service.email.EmailService;
-import net.blueshell.api.service.google.CalendarService;
+import net.blueshell.api.service.CalendarService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,18 +25,20 @@ public class EventListenerConfig {
     }
 
     @Bean
-    public ContributionEventListener contributionEventListener(ContactService contacts, RemoveContactFromListJob removeContactFromListJob) {
-        return new ContributionEventListener(contacts, removeContactFromListJob);
+    public ContributionEventListener contributionEventListener(AddContactToListJob contactListJob, RemoveContactFromListJob removeContactFromListJob) {
+        return new ContributionEventListener(contactListJob, removeContactFromListJob);
     }
 
     @Bean
-    public ContributionPeriodEventListener contributionPeriodEventListener(ContactService contacts, ContributionPeriodService periods) {
-        return new ContributionPeriodEventListener(contacts, periods);
+    public ContributionPeriodEventListener contributionPeriodEventListener(CreateContributionPeriodListJob createListJob) {
+        return new ContributionPeriodEventListener(createListJob);
     }
 
     @Bean
-    public EventEventListener eventEventListener(CalendarService calendars) {
-        return new EventEventListener(calendars);
+    public EventEventListener eventEventListener(AddEventToCalendarJob addJob,
+                                                 SyncEventToCalendarJob syncJob,
+                                                 RemoveEventFromCalendarJob removeJob) {
+        return new EventEventListener(addJob, syncJob, removeJob);
     }
 
     @Bean

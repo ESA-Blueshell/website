@@ -33,15 +33,19 @@ public class MembershipEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onCreate(PrePersistEvent<Membership> evt) {
         Membership m = evt.getSource();
-        var user = m.getUser();
-
+        log.info("Creating membership for user {} adding role {}", m.getUserId(), Role.MEMBER);
+        users.addRole(m.getUserId(), Role.MEMBER);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onUpdate(PostUpdateEvent<Membership> evt) {
         Membership m = evt.getSource();
-        if (m.getEndDate() != null) {
+        if (m.getEndDate() == null) {
+            log.info("Updating membership for user {} adding role {}", m.getUserId(), Role.MEMBER);
+            users.addRole(m.getUserId(), Role.MEMBER);
+        } else {
+            log.info("Updating membership for user {} removing role {}", m.getUserId(), Role.MEMBER);
             users.removeRole(m.getUserId(), Role.MEMBER);
         }
     }
@@ -50,6 +54,7 @@ public class MembershipEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Membership> evt) {
         Membership m = evt.getSource();
+        log.info("Deleting membership for user {} removing role {}", m.getUserId(), Role.MEMBER);
         users.removeRole(m.getUserId(), Role.MEMBER);
     }
 }

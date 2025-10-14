@@ -2,7 +2,9 @@ package net.blueshell.api.service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
+import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.common.util.Util;
 import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
@@ -18,7 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import java.sql.Timestamp;
+import java.time.Instant;
+
+import static net.blueshell.api.common.util.Util.ACTIVATION_KEY_LENGTH;
+import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
 
 @Slf4j
 @Service
@@ -58,9 +64,6 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
         return repository.existsByPhoneNumber(phoneNumber);
     }
 
-    public List<User> findByMembershipNotNull() {
-        return repository.findByMembershipNotNull();
-    }
 
     @Transactional
     public User toggleRole(Long id, Role role) {
@@ -93,18 +96,17 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
         }
     }
 
-    public User findBySignature(File signature) {
-        return repository.findByMembershipSignature(signature).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with signature: %s".formatted(signature.getName())));
-    }
-
-    public User findByProfilePicture(File profilePicture) {
-        return repository.findByProfilePicture(profilePicture).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with profile picture: %s".formatted(profilePicture.getName())));
-    }
-
     public Page<User> findByFilter(UserFilter filter, Pageable pageable) {
         if (filter == null) filter = new UserFilter();
         if (pageable == null) pageable = Pageable.unpaged();
         var spec = UserSpecifications.fromFilter(filter, getPrincipal());
         return repository.findAll(spec, pageable);
+    }
+
+    public void resetPassword(User user) {
+        user.setResetType(ResetType.PASSWORD_RESET);
+        user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
+        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS)));
+        user.setEnabled(false);
     }
 }

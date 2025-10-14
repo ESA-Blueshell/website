@@ -1,5 +1,6 @@
 package net.blueshell.api.service.email;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.base.EmailContent;
 import net.blueshell.api.email.*;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class EmailService {
 
@@ -44,6 +46,7 @@ public class EmailService {
     }
 
     public void passwordReset(User user) {
+        log.info("Sending password reset to email: {}", user.getEmail());
         var email = new PasswordResetEmail(
                 user,
                 frontendUrl,

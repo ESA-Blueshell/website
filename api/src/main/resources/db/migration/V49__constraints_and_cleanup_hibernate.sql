@@ -210,9 +210,6 @@ ALTER TABLE guests
 ALTER TABLE memberships
     ADD CONSTRAINT uk_memberships_signature_deleted_at UNIQUE (signature_id, deleted_at);
 
-ALTER TABLE memberships
-    ADD CONSTRAINT uk_memberships_user_id_deleted_at UNIQUE (user_id, deleted_at);
-
 ALTER TABLE questions
     ADD CONSTRAINT uk_questions_survey_idx_deleted_at UNIQUE (survey_id, idx, deleted_at);
 

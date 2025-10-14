@@ -44,10 +44,6 @@ public interface UserRepository extends BaseRepository<User> {
 
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
 
-    List<User> findByMembershipNotNull();
-
-    Optional<User> findByMembershipSignature(File signature);
-
     Optional<User> findByProfilePicture(File profilePicture);
 
     @Query("SELECT DISTINCT u FROM User u " +

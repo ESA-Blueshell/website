@@ -1,10 +1,10 @@
-package net.blueshell.api.job.brevo;
+package net.blueshell.api.job.contact;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.brevo.ContactService;
+import net.blueshell.api.service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -24,11 +24,11 @@ public class RemoveContactFromListJob {
     private static final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Boolean> processingJobs = new ConcurrentHashMap<>();
     @Autowired
-    private ContactService contactService;
+    private ContactService contacts;
     @Autowired
-    private UserService userService;
+    private UserService users;
     @Autowired
-    private ContributionPeriodService contributionPeriodService;
+    private ContributionPeriodService contributionPeriods;
 
     @Async
     @Retryable(
@@ -51,10 +51,10 @@ public class RemoveContactFromListJob {
             lock.lock();
             log.info("Starting remove-from-list job for user ID: {} and period ID: {}", userId, periodId);
 
-            User user = userService.findById(userId);
-            var period = contributionPeriodService.findById(periodId);
+            User user = users.findById(userId);
+            var period = contributionPeriods.findById(periodId);
 
-            contactService.removeFromList(period, user);
+            contacts.removeFromList(period, user);
 
             log.info("Successfully removed contact {} (user ID: {}) from list for period ID: {}",
                     user.getEmail(), userId, periodId);

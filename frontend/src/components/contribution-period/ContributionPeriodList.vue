@@ -54,7 +54,6 @@
       </v-col>
     </v-row>
 
-    <!-- Contribution Period Dialog -->
     <contribution-period-dialog
       v-model:show-dialog="showAddPeriodDialog"
       :contribution-period="selectedPeriod"
@@ -62,7 +61,6 @@
       @refresh-periods="getContributionPeriods"
     />
 
-    <!-- Delete Confirmation Dialog for Periods -->
     <delete-confirmation-dialog
       v-model="deleteDialog"
       :message="`Are you sure you want to delete the contribution period from ${formatPeriod(selectedPeriod)}?`"

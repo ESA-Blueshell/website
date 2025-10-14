@@ -2555,10 +2555,12 @@ export type UserActivateResponses = {
 };
 
 export type ResetPasswordData = {
-    body: PasswordResetRequest;
+    body?: never;
     path?: never;
-    query?: never;
-    url: '/auth/password/reset';
+    query: {
+        username: string;
+    };
+    url: '/auth/password';
 };
 
 export type ResetPasswordErrors = {
@@ -2587,6 +2589,45 @@ export type ResetPasswordErrors = {
 export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
 
 export type ResetPasswordResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type SetPasswordData = {
+    body: PasswordResetRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/password';
+};
+
+export type SetPasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
+
+export type SetPasswordResponses = {
     /**
      * OK
      */

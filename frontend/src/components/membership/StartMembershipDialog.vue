@@ -68,6 +68,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void;
+  (e: "update:membership", value: Membership): void;
 }>()
 
 const form: Ref<VForm | undefined> = ref()
@@ -101,7 +102,7 @@ const confirm = async () => {
     const response = await createMembership({body: membershipData})
 
     if (response.data) {
-
+      emit("update:membership", response.data)
       open.value = false
     }
   } catch (error) {

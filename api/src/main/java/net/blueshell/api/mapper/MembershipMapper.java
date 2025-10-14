@@ -9,6 +9,7 @@ import net.blueshell.api.model.Membership;
 import org.mapstruct.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Date;
 
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
@@ -38,11 +39,11 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     protected void afterFromDTO(MembershipDTO dto, @MappingTarget Membership membership) {
         if (hasAuthority(Role.BOARD)) {
             applyIfFieldIsNotNull(membership, dto.getStartDate(), Membership::setStartDate);
-            applyIfFieldIsNotNull(membership, dto.getEndDate(), Membership::setEndDate);
+            membership.setEndDate(dto.getEndDate()); // Must be applied, in order to be able to resume memberships
             applyIfFieldIsNotNull(membership, dto.getMemberType(), Membership::setMemberType);
             applyIfFieldIsNotNull(membership, dto.isIncasso(), Membership::setIncasso);
         } else {
-            membership.setStartDate((java.sql.Date) Date.from(Instant.now()));
+            membership.setStartDate(LocalDate.now());
             membership.setMemberType(MemberType.REGULAR);
         }
     }

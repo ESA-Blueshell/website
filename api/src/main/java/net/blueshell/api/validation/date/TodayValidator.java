@@ -7,17 +7,14 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
-public class TodayValidator implements ConstraintValidator<Today, Date> {
+public class TodayValidator implements ConstraintValidator<Today, LocalDate> {
 
     @Override
-    public boolean isValid(Date value, ConstraintValidatorContext context) {
+    public boolean isValid(LocalDate value, ConstraintValidatorContext context) {
         if (value == null) {
             return true; // let @NotNull handle null
         }
-        LocalDate inputDate = value.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-        return LocalDate.now().equals(inputDate);
+        return LocalDate.now().equals(value);
     }
 }
 

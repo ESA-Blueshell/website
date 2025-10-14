@@ -15,13 +15,12 @@ import net.blueshell.api.mapper.activation.PasswordResetRequestMapper;
 import net.blueshell.api.mapper.activation.UserActivationRequestMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
+import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -31,6 +30,7 @@ public class AuthenticationController extends JWTAuthBase {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService users;
+    private final EmailService emails;
     private final MemberActivationRequestMapper memberActivationMapper;
     private final UserActivationRequestMapper userActivationMapper;
     private final PasswordResetRequestMapper passwordResetMapper;
@@ -41,7 +41,7 @@ public class AuthenticationController extends JWTAuthBase {
     public AuthenticationController(
             AuthenticationManager authenticationManager,
             JwtTokenUtil jwtTokenUtil,
-            UserService users,
+            UserService users, EmailService emails,
             MemberActivationRequestMapper memberActivationMapper,
             UserActivationRequestMapper userActivationMapper,
             PasswordResetRequestMapper passwordResetMapper
@@ -49,6 +49,7 @@ public class AuthenticationController extends JWTAuthBase {
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
         this.users = users;
+        this.emails = emails;
         this.memberActivationMapper = memberActivationMapper;
         this.userActivationMapper = userActivationMapper;
         this.passwordResetMapper = passwordResetMapper;
@@ -63,6 +64,15 @@ public class AuthenticationController extends JWTAuthBase {
         users.update(user);
     }
 
+    @DeleteMapping("/auth/password")
+    @PermitAll
+    public void resetPassword(@Validated @RequestParam String username) {
+        var user = users.findByUsername(username);
+        users.resetPassword(user);
+        users.update(user);
+        emails.passwordReset(user);
+    }
+
     @PostMapping("/auth/member/activate")
     @PermitAll
     public void memberActivate(@Validated @RequestBody MemberActivationRequest request) {
@@ -71,9 +81,9 @@ public class AuthenticationController extends JWTAuthBase {
         users.update(user);
     }
 
-    @PostMapping("/auth/password/reset")
+    @PostMapping("/auth/password")
     @PermitAll
-    public void resetPassword(@Validated @RequestBody PasswordResetRequest request) {
+    public void setPassword(@Validated @RequestBody PasswordResetRequest request) {
         var user = users.findByUsername(request.getUsername());
         passwordResetMapper.fromDTO(request, user);
         users.update(user);

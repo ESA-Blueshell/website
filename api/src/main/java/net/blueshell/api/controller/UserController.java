@@ -78,7 +78,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
     }
 
     @GetMapping(value = "/users/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
     public AdvancedUserDTO findUserById(@PathVariable("userId") Long userId) {
         var user = service.findById(userId);
         return advancedMapper.toDTO(user);

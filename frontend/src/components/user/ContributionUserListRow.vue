@@ -17,20 +17,20 @@
           <div class="d-flex align-center mr-4">
             <v-chip
               v-if="!!user?.roles?.length"
+              :color="user.roles.includes('MEMBER') ? 'primary' : 'grey'"
               class="mr-3 d-flex justify-center align-center text-capitalize"
               size="small"
               style="width: 60px"
-              :color="user.roles.includes('MEMBER') ? 'primary' : 'grey'"
               variant="flat"
             >
-              {{ user.roles.includes('MEMBER') ? 'Member' : 'User' }}
+              {{ user.roles.includes("MEMBER") ? "Member" : "User" }}
             </v-chip>
 
             <v-btn
+              :disabled="disabled || saving"
+              :loading="saving"
               size="small"
               variant="tonal"
-              :loading="saving"
-              :disabled="disabled || saving"
               @click.stop="hasContribution ? unmarkPaid() : markPaid()"
             >
               {{ hasContribution ? "Mark unpaid" : "Mark paid" }}

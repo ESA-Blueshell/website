@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.MailSendException;
@@ -41,6 +40,22 @@ public class MockJavaMailSender implements JavaMailSender {
     @Getter
     private final List<SimpleMailMessage> simpleOutbox = new CopyOnWriteArrayList<>();
 
+    private static String safeSubject(MimeMessage m) {
+        try {
+            return m.getSubject();
+        } catch (Exception ignored) {
+            return "<n/a>";
+        }
+    }
+
+    private static List<String> safeRecipients(MimeMessage m) {
+        try {
+            return Arrays.stream(Objects.requireNonNullElse(m.getAllRecipients(), new jakarta.mail.Address[0]))
+                    .map(Object::toString).toList();
+        } catch (Exception ignored) {
+            return List.of();
+        }
+    }
 
     @Override
     public @NotNull MimeMessage createMimeMessage() {
@@ -99,23 +114,6 @@ public class MockJavaMailSender implements JavaMailSender {
             }
         } catch (Exception e) {
             throw new MailSendException("Failed to clone MimeMessage", e);
-        }
-    }
-
-    private static String safeSubject(MimeMessage m) {
-        try {
-            return m.getSubject();
-        } catch (Exception ignored) {
-            return "<n/a>";
-        }
-    }
-
-    private static List<String> safeRecipients(MimeMessage m) {
-        try {
-            return Arrays.stream(Objects.requireNonNullElse(m.getAllRecipients(), new jakarta.mail.Address[0]))
-                    .map(Object::toString).toList();
-        } catch (Exception ignored) {
-            return List.of();
         }
     }
 

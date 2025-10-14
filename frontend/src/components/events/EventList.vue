@@ -5,8 +5,11 @@ import type {AdvancedCommittee, Event, EventSignUp} from "@/lib"
 
 interface Emits {
   (e: "delete:event", id: number): void
+
   (e: "delete:signUp", id: number): void
+
   (e: "update:event", event: Event): void
+
   (e: "update:signUp", signUp: EventSignUp): void
 }
 

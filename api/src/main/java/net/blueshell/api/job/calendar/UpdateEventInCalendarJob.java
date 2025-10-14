@@ -1,11 +1,10 @@
-package net.blueshell.api.job.google;
+package net.blueshell.api.job.calendar;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.event.Event;
 import net.blueshell.api.service.CalendarService;
 import net.blueshell.api.service.event.EventService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;

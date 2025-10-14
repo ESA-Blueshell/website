@@ -33,11 +33,11 @@
         :key="user.id ?? user.username"
       >
         <member-user-list-row
-          :user="user"
-          :memberships="memberships"
           :contributions="contributions"
-          :expanded="expanded"
           :enable-delete="enableDelete"
+          :expanded="expanded"
+          :memberships="memberships"
+          :user="user"
           @update:expanded="toggleExpanded"
           @update:membership="membershipChanged"
           @update:user="userChanged"

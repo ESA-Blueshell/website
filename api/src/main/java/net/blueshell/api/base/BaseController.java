@@ -1,6 +1,5 @@
 package net.blueshell.api.base;
 
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

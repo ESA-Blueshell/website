@@ -3,7 +3,7 @@ package net.blueshell.api.listener.calendar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.event.job.UpdateEventInCalendarEvent;
-import net.blueshell.api.job.google.UpdateEventInCalendarJob;
+import net.blueshell.api.job.calendar.UpdateEventInCalendarJob;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 

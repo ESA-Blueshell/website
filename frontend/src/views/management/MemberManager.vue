@@ -17,12 +17,12 @@
         />
 
         <member-user-list
-          :users="nonMembers"
-          :memberships="memberships"
           :contributions="contributions"
           :expanded="expanded"
-          title="Non-members"
+          :memberships="memberships"
+          :users="nonMembers"
           enable-delete
+          title="Non-members"
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"
           @update:user="userChanged"
@@ -30,13 +30,13 @@
         />
 
         <member-user-list
-          :users="members"
-          :memberships="memberships"
           :contributions="contributions"
           :expanded="expanded"
+          :memberships="memberships"
+          :users="members"
+          allow-create
           class="mt-5"
           title="Members"
-          allow-create
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"
           @update:user="userChanged"
@@ -57,7 +57,8 @@ import {
   type Contribution,
   type ContributionPeriod,
   findContributionsByPeriodId,
-  findMemberships, findUserById,
+  findMemberships,
+  findUserById,
   findUsers,
   type Membership,
 } from "@/lib"
@@ -138,7 +139,7 @@ const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
   if (!newPeriod) return
   contributionPeriod.value = newPeriod
   selectedPeriodId.value = newPeriod.id as number
-  const [membershipsResp, contributionsResp ] = await Promise.all([
+  const [membershipsResp, contributionsResp] = await Promise.all([
       findMemberships({query: {from: newPeriod.startDate, to: newPeriod.endDate}}),
       findContributionsByPeriodId({path: {periodId: newPeriod.id as number}}),
     ],

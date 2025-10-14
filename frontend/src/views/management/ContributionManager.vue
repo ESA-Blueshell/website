@@ -18,22 +18,22 @@
         />
 
         <contribution-user-list
-          title="Contribution paid"
-          :users="membersPaid"
+          :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
           :disabled="!selectedPeriodId"
-          :contribution-period-id="selectedPeriodId"
+          :users="membersPaid"
+          title="Contribution paid"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"
         />
 
         <contribution-user-list
-          class="mt-5"
-          title="Contribution unpaid"
-          :users="membersUnpaid"
+          :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
           :disabled="!selectedPeriodId"
-          :contribution-period-id="selectedPeriodId"
+          :users="membersUnpaid"
+          class="mt-5"
+          title="Contribution unpaid"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"
         />

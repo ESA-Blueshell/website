@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.service.ContactService;
 import net.blueshell.api.service.contribution.ContributionPeriodService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;

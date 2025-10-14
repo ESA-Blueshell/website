@@ -17,7 +17,7 @@ onMounted(async () => {
       path: {
         id: blogId,
       },
-      throwOnError: true
+      throwOnError: true,
     })
     blog.value = resp.data!
   } catch (error) {

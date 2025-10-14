@@ -28,10 +28,10 @@
       >
         <Field
           v-slot="{ errors, handleChange }"
-          name="signature"
           :rules="'required'"
           :validate-on-blur="false"
           :validate-on-change="false"
+          name="signature"
         >
           <v-input
             :error-messages="errors"
@@ -71,11 +71,11 @@
             rules="required|min_chars:2"
           >
             <v-text-field
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="Place"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -89,13 +89,13 @@
             rules="required"
           >
             <v-text-field
-              :model-value="value"
-              :error-messages="errors"
               :disabled="true"
+              :error-messages="errors"
+              :model-value="value"
               label="Date"
               type="date"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>

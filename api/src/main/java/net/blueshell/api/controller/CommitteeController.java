@@ -12,7 +12,6 @@ import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.service.CommitteeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

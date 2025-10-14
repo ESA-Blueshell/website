@@ -66,8 +66,8 @@
                   />
                   <discord-user
                     v-if="discordData!.members.length > 99"
-                    :half-width="hasChannels"
                     :custom-text="'+' + (discordData!.presence_count - discordData!.members.length) + ' more'"
+                    :half-width="hasChannels"
                   />
                 </v-row>
               </v-container>
@@ -128,7 +128,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import axios from "axios"
 import {useTheme} from "vuetify"

@@ -13,8 +13,8 @@
       <Field
         v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="form.username"
-        name="username"
         label="Username"
+        name="username"
         rules="required|alphaNum"
       >
         <v-text-field
@@ -29,8 +29,8 @@
       <Field
         v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="form.password"
-        name="password"
         label="Password"
+        name="password"
         rules="required|min_chars:8|max_chars:100|has_lower|has_upper|has_number|has_special"
       >
         <v-text-field
@@ -48,8 +48,8 @@
       <Field
         v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="passwordAgain"
-        name="passwordAgain"
         label="Repeat Password"
+        name="passwordAgain"
         rules="required|match:@password"
       >
         <v-text-field

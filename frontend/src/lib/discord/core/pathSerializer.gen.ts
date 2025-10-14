@@ -2,7 +2,8 @@
 
 interface SerializeOptions<T>
   extends SerializePrimitiveOptions,
-    SerializerOptions<T> {}
+    SerializerOptions<T> {
+}
 
 interface SerializePrimitiveOptions {
   allowReserved?: boolean;
@@ -17,10 +18,10 @@ export interface SerializerOptions<T> {
   style: T;
 }
 
-export type ArrayStyle = 'form' | 'spaceDelimited' | 'pipeDelimited';
+export type ArrayStyle = "form" | "spaceDelimited" | "pipeDelimited";
 export type ArraySeparatorStyle = ArrayStyle | MatrixStyle;
-type MatrixStyle = 'label' | 'matrix' | 'simple';
-export type ObjectStyle = 'form' | 'deepObject';
+type MatrixStyle = "label" | "matrix" | "simple";
+export type ObjectStyle = "form" | "deepObject";
 type ObjectSeparatorStyle = ObjectStyle | MatrixStyle;
 
 interface SerializePrimitiveParam extends SerializePrimitiveOptions {
@@ -29,153 +30,153 @@ interface SerializePrimitiveParam extends SerializePrimitiveOptions {
 
 export const separatorArrayExplode = (style: ArraySeparatorStyle) => {
   switch (style) {
-    case 'label':
-      return '.';
-    case 'matrix':
-      return ';';
-    case 'simple':
-      return ',';
+    case "label":
+      return "."
+    case "matrix":
+      return ";"
+    case "simple":
+      return ","
     default:
-      return '&';
+      return "&"
   }
-};
+}
 
 export const separatorArrayNoExplode = (style: ArraySeparatorStyle) => {
   switch (style) {
-    case 'form':
-      return ',';
-    case 'pipeDelimited':
-      return '|';
-    case 'spaceDelimited':
-      return '%20';
+    case "form":
+      return ","
+    case "pipeDelimited":
+      return "|"
+    case "spaceDelimited":
+      return "%20"
     default:
-      return ',';
+      return ","
   }
-};
+}
 
 export const separatorObjectExplode = (style: ObjectSeparatorStyle) => {
   switch (style) {
-    case 'label':
-      return '.';
-    case 'matrix':
-      return ';';
-    case 'simple':
-      return ',';
+    case "label":
+      return "."
+    case "matrix":
+      return ";"
+    case "simple":
+      return ","
     default:
-      return '&';
+      return "&"
   }
-};
+}
 
 export const serializeArrayParam = ({
-  allowReserved,
-  explode,
-  name,
-  style,
-  value,
-}: SerializeOptions<ArraySeparatorStyle> & {
+                                      allowReserved,
+                                      explode,
+                                      name,
+                                      style,
+                                      value,
+                                    }: SerializeOptions<ArraySeparatorStyle> & {
   value: unknown[];
 }) => {
   if (!explode) {
     const joinedValues = (
       allowReserved ? value : value.map((v) => encodeURIComponent(v as string))
-    ).join(separatorArrayNoExplode(style));
+    ).join(separatorArrayNoExplode(style))
     switch (style) {
-      case 'label':
-        return `.${joinedValues}`;
-      case 'matrix':
-        return `;${name}=${joinedValues}`;
-      case 'simple':
-        return joinedValues;
+      case "label":
+        return `.${joinedValues}`
+      case "matrix":
+        return `;${name}=${joinedValues}`
+      case "simple":
+        return joinedValues
       default:
-        return `${name}=${joinedValues}`;
+        return `${name}=${joinedValues}`
     }
   }
 
-  const separator = separatorArrayExplode(style);
+  const separator = separatorArrayExplode(style)
   const joinedValues = value
     .map((v) => {
-      if (style === 'label' || style === 'simple') {
-        return allowReserved ? v : encodeURIComponent(v as string);
+      if (style === "label" || style === "simple") {
+        return allowReserved ? v : encodeURIComponent(v as string)
       }
 
       return serializePrimitiveParam({
         allowReserved,
         name,
         value: v as string,
-      });
+      })
     })
-    .join(separator);
-  return style === 'label' || style === 'matrix'
+    .join(separator)
+  return style === "label" || style === "matrix"
     ? separator + joinedValues
-    : joinedValues;
-};
+    : joinedValues
+}
 
 export const serializePrimitiveParam = ({
-  allowReserved,
-  name,
-  value,
-}: SerializePrimitiveParam) => {
+                                          allowReserved,
+                                          name,
+                                          value,
+                                        }: SerializePrimitiveParam) => {
   if (value === undefined || value === null) {
-    return '';
+    return ""
   }
 
-  if (typeof value === 'object') {
+  if (typeof value === "object") {
     throw new Error(
-      'Deeply-nested arrays/objects aren’t supported. Provide your own `querySerializer()` to handle these.',
-    );
+      "Deeply-nested arrays/objects aren’t supported. Provide your own `querySerializer()` to handle these.",
+    )
   }
 
-  return `${name}=${allowReserved ? value : encodeURIComponent(value)}`;
-};
+  return `${name}=${allowReserved ? value : encodeURIComponent(value)}`
+}
 
 export const serializeObjectParam = ({
-  allowReserved,
-  explode,
-  name,
-  style,
-  value,
-  valueOnly,
-}: SerializeOptions<ObjectSeparatorStyle> & {
+                                       allowReserved,
+                                       explode,
+                                       name,
+                                       style,
+                                       value,
+                                       valueOnly,
+                                     }: SerializeOptions<ObjectSeparatorStyle> & {
   value: Record<string, unknown> | Date;
   valueOnly?: boolean;
 }) => {
   if (value instanceof Date) {
-    return valueOnly ? value.toISOString() : `${name}=${value.toISOString()}`;
+    return valueOnly ? value.toISOString() : `${name}=${value.toISOString()}`
   }
 
-  if (style !== 'deepObject' && !explode) {
-    let values: string[] = [];
+  if (style !== "deepObject" && !explode) {
+    let values: string[] = []
     Object.entries(value).forEach(([key, v]) => {
       values = [
         ...values,
         key,
         allowReserved ? (v as string) : encodeURIComponent(v as string),
-      ];
-    });
-    const joinedValues = values.join(',');
+      ]
+    })
+    const joinedValues = values.join(",")
     switch (style) {
-      case 'form':
-        return `${name}=${joinedValues}`;
-      case 'label':
-        return `.${joinedValues}`;
-      case 'matrix':
-        return `;${name}=${joinedValues}`;
+      case "form":
+        return `${name}=${joinedValues}`
+      case "label":
+        return `.${joinedValues}`
+      case "matrix":
+        return `;${name}=${joinedValues}`
       default:
-        return joinedValues;
+        return joinedValues
     }
   }
 
-  const separator = separatorObjectExplode(style);
+  const separator = separatorObjectExplode(style)
   const joinedValues = Object.entries(value)
     .map(([key, v]) =>
       serializePrimitiveParam({
         allowReserved,
-        name: style === 'deepObject' ? `${name}[${key}]` : key,
+        name: style === "deepObject" ? `${name}[${key}]` : key,
         value: v as string,
       }),
     )
-    .join(separator);
-  return style === 'label' || style === 'matrix'
+    .join(separator)
+  return style === "label" || style === "matrix"
     ? separator + joinedValues
-    : joinedValues;
-};
+    : joinedValues
+}

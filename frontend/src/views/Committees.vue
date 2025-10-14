@@ -65,7 +65,7 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import TopBanner from "@/components/banners/TopBanner.vue"
 

@@ -4,11 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.mapper.BrevoContactMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.service.ContactService;
-import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 

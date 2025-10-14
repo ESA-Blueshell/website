@@ -4,234 +4,234 @@
  * Ratelimit error object returned by the Discord API
  */
 export type RatelimitedResponse = _Error & {
-    /**
-     * The number of seconds to wait before retrying your request
-     */
-    retry_after: number;
-    /**
-     * Whether you are being ratelimited by the global ratelimit or a per-endpoint ratelimit
-     */
-    global: boolean;
+  /**
+   * The number of seconds to wait before retrying your request
+   */
+  retry_after: number;
+  /**
+   * Whether you are being ratelimited by the global ratelimit or a per-endpoint ratelimit
+   */
+  global: boolean;
 };
 
 /**
  * A single error, either for an API response or a specific field.
  */
 export type _Error = {
-    /**
-     * Discord internal error code. See error code reference
-     */
-    code: number;
-    /**
-     * Human-readable error message
-     */
-    message: string;
+  /**
+   * Discord internal error code. See error code reference
+   */
+  code: number;
+  /**
+   * Human-readable error message
+   */
+  message: string;
 };
 
 /**
  * Errors object returned by the Discord API
  */
 export type ErrorResponse = _Error & {
-    errors?: ErrorDetails;
+  errors?: ErrorDetails;
 };
 
 export type InnerErrors = {
-    /**
-     * The list of errors for this field
-     */
-    _errors: Array<_Error>;
+  /**
+   * The list of errors for this field
+   */
+  _errors: Array<_Error>;
 };
 
 export type ErrorDetails = {
-    [key: string]: ErrorDetails;
+  [key: string]: ErrorDetails;
 } | InnerErrors;
 
 /**
  * ZEROES
  */
-export type WidgetUserDiscriminator = '0000';
+export type WidgetUserDiscriminator = "0000";
 
 export type WidgetSettingsResponse = {
-    enabled: boolean;
-    channel_id?: null | SnowflakeType;
+  enabled: boolean;
+  channel_id?: null | SnowflakeType;
 };
 
 export type SnowflakeType = string;
 
 export type WidgetResponse = {
-    id: SnowflakeType;
-    name: string;
-    instant_invite?: string | null;
-    channels: Array<WidgetChannel>;
-    members: Array<WidgetMember>;
-    presence_count: number;
+  id: SnowflakeType;
+  name: string;
+  instant_invite?: string | null;
+  channels: Array<WidgetChannel>;
+  members: Array<WidgetMember>;
+  presence_count: number;
 };
 
 export type WidgetActivity = {
-    name: string;
+  name: string;
 };
 
 export type WidgetMember = {
-    id: string;
-    username: string;
-    discriminator: WidgetUserDiscriminator;
-    avatar?: null;
-    status: string;
-    avatar_url: string;
-    activity?: WidgetActivity;
-    deaf?: boolean;
-    mute?: boolean;
-    self_deaf?: boolean;
-    self_mute?: boolean;
-    suppress?: boolean;
-    channel_id?: SnowflakeType;
+  id: string;
+  username: string;
+  discriminator: WidgetUserDiscriminator;
+  avatar?: null;
+  status: string;
+  avatar_url: string;
+  activity?: WidgetActivity;
+  deaf?: boolean;
+  mute?: boolean;
+  self_deaf?: boolean;
+  self_mute?: boolean;
+  suppress?: boolean;
+  channel_id?: SnowflakeType;
 };
 
 export type WidgetChannel = {
-    id: SnowflakeType;
-    name: string;
-    position: number;
+  id: SnowflakeType;
+  name: string;
+  position: number;
 };
 
-export type WidgetImageStyles = 'shield' | 'banner1' | 'banner2' | 'banner3' | 'banner4';
+export type WidgetImageStyles = "shield" | "banner1" | "banner2" | "banner3" | "banner4";
 
 export type WelcomeScreenPatchRequestPartial = {
-    description?: string | null;
-    welcome_channels?: Array<GuildWelcomeChannel> | null;
-    enabled?: boolean | null;
+  description?: string | null;
+  welcome_channels?: Array<GuildWelcomeChannel> | null;
+  enabled?: boolean | null;
 };
 
 export type GuildWelcomeChannel = {
-    channel_id: SnowflakeType;
-    description: string;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+  channel_id: SnowflakeType;
+  description: string;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
 };
 
 export type WelcomeMessageResponse = {
-    author_ids: Array<SnowflakeType>;
-    message: string;
+  author_ids: Array<SnowflakeType>;
+  message: string;
 };
 
 export type WebhookTypes = 1 | 2 | 3;
 
 export type WebhookSourceGuildResponse = {
-    id: SnowflakeType;
-    icon?: string | null;
-    name: string;
+  id: SnowflakeType;
+  icon?: string | null;
+  name: string;
 };
 
 export type WebhookSourceChannelResponse = {
-    id: SnowflakeType;
-    name: string;
+  id: SnowflakeType;
+  name: string;
 };
 
 export type VoiceStateResponse = {
-    channel_id?: null | SnowflakeType;
-    deaf: boolean;
-    guild_id?: null | SnowflakeType;
-    member?: GuildMemberResponse;
-    mute: boolean;
-    request_to_speak_timestamp?: string | null;
-    suppress: boolean;
-    self_stream?: boolean | null;
-    self_deaf: boolean;
-    self_mute: boolean;
-    self_video: boolean;
-    session_id: string;
-    user_id: SnowflakeType;
+  channel_id?: null | SnowflakeType;
+  deaf: boolean;
+  guild_id?: null | SnowflakeType;
+  member?: GuildMemberResponse;
+  mute: boolean;
+  request_to_speak_timestamp?: string | null;
+  suppress: boolean;
+  self_stream?: boolean | null;
+  self_deaf: boolean;
+  self_mute: boolean;
+  self_video: boolean;
+  session_id: string;
+  user_id: SnowflakeType;
 };
 
 export type UserPrimaryGuildResponse = {
-    identity_guild_id?: null | SnowflakeType;
-    identity_enabled?: boolean | null;
-    tag?: string | null;
-    badge?: string | null;
+  identity_guild_id?: null | SnowflakeType;
+  identity_enabled?: boolean | null;
+  tag?: string | null;
+  badge?: string | null;
 };
 
 export type Int53Type = number;
 
 export type UserResponse = {
-    id: SnowflakeType;
-    username: string;
-    avatar?: string | null;
-    discriminator: string;
-    public_flags: number;
-    flags: Int53Type;
-    bot?: boolean;
-    system?: boolean;
-    banner?: string | null;
-    accent_color?: number | null;
-    global_name?: string | null;
-    avatar_decoration_data?: null | UserAvatarDecorationResponse;
-    collectibles?: null | UserCollectiblesResponse;
-    primary_guild?: null | UserPrimaryGuildResponse;
+  id: SnowflakeType;
+  username: string;
+  avatar?: string | null;
+  discriminator: string;
+  public_flags: number;
+  flags: Int53Type;
+  bot?: boolean;
+  system?: boolean;
+  banner?: string | null;
+  accent_color?: number | null;
+  global_name?: string | null;
+  avatar_decoration_data?: null | UserAvatarDecorationResponse;
+  collectibles?: null | UserCollectiblesResponse;
+  primary_guild?: null | UserPrimaryGuildResponse;
 };
 
 export type NameplatePalette = unknown;
 
 export type UserNameplateResponse = {
-    sku_id?: null | SnowflakeType;
-    asset: string;
-    label: string;
-    palette: NameplatePalette;
+  sku_id?: null | SnowflakeType;
+  asset: string;
+  label: string;
+  palette: NameplatePalette;
 };
 
 export type UserCollectiblesResponse = {
-    nameplate?: null | UserNameplateResponse;
+  nameplate?: null | UserNameplateResponse;
 };
 
 export type UserAvatarDecorationResponse = {
-    asset: string;
-    sku_id?: null | SnowflakeType;
+  asset: string;
+  sku_id?: null | SnowflakeType;
 };
 
 export type GuildMemberResponse = {
-    avatar?: string | null;
-    avatar_decoration_data?: null | UserAvatarDecorationResponse;
-    banner?: string | null;
-    communication_disabled_until?: string | null;
-    flags: number;
-    joined_at: string;
-    nick?: string | null;
-    pending: boolean;
-    premium_since?: string | null;
-    roles: Array<SnowflakeType>;
-    collectibles?: null | UserCollectiblesResponse;
-    user: UserResponse;
-    mute: boolean;
-    deaf: boolean;
+  avatar?: string | null;
+  avatar_decoration_data?: null | UserAvatarDecorationResponse;
+  banner?: string | null;
+  communication_disabled_until?: string | null;
+  flags: number;
+  joined_at: string;
+  nick?: string | null;
+  pending: boolean;
+  premium_since?: string | null;
+  roles: Array<SnowflakeType>;
+  collectibles?: null | UserCollectiblesResponse;
+  user: UserResponse;
+  mute: boolean;
+  deaf: boolean;
 };
 
 export type VoiceScheduledEventResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    name: string;
-    description?: string | null;
-    channel_id?: null | SnowflakeType;
-    creator_id?: null | SnowflakeType;
-    creator?: UserResponse;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    status: GuildScheduledEventStatuses;
-    entity_type: 2;
-    entity_id?: null | SnowflakeType;
-    user_count?: number;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    user_rsvp?: null | ScheduledEventUserResponse;
-    entity_metadata?: null | EntityMetadataVoiceResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  name: string;
+  description?: string | null;
+  channel_id?: null | SnowflakeType;
+  creator_id?: null | SnowflakeType;
+  creator?: UserResponse;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  status: GuildScheduledEventStatuses;
+  entity_type: 2;
+  entity_id?: null | SnowflakeType;
+  user_count?: number;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  user_rsvp?: null | ScheduledEventUserResponse;
+  entity_metadata?: null | EntityMetadataVoiceResponse;
 };
 
 export type EntityMetadataVoiceResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type ScheduledEventUserResponse = {
-    guild_scheduled_event_id: SnowflakeType;
-    user_id: SnowflakeType;
-    user?: UserResponse;
-    member?: GuildMemberResponse;
+  guild_scheduled_event_id: SnowflakeType;
+  user_id: SnowflakeType;
+  user?: UserResponse;
+  member?: GuildMemberResponse;
 };
 
 /**
@@ -245,40 +245,40 @@ export type GuildScheduledEventEntityTypes = 0 | 1 | 2 | 3;
 export type GuildScheduledEventStatuses = 1 | 2 | 3 | 4;
 
 export type VoiceScheduledEventPatchRequestPartial = {
-    status?: null | GuildScheduledEventStatuses;
-    name?: string;
-    description?: string | null;
-    image?: string | null;
-    scheduled_start_time?: string;
-    scheduled_end_time?: string | null;
-    entity_type?: null | 2;
-    privacy_level?: GuildScheduledEventPrivacyLevels;
-    channel_id?: null | SnowflakeType;
-    entity_metadata?: null | EntityMetadataVoice;
+  status?: null | GuildScheduledEventStatuses;
+  name?: string;
+  description?: string | null;
+  image?: string | null;
+  scheduled_start_time?: string;
+  scheduled_end_time?: string | null;
+  entity_type?: null | 2;
+  privacy_level?: GuildScheduledEventPrivacyLevels;
+  channel_id?: null | SnowflakeType;
+  entity_metadata?: null | EntityMetadataVoice;
 };
 
 export type EntityMetadataVoice = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type VoiceScheduledEventCreateRequest = {
-    name: string;
-    description?: string | null;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    entity_type: 2;
-    channel_id?: null | SnowflakeType;
-    entity_metadata?: null | EntityMetadataVoice;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  entity_type: 2;
+  channel_id?: null | SnowflakeType;
+  entity_metadata?: null | EntityMetadataVoice;
 };
 
 export type VoiceRegionResponse = {
-    id: string;
-    name: string;
-    custom: boolean;
-    deprecated: boolean;
-    optimal: boolean;
+  id: string;
+  name: string;
+  custom: boolean;
+  deprecated: boolean;
+  optimal: boolean;
 };
 
 export type VideoQualityModes = 1 | 2;
@@ -286,480 +286,548 @@ export type VideoQualityModes = 1 | 2;
 export type VerificationLevels = 0 | 1 | 2 | 3 | 4;
 
 export type VanityUrlResponse = {
-    code?: string | null;
-    uses: number;
-    error?: null | VanityUrlErrorResponse;
+  code?: string | null;
+  uses: number;
+  error?: null | VanityUrlErrorResponse;
 };
 
 export type VanityUrlErrorResponse = {
-    message: string;
-    code: number;
+  message: string;
+  code: number;
 };
 
 export type UserSelectDefaultValueResponse = {
-    type: 'user';
-    id: SnowflakeType;
+  type: "user";
+  id: SnowflakeType;
 };
 
-export type SnowflakeSelectDefaultValueTypes = 'user' | 'role' | 'channel';
+export type SnowflakeSelectDefaultValueTypes = "user" | "role" | "channel";
 
 export type UserSelectComponentResponse = {
-    type: 5;
-    id: number;
-    custom_id: string;
-    placeholder?: string;
-    min_values?: number | null;
-    max_values?: number | null;
-    disabled?: boolean;
-    default_values?: Array<UserSelectDefaultValueResponse>;
+  type: 5;
+  id: number;
+  custom_id: string;
+  placeholder?: string;
+  min_values?: number | null;
+  max_values?: number | null;
+  disabled?: boolean;
+  default_values?: Array<UserSelectDefaultValueResponse>;
 };
 
 export type MessageComponentTypes = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18;
 
-export type AvailableLocalesEnum = 'ar' | 'bg' | 'cs' | 'da' | 'de' | 'el' | 'en-GB' | 'en-US' | 'es-419' | 'es-ES' | 'fi' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ko' | 'lt' | 'nl' | 'no' | 'pl' | 'pt-BR' | 'ro' | 'ru' | 'sv-SE' | 'th' | 'tr' | 'uk' | 'vi' | 'zh-CN' | 'zh-TW';
+export type AvailableLocalesEnum =
+  "ar"
+  | "bg"
+  | "cs"
+  | "da"
+  | "de"
+  | "el"
+  | "en-GB"
+  | "en-US"
+  | "es-419"
+  | "es-ES"
+  | "fi"
+  | "fr"
+  | "he"
+  | "hi"
+  | "hr"
+  | "hu"
+  | "id"
+  | "it"
+  | "ja"
+  | "ko"
+  | "lt"
+  | "nl"
+  | "no"
+  | "pl"
+  | "pt-BR"
+  | "ro"
+  | "ru"
+  | "sv-SE"
+  | "th"
+  | "tr"
+  | "uk"
+  | "vi"
+  | "zh-CN"
+  | "zh-TW";
 
 export type UserNotificationSettings = 0 | 1;
 
 export type UserGuildOnboardingResponse = {
-    guild_id: SnowflakeType;
-    prompts: Array<OnboardingPromptResponse>;
-    default_channel_ids: Array<SnowflakeType>;
-    enabled: boolean;
+  guild_id: SnowflakeType;
+  prompts: Array<OnboardingPromptResponse>;
+  default_channel_ids: Array<SnowflakeType>;
+  enabled: boolean;
 };
 
 export type OnboardingPromptType = 0 | 1;
 
 export type SettingsEmojiResponse = {
-    id?: null | SnowflakeType;
-    name?: string | null;
-    animated: boolean;
+  id?: null | SnowflakeType;
+  name?: string | null;
+  animated: boolean;
 };
 
 export type OnboardingPromptOptionResponse = {
-    id: SnowflakeType;
-    title: string;
-    description: string;
-    emoji: SettingsEmojiResponse;
-    role_ids: Array<SnowflakeType>;
-    channel_ids: Array<SnowflakeType>;
+  id: SnowflakeType;
+  title: string;
+  description: string;
+  emoji: SettingsEmojiResponse;
+  role_ids: Array<SnowflakeType>;
+  channel_ids: Array<SnowflakeType>;
 };
 
 export type OnboardingPromptResponse = {
-    id: SnowflakeType;
-    title: string;
-    options: Array<OnboardingPromptOptionResponse>;
-    single_select: boolean;
-    required: boolean;
-    in_onboarding: boolean;
-    type: OnboardingPromptType;
+  id: SnowflakeType;
+  title: string;
+  options: Array<OnboardingPromptOptionResponse>;
+  single_select: boolean;
+  required: boolean;
+  in_onboarding: boolean;
+  type: OnboardingPromptType;
 };
 
 export type UserCommunicationDisabledActionResponse = {
-    type: 3;
-    metadata: UserCommunicationDisabledActionMetadataResponse;
+  type: 3;
+  metadata: UserCommunicationDisabledActionMetadataResponse;
 };
 
 export type UserCommunicationDisabledActionMetadataResponse = {
-    duration_seconds: number;
+  duration_seconds: number;
 };
 
 export type AutomodActionType = 1 | 2 | 3 | 4;
 
 export type UserCommunicationDisabledActionMetadata = {
-    duration_seconds?: number | null;
+  duration_seconds?: number | null;
 };
 
 export type UserCommunicationDisabledAction = {
-    type: 3;
-    metadata: UserCommunicationDisabledActionMetadata;
+  type: 3;
+  metadata: UserCommunicationDisabledActionMetadata;
 };
 
 export type UpdateVoiceStateRequestPartial = {
-    suppress?: boolean | null;
-    channel_id?: null | SnowflakeType;
+  suppress?: boolean | null;
+  channel_id?: null | SnowflakeType;
 };
 
 export type ThreadAutoArchiveDuration = 60 | 1440 | 4320 | 10080;
 
 export type UpdateSelfVoiceStateRequestPartial = {
-    request_to_speak_timestamp?: string | null;
-    suppress?: boolean | null;
-    channel_id?: null | SnowflakeType;
+  request_to_speak_timestamp?: string | null;
+  suppress?: boolean | null;
+  channel_id?: null | SnowflakeType;
 };
 
 export type UpdateRoleRequestPartial = {
-    name?: string | null;
-    permissions?: number | null;
-    color?: number | null;
-    hoist?: boolean | null;
-    mentionable?: boolean | null;
-    icon?: string | null;
-    unicode_emoji?: string | null;
+  name?: string | null;
+  permissions?: number | null;
+  color?: number | null;
+  hoist?: boolean | null;
+  mentionable?: boolean | null;
+  icon?: string | null;
+  unicode_emoji?: string | null;
 };
 
 export type UpdateRolePositionsRequest = {
-    id?: null | SnowflakeType;
-    position?: number | null;
+  id?: null | SnowflakeType;
+  position?: number | null;
 };
 
 export type UpdateOnboardingPromptRequest = {
-    title: string;
-    options: Array<OnboardingPromptOptionRequest>;
-    single_select?: boolean | null;
-    required?: boolean | null;
-    in_onboarding?: boolean | null;
-    type?: null | OnboardingPromptType;
-    id: SnowflakeType;
+  title: string;
+  options: Array<OnboardingPromptOptionRequest>;
+  single_select?: boolean | null;
+  required?: boolean | null;
+  in_onboarding?: boolean | null;
+  type?: null | OnboardingPromptType;
+  id: SnowflakeType;
 };
 
 export type OnboardingPromptOptionRequest = {
-    id?: null | SnowflakeType;
-    title: string;
-    description?: string | null;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
-    emoji_animated?: boolean | null;
-    role_ids?: Array<SnowflakeType> | null;
-    channel_ids?: Array<SnowflakeType> | null;
+  id?: null | SnowflakeType;
+  title: string;
+  description?: string | null;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
+  emoji_animated?: boolean | null;
+  role_ids?: Array<SnowflakeType> | null;
+  channel_ids?: Array<SnowflakeType> | null;
 };
 
 export type BasicMessageResponse = {
-    type: MessageType;
-    content: string;
-    mentions: Array<UserResponse>;
-    mention_roles: Array<SnowflakeType>;
-    attachments: Array<MessageAttachmentResponse>;
-    embeds: Array<MessageEmbedResponse>;
-    timestamp: string;
-    edited_timestamp?: string | null;
-    flags: number;
-    components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
-    stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
-    sticker_items?: Array<MessageStickerItemResponse>;
-    id: SnowflakeType;
-    channel_id: SnowflakeType;
-    author: UserResponse;
-    pinned: boolean;
-    mention_everyone: boolean;
-    tts: boolean;
-    call?: MessageCallResponse;
-    activity?: MessageActivityResponse;
-    application?: BasicApplicationResponse;
-    application_id?: SnowflakeType;
-    interaction?: MessageInteractionResponse;
-    nonce?: number | string | null;
-    webhook_id?: SnowflakeType;
-    message_reference?: MessageReferenceResponse;
-    thread?: ThreadResponse;
-    mention_channels?: Array<null | MessageMentionChannelResponse>;
-    role_subscription_data?: MessageRoleSubscriptionDataResponse;
-    purchase_notification?: PurchaseNotificationResponse;
-    position?: number;
-    resolved?: ResolvedObjectsResponse;
-    poll?: PollResponse;
-    shared_client_theme?: null | CustomClientThemeResponse;
-    interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
-    message_snapshots?: Array<MessageSnapshotResponse>;
+  type: MessageType;
+  content: string;
+  mentions: Array<UserResponse>;
+  mention_roles: Array<SnowflakeType>;
+  attachments: Array<MessageAttachmentResponse>;
+  embeds: Array<MessageEmbedResponse>;
+  timestamp: string;
+  edited_timestamp?: string | null;
+  flags: number;
+  components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
+  stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
+  sticker_items?: Array<MessageStickerItemResponse>;
+  id: SnowflakeType;
+  channel_id: SnowflakeType;
+  author: UserResponse;
+  pinned: boolean;
+  mention_everyone: boolean;
+  tts: boolean;
+  call?: MessageCallResponse;
+  activity?: MessageActivityResponse;
+  application?: BasicApplicationResponse;
+  application_id?: SnowflakeType;
+  interaction?: MessageInteractionResponse;
+  nonce?: number | string | null;
+  webhook_id?: SnowflakeType;
+  message_reference?: MessageReferenceResponse;
+  thread?: ThreadResponse;
+  mention_channels?: Array<null | MessageMentionChannelResponse>;
+  role_subscription_data?: MessageRoleSubscriptionDataResponse;
+  purchase_notification?: PurchaseNotificationResponse;
+  position?: number;
+  resolved?: ResolvedObjectsResponse;
+  poll?: PollResponse;
+  shared_client_theme?: null | CustomClientThemeResponse;
+  interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
+  message_snapshots?: Array<MessageSnapshotResponse>;
 };
 
 export type MinimalContentMessageResponse = {
-    type: MessageType;
-    content: string;
-    mentions: Array<UserResponse>;
-    mention_roles: Array<SnowflakeType>;
-    attachments: Array<MessageAttachmentResponse>;
-    embeds: Array<MessageEmbedResponse>;
-    timestamp: string;
-    edited_timestamp?: string | null;
-    flags: number;
-    components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
-    stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
-    sticker_items?: Array<MessageStickerItemResponse>;
+  type: MessageType;
+  content: string;
+  mentions: Array<UserResponse>;
+  mention_roles: Array<SnowflakeType>;
+  attachments: Array<MessageAttachmentResponse>;
+  embeds: Array<MessageEmbedResponse>;
+  timestamp: string;
+  edited_timestamp?: string | null;
+  flags: number;
+  components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
+  stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
+  sticker_items?: Array<MessageStickerItemResponse>;
 };
 
 export type MessageStickerItemResponse = {
-    id: SnowflakeType;
-    name: string;
-    format_type: StickerFormatTypes;
+  id: SnowflakeType;
+  name: string;
+  format_type: StickerFormatTypes;
 };
 
 export type StickerFormatTypes = 1 | 2 | 3 | 4;
 
 export type StandardStickerResponse = {
-    id: SnowflakeType;
-    name: string;
-    tags: string;
-    type: 1;
-    format_type?: null | StickerFormatTypes;
-    description?: string | null;
-    pack_id: SnowflakeType;
-    sort_value: number;
+  id: SnowflakeType;
+  name: string;
+  tags: string;
+  type: 1;
+  format_type?: null | StickerFormatTypes;
+  description?: string | null;
+  pack_id: SnowflakeType;
+  sort_value: number;
 };
 
 export type StickerTypes = 1 | 2;
 
 export type GuildStickerResponse = {
-    id: SnowflakeType;
-    name: string;
-    tags: string;
-    type: 2;
-    format_type?: null | StickerFormatTypes;
-    description?: string | null;
-    available: boolean;
-    guild_id: SnowflakeType;
-    user?: UserResponse;
+  id: SnowflakeType;
+  name: string;
+  tags: string;
+  type: 2;
+  format_type?: null | StickerFormatTypes;
+  description?: string | null;
+  available: boolean;
+  guild_id: SnowflakeType;
+  user?: UserResponse;
 };
 
 export type MessageComponentSeparatorSpacingSize = 1 | 2;
 
 export type SeparatorComponentResponse = {
-    type: 14;
-    id: number;
-    spacing: MessageComponentSeparatorSpacingSize;
-    divider: boolean;
+  type: 14;
+  id: number;
+  spacing: MessageComponentSeparatorSpacingSize;
+  divider: boolean;
 };
 
 export type ThumbnailComponentResponse = {
-    type: 11;
-    id: number;
-    media: UnfurledMediaResponse;
-    description?: string | null;
-    spoiler: boolean;
+  type: 11;
+  id: number;
+  media: UnfurledMediaResponse;
+  description?: string | null;
+  spoiler: boolean;
 };
 
 export type UnfurledMediaResponse = {
-    id: SnowflakeType;
-    url: string;
-    proxy_url: string;
-    width?: number | null;
-    height?: number | null;
-    content_type?: string | null;
-    attachment_id?: SnowflakeType;
+  id: SnowflakeType;
+  url: string;
+  proxy_url: string;
+  width?: number | null;
+  height?: number | null;
+  content_type?: string | null;
+  attachment_id?: SnowflakeType;
 };
 
 export type TextDisplayComponentResponse = {
-    type: 10;
-    id: number;
-    content: string;
+  type: 10;
+  id: number;
+  content: string;
 };
 
 export type SectionComponentResponse = {
-    type: 9;
-    id: number;
-    components: Array<TextDisplayComponentResponse>;
-    accessory: ButtonComponentResponse | ThumbnailComponentResponse;
+  type: 9;
+  id: number;
+  components: Array<TextDisplayComponentResponse>;
+  accessory: ButtonComponentResponse | ThumbnailComponentResponse;
 };
 
 export type ComponentEmojiResponse = {
-    id?: SnowflakeType;
-    name: string;
-    animated?: boolean;
+  id?: SnowflakeType;
+  name: string;
+  animated?: boolean;
 };
 
 export type ButtonStyleTypes = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type ButtonComponentResponse = {
-    type: 2;
-    id: number;
-    custom_id?: string;
-    style: ButtonStyleTypes;
-    label?: string;
-    disabled?: boolean;
-    emoji?: ComponentEmojiResponse;
-    url?: string | null;
-    sku_id?: SnowflakeType;
+  type: 2;
+  id: number;
+  custom_id?: string;
+  style: ButtonStyleTypes;
+  label?: string;
+  disabled?: boolean;
+  emoji?: ComponentEmojiResponse;
+  url?: string | null;
+  sku_id?: SnowflakeType;
 };
 
 export type MediaGalleryItemResponse = {
-    media: UnfurledMediaResponse;
-    description?: string | null;
-    spoiler: boolean;
+  media: UnfurledMediaResponse;
+  description?: string | null;
+  spoiler: boolean;
 };
 
 export type MediaGalleryComponentResponse = {
-    type: 12;
-    id: number;
-    items: Array<MediaGalleryItemResponse>;
+  type: 12;
+  id: number;
+  items: Array<MediaGalleryItemResponse>;
 };
 
 export type FileComponentResponse = {
-    type: 13;
-    id: number;
-    file: UnfurledMediaResponse;
-    name?: string | null;
-    size?: number | null;
-    spoiler: boolean;
+  type: 13;
+  id: number;
+  file: UnfurledMediaResponse;
+  name?: string | null;
+  size?: number | null;
+  spoiler: boolean;
 };
 
 export type ContainerComponentResponse = {
-    type: 17;
-    id: number;
-    accent_color?: number | null;
-    components: Array<ActionRowComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
-    spoiler: boolean;
+  type: 17;
+  id: number;
+  accent_color?: number | null;
+  components: Array<ActionRowComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
+  spoiler: boolean;
 };
 
 export type TextInputStyleTypes = 1 | 2;
 
 export type TextInputComponentResponse = {
-    type: 4;
-    id: number;
-    custom_id: string;
-    style: TextInputStyleTypes;
-    label?: string | null;
-    value?: string;
-    placeholder?: string;
-    required?: boolean;
-    min_length?: number | null;
-    max_length?: number | null;
+  type: 4;
+  id: number;
+  custom_id: string;
+  style: TextInputStyleTypes;
+  label?: string | null;
+  value?: string;
+  placeholder?: string;
+  required?: boolean;
+  min_length?: number | null;
+  max_length?: number | null;
 };
 
 export type StringSelectOptionResponse = {
-    label: string;
-    value: string;
-    description?: string;
-    emoji?: ComponentEmojiResponse;
-    default?: boolean;
+  label: string;
+  value: string;
+  description?: string;
+  emoji?: ComponentEmojiResponse;
+  default?: boolean;
 };
 
 export type StringSelectComponentResponse = {
-    type: 3;
-    id: number;
-    custom_id: string;
-    placeholder?: string;
-    min_values?: number | null;
-    max_values?: number | null;
-    disabled?: boolean;
-    options: Array<StringSelectOptionResponse>;
+  type: 3;
+  id: number;
+  custom_id: string;
+  placeholder?: string;
+  min_values?: number | null;
+  max_values?: number | null;
+  disabled?: boolean;
+  options: Array<StringSelectOptionResponse>;
 };
 
 export type RoleSelectComponentResponse = {
-    type: 6;
-    id: number;
-    custom_id: string;
-    placeholder?: string;
-    min_values?: number | null;
-    max_values?: number | null;
-    disabled?: boolean;
-    default_values?: Array<RoleSelectDefaultValueResponse>;
+  type: 6;
+  id: number;
+  custom_id: string;
+  placeholder?: string;
+  min_values?: number | null;
+  max_values?: number | null;
+  disabled?: boolean;
+  default_values?: Array<RoleSelectDefaultValueResponse>;
 };
 
 export type RoleSelectDefaultValueResponse = {
-    type: 'role';
-    id: SnowflakeType;
+  type: "role";
+  id: SnowflakeType;
 };
 
 export type MentionableSelectComponentResponse = {
-    type: 7;
-    id: number;
-    custom_id: string;
-    placeholder?: string;
-    min_values?: number | null;
-    max_values?: number | null;
-    disabled?: boolean;
-    default_values?: Array<RoleSelectDefaultValueResponse | UserSelectDefaultValueResponse>;
+  type: 7;
+  id: number;
+  custom_id: string;
+  placeholder?: string;
+  min_values?: number | null;
+  max_values?: number | null;
+  disabled?: boolean;
+  default_values?: Array<RoleSelectDefaultValueResponse | UserSelectDefaultValueResponse>;
 };
 
 export type ChannelSelectDefaultValueResponse = {
-    type: 'channel';
-    id: SnowflakeType;
+  type: "channel";
+  id: SnowflakeType;
 };
 
 export type ChannelTypes = 1 | 3 | 0 | 2 | 4 | 5 | 10 | 11 | 12 | 13 | 14 | 15;
 
 export type ChannelSelectComponentResponse = {
-    type: 8;
-    id: number;
-    custom_id: string;
-    placeholder?: string;
-    min_values?: number | null;
-    max_values?: number | null;
-    disabled?: boolean;
-    channel_types?: Array<ChannelTypes>;
-    default_values?: Array<ChannelSelectDefaultValueResponse>;
+  type: 8;
+  id: number;
+  custom_id: string;
+  placeholder?: string;
+  min_values?: number | null;
+  max_values?: number | null;
+  disabled?: boolean;
+  channel_types?: Array<ChannelTypes>;
+  default_values?: Array<ChannelSelectDefaultValueResponse>;
 };
 
 export type ActionRowComponentResponse = {
-    type: 1;
-    id: number;
-    components: Array<ButtonComponentResponse | ChannelSelectComponentResponse | MentionableSelectComponentResponse | RoleSelectComponentResponse | StringSelectComponentResponse | TextInputComponentResponse | UserSelectComponentResponse>;
+  type: 1;
+  id: number;
+  components: Array<ButtonComponentResponse | ChannelSelectComponentResponse | MentionableSelectComponentResponse | RoleSelectComponentResponse | StringSelectComponentResponse | TextInputComponentResponse | UserSelectComponentResponse>;
 };
 
 export type MessageEmbedFooterResponse = {
-    text: string;
-    icon_url?: string;
-    proxy_icon_url?: string;
+  text: string;
+  icon_url?: string;
+  proxy_icon_url?: string;
 };
 
 export type MessageEmbedVideoResponse = {
-    url?: string;
-    proxy_url?: string;
-    width?: UInt32Type;
-    height?: UInt32Type;
-    content_type?: string;
-    placeholder?: string;
-    placeholder_version?: UInt32Type;
-    description?: string;
-    flags?: UInt32Type;
+  url?: string;
+  proxy_url?: string;
+  width?: UInt32Type;
+  height?: UInt32Type;
+  content_type?: string;
+  placeholder?: string;
+  placeholder_version?: UInt32Type;
+  description?: string;
+  flags?: UInt32Type;
 };
 
 export type UInt32Type = number;
 
 export type MessageEmbedImageResponse = {
-    url?: string;
-    proxy_url?: string;
-    width?: UInt32Type;
-    height?: UInt32Type;
-    content_type?: string;
-    placeholder?: string;
-    placeholder_version?: UInt32Type;
-    description?: string;
-    flags?: UInt32Type;
+  url?: string;
+  proxy_url?: string;
+  width?: UInt32Type;
+  height?: UInt32Type;
+  content_type?: string;
+  placeholder?: string;
+  placeholder_version?: UInt32Type;
+  description?: string;
+  flags?: UInt32Type;
 };
 
 export type MessageEmbedProviderResponse = {
-    name: string;
-    url?: string;
+  name: string;
+  url?: string;
 };
 
 export type MessageEmbedAuthorResponse = {
-    name: string;
-    url?: string;
-    icon_url?: string;
-    proxy_icon_url?: string;
+  name: string;
+  url?: string;
+  icon_url?: string;
+  proxy_icon_url?: string;
 };
 
 export type MessageEmbedFieldResponse = {
-    name: string;
-    value: string;
-    inline: boolean;
+  name: string;
+  value: string;
+  inline: boolean;
 };
 
 export type MessageEmbedResponse = {
-    type: string;
-    url?: string;
-    title?: string;
-    description?: string;
-    color?: number;
-    timestamp?: string;
-    fields?: Array<MessageEmbedFieldResponse>;
-    author?: MessageEmbedAuthorResponse;
-    provider?: MessageEmbedProviderResponse;
-    image?: MessageEmbedImageResponse;
-    thumbnail?: MessageEmbedImageResponse;
-    video?: MessageEmbedVideoResponse;
-    footer?: MessageEmbedFooterResponse;
+  type: string;
+  url?: string;
+  title?: string;
+  description?: string;
+  color?: number;
+  timestamp?: string;
+  fields?: Array<MessageEmbedFieldResponse>;
+  author?: MessageEmbedAuthorResponse;
+  provider?: MessageEmbedProviderResponse;
+  image?: MessageEmbedImageResponse;
+  thumbnail?: MessageEmbedImageResponse;
+  video?: MessageEmbedVideoResponse;
+  footer?: MessageEmbedFooterResponse;
 };
 
 export type ApplicationIntegrationTypeConfigurationResponse = {
-    oauth2_install_params?: ApplicationOAuth2InstallParamsResponse;
+  oauth2_install_params?: ApplicationOAuth2InstallParamsResponse;
 };
 
-export type OAuth2Scopes = 'identify' | 'email' | 'connections' | 'guilds' | 'guilds.join' | 'guilds.members.read' | 'gdm.join' | 'bot' | 'rpc' | 'rpc.notifications.read' | 'rpc.voice.read' | 'rpc.voice.write' | 'rpc.video.read' | 'rpc.video.write' | 'rpc.screenshare.read' | 'rpc.screenshare.write' | 'rpc.activities.write' | 'webhook.incoming' | 'messages.read' | 'applications.builds.upload' | 'applications.builds.read' | 'applications.commands' | 'applications.commands.permissions.update' | 'applications.commands.update' | 'applications.store.update' | 'applications.entitlements' | 'activities.read' | 'activities.write' | 'activities.invites.write' | 'relationships.read' | 'voice' | 'dm_channels.read' | 'role_connections.write' | 'openid';
+export type OAuth2Scopes =
+  "identify"
+  | "email"
+  | "connections"
+  | "guilds"
+  | "guilds.join"
+  | "guilds.members.read"
+  | "gdm.join"
+  | "bot"
+  | "rpc"
+  | "rpc.notifications.read"
+  | "rpc.voice.read"
+  | "rpc.voice.write"
+  | "rpc.video.read"
+  | "rpc.video.write"
+  | "rpc.screenshare.read"
+  | "rpc.screenshare.write"
+  | "rpc.activities.write"
+  | "webhook.incoming"
+  | "messages.read"
+  | "applications.builds.upload"
+  | "applications.builds.read"
+  | "applications.commands"
+  | "applications.commands.permissions.update"
+  | "applications.commands.update"
+  | "applications.store.update"
+  | "applications.entitlements"
+  | "activities.read"
+  | "activities.write"
+  | "activities.invites.write"
+  | "relationships.read"
+  | "voice"
+  | "dm_channels.read"
+  | "role_connections.write"
+  | "openid";
 
 export type ApplicationOAuth2InstallParamsResponse = {
-    scopes: Array<'applications.commands' | 'bot'>;
-    permissions: string;
+  scopes: Array<"applications.commands" | "bot">;
+  permissions: string;
 };
 
 /**
@@ -768,326 +836,363 @@ export type ApplicationOAuth2InstallParamsResponse = {
 export type ApplicationTypes = 4;
 
 export type ApplicationResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description: string;
-    type?: null | ApplicationTypes;
-    cover_image?: string;
-    primary_sku_id?: SnowflakeType;
-    bot?: UserResponse;
-    slug?: string;
-    guild_id?: SnowflakeType;
-    rpc_origins?: Array<string | null>;
-    bot_public?: boolean;
-    bot_require_code_grant?: boolean;
-    terms_of_service_url?: string;
-    privacy_policy_url?: string;
-    custom_install_url?: string;
-    install_params?: ApplicationOAuth2InstallParamsResponse;
-    integration_types_config?: {
-        [key: string]: ApplicationIntegrationTypeConfigurationResponse;
-    };
-    verify_key: string;
-    flags: number;
-    max_participants?: number | null;
-    tags?: Array<string>;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description: string;
+  type?: null | ApplicationTypes;
+  cover_image?: string;
+  primary_sku_id?: SnowflakeType;
+  bot?: UserResponse;
+  slug?: string;
+  guild_id?: SnowflakeType;
+  rpc_origins?: Array<string | null>;
+  bot_public?: boolean;
+  bot_require_code_grant?: boolean;
+  terms_of_service_url?: string;
+  privacy_policy_url?: string;
+  custom_install_url?: string;
+  install_params?: ApplicationOAuth2InstallParamsResponse;
+  integration_types_config?: {
+    [key: string]: ApplicationIntegrationTypeConfigurationResponse;
+  };
+  verify_key: string;
+  flags: number;
+  max_participants?: number | null;
+  tags?: Array<string>;
 };
 
 export type MessageAttachmentResponse = {
-    id: SnowflakeType;
-    filename: string;
-    size: number;
-    url: string;
-    proxy_url: string;
-    width?: number;
-    height?: number;
-    duration_secs?: number;
-    waveform?: string;
-    description?: string;
-    content_type?: string;
-    ephemeral?: boolean;
-    title?: string | null;
-    application?: ApplicationResponse;
-    clip_created_at?: string;
-    clip_participants?: Array<UserResponse>;
+  id: SnowflakeType;
+  filename: string;
+  size: number;
+  url: string;
+  proxy_url: string;
+  width?: number;
+  height?: number;
+  duration_secs?: number;
+  waveform?: string;
+  description?: string;
+  content_type?: string;
+  ephemeral?: boolean;
+  title?: string | null;
+  application?: ApplicationResponse;
+  clip_created_at?: string;
+  clip_participants?: Array<UserResponse>;
 };
 
-export type MessageType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 31 | 32 | 36 | 37 | 38 | 39 | 46 | 55;
+export type MessageType =
+  0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21
+  | 22
+  | 23
+  | 24
+  | 25
+  | 26
+  | 27
+  | 28
+  | 29
+  | 31
+  | 32
+  | 36
+  | 37
+  | 38
+  | 39
+  | 46
+  | 55;
 
 export type MessageSnapshotResponse = {
-    message: MinimalContentMessageResponse;
+  message: MinimalContentMessageResponse;
 };
 
 export type ModalSubmitInteractionMetadataResponse = {
-    id: SnowflakeType;
-    type: 5;
-    user?: UserResponse;
-    authorizing_integration_owners: {
-        [key: string]: SnowflakeType;
-    };
-    original_response_message_id?: SnowflakeType;
-    triggering_interaction_metadata: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse;
+  id: SnowflakeType;
+  type: 5;
+  user?: UserResponse;
+  authorizing_integration_owners: {
+    [key: string]: SnowflakeType;
+  };
+  original_response_message_id?: SnowflakeType;
+  triggering_interaction_metadata: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse;
 };
 
 export type MessageComponentInteractionMetadataResponse = {
-    id: SnowflakeType;
-    type: 3;
-    user?: UserResponse;
-    authorizing_integration_owners: {
-        [key: string]: SnowflakeType;
-    };
-    original_response_message_id?: SnowflakeType;
-    interacted_message_id: SnowflakeType;
+  id: SnowflakeType;
+  type: 3;
+  user?: UserResponse;
+  authorizing_integration_owners: {
+    [key: string]: SnowflakeType;
+  };
+  original_response_message_id?: SnowflakeType;
+  interacted_message_id: SnowflakeType;
 };
 
 export type InteractionTypes = 1 | 2 | 3 | 4 | 5;
 
 export type ApplicationCommandInteractionMetadataResponse = {
-    id: SnowflakeType;
-    type: 2;
-    user?: UserResponse;
-    authorizing_integration_owners: {
-        [key: string]: SnowflakeType;
-    };
-    original_response_message_id?: SnowflakeType;
-    target_user?: UserResponse;
-    target_message_id?: SnowflakeType;
+  id: SnowflakeType;
+  type: 2;
+  user?: UserResponse;
+  authorizing_integration_owners: {
+    [key: string]: SnowflakeType;
+  };
+  original_response_message_id?: SnowflakeType;
+  target_user?: UserResponse;
+  target_message_id?: SnowflakeType;
 };
 
 export type MessageShareCustomUserThemeBaseTheme = 0 | 1 | 2 | 3 | 4;
 
 export type CustomClientThemeResponse = {
-    colors: Array<string>;
-    gradient_angle: number;
-    base_mix: number;
-    base_theme: MessageShareCustomUserThemeBaseTheme;
+  colors: Array<string>;
+  gradient_angle: number;
+  base_mix: number;
+  base_theme: MessageShareCustomUserThemeBaseTheme;
 };
 
 export type PollResultsEntryResponse = {
-    id: number;
-    count: number;
-    me_voted: boolean;
+  id: number;
+  count: number;
+  me_voted: boolean;
 };
 
 export type PollResultsResponse = {
-    answer_counts: Array<PollResultsEntryResponse>;
-    is_finalized: boolean;
+  answer_counts: Array<PollResultsEntryResponse>;
+  is_finalized: boolean;
 };
 
 export type PollLayoutTypes = unknown;
 
 export type PollAnswerResponse = {
-    answer_id: number;
-    poll_media: PollMediaResponse;
+  answer_id: number;
+  poll_media: PollMediaResponse;
 };
 
 export type MessageReactionEmojiResponse = {
-    id?: null | SnowflakeType;
-    name?: string | null;
-    animated?: boolean;
+  id?: null | SnowflakeType;
+  name?: string | null;
+  animated?: boolean;
 };
 
 export type PollMediaResponse = {
-    text?: string;
-    emoji?: MessageReactionEmojiResponse;
+  text?: string;
+  emoji?: MessageReactionEmojiResponse;
 };
 
 export type PollResponse = {
-    question: PollMediaResponse;
-    answers: Array<PollAnswerResponse>;
-    expiry: string;
-    allow_multiselect: boolean;
-    layout_type: PollLayoutTypes;
-    results: PollResultsResponse;
+  question: PollMediaResponse;
+  answers: Array<PollAnswerResponse>;
+  expiry: string;
+  allow_multiselect: boolean;
+  layout_type: PollLayoutTypes;
+  results: PollResultsResponse;
 };
 
 export type GuildRoleTagsResponse = {
-    premium_subscriber?: null;
-    bot_id?: SnowflakeType;
-    integration_id?: SnowflakeType;
-    subscription_listing_id?: SnowflakeType;
-    available_for_purchase?: null;
-    guild_connections?: null;
+  premium_subscriber?: null;
+  bot_id?: SnowflakeType;
+  integration_id?: SnowflakeType;
+  subscription_listing_id?: SnowflakeType;
+  available_for_purchase?: null;
+  guild_connections?: null;
 };
 
 export type GuildRoleColorsResponse = {
-    primary_color: number;
-    secondary_color?: number | null;
-    tertiary_color?: number | null;
+  primary_color: number;
+  secondary_color?: number | null;
+  tertiary_color?: number | null;
 };
 
 export type GuildRoleResponse = {
-    id: SnowflakeType;
-    name: string;
-    description?: string | null;
-    permissions: string;
-    position: number;
-    color: number;
-    colors: GuildRoleColorsResponse;
-    hoist: boolean;
-    managed: boolean;
-    mentionable: boolean;
-    icon?: string | null;
-    unicode_emoji?: string | null;
-    tags?: GuildRoleTagsResponse;
-    flags: number;
+  id: SnowflakeType;
+  name: string;
+  description?: string | null;
+  permissions: string;
+  position: number;
+  color: number;
+  colors: GuildRoleColorsResponse;
+  hoist: boolean;
+  managed: boolean;
+  mentionable: boolean;
+  icon?: string | null;
+  unicode_emoji?: string | null;
+  tags?: GuildRoleTagsResponse;
+  flags: number;
 };
 
 export type PrivateGroupChannelResponse = {
-    id: SnowflakeType;
-    type: 3;
-    last_message_id?: null | SnowflakeType;
-    flags: number;
-    last_pin_timestamp?: string | null;
-    recipients: Array<UserResponse>;
-    name?: string | null;
-    icon?: string | null;
-    owner_id: SnowflakeType;
-    managed?: boolean;
-    application_id?: SnowflakeType;
+  id: SnowflakeType;
+  type: 3;
+  last_message_id?: null | SnowflakeType;
+  flags: number;
+  last_pin_timestamp?: string | null;
+  recipients: Array<UserResponse>;
+  name?: string | null;
+  icon?: string | null;
+  owner_id: SnowflakeType;
+  managed?: boolean;
+  application_id?: SnowflakeType;
 };
 
 export type PrivateChannelResponse = {
-    id: SnowflakeType;
-    type: 1;
-    last_message_id?: null | SnowflakeType;
-    flags: number;
-    last_pin_timestamp?: string | null;
-    recipients: Array<UserResponse>;
+  id: SnowflakeType;
+  type: 1;
+  last_message_id?: null | SnowflakeType;
+  flags: number;
+  last_pin_timestamp?: string | null;
+  recipients: Array<UserResponse>;
 };
 
-export type ThreadSearchTagSetting = 'match_all' | 'match_some';
+export type ThreadSearchTagSetting = "match_all" | "match_some";
 
 export type ForumLayout = 0 | 1 | 2;
 
 export type ThreadSortOrder = 0 | 1;
 
 export type DefaultReactionEmojiResponse = {
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
 };
 
 export type ForumTagResponse = {
-    id: SnowflakeType;
-    name: string;
-    moderated: boolean;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+  id: SnowflakeType;
+  name: string;
+  moderated: boolean;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
 };
 
 export type ChannelPermissionOverwrites = 0 | 1;
 
 export type ChannelPermissionOverwriteResponse = {
-    id: SnowflakeType;
-    type: ChannelPermissionOverwrites;
-    allow: string;
-    deny: string;
+  id: SnowflakeType;
+  type: ChannelPermissionOverwrites;
+  allow: string;
+  deny: string;
 };
 
 export type GuildChannelResponse = {
-    id: SnowflakeType;
-    type: 0 | 2 | 4 | 5 | 13 | 14 | 15;
-    last_message_id?: null | SnowflakeType;
-    flags: number;
-    last_pin_timestamp?: string | null;
-    guild_id: SnowflakeType;
-    name: string;
-    parent_id?: null | SnowflakeType;
-    rate_limit_per_user?: number;
-    bitrate?: number;
-    user_limit?: number;
-    rtc_region?: string | null;
-    video_quality_mode?: VideoQualityModes;
-    permissions?: string | null;
-    topic?: string | null;
-    default_auto_archive_duration?: ThreadAutoArchiveDuration;
-    default_thread_rate_limit_per_user?: number;
-    position: number;
-    permission_overwrites?: Array<ChannelPermissionOverwriteResponse>;
-    nsfw?: boolean;
-    available_tags?: Array<ForumTagResponse>;
-    default_reaction_emoji?: null | DefaultReactionEmojiResponse;
-    default_sort_order?: null | ThreadSortOrder;
-    default_forum_layout?: null | ForumLayout;
-    default_tag_setting?: null | ThreadSearchTagSetting;
-    hd_streaming_until?: string;
-    hd_streaming_buyer_id?: SnowflakeType;
+  id: SnowflakeType;
+  type: 0 | 2 | 4 | 5 | 13 | 14 | 15;
+  last_message_id?: null | SnowflakeType;
+  flags: number;
+  last_pin_timestamp?: string | null;
+  guild_id: SnowflakeType;
+  name: string;
+  parent_id?: null | SnowflakeType;
+  rate_limit_per_user?: number;
+  bitrate?: number;
+  user_limit?: number;
+  rtc_region?: string | null;
+  video_quality_mode?: VideoQualityModes;
+  permissions?: string | null;
+  topic?: string | null;
+  default_auto_archive_duration?: ThreadAutoArchiveDuration;
+  default_thread_rate_limit_per_user?: number;
+  position: number;
+  permission_overwrites?: Array<ChannelPermissionOverwriteResponse>;
+  nsfw?: boolean;
+  available_tags?: Array<ForumTagResponse>;
+  default_reaction_emoji?: null | DefaultReactionEmojiResponse;
+  default_sort_order?: null | ThreadSortOrder;
+  default_forum_layout?: null | ForumLayout;
+  default_tag_setting?: null | ThreadSearchTagSetting;
+  hd_streaming_until?: string;
+  hd_streaming_buyer_id?: SnowflakeType;
 };
 
 export type BasicGuildMemberResponse = {
-    avatar?: string | null;
-    avatar_decoration_data?: null | UserAvatarDecorationResponse;
-    banner?: string | null;
-    communication_disabled_until?: string | null;
-    flags: number;
-    joined_at: string;
-    nick?: string | null;
-    pending: boolean;
-    premium_since?: string | null;
-    roles: Array<SnowflakeType>;
-    collectibles?: null | UserCollectiblesResponse;
+  avatar?: string | null;
+  avatar_decoration_data?: null | UserAvatarDecorationResponse;
+  banner?: string | null;
+  communication_disabled_until?: string | null;
+  flags: number;
+  joined_at: string;
+  nick?: string | null;
+  pending: boolean;
+  premium_since?: string | null;
+  roles: Array<SnowflakeType>;
+  collectibles?: null | UserCollectiblesResponse;
 };
 
 export type ResolvedObjectsResponse = {
-    users?: {
-        [key: string]: UserResponse;
-    } | null;
-    members?: {
-        [key: string]: BasicGuildMemberResponse;
-    } | null;
-    channels?: {
-        [key: string]: GuildChannelResponse | PrivateChannelResponse | PrivateGroupChannelResponse | ThreadResponse;
-    } | null;
-    roles?: {
-        [key: string]: GuildRoleResponse;
-    } | null;
+  users?: {
+    [key: string]: UserResponse;
+  } | null;
+  members?: {
+    [key: string]: BasicGuildMemberResponse;
+  } | null;
+  channels?: {
+    [key: string]: GuildChannelResponse | PrivateChannelResponse | PrivateGroupChannelResponse | ThreadResponse;
+  } | null;
+  roles?: {
+    [key: string]: GuildRoleResponse;
+  } | null;
 };
 
 export type ThreadMemberResponse = {
-    id: SnowflakeType;
-    user_id: SnowflakeType;
-    join_timestamp: string;
-    flags: number;
-    member?: GuildMemberResponse;
+  id: SnowflakeType;
+  user_id: SnowflakeType;
+  join_timestamp: string;
+  flags: number;
+  member?: GuildMemberResponse;
 };
 
 export type ThreadMetadataResponse = {
-    archived: boolean;
-    archive_timestamp?: string | null;
-    auto_archive_duration: ThreadAutoArchiveDuration;
-    locked: boolean;
-    create_timestamp?: string;
-    invitable?: boolean;
+  archived: boolean;
+  archive_timestamp?: string | null;
+  auto_archive_duration: ThreadAutoArchiveDuration;
+  locked: boolean;
+  create_timestamp?: string;
+  invitable?: boolean;
 };
 
 export type ThreadResponse = {
-    id: SnowflakeType;
-    type: 10 | 11 | 12;
-    last_message_id?: null | SnowflakeType;
-    flags: number;
-    last_pin_timestamp?: string | null;
-    guild_id: SnowflakeType;
-    name: string;
-    parent_id?: null | SnowflakeType;
-    rate_limit_per_user?: number;
-    bitrate?: number;
-    user_limit?: number;
-    rtc_region?: string | null;
-    video_quality_mode?: VideoQualityModes;
-    permissions?: string | null;
-    owner_id: SnowflakeType;
-    thread_metadata: ThreadMetadataResponse;
-    message_count: number;
-    member_count: number;
-    total_message_sent: number;
-    applied_tags?: Array<SnowflakeType>;
-    member?: ThreadMemberResponse;
+  id: SnowflakeType;
+  type: 10 | 11 | 12;
+  last_message_id?: null | SnowflakeType;
+  flags: number;
+  last_pin_timestamp?: string | null;
+  guild_id: SnowflakeType;
+  name: string;
+  parent_id?: null | SnowflakeType;
+  rate_limit_per_user?: number;
+  bitrate?: number;
+  user_limit?: number;
+  rtc_region?: string | null;
+  video_quality_mode?: VideoQualityModes;
+  permissions?: string | null;
+  owner_id: SnowflakeType;
+  thread_metadata: ThreadMetadataResponse;
+  message_count: number;
+  member_count: number;
+  total_message_sent: number;
+  applied_tags?: Array<SnowflakeType>;
+  member?: ThreadMemberResponse;
 };
 
 export type GuildProductPurchaseResponse = {
-    listing_id: SnowflakeType;
-    product_name: string;
+  listing_id: SnowflakeType;
+  product_name: string;
 };
 
 /**
@@ -1096,22 +1201,22 @@ export type GuildProductPurchaseResponse = {
 export type PurchaseType = 0;
 
 export type PurchaseNotificationResponse = {
-    type: PurchaseType;
-    guild_product_purchase?: GuildProductPurchaseResponse;
+  type: PurchaseType;
+  guild_product_purchase?: GuildProductPurchaseResponse;
 };
 
 export type MessageRoleSubscriptionDataResponse = {
-    role_subscription_listing_id: SnowflakeType;
-    tier_name: string;
-    total_months_subscribed: number;
-    is_renewal: boolean;
+  role_subscription_listing_id: SnowflakeType;
+  tier_name: string;
+  total_months_subscribed: number;
+  is_renewal: boolean;
 };
 
 export type MessageMentionChannelResponse = {
-    id: SnowflakeType;
-    name: string;
-    type: ChannelTypes;
-    guild_id: SnowflakeType;
+  id: SnowflakeType;
+  name: string;
+  type: ChannelTypes;
+  guild_id: SnowflakeType;
 };
 
 /**
@@ -1121,527 +1226,554 @@ export type MessageMentionChannelResponse = {
 export type MessageReferenceType = 0;
 
 export type MessageReferenceResponse = {
-    type: MessageReferenceType;
-    channel_id: SnowflakeType;
-    message_id?: SnowflakeType;
-    guild_id?: SnowflakeType;
+  type: MessageReferenceType;
+  channel_id: SnowflakeType;
+  message_id?: SnowflakeType;
+  guild_id?: SnowflakeType;
 };
 
 export type MessageInteractionResponse = {
-    id: SnowflakeType;
-    type: InteractionTypes;
-    name: string;
-    user?: UserResponse;
-    name_localized?: string;
+  id: SnowflakeType;
+  type: InteractionTypes;
+  name: string;
+  user?: UserResponse;
+  name_localized?: string;
 };
 
 export type BasicApplicationResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description: string;
-    type?: null | ApplicationTypes;
-    cover_image?: string;
-    primary_sku_id?: SnowflakeType;
-    bot?: UserResponse;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description: string;
+  type?: null | ApplicationTypes;
+  cover_image?: string;
+  primary_sku_id?: SnowflakeType;
+  bot?: UserResponse;
 };
 
 export type MessageActivityResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type MessageCallResponse = {
-    ended_timestamp?: string | null;
-    participants: Array<SnowflakeType>;
+  ended_timestamp?: string | null;
+  participants: Array<SnowflakeType>;
 };
 
 export type MessageReactionCountDetailsResponse = {
-    burst: number;
-    normal: number;
+  burst: number;
+  normal: number;
 };
 
 export type MessageReactionResponse = {
-    emoji: MessageReactionEmojiResponse;
-    count: number;
-    count_details: MessageReactionCountDetailsResponse;
-    burst_colors: Array<string>;
-    me_burst: boolean;
-    me: boolean;
+  emoji: MessageReactionEmojiResponse;
+  count: number;
+  count_details: MessageReactionCountDetailsResponse;
+  burst_colors: Array<string>;
+  me_burst: boolean;
+  me: boolean;
 };
 
 export type MessageResponse = {
-    type: MessageType;
-    content: string;
-    mentions: Array<UserResponse>;
-    mention_roles: Array<SnowflakeType>;
-    attachments: Array<MessageAttachmentResponse>;
-    embeds: Array<MessageEmbedResponse>;
-    timestamp: string;
-    edited_timestamp?: string | null;
-    flags: number;
-    components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
-    stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
-    sticker_items?: Array<MessageStickerItemResponse>;
-    id: SnowflakeType;
-    channel_id: SnowflakeType;
-    author: UserResponse;
-    pinned: boolean;
-    mention_everyone: boolean;
-    tts: boolean;
-    call?: MessageCallResponse;
-    activity?: MessageActivityResponse;
-    application?: BasicApplicationResponse;
-    application_id?: SnowflakeType;
-    interaction?: MessageInteractionResponse;
-    nonce?: number | string | null;
-    webhook_id?: SnowflakeType;
-    message_reference?: MessageReferenceResponse;
-    thread?: ThreadResponse;
-    mention_channels?: Array<null | MessageMentionChannelResponse>;
-    role_subscription_data?: MessageRoleSubscriptionDataResponse;
-    purchase_notification?: PurchaseNotificationResponse;
-    position?: number;
-    resolved?: ResolvedObjectsResponse;
-    poll?: PollResponse;
-    shared_client_theme?: null | CustomClientThemeResponse;
-    interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
-    message_snapshots?: Array<MessageSnapshotResponse>;
-    reactions?: Array<MessageReactionResponse>;
-    referenced_message?: null | BasicMessageResponse;
+  type: MessageType;
+  content: string;
+  mentions: Array<UserResponse>;
+  mention_roles: Array<SnowflakeType>;
+  attachments: Array<MessageAttachmentResponse>;
+  embeds: Array<MessageEmbedResponse>;
+  timestamp: string;
+  edited_timestamp?: string | null;
+  flags: number;
+  components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
+  stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
+  sticker_items?: Array<MessageStickerItemResponse>;
+  id: SnowflakeType;
+  channel_id: SnowflakeType;
+  author: UserResponse;
+  pinned: boolean;
+  mention_everyone: boolean;
+  tts: boolean;
+  call?: MessageCallResponse;
+  activity?: MessageActivityResponse;
+  application?: BasicApplicationResponse;
+  application_id?: SnowflakeType;
+  interaction?: MessageInteractionResponse;
+  nonce?: number | string | null;
+  webhook_id?: SnowflakeType;
+  message_reference?: MessageReferenceResponse;
+  thread?: ThreadResponse;
+  mention_channels?: Array<null | MessageMentionChannelResponse>;
+  role_subscription_data?: MessageRoleSubscriptionDataResponse;
+  purchase_notification?: PurchaseNotificationResponse;
+  position?: number;
+  resolved?: ResolvedObjectsResponse;
+  poll?: PollResponse;
+  shared_client_theme?: null | CustomClientThemeResponse;
+  interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
+  message_snapshots?: Array<MessageSnapshotResponse>;
+  reactions?: Array<MessageReactionResponse>;
+  referenced_message?: null | BasicMessageResponse;
 };
 
 export type UpdateGuildOnboardingRequest = {
-    prompts?: Array<UpdateOnboardingPromptRequest> | null;
-    enabled?: boolean | null;
-    default_channel_ids?: Array<SnowflakeType> | null;
-    mode?: null | GuildOnboardingMode;
+  prompts?: Array<UpdateOnboardingPromptRequest> | null;
+  enabled?: boolean | null;
+  default_channel_ids?: Array<SnowflakeType> | null;
+  mode?: null | GuildOnboardingMode;
 };
 
 export type GuildOnboardingMode = 0 | 1;
 
 export type UpdateDefaultReactionEmojiRequest = {
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
 };
 
 export type ChannelPermissionOverwriteRequest = {
-    id: SnowflakeType;
-    type?: null | ChannelPermissionOverwrites;
-    allow?: number | null;
-    deny?: number | null;
+  id: SnowflakeType;
+  type?: null | ChannelPermissionOverwrites;
+  allow?: number | null;
+  deny?: number | null;
 };
 
 export type UnbanUserFromGuildRequest = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type ThreadsResponse = {
-    threads: Array<ThreadResponse>;
-    members: Array<ThreadMemberResponse>;
-    has_more: boolean;
-    first_messages?: Array<MessageResponse>;
+  threads: Array<ThreadResponse>;
+  members: Array<ThreadMemberResponse>;
+  has_more: boolean;
+  first_messages?: Array<MessageResponse>;
 };
 
 export type StageScheduledEventResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    name: string;
-    description?: string | null;
-    channel_id?: null | SnowflakeType;
-    creator_id?: null | SnowflakeType;
-    creator?: UserResponse;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    status: GuildScheduledEventStatuses;
-    entity_type: 1;
-    entity_id?: null | SnowflakeType;
-    user_count?: number;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    user_rsvp?: null | ScheduledEventUserResponse;
-    entity_metadata?: null | EntityMetadataStageInstanceResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  name: string;
+  description?: string | null;
+  channel_id?: null | SnowflakeType;
+  creator_id?: null | SnowflakeType;
+  creator?: UserResponse;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  status: GuildScheduledEventStatuses;
+  entity_type: 1;
+  entity_id?: null | SnowflakeType;
+  user_count?: number;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  user_rsvp?: null | ScheduledEventUserResponse;
+  entity_metadata?: null | EntityMetadataStageInstanceResponse;
 };
 
 export type EntityMetadataStageInstanceResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type StageScheduledEventPatchRequestPartial = {
-    status?: null | GuildScheduledEventStatuses;
-    name?: string;
-    description?: string | null;
-    image?: string | null;
-    scheduled_start_time?: string;
-    scheduled_end_time?: string | null;
-    entity_type?: null | 1;
-    privacy_level?: GuildScheduledEventPrivacyLevels;
-    channel_id?: null | SnowflakeType;
-    entity_metadata?: null | EntityMetadataStageInstance;
+  status?: null | GuildScheduledEventStatuses;
+  name?: string;
+  description?: string | null;
+  image?: string | null;
+  scheduled_start_time?: string;
+  scheduled_end_time?: string | null;
+  entity_type?: null | 1;
+  privacy_level?: GuildScheduledEventPrivacyLevels;
+  channel_id?: null | SnowflakeType;
+  entity_metadata?: null | EntityMetadataStageInstance;
 };
 
 export type EntityMetadataStageInstance = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type StageScheduledEventCreateRequest = {
-    name: string;
-    description?: string | null;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    entity_type: 1;
-    channel_id?: null | SnowflakeType;
-    entity_metadata?: null | EntityMetadataStageInstance;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  entity_type: 1;
+  channel_id?: null | SnowflakeType;
+  entity_metadata?: null | EntityMetadataStageInstance;
 };
 
 export type SpamLinkTriggerMetadataResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type SpamLinkRuleResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    creator_id: SnowflakeType;
-    name: string;
-    event_type: AutomodEventType;
-    actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
-    trigger_type: 2;
-    enabled: boolean;
-    exempt_roles: Array<SnowflakeType>;
-    exempt_channels: Array<SnowflakeType>;
-    trigger_metadata: SpamLinkTriggerMetadataResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  creator_id: SnowflakeType;
+  name: string;
+  event_type: AutomodEventType;
+  actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
+  trigger_type: 2;
+  enabled: boolean;
+  exempt_roles: Array<SnowflakeType>;
+  exempt_channels: Array<SnowflakeType>;
+  trigger_metadata: SpamLinkTriggerMetadataResponse;
 };
 
 export type AutomodTriggerType = 1 | 2 | 3 | 4 | 5;
 
 export type QuarantineUserActionMetadataResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type QuarantineUserActionResponse = {
-    type: 4;
-    metadata: QuarantineUserActionMetadataResponse;
+  type: 4;
+  metadata: QuarantineUserActionMetadataResponse;
 };
 
 export type FlagToChannelActionMetadataResponse = {
-    channel_id: SnowflakeType;
+  channel_id: SnowflakeType;
 };
 
 export type FlagToChannelActionResponse = {
-    type: 2;
-    metadata: FlagToChannelActionMetadataResponse;
+  type: 2;
+  metadata: FlagToChannelActionMetadataResponse;
 };
 
 export type BlockMessageActionMetadataResponse = {
-    custom_message?: string;
+  custom_message?: string;
 };
 
 export type BlockMessageActionResponse = {
-    type: 1;
-    metadata: BlockMessageActionMetadataResponse;
+  type: 1;
+  metadata: BlockMessageActionMetadataResponse;
 };
 
 export type AutomodEventType = 1 | 2;
 
 export type SoundboardSoundResponse = {
-    name: string;
-    sound_id: SnowflakeType;
-    volume: number;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
-    guild_id?: SnowflakeType;
-    available: boolean;
-    user?: UserResponse;
+  name: string;
+  sound_id: SnowflakeType;
+  volume: number;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
+  guild_id?: SnowflakeType;
+  available: boolean;
+  user?: UserResponse;
 };
 
 export type SoundboardPatchRequestPartial = {
-    name?: string;
-    volume?: number | null;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+  name?: string;
+  volume?: number | null;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
 };
 
 export type SoundboardCreateRequest = {
-    name: string;
-    volume?: number | null;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
-    sound: string;
+  name: string;
+  volume?: number | null;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
+  sound: string;
 };
 
 export type ScheduledEventResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    name: string;
-    description?: string | null;
-    channel_id?: null | SnowflakeType;
-    creator_id?: null | SnowflakeType;
-    creator?: UserResponse;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    status: GuildScheduledEventStatuses;
-    entity_type: GuildScheduledEventEntityTypes;
-    entity_id?: null | SnowflakeType;
-    user_count?: number;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    user_rsvp?: null | ScheduledEventUserResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  name: string;
+  description?: string | null;
+  channel_id?: null | SnowflakeType;
+  creator_id?: null | SnowflakeType;
+  creator?: UserResponse;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  status: GuildScheduledEventStatuses;
+  entity_type: GuildScheduledEventEntityTypes;
+  entity_id?: null | SnowflakeType;
+  user_count?: number;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  user_rsvp?: null | ScheduledEventUserResponse;
 };
 
 export type ResourceChannelResponse = {
-    channel_id: SnowflakeType;
-    title: string;
-    emoji?: SettingsEmojiResponse;
-    icon?: string;
-    description: string;
+  channel_id: SnowflakeType;
+  title: string;
+  emoji?: SettingsEmojiResponse;
+  icon?: string;
+  description: string;
 };
 
 export type QuarantineUserActionMetadata = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type QuarantineUserAction = {
-    type: 4;
-    metadata?: null | QuarantineUserActionMetadata;
+  type: 4;
+  metadata?: null | QuarantineUserActionMetadata;
 };
 
 export type PruneGuildRequest = {
-    days?: number | null;
-    compute_prune_count?: boolean | null;
-    include_roles?: string | Array<SnowflakeType> | null;
+  days?: number | null;
+  compute_prune_count?: boolean | null;
+  include_roles?: string | Array<SnowflakeType> | null;
 };
 
 export type PrivateGuildMemberResponse = {
-    avatar?: string | null;
-    avatar_decoration_data?: null | UserAvatarDecorationResponse;
-    banner?: string | null;
-    communication_disabled_until?: string | null;
-    flags: number;
-    joined_at: string;
-    nick?: string | null;
-    pending: boolean;
-    premium_since?: string | null;
-    roles: Array<SnowflakeType>;
-    collectibles?: null | UserCollectiblesResponse;
-    user: UserResponse;
-    mute: boolean;
-    deaf: boolean;
+  avatar?: string | null;
+  avatar_decoration_data?: null | UserAvatarDecorationResponse;
+  banner?: string | null;
+  communication_disabled_until?: string | null;
+  flags: number;
+  joined_at: string;
+  nick?: string | null;
+  pending: boolean;
+  premium_since?: string | null;
+  roles: Array<SnowflakeType>;
+  collectibles?: null | UserCollectiblesResponse;
+  user: UserResponse;
+  mute: boolean;
+  deaf: boolean;
 };
 
 export type PremiumGuildTiers = 0 | 1 | 2 | 3;
 
 export type PartialGuildSubscriptionIntegrationResponse = {
-    id: SnowflakeType;
-    type: 'guild_subscription';
-    name?: string | null;
-    account: AccountResponse;
+  id: SnowflakeType;
+  type: "guild_subscription";
+  name?: string | null;
+  account: AccountResponse;
 };
 
 export type AccountResponse = {
-    id: string;
-    name?: string | null;
+  id: string;
+  name?: string | null;
 };
 
-export type IntegrationTypes = 'discord' | 'twitch' | 'youtube' | 'guild_subscription';
+export type IntegrationTypes = "discord" | "twitch" | "youtube" | "guild_subscription";
 
 export type PartialExternalConnectionIntegrationResponse = {
-    id: SnowflakeType;
-    type: 'twitch' | 'youtube';
-    name?: string | null;
-    account: AccountResponse;
+  id: SnowflakeType;
+  type: "twitch" | "youtube";
+  name?: string | null;
+  account: AccountResponse;
 };
 
 export type PartialDiscordIntegrationResponse = {
-    id: SnowflakeType;
-    type: 'discord';
-    name?: string | null;
-    account: AccountResponse;
-    application_id: SnowflakeType;
+  id: SnowflakeType;
+  type: "discord";
+  name?: string | null;
+  account: AccountResponse;
+  application_id: SnowflakeType;
 };
 
 export type NewMemberActionType = 0 | 1;
 
 export type NewMemberActionResponse = {
-    channel_id: SnowflakeType;
-    action_type: NewMemberActionType;
-    title: string;
-    description: string;
-    emoji?: SettingsEmojiResponse;
-    icon?: string;
+  channel_id: SnowflakeType;
+  action_type: NewMemberActionType;
+  title: string;
+  description: string;
+  emoji?: SettingsEmojiResponse;
+  icon?: string;
 };
 
-export type GuildFeatures = 'ANIMATED_BANNER' | 'ANIMATED_ICON' | 'APPLICATION_COMMAND_PERMISSIONS_V2' | 'AUTO_MODERATION' | 'BANNER' | 'COMMUNITY' | 'CREATOR_MONETIZABLE_PROVISIONAL' | 'CREATOR_STORE_PAGE' | 'DEVELOPER_SUPPORT_SERVER' | 'DISCOVERABLE' | 'FEATURABLE' | 'INVITES_DISABLED' | 'INVITE_SPLASH' | 'MEMBER_VERIFICATION_GATE_ENABLED' | 'MORE_STICKERS' | 'NEWS' | 'PARTNERED' | 'PREVIEW_ENABLED' | 'RAID_ALERTS_DISABLED' | 'ROLE_ICONS' | 'ROLE_SUBSCRIPTIONS_AVAILABLE_FOR_PURCHASE' | 'ROLE_SUBSCRIPTIONS_ENABLED' | 'TICKETED_EVENTS_ENABLED' | 'VANITY_URL' | 'VERIFIED' | 'VIP_REGIONS' | 'WELCOME_SCREEN_ENABLED';
+export type GuildFeatures =
+  "ANIMATED_BANNER"
+  | "ANIMATED_ICON"
+  | "APPLICATION_COMMAND_PERMISSIONS_V2"
+  | "AUTO_MODERATION"
+  | "BANNER"
+  | "COMMUNITY"
+  | "CREATOR_MONETIZABLE_PROVISIONAL"
+  | "CREATOR_STORE_PAGE"
+  | "DEVELOPER_SUPPORT_SERVER"
+  | "DISCOVERABLE"
+  | "FEATURABLE"
+  | "INVITES_DISABLED"
+  | "INVITE_SPLASH"
+  | "MEMBER_VERIFICATION_GATE_ENABLED"
+  | "MORE_STICKERS"
+  | "NEWS"
+  | "PARTNERED"
+  | "PREVIEW_ENABLED"
+  | "RAID_ALERTS_DISABLED"
+  | "ROLE_ICONS"
+  | "ROLE_SUBSCRIPTIONS_AVAILABLE_FOR_PURCHASE"
+  | "ROLE_SUBSCRIPTIONS_ENABLED"
+  | "TICKETED_EVENTS_ENABLED"
+  | "VANITY_URL"
+  | "VERIFIED"
+  | "VIP_REGIONS"
+  | "WELCOME_SCREEN_ENABLED";
 
 export type MentionSpamUpsertRequestPartial = {
-    name?: string;
-    event_type?: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type?: 5;
-    trigger_metadata?: null | MentionSpamTriggerMetadata;
+  name?: string;
+  event_type?: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type?: 5;
+  trigger_metadata?: null | MentionSpamTriggerMetadata;
 };
 
 export type MentionSpamTriggerMetadata = {
-    mention_total_limit?: number | null;
-    mention_raid_protection_enabled?: boolean | null;
+  mention_total_limit?: number | null;
+  mention_raid_protection_enabled?: boolean | null;
 };
 
 export type FlagToChannelActionMetadata = {
-    channel_id: SnowflakeType;
+  channel_id: SnowflakeType;
 };
 
 export type FlagToChannelAction = {
-    type: 2;
-    metadata: FlagToChannelActionMetadata;
+  type: 2;
+  metadata: FlagToChannelActionMetadata;
 };
 
 export type BlockMessageActionMetadata = {
-    custom_message?: string | null;
+  custom_message?: string | null;
 };
 
 export type BlockMessageAction = {
-    type: 1;
-    metadata?: null | BlockMessageActionMetadata;
+  type: 1;
+  metadata?: null | BlockMessageActionMetadata;
 };
 
 export type MentionSpamUpsertRequest = {
-    name: string;
-    event_type: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type: 5;
-    trigger_metadata?: null | MentionSpamTriggerMetadata;
+  name: string;
+  event_type: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type: 5;
+  trigger_metadata?: null | MentionSpamTriggerMetadata;
 };
 
 export type MentionSpamTriggerMetadataResponse = {
-    mention_total_limit: number;
-    mention_raid_protection_enabled: boolean;
+  mention_total_limit: number;
+  mention_raid_protection_enabled: boolean;
 };
 
 export type MentionSpamRuleResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    creator_id: SnowflakeType;
-    name: string;
-    event_type: AutomodEventType;
-    actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
-    trigger_type: 5;
-    enabled: boolean;
-    exempt_roles: Array<SnowflakeType>;
-    exempt_channels: Array<SnowflakeType>;
-    trigger_metadata: MentionSpamTriggerMetadataResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  creator_id: SnowflakeType;
+  name: string;
+  event_type: AutomodEventType;
+  actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
+  trigger_type: 5;
+  enabled: boolean;
+  exempt_roles: Array<SnowflakeType>;
+  exempt_channels: Array<SnowflakeType>;
+  trigger_metadata: MentionSpamTriggerMetadataResponse;
 };
 
 export type MlSpamUpsertRequestPartial = {
-    name?: string;
-    event_type?: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type?: 3;
-    trigger_metadata?: null | MlSpamTriggerMetadata;
+  name?: string;
+  event_type?: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type?: 3;
+  trigger_metadata?: null | MlSpamTriggerMetadata;
 };
 
 export type MlSpamTriggerMetadata = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type MlSpamUpsertRequest = {
-    name: string;
-    event_type: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type: 3;
-    trigger_metadata?: null | MlSpamTriggerMetadata;
+  name: string;
+  event_type: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type: 3;
+  trigger_metadata?: null | MlSpamTriggerMetadata;
 };
 
 export type MlSpamTriggerMetadataResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type MlSpamRuleResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    creator_id: SnowflakeType;
-    name: string;
-    event_type: AutomodEventType;
-    actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
-    trigger_type: 3;
-    enabled: boolean;
-    exempt_roles: Array<SnowflakeType>;
-    exempt_channels: Array<SnowflakeType>;
-    trigger_metadata: MlSpamTriggerMetadataResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  creator_id: SnowflakeType;
+  name: string;
+  event_type: AutomodEventType;
+  actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
+  trigger_type: 3;
+  enabled: boolean;
+  exempt_roles: Array<SnowflakeType>;
+  exempt_channels: Array<SnowflakeType>;
+  trigger_metadata: MlSpamTriggerMetadataResponse;
 };
 
 export type ListGuildSoundboardSoundsResponse = {
-    items: Array<SoundboardSoundResponse>;
+  items: Array<SoundboardSoundResponse>;
 };
 
 export type EmojiResponse = {
-    id: SnowflakeType;
-    name: string;
-    user?: UserResponse;
-    roles: Array<SnowflakeType>;
-    require_colons: boolean;
-    managed: boolean;
-    animated: boolean;
-    available: boolean;
+  id: SnowflakeType;
+  name: string;
+  user?: UserResponse;
+  roles: Array<SnowflakeType>;
+  require_colons: boolean;
+  managed: boolean;
+  animated: boolean;
+  available: boolean;
 };
 
 export type KeywordUpsertRequestPartial = {
-    name?: string;
-    event_type?: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type?: 1;
-    trigger_metadata?: null | KeywordTriggerMetadata;
+  name?: string;
+  event_type?: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type?: 1;
+  trigger_metadata?: null | KeywordTriggerMetadata;
 };
 
 export type KeywordTriggerMetadata = {
-    keyword_filter?: Array<string> | null;
-    regex_patterns?: Array<string> | null;
-    allow_list?: Array<string> | null;
+  keyword_filter?: Array<string> | null;
+  regex_patterns?: Array<string> | null;
+  allow_list?: Array<string> | null;
 };
 
 export type KeywordUpsertRequest = {
-    name: string;
-    event_type: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type: 1;
-    trigger_metadata?: null | KeywordTriggerMetadata;
+  name: string;
+  event_type: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type: 1;
+  trigger_metadata?: null | KeywordTriggerMetadata;
 };
 
 export type KeywordTriggerMetadataResponse = {
-    keyword_filter: Array<string>;
-    regex_patterns: Array<string>;
-    allow_list: Array<string>;
+  keyword_filter: Array<string>;
+  regex_patterns: Array<string>;
+  allow_list: Array<string>;
 };
 
 export type KeywordRuleResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    creator_id: SnowflakeType;
-    name: string;
-    event_type: AutomodEventType;
-    actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
-    trigger_type: 1;
-    enabled: boolean;
-    exempt_roles: Array<SnowflakeType>;
-    exempt_channels: Array<SnowflakeType>;
-    trigger_metadata: KeywordTriggerMetadataResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  creator_id: SnowflakeType;
+  name: string;
+  event_type: AutomodEventType;
+  actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
+  trigger_type: 1;
+  enabled: boolean;
+  exempt_roles: Array<SnowflakeType>;
+  exempt_channels: Array<SnowflakeType>;
+  trigger_metadata: KeywordTriggerMetadataResponse;
 };
 
 export type InviteTypes = 0 | 1 | 2;
@@ -1649,59 +1781,59 @@ export type InviteTypes = 0 | 1 | 2;
 export type InviteTargetTypes = 1 | 2 | 3;
 
 export type InviteGuildResponse = {
-    id: SnowflakeType;
-    name: string;
-    splash?: string | null;
-    banner?: string | null;
-    description?: string | null;
-    icon?: string | null;
-    features: Array<GuildFeatures>;
-    verification_level?: null | VerificationLevels;
-    vanity_url_code?: string | null;
-    nsfw_level?: null | GuildNsfwContentLevel;
-    nsfw?: boolean | null;
-    premium_subscription_count: number;
+  id: SnowflakeType;
+  name: string;
+  splash?: string | null;
+  banner?: string | null;
+  description?: string | null;
+  icon?: string | null;
+  features: Array<GuildFeatures>;
+  verification_level?: null | VerificationLevels;
+  vanity_url_code?: string | null;
+  nsfw_level?: null | GuildNsfwContentLevel;
+  nsfw?: boolean | null;
+  premium_subscription_count: number;
 };
 
 export type GuildNsfwContentLevel = 0 | 1 | 2 | 3;
 
 export type InviteChannelResponse = {
-    id: SnowflakeType;
-    type: ChannelTypes;
-    name?: string | null;
-    icon?: string;
-    recipients?: Array<InviteChannelRecipientResponse>;
+  id: SnowflakeType;
+  type: ChannelTypes;
+  name?: string | null;
+  icon?: string;
+  recipients?: Array<InviteChannelRecipientResponse>;
 };
 
 export type InviteChannelRecipientResponse = {
-    username: string;
+  username: string;
 };
 
 export type InviteApplicationResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description: string;
-    type?: null | ApplicationTypes;
-    cover_image?: string;
-    primary_sku_id?: SnowflakeType;
-    bot?: UserResponse;
-    slug?: string;
-    guild_id?: SnowflakeType;
-    rpc_origins?: Array<string | null>;
-    bot_public?: boolean;
-    bot_require_code_grant?: boolean;
-    terms_of_service_url?: string;
-    privacy_policy_url?: string;
-    custom_install_url?: string;
-    install_params?: ApplicationOAuth2InstallParamsResponse;
-    integration_types_config?: {
-        [key: string]: ApplicationIntegrationTypeConfigurationResponse;
-    };
-    verify_key: string;
-    flags: number;
-    max_participants?: number | null;
-    tags?: Array<string>;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description: string;
+  type?: null | ApplicationTypes;
+  cover_image?: string;
+  primary_sku_id?: SnowflakeType;
+  bot?: UserResponse;
+  slug?: string;
+  guild_id?: SnowflakeType;
+  rpc_origins?: Array<string | null>;
+  bot_public?: boolean;
+  bot_require_code_grant?: boolean;
+  terms_of_service_url?: string;
+  privacy_policy_url?: string;
+  custom_install_url?: string;
+  install_params?: ApplicationOAuth2InstallParamsResponse;
+  integration_types_config?: {
+    [key: string]: ApplicationIntegrationTypeConfigurationResponse;
+  };
+  verify_key: string;
+  flags: number;
+  max_participants?: number | null;
+  tags?: Array<string>;
 };
 
 export type InteractionContextType = 0 | 1 | 2;
@@ -1711,62 +1843,62 @@ export type IntegrationExpireGracePeriodTypes = 1 | 3 | 7 | 14 | 30;
 export type IntegrationExpireBehaviorTypes = 0 | 1;
 
 export type IntegrationApplicationResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description: string;
-    type?: null | ApplicationTypes;
-    cover_image?: string;
-    primary_sku_id?: SnowflakeType;
-    bot?: UserResponse;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description: string;
+  type?: null | ApplicationTypes;
+  cover_image?: string;
+  primary_sku_id?: SnowflakeType;
+  bot?: UserResponse;
 };
 
 export type IconEmojiResponse = {
-    [key: string]: unknown;
+  [key: string]: unknown;
 };
 
 export type GuildWithCountsResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description?: string | null;
-    home_header?: string | null;
-    splash?: string | null;
-    discovery_splash?: string | null;
-    features: Array<GuildFeatures>;
-    banner?: string | null;
-    owner_id: SnowflakeType;
-    application_id?: null | SnowflakeType;
-    region: string;
-    afk_channel_id?: null | SnowflakeType;
-    afk_timeout: AfkTimeouts;
-    system_channel_id?: null | SnowflakeType;
-    system_channel_flags: number;
-    widget_enabled: boolean;
-    widget_channel_id?: null | SnowflakeType;
-    verification_level: VerificationLevels;
-    roles: Array<GuildRoleResponse>;
-    default_message_notifications: UserNotificationSettings;
-    mfa_level: GuildMfaLevel;
-    explicit_content_filter: GuildExplicitContentFilterTypes;
-    max_presences?: number | null;
-    max_members: number;
-    max_stage_video_channel_users: number;
-    max_video_channel_users: number;
-    vanity_url_code?: string | null;
-    premium_tier: PremiumGuildTiers;
-    premium_subscription_count: number;
-    preferred_locale: AvailableLocalesEnum;
-    rules_channel_id?: null | SnowflakeType;
-    safety_alerts_channel_id?: null | SnowflakeType;
-    public_updates_channel_id?: null | SnowflakeType;
-    premium_progress_bar_enabled: boolean;
-    nsfw: boolean;
-    nsfw_level: GuildNsfwContentLevel;
-    emojis: Array<EmojiResponse>;
-    stickers: Array<GuildStickerResponse>;
-    approximate_member_count?: number | null;
-    approximate_presence_count?: number | null;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description?: string | null;
+  home_header?: string | null;
+  splash?: string | null;
+  discovery_splash?: string | null;
+  features: Array<GuildFeatures>;
+  banner?: string | null;
+  owner_id: SnowflakeType;
+  application_id?: null | SnowflakeType;
+  region: string;
+  afk_channel_id?: null | SnowflakeType;
+  afk_timeout: AfkTimeouts;
+  system_channel_id?: null | SnowflakeType;
+  system_channel_flags: number;
+  widget_enabled: boolean;
+  widget_channel_id?: null | SnowflakeType;
+  verification_level: VerificationLevels;
+  roles: Array<GuildRoleResponse>;
+  default_message_notifications: UserNotificationSettings;
+  mfa_level: GuildMfaLevel;
+  explicit_content_filter: GuildExplicitContentFilterTypes;
+  max_presences?: number | null;
+  max_members: number;
+  max_stage_video_channel_users: number;
+  max_video_channel_users: number;
+  vanity_url_code?: string | null;
+  premium_tier: PremiumGuildTiers;
+  premium_subscription_count: number;
+  preferred_locale: AvailableLocalesEnum;
+  rules_channel_id?: null | SnowflakeType;
+  safety_alerts_channel_id?: null | SnowflakeType;
+  public_updates_channel_id?: null | SnowflakeType;
+  premium_progress_bar_enabled: boolean;
+  nsfw: boolean;
+  nsfw_level: GuildNsfwContentLevel;
+  emojis: Array<EmojiResponse>;
+  stickers: Array<GuildStickerResponse>;
+  approximate_member_count?: number | null;
+  approximate_presence_count?: number | null;
 };
 
 export type GuildExplicitContentFilterTypes = 0 | 1 | 2;
@@ -1776,488 +1908,488 @@ export type GuildMfaLevel = 0 | 1;
 export type AfkTimeouts = 60 | 300 | 900 | 1800 | 3600;
 
 export type GuildWelcomeScreenResponse = {
-    description?: string | null;
-    welcome_channels: Array<GuildWelcomeScreenChannelResponse>;
+  description?: string | null;
+  welcome_channels: Array<GuildWelcomeScreenChannelResponse>;
 };
 
 export type GuildWelcomeScreenChannelResponse = {
-    channel_id: SnowflakeType;
-    description: string;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+  channel_id: SnowflakeType;
+  description: string;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
 };
 
 export type GuildTemplateSnapshotResponse = {
-    name: string;
-    description?: string | null;
-    region?: string | null;
-    verification_level: VerificationLevels;
-    default_message_notifications: UserNotificationSettings;
-    explicit_content_filter: GuildExplicitContentFilterTypes;
-    preferred_locale: AvailableLocalesEnum;
-    afk_channel_id?: null | SnowflakeType;
-    afk_timeout: AfkTimeouts;
-    system_channel_id?: null | SnowflakeType;
-    system_channel_flags: number;
-    roles: Array<GuildTemplateRoleResponse>;
-    channels: Array<GuildTemplateChannelResponse>;
+  name: string;
+  description?: string | null;
+  region?: string | null;
+  verification_level: VerificationLevels;
+  default_message_notifications: UserNotificationSettings;
+  explicit_content_filter: GuildExplicitContentFilterTypes;
+  preferred_locale: AvailableLocalesEnum;
+  afk_channel_id?: null | SnowflakeType;
+  afk_timeout: AfkTimeouts;
+  system_channel_id?: null | SnowflakeType;
+  system_channel_flags: number;
+  roles: Array<GuildTemplateRoleResponse>;
+  channels: Array<GuildTemplateChannelResponse>;
 };
 
 export type GuildTemplateChannelTags = {
-    id?: number | null;
-    name: string;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
-    moderated?: boolean | null;
+  id?: number | null;
+  name: string;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
+  moderated?: boolean | null;
 };
 
 export type GuildTemplateChannelResponse = {
-    id?: number | null;
-    type: 0 | 2 | 4 | 15;
-    name?: string | null;
-    position?: number | null;
-    topic?: string | null;
-    bitrate: number;
-    user_limit: number;
-    nsfw: boolean;
-    rate_limit_per_user: number;
-    parent_id?: null | SnowflakeType;
-    default_auto_archive_duration?: null | ThreadAutoArchiveDuration;
-    permission_overwrites: Array<null | ChannelPermissionOverwriteResponse>;
-    available_tags?: Array<GuildTemplateChannelTags> | null;
-    template: string;
-    default_reaction_emoji?: null | DefaultReactionEmojiResponse;
-    default_thread_rate_limit_per_user?: number | null;
-    default_sort_order?: null | ThreadSortOrder;
-    default_forum_layout?: null | ForumLayout;
-    default_tag_setting?: null | ThreadSearchTagSetting;
-    icon_emoji?: null | IconEmojiResponse;
-    theme_color?: number | null;
+  id?: number | null;
+  type: 0 | 2 | 4 | 15;
+  name?: string | null;
+  position?: number | null;
+  topic?: string | null;
+  bitrate: number;
+  user_limit: number;
+  nsfw: boolean;
+  rate_limit_per_user: number;
+  parent_id?: null | SnowflakeType;
+  default_auto_archive_duration?: null | ThreadAutoArchiveDuration;
+  permission_overwrites: Array<null | ChannelPermissionOverwriteResponse>;
+  available_tags?: Array<GuildTemplateChannelTags> | null;
+  template: string;
+  default_reaction_emoji?: null | DefaultReactionEmojiResponse;
+  default_thread_rate_limit_per_user?: number | null;
+  default_sort_order?: null | ThreadSortOrder;
+  default_forum_layout?: null | ForumLayout;
+  default_tag_setting?: null | ThreadSearchTagSetting;
+  icon_emoji?: null | IconEmojiResponse;
+  theme_color?: number | null;
 };
 
 export type GuildTemplateRoleResponse = {
-    id: number;
-    name: string;
-    permissions: string;
-    color: number;
-    hoist: boolean;
-    mentionable: boolean;
-    icon?: string | null;
-    unicode_emoji?: string | null;
+  id: number;
+  name: string;
+  permissions: string;
+  color: number;
+  hoist: boolean;
+  mentionable: boolean;
+  icon?: string | null;
+  unicode_emoji?: string | null;
 };
 
 export type GuildTemplateResponse = {
-    code: string;
-    name: string;
-    description?: string | null;
-    usage_count: number;
-    creator_id: SnowflakeType;
-    creator?: null | UserResponse;
-    created_at: string;
-    updated_at: string;
-    source_guild_id: SnowflakeType;
-    serialized_source_guild: GuildTemplateSnapshotResponse;
-    is_dirty?: boolean | null;
+  code: string;
+  name: string;
+  description?: string | null;
+  usage_count: number;
+  creator_id: SnowflakeType;
+  creator?: null | UserResponse;
+  created_at: string;
+  updated_at: string;
+  source_guild_id: SnowflakeType;
+  serialized_source_guild: GuildTemplateSnapshotResponse;
+  is_dirty?: boolean | null;
 };
 
 export type GuildSubscriptionIntegrationResponse = {
-    type: 'guild_subscription';
-    name?: string | null;
-    account: AccountResponse;
-    enabled: boolean;
-    id: SnowflakeType;
+  type: "guild_subscription";
+  name?: string | null;
+  account: AccountResponse;
+  enabled: boolean;
+  id: SnowflakeType;
 };
 
 export type GuildResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description?: string | null;
-    home_header?: string | null;
-    splash?: string | null;
-    discovery_splash?: string | null;
-    features: Array<GuildFeatures>;
-    banner?: string | null;
-    owner_id: SnowflakeType;
-    application_id?: null | SnowflakeType;
-    region: string;
-    afk_channel_id?: null | SnowflakeType;
-    afk_timeout: AfkTimeouts;
-    system_channel_id?: null | SnowflakeType;
-    system_channel_flags: number;
-    widget_enabled: boolean;
-    widget_channel_id?: null | SnowflakeType;
-    verification_level: VerificationLevels;
-    roles: Array<GuildRoleResponse>;
-    default_message_notifications: UserNotificationSettings;
-    mfa_level: GuildMfaLevel;
-    explicit_content_filter: GuildExplicitContentFilterTypes;
-    max_presences?: number | null;
-    max_members: number;
-    max_stage_video_channel_users: number;
-    max_video_channel_users: number;
-    vanity_url_code?: string | null;
-    premium_tier: PremiumGuildTiers;
-    premium_subscription_count: number;
-    preferred_locale: AvailableLocalesEnum;
-    rules_channel_id?: null | SnowflakeType;
-    safety_alerts_channel_id?: null | SnowflakeType;
-    public_updates_channel_id?: null | SnowflakeType;
-    premium_progress_bar_enabled: boolean;
-    nsfw: boolean;
-    nsfw_level: GuildNsfwContentLevel;
-    emojis: Array<EmojiResponse>;
-    stickers: Array<GuildStickerResponse>;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description?: string | null;
+  home_header?: string | null;
+  splash?: string | null;
+  discovery_splash?: string | null;
+  features: Array<GuildFeatures>;
+  banner?: string | null;
+  owner_id: SnowflakeType;
+  application_id?: null | SnowflakeType;
+  region: string;
+  afk_channel_id?: null | SnowflakeType;
+  afk_timeout: AfkTimeouts;
+  system_channel_id?: null | SnowflakeType;
+  system_channel_flags: number;
+  widget_enabled: boolean;
+  widget_channel_id?: null | SnowflakeType;
+  verification_level: VerificationLevels;
+  roles: Array<GuildRoleResponse>;
+  default_message_notifications: UserNotificationSettings;
+  mfa_level: GuildMfaLevel;
+  explicit_content_filter: GuildExplicitContentFilterTypes;
+  max_presences?: number | null;
+  max_members: number;
+  max_stage_video_channel_users: number;
+  max_video_channel_users: number;
+  vanity_url_code?: string | null;
+  premium_tier: PremiumGuildTiers;
+  premium_subscription_count: number;
+  preferred_locale: AvailableLocalesEnum;
+  rules_channel_id?: null | SnowflakeType;
+  safety_alerts_channel_id?: null | SnowflakeType;
+  public_updates_channel_id?: null | SnowflakeType;
+  premium_progress_bar_enabled: boolean;
+  nsfw: boolean;
+  nsfw_level: GuildNsfwContentLevel;
+  emojis: Array<EmojiResponse>;
+  stickers: Array<GuildStickerResponse>;
 };
 
 export type GuildPruneResponse = {
-    pruned?: number | null;
+  pruned?: number | null;
 };
 
 export type GuildPreviewResponse = {
-    id: SnowflakeType;
-    name: string;
-    icon?: string | null;
-    description?: string | null;
-    home_header?: string | null;
-    splash?: string | null;
-    discovery_splash?: string | null;
-    features: Array<GuildFeatures>;
-    approximate_member_count: number;
-    approximate_presence_count: number;
-    emojis: Array<EmojiResponse>;
-    stickers: Array<GuildStickerResponse>;
+  id: SnowflakeType;
+  name: string;
+  icon?: string | null;
+  description?: string | null;
+  home_header?: string | null;
+  splash?: string | null;
+  discovery_splash?: string | null;
+  features: Array<GuildFeatures>;
+  approximate_member_count: number;
+  approximate_presence_count: number;
+  emojis: Array<EmojiResponse>;
+  stickers: Array<GuildStickerResponse>;
 };
 
 export type GuildPatchRequestPartial = {
-    name?: string;
-    description?: string | null;
-    region?: string | null;
-    icon?: string | null;
-    verification_level?: null | VerificationLevels;
-    default_message_notifications?: null | UserNotificationSettings;
-    explicit_content_filter?: null | GuildExplicitContentFilterTypes;
-    preferred_locale?: null | AvailableLocalesEnum;
-    afk_timeout?: null | AfkTimeouts;
-    afk_channel_id?: null | SnowflakeType;
-    system_channel_id?: null | SnowflakeType;
-    owner_id?: SnowflakeType;
-    splash?: string | null;
-    banner?: string | null;
-    system_channel_flags?: number | null;
-    features?: Array<string | null> | null;
-    discovery_splash?: string | null;
-    home_header?: string | null;
-    rules_channel_id?: null | SnowflakeType;
-    safety_alerts_channel_id?: null | SnowflakeType;
-    public_updates_channel_id?: null | SnowflakeType;
-    premium_progress_bar_enabled?: boolean | null;
+  name?: string;
+  description?: string | null;
+  region?: string | null;
+  icon?: string | null;
+  verification_level?: null | VerificationLevels;
+  default_message_notifications?: null | UserNotificationSettings;
+  explicit_content_filter?: null | GuildExplicitContentFilterTypes;
+  preferred_locale?: null | AvailableLocalesEnum;
+  afk_timeout?: null | AfkTimeouts;
+  afk_channel_id?: null | SnowflakeType;
+  system_channel_id?: null | SnowflakeType;
+  owner_id?: SnowflakeType;
+  splash?: string | null;
+  banner?: string | null;
+  system_channel_flags?: number | null;
+  features?: Array<string | null> | null;
+  discovery_splash?: string | null;
+  home_header?: string | null;
+  rules_channel_id?: null | SnowflakeType;
+  safety_alerts_channel_id?: null | SnowflakeType;
+  public_updates_channel_id?: null | SnowflakeType;
+  premium_progress_bar_enabled?: boolean | null;
 };
 
 export type GuildOnboardingResponse = {
-    guild_id: SnowflakeType;
-    prompts: Array<OnboardingPromptResponse>;
-    default_channel_ids: Array<SnowflakeType>;
-    enabled: boolean;
+  guild_id: SnowflakeType;
+  prompts: Array<OnboardingPromptResponse>;
+  default_channel_ids: Array<SnowflakeType>;
+  enabled: boolean;
 };
 
 export type GuildMfaRequest = {
-    level: GuildMfaLevel;
+  level: GuildMfaLevel;
 };
 
 export type GuildMfaLevelResponse = {
-    level: GuildMfaLevel;
+  level: GuildMfaLevel;
 };
 
 export type GuildInviteResponse = {
-    type: 0;
-    code: string;
-    inviter?: UserResponse;
-    max_age?: number;
-    created_at?: string;
-    expires_at?: string | null;
-    is_contact?: boolean;
-    flags?: number;
-    guild: InviteGuildResponse;
-    guild_id: SnowflakeType;
-    channel: InviteChannelResponse;
-    target_type?: InviteTargetTypes;
-    target_user?: UserResponse;
-    target_application?: InviteApplicationResponse;
-    guild_scheduled_event?: ScheduledEventResponse;
-    uses?: number;
-    max_uses?: number;
-    temporary?: boolean;
-    approximate_member_count?: number | null;
-    approximate_presence_count?: number | null;
-    is_nickname_changeable?: boolean;
+  type: 0;
+  code: string;
+  inviter?: UserResponse;
+  max_age?: number;
+  created_at?: string;
+  expires_at?: string | null;
+  is_contact?: boolean;
+  flags?: number;
+  guild: InviteGuildResponse;
+  guild_id: SnowflakeType;
+  channel: InviteChannelResponse;
+  target_type?: InviteTargetTypes;
+  target_user?: UserResponse;
+  target_application?: InviteApplicationResponse;
+  guild_scheduled_event?: ScheduledEventResponse;
+  uses?: number;
+  max_uses?: number;
+  temporary?: boolean;
+  approximate_member_count?: number | null;
+  approximate_presence_count?: number | null;
+  is_nickname_changeable?: boolean;
 };
 
 export type GuildIncomingWebhookResponse = {
-    application_id?: null | SnowflakeType;
-    avatar?: string | null;
-    channel_id?: null | SnowflakeType;
-    guild_id?: null | SnowflakeType;
-    id: SnowflakeType;
-    name: string;
-    type: 1;
-    user?: UserResponse;
-    token?: string;
-    url?: string;
+  application_id?: null | SnowflakeType;
+  avatar?: string | null;
+  channel_id?: null | SnowflakeType;
+  guild_id?: null | SnowflakeType;
+  id: SnowflakeType;
+  name: string;
+  type: 1;
+  user?: UserResponse;
+  token?: string;
+  url?: string;
 };
 
 export type GuildHomeSettingsResponse = {
-    guild_id: SnowflakeType;
-    enabled: boolean;
-    welcome_message?: WelcomeMessageResponse;
-    new_member_actions: Array<null | NewMemberActionResponse>;
-    resource_channels: Array<null | ResourceChannelResponse>;
+  guild_id: SnowflakeType;
+  enabled: boolean;
+  welcome_message?: WelcomeMessageResponse;
+  new_member_actions: Array<null | NewMemberActionResponse>;
+  resource_channels: Array<null | ResourceChannelResponse>;
 };
 
 export type GuildBanResponse = {
-    user: UserResponse;
-    reason?: string | null;
+  user: UserResponse;
+  reason?: string | null;
 };
 
 export type GuildAuditLogResponse = {
-    audit_log_entries: Array<AuditLogEntryResponse>;
-    users: Array<UserResponse>;
-    integrations: Array<PartialDiscordIntegrationResponse | PartialExternalConnectionIntegrationResponse | PartialGuildSubscriptionIntegrationResponse>;
-    webhooks: Array<ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse>;
-    guild_scheduled_events: Array<ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse>;
-    threads: Array<ThreadResponse>;
-    application_commands: Array<ApplicationCommandResponse>;
-    auto_moderation_rules: Array<DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse | null>;
+  audit_log_entries: Array<AuditLogEntryResponse>;
+  users: Array<UserResponse>;
+  integrations: Array<PartialDiscordIntegrationResponse | PartialExternalConnectionIntegrationResponse | PartialGuildSubscriptionIntegrationResponse>;
+  webhooks: Array<ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse>;
+  guild_scheduled_events: Array<ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse>;
+  threads: Array<ThreadResponse>;
+  application_commands: Array<ApplicationCommandResponse>;
+  auto_moderation_rules: Array<DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse | null>;
 };
 
 export type AutomodKeywordPresetType = 1 | 2 | 3;
 
 export type DefaultKeywordListTriggerMetadataResponse = {
-    allow_list: Array<string>;
-    presets: Array<AutomodKeywordPresetType>;
+  allow_list: Array<string>;
+  presets: Array<AutomodKeywordPresetType>;
 };
 
 export type DefaultKeywordRuleResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    creator_id: SnowflakeType;
-    name: string;
-    event_type: AutomodEventType;
-    actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
-    trigger_type: 4;
-    enabled: boolean;
-    exempt_roles: Array<SnowflakeType>;
-    exempt_channels: Array<SnowflakeType>;
-    trigger_metadata: DefaultKeywordListTriggerMetadataResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  creator_id: SnowflakeType;
+  name: string;
+  event_type: AutomodEventType;
+  actions: Array<BlockMessageActionResponse | FlagToChannelActionResponse | QuarantineUserActionResponse | UserCommunicationDisabledActionResponse>;
+  trigger_type: 4;
+  enabled: boolean;
+  exempt_roles: Array<SnowflakeType>;
+  exempt_channels: Array<SnowflakeType>;
+  trigger_metadata: DefaultKeywordListTriggerMetadataResponse;
 };
 
 export type ApplicationCommandUserOptionResponse = {
-    type: 6;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
+  type: 6;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
 };
 
 export type ApplicationCommandOptionType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 
 export type ApplicationCommandSubcommandOptionResponse = {
-    type: 1;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
-    options?: Array<ApplicationCommandAttachmentOptionResponse | ApplicationCommandBooleanOptionResponse | ApplicationCommandChannelOptionResponse | ApplicationCommandIntegerOptionResponse | ApplicationCommandMentionableOptionResponse | ApplicationCommandNumberOptionResponse | ApplicationCommandRoleOptionResponse | ApplicationCommandStringOptionResponse | ApplicationCommandUserOptionResponse>;
+  type: 1;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
+  options?: Array<ApplicationCommandAttachmentOptionResponse | ApplicationCommandBooleanOptionResponse | ApplicationCommandChannelOptionResponse | ApplicationCommandIntegerOptionResponse | ApplicationCommandMentionableOptionResponse | ApplicationCommandNumberOptionResponse | ApplicationCommandRoleOptionResponse | ApplicationCommandStringOptionResponse | ApplicationCommandUserOptionResponse>;
 };
 
 export type ApplicationCommandOptionStringChoiceResponse = {
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    value: string;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  value: string;
 };
 
 export type ApplicationCommandStringOptionResponse = {
-    type: 3;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
-    autocomplete?: boolean;
-    choices?: Array<ApplicationCommandOptionStringChoiceResponse>;
-    min_length?: number;
-    max_length?: number;
+  type: 3;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
+  autocomplete?: boolean;
+  choices?: Array<ApplicationCommandOptionStringChoiceResponse>;
+  min_length?: number;
+  max_length?: number;
 };
 
 export type ApplicationCommandRoleOptionResponse = {
-    type: 8;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
+  type: 8;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
 };
 
 export type ApplicationCommandOptionNumberChoiceResponse = {
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    value: number;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  value: number;
 };
 
 export type ApplicationCommandNumberOptionResponse = {
-    type: 10;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
-    autocomplete?: boolean;
-    choices?: Array<ApplicationCommandOptionNumberChoiceResponse>;
-    min_value?: number;
-    max_value?: number;
+  type: 10;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
+  autocomplete?: boolean;
+  choices?: Array<ApplicationCommandOptionNumberChoiceResponse>;
+  min_value?: number;
+  max_value?: number;
 };
 
 export type ApplicationCommandMentionableOptionResponse = {
-    type: 9;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
+  type: 9;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
 };
 
 export type ApplicationCommandOptionIntegerChoiceResponse = {
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    value: Int53Type;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  value: Int53Type;
 };
 
 export type ApplicationCommandIntegerOptionResponse = {
-    type: 4;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
-    autocomplete?: boolean;
-    choices?: Array<ApplicationCommandOptionIntegerChoiceResponse>;
-    min_value?: Int53Type;
-    max_value?: Int53Type;
+  type: 4;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
+  autocomplete?: boolean;
+  choices?: Array<ApplicationCommandOptionIntegerChoiceResponse>;
+  min_value?: Int53Type;
+  max_value?: Int53Type;
 };
 
 export type ApplicationCommandChannelOptionResponse = {
-    type: 7;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
-    channel_types?: Array<ChannelTypes>;
+  type: 7;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
+  channel_types?: Array<ChannelTypes>;
 };
 
 export type ApplicationCommandBooleanOptionResponse = {
-    type: 5;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
+  type: 5;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
 };
 
 export type ApplicationCommandAttachmentOptionResponse = {
-    type: 11;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
+  type: 11;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
 };
 
 export type ApplicationCommandSubcommandGroupOptionResponse = {
-    type: 2;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    required?: boolean;
-    options?: Array<ApplicationCommandSubcommandOptionResponse>;
+  type: 2;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  required?: boolean;
+  options?: Array<ApplicationCommandSubcommandOptionResponse>;
 };
 
 export type ApplicationIntegrationType = 0 | 1;
@@ -2265,2964 +2397,3037 @@ export type ApplicationIntegrationType = 0 | 1;
 export type ApplicationCommandType = 1 | 2 | 3 | 4;
 
 export type ApplicationCommandResponse = {
-    id: SnowflakeType;
-    application_id: SnowflakeType;
-    version: SnowflakeType;
-    default_member_permissions?: string | null;
-    type: ApplicationCommandType;
-    name: string;
-    name_localized?: string;
-    name_localizations?: {
-        [key: string]: string;
-    } | null;
-    description: string;
-    description_localized?: string;
-    description_localizations?: {
-        [key: string]: string;
-    } | null;
-    guild_id?: SnowflakeType;
-    dm_permission?: boolean;
-    contexts?: Array<InteractionContextType> | null;
-    integration_types?: Array<ApplicationIntegrationType>;
-    options?: Array<ApplicationCommandAttachmentOptionResponse | ApplicationCommandBooleanOptionResponse | ApplicationCommandChannelOptionResponse | ApplicationCommandIntegerOptionResponse | ApplicationCommandMentionableOptionResponse | ApplicationCommandNumberOptionResponse | ApplicationCommandRoleOptionResponse | ApplicationCommandStringOptionResponse | ApplicationCommandSubcommandGroupOptionResponse | ApplicationCommandSubcommandOptionResponse | ApplicationCommandUserOptionResponse>;
-    nsfw?: boolean;
+  id: SnowflakeType;
+  application_id: SnowflakeType;
+  version: SnowflakeType;
+  default_member_permissions?: string | null;
+  type: ApplicationCommandType;
+  name: string;
+  name_localized?: string;
+  name_localizations?: {
+    [key: string]: string;
+  } | null;
+  description: string;
+  description_localized?: string;
+  description_localizations?: {
+    [key: string]: string;
+  } | null;
+  guild_id?: SnowflakeType;
+  dm_permission?: boolean;
+  contexts?: Array<InteractionContextType> | null;
+  integration_types?: Array<ApplicationIntegrationType>;
+  options?: Array<ApplicationCommandAttachmentOptionResponse | ApplicationCommandBooleanOptionResponse | ApplicationCommandChannelOptionResponse | ApplicationCommandIntegerOptionResponse | ApplicationCommandMentionableOptionResponse | ApplicationCommandNumberOptionResponse | ApplicationCommandRoleOptionResponse | ApplicationCommandStringOptionResponse | ApplicationCommandSubcommandGroupOptionResponse | ApplicationCommandSubcommandOptionResponse | ApplicationCommandUserOptionResponse>;
+  nsfw?: boolean;
 };
 
 export type EntityMetadataExternalResponse = {
-    location: string;
+  location: string;
 };
 
 export type ExternalScheduledEventResponse = {
-    id: SnowflakeType;
-    guild_id: SnowflakeType;
-    name: string;
-    description?: string | null;
-    channel_id?: null | SnowflakeType;
-    creator_id?: null | SnowflakeType;
-    creator?: UserResponse;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    status: GuildScheduledEventStatuses;
-    entity_type: 3;
-    entity_id?: null | SnowflakeType;
-    user_count?: number;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    user_rsvp?: null | ScheduledEventUserResponse;
-    entity_metadata: EntityMetadataExternalResponse;
+  id: SnowflakeType;
+  guild_id: SnowflakeType;
+  name: string;
+  description?: string | null;
+  channel_id?: null | SnowflakeType;
+  creator_id?: null | SnowflakeType;
+  creator?: UserResponse;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  status: GuildScheduledEventStatuses;
+  entity_type: 3;
+  entity_id?: null | SnowflakeType;
+  user_count?: number;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  user_rsvp?: null | ScheduledEventUserResponse;
+  entity_metadata: EntityMetadataExternalResponse;
 };
 
 export type ChannelFollowerWebhookResponse = {
-    application_id?: null | SnowflakeType;
-    avatar?: string | null;
-    channel_id?: null | SnowflakeType;
-    guild_id?: null | SnowflakeType;
-    id: SnowflakeType;
-    name: string;
-    type: 2;
-    user?: UserResponse;
-    source_guild?: WebhookSourceGuildResponse;
-    source_channel?: WebhookSourceChannelResponse;
+  application_id?: null | SnowflakeType;
+  avatar?: string | null;
+  channel_id?: null | SnowflakeType;
+  guild_id?: null | SnowflakeType;
+  id: SnowflakeType;
+  name: string;
+  type: 2;
+  user?: UserResponse;
+  source_guild?: WebhookSourceGuildResponse;
+  source_channel?: WebhookSourceChannelResponse;
 };
 
 export type ApplicationIncomingWebhookResponse = {
-    application_id?: null | SnowflakeType;
-    avatar?: string | null;
-    channel_id?: null | SnowflakeType;
-    guild_id?: null | SnowflakeType;
-    id: SnowflakeType;
-    name: string;
-    type: 3;
-    user?: UserResponse;
+  application_id?: null | SnowflakeType;
+  avatar?: string | null;
+  channel_id?: null | SnowflakeType;
+  guild_id?: null | SnowflakeType;
+  id: SnowflakeType;
+  name: string;
+  type: 3;
+  user?: UserResponse;
 };
 
 export type AuditLogObjectChangeResponse = {
-    key?: string | null;
-    new_value?: unknown;
-    old_value?: unknown;
+  key?: string | null;
+  new_value?: unknown;
+  old_value?: unknown;
 };
 
-export type AuditLogActionTypes = 1 | 10 | 11 | 12 | 13 | 14 | 15 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 30 | 31 | 32 | 40 | 41 | 42 | 50 | 51 | 52 | 60 | 61 | 62 | 72 | 73 | 74 | 75 | 80 | 81 | 82 | 83 | 84 | 85 | 90 | 91 | 92 | 100 | 101 | 102 | 110 | 111 | 112 | 121 | 130 | 131 | 132 | 140 | 141 | 142 | 143 | 144 | 145 | 146 | 150 | 151 | 163 | 164 | 165 | 166 | 167 | 171 | 172 | 180 | 190 | 191 | 192 | 193 | 211;
+export type AuditLogActionTypes =
+  1
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 20
+  | 21
+  | 22
+  | 23
+  | 24
+  | 25
+  | 26
+  | 27
+  | 28
+  | 30
+  | 31
+  | 32
+  | 40
+  | 41
+  | 42
+  | 50
+  | 51
+  | 52
+  | 60
+  | 61
+  | 62
+  | 72
+  | 73
+  | 74
+  | 75
+  | 80
+  | 81
+  | 82
+  | 83
+  | 84
+  | 85
+  | 90
+  | 91
+  | 92
+  | 100
+  | 101
+  | 102
+  | 110
+  | 111
+  | 112
+  | 121
+  | 130
+  | 131
+  | 132
+  | 140
+  | 141
+  | 142
+  | 143
+  | 144
+  | 145
+  | 146
+  | 150
+  | 151
+  | 163
+  | 164
+  | 165
+  | 166
+  | 167
+  | 171
+  | 172
+  | 180
+  | 190
+  | 191
+  | 192
+  | 193
+  | 211;
 
 export type AuditLogEntryResponse = {
-    id: SnowflakeType;
-    action_type: AuditLogActionTypes;
-    user_id?: null | SnowflakeType;
-    target_id?: null | SnowflakeType;
-    changes?: Array<AuditLogObjectChangeResponse>;
-    options?: {
-        [key: string]: string;
-    };
-    reason?: string;
+  id: SnowflakeType;
+  action_type: AuditLogActionTypes;
+  user_id?: null | SnowflakeType;
+  target_id?: null | SnowflakeType;
+  changes?: Array<AuditLogObjectChangeResponse>;
+  options?: {
+    [key: string]: string;
+  };
+  reason?: string;
 };
 
 export type GroupDmInviteResponse = {
-    type: 1;
-    code: string;
-    inviter?: UserResponse;
-    max_age?: number;
-    created_at?: string;
-    expires_at?: string | null;
-    channel: InviteChannelResponse;
-    approximate_member_count?: number | null;
+  type: 1;
+  code: string;
+  inviter?: UserResponse;
+  max_age?: number;
+  created_at?: string;
+  expires_at?: string | null;
+  channel: InviteChannelResponse;
+  approximate_member_count?: number | null;
 };
 
 export type FriendInviteResponse = {
-    type: 2;
-    code: string;
-    inviter?: UserResponse;
-    max_age?: number;
-    created_at?: string;
-    expires_at?: string | null;
-    friends_count?: number;
-    channel?: null | InviteChannelResponse;
-    is_contact?: boolean;
-    uses?: number;
-    max_uses?: number;
-    flags?: number;
+  type: 2;
+  code: string;
+  inviter?: UserResponse;
+  max_age?: number;
+  created_at?: string;
+  expires_at?: string | null;
+  friends_count?: number;
+  channel?: null | InviteChannelResponse;
+  is_contact?: boolean;
+  uses?: number;
+  max_uses?: number;
+  flags?: number;
 };
 
 export type ExternalScheduledEventPatchRequestPartial = {
-    status?: null | GuildScheduledEventStatuses;
-    name?: string;
-    description?: string | null;
-    image?: string | null;
-    scheduled_start_time?: string;
-    scheduled_end_time?: string | null;
-    entity_type?: null | 3;
-    privacy_level?: GuildScheduledEventPrivacyLevels;
-    channel_id?: null | SnowflakeType;
-    entity_metadata?: EntityMetadataExternal;
+  status?: null | GuildScheduledEventStatuses;
+  name?: string;
+  description?: string | null;
+  image?: string | null;
+  scheduled_start_time?: string;
+  scheduled_end_time?: string | null;
+  entity_type?: null | 3;
+  privacy_level?: GuildScheduledEventPrivacyLevels;
+  channel_id?: null | SnowflakeType;
+  entity_metadata?: EntityMetadataExternal;
 };
 
 export type EntityMetadataExternal = {
-    location: string;
+  location: string;
 };
 
 export type ExternalScheduledEventCreateRequest = {
-    name: string;
-    description?: string | null;
-    image?: string | null;
-    scheduled_start_time: string;
-    scheduled_end_time?: string | null;
-    privacy_level: GuildScheduledEventPrivacyLevels;
-    entity_type: 3;
-    channel_id?: null | SnowflakeType;
-    entity_metadata: EntityMetadataExternal;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  scheduled_start_time: string;
+  scheduled_end_time?: string | null;
+  privacy_level: GuildScheduledEventPrivacyLevels;
+  entity_type: 3;
+  channel_id?: null | SnowflakeType;
+  entity_metadata: EntityMetadataExternal;
 };
 
 export type ExternalConnectionIntegrationResponse = {
-    type: 'twitch' | 'youtube';
-    name?: string | null;
-    account: AccountResponse;
-    enabled: boolean;
-    id: string;
-    user: UserResponse;
-    revoked?: boolean;
-    expire_behavior?: IntegrationExpireBehaviorTypes;
-    expire_grace_period?: IntegrationExpireGracePeriodTypes;
-    subscriber_count?: number;
-    synced_at?: string;
-    role_id?: null | SnowflakeType;
-    syncing?: boolean;
-    enable_emoticons?: boolean;
+  type: "twitch" | "youtube";
+  name?: string | null;
+  account: AccountResponse;
+  enabled: boolean;
+  id: string;
+  user: UserResponse;
+  revoked?: boolean;
+  expire_behavior?: IntegrationExpireBehaviorTypes;
+  expire_grace_period?: IntegrationExpireGracePeriodTypes;
+  subscriber_count?: number;
+  synced_at?: string;
+  role_id?: null | SnowflakeType;
+  syncing?: boolean;
+  enable_emoticons?: boolean;
 };
 
 export type DiscordIntegrationResponse = {
-    type: 'discord';
-    name?: string | null;
-    account: AccountResponse;
-    enabled: boolean;
-    id: SnowflakeType;
-    application: IntegrationApplicationResponse;
-    scopes: Array<'applications.commands' | 'bot' | 'webhook.incoming'>;
-    user?: UserResponse;
+  type: "discord";
+  name?: string | null;
+  account: AccountResponse;
+  enabled: boolean;
+  id: SnowflakeType;
+  application: IntegrationApplicationResponse;
+  scopes: Array<"applications.commands" | "bot" | "webhook.incoming">;
+  user?: UserResponse;
 };
 
 export type DefaultKeywordListUpsertRequestPartial = {
-    name?: string;
-    event_type?: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type?: 4;
-    trigger_metadata?: DefaultKeywordListTriggerMetadata;
+  name?: string;
+  event_type?: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type?: 4;
+  trigger_metadata?: DefaultKeywordListTriggerMetadata;
 };
 
 export type DefaultKeywordListTriggerMetadata = {
-    allow_list?: Array<string> | null;
-    presets?: Array<AutomodKeywordPresetType> | null;
+  allow_list?: Array<string> | null;
+  presets?: Array<AutomodKeywordPresetType> | null;
 };
 
 export type DefaultKeywordListUpsertRequest = {
-    name: string;
-    event_type: AutomodEventType;
-    actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
-    enabled?: boolean | null;
-    exempt_roles?: Array<SnowflakeType> | null;
-    exempt_channels?: Array<SnowflakeType> | null;
-    trigger_type: 4;
-    trigger_metadata: DefaultKeywordListTriggerMetadata;
+  name: string;
+  event_type: AutomodEventType;
+  actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
+  enabled?: boolean | null;
+  exempt_roles?: Array<SnowflakeType> | null;
+  exempt_channels?: Array<SnowflakeType> | null;
+  trigger_type: 4;
+  trigger_metadata: DefaultKeywordListTriggerMetadata;
 };
 
 export type CreateRoleRequest = {
-    name?: string | null;
-    permissions?: number | null;
-    color?: number | null;
-    hoist?: boolean | null;
-    mentionable?: boolean | null;
-    icon?: string | null;
-    unicode_emoji?: string | null;
+  name?: string | null;
+  permissions?: number | null;
+  color?: number | null;
+  hoist?: boolean | null;
+  mentionable?: boolean | null;
+  icon?: string | null;
+  unicode_emoji?: string | null;
 };
 
 export type CreateOrUpdateThreadTagRequest = {
-    name: string;
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
-    moderated?: boolean | null;
+  name: string;
+  emoji_id?: null | SnowflakeType;
+  emoji_name?: string | null;
+  moderated?: boolean | null;
 };
 
 export type CreateGuildChannelRequest = {
-    type?: null | 0 | 2 | 4 | 5 | 13 | 14 | 15;
-    name: string;
-    position?: number | null;
-    topic?: string | null;
-    bitrate?: number | null;
-    user_limit?: number | null;
-    nsfw?: boolean | null;
-    rate_limit_per_user?: number | null;
-    parent_id?: null | SnowflakeType;
-    permission_overwrites?: Array<ChannelPermissionOverwriteRequest> | null;
-    rtc_region?: string | null;
-    video_quality_mode?: null | VideoQualityModes;
-    default_auto_archive_duration?: null | ThreadAutoArchiveDuration;
-    default_reaction_emoji?: null | UpdateDefaultReactionEmojiRequest;
-    default_thread_rate_limit_per_user?: number | null;
-    default_sort_order?: null | ThreadSortOrder;
-    default_forum_layout?: null | ForumLayout;
-    default_tag_setting?: null | ThreadSearchTagSetting;
-    available_tags?: Array<null | CreateOrUpdateThreadTagRequest> | null;
+  type?: null | 0 | 2 | 4 | 5 | 13 | 14 | 15;
+  name: string;
+  position?: number | null;
+  topic?: string | null;
+  bitrate?: number | null;
+  user_limit?: number | null;
+  nsfw?: boolean | null;
+  rate_limit_per_user?: number | null;
+  parent_id?: null | SnowflakeType;
+  permission_overwrites?: Array<ChannelPermissionOverwriteRequest> | null;
+  rtc_region?: string | null;
+  video_quality_mode?: null | VideoQualityModes;
+  default_auto_archive_duration?: null | ThreadAutoArchiveDuration;
+  default_reaction_emoji?: null | UpdateDefaultReactionEmojiRequest;
+  default_thread_rate_limit_per_user?: number | null;
+  default_sort_order?: null | ThreadSortOrder;
+  default_forum_layout?: null | ForumLayout;
+  default_tag_setting?: null | ThreadSearchTagSetting;
+  available_tags?: Array<null | CreateOrUpdateThreadTagRequest> | null;
 };
 
 export type BulkBanUsersResponse = {
-    banned_users: Array<SnowflakeType>;
-    failed_users: Array<SnowflakeType>;
+  banned_users: Array<SnowflakeType>;
+  failed_users: Array<SnowflakeType>;
 };
 
 export type BulkBanUsersRequest = {
-    user_ids: Array<SnowflakeType>;
-    delete_message_seconds?: number | null;
+  user_ids: Array<SnowflakeType>;
+  delete_message_seconds?: number | null;
 };
 
 export type BotAddGuildMemberRequest = {
-    nick?: string | null;
-    roles?: Array<SnowflakeType> | null;
-    mute?: boolean | null;
-    deaf?: boolean | null;
-    access_token: string;
-    flags?: number | null;
+  nick?: string | null;
+  roles?: Array<SnowflakeType> | null;
+  mute?: boolean | null;
+  deaf?: boolean | null;
+  access_token: string;
+  flags?: number | null;
 };
 
 export type BanUserFromGuildRequest = {
-    delete_message_seconds?: number | null;
-    delete_message_days?: number | null;
+  delete_message_seconds?: number | null;
+  delete_message_days?: number | null;
 };
 
 export type GetGuildTemplateData = {
-    body?: never;
-    path: {
-        code: string;
-    };
-    query?: never;
-    url: '/guilds/templates/{code}';
+  body?: never;
+  path: {
+    code: string;
+  };
+  query?: never;
+  url: "/guilds/templates/{code}";
 };
 
 export type GetGuildTemplateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildTemplateError = GetGuildTemplateErrors[keyof GetGuildTemplateErrors];
 
 export type GetGuildTemplateResponses = {
-    /**
-     * 200 response for get_guild_template
-     */
-    200: GuildTemplateResponse;
+  /**
+   * 200 response for get_guild_template
+   */
+  200: GuildTemplateResponse;
 };
 
 export type GetGuildTemplateResponse = GetGuildTemplateResponses[keyof GetGuildTemplateResponses];
 
 export type DeleteGuildData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}";
 };
 
 export type DeleteGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildError = DeleteGuildErrors[keyof DeleteGuildErrors];
 
 export type DeleteGuildResponses = {
-    /**
-     * 204 response for delete_guild
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild
+   */
+  204: void;
 };
 
 export type DeleteGuildResponse = DeleteGuildResponses[keyof DeleteGuildResponses];
 
 export type GetGuildData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        with_counts?: boolean;
-    };
-    url: '/guilds/{guild_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    with_counts?: boolean;
+  };
+  url: "/guilds/{guild_id}";
 };
 
 export type GetGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildError = GetGuildErrors[keyof GetGuildErrors];
 
 export type GetGuildResponses = {
-    /**
-     * 200 response for get_guild
-     */
-    200: GuildWithCountsResponse;
+  /**
+   * 200 response for get_guild
+   */
+  200: GuildWithCountsResponse;
 };
 
 export type GetGuildResponse = GetGuildResponses[keyof GetGuildResponses];
 
 export type UpdateGuildData = {
-    body: GuildPatchRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}';
+  body: GuildPatchRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}";
 };
 
 export type UpdateGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildError = UpdateGuildErrors[keyof UpdateGuildErrors];
 
 export type UpdateGuildResponses = {
-    /**
-     * 200 response for update_guild
-     */
-    200: GuildResponse;
+  /**
+   * 200 response for update_guild
+   */
+  200: GuildResponse;
 };
 
 export type UpdateGuildResponse = UpdateGuildResponses[keyof UpdateGuildResponses];
 
 export type ListGuildAuditLogEntriesData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        user_id?: SnowflakeType;
-        target_id?: SnowflakeType;
-        action_type?: AuditLogActionTypes;
-        before?: SnowflakeType;
-        after?: SnowflakeType;
-        limit?: number;
-    };
-    url: '/guilds/{guild_id}/audit-logs';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    user_id?: SnowflakeType;
+    target_id?: SnowflakeType;
+    action_type?: AuditLogActionTypes;
+    before?: SnowflakeType;
+    after?: SnowflakeType;
+    limit?: number;
+  };
+  url: "/guilds/{guild_id}/audit-logs";
 };
 
 export type ListGuildAuditLogEntriesErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildAuditLogEntriesError = ListGuildAuditLogEntriesErrors[keyof ListGuildAuditLogEntriesErrors];
 
 export type ListGuildAuditLogEntriesResponses = {
-    /**
-     * 200 response for list_guild_audit_log_entries
-     */
-    200: GuildAuditLogResponse;
+  /**
+   * 200 response for list_guild_audit_log_entries
+   */
+  200: GuildAuditLogResponse;
 };
 
 export type ListGuildAuditLogEntriesResponse = ListGuildAuditLogEntriesResponses[keyof ListGuildAuditLogEntriesResponses];
 
 export type ListAutoModerationRulesData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/auto-moderation/rules';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/auto-moderation/rules";
 };
 
 export type ListAutoModerationRulesErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListAutoModerationRulesError = ListAutoModerationRulesErrors[keyof ListAutoModerationRulesErrors];
 
 export type ListAutoModerationRulesResponses = {
-    /**
-     * 200 response for list_auto_moderation_rules
-     */
-    200: Array<DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse | null> | null;
+  /**
+   * 200 response for list_auto_moderation_rules
+   */
+  200: Array<DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse | null> | null;
 };
 
 export type ListAutoModerationRulesResponse = ListAutoModerationRulesResponses[keyof ListAutoModerationRulesResponses];
 
 export type CreateAutoModerationRuleData = {
-    body: DefaultKeywordListUpsertRequest | KeywordUpsertRequest | MlSpamUpsertRequest | MentionSpamUpsertRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/auto-moderation/rules';
+  body: DefaultKeywordListUpsertRequest | KeywordUpsertRequest | MlSpamUpsertRequest | MentionSpamUpsertRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/auto-moderation/rules";
 };
 
 export type CreateAutoModerationRuleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateAutoModerationRuleError = CreateAutoModerationRuleErrors[keyof CreateAutoModerationRuleErrors];
 
 export type CreateAutoModerationRuleResponses = {
-    /**
-     * 200 response for create_auto_moderation_rule
-     */
-    200: DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse;
+  /**
+   * 200 response for create_auto_moderation_rule
+   */
+  200: DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse;
 };
 
 export type CreateAutoModerationRuleResponse = CreateAutoModerationRuleResponses[keyof CreateAutoModerationRuleResponses];
 
 export type DeleteAutoModerationRuleData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        rule_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    rule_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/auto-moderation/rules/{rule_id}";
 };
 
 export type DeleteAutoModerationRuleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteAutoModerationRuleError = DeleteAutoModerationRuleErrors[keyof DeleteAutoModerationRuleErrors];
 
 export type DeleteAutoModerationRuleResponses = {
-    /**
-     * 204 response for delete_auto_moderation_rule
-     */
-    204: void;
+  /**
+   * 204 response for delete_auto_moderation_rule
+   */
+  204: void;
 };
 
 export type DeleteAutoModerationRuleResponse = DeleteAutoModerationRuleResponses[keyof DeleteAutoModerationRuleResponses];
 
 export type GetAutoModerationRuleData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        rule_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    rule_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/auto-moderation/rules/{rule_id}";
 };
 
 export type GetAutoModerationRuleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetAutoModerationRuleError = GetAutoModerationRuleErrors[keyof GetAutoModerationRuleErrors];
 
 export type GetAutoModerationRuleResponses = {
-    /**
-     * 200 response for get_auto_moderation_rule
-     */
-    200: DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse;
+  /**
+   * 200 response for get_auto_moderation_rule
+   */
+  200: DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse;
 };
 
 export type GetAutoModerationRuleResponse = GetAutoModerationRuleResponses[keyof GetAutoModerationRuleResponses];
 
 export type UpdateAutoModerationRuleData = {
-    body: DefaultKeywordListUpsertRequestPartial | KeywordUpsertRequestPartial | MlSpamUpsertRequestPartial | MentionSpamUpsertRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-        rule_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}';
+  body: DefaultKeywordListUpsertRequestPartial | KeywordUpsertRequestPartial | MlSpamUpsertRequestPartial | MentionSpamUpsertRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+    rule_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/auto-moderation/rules/{rule_id}";
 };
 
 export type UpdateAutoModerationRuleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateAutoModerationRuleError = UpdateAutoModerationRuleErrors[keyof UpdateAutoModerationRuleErrors];
 
 export type UpdateAutoModerationRuleResponses = {
-    /**
-     * 200 response for update_auto_moderation_rule
-     */
-    200: DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse;
+  /**
+   * 200 response for update_auto_moderation_rule
+   */
+  200: DefaultKeywordRuleResponse | KeywordRuleResponse | MlSpamRuleResponse | MentionSpamRuleResponse | SpamLinkRuleResponse;
 };
 
 export type UpdateAutoModerationRuleResponse = UpdateAutoModerationRuleResponses[keyof UpdateAutoModerationRuleResponses];
 
 export type ListGuildBansData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        limit?: number;
-        before?: SnowflakeType;
-        after?: SnowflakeType;
-    };
-    url: '/guilds/{guild_id}/bans';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    limit?: number;
+    before?: SnowflakeType;
+    after?: SnowflakeType;
+  };
+  url: "/guilds/{guild_id}/bans";
 };
 
 export type ListGuildBansErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildBansError = ListGuildBansErrors[keyof ListGuildBansErrors];
 
 export type ListGuildBansResponses = {
-    /**
-     * 200 response for list_guild_bans
-     */
-    200: Array<GuildBanResponse> | null;
+  /**
+   * 200 response for list_guild_bans
+   */
+  200: Array<GuildBanResponse> | null;
 };
 
 export type ListGuildBansResponse = ListGuildBansResponses[keyof ListGuildBansResponses];
 
 export type UnbanUserFromGuildData = {
-    body: UnbanUserFromGuildRequest;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/bans/{user_id}';
+  body: UnbanUserFromGuildRequest;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/bans/{user_id}";
 };
 
 export type UnbanUserFromGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UnbanUserFromGuildError = UnbanUserFromGuildErrors[keyof UnbanUserFromGuildErrors];
 
 export type UnbanUserFromGuildResponses = {
-    /**
-     * 204 response for unban_user_from_guild
-     */
-    204: void;
+  /**
+   * 204 response for unban_user_from_guild
+   */
+  204: void;
 };
 
 export type UnbanUserFromGuildResponse = UnbanUserFromGuildResponses[keyof UnbanUserFromGuildResponses];
 
 export type GetGuildBanData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/bans/{user_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/bans/{user_id}";
 };
 
 export type GetGuildBanErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildBanError = GetGuildBanErrors[keyof GetGuildBanErrors];
 
 export type GetGuildBanResponses = {
-    /**
-     * 200 response for get_guild_ban
-     */
-    200: GuildBanResponse;
+  /**
+   * 200 response for get_guild_ban
+   */
+  200: GuildBanResponse;
 };
 
 export type GetGuildBanResponse = GetGuildBanResponses[keyof GetGuildBanResponses];
 
 export type BanUserFromGuildData = {
-    body: BanUserFromGuildRequest;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/bans/{user_id}';
+  body: BanUserFromGuildRequest;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/bans/{user_id}";
 };
 
 export type BanUserFromGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type BanUserFromGuildError = BanUserFromGuildErrors[keyof BanUserFromGuildErrors];
 
 export type BanUserFromGuildResponses = {
-    /**
-     * 204 response for ban_user_from_guild
-     */
-    204: void;
+  /**
+   * 204 response for ban_user_from_guild
+   */
+  204: void;
 };
 
 export type BanUserFromGuildResponse = BanUserFromGuildResponses[keyof BanUserFromGuildResponses];
 
 export type BulkBanUsersFromGuildData = {
-    body: BulkBanUsersRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/bulk-ban';
+  body: BulkBanUsersRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/bulk-ban";
 };
 
 export type BulkBanUsersFromGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type BulkBanUsersFromGuildError = BulkBanUsersFromGuildErrors[keyof BulkBanUsersFromGuildErrors];
 
 export type BulkBanUsersFromGuildResponses = {
-    /**
-     * 200 response for bulk_ban_users_from_guild
-     */
-    200: BulkBanUsersResponse;
+  /**
+   * 200 response for bulk_ban_users_from_guild
+   */
+  200: BulkBanUsersResponse;
 };
 
 export type BulkBanUsersFromGuildResponse = BulkBanUsersFromGuildResponses[keyof BulkBanUsersFromGuildResponses];
 
 export type ListGuildChannelsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/channels';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/channels";
 };
 
 export type ListGuildChannelsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildChannelsError = ListGuildChannelsErrors[keyof ListGuildChannelsErrors];
 
 export type ListGuildChannelsResponses = {
-    /**
-     * 200 response for list_guild_channels
-     */
-    200: Array<GuildChannelResponse | PrivateChannelResponse | PrivateGroupChannelResponse | ThreadResponse> | null;
+  /**
+   * 200 response for list_guild_channels
+   */
+  200: Array<GuildChannelResponse | PrivateChannelResponse | PrivateGroupChannelResponse | ThreadResponse> | null;
 };
 
 export type ListGuildChannelsResponse = ListGuildChannelsResponses[keyof ListGuildChannelsResponses];
 
 export type BulkUpdateGuildChannelsData = {
-    body: Array<{
-        id?: null | SnowflakeType;
-        position?: number | null;
-        parent_id?: null | SnowflakeType;
-        lock_permissions?: boolean | null;
-    }>;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/channels';
+  body: Array<{
+    id?: null | SnowflakeType;
+    position?: number | null;
+    parent_id?: null | SnowflakeType;
+    lock_permissions?: boolean | null;
+  }>;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/channels";
 };
 
 export type BulkUpdateGuildChannelsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type BulkUpdateGuildChannelsError = BulkUpdateGuildChannelsErrors[keyof BulkUpdateGuildChannelsErrors];
 
 export type BulkUpdateGuildChannelsResponses = {
-    /**
-     * 204 response for bulk_update_guild_channels
-     */
-    204: void;
+  /**
+   * 204 response for bulk_update_guild_channels
+   */
+  204: void;
 };
 
 export type BulkUpdateGuildChannelsResponse = BulkUpdateGuildChannelsResponses[keyof BulkUpdateGuildChannelsResponses];
 
 export type CreateGuildChannelData = {
-    body: CreateGuildChannelRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/channels';
+  body: CreateGuildChannelRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/channels";
 };
 
 export type CreateGuildChannelErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildChannelError = CreateGuildChannelErrors[keyof CreateGuildChannelErrors];
 
 export type CreateGuildChannelResponses = {
-    /**
-     * 201 response for create_guild_channel
-     */
-    201: GuildChannelResponse;
+  /**
+   * 201 response for create_guild_channel
+   */
+  201: GuildChannelResponse;
 };
 
 export type CreateGuildChannelResponse = CreateGuildChannelResponses[keyof CreateGuildChannelResponses];
 
 export type ListGuildEmojisData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/emojis';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/emojis";
 };
 
 export type ListGuildEmojisErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildEmojisError = ListGuildEmojisErrors[keyof ListGuildEmojisErrors];
 
 export type ListGuildEmojisResponses = {
-    /**
-     * 200 response for list_guild_emojis
-     */
-    200: Array<EmojiResponse> | null;
+  /**
+   * 200 response for list_guild_emojis
+   */
+  200: Array<EmojiResponse> | null;
 };
 
 export type ListGuildEmojisResponse = ListGuildEmojisResponses[keyof ListGuildEmojisResponses];
 
 export type CreateGuildEmojiData = {
-    body: {
-        name: string;
-        image: string;
-        roles?: Array<null | SnowflakeType> | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/emojis';
+  body: {
+    name: string;
+    image: string;
+    roles?: Array<null | SnowflakeType> | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/emojis";
 };
 
 export type CreateGuildEmojiErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildEmojiError = CreateGuildEmojiErrors[keyof CreateGuildEmojiErrors];
 
 export type CreateGuildEmojiResponses = {
-    /**
-     * 201 response for create_guild_emoji
-     */
-    201: EmojiResponse;
+  /**
+   * 201 response for create_guild_emoji
+   */
+  201: EmojiResponse;
 };
 
 export type CreateGuildEmojiResponse = CreateGuildEmojiResponses[keyof CreateGuildEmojiResponses];
 
 export type DeleteGuildEmojiData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        emoji_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/emojis/{emoji_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    emoji_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/emojis/{emoji_id}";
 };
 
 export type DeleteGuildEmojiErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildEmojiError = DeleteGuildEmojiErrors[keyof DeleteGuildEmojiErrors];
 
 export type DeleteGuildEmojiResponses = {
-    /**
-     * 204 response for delete_guild_emoji
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_emoji
+   */
+  204: void;
 };
 
 export type DeleteGuildEmojiResponse = DeleteGuildEmojiResponses[keyof DeleteGuildEmojiResponses];
 
 export type GetGuildEmojiData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        emoji_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/emojis/{emoji_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    emoji_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/emojis/{emoji_id}";
 };
 
 export type GetGuildEmojiErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildEmojiError = GetGuildEmojiErrors[keyof GetGuildEmojiErrors];
 
 export type GetGuildEmojiResponses = {
-    /**
-     * 200 response for get_guild_emoji
-     */
-    200: EmojiResponse;
+  /**
+   * 200 response for get_guild_emoji
+   */
+  200: EmojiResponse;
 };
 
 export type GetGuildEmojiResponse = GetGuildEmojiResponses[keyof GetGuildEmojiResponses];
 
 export type UpdateGuildEmojiData = {
-    body: {
-        name?: string;
-        roles?: Array<null | SnowflakeType> | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-        emoji_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/emojis/{emoji_id}';
+  body: {
+    name?: string;
+    roles?: Array<null | SnowflakeType> | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+    emoji_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/emojis/{emoji_id}";
 };
 
 export type UpdateGuildEmojiErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildEmojiError = UpdateGuildEmojiErrors[keyof UpdateGuildEmojiErrors];
 
 export type UpdateGuildEmojiResponses = {
-    /**
-     * 200 response for update_guild_emoji
-     */
-    200: EmojiResponse;
+  /**
+   * 200 response for update_guild_emoji
+   */
+  200: EmojiResponse;
 };
 
 export type UpdateGuildEmojiResponse = UpdateGuildEmojiResponses[keyof UpdateGuildEmojiResponses];
 
 export type ListGuildIntegrationsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/integrations';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/integrations";
 };
 
 export type ListGuildIntegrationsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildIntegrationsError = ListGuildIntegrationsErrors[keyof ListGuildIntegrationsErrors];
 
 export type ListGuildIntegrationsResponses = {
-    /**
-     * 200 response for list_guild_integrations
-     */
-    200: Array<DiscordIntegrationResponse | ExternalConnectionIntegrationResponse | GuildSubscriptionIntegrationResponse> | null;
+  /**
+   * 200 response for list_guild_integrations
+   */
+  200: Array<DiscordIntegrationResponse | ExternalConnectionIntegrationResponse | GuildSubscriptionIntegrationResponse> | null;
 };
 
 export type ListGuildIntegrationsResponse = ListGuildIntegrationsResponses[keyof ListGuildIntegrationsResponses];
 
 export type DeleteGuildIntegrationData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        integration_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/integrations/{integration_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    integration_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/integrations/{integration_id}";
 };
 
 export type DeleteGuildIntegrationErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildIntegrationError = DeleteGuildIntegrationErrors[keyof DeleteGuildIntegrationErrors];
 
 export type DeleteGuildIntegrationResponses = {
-    /**
-     * 204 response for delete_guild_integration
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_integration
+   */
+  204: void;
 };
 
 export type DeleteGuildIntegrationResponse = DeleteGuildIntegrationResponses[keyof DeleteGuildIntegrationResponses];
 
 export type ListGuildInvitesData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/invites';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/invites";
 };
 
 export type ListGuildInvitesErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildInvitesError = ListGuildInvitesErrors[keyof ListGuildInvitesErrors];
 
 export type ListGuildInvitesResponses = {
-    /**
-     * 200 response for list_guild_invites
-     */
-    200: Array<FriendInviteResponse | GroupDmInviteResponse | GuildInviteResponse | null> | null;
+  /**
+   * 200 response for list_guild_invites
+   */
+  200: Array<FriendInviteResponse | GroupDmInviteResponse | GuildInviteResponse | null> | null;
 };
 
 export type ListGuildInvitesResponse = ListGuildInvitesResponses[keyof ListGuildInvitesResponses];
 
 export type ListGuildMembersData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        limit?: number;
-        after?: number;
-    };
-    url: '/guilds/{guild_id}/members';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    limit?: number;
+    after?: number;
+  };
+  url: "/guilds/{guild_id}/members";
 };
 
 export type ListGuildMembersErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildMembersError = ListGuildMembersErrors[keyof ListGuildMembersErrors];
 
 export type ListGuildMembersResponses = {
-    /**
-     * 200 response for list_guild_members
-     */
-    200: Array<GuildMemberResponse>;
+  /**
+   * 200 response for list_guild_members
+   */
+  200: Array<GuildMemberResponse>;
 };
 
 export type ListGuildMembersResponse = ListGuildMembersResponses[keyof ListGuildMembersResponses];
 
 export type UpdateMyGuildMemberData = {
-    body: {
-        nick?: string | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/@me';
+  body: {
+    nick?: string | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/@me";
 };
 
 export type UpdateMyGuildMemberErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateMyGuildMemberError = UpdateMyGuildMemberErrors[keyof UpdateMyGuildMemberErrors];
 
 export type UpdateMyGuildMemberResponses = {
-    /**
-     * 200 response for update_my_guild_member
-     */
-    200: PrivateGuildMemberResponse;
+  /**
+   * 200 response for update_my_guild_member
+   */
+  200: PrivateGuildMemberResponse;
 };
 
 export type UpdateMyGuildMemberResponse = UpdateMyGuildMemberResponses[keyof UpdateMyGuildMemberResponses];
 
 export type SearchGuildMembersData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query: {
-        limit?: number;
-        query: string;
-    };
-    url: '/guilds/{guild_id}/members/search';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query: {
+    limit?: number;
+    query: string;
+  };
+  url: "/guilds/{guild_id}/members/search";
 };
 
 export type SearchGuildMembersErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type SearchGuildMembersError = SearchGuildMembersErrors[keyof SearchGuildMembersErrors];
 
 export type SearchGuildMembersResponses = {
-    /**
-     * 200 response for search_guild_members
-     */
-    200: Array<GuildMemberResponse>;
+  /**
+   * 200 response for search_guild_members
+   */
+  200: Array<GuildMemberResponse>;
 };
 
 export type SearchGuildMembersResponse = SearchGuildMembersResponses[keyof SearchGuildMembersResponses];
 
 export type DeleteGuildMemberData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/{user_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/{user_id}";
 };
 
 export type DeleteGuildMemberErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildMemberError = DeleteGuildMemberErrors[keyof DeleteGuildMemberErrors];
 
 export type DeleteGuildMemberResponses = {
-    /**
-     * 204 response for delete_guild_member
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_member
+   */
+  204: void;
 };
 
 export type DeleteGuildMemberResponse = DeleteGuildMemberResponses[keyof DeleteGuildMemberResponses];
 
 export type GetGuildMemberData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/{user_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/{user_id}";
 };
 
 export type GetGuildMemberErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildMemberError = GetGuildMemberErrors[keyof GetGuildMemberErrors];
 
 export type GetGuildMemberResponses = {
-    /**
-     * 200 response for get_guild_member
-     */
-    200: GuildMemberResponse;
+  /**
+   * 200 response for get_guild_member
+   */
+  200: GuildMemberResponse;
 };
 
 export type GetGuildMemberResponse = GetGuildMemberResponses[keyof GetGuildMemberResponses];
 
 export type UpdateGuildMemberData = {
-    body: {
-        nick?: string | null;
-        roles?: Array<null | SnowflakeType> | null;
-        mute?: boolean | null;
-        deaf?: boolean | null;
-        channel_id?: null | SnowflakeType;
-        communication_disabled_until?: string | null;
-        flags?: number | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/{user_id}';
+  body: {
+    nick?: string | null;
+    roles?: Array<null | SnowflakeType> | null;
+    mute?: boolean | null;
+    deaf?: boolean | null;
+    channel_id?: null | SnowflakeType;
+    communication_disabled_until?: string | null;
+    flags?: number | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/{user_id}";
 };
 
 export type UpdateGuildMemberErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildMemberError = UpdateGuildMemberErrors[keyof UpdateGuildMemberErrors];
 
 export type UpdateGuildMemberResponses = {
-    /**
-     * 200 response for update_guild_member
-     */
-    200: GuildMemberResponse;
-    /**
-     * 204 response for update_guild_member
-     */
-    204: void;
+  /**
+   * 200 response for update_guild_member
+   */
+  200: GuildMemberResponse;
+  /**
+   * 204 response for update_guild_member
+   */
+  204: void;
 };
 
 export type UpdateGuildMemberResponse = UpdateGuildMemberResponses[keyof UpdateGuildMemberResponses];
 
 export type AddGuildMemberData = {
-    body: BotAddGuildMemberRequest;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/{user_id}';
+  body: BotAddGuildMemberRequest;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/{user_id}";
 };
 
 export type AddGuildMemberErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type AddGuildMemberError = AddGuildMemberErrors[keyof AddGuildMemberErrors];
 
 export type AddGuildMemberResponses = {
-    /**
-     * 201 response for add_guild_member
-     */
-    201: GuildMemberResponse;
-    /**
-     * 204 response for add_guild_member
-     */
-    204: void;
+  /**
+   * 201 response for add_guild_member
+   */
+  201: GuildMemberResponse;
+  /**
+   * 204 response for add_guild_member
+   */
+  204: void;
 };
 
 export type AddGuildMemberResponse = AddGuildMemberResponses[keyof AddGuildMemberResponses];
 
 export type DeleteGuildMemberRoleData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-        role_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/{user_id}/roles/{role_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+    role_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/{user_id}/roles/{role_id}";
 };
 
 export type DeleteGuildMemberRoleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildMemberRoleError = DeleteGuildMemberRoleErrors[keyof DeleteGuildMemberRoleErrors];
 
 export type DeleteGuildMemberRoleResponses = {
-    /**
-     * 204 response for delete_guild_member_role
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_member_role
+   */
+  204: void;
 };
 
 export type DeleteGuildMemberRoleResponse = DeleteGuildMemberRoleResponses[keyof DeleteGuildMemberRoleResponses];
 
 export type AddGuildMemberRoleData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-        role_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/members/{user_id}/roles/{role_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+    role_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/members/{user_id}/roles/{role_id}";
 };
 
 export type AddGuildMemberRoleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type AddGuildMemberRoleError = AddGuildMemberRoleErrors[keyof AddGuildMemberRoleErrors];
 
 export type AddGuildMemberRoleResponses = {
-    /**
-     * 204 response for add_guild_member_role
-     */
-    204: void;
+  /**
+   * 204 response for add_guild_member_role
+   */
+  204: void;
 };
 
 export type AddGuildMemberRoleResponse = AddGuildMemberRoleResponses[keyof AddGuildMemberRoleResponses];
 
 export type SetGuildMfaLevelData = {
-    body: GuildMfaRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/mfa';
+  body: GuildMfaRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/mfa";
 };
 
 export type SetGuildMfaLevelErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type SetGuildMfaLevelError = SetGuildMfaLevelErrors[keyof SetGuildMfaLevelErrors];
 
 export type SetGuildMfaLevelResponses = {
-    /**
-     * 200 response for set_guild_mfa_level
-     */
-    200: GuildMfaLevelResponse;
+  /**
+   * 200 response for set_guild_mfa_level
+   */
+  200: GuildMfaLevelResponse;
 };
 
 export type SetGuildMfaLevelResponse = SetGuildMfaLevelResponses[keyof SetGuildMfaLevelResponses];
 
 export type GetGuildNewMemberWelcomeData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/new-member-welcome';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/new-member-welcome";
 };
 
 export type GetGuildNewMemberWelcomeErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildNewMemberWelcomeError = GetGuildNewMemberWelcomeErrors[keyof GetGuildNewMemberWelcomeErrors];
 
 export type GetGuildNewMemberWelcomeResponses = {
-    /**
-     * 200 response for get_guild_new_member_welcome
-     */
-    200: GuildHomeSettingsResponse;
-    /**
-     * 204 response for get_guild_new_member_welcome
-     */
-    204: void;
+  /**
+   * 200 response for get_guild_new_member_welcome
+   */
+  200: GuildHomeSettingsResponse;
+  /**
+   * 204 response for get_guild_new_member_welcome
+   */
+  204: void;
 };
 
 export type GetGuildNewMemberWelcomeResponse = GetGuildNewMemberWelcomeResponses[keyof GetGuildNewMemberWelcomeResponses];
 
 export type GetGuildsOnboardingData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/onboarding';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/onboarding";
 };
 
 export type GetGuildsOnboardingErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildsOnboardingError = GetGuildsOnboardingErrors[keyof GetGuildsOnboardingErrors];
 
 export type GetGuildsOnboardingResponses = {
-    /**
-     * 200 response for get_guilds_onboarding
-     */
-    200: UserGuildOnboardingResponse;
+  /**
+   * 200 response for get_guilds_onboarding
+   */
+  200: UserGuildOnboardingResponse;
 };
 
 export type GetGuildsOnboardingResponse = GetGuildsOnboardingResponses[keyof GetGuildsOnboardingResponses];
 
 export type PutGuildsOnboardingData = {
-    body: UpdateGuildOnboardingRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/onboarding';
+  body: UpdateGuildOnboardingRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/onboarding";
 };
 
 export type PutGuildsOnboardingErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type PutGuildsOnboardingError = PutGuildsOnboardingErrors[keyof PutGuildsOnboardingErrors];
 
 export type PutGuildsOnboardingResponses = {
-    /**
-     * 200 response for put_guilds_onboarding
-     */
-    200: GuildOnboardingResponse;
+  /**
+   * 200 response for put_guilds_onboarding
+   */
+  200: GuildOnboardingResponse;
 };
 
 export type PutGuildsOnboardingResponse = PutGuildsOnboardingResponses[keyof PutGuildsOnboardingResponses];
 
 export type GetGuildPreviewData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/preview';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/preview";
 };
 
 export type GetGuildPreviewErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildPreviewError = GetGuildPreviewErrors[keyof GetGuildPreviewErrors];
 
 export type GetGuildPreviewResponses = {
-    /**
-     * 200 response for get_guild_preview
-     */
-    200: GuildPreviewResponse;
+  /**
+   * 200 response for get_guild_preview
+   */
+  200: GuildPreviewResponse;
 };
 
 export type GetGuildPreviewResponse = GetGuildPreviewResponses[keyof GetGuildPreviewResponses];
 
 export type PreviewPruneGuildData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        days?: number;
-        include_roles?: string | Array<null | SnowflakeType>;
-    };
-    url: '/guilds/{guild_id}/prune';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    days?: number;
+    include_roles?: string | Array<null | SnowflakeType>;
+  };
+  url: "/guilds/{guild_id}/prune";
 };
 
 export type PreviewPruneGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type PreviewPruneGuildError = PreviewPruneGuildErrors[keyof PreviewPruneGuildErrors];
 
 export type PreviewPruneGuildResponses = {
-    /**
-     * 200 response for preview_prune_guild
-     */
-    200: GuildPruneResponse;
+  /**
+   * 200 response for preview_prune_guild
+   */
+  200: GuildPruneResponse;
 };
 
 export type PreviewPruneGuildResponse = PreviewPruneGuildResponses[keyof PreviewPruneGuildResponses];
 
 export type PruneGuildData = {
-    body: PruneGuildRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/prune';
+  body: PruneGuildRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/prune";
 };
 
 export type PruneGuildErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type PruneGuildError = PruneGuildErrors[keyof PruneGuildErrors];
 
 export type PruneGuildResponses = {
-    /**
-     * 200 response for prune_guild
-     */
-    200: GuildPruneResponse;
+  /**
+   * 200 response for prune_guild
+   */
+  200: GuildPruneResponse;
 };
 
 export type PruneGuildResponse = PruneGuildResponses[keyof PruneGuildResponses];
 
 export type ListGuildVoiceRegionsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/regions';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/regions";
 };
 
 export type ListGuildVoiceRegionsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildVoiceRegionsError = ListGuildVoiceRegionsErrors[keyof ListGuildVoiceRegionsErrors];
 
 export type ListGuildVoiceRegionsResponses = {
-    /**
-     * 200 response for list_guild_voice_regions
-     */
-    200: Array<VoiceRegionResponse> | null;
+  /**
+   * 200 response for list_guild_voice_regions
+   */
+  200: Array<VoiceRegionResponse> | null;
 };
 
 export type ListGuildVoiceRegionsResponse = ListGuildVoiceRegionsResponses[keyof ListGuildVoiceRegionsResponses];
 
 export type ListGuildRolesData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/roles';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/roles";
 };
 
 export type ListGuildRolesErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildRolesError = ListGuildRolesErrors[keyof ListGuildRolesErrors];
 
 export type ListGuildRolesResponses = {
-    /**
-     * 200 response for list_guild_roles
-     */
-    200: Array<GuildRoleResponse>;
+  /**
+   * 200 response for list_guild_roles
+   */
+  200: Array<GuildRoleResponse>;
 };
 
 export type ListGuildRolesResponse = ListGuildRolesResponses[keyof ListGuildRolesResponses];
 
 export type BulkUpdateGuildRolesData = {
-    body: Array<UpdateRolePositionsRequest>;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/roles';
+  body: Array<UpdateRolePositionsRequest>;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/roles";
 };
 
 export type BulkUpdateGuildRolesErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type BulkUpdateGuildRolesError = BulkUpdateGuildRolesErrors[keyof BulkUpdateGuildRolesErrors];
 
 export type BulkUpdateGuildRolesResponses = {
-    /**
-     * 200 response for bulk_update_guild_roles
-     */
-    200: Array<GuildRoleResponse>;
+  /**
+   * 200 response for bulk_update_guild_roles
+   */
+  200: Array<GuildRoleResponse>;
 };
 
 export type BulkUpdateGuildRolesResponse = BulkUpdateGuildRolesResponses[keyof BulkUpdateGuildRolesResponses];
 
 export type CreateGuildRoleData = {
-    body: CreateRoleRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/roles';
+  body: CreateRoleRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/roles";
 };
 
 export type CreateGuildRoleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildRoleError = CreateGuildRoleErrors[keyof CreateGuildRoleErrors];
 
 export type CreateGuildRoleResponses = {
-    /**
-     * 200 response for create_guild_role
-     */
-    200: GuildRoleResponse;
+  /**
+   * 200 response for create_guild_role
+   */
+  200: GuildRoleResponse;
 };
 
 export type CreateGuildRoleResponse = CreateGuildRoleResponses[keyof CreateGuildRoleResponses];
 
 export type DeleteGuildRoleData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        role_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/roles/{role_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    role_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/roles/{role_id}";
 };
 
 export type DeleteGuildRoleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildRoleError = DeleteGuildRoleErrors[keyof DeleteGuildRoleErrors];
 
 export type DeleteGuildRoleResponses = {
-    /**
-     * 204 response for delete_guild_role
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_role
+   */
+  204: void;
 };
 
 export type DeleteGuildRoleResponse = DeleteGuildRoleResponses[keyof DeleteGuildRoleResponses];
 
 export type GetGuildRoleData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        role_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/roles/{role_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    role_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/roles/{role_id}";
 };
 
 export type GetGuildRoleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildRoleError = GetGuildRoleErrors[keyof GetGuildRoleErrors];
 
 export type GetGuildRoleResponses = {
-    /**
-     * 200 response for get_guild_role
-     */
-    200: GuildRoleResponse;
+  /**
+   * 200 response for get_guild_role
+   */
+  200: GuildRoleResponse;
 };
 
 export type GetGuildRoleResponse = GetGuildRoleResponses[keyof GetGuildRoleResponses];
 
 export type UpdateGuildRoleData = {
-    body: UpdateRoleRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-        role_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/roles/{role_id}';
+  body: UpdateRoleRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+    role_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/roles/{role_id}";
 };
 
 export type UpdateGuildRoleErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildRoleError = UpdateGuildRoleErrors[keyof UpdateGuildRoleErrors];
 
 export type UpdateGuildRoleResponses = {
-    /**
-     * 200 response for update_guild_role
-     */
-    200: GuildRoleResponse;
+  /**
+   * 200 response for update_guild_role
+   */
+  200: GuildRoleResponse;
 };
 
 export type UpdateGuildRoleResponse = UpdateGuildRoleResponses[keyof UpdateGuildRoleResponses];
 
 export type ListGuildScheduledEventsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        with_user_count?: boolean;
-    };
-    url: '/guilds/{guild_id}/scheduled-events';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    with_user_count?: boolean;
+  };
+  url: "/guilds/{guild_id}/scheduled-events";
 };
 
 export type ListGuildScheduledEventsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildScheduledEventsError = ListGuildScheduledEventsErrors[keyof ListGuildScheduledEventsErrors];
 
 export type ListGuildScheduledEventsResponses = {
-    /**
-     * 200 response for list_guild_scheduled_events
-     */
-    200: Array<ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse> | null;
+  /**
+   * 200 response for list_guild_scheduled_events
+   */
+  200: Array<ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse> | null;
 };
 
 export type ListGuildScheduledEventsResponse = ListGuildScheduledEventsResponses[keyof ListGuildScheduledEventsResponses];
 
 export type CreateGuildScheduledEventData = {
-    body: ExternalScheduledEventCreateRequest | StageScheduledEventCreateRequest | VoiceScheduledEventCreateRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/scheduled-events';
+  body: ExternalScheduledEventCreateRequest | StageScheduledEventCreateRequest | VoiceScheduledEventCreateRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/scheduled-events";
 };
 
 export type CreateGuildScheduledEventErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildScheduledEventError = CreateGuildScheduledEventErrors[keyof CreateGuildScheduledEventErrors];
 
 export type CreateGuildScheduledEventResponses = {
-    /**
-     * 200 response for create_guild_scheduled_event
-     */
-    200: ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse;
+  /**
+   * 200 response for create_guild_scheduled_event
+   */
+  200: ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse;
 };
 
 export type CreateGuildScheduledEventResponse = CreateGuildScheduledEventResponses[keyof CreateGuildScheduledEventResponses];
 
 export type DeleteGuildScheduledEventData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        guild_scheduled_event_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    guild_scheduled_event_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}";
 };
 
 export type DeleteGuildScheduledEventErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildScheduledEventError = DeleteGuildScheduledEventErrors[keyof DeleteGuildScheduledEventErrors];
 
 export type DeleteGuildScheduledEventResponses = {
-    /**
-     * 204 response for delete_guild_scheduled_event
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_scheduled_event
+   */
+  204: void;
 };
 
 export type DeleteGuildScheduledEventResponse = DeleteGuildScheduledEventResponses[keyof DeleteGuildScheduledEventResponses];
 
 export type GetGuildScheduledEventData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        guild_scheduled_event_id: SnowflakeType;
-    };
-    query?: {
-        with_user_count?: boolean;
-    };
-    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    guild_scheduled_event_id: SnowflakeType;
+  };
+  query?: {
+    with_user_count?: boolean;
+  };
+  url: "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}";
 };
 
 export type GetGuildScheduledEventErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildScheduledEventError = GetGuildScheduledEventErrors[keyof GetGuildScheduledEventErrors];
 
 export type GetGuildScheduledEventResponses = {
-    /**
-     * 200 response for get_guild_scheduled_event
-     */
-    200: ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse;
+  /**
+   * 200 response for get_guild_scheduled_event
+   */
+  200: ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse;
 };
 
 export type GetGuildScheduledEventResponse = GetGuildScheduledEventResponses[keyof GetGuildScheduledEventResponses];
 
 export type UpdateGuildScheduledEventData = {
-    body: ExternalScheduledEventPatchRequestPartial | StageScheduledEventPatchRequestPartial | VoiceScheduledEventPatchRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-        guild_scheduled_event_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}';
+  body: ExternalScheduledEventPatchRequestPartial | StageScheduledEventPatchRequestPartial | VoiceScheduledEventPatchRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+    guild_scheduled_event_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}";
 };
 
 export type UpdateGuildScheduledEventErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildScheduledEventError = UpdateGuildScheduledEventErrors[keyof UpdateGuildScheduledEventErrors];
 
 export type UpdateGuildScheduledEventResponses = {
-    /**
-     * 200 response for update_guild_scheduled_event
-     */
-    200: ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse;
+  /**
+   * 200 response for update_guild_scheduled_event
+   */
+  200: ExternalScheduledEventResponse | StageScheduledEventResponse | VoiceScheduledEventResponse;
 };
 
 export type UpdateGuildScheduledEventResponse = UpdateGuildScheduledEventResponses[keyof UpdateGuildScheduledEventResponses];
 
 export type ListGuildScheduledEventUsersData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        guild_scheduled_event_id: SnowflakeType;
-    };
-    query?: {
-        with_member?: boolean;
-        limit?: number;
-        before?: SnowflakeType;
-        after?: SnowflakeType;
-    };
-    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    guild_scheduled_event_id: SnowflakeType;
+  };
+  query?: {
+    with_member?: boolean;
+    limit?: number;
+    before?: SnowflakeType;
+    after?: SnowflakeType;
+  };
+  url: "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users";
 };
 
 export type ListGuildScheduledEventUsersErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildScheduledEventUsersError = ListGuildScheduledEventUsersErrors[keyof ListGuildScheduledEventUsersErrors];
 
 export type ListGuildScheduledEventUsersResponses = {
-    /**
-     * 200 response for list_guild_scheduled_event_users
-     */
-    200: Array<ScheduledEventUserResponse> | null;
+  /**
+   * 200 response for list_guild_scheduled_event_users
+   */
+  200: Array<ScheduledEventUserResponse> | null;
 };
 
 export type ListGuildScheduledEventUsersResponse = ListGuildScheduledEventUsersResponses[keyof ListGuildScheduledEventUsersResponses];
 
 export type ListGuildSoundboardSoundsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/soundboard-sounds';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/soundboard-sounds";
 };
 
 export type ListGuildSoundboardSoundsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildSoundboardSoundsError = ListGuildSoundboardSoundsErrors[keyof ListGuildSoundboardSoundsErrors];
 
 export type ListGuildSoundboardSoundsResponses = {
-    /**
-     * 200 response for list_guild_soundboard_sounds
-     */
-    200: ListGuildSoundboardSoundsResponse;
+  /**
+   * 200 response for list_guild_soundboard_sounds
+   */
+  200: ListGuildSoundboardSoundsResponse;
 };
 
 export type ListGuildSoundboardSoundsResponse2 = ListGuildSoundboardSoundsResponses[keyof ListGuildSoundboardSoundsResponses];
 
 export type CreateGuildSoundboardSoundData = {
-    body: SoundboardCreateRequest;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/soundboard-sounds';
+  body: SoundboardCreateRequest;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/soundboard-sounds";
 };
 
 export type CreateGuildSoundboardSoundErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildSoundboardSoundError = CreateGuildSoundboardSoundErrors[keyof CreateGuildSoundboardSoundErrors];
 
 export type CreateGuildSoundboardSoundResponses = {
-    /**
-     * 201 response for create_guild_soundboard_sound
-     */
-    201: SoundboardSoundResponse;
+  /**
+   * 201 response for create_guild_soundboard_sound
+   */
+  201: SoundboardSoundResponse;
 };
 
 export type CreateGuildSoundboardSoundResponse = CreateGuildSoundboardSoundResponses[keyof CreateGuildSoundboardSoundResponses];
 
 export type DeleteGuildSoundboardSoundData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        sound_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    sound_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/soundboard-sounds/{sound_id}";
 };
 
 export type DeleteGuildSoundboardSoundErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildSoundboardSoundError = DeleteGuildSoundboardSoundErrors[keyof DeleteGuildSoundboardSoundErrors];
 
 export type DeleteGuildSoundboardSoundResponses = {
-    /**
-     * 204 response for delete_guild_soundboard_sound
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_soundboard_sound
+   */
+  204: void;
 };
 
 export type DeleteGuildSoundboardSoundResponse = DeleteGuildSoundboardSoundResponses[keyof DeleteGuildSoundboardSoundResponses];
 
 export type GetGuildSoundboardSoundData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        sound_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    sound_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/soundboard-sounds/{sound_id}";
 };
 
 export type GetGuildSoundboardSoundErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildSoundboardSoundError = GetGuildSoundboardSoundErrors[keyof GetGuildSoundboardSoundErrors];
 
 export type GetGuildSoundboardSoundResponses = {
-    /**
-     * 200 response for get_guild_soundboard_sound
-     */
-    200: SoundboardSoundResponse;
+  /**
+   * 200 response for get_guild_soundboard_sound
+   */
+  200: SoundboardSoundResponse;
 };
 
 export type GetGuildSoundboardSoundResponse = GetGuildSoundboardSoundResponses[keyof GetGuildSoundboardSoundResponses];
 
 export type UpdateGuildSoundboardSoundData = {
-    body: SoundboardPatchRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-        sound_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}';
+  body: SoundboardPatchRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+    sound_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/soundboard-sounds/{sound_id}";
 };
 
 export type UpdateGuildSoundboardSoundErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildSoundboardSoundError = UpdateGuildSoundboardSoundErrors[keyof UpdateGuildSoundboardSoundErrors];
 
 export type UpdateGuildSoundboardSoundResponses = {
-    /**
-     * 200 response for update_guild_soundboard_sound
-     */
-    200: SoundboardSoundResponse;
+  /**
+   * 200 response for update_guild_soundboard_sound
+   */
+  200: SoundboardSoundResponse;
 };
 
 export type UpdateGuildSoundboardSoundResponse = UpdateGuildSoundboardSoundResponses[keyof UpdateGuildSoundboardSoundResponses];
 
 export type ListGuildStickersData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/stickers';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/stickers";
 };
 
 export type ListGuildStickersErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildStickersError = ListGuildStickersErrors[keyof ListGuildStickersErrors];
 
 export type ListGuildStickersResponses = {
-    /**
-     * 200 response for list_guild_stickers
-     */
-    200: Array<GuildStickerResponse>;
+  /**
+   * 200 response for list_guild_stickers
+   */
+  200: Array<GuildStickerResponse>;
 };
 
 export type ListGuildStickersResponse = ListGuildStickersResponses[keyof ListGuildStickersResponses];
 
 export type CreateGuildStickerData = {
-    body: {
-        name: string;
-        tags: string;
-        description?: string | null;
-        file: string;
-    };
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/stickers';
+  body: {
+    name: string;
+    tags: string;
+    description?: string | null;
+    file: string;
+  };
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/stickers";
 };
 
 export type CreateGuildStickerErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildStickerError = CreateGuildStickerErrors[keyof CreateGuildStickerErrors];
 
 export type CreateGuildStickerResponses = {
-    /**
-     * 201 response for create_guild_sticker
-     */
-    201: GuildStickerResponse;
+  /**
+   * 201 response for create_guild_sticker
+   */
+  201: GuildStickerResponse;
 };
 
 export type CreateGuildStickerResponse = CreateGuildStickerResponses[keyof CreateGuildStickerResponses];
 
 export type DeleteGuildStickerData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        sticker_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/stickers/{sticker_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    sticker_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/stickers/{sticker_id}";
 };
 
 export type DeleteGuildStickerErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildStickerError = DeleteGuildStickerErrors[keyof DeleteGuildStickerErrors];
 
 export type DeleteGuildStickerResponses = {
-    /**
-     * 204 response for delete_guild_sticker
-     */
-    204: void;
+  /**
+   * 204 response for delete_guild_sticker
+   */
+  204: void;
 };
 
 export type DeleteGuildStickerResponse = DeleteGuildStickerResponses[keyof DeleteGuildStickerResponses];
 
 export type GetGuildStickerData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        sticker_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/stickers/{sticker_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    sticker_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/stickers/{sticker_id}";
 };
 
 export type GetGuildStickerErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildStickerError = GetGuildStickerErrors[keyof GetGuildStickerErrors];
 
 export type GetGuildStickerResponses = {
-    /**
-     * 200 response for get_guild_sticker
-     */
-    200: GuildStickerResponse;
+  /**
+   * 200 response for get_guild_sticker
+   */
+  200: GuildStickerResponse;
 };
 
 export type GetGuildStickerResponse = GetGuildStickerResponses[keyof GetGuildStickerResponses];
 
 export type UpdateGuildStickerData = {
-    body: {
-        name?: string;
-        tags?: string;
-        description?: string | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-        sticker_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/stickers/{sticker_id}';
+  body: {
+    name?: string;
+    tags?: string;
+    description?: string | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+    sticker_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/stickers/{sticker_id}";
 };
 
 export type UpdateGuildStickerErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildStickerError = UpdateGuildStickerErrors[keyof UpdateGuildStickerErrors];
 
 export type UpdateGuildStickerResponses = {
-    /**
-     * 200 response for update_guild_sticker
-     */
-    200: GuildStickerResponse;
+  /**
+   * 200 response for update_guild_sticker
+   */
+  200: GuildStickerResponse;
 };
 
 export type UpdateGuildStickerResponse = UpdateGuildStickerResponses[keyof UpdateGuildStickerResponses];
 
 export type ListGuildTemplatesData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/templates';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/templates";
 };
 
 export type ListGuildTemplatesErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type ListGuildTemplatesError = ListGuildTemplatesErrors[keyof ListGuildTemplatesErrors];
 
 export type ListGuildTemplatesResponses = {
-    /**
-     * 200 response for list_guild_templates
-     */
-    200: Array<GuildTemplateResponse> | null;
+  /**
+   * 200 response for list_guild_templates
+   */
+  200: Array<GuildTemplateResponse> | null;
 };
 
 export type ListGuildTemplatesResponse = ListGuildTemplatesResponses[keyof ListGuildTemplatesResponses];
 
 export type CreateGuildTemplateData = {
-    body: {
-        name: string;
-        description?: string | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/templates';
+  body: {
+    name: string;
+    description?: string | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/templates";
 };
 
 export type CreateGuildTemplateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type CreateGuildTemplateError = CreateGuildTemplateErrors[keyof CreateGuildTemplateErrors];
 
 export type CreateGuildTemplateResponses = {
-    /**
-     * 200 response for create_guild_template
-     */
-    200: GuildTemplateResponse;
+  /**
+   * 200 response for create_guild_template
+   */
+  200: GuildTemplateResponse;
 };
 
 export type CreateGuildTemplateResponse = CreateGuildTemplateResponses[keyof CreateGuildTemplateResponses];
 
 export type DeleteGuildTemplateData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        code: string;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/templates/{code}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    code: string;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/templates/{code}";
 };
 
 export type DeleteGuildTemplateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type DeleteGuildTemplateError = DeleteGuildTemplateErrors[keyof DeleteGuildTemplateErrors];
 
 export type DeleteGuildTemplateResponses = {
-    /**
-     * 200 response for delete_guild_template
-     */
-    200: GuildTemplateResponse;
+  /**
+   * 200 response for delete_guild_template
+   */
+  200: GuildTemplateResponse;
 };
 
 export type DeleteGuildTemplateResponse = DeleteGuildTemplateResponses[keyof DeleteGuildTemplateResponses];
 
 export type UpdateGuildTemplateData = {
-    body: {
-        name?: string;
-        description?: string | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-        code: string;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/templates/{code}';
+  body: {
+    name?: string;
+    description?: string | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+    code: string;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/templates/{code}";
 };
 
 export type UpdateGuildTemplateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildTemplateError = UpdateGuildTemplateErrors[keyof UpdateGuildTemplateErrors];
 
 export type UpdateGuildTemplateResponses = {
-    /**
-     * 200 response for update_guild_template
-     */
-    200: GuildTemplateResponse;
+  /**
+   * 200 response for update_guild_template
+   */
+  200: GuildTemplateResponse;
 };
 
 export type UpdateGuildTemplateResponse = UpdateGuildTemplateResponses[keyof UpdateGuildTemplateResponses];
 
 export type SyncGuildTemplateData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        code: string;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/templates/{code}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    code: string;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/templates/{code}";
 };
 
 export type SyncGuildTemplateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type SyncGuildTemplateError = SyncGuildTemplateErrors[keyof SyncGuildTemplateErrors];
 
 export type SyncGuildTemplateResponses = {
-    /**
-     * 200 response for sync_guild_template
-     */
-    200: GuildTemplateResponse;
+  /**
+   * 200 response for sync_guild_template
+   */
+  200: GuildTemplateResponse;
 };
 
 export type SyncGuildTemplateResponse = SyncGuildTemplateResponses[keyof SyncGuildTemplateResponses];
 
 export type GetActiveGuildThreadsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/threads/active';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/threads/active";
 };
 
 export type GetActiveGuildThreadsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetActiveGuildThreadsError = GetActiveGuildThreadsErrors[keyof GetActiveGuildThreadsErrors];
 
 export type GetActiveGuildThreadsResponses = {
-    /**
-     * 200 response for get_active_guild_threads
-     */
-    200: ThreadsResponse;
+  /**
+   * 200 response for get_active_guild_threads
+   */
+  200: ThreadsResponse;
 };
 
 export type GetActiveGuildThreadsResponse = GetActiveGuildThreadsResponses[keyof GetActiveGuildThreadsResponses];
 
 export type GetGuildVanityUrlData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/vanity-url';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/vanity-url";
 };
 
 export type GetGuildVanityUrlErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildVanityUrlError = GetGuildVanityUrlErrors[keyof GetGuildVanityUrlErrors];
 
 export type GetGuildVanityUrlResponses = {
-    /**
-     * 200 response for get_guild_vanity_url
-     */
-    200: VanityUrlResponse;
+  /**
+   * 200 response for get_guild_vanity_url
+   */
+  200: VanityUrlResponse;
 };
 
 export type GetGuildVanityUrlResponse = GetGuildVanityUrlResponses[keyof GetGuildVanityUrlResponses];
 
 export type GetSelfVoiceStateData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/voice-states/@me';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/voice-states/@me";
 };
 
 export type GetSelfVoiceStateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetSelfVoiceStateError = GetSelfVoiceStateErrors[keyof GetSelfVoiceStateErrors];
 
 export type GetSelfVoiceStateResponses = {
-    /**
-     * 200 response for get_self_voice_state
-     */
-    200: VoiceStateResponse;
+  /**
+   * 200 response for get_self_voice_state
+   */
+  200: VoiceStateResponse;
 };
 
 export type GetSelfVoiceStateResponse = GetSelfVoiceStateResponses[keyof GetSelfVoiceStateResponses];
 
 export type UpdateSelfVoiceStateData = {
-    body: UpdateSelfVoiceStateRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/voice-states/@me';
+  body: UpdateSelfVoiceStateRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/voice-states/@me";
 };
 
 export type UpdateSelfVoiceStateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateSelfVoiceStateError = UpdateSelfVoiceStateErrors[keyof UpdateSelfVoiceStateErrors];
 
 export type UpdateSelfVoiceStateResponses = {
-    /**
-     * 204 response for update_self_voice_state
-     */
-    204: void;
+  /**
+   * 204 response for update_self_voice_state
+   */
+  204: void;
 };
 
 export type UpdateSelfVoiceStateResponse = UpdateSelfVoiceStateResponses[keyof UpdateSelfVoiceStateResponses];
 
 export type GetVoiceStateData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/voice-states/{user_id}';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/voice-states/{user_id}";
 };
 
 export type GetVoiceStateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetVoiceStateError = GetVoiceStateErrors[keyof GetVoiceStateErrors];
 
 export type GetVoiceStateResponses = {
-    /**
-     * 200 response for get_voice_state
-     */
-    200: VoiceStateResponse;
+  /**
+   * 200 response for get_voice_state
+   */
+  200: VoiceStateResponse;
 };
 
 export type GetVoiceStateResponse = GetVoiceStateResponses[keyof GetVoiceStateResponses];
 
 export type UpdateVoiceStateData = {
-    body: UpdateVoiceStateRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-        user_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/voice-states/{user_id}';
+  body: UpdateVoiceStateRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+    user_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/voice-states/{user_id}";
 };
 
 export type UpdateVoiceStateErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateVoiceStateError = UpdateVoiceStateErrors[keyof UpdateVoiceStateErrors];
 
 export type UpdateVoiceStateResponses = {
-    /**
-     * 204 response for update_voice_state
-     */
-    204: void;
+  /**
+   * 204 response for update_voice_state
+   */
+  204: void;
 };
 
 export type UpdateVoiceStateResponse = UpdateVoiceStateResponses[keyof UpdateVoiceStateResponses];
 
 export type GetGuildWebhooksData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/webhooks';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/webhooks";
 };
 
 export type GetGuildWebhooksErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildWebhooksError = GetGuildWebhooksErrors[keyof GetGuildWebhooksErrors];
 
 export type GetGuildWebhooksResponses = {
-    /**
-     * 200 response for get_guild_webhooks
-     */
-    200: Array<ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse> | null;
+  /**
+   * 200 response for get_guild_webhooks
+   */
+  200: Array<ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse> | null;
 };
 
 export type GetGuildWebhooksResponse = GetGuildWebhooksResponses[keyof GetGuildWebhooksResponses];
 
 export type GetGuildWelcomeScreenData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/welcome-screen';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/welcome-screen";
 };
 
 export type GetGuildWelcomeScreenErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildWelcomeScreenError = GetGuildWelcomeScreenErrors[keyof GetGuildWelcomeScreenErrors];
 
 export type GetGuildWelcomeScreenResponses = {
-    /**
-     * 200 response for get_guild_welcome_screen
-     */
-    200: GuildWelcomeScreenResponse;
+  /**
+   * 200 response for get_guild_welcome_screen
+   */
+  200: GuildWelcomeScreenResponse;
 };
 
 export type GetGuildWelcomeScreenResponse = GetGuildWelcomeScreenResponses[keyof GetGuildWelcomeScreenResponses];
 
 export type UpdateGuildWelcomeScreenData = {
-    body: WelcomeScreenPatchRequestPartial;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/welcome-screen';
+  body: WelcomeScreenPatchRequestPartial;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/welcome-screen";
 };
 
 export type UpdateGuildWelcomeScreenErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildWelcomeScreenError = UpdateGuildWelcomeScreenErrors[keyof UpdateGuildWelcomeScreenErrors];
 
 export type UpdateGuildWelcomeScreenResponses = {
-    /**
-     * 200 response for update_guild_welcome_screen
-     */
-    200: GuildWelcomeScreenResponse;
+  /**
+   * 200 response for update_guild_welcome_screen
+   */
+  200: GuildWelcomeScreenResponse;
 };
 
 export type UpdateGuildWelcomeScreenResponse = UpdateGuildWelcomeScreenResponses[keyof UpdateGuildWelcomeScreenResponses];
 
 export type GetGuildWidgetSettingsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/widget';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/widget";
 };
 
 export type GetGuildWidgetSettingsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildWidgetSettingsError = GetGuildWidgetSettingsErrors[keyof GetGuildWidgetSettingsErrors];
 
 export type GetGuildWidgetSettingsResponses = {
-    /**
-     * 200 response for get_guild_widget_settings
-     */
-    200: WidgetSettingsResponse;
+  /**
+   * 200 response for get_guild_widget_settings
+   */
+  200: WidgetSettingsResponse;
 };
 
 export type GetGuildWidgetSettingsResponse = GetGuildWidgetSettingsResponses[keyof GetGuildWidgetSettingsResponses];
 
 export type UpdateGuildWidgetSettingsData = {
-    body: {
-        channel_id?: null | SnowflakeType;
-        enabled?: boolean | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/widget';
+  body: {
+    channel_id?: null | SnowflakeType;
+    enabled?: boolean | null;
+  };
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/widget";
 };
 
 export type UpdateGuildWidgetSettingsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type UpdateGuildWidgetSettingsError = UpdateGuildWidgetSettingsErrors[keyof UpdateGuildWidgetSettingsErrors];
 
 export type UpdateGuildWidgetSettingsResponses = {
-    /**
-     * 200 response for update_guild_widget_settings
-     */
-    200: WidgetSettingsResponse;
+  /**
+   * 200 response for update_guild_widget_settings
+   */
+  200: WidgetSettingsResponse;
 };
 
 export type UpdateGuildWidgetSettingsResponse = UpdateGuildWidgetSettingsResponses[keyof UpdateGuildWidgetSettingsResponses];
 
 export type GetGuildWidgetData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/widget.json';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: never;
+  url: "/guilds/{guild_id}/widget.json";
 };
 
 export type GetGuildWidgetErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildWidgetError = GetGuildWidgetErrors[keyof GetGuildWidgetErrors];
 
 export type GetGuildWidgetResponses = {
-    /**
-     * 200 response for get_guild_widget
-     */
-    200: WidgetResponse;
+  /**
+   * 200 response for get_guild_widget
+   */
+  200: WidgetResponse;
 };
 
 export type GetGuildWidgetResponse = GetGuildWidgetResponses[keyof GetGuildWidgetResponses];
 
 export type GetGuildWidgetPngData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        style?: WidgetImageStyles;
-    };
-    url: '/guilds/{guild_id}/widget.png';
+  body?: never;
+  path: {
+    guild_id: SnowflakeType;
+  };
+  query?: {
+    style?: WidgetImageStyles;
+  };
+  url: "/guilds/{guild_id}/widget.png";
 };
 
 export type GetGuildWidgetPngErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse;
+  /**
+   * Client error response
+   */
+  "4XX": ErrorResponse;
 };
 
 export type GetGuildWidgetPngError = GetGuildWidgetPngErrors[keyof GetGuildWidgetPngErrors];
 
 export type GetGuildWidgetPngResponses = {
-    /**
-     * 200 response for get_guild_widget_png
-     */
-    200: string;
+  /**
+   * 200 response for get_guild_widget_png
+   */
+  200: string;
 };
 
 export type GetGuildWidgetPngResponse = GetGuildWidgetPngResponses[keyof GetGuildWidgetPngResponses];
 
 export type ClientOptions = {
-    baseURL: 'https://discord.com/api/v10' | (string & {});
+  baseURL: "https://discord.com/api/v10" | (string & {});
 };

@@ -15,7 +15,6 @@ import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;

@@ -13,8 +13,8 @@
       <Field
         v-slot="{ value, errors, handleChange, handleBlur }"
         v-model="form.username"
-        name="username"
         label="Username"
+        name="username"
         rules="required|alphaNum"
       >
         <v-text-field

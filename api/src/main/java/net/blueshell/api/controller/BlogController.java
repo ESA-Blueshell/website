@@ -8,7 +8,6 @@ import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.mapper.BlogMapper;
 import net.blueshell.api.service.BlogService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

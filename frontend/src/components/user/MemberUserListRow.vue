@@ -27,10 +27,10 @@
 
 
           <v-chip
+            :color="hasContribution ? 'green' : 'red'"
             class="mr-3 d-flex justify-center align-center"
             size="small"
             style="width: 50px"
-            :color="hasContribution ? 'green' : 'red'"
             variant="flat"
           >
             {{ hasContribution ? "Paid" : "Unpaid" }}
@@ -40,9 +40,9 @@
           <v-btn
             v-if="enableDelete"
             :disabled="user?.roles?.includes('ADMIN')"
+            class="btn-tight"
             color="red"
             variant="text"
-            class="btn-tight"
             @click.stop="openDelete"
           >
             Delete
@@ -54,17 +54,17 @@
           >
             <v-btn
               v-if="membership.endDate"
-              variant="text"
               class="btn-tight"
+              variant="text"
               @click.stop="resumeMembership"
             >
               Resume Membership
             </v-btn>
             <v-btn
               v-else
-              variant="text"
-              class="btn-tight"
               :disabled="user.roles.includes('COMMITTEE')"
+              class="btn-tight"
+              variant="text"
               @click.stop="endMembership"
             >
               End Membership
@@ -72,8 +72,8 @@
           </template>
           <template v-else>
             <v-btn
-              variant="text"
               class="btn-tight"
+              variant="text"
               @click.stop="startMembership"
             >
               Start Membership

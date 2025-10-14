@@ -9,10 +9,10 @@
         :key="user.id ?? user.username"
       >
         <contribution-user-list-row
-          :user="user"
+          :contribution-period-id="contributionPeriodId"
           :contributions="contributions"
           :disabled="disabled"
-          :contribution-period-id="contributionPeriodId"
+          :user="user"
           @update:contribution="contributionChanged"
           @delete:contribution="contributionDeleted"
         />

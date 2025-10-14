@@ -1,7 +1,6 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.security.PermitAll;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
@@ -12,7 +11,6 @@ import net.blueshell.api.repository.FileRepository;
 import net.blueshell.api.service.FileService;
 import net.blueshell.api.validation.file.AllowedContentTypes;
 import net.blueshell.api.validation.file.FileSize;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

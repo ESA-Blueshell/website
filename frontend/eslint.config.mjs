@@ -10,6 +10,7 @@ export default [
     {
         ignores: [
             '**/.yarn/**',
+            '.pnp*',
             'node_modules/**',
             'src/assets/**',
             'src/lib/discord/**',

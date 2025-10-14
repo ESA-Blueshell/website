@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type {WidgetMember} from "@/lib"
 
 type PresenceStatus = WidgetMember["status"] // string in your model; keep as-is
@@ -41,12 +41,12 @@ withDefaults(defineProps<Props>(), {
         >
       </v-lazy>
       <span
-        class="discord-membership-status"
         :class="{
           'discord-membership-online': status === 'online',
           'discord-membership-idle': status === 'idle',
           'discord-membership-dnd': status === 'dnd'
         }"
+        class="discord-membership-status"
       />
     </div>
     <span

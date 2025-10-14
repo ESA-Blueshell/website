@@ -54,7 +54,7 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {computed} from "vue"
 import TopBanner from "@/components/banners/TopBanner.vue"
 import {DateTime} from "luxon"

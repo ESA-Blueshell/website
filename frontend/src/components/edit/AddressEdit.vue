@@ -19,11 +19,11 @@
             rules="required|min_chars:2"
           >
             <v-text-field
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="Street"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -36,11 +36,11 @@
             rules="required|houseNumber"
           >
             <v-text-field
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="House Number"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -55,11 +55,11 @@
             rules="required|zipByCountry:@country"
           >
             <v-text-field
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="Zipcode"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -72,11 +72,11 @@
             rules="required|cityName|min_chars:2"
           >
             <v-text-field
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="City"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>
@@ -91,11 +91,11 @@
             rules="required"
           >
             <country-select
-              :model-value="value"
               :error-messages="errors"
+              :model-value="value"
               label="Country"
-              @update:model-value="handleChange"
               @blur="handleBlur"
+              @update:model-value="handleChange"
             />
           </Field>
         </v-col>

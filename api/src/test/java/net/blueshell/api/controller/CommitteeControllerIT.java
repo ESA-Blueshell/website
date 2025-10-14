@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"test", "brevo-mock"})
 class CommitteeControllerIT extends UserTestSupport {
 
     private final Map<Role, User> userMap = new EnumMap<>(Role.class);

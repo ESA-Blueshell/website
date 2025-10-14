@@ -1,4 +1,4 @@
-package net.blueshell.api.service.brevo;
+package net.blueshell.api.service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.mapper.BrevoContactMapper;
@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 @Service
-@Profile({"test", "brevo-mock"})
 @Primary
 public class MockContactService extends ContactService {
 

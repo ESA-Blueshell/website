@@ -16,6 +16,10 @@ spring:
     livereload:
       enabled: true
 
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+
 logging:
   level:
     org.springframework.security: debug

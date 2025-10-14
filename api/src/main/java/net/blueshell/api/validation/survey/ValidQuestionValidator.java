@@ -21,7 +21,7 @@ public class ValidQuestionValidator implements ConstraintValidator<ValidQuestion
 
         return switch (dto.getType()) {
             // If a question is an open question, don't allow choice labels to be set
-            case QuestionType.OPEN -> dto.getChoiceLabels() == null
+            case QuestionType.OPEN, QuestionType.DESCRIPTION -> dto.getChoiceLabels() == null
                     || dto.getChoiceLabels().isEmpty();
             // If a question is checkbox or radio, ensure that choice labels are set
             // And that all the choice labels have some text

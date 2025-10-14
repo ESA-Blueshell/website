@@ -2,6 +2,7 @@ package net.blueshell.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import net.blueshell.api.common.enums.QuestionType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
 import net.blueshell.api.dto.event.EventDTO;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("brevo-mock")
+@ActiveProfiles({"test", "brevo-mock"})
 class EventControllerIT extends UserTestSupport {
 
     private final Map<Role, User> userMap = new EnumMap<>(Role.class);
@@ -88,23 +89,23 @@ class EventControllerIT extends UserTestSupport {
         List<Map<String, Object>> questions = new ArrayList<>();
 
         questions.add(new HashMap<>(Map.of(
-                "type", "CHECKBOX",
+                "type", QuestionType.CHECKBOX,
                 "label", "Checkboxes",
                 "idx", 0,
                 "choiceLabels", List.of("Check a", "Check b")
         )));
         questions.add(new HashMap<>(Map.of(
-                "type", "DESCRIPTION",
+                "type", QuestionType.DESCRIPTION,
                 "label", "Description",
                 "idx", 1
         )));
         questions.add(new HashMap<>(Map.of(
-                "type", "OPEN",
+                "type", QuestionType.OPEN,
                 "label", "Open question",
                 "idx", 2
         )));
         questions.add(new HashMap<>(Map.of(
-                "type", "RADIO",
+                "type", QuestionType.RADIO,
                 "label", "Radio question",
                 "idx", 3,
                 "choiceLabels", List.of("a", "b", "c")

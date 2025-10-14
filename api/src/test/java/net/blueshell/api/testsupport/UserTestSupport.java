@@ -2,7 +2,7 @@ package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.config.SqlScriptTestExecutionListener;
+import net.blueshell.api.config.TruncateTestDatabaseListener;
 import net.blueshell.api.dto.request.JwtRequest;
 import net.blueshell.api.dto.response.AuthenticationDTO;
 import net.blueshell.api.model.User;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Test support for creating users with arbitrary roles and obtaining their JWT tokens.
  */
 @TestExecutionListeners(listeners = {
-        SqlScriptTestExecutionListener.class
+        TruncateTestDatabaseListener.class
 }, mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 public abstract class UserTestSupport {
 

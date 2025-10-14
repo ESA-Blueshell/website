@@ -48,6 +48,12 @@ UPDATE events
 SET end_time = DATE_ADD(DATE(start_time), INTERVAL 1 DAY) - INTERVAL 1 SECOND
 WHERE end_time IS NULL;
 
+-- Migrate news table entries into blogs
+INSERT INTO blogs (title, html, published_at, created_at)
+SELECT title, content, posted_at, posted_at
+FROM news;
+
+
 ALTER TABLE events
     DROP FOREIGN KEY fk_events_banner_id;
 
@@ -381,10 +387,10 @@ ALTER TABLE addresses
     MODIFY created_at datetime NOT NULL;
 
 ALTER TABLE blogs
-    MODIFY created_at datetime NOT NULL;
+    ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
 
 ALTER TABLE blogs
-    ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
+    MODIFY created_at datetime NOT NULL;
 
 ALTER TABLE files
     MODIFY created_at datetime NOT NULL;
@@ -444,7 +450,7 @@ ALTER TABLE board_documents
     MODIFY file_id BIGINT NOT NULL;
 
 ALTER TABLE blogs
-    MODIFY html VARCHAR(255) NOT NULL;
+    MODIFY html LONGTEXT NOT NULL;
 
 ALTER TABLE memberships
     MODIFY incasso BIT(1) NOT NULL;
@@ -515,6 +521,9 @@ ALTER TABLE users
 
 ALTER TABLE redirects
     MODIFY telemetry_id BIGINT NOT NULL;
+
+ALTER TABLE blogs
+    MODIFY created_at DATETIME DEFAULT NOW() NOT NULL;
 
 ALTER TABLE blogs
     MODIFY title VARCHAR(255) NOT NULL;

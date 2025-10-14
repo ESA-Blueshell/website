@@ -40,6 +40,7 @@ public class Blog implements BaseModel {
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Lob
     @Column(name = "html", nullable = false)
     private String html;
 

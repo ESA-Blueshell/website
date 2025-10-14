@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
-import net.blueshell.api.model.Membership;
 import net.blueshell.api.model.User;
 import org.hibernate.annotations.*;
 
@@ -55,6 +54,13 @@ public class Contribution implements BaseModel {
 
     @Column(name = "contribution_period_id", nullable = false)
     private Long contributionPeriodId;
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 
     public Contribution() {
     }
@@ -71,12 +77,4 @@ public class Contribution implements BaseModel {
     public int hashCode() {
         return getClass().hashCode();
     }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

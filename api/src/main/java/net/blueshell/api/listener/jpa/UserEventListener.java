@@ -1,13 +1,15 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.event.PostPersistEvent;
-import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.job.contact.SyncContactJob;
+import net.blueshell.api.common.event.job.SyncContactEvent;
+import net.blueshell.api.common.event.job.UserResetEmailEvent;
+import net.blueshell.api.common.event.jpa.PostPersistEvent;
+import net.blueshell.api.common.event.jpa.PostUpdateEvent;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.email.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +20,12 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class UserEventListener {
 
-    private final EmailService email;
-    private final SyncContactJob syncContactJob;
+    private final ApplicationEventPublisher eventPublisher;
     private final CommitteeMemberService committeeMembers;
 
-    public UserEventListener(EmailService email, SyncContactJob syncContactJob, CommitteeMemberService committeeMembers) {
-        this.email = email;
-        this.syncContactJob = syncContactJob;
+    @Autowired
+    public UserEventListener(ApplicationEventPublisher eventPublisher, CommitteeMemberService committeeMembers) {
+        this.eventPublisher = eventPublisher;
         this.committeeMembers = committeeMembers;
     }
 
@@ -32,15 +33,15 @@ public class UserEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postPersist(PostPersistEvent<User> evt) {
         User u = evt.getSource();
-        email.activation(u);
-        syncContactJob.sync(u.getId());
+        eventPublisher.publishEvent(new UserResetEmailEvent(u.getId()));
+        eventPublisher.publishEvent(new SyncContactEvent(u.getId()));
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onUpdate(PostUpdateEvent<User> evt) {
         User u = evt.getSource();
-        syncContactJob.sync(u.getId());
+        eventPublisher.publishEvent(new SyncContactEvent(u.getId()));
         if (!u.hasRole(Role.MEMBER)) {
             u.getCommitteeMembers().forEach(committeeMembers::delete);
         }

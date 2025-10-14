@@ -6,8 +6,6 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.common.enums.FileType;
 
-import java.sql.Timestamp;
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "File")

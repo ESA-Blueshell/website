@@ -1,14 +1,12 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.event.PostRemoveEvent;
-import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.common.event.PrePersistEvent;
+import net.blueshell.api.common.event.jpa.PostRemoveEvent;
+import net.blueshell.api.common.event.jpa.PostUpdateEvent;
+import net.blueshell.api.common.event.jpa.PrePersistEvent;
 import net.blueshell.api.model.Membership;
-import net.blueshell.api.service.contribution.ContributionPeriodService;
 import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.email.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,14 +17,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class MembershipEventListener {
 
-    private final EmailService emails;
     private final UserService users;
-    private final ContributionPeriodService periods;
 
-    public MembershipEventListener(EmailService emails, UserService users, ContributionPeriodService periods) {
-        this.emails = emails;
+    public MembershipEventListener(UserService users) {
         this.users = users;
-        this.periods = periods;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

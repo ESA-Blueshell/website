@@ -1,11 +1,12 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
-import net.blueshell.api.common.event.PostPersistEvent;
-import net.blueshell.api.common.event.PostRemoveEvent;
-import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.job.contact.AddContactToListJob;
-import net.blueshell.api.job.contact.RemoveContactFromListJob;
+import net.blueshell.api.common.event.job.AddContactToListEvent;
+import net.blueshell.api.common.event.job.RemoveContactFromListEvent;
+import net.blueshell.api.common.event.jpa.PostPersistEvent;
+import net.blueshell.api.common.event.jpa.PostRemoveEvent;
+import net.blueshell.api.common.event.jpa.PostUpdateEvent;
 import net.blueshell.api.model.contribution.Contribution;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,33 +16,30 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class ContributionEventListener {
 
-    private final AddContactToListJob addContactToListJob;
-    private final RemoveContactFromListJob removeContactFromListJob;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public ContributionEventListener(AddContactToListJob addContactToListJob,
-                                     RemoveContactFromListJob removeContactFromListJob) {
-        this.addContactToListJob = addContactToListJob;
-        this.removeContactFromListJob = removeContactFromListJob;
+    public ContributionEventListener(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onPersist(PostPersistEvent<Contribution> evt) {
         var c = evt.getSource();
-        addContactToListJob.addToList(c.getUserId(), c.getContributionPeriodId());
+        eventPublisher.publishEvent(new AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()));
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onUpdate(PostUpdateEvent<Contribution> evt) {
         var c = evt.getSource();
-        addContactToListJob.addToList(c.getUserId(), c.getContributionPeriodId());
+        eventPublisher.publishEvent(new AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()));
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Contribution> evt) {
         var c = evt.getSource();
-        removeContactFromListJob.removeFromList(c.getUserId(), c.getContributionPeriodId());
+        eventPublisher.publishEvent(new RemoveContactFromListEvent(c.getUserId(), c.getContributionPeriodId()));
     }
 }

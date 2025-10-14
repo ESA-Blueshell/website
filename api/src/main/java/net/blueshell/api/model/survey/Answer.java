@@ -5,7 +5,6 @@ import lombok.Data;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.converter.BooleanListConverter;
-import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.model.event.EventSignUpAnswer;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Generated;
@@ -48,6 +47,13 @@ public class Answer implements BaseModel {
 
     @OneToOne(mappedBy = "answer", cascade = CascadeType.ALL)
     private EventSignUpAnswer eventSignUpAnswer;
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 
     @Override
     public boolean equals(Object o) {
@@ -60,12 +66,4 @@ public class Answer implements BaseModel {
     public int hashCode() {
         return getClass().hashCode();
     }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

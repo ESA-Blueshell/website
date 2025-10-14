@@ -38,6 +38,14 @@ public class AuthenticationDTO extends BaseDTO {
     @NotEmpty
     private final Set<Role> roles;
 
+    public AuthenticationDTO(String token, long userId, String username, long expiration, Set<Role> roles) {
+        this.token = token;
+        this.userId = userId;
+        this.username = username;
+        this.expiration = expiration;
+        this.roles = roles;
+    }
+
     @JsonProperty("roles")
     public List<Role> getRolesSorted() {
         if (roles == null || roles.isEmpty()) return new ArrayList<>();
@@ -45,13 +53,5 @@ public class AuthenticationDTO extends BaseDTO {
         return roles.stream()
                 .sorted(Comparator.comparingInt(Enum::ordinal))
                 .toList();
-    }
-
-    public AuthenticationDTO(String token, long userId, String username, long expiration, Set<Role> roles) {
-        this.token = token;
-        this.userId = userId;
-        this.username = username;
-        this.expiration = expiration;
-        this.roles = roles;
     }
 }

@@ -1,14 +1,14 @@
-package net.blueshell.api.common.event;
+package net.blueshell.api.common.event.jpa;
 
 import lombok.Getter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
 
-public class PreRemoveEvent<T> implements ResolvableTypeProvider {
+public class PostRemoveEvent<T> implements ResolvableTypeProvider {
     @Getter
     private T source;
 
-    public PreRemoveEvent(T source) {
+    public PostRemoveEvent(T source) {
         this.source = source;
     }
 

@@ -6,7 +6,6 @@ import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.FileType;
 import net.blueshell.api.model.event.EventBanner;
-import org.checkerframework.checker.units.qual.C;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
@@ -65,6 +64,13 @@ public class File implements BaseModel {
 
     @OneToMany(mappedBy = "file")
     private Set<EventBanner> eventBanners;
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 
     @Override
     public boolean equals(Object o) {
@@ -78,12 +84,4 @@ public class File implements BaseModel {
     public int hashCode() {
         return Objects.hash(id);
     }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

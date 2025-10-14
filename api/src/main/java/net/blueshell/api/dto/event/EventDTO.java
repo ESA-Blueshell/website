@@ -9,9 +9,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.dto.survey.SurveyDTO;
-import net.blueshell.api.model.event.EventBanner;
 
 import java.time.OffsetDateTime;
 

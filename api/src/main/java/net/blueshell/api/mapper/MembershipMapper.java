@@ -8,9 +8,7 @@ import net.blueshell.api.dto.MembershipDTO;
 import net.blueshell.api.model.Membership;
 import org.mapstruct.*;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Date;
 
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 

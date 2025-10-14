@@ -2,7 +2,6 @@ package net.blueshell.api.controller.contribution;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.PathParam;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.contribution.ContributionDTO;
 import net.blueshell.api.mapper.contribution.ContributionMapper;

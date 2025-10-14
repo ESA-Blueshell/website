@@ -47,7 +47,7 @@ public class EventPicture implements BaseModel {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)

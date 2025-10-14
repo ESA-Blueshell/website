@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event;
+package net.blueshell.api.common.event.jpa;
 
 import lombok.Getter;
 import org.springframework.core.ResolvableType;

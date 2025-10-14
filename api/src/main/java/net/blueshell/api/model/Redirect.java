@@ -34,17 +34,16 @@ public class Redirect implements BaseModel {
     @ManyToOne
     @JoinColumn(name = "telemetry_id", nullable = false)
     private Telemetry telemetry;
-
-    public Redirect(Telemetry telemetry) {
-        this.telemetry = telemetry;
-        this.createdAt = Timestamp.from(Instant.now());
-    }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Generated
     private Timestamp createdAt;
+
+    public Redirect(Telemetry telemetry) {
+        this.telemetry = telemetry;
+        this.createdAt = Timestamp.from(Instant.now());
+    }
 }

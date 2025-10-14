@@ -4,14 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
+import net.blueshell.api.common.event.job.UserResetEmailEvent;
 import net.blueshell.api.common.util.Util;
 import net.blueshell.api.controller.filter.UserFilter;
-import net.blueshell.api.job.email.ActivationEmailJob;
-import net.blueshell.api.job.email.PasswordResetEmailJob;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
 import net.blueshell.api.repository.spec.UserSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -31,14 +31,12 @@ import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
 @Service
 public class UserService extends BaseModelService<User, UserRepository> implements UserDetailsService {
 
-    private final ActivationEmailJob activationEmailJob;
-    private final PasswordResetEmailJob passwordResetEmailJob;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public UserService(UserRepository repository, ActivationEmailJob activationEmailJob, PasswordResetEmailJob passwordResetEmailJob) {
+    public UserService(UserRepository repository, ApplicationEventPublisher eventPublisher) {
         super(repository);
-        this.activationEmailJob = activationEmailJob;
-        this.passwordResetEmailJob = passwordResetEmailJob;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -111,13 +109,6 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
 
         self().update(user);
 
-        switch (user.getResetType()) {
-            case PASSWORD_RESET:
-                passwordResetEmailJob.send(user.getId());
-                break;
-            case USER_ACTIVATION, MEMBER_ACTIVATION:
-                activationEmailJob.send(user.getId());
-                break;
-        }
+        eventPublisher.publishEvent(new UserResetEmailEvent(user.getId()));
     }
 }

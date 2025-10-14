@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
-import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.util.Util;

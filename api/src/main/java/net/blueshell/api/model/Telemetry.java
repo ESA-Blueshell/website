@@ -11,7 +11,6 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.Set;
 
 @Entity
@@ -48,17 +47,16 @@ public class Telemetry implements BaseModel {
 
     @OneToMany(mappedBy = "telemetry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Redirect> redirects;
-
-    public Telemetry(PlatformType platform, String url) {
-        this.platform = platform;
-        this.url = url;
-    }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Generated
     private Timestamp createdAt;
+
+    public Telemetry(PlatformType platform, String url) {
+        this.platform = platform;
+        this.url = url;
+    }
 }

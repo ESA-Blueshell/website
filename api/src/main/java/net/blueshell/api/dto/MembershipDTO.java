@@ -14,7 +14,6 @@ import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.membership.NoExistingMembershipForUserId;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import java.sql.Date;
 import java.time.LocalDate;
 
 @Data

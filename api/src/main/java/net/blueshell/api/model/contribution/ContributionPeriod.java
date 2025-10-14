@@ -66,7 +66,13 @@ public class ContributionPeriod implements BaseModel {
     @Column(name = "list_id")
     @Setter
     private Long listId;
-
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 
     @Override
     public boolean equals(Object o) {
@@ -80,12 +86,4 @@ public class ContributionPeriod implements BaseModel {
     public int hashCode() {
         return getClass().hashCode();
     }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

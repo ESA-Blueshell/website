@@ -3,9 +3,7 @@ package net.blueshell.api.validation.date;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.time.ZoneId;
 
 public class TodayValidator implements ConstraintValidator<Today, LocalDate> {
 

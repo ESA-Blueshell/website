@@ -3,7 +3,10 @@ package net.blueshell.api.mapper;
 import net.blueshell.api.common.enums.PlatformType;
 import net.blueshell.api.dto.SocialDTO;
 import net.blueshell.api.model.Blog;
-import org.mapstruct.*;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Value;
 
 @Mapper(componentModel = "spring")

@@ -17,7 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ContributionReminderEmailJob {
 
     private static final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
-    @Autowired private EmailService emails;
+    @Autowired
+    private EmailService emails;
 
     @Async
     @Retryable(retryFor = {Exception.class}, maxAttempts = 3,

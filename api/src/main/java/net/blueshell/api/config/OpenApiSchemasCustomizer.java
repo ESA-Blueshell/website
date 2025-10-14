@@ -1,11 +1,11 @@
 package net.blueshell.api.config;
 
 import io.swagger.v3.core.converter.ModelConverters;
+import net.blueshell.api.dto.PersonalInfoDTO;
 import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import net.blueshell.api.dto.PersonalInfoDTO;
 
 import java.util.Set;
 

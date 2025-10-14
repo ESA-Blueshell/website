@@ -6,7 +6,6 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.event.EventDTO;
 import net.blueshell.api.mapper.survey.SurveyMapper;
 import net.blueshell.api.model.event.Event;
-import net.blueshell.api.model.survey.Survey;
 import org.mapstruct.*;
 
 import java.time.LocalDateTime;

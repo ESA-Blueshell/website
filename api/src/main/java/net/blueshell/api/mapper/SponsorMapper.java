@@ -6,7 +6,6 @@ import net.blueshell.api.model.Sponsor;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(componentModel = "spring")
 public abstract class SponsorMapper extends BaseMapper<Sponsor, SponsorDTO> {

@@ -1,12 +1,13 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
-import net.blueshell.api.common.event.PostRemoveEvent;
-import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.common.event.PrePersistEvent;
-import net.blueshell.api.job.calendar.AddEventToCalendarJob;
-import net.blueshell.api.job.calendar.RemoveEventFromCalendarJob;
-import net.blueshell.api.job.calendar.SyncEventToCalendarJob;
+import net.blueshell.api.common.event.job.AddEventToCalendarEvent;
+import net.blueshell.api.common.event.job.RemoveEventFromCalendarEvent;
+import net.blueshell.api.common.event.job.SyncEventToCalendarEvent;
+import net.blueshell.api.common.event.jpa.PostRemoveEvent;
+import net.blueshell.api.common.event.jpa.PostUpdateEvent;
+import net.blueshell.api.common.event.jpa.PrePersistEvent;
 import net.blueshell.api.model.event.Event;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,16 +17,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class EventEventListener {
 
-    private final AddEventToCalendarJob addJob;
-    private final SyncEventToCalendarJob syncJob;
-    private final RemoveEventFromCalendarJob removeJob;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public EventEventListener(AddEventToCalendarJob addJob,
-                              SyncEventToCalendarJob syncJob,
-                              RemoveEventFromCalendarJob removeJob) {
-        this.addJob = addJob;
-        this.syncJob = syncJob;
-        this.removeJob = removeJob;
+    public EventEventListener(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -36,7 +31,7 @@ public class EventEventListener {
     public void onPersist(PrePersistEvent<Event> evt) {
         Event e = evt.getSource();
         if (e.isApproved()) {
-            addJob.add(e.getId());
+            eventPublisher.publishEvent(new AddEventToCalendarEvent(e.getId()));
         }
     }
 
@@ -48,9 +43,9 @@ public class EventEventListener {
     public void onUpdate(PostUpdateEvent<Event> evt) {
         Event e = evt.getSource();
         if (e.isApproved()) {
-            syncJob.sync(e.getId());
+            eventPublisher.publishEvent(new SyncEventToCalendarEvent(e.getId()));
         } else {
-            removeJob.remove(e.getId());
+            eventPublisher.publishEvent(new RemoveEventFromCalendarEvent(e.getId()));
         }
     }
 
@@ -61,6 +56,6 @@ public class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Event> evt) {
         Event e = evt.getSource();
-        removeJob.remove(e.getId());
+        eventPublisher.publishEvent(new RemoveEventFromCalendarEvent(e.getId()));
     }
 }

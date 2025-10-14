@@ -1,10 +1,8 @@
 package net.blueshell.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
 
 import java.sql.Timestamp;
 

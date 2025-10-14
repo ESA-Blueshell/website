@@ -45,13 +45,11 @@ public class Address implements BaseModel {
     @OneToOne(mappedBy = "address")
     @ToString.Exclude
     private User user;
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
+    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Timestamp createdAt;
 
     public Address() {
     }
-
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
-
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    private Timestamp createdAt;
 }

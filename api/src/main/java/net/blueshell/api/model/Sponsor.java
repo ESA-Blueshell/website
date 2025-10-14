@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
-import org.checkerframework.checker.units.qual.C;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
@@ -44,6 +43,13 @@ public class Sponsor implements BaseModel {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "logo_id", nullable = false)
     private File picture;
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
+    private Timestamp createdAt;
 
     @JsonProperty("picture")
     public long getPictureId() {
@@ -62,12 +68,4 @@ public class Sponsor implements BaseModel {
     public int hashCode() {
         return Objects.hash(id);
     }
-
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

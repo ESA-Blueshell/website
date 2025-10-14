@@ -16,13 +16,12 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "Survey")
 public class SurveyDTO extends BaseDTO {
-    private Long id;
-    private Long responseCount;
-
     @NotEmpty
     @ValidQuestionList
     @Valid
     List<QuestionDTO> questions;
+    private Long id;
+    private Long responseCount;
 
     @JsonProperty("questions")
     public List<QuestionDTO> getQuestionsSorted() {

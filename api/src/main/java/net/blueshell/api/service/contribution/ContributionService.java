@@ -4,26 +4,20 @@ import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.contribution.ContributionPeriod;
 import net.blueshell.api.repository.contribution.ContributionRepository;
-import net.blueshell.api.service.email.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 
 @Service
 public class ContributionService extends BaseModelService<Contribution, ContributionRepository> {
 
     private final ContributionPeriodService periodService;
-    private final EmailService emails;
 
     @Autowired
-    public ContributionService(ContributionRepository repository, EmailService emails, ContributionPeriodService periodService) {
+    public ContributionService(ContributionRepository repository, ContributionPeriodService periodService) {
         super(repository);
-        this.emails = emails;
         this.periodService = periodService;
     }
 

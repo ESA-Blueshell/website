@@ -3,8 +3,10 @@ package net.blueshell.api.mapper;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.model.File;
-import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Value;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 

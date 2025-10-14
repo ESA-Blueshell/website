@@ -80,6 +80,7 @@ public class CalendarService {
                     .insert(calendarId, googleEvent)
                     .execute();
             event.setGoogleId(googleEvent.getId());
+            log.info("Added a new event to the calendar at: {}", googleEvent.getHtmlLink());
         } catch (GoogleJsonResponseException e) {
             log.error("Google Calendar API returned HTTP response code during insert: {}", e.getStatusCode());
         }

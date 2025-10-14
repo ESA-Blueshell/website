@@ -36,7 +36,8 @@ import java.util.Set;
 @Data
 @EntityListeners(JpaListener.class)
 public class Question implements BaseModel {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "idx", nullable = false)
@@ -66,7 +67,7 @@ public class Question implements BaseModel {
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
     private long answerCount;
 
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)

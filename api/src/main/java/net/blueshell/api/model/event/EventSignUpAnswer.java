@@ -2,9 +2,7 @@ package net.blueshell.api.model.event;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.survey.Answer;
 import org.hibernate.annotations.ColumnDefault;
@@ -13,7 +11,6 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -53,7 +50,7 @@ public class EventSignUpAnswer implements BaseModel {
     @JoinColumn(name = "answer_id", nullable = false)
     private Answer answer;
 
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)

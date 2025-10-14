@@ -47,7 +47,7 @@ public class Blog implements BaseModel {
     @Column(name = "published_at", nullable = false)
     private Timestamp publishedAt;
 
-    @Column(name = "deleted_at", nullable = false, insertable=false, updatable = false)
+    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")
     private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)

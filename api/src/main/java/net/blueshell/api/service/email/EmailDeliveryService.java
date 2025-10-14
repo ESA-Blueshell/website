@@ -15,8 +15,12 @@ import java.io.UnsupportedEncodingException;
 @Slf4j
 public class EmailDeliveryService {
 
+    private final JavaMailSender mailSender;
+
     @Autowired
-    private JavaMailSender mailSender;
+    public EmailDeliveryService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     /**
      * Sends an HTML email (synchronous). Jobs wrap retries/async.

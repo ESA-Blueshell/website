@@ -1,9 +1,9 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
 import net.blueshell.api.common.enums.QuestionType;
-import net.blueshell.api.common.event.PostPersistEvent;
-import net.blueshell.api.common.event.PostRemoveEvent;
-import net.blueshell.api.common.event.PostUpdateEvent;
+import net.blueshell.api.common.event.jpa.PostPersistEvent;
+import net.blueshell.api.common.event.jpa.PostRemoveEvent;
+import net.blueshell.api.common.event.jpa.PostUpdateEvent;
 import net.blueshell.api.model.survey.Question;
 import net.blueshell.api.service.event.EventSignUpService;
 import net.blueshell.api.service.survey.AnswerService;

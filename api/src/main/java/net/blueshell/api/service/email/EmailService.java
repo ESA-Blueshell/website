@@ -42,34 +42,6 @@ public class EmailService {
         this.appUrl = appUrl;
     }
 
-    /**
-     * Activation: decide template based on user's resetType
-     */
-    public void sendActivationEmail(Long userId) {
-        User user = users.findById(userId);
-        if (user == null || user.getResetType() == null) {
-            log.info("Activation skipped: user={} or resetType missing", userId);
-            return;
-        }
-
-        BaseEmail email = switch (user.getResetType()) {
-            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
-            case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
-            default -> null;
-        };
-        if (email == null) return;
-
-        deliver(email);
-    }
-
-    public void sendPasswordResetEmail(Long userId) {
-        User user = users.findById(userId);
-        if (user == null) return;
-
-        BaseEmail email = new PasswordResetEmail(user, frontendUrl, appUrl);
-        deliver(email);
-    }
-
     public void sendContributionReminderEmail(Long reminderId) {
         ContributionReminder reminder = reminders.findById(reminderId);
         if (reminder == null || reminder.getUser() == null) return;
@@ -110,5 +82,23 @@ public class EmailService {
                 content.senderName(),
                 content.senderAddress()
         );
+    }
+
+    public void sendUserResetEmail(Long userId) {
+        User user = users.findById(userId);
+        if (user == null || user.getResetType() == null) {
+            log.info("Activation skipped: user={} or resetType missing", userId);
+            return;
+        }
+
+        BaseEmail email = switch (user.getResetType()) {
+            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
+            case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
+            case PASSWORD_RESET -> new PasswordResetEmail(user, frontendUrl, appUrl);
+            default -> null;
+        };
+        if (email == null) return;
+
+        deliver(email);
     }
 }

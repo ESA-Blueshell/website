@@ -4,7 +4,10 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.clients.brevo.model.CreateContact;
 import net.blueshell.clients.brevo.model.UpdateContact;
-import org.mapstruct.*;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import java.util.HashMap;
 import java.util.Map;

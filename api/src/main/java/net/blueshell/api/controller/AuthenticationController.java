@@ -10,7 +10,6 @@ import net.blueshell.api.dto.request.MemberActivationRequest;
 import net.blueshell.api.dto.request.PasswordResetRequest;
 import net.blueshell.api.dto.request.UserActivationRequest;
 import net.blueshell.api.dto.response.AuthenticationDTO;
-import net.blueshell.api.job.email.PasswordResetEmailJob;
 import net.blueshell.api.mapper.activation.MemberActivationRequestMapper;
 import net.blueshell.api.mapper.activation.PasswordResetRequestMapper;
 import net.blueshell.api.mapper.activation.UserActivationRequestMapper;
@@ -33,7 +32,6 @@ public class AuthenticationController extends JWTAuthBase {
     private final MemberActivationRequestMapper memberActivationMapper;
     private final UserActivationRequestMapper userActivationMapper;
     private final PasswordResetRequestMapper passwordResetMapper;
-    private final PasswordResetEmailJob resetEmailJob;
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
@@ -44,7 +42,7 @@ public class AuthenticationController extends JWTAuthBase {
             UserService users,
             MemberActivationRequestMapper memberActivationMapper,
             UserActivationRequestMapper userActivationMapper,
-            PasswordResetRequestMapper passwordResetMapper, PasswordResetEmailJob resetEmailJob
+            PasswordResetRequestMapper passwordResetMapper
     ) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
@@ -52,7 +50,6 @@ public class AuthenticationController extends JWTAuthBase {
         this.memberActivationMapper = memberActivationMapper;
         this.userActivationMapper = userActivationMapper;
         this.passwordResetMapper = passwordResetMapper;
-        this.resetEmailJob = resetEmailJob;
     }
 
 

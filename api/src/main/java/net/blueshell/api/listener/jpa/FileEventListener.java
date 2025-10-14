@@ -1,6 +1,6 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
-import net.blueshell.api.common.event.PostRemoveEvent;
+import net.blueshell.api.common.event.jpa.PostRemoveEvent;
 import net.blueshell.api.model.File;
 import net.blueshell.api.service.FileService;
 import org.springframework.stereotype.Component;

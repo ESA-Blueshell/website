@@ -1,9 +1,10 @@
-package net.blueshell.api.event;
+package net.blueshell.api.listener.jpa;
 
-import net.blueshell.api.common.event.PostPersistEvent;
-import net.blueshell.api.common.event.PostUpdateEvent;
-import net.blueshell.api.job.contact.CreateContributionPeriodListJob;
+import net.blueshell.api.common.event.job.CreateContributionPeriodListEvent;
+import net.blueshell.api.common.event.jpa.PostPersistEvent;
+import net.blueshell.api.common.event.jpa.PostUpdateEvent;
 import net.blueshell.api.model.contribution.ContributionPeriod;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,10 +14,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class ContributionPeriodEventListener {
 
-    private final CreateContributionPeriodListJob createListJob;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public ContributionPeriodEventListener(CreateContributionPeriodListJob createListJob) {
-        this.createListJob = createListJob;
+    public ContributionPeriodEventListener(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -24,7 +25,7 @@ public class ContributionPeriodEventListener {
     public void onUpdate(PostUpdateEvent<ContributionPeriod> evt) {
         var c = evt.getSource();
         if (c.getListId() != null) return;
-        createListJob.createList(c.getId());
+        eventPublisher.publishEvent(new CreateContributionPeriodListEvent(c.getId()));
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -32,6 +33,6 @@ public class ContributionPeriodEventListener {
     public void onCreate(PostPersistEvent<ContributionPeriod> evt) {
         var c = evt.getSource();
         if (c.getListId() != null) return;
-        createListJob.createList(c.getId());
+        eventPublisher.publishEvent(new CreateContributionPeriodListEvent(c.getId()));
     }
 }

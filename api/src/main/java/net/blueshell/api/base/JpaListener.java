@@ -2,7 +2,7 @@ package net.blueshell.api.base;
 
 import jakarta.persistence.*;
 import lombok.Setter;
-import net.blueshell.api.common.event.*;
+import net.blueshell.api.common.event.jpa.*;
 import org.springframework.context.ApplicationEventPublisher;
 
 public class JpaListener {

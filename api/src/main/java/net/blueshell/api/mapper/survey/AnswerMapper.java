@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.survey.AnswerDTO;
 import net.blueshell.api.model.survey.Answer;
-import org.mapstruct.*;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Slf4j
 @Mapper(componentModel = "spring")

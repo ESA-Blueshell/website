@@ -9,5 +9,6 @@ import java.util.Optional;
 @Repository
 public interface FileRepository extends BaseRepository<File> {
     Optional<File> findByName(String name);
+
     Optional<File> findByEventBanners_Id(Long bannerId);
 }

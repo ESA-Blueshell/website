@@ -1,0 +1,117 @@
+name: Frontend CI
+
+on:
+  push:
+    paths: [ 'frontend/**' ]
+  pull_request:
+    paths: [ 'frontend/**' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.4 --activate
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Upload install artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-install
+          path: |
+            frontend/.yarn
+            frontend/.pnp.*
+            frontend/node_modules
+          if-no-files-found: ignore
+
+  typecheck:
+    name: Typecheck
+    needs: setup
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.4 --activate
+
+      - name: Restore install artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-install
+          path: frontend
+
+      - name: Ensure deps present (no-op if restored)
+        run: yarn install --immutable
+
+      - name: Run typecheck
+        run: yarn typecheck
+
+  lint:
+    name: Lint
+    needs: setup
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.4 --activate
+
+      - name: Restore install artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-install
+          path: frontend
+
+      - name: Ensure deps present (no-op if restored)
+        run: yarn install --immutable
+
+      - name: Run lint
+        run: yarn lint

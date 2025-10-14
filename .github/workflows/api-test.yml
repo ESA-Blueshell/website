@@ -2,11 +2,9 @@ name: Test API
 
 on:
   push:
-    paths:
-      - 'api/**'
+    paths: [ 'api/**' ]
   pull_request:
-    paths:
-      - 'api/**'
+    paths: [ 'api/**' ]
 
 permissions:
   contents: read
@@ -15,10 +13,10 @@ concurrency:
   group: api-ci-${{ github.ref }}
   cancel-in-progress: true
 
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       db:
@@ -33,6 +31,9 @@ jobs:
           MYSQL_PASSWORD: "blueshell-test"
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     env:
       MYSQL_HOST: 127.0.0.1
@@ -45,11 +46,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK (match POM release 24)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 24
           cache: maven
 
       - name: Install Maven
@@ -58,8 +59,7 @@ jobs:
           sudo apt-get install -y maven
 
       - name: Install Dependencies
-        run: |
-          mvn install
+        run: mvn install -q -DskipTests
         working-directory: api
 
       - name: Install MariaDB client
@@ -67,19 +67,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mariadb-client
 
+      - name: Wait for DB
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "DB is up"; break
+            fi
+            echo "Waiting for DB ($i/30)..."
+            sleep 2
+          done
+
       - name: Run DB init SQL if present
         run: |
           set -e
-          SQL=""
-          if [ -f env/init.sql ]; then SQL="env/init.sql"; fi
-          if [ -n "$SQL" ]; then
-            echo "Applying $SQL..."
-            mysql -h 127.0.0.1 -uroot -p"${MYSQL_PASSWORD}" < "$SQL"
+          if [ -f api/env/init.sql ]; then
+            echo "Applying api/env/init.sql..."
+            mysql -h 127.0.0.1 -uroot -p"${MYSQL_PASSWORD}" < api/env/init.sql
           else
-            echo "No env/init.sql or env/dump.sql found. Skipping seed."
+            echo "No api/env/init.sql found. Skipping seed."
           fi
 
-      # ---- Build & test the API (host build) ----
-      - name: Maven - clean verify (run all tests)
+      - name: Maven - clean verify
         run: mvn -B -DskipTests=false clean verify
         working-directory: api

@@ -1,13 +1,8 @@
 <script lang="ts" setup>
 import {computed, type Ref, ref} from "vue"
 import {useStore} from "vuex"
-import {type Guest} from "@/lib"
 import {Field, Form} from "vee-validate"
 import type {VForm} from "vuetify/lib/components"
-
-interface Props {
-  guest: Guest
-}
 
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)

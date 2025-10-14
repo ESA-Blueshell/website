@@ -84,7 +84,7 @@ const route = useRoute()
 const store = useStore<State>()
 
 const form = ref<VForm>()
-const usernameField = ref<any>(null)
+const usernameField = ref()
 const username = ref<string>("")
 const password = ref<string>("")
 const valid = ref<boolean>(false)

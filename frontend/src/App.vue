@@ -539,20 +539,13 @@ onMounted(async () => {
         path: {
           userId: loginData.userId,
         },
+        throwOnError: true,
       })
 
       const userData: AdvancedUser = resp.data!
       store.commit("setRoles", userData.roles)
-    } catch (e: any) {
-      if (e.response?.status === 401) {
-        store.commit("setStatusSnackbarMessage", "Login expired. You have been logged out.")
-        store.commit("logout")
-        if (route.meta.requiresAuth) {
-          $goto("/")
-        }
-      } else {
-        $handleNetworkError(e)
-      }
+    } catch (e: unknown) {
+      $handleNetworkError(e)
     }
   }
 

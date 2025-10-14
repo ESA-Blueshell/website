@@ -54,6 +54,7 @@ export type AdvancedUser = {
     createdAt?: string;
     gender?: string;
     studentNumber?: string;
+    addressId?: number;
 };
 
 export type Sponsor = {
@@ -1326,6 +1327,49 @@ export type CreateUserResponses = {
 };
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
+
+export type UploadSignatureData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/users/signature';
+};
+
+export type UploadSignatureErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadSignatureError = UploadSignatureErrors[keyof UploadSignatureErrors];
+
+export type UploadSignatureResponses = {
+    /**
+     * Created
+     */
+    201: File;
+};
+
+export type UploadSignatureResponse = UploadSignatureResponses[keyof UploadSignatureResponses];
 
 export type CreateMemberData = {
     body: AdvancedUser;
@@ -3103,49 +3147,6 @@ export type DownloadEventBannerResponses = {
 
 export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
 
-export type DownloadFileData = {
-    body?: never;
-    path: {
-        filename: string;
-    };
-    query?: never;
-    url: '/download/{filename}';
-};
-
-export type DownloadFileErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadFileError = DownloadFileErrors[keyof DownloadFileErrors];
-
-export type DownloadFileResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadFileResponse = DownloadFileResponses[keyof DownloadFileResponses];
-
 export type FindContributionsByPeriodIdData = {
     body?: never;
     path: {
@@ -3313,49 +3314,6 @@ export type FindCommitteesForCurrentUserResponses = {
 };
 
 export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
-
-export type DownloadAssetData = {
-    body?: never;
-    path: {
-        filename: string;
-    };
-    query?: never;
-    url: '/assets/{filename}';
-};
-
-export type DownloadAssetErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadAssetError = DownloadAssetErrors[keyof DownloadAssetErrors];
-
-export type DownloadAssetResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadAssetResponse = DownloadAssetResponses[keyof DownloadAssetResponses];
 
 export type DeleteEventByIdData = {
     body?: never;

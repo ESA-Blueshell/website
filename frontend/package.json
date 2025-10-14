@@ -7,7 +7,7 @@
     "build": "vite build",
     "typecheck": "vue-tsc --noEmit",
     "dev": "vite --host",
-    "lint": "eslint  --fix",
+    "lint": "eslint --fix",
     "preview": "tsc && vite preview",
     "gen:discord": "openapi-ts --file ./openapi-ts.discord.config.ts",
     "gen:blueshell": "openapi-ts --file ./openapi-ts.blueshell.config.ts",

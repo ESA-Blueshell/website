@@ -57,7 +57,7 @@
 import {onMounted, ref} from "vue"
 import type {VForm} from "vuetify/components"
 import {useRoute, useRouter} from "vue-router"
-import type {MemberActivationRequest} from "@/lib"
+import type {UserActivationRequest} from "@/lib"
 import {memberActivate} from "@/lib"
 import {Field, Form, useForm} from "vee-validate"
 
@@ -69,16 +69,12 @@ const vuetifyValid = ref<boolean>(true)
 
 const loading = ref<boolean>(false)
 const succeeded = ref<boolean>(false)
-const showPass = ref<boolean>(false)
 const token = ref<string>("")
 
-const form = ref<MemberActivationRequest>({
+const form = ref<UserActivationRequest>({
   token: "",
   username: "",
-  password: "",
 })
-
-const passwordAgain = ref<string>("")
 
 const {validate: vvValidate} = useForm()
 

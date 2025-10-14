@@ -148,13 +148,13 @@ const formRef = ref<FormContext>()
 const {validate: vvValidate, resetForm} = useForm()
 const {apply} = useBackendValidation()
 
-const validateAddress = async (): Promise<boolean> => {
+const validate = async (): Promise<boolean> => {
   const res = await vvValidate()
   return Boolean(res.valid)
 }
 
-const saveAddress = async (): Promise<void> => {
-  const ok = await validateAddress()
+const save = async (): Promise<void> => {
+  const ok = await validate()
   if (!ok) throw new Error("Address validation failed")
 
   try {
@@ -184,7 +184,7 @@ const saveAddress = async (): Promise<void> => {
   }
 }
 
-const clearAddress = (): void => {
+const clear = (): void => {
   const empty: Address = {
     id: undefined,
     userId: localAddress.value.userId, // preserve userId
@@ -199,9 +199,9 @@ const clearAddress = (): void => {
 }
 
 defineExpose({
-  saveAddress,
-  validateAddress,
-  clearAddress,
+  save,
+  validate,
+  clear,
 })
 </script>
 

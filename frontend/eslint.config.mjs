@@ -1,4 +1,3 @@
-
 import js from '@eslint/js'
 import pluginVue from 'eslint-plugin-vue'
 import * as parserVue from 'vue-eslint-parser'
@@ -8,6 +7,15 @@ import pluginVuetify from 'eslint-plugin-vuetify'
 import globals from 'globals'
 
 export default [
+    {
+        ignores: [
+            '**/.yarn/**',
+            'node_modules/**',
+            'src/assets/**',
+            'src/lib/discord/**',
+            'src/lib/blueshell/**',
+        ]
+    },
     js.configs.recommended,
     ...pluginVue.configs['flat/recommended'],
     {

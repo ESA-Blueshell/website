@@ -105,8 +105,6 @@ const props = defineProps<{ modelValue: Event }>()
 
 const event = toRef(props, "modelValue")
 
-const expand = ref(false)
-
 const eventTitle = computed(() => (event.value?.title as string | undefined) ?? "")
 const description = computed(() => (event.value?.description as string) ?? "")
 

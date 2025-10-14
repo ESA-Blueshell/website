@@ -49,6 +49,7 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private String gender;
     @JsonProperty
     private String studentNumber;
+    private Long addressId;
 
     @JsonProperty("roles")
     public List<Role> getRolesSorted() {

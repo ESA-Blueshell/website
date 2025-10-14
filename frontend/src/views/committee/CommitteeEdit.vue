@@ -27,18 +27,18 @@ const emit = defineEmits<{
   (e: "saved", value: Model): void
 }>()
 
-defineRule("committeeUserIsMember", (userId: number | string, _params, _ctx) => {
+defineRule("committeeUserIsMember", (userId: number | string) => {
   if (!userId && userId !== 0) return "Select a user"
   const u = props.users.find(u => Number(u.id) === Number(userId))
   if (!u) return "Select a user"
   return u.roles?.includes?.(Role.MEMBER) || "Committee members must be members of the association"
 })
 
-defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[], ctx) => {
+defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[]) => {
   if (!userId && userId !== 0) return true
   const i = Number(idx)
-  const members = (ctx?.form as any)?.members ?? []
-  const dup = members.some((m: any, pos: number) => pos !== i && Number(m?.userId) === Number(userId))
+  committee.value.members ??= []
+  const dup = committee.value.members.some((m: CommitteeMember, pos: number) => pos !== i && Number(m?.userId) === Number(userId))
   return !dup || "Member already in this committee"
 })
 

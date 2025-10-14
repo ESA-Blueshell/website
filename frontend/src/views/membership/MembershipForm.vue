@@ -140,8 +140,15 @@ import TopBanner from "@/components/banners/TopBanner.vue"
 import AdvancedUserForm from "@/components/user/AdvancedUserForm.vue"
 import AddressEdit from "@/components/edit/AddressEdit.vue"
 import MembershipEdit from "@/components/edit/MembershipEdit.vue"
-import type {Address, AdvancedUser, Membership} from "@/lib"
-import {createUser, findUserById, updateUser} from "@/lib"
+import {
+  type Address,
+  type AdvancedUser,
+  createUser,
+  findAddressById,
+  findUserById,
+  type Membership,
+  updateUser,
+} from "@/lib"
 
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -326,9 +333,9 @@ onMounted(async () => {
         userData.value = {...response.data}
         membershipData.value!.userId = response.data.id!
 
-        // If user has an address, fetch it
-        if ((response.data as any).address) {
-          addressData.value = {...(response.data as any).address}
+        if (userData.value?.addressId) {
+          const addResp = await findAddressById({path: {id: userData.value.addressId}, throwOnError: true})
+          addressData.value = addResp.data!
         }
       }
     } catch (error: unknown) {

@@ -37,6 +37,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "createdAt")
     @Mapping(target = "gender")
     @Mapping(target = "studentNumber")
+    @Mapping(target = "addressId")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
     @BeanMapping(ignoreByDefault = true)
@@ -47,6 +48,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "prefix")
     @Mapping(target = "lastName")
     @Mapping(target = "username", conditionExpression = "java(hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
+    @Mapping(target = "addressId")
     @Mapping(target = "email")
     @BeanMapping(ignoreByDefault = true)
     public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);

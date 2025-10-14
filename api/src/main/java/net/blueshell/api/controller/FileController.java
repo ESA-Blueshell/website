@@ -33,24 +33,28 @@ public class FileController extends BaseController<FileService, FileRepository> 
         this.fileMapper = fileMapper;
     }
 
-    @GetMapping("/download/{filename:.+}")
-    @PreAuthorize("hasPermission(#filename, 'File', 'read')")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
-        var file = service.findByName(filename);
-        return service.prepareFileResponse(file);
-    }
-
-    @GetMapping("/assets/{filename:.+}")
-    @PermitAll
-    public ResponseEntity<Resource> downloadAsset(@PathVariable String filename) {
-        return service.prepareAssetResponse(filename);
-    }
-
     @GetMapping("/events/banners/{bannerId}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
     public ResponseEntity<Resource> downloadEventBanner(@PathVariable("bannerId") Long bannerId) {
         var file = service.findByEventBannerId(bannerId);
         return service.prepareFileResponse(file);
+    }
+
+    @PostMapping(
+            value = "/users/signature",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('COMMITTEE')")
+    public FileDTO uploadSignature(
+            @RequestPart("file")
+            @NotNull(message = "File is required")
+            @FileSize(max = 2 * 1024 * 1024)
+            @AllowedContentTypes({"image/png"})
+            MultipartFile file
+    ) {
+        var stored = service.storeMultipart(file, FileType.SIGNATURE);
+        return fileMapper.toDTO(stored);
     }
 
     @PostMapping(

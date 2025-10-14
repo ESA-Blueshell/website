@@ -50,8 +50,6 @@ jobs:
             frontend/.pnp.*
             frontend/node_modules
           key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-
 
       - name: Install dependencies (only on cache miss)
         if: steps.yarn-cache.outputs.cache-hit != 'true'
@@ -90,8 +88,6 @@ jobs:
             frontend/.pnp.*
             frontend/node_modules
           key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-
 
       - name: Install dependencies (only on cache miss)
         if: steps.yarn-cache.outputs.cache-hit != 'true'
@@ -133,8 +129,6 @@ jobs:
             frontend/.pnp.*
             frontend/node_modules
           key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-node${{ env.NODE_VERSION }}-yarn${{ env.YARN_VERSION }}-
 
       - name: Install dependencies (only on cache miss)
         if: steps.yarn-cache.outputs.cache-hit != 'true'

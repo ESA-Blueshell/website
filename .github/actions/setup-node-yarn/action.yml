@@ -15,8 +15,8 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache-dependency-path: |
-          'yarn.lock'
-          '.yarnrc.yml'
+          'frontend/yarn.lock'
+          'frontend/.yarnrc.yml'
 
     - name: Enable Yarn via Corepack
       shell: bash
@@ -31,14 +31,15 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          .yarn/cache
-          .yarn/install-state.gz
-          .pnp.*
-          node_modules
-        key: ${{ runner.os }}-node${{ inputs.node-version }}-yarn${{ inputs.yarn-version }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+          frontend/.yarn/cache
+          frontend/.yarn/install-state.gz
+          frontend/.pnp.*
+          frontend/node_modules
+        key: ${{ runner.os }}-node${{ inputs.node-version }}-yarn${{ inputs.yarn-version }}-${{ hashFiles('frontend/yarn.lock', 'frontend/.yarnrc.yml') }}
 
 
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
+      working-directory: frontend
       run: yarn install --immutable

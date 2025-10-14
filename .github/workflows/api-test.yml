@@ -4,7 +4,6 @@ on:
   push:
     paths: [ 'api/**' ]
   pull_request:
-    paths: [ 'api/**' ]
   workflow_dispatch:
 
 permissions:
@@ -47,7 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK (match POM release 24)
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin

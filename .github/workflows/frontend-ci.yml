@@ -4,7 +4,6 @@ on:
   push:
     paths: [ 'frontend/**' ]
   pull_request:
-    paths: [ 'frontend/**' ]
   workflow_dispatch:
 
 permissions:
@@ -20,7 +19,7 @@ env:
 
 jobs:
   setup:
-    name: Setup (cache deps)
+    name: Setup
     runs-on: ubuntu-latest
     defaults:
       run:

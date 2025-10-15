@@ -1,3 +1,202 @@
+<script lang="ts" setup>
+import {computed, onMounted, ref, watch} from "vue"
+import {DateTime} from "luxon"
+import {defineRule, Field, Form, type FormContext} from "vee-validate"
+import MarkdownField from "@/components/form/fields/MarkdownField.vue"
+import SurveyForm from "@/components/form/SurveyForm.vue"
+import {useStore} from "vuex"
+import router from "@/plugins/router.ts"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {
+  type AdvancedCommittee,
+  createEvent,
+  downloadEventBanner,
+  type Event,
+  type EventBanner,
+  findCommittees,
+  updateEvent,
+  uploadEventBanner,
+} from "@/services/api"
+
+const props = defineProps({
+  initialEvent: {type: Object as () => Event, default: () => null},
+  hasPromo: {type: Boolean, default: false},
+})
+
+const store = useStore()
+const {apply} = useBackendValidation()
+
+function getDefaultEvent(): Event {
+  return {
+    id: undefined,
+    title: "",
+    location: "",
+    description: "",
+    startTime: DateTime.now().plus({days: 1}).toISO(),
+    endTime: DateTime.now().plus({days: 1, hours: 3}).toISO(),
+    memberPrice: 0,
+    publicPrice: 0,
+    approved: false,
+    membersOnly: false,
+    signUp: false,
+    banner: undefined,
+    committeeId: 0,
+  }
+}
+
+const event = ref<Event>({...getDefaultEvent(), ...(props.initialEvent || {})})
+const hadSignUp = ref<boolean>(!!event.value.signUp)
+const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm)
+const committees = ref<AdvancedCommittee[]>([])
+const sameEndDate = ref(true)
+
+const formRef = ref<FormContext>()
+const submitting = ref(false)
+const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
+
+const isBoard = computed<boolean>(() => store.getters.isBoard)
+const initialJson = ref(JSON.stringify(event.value))
+const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
+
+function safeFormatISO(iso: string, fmt: string) {
+  const dt = DateTime.fromISO(iso || "")
+  return dt.isValid ? dt.toFormat(fmt) : ""
+}
+
+function toISO({date, time, dateTime}: { date?: string; time?: string; dateTime?: string }): string {
+  const base = dateTime ? DateTime.fromISO(dateTime) : null
+  const hasBase = !!base && base.isValid
+  const d = date ?? (hasBase ? base!.toFormat("yyyy-MM-dd") : undefined)
+  const t = time ?? (hasBase ? base!.toFormat("HH:mm") : undefined)
+  if (!d && !t) return ""
+  if (d && t) return DateTime.fromFormat(`${d} ${t}`, "yyyy-MM-dd HH:mm").toISO() || ""
+  if (d) return (DateTime.fromFormat(d, "yyyy-MM-dd").set({
+    hour: hasBase ? base!.hour : 0,
+    minute: hasBase ? base!.minute : 0,
+  }).toISO() || "")
+  if (t) {
+    const ref = hasBase ? base! : DateTime.now()
+    const [h, m] = (t || "00:00").split(":").map(Number)
+    return ref.set({hour: h ?? 0, minute: m ?? 0}).toISO() || ""
+  }
+  return ""
+}
+
+watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
+  if (!sameEndDate.value) return
+  const end = DateTime.fromISO(event.value.endTime)
+  const time = end.isValid ? end.toFormat("HH:mm") : "00:00"
+  event.value.endTime = toISO({time, dateTime: event.value.startTime})
+})
+
+watch(
+  () => event.value.signUp,
+  (on) => {
+    if (!on) {
+      event.value.signUpForm = undefined
+      enableSignUpForm.value = false
+    }
+  },
+)
+
+watch(enableSignUpForm, (on) => {
+  if (on) event.value.signUp = true
+  else event.value.signUpForm = undefined
+})
+
+const bannerFile = ref<File | null>(null)
+const bannerDirty = ref(false)
+
+function getFirstFile(value: File | File[] | null | undefined): File | null {
+  if (Array.isArray(value)) return value[0] ?? null
+  return (value as File | null) ?? null
+}
+
+defineRule("fileSize", (value: File | File[] | null) => {
+  const f = getFirstFile(value)
+  if (!f) return true
+  return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
+})
+
+async function loadBanner() {
+  if (!event.value?.id || !event.value.banner) return
+  try {
+    const resp = await downloadEventBanner({
+      path: {bannerId: event.value.banner.id!},
+      throwOnError: true,
+      responseType: "blob",
+    })
+    const blob = resp?.data as Blob
+    if (!blob) return
+    bannerFile.value = new File([blob], event.value.banner.file.name!, {
+      type: blob.type || "application/octet-stream",
+      lastModified: Date.now(),
+    })
+    bannerDirty.value = false
+  } catch (e) {
+    console.error("Failed to download event banner:", e)
+  }
+}
+
+async function onBannerChange(val: File | null, handleChange: (v: File | null) => void) {
+  const file = getFirstFile(val)
+  const res = await formRef.value?.validateField("banner")
+  if (file && !res?.valid) return
+
+  bannerFile.value = file ?? null
+  bannerDirty.value = true
+  handleChange(file ?? null)
+}
+
+async function fetchCommittees() {
+  const resp = await findCommittees()
+  if (resp.status === 200) committees.value = (resp.data ?? []) as AdvancedCommittee[]
+  else $handleNetworkError(resp)
+}
+
+onMounted(async () => {
+  await Promise.all([loadBanner(), fetchCommittees()])
+})
+
+async function submit() {
+  const result = await formRef.value?.validate()
+  if (!result?.valid) return
+  submitting.value = true
+  try {
+    if (bannerDirty.value) {
+      if (bannerFile.value) {
+        const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
+        if (uploadResp.status === 201) {
+          // If the banner is the same as before, then we can just keep the old ref.
+          if (event.value.banner?.file.id !== uploadResp.data?.id) {
+            event.value.banner = {file: uploadResp.data!} as EventBanner
+          }
+        } else if (!apply(formRef.value!, uploadResp)) {
+          $handleNetworkError(uploadResp)
+          submitting.value = false
+          return
+        }
+      } else {
+        event.value.banner = undefined
+      }
+    }
+
+    if (event.value?.id)
+      await updateEvent({path: {id: event.value.id}, body: event.value, throwOnError: true})
+    else
+      await createEvent({body: event.value, throwOnError: true})
+
+    router.back()
+  } catch (e: unknown) {
+    if (!apply(formRef.value!, e)) $handleNetworkError(e)
+  } finally {
+    submitting.value = false
+  }
+}
+
+</script>
+
 <template>
   <Form
     ref="formRef"
@@ -372,205 +571,6 @@
     </v-row>
   </Form>
 </template>
-
-<script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
-import {DateTime} from "luxon"
-import {defineRule, Field, Form, type FormContext} from "vee-validate"
-import MarkdownField from "@/components/form/fields/MarkdownField.vue"
-import SurveyForm from "@/components/form/SurveyForm.vue"
-import {useStore} from "vuex"
-import router from "@/plugins/router.ts"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {
-  type AdvancedCommittee,
-  createEvent,
-  downloadEventBanner,
-  type Event,
-  type EventBanner,
-  findCommittees,
-  updateEvent,
-  uploadEventBanner,
-} from "@/services/api"
-
-const props = defineProps({
-  initialEvent: {type: Object as () => Event, default: () => null},
-  hasPromo: {type: Boolean, default: false},
-})
-
-const store = useStore()
-const {apply} = useBackendValidation()
-
-function getDefaultEvent(): Event {
-  return {
-    id: undefined,
-    title: "",
-    location: "",
-    description: "",
-    startTime: DateTime.now().plus({days: 1}).toISO(),
-    endTime: DateTime.now().plus({hours: 3}).toISO(),
-    memberPrice: 0,
-    publicPrice: 0,
-    approved: false,
-    membersOnly: false,
-    signUp: false,
-    banner: undefined,
-    committeeId: 0,
-  }
-}
-
-const event = ref<Event>({...getDefaultEvent(), ...(props.initialEvent || {})})
-const hadSignUp = ref<boolean>(!!event.value.signUp)
-const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm)
-const committees = ref<AdvancedCommittee[]>([])
-const sameEndDate = ref(true)
-
-const formRef = ref<FormContext>()
-const submitting = ref(false)
-const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
-
-const isBoard = computed<boolean>(() => store.getters.isBoard)
-const initialJson = ref(JSON.stringify(event.value))
-const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
-
-function safeFormatISO(iso: string, fmt: string) {
-  const dt = DateTime.fromISO(iso || "")
-  return dt.isValid ? dt.toFormat(fmt) : ""
-}
-
-function toISO({date, time, dateTime}: { date?: string; time?: string; dateTime?: string }): string {
-  const base = dateTime ? DateTime.fromISO(dateTime) : null
-  const hasBase = !!base && base.isValid
-  const d = date ?? (hasBase ? base!.toFormat("yyyy-MM-dd") : undefined)
-  const t = time ?? (hasBase ? base!.toFormat("HH:mm") : undefined)
-  if (!d && !t) return ""
-  if (d && t) return DateTime.fromFormat(`${d} ${t}`, "yyyy-MM-dd HH:mm").toISO() || ""
-  if (d) return (DateTime.fromFormat(d, "yyyy-MM-dd").set({
-    hour: hasBase ? base!.hour : 0,
-    minute: hasBase ? base!.minute : 0,
-  }).toISO() || "")
-  if (t) {
-    const ref = hasBase ? base! : DateTime.now()
-    const [h, m] = (t || "00:00").split(":").map(Number)
-    return ref.set({hour: h ?? 0, minute: m ?? 0}).toISO() || ""
-  }
-  return ""
-}
-
-watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
-  if (!sameEndDate.value) return
-  const end = DateTime.fromISO(event.value.endTime)
-  const time = end.isValid ? end.toFormat("HH:mm") : "00:00"
-  event.value.endTime = toISO({time, dateTime: event.value.startTime})
-})
-
-watch(
-  () => event.value.signUp,
-  (on) => {
-    if (!on) {
-      event.value.signUpForm = undefined
-      enableSignUpForm.value = false
-    }
-  },
-)
-
-watch(enableSignUpForm, (on) => {
-  if (on) event.value.signUp = true
-  else event.value.signUpForm = undefined
-})
-
-const bannerFile = ref<File | null>(null)
-const bannerDirty = ref(false)
-
-function getFirstFile(value: File | File[] | null | undefined): File | null {
-  if (Array.isArray(value)) return value[0] ?? null
-  return (value as File | null) ?? null
-}
-
-defineRule("fileSize", (value: File | File[] | null) => {
-  const f = getFirstFile(value)
-  if (!f) return true
-  return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
-})
-
-async function loadBanner() {
-  if (!event.value?.id || !event.value.banner) return
-  try {
-    const resp = await downloadEventBanner({
-      path: {bannerId: event.value.banner.id!},
-      throwOnError: true,
-      responseType: "blob",
-    })
-    const blob = resp?.data as Blob
-    if (!blob) return
-    bannerFile.value = new File([blob], event.value.banner.file.name!, {
-      type: blob.type || "application/octet-stream",
-      lastModified: Date.now(),
-    })
-    bannerDirty.value = false
-  } catch (e) {
-    console.error("Failed to download event banner:", e)
-  }
-}
-
-/** Just update local state; do NOT upload here. */
-async function onBannerChange(val: File | null, handleChange: (v: File | null) => void) {
-  const file = getFirstFile(val)
-  const res = await formRef.value?.validateField("banner")
-  if (file && !res?.valid) return
-
-  bannerFile.value = file ?? null
-  bannerDirty.value = true
-  handleChange(file ?? null)
-}
-
-// --------------------------------------------------------------
-
-async function fetchCommittees() {
-  const resp = await findCommittees()
-  if (resp.status === 200) committees.value = (resp.data ?? []) as AdvancedCommittee[]
-  else $handleNetworkError(resp)
-}
-
-onMounted(async () => {
-  await Promise.all([loadBanner(), fetchCommittees()])
-})
-
-async function submit() {
-  const result = await formRef.value?.validate()
-  if (!result?.valid) return
-  submitting.value = true
-  try {
-    if (bannerDirty.value) {
-      if (bannerFile.value) {
-        const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
-        if (uploadResp.status === 201) {
-          event.value.banner = {file: uploadResp.data!} as EventBanner
-        } else if (!apply(formRef.value!, uploadResp)) {
-          $handleNetworkError(uploadResp)
-          submitting.value = false
-          return
-        }
-      } else {
-        event.value.banner = undefined
-      }
-    }
-
-    if (event.value?.id)
-      await updateEvent({path: {id: event.value.id}, body: event.value, throwOnError: true})
-    else
-      await createEvent({body: event.value, throwOnError: true})
-
-    router.back()
-  } catch (e: unknown) {
-    if (!apply(formRef.value!, e)) $handleNetworkError(e)
-  } finally {
-    submitting.value = false
-  }
-}
-
-</script>
 
 <style lang="scss">
 .v-col:first-child {

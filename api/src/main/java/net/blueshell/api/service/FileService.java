@@ -110,7 +110,7 @@ public class FileService extends BaseModelService<File, FileRepository> {
                 }
             }
 
-            var entity = repository.findByName(hashedFilename).orElse(null);
+            var entity = repository.findByPath(path).orElse(null);
             if (entity == null) {
                 entity = new File();
             }

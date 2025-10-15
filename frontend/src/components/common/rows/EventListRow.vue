@@ -10,13 +10,11 @@ import {DateTime} from "luxon"
 import {
   type AdvancedCommittee,
   approveEvent,
-  createEventSignup,
   deleteEventById,
   deleteEventSignup,
   downloadEventBanner,
   type Event,
   type EventSignUp,
-  updateEventSignUp,
 } from "@/services/api"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
@@ -357,7 +355,9 @@ function updateSignUp(updatedSignUp: EventSignUp) {
                     >
                       <template #activator="{ props: tooltipProps }">
                         <v-btn
-                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
+                          :disabled="!event.approved
+                            || (event.membersOnly && !isMember)
+                            || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
                           icon="mdi-close"
                           v-bind="tooltipProps"
@@ -383,7 +383,9 @@ function updateSignUp(updatedSignUp: EventSignUp) {
                           offset-y="8"
                         />
                         <v-btn
-                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
+                          :disabled="!event.approved
+                            || (event.membersOnly && !isMember)
+                            || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
                           :color="signUp?.id ? 'green' : 'orange'"
                           icon="mdi-list-status"
@@ -395,7 +397,6 @@ function updateSignUp(updatedSignUp: EventSignUp) {
                     </v-tooltip>
                   </template>
                 </template>
-
 
                 <v-tooltip
                   location="left"

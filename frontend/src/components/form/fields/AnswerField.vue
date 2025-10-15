@@ -5,7 +5,6 @@ import {type Answer, type Question, QuestionType} from "@/services/api"
 
 interface Props {
   question: Question
-  /** Base vee-validate name, e.g. "answers[2]" */
   name: string
   modelValue?: Answer | null
 }
@@ -90,7 +89,7 @@ function updateAndEmit(next: Answer) {
             @blur="handleBlur"
             @update:model-value="(idx: number) => {
               const next = Array(choiceCount).fill(false)
-              if (idx >= 0 && idx < choiceCount) next[idx] = true
+              next[idx] = true
               updateAndEmit({ ...local, optionSelections: next })
               handleChange(next)
             }"

@@ -15,13 +15,11 @@ import {computed, ref, watch} from "vue"
 import countries, {type Country} from "world-countries"
 import type {InternalItem} from "vuetify"
 
-// Props / emits unchanged: we still pass the 2-letter code (cca2) to parent
 const props = defineProps<{ modelValue?: string | null; label?: string }>()
 const emit = defineEmits<{ "update:modelValue": [value: string | null] }>()
 
 const selectedCountry = ref<string | null>(props.modelValue ?? null)
 
-// Use countries as-is (optionally sort for nicer UX)
 const countryItems = computed<Country[]>(() =>
   [...countries].sort((a, b) => {
     const ta = a.name.common.toLowerCase()

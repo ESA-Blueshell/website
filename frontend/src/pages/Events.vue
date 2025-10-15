@@ -82,9 +82,9 @@ const deleteEvent = (id: number) => {
 
 const updateSignUp = (su: EventSignUp) => {
   const ev = events.value.find(e => e.id === su.eventId)
-  if (ev) {
-    ev.signUpCount ??= 0
-    ev.signUpCount += 1
+  const newSignUp = !eventSignUps.value.some(e => e.id === su.id)
+  if (ev && newSignUp) {
+    ev.signUpCount! += 1
   }
   upsert(eventSignUps, su)
 }

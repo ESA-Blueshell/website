@@ -385,6 +385,7 @@ function updateSignUp(updatedSignUp: EventSignUp) {
                         <v-btn
                           :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
+                          :color="signUp?.id ? 'green' : 'orange'"
                           icon="mdi-list-status"
                           v-bind="tooltipProps"
                           variant="plain"

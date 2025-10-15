@@ -264,7 +264,6 @@ async function save() {
       })
     }
 
-    // Success
     emit("submit")
   } catch (e: unknown) {
     const handled = await applyServerErrors(e)

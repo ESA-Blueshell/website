@@ -25,8 +25,6 @@ import MemberManager from "@/pages/management/MemberManager.vue"
 import ContributionManager from "@/pages/management/ContributionManager.vue"
 import RocketLeague from "@/pages/esports/RocketLeague.vue"
 import ResetPassword from "@/pages/login/ResetPassword.vue"
-import EventSignUpEdit from "@/components/form/EventSignUpEdit.vue"
-
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
 import store from "./store"
 import CircuitShowdown from "@/pages/events/CircuitShowdown.vue"
@@ -36,6 +34,7 @@ import ActivateMember from "@/pages/login/ActivateMember.vue"
 import ActivateUser from "@/pages/login/ActivateUser.vue"
 import Geoguessr from "@/pages/esports/Geoguessr.vue"
 import ForgotPassword from "@/pages/login/ForgotPassword.vue"
+import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 
 const routes: RouteRecordRaw[] = [
   {
@@ -203,7 +202,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/events/signups/edit/:accessToken",
     name: "editSignUp",
-    component: EventSignUpEdit,
+    component: EventSignUpForm,
   },
   {
     path: "/events/circuitShowdown",

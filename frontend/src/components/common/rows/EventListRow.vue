@@ -19,7 +19,7 @@ import {
   updateEventSignUp,
 } from "@/services/api"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import EventSignUpEdit from "@/components/form/EventSignUpEdit.vue"
+import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 
 const router = useRouter()
 const theme = useTheme()
@@ -522,7 +522,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                 v-if="expanded"
                 class="form-border mx-auto rounded-b w-100"
               >
-                <event-sign-up-edit
+                <event-sign-up-form
                   :event="event"
                   :initial-form-answers="signUp?.answers"
                   :initial-sign-up="signUp"

@@ -4,7 +4,7 @@ import {useStore} from "vuex"
 import {DateTime} from "luxon"
 
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import Calendar from "@/components/base/Calendar.vue"
+import EventCalendar from "@/components/base/EventCalendar.vue"
 import EventList from "@/components/common/lists/EventList.vue"
 
 import {
@@ -24,7 +24,7 @@ const store = useStore()
 const events = ref<Event[]>([])
 const committees = ref<AdvancedCommittee[]>([])
 const eventSignUps = ref<EventSignUp[]>([])
-
+const calendarRef = ref<InstanceType<typeof EventCalendar>>()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed<Login>(() => store.getters.getLogin)
 
@@ -72,10 +72,12 @@ function removeById<T extends WithOptionalId>(listRef: RefLike<T[] | undefined>,
 
 const updateEvent = (event: Event) => {
   upsert(events, event)
+  calendarRef.value?.updateEvent(event)
 }
 
 const deleteEvent = (id: number) => {
   removeById<Event>(events, id)
+  calendarRef.value?.deleteEvent(id)
 }
 
 const updateSignUp = (su: EventSignUp) => {
@@ -106,7 +108,7 @@ const deleteSignUp = (id: number) => {
         class="mx-auto my-5"
         style="max-width: 1200px"
       >
-        <calendar />
+        <event-calendar ref="calendarRef" />
       </div>
       <div
         class="mx-auto mt-5"

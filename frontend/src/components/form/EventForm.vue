@@ -308,9 +308,9 @@
             v-slot="{ errors, handleChange }"
             v-model="event.signUpForm"
             name="signUpForm"
-            rules="notEmpty"
+            rules="required"
           >
-            <survey-edit
+            <survey-form
               v-model="event.signUpForm"
               :error-messages="errors"
               @update:model-value="handleChange"
@@ -517,12 +517,11 @@ async function loadBanner() {
 /** Just update local state; do NOT upload here. */
 async function onBannerChange(val: File | null, handleChange: (v: File | null) => void) {
   const file = getFirstFile(val)
-  // Run the single-field validation so the size rule triggers immediately.
   const res = await formRef.value?.validateField("banner")
   if (file && !res?.valid) return
 
   bannerFile.value = file ?? null
-  bannerDirty.value = true // mark as changed (also true when cleared)
+  bannerDirty.value = true
   handleChange(file ?? null)
 }
 

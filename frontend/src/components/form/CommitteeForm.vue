@@ -14,17 +14,15 @@ import {
   updateCommittee,
 } from "@/services/api"
 
-type Model = AdvancedCommittee
-
 const props = defineProps<{
-  modelValue: Model
+  modelValue: AdvancedCommittee
   users: AdvancedUser[]
 }>()
 
 const emit = defineEmits<{
-  (e: "update:modelValue", value: Model): void
+  (e: "update:modelValue", value: AdvancedCommittee): void
   (e: "submitting", value: boolean): void
-  (e: "saved", value: Model): void
+  (e: "saved", value: AdvancedCommittee): void
 }>()
 
 defineRule("committeeUserIsMember", (userId: number | string) => {
@@ -46,14 +44,14 @@ const formRef = ref<FormContext>()
 const submitting = ref(false)
 const {apply} = useBackendValidation()
 
-const committee = ref<Model>(
-  props.modelValue ?? ({name: "", description: "", members: []} as Model),
+const committee = ref<AdvancedCommittee>(
+  props.modelValue ?? ({name: "", description: "", members: []} as AdvancedCommittee),
 )
 
 watch(
   () => props.modelValue,
   v => {
-    committee.value = v ?? ({name: "", description: "", members: []} as Model)
+    committee.value = v ?? ({name: "", description: "", members: []} as AdvancedCommittee)
   },
   {deep: true},
 )
@@ -76,26 +74,19 @@ async function submit() {
   emit("submitting", true)
 
   try {
-    if (!committee.value.id) {
-      const resp = await createCommittee({body: committee.value})
-      if (resp.status === 201) {
-        emit("update:modelValue", resp.data!)
-        emit("saved", resp.data!)
-        return
-      }
-      if (!apply(formRef.value!, resp)) $handleNetworkError(resp)
+    let newCommittee: AdvancedCommittee
+    if (committee.value.id) {
+      const resp = await updateCommittee({path: {id: committee.value.id!}, body: committee.value, throwOnError: true})
+      newCommittee = resp.data!
     } else {
-      const resp = await updateCommittee({
-        path: {id: committee.value.id!},
-        body: committee.value,
-      })
-      if (resp.status === 200) {
-        emit("update:modelValue", resp.data!)
-        emit("saved", resp.data!)
-        return
-      }
-      if (!apply(formRef.value!, resp)) $handleNetworkError(resp)
+      const resp = await createCommittee({body: committee.value, throwOnError: true})
+      newCommittee = resp.data!
     }
+    emit("submitting", false)
+    emit("update:modelValue", newCommittee)
+    emit("saved", newCommittee)
+  } catch (e: unknown) {
+    if (!formRef.value || !apply(formRef.value!, e)) $handleNetworkError(e)
   } finally {
     submitting.value = false
     emit("submitting", false)

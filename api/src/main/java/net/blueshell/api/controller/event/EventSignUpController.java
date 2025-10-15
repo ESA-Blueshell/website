@@ -64,7 +64,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     }
 
     @PutMapping(value = "/events/{eventId}/signups")
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'signUp') or hasPermission(accessToken, 'Guest', 'delete')")
+    @PreAuthorize("hasPermission(#eventId, 'Event', 'signUp') or (accessToken != null and hasPermission(accessToken, 'Guest', 'delete'))")
     public EventSignUpDTO updateEventSignUp(@PathVariable("eventId") Long eventId,
                                             @Valid @RequestBody EventSignUpDTO dto,
                                             @RequestParam(value = "accessToken", required = false) String accessToken) {

@@ -83,32 +83,6 @@ async function confirmDeleteEvent() {
   }
 }
 
-async function submitSignUp() {
-  if (!event.value?.id) return
-  submitting.value = true
-  try {
-    let updatedSignUp: EventSignUp
-    if (signUp.value?.id) {
-      const resp = await updateEventSignUp({
-        path: {eventId: event.value.id as number},
-        body: {...signUp.value},
-        throwOnError: true,
-      })
-      updatedSignUp = resp.data
-    } else {
-      const resp = await createEventSignup({
-        path: {eventId: event.value.id as number},
-        body: {eventId: event.value.id as number, answers: []},
-        throwOnError: true,
-      })
-      updatedSignUp = resp.data
-    }
-    emit("update:signUp", updatedSignUp)
-  } finally {
-    submitting.value = false
-  }
-}
-
 async function removeSignUp() {
   if (signUp.value?.id === undefined) return
   await deleteEventSignup({path: {eventSignupId: signUp.value.id as number}, throwOnError: true})
@@ -232,7 +206,7 @@ onBeforeUnmount(() => {
   if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
 })
 
-function handleUpdateSignUp(updatedSignUp: EventSignUp) {
+function updateSignUp(updatedSignUp: EventSignUp) {
   eventElement.value?.scrollIntoView({behavior: "smooth", block: "start"})
   emit("update:signUp", updatedSignUp)
   expanded.value = false
@@ -375,56 +349,7 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
                 </div>
 
                 <template v-if="event.signUp">
-                  <template v-if="!event.signUpForm">
-                    <v-tooltip
-                      v-if="signUp?.id"
-                      location="left"
-                      text="Remove sign-up"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-badge
-                          v-if="event.signUpCount > 0"
-                          :content="event.signUpCount"
-                          color="blue"
-                          offset-x="8"
-                          offset-y="8"
-                        />
-                        <v-btn
-                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
-                          :loading="submitting"
-                          icon="mdi-checkbox-marked"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="removeSignUp()"
-                        />
-                      </template>
-                    </v-tooltip>
-
-                    <v-tooltip
-                      v-else
-                      location="left"
-                      text="Sign Up"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-badge
-                          :content="event.signUpCount"
-                          color="blue"
-                          offset-x="8"
-                          offset-y="8"
-                        />
-                        <v-btn
-                          :disabled="(event.membersOnly && !isMember) || DateTime.fromISO(event.startTime) < DateTime.now()"
-                          :loading="submitting"
-                          icon="mdi-checkbox-blank"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="submitSignUp()"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </template>
-
-                  <template v-else-if="event.signUpForm && (isLoggedIn || !event.membersOnly)">
+                  <template v-if="(isLoggedIn || !event.membersOnly)">
                     <v-tooltip
                       v-if="isLoggedIn && signUp?.id !== undefined"
                       location="left"
@@ -524,11 +449,10 @@ function handleUpdateSignUp(updatedSignUp: EventSignUp) {
               >
                 <event-sign-up-form
                   :event="event"
-                  :initial-form-answers="signUp?.answers"
                   :initial-sign-up="signUp"
                   :show-guest-form="!isLoggedIn"
                   class="form mx-auto"
-                  @update:sign-up="handleUpdateSignUp"
+                  @update:sign-up="updateSignUp"
                 />
               </div>
             </v-expand-transition>

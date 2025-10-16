@@ -57,6 +57,21 @@ export type AdvancedUser = {
     addressId?: number;
 };
 
+export type SimpleUser = {
+    fullName?: string;
+    discord: string;
+    email: string;
+    phoneNumber: string;
+    id?: number;
+    initials: string;
+    firstName: string;
+    prefix?: string;
+    lastName: string;
+    username: string;
+    newsletter: boolean;
+    password?: string;
+};
+
 export type Sponsor = {
     id?: number;
     name: string;
@@ -150,21 +165,6 @@ export type Guest = {
     id?: number;
     createdAt?: string;
     accessToken?: string;
-};
-
-export type SimpleUser = {
-    fullName?: string;
-    discord: string;
-    email: string;
-    phoneNumber: string;
-    id?: number;
-    initials: string;
-    firstName: string;
-    prefix?: string;
-    lastName: string;
-    username: string;
-    newsletter: boolean;
-    password?: string;
 };
 
 export type ContributionPeriod = {
@@ -355,17 +355,17 @@ export type FieldValidationError = {
     code?: string;
 };
 
-export type SimpleCommittee = {
-    id?: number;
-    name?: string;
-    description?: string;
-};
-
 export type PersonalInfo = {
     fullName: string;
     discord: string;
     email: string;
     phoneNumber: string;
+};
+
+export type SimpleCommittee = {
+    id?: number;
+    name?: string;
+    description?: string;
 };
 
 export type FindMembershipByIdData = {
@@ -541,6 +541,49 @@ export type UpdateUserResponses = {
 };
 
 export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
+
+export type UpdateGuestUserData = {
+    body: SimpleUser;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/guest/{id}';
+};
+
+export type UpdateGuestUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateGuestUserError = UpdateGuestUserErrors[keyof UpdateGuestUserErrors];
+
+export type UpdateGuestUserResponses = {
+    /**
+     * OK
+     */
+    200: SimpleUser;
+};
+
+export type UpdateGuestUserResponse = UpdateGuestUserResponses[keyof UpdateGuestUserResponses];
 
 export type DeleteSponsorByIdData = {
     body?: never;

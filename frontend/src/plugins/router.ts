@@ -3,7 +3,7 @@ import Events from "@/pages/Events.vue"
 import Contact from "@/pages/Contact.vue"
 import Committees from "@/pages/Committees.vue"
 import Membership from "@/pages/membership/Membership.vue"
-import MembershipForm from "@/pages/membership/MembershipForm.vue"
+import MembershipSignUp from "@/pages/membership/MembershipSignUp.vue"
 import Esports from "@/pages/Esports.vue"
 import AboutUs from "@/pages/AboutUs.vue"
 import Board from "@/pages/Board.vue"
@@ -75,7 +75,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/membership/signup",
     name: "membership/signup",
-    component: MembershipForm,
+    component: MembershipSignUp,
   },
   {
     path: "/documents",

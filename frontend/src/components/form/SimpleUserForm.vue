@@ -6,192 +6,125 @@
     >
       <v-row>
         <v-col cols="4">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.initials"
+          <VvField
+            v-model="user.initials"
             name="initials"
+            label="Initials*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Initials"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="8">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.firstName"
+          <VvField
+            v-model="user.firstName"
             name="firstName"
+            label="First Name*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="First Name"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="4">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.prefix"
+          <VvField
+            v-model="user.prefix"
             name="prefix"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="SurPrefix"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Surname Prefix"
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="8">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.lastName"
+          <VvField
+            v-model="user.lastName"
             name="lastName"
+            label="Surname*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Surname"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.username"
+          <VvField
+            v-model="user.username"
             name="username"
+            label="Username*"
             rules="required|alphaNum"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Username"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.discord"
+          <VvField
+            v-model="user.discord"
             name="discord"
+            label="Discord*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Discord"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.email"
+          <VvField
+            v-model="user.email"
             name="email"
+            label="E-mail*"
             rules="required|email|noStudentEmail"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="E-mail"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.phoneNumber"
-            :rules="`required|phoneMobile:${country}`"
+          <VvField
+            v-model="user.phoneNumber"
             name="phoneNumber"
-          >
-            <v-phone-input
-              ref="phoneInput"
-              :default-country="'NL'"
-              :error-messages="errors"
-              :model-value="value"
-              country-icon-mode="svg"
-              label="Phone Number"
-              mode="international"
-              placeholder="Phone Number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-              @update:country="updateCountry"
-            />
-          </Field>
+            :rules="`required|phoneMobile:${country}`"
+            :component="VPhoneInput"
+            :component-props="{
+              defaultCountry: 'NL',
+              countryIconMode: 'svg',
+              mode: 'international',
+              placeholder: 'Phone Number'
+            }"
+            label="Phone Number*"
+            @update:country="onCountryUpdate"
+          />
         </v-col>
       </v-row>
 
-      <v-row v-if="showPasswordFields">
+      <v-row v-if="showPassword">
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="simpleUser.password"
+          <VvField
+            v-model="user.password"
             name="password"
+            label="Password*"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-          >
-            <v-text-field
-              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="errors"
-              :model-value="value"
-              :type="showPass ? 'text' : 'password'"
-              label="Password"
-              @blur="handleBlur"
-              @click:append-inner="showPass = !showPass"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :component-props="{
+              type: isPasswordVisible ? 'text' : 'password',
+              'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
+              'onClick:append-inner': () => (isPasswordVisible = !isPasswordVisible)
+            }"
+            @click:append-inner="isPasswordVisible = !isPasswordVisible"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="confirmPassword"
             name="confirmPassword"
+            label="Password (repeated)"
             rules="required|match:@password"
-          >
-            <v-text-field
-              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="errors"
-              :model-value="value"
-              :type="showPass ? 'text' : 'password'"
-              label="Password (repeated)"
-              @blur="handleBlur"
-              @click:append-inner="showPass = !showPass"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :component-props="{
+              type: isPasswordVisible ? 'text' : 'password',
+              'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
+              'onClick:append-inner': () => (isPasswordVisible = !isPasswordVisible)
+            }"
+          />
         </v-col>
       </v-row>
 
@@ -200,36 +133,34 @@
         justify="space-evenly"
       >
         <v-col cols="auto">
-          <Field
-            v-slot="{ value, handleChange }"
-            v-model="simpleUser.newsletter"
+          <VvField
+            v-model="user.newsletter"
             name="newsletter"
-          >
-            <v-checkbox
-              :hide-details="true"
-              :model-value="value"
-              label="Subscribe to newsletter"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Newsletter"
+            :component="VCheckbox"
+            :component-props="{ hideDetails: true }"
+          />
         </v-col>
       </v-row>
 
       <v-row
         align="end"
         justify="end"
+        class="mb-5"
       >
         <v-col
-          v-if="showSaveButton"
+          v-if="showSubmit"
           cols="auto"
         >
           <v-btn
-            :prepend-icon="isEditing ? 'mdi-content-save-edit' : 'mdi-content-save'"
+            type="button"
+            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             :loading="isSaving"
             :disabled="isSaving"
-            @click="onSave"
+            size="large"
+            @click="save"
           >
-            Save
+            {{ submitText }}
           </v-btn>
         </v-col>
       </v-row>
@@ -238,74 +169,64 @@
 </template>
 
 <script lang="ts" setup>
-import {type Ref, ref, watch} from "vue"
-import {createGuestUser, type SimpleUser} from "@/services/api"
-import type {FormContext} from "vee-validate"
-import {Field, Form} from "vee-validate"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {computed, ref, type Ref} from "vue"
+import "flag-icons/css/flag-icons.min.css"
+import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
-import type {CountryCode} from "libphonenumber-js/max"
+import {createGuestUser, type SimpleUser, updateGuestUser} from "@/services/api"
+import {type CountryCode} from "libphonenumber-js/max"
+import {Form, type FormContext} from "vee-validate"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {useStore} from "vuex"
+import VvField from "@/components/form/fields/VvField.vue"
+import {VCheckbox} from "vuetify/components"
 
-interface Props {
-  modelValue?: SimpleUser
-  showPasswordFields?: boolean
-  showSaveButton?: boolean
-  isEditing?: boolean
-}
+const {
+  showPassword = false,
+  showSubmit = false,
+  submitText = "Submit",
+} = defineProps<{
+  showPassword?: boolean
+  showSubmit?: boolean
+  submitText?: string
+}>()
 
-type Emits = (e: "update:modelValue", user: SimpleUser) => void
-
-const props = withDefaults(defineProps<Props>(), {
-  showPasswordFields: true,
-  showSaveButton: false,
-  isEditing: false,
-  modelValue: () => ({
-      discord: "",
-      email: "",
-      initials: "",
-      firstName: "",
-      lastName: "",
-      username: "",
-      newsletter: true,
-      password: "",
-    } as SimpleUser
-  ),
+const user = defineModel<SimpleUser>({
+  default: () => ({
+    discord: "",
+    email: "",
+    phoneNumber: "",
+    initials: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    newsletter: true,
+    password: "",
+  }),
 })
 
-const emit = defineEmits<Emits>()
-
-const simpleUser: Ref<SimpleUser> = ref({...props.modelValue})
-const country: Ref<CountryCode> = ref("NL")
-const confirmPassword = ref<string>("")
-const showPass = ref<boolean>(false)
-const isSaving = ref<boolean>(false)
-
-
-const updateCountry = (newCountry: string): void => {
-  country.value = newCountry as CountryCode
-}
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (!val) return
-    simpleUser.value = {...val}
-  },
-  {deep: true, immediate: true},
-)
-
-watch(
-  simpleUser,
-  (newVal) => {
-    emit("update:modelValue", newVal)
-  },
-  {deep: true},
-)
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+}>()
 
 const {apply} = useBackendValidation()
+const store = useStore()
+
+const isCreating = computed<boolean>(() => !user.value?.id)
+const country: Ref<CountryCode> = ref("NL")
 
 const formRef = ref<FormContext>()
+const confirmPassword = ref<string>("")
+const isPasswordVisible = ref<boolean>(false)
+const isSaving = ref<boolean>(false)
+const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
+const isBoard = computed((): boolean => store.getters.isBoard)
+const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
+
+const onCountryUpdate = (newCountry: string): void => {
+  country.value = newCountry as CountryCode
+}
 
 const validate = async (): Promise<boolean> => {
   const result = await formRef.value?.validate()
@@ -313,28 +234,37 @@ const validate = async (): Promise<boolean> => {
 }
 
 const save = async (): Promise<SimpleUser | null> => {
-  if (!(await validate())) return null
+  if (!(await validate())) {
+    emit("submitted", false)
+    return null
+  }
 
   isSaving.value = true
   try {
-    const resp = await createGuestUser({
-      body: simpleUser.value,
-      throwOnError: true,
-    })
-    simpleUser.value = resp.data!
+    const hasId = Boolean(user.value?.id)
+    const resp = hasId
+      ? await updateGuestUser({
+        path: {id: user.value!.id!},
+        body: user.value!,
+        throwOnError: true,
+      })
+      : await createGuestUser({
+        body: user.value!,
+        throwOnError: true,
+      })
+
+    user.value = resp.data!
+    emit("submitted", true)
     return resp.data!
-  } catch (e: unknown) {
-    if (!formRef.value || apply(formRef.value, e)) {
-      $handleNetworkError(e)
+  } catch (error: unknown) {
+    if (!formRef.value || !apply(formRef.value, error)) {
+      $handleNetworkError(error)
     }
+    emit("submitted", false)
     return null
   } finally {
     isSaving.value = false
   }
-}
-
-const onSave = async () => {
-  await save()
 }
 
 defineExpose({validate, save})

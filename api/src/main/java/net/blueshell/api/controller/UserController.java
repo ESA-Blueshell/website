@@ -58,6 +58,16 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
         return simpleMapper.toDTO(user);
     }
 
+    @PutMapping("/users/guest/{id}")
+    @PermitAll
+    public SimpleUserDTO updateGuestUser(@PathVariable("id") Long id,
+                                         @Validated(Update.class) @RequestBody SimpleUserDTO dto) {
+        var user = service.findById(id);
+        simpleMapper.fromDTO(dto, user);
+        user = service.create(user);
+        return simpleMapper.toDTO(user);
+    }
+
     @PutMapping(value = "/users/{id}")
     @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     public AdvancedUserDTO updateUser(@PathVariable("id") Long id,

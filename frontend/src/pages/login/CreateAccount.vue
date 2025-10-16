@@ -1,35 +1,23 @@
 <template>
   <v-main>
-    <top-banner title="Create Account" />
+    <TopBanner title="Create Account" />
 
     <div
-      v-if="!succeeded"
-      class="mx-3 pb-10"
+      v-if="!isSuccess"
+      class="mx-auto pb-10 mt-10"
+      style="max-width: 600px"
     >
-      <Form
-        as="div"
-        class="mx-auto mt-10"
-        style="max-width: 600px"
-      >
-        <SimpleUserForm
-          ref="simpleRef"
-          v-model="userForm"
-        />
-        <v-spacer />
-        <v-row class="justify-end">
-          <v-btn
-            :loading="loading"
-            color="primary"
-            @click="createAccount"
-          >
-            Create account
-          </v-btn>
-        </v-row>
-      </Form>
+      <SimpleUserForm
+        ref="simpleUserForm"
+        show-password
+        show-submit
+        submit-text="Create Account"
+        @submitted="onFormSubmitted"
+      />
     </div>
 
     <div
-      v-else-if="succeeded"
+      v-else
       class="mx-auto my-10"
       style="max-width: 600px"
     >
@@ -44,49 +32,11 @@
 <script lang="ts" setup>
 import {ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {createGuestUser, type SimpleUser} from "@/services/api"
-import {Form} from "vee-validate"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
 
-const loading = ref(false)
-const succeeded = ref(false)
-const userForm = ref<SimpleUser>({
-  phoneNumber: "",
-  username: "",
-  initials: "",
-  firstName: "",
-  lastName: "",
-  password: "",
-  email: "",
-  discord: "",
-  prefix: "",
-  newsletter: true
-})
+const isSuccess = ref(false)
 
-const simpleRef = ref<InstanceType<typeof SimpleUserForm>>()
-
-
-// Methods
-const createAccount = async () => {
-  const isValid = await simpleRef.value?.validate()
-  if (!isValid) return
-
-  loading.value = true
-
-  try {
-    // Use the generated OpenAPI client to create user
-    const response = await createGuestUser({
-      body: userForm.value,
-    })
-
-    if (response.status === 201) {
-      succeeded.value = true
-    } else if (!await simpleRef.value?.applyErrors(response)) {
-      $handleNetworkError(response)
-    }
-  } finally {
-    loading.value = false
-  }
+const onFormSubmitted = (ok: boolean) => {
+  isSuccess.value = ok
 }
 </script>

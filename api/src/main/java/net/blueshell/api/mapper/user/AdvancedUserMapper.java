@@ -9,15 +9,15 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 import static net.blueshell.api.common.util.MappingUtil.generatePassword;
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 @Mapper(componentModel = "spring")
 public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDTO> {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-    @Autowired
-    private UserService users;
 
     @Mapping(target = "id")
     @Mapping(target = "initials")
@@ -41,21 +41,17 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "newsletter")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
+    @Mapping(target = "password", ignore = true)
     @BeanMapping(ignoreByDefault = true)
     public abstract AdvancedUserDTO toDTO(User user);
 
-    @Mapping(target = "initials",
-            conditionExpression = "java(user.getId() == null || hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "firstName",
-            conditionExpression = "java(user.getId() == null || hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "prefix",
-            conditionExpression = "java(user.getId() == null || hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "lastName",
-            conditionExpression = "java(user.getId() == null || hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "username",
-            conditionExpression = "java(user.getId() == null || hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "email",
-            conditionExpression = "java(user.getId() == null || hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
+    @Mapping(target = "initials", ignore = true)
+    @Mapping(target = "firstName", ignore = true)
+    @Mapping(target = "prefix", ignore = true)
+    @Mapping(target = "lastName", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "password", ignore = true)
     @Mapping(target = "discord")
     @Mapping(target = "dateOfBirth")
     @Mapping(target = "phoneNumber")
@@ -64,12 +60,10 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "bhv")
     @Mapping(target = "ehbo")
     @Mapping(target = "newsletter")
-    @Mapping(target = "enabled")
-    @Mapping(target = "createdAt")
     @Mapping(target = "gender")
     @Mapping(target = "studentNumber")
     @Mapping(target = "addressId")
-    @BeanMapping(ignoreByDefault = true)
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
     public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);
 
     @AfterMapping
@@ -79,6 +73,12 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
         if (hasAuthority(Role.BOARD)) {
             user.setCreatorId(getPrincipal().getId());
             user.setPassword(passwordEncoder.encode(generatePassword()));
+            applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
+            applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
+            applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
+            applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
+            applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
+            applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
         } else {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }

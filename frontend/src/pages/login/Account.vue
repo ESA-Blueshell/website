@@ -36,6 +36,12 @@
         >
           <v-form ref="form">
             <advanced-user-form
+              v-if="isMember"
+              v-model="user"
+              show-submit
+            />
+            <simple-user-form
+              v-else
               v-model="user"
               show-submit
             />
@@ -49,15 +55,18 @@
 
 
 <script lang="ts" setup>
-import {onMounted, ref} from "vue"
+import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
-import {type AdvancedUser, findUserById} from "@/services/api"
+import {type AdvancedUser, findUserById, type SimpleUser} from "@/services/api"
+import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
 
-const user = ref<AdvancedUser>()
+const user = ref<SimpleUser | AdvancedUser>()
 const store = useStore()
+const isMember = computed<boolean>(() => store.getters.isMember)
+
 onMounted(async () => {
   const login = store.getters.getLogin
 

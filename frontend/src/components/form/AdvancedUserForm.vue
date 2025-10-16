@@ -210,7 +210,7 @@
           <VvField
             v-model="user.photoConsent"
             name="photoConsent"
-            label="Photo Consent"
+            label="Consent to pictures being taken at event"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
           />

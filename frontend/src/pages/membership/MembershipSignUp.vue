@@ -143,17 +143,14 @@ import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
   type Address,
   type AdvancedUser,
-  createUser,
   findAddressById,
   findUserById,
   type Membership,
-  updateUser,
 } from "@/services/api"
 
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
-import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
 
 // Reactive state
 const currentStep: Ref<number> = ref(1)

@@ -17,7 +17,7 @@ withDefaults(defineProps<{
 }>(), {
   label: "",
   rules: "",
-  component: VTextField,
+  component: () => VTextField,
   componentProps: () => ({}),
 })
 

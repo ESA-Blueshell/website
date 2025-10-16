@@ -199,7 +199,7 @@ const previewHtml = computed(() =>
   }
 
   :deep(.v-field--variant-outlined .v-field__field) {
-    padding-top: 4px; /* keep your earlier tweak */
+    padding-top: 4px;
   }
 
   :deep(.v-field) {
@@ -209,36 +209,5 @@ const previewHtml = computed(() =>
   :deep(.v-field--focused .v-field__outline) {
     box-shadow: 0 0 0 2px rgba(var(--v-theme-on-surface), 0.08) inset;
   }
-}
-
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-  margin: 1em 0 .5em;
-  line-height: 1.25;
-}
-
-.markdown-body :deep(p),
-.markdown-body :deep(ul),
-.markdown-body :deep(ol),
-.markdown-body :deep(pre),
-.markdown-body :deep(code),
-.markdown-body :deep(blockquote) {
-  margin: .5em 0;
-}
-
-.markdown-body :deep(code) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: .875em;
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  padding: .15em .35em;
-  border-radius: 4px;
-}
-
-.markdown-body :deep(pre) {
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  padding: .75rem;
-  border-radius: 6px;
-  overflow: auto;
 }
 </style>

@@ -65,7 +65,6 @@ export function useBackendValidation() {
     if (!parsed) return false
 
     for (const [field, msgs] of Object.entries(parsed.fieldErrors)) {
-      console.log("field:", field, "errors:", msgs)
       formContext.setFieldError(field, msgs)
     }
     return true

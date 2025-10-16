@@ -13,6 +13,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Objects;
 
+import static net.blueshell.api.common.util.Util.getRandomCapitalString;
+
 @Entity
 @Table(
         name = "guests",
@@ -48,7 +50,7 @@ public class Guest implements BaseModel {
     private String phoneNumber;
 
     @Column(name = "access_token", nullable = false)
-    private String accessToken;
+    private String accessToken = getRandomCapitalString(30);
 
     @OneToOne(mappedBy = "guest", cascade = CascadeType.ALL)
     private EventSignUp eventSignUp;
@@ -59,19 +61,6 @@ public class Guest implements BaseModel {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Generated
     private Timestamp createdAt;
-
-
-    public Guest() {
-    }
-
-    public Guest(String name, String discord, String email) {
-        this.name = name;
-        this.discord = discord;
-        this.email = email;
-        this.createdAt = Timestamp.from(Instant.now());
-        this.accessToken = BCrypt.hashpw(name + discord + email + this.createdAt, BCrypt.gensalt())
-                .replace("/", "");
-    }
 
     @Override
     public boolean equals(Object o) {

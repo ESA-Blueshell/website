@@ -3,6 +3,7 @@ package net.blueshell.api.repository.spec;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.SetJoin;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.EventFilter;
 import net.blueshell.api.model.User;
@@ -13,6 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @NoArgsConstructor
 public final class EventSpecifications {
 
@@ -86,12 +88,14 @@ public final class EventSpecifications {
         // Board members can see all events
         // So we don't filter further
         if (user == null || !user.hasAuthority(Role.MEMBER)) {
+            log.info("User {} has no member role", user);
             // Only approved are visible
             spec = spec.and(approved());
         } else if (!user.hasAuthority(Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
             // And approved events are included
             spec = spec.and(userIsCommitteeMember(user).or(approved()));
+            log.info("User {} has member role", user);
         }
 
         return spec;

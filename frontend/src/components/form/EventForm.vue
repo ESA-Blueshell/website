@@ -14,7 +14,7 @@ import {
   downloadEventBanner,
   type Event,
   type EventBanner,
-  findCommittees,
+  findCommitteesForCurrentUser,
   updateEvent,
   uploadEventBanner,
 } from "@/services/api"
@@ -150,7 +150,7 @@ async function onBannerChange(val: File | null, handleChange: (v: File | null) =
 }
 
 async function fetchCommittees() {
-  const resp = await findCommittees()
+  const resp = await findCommitteesForCurrentUser()
   if (resp.status === 200) committees.value = (resp.data ?? []) as AdvancedCommittee[]
   else $handleNetworkError(resp)
 }

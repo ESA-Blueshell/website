@@ -1,5 +1,6 @@
 package net.blueshell.api.permission;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.event.Event;
@@ -9,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class EventPermission extends BasePermissionEvaluator<Event, EventService> {
 
     @Autowired

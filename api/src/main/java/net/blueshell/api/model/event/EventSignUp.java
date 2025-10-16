@@ -3,6 +3,7 @@ package net.blueshell.api.model.event;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.survey.Answer;
 import org.hibernate.annotations.ColumnDefault;
@@ -42,13 +43,14 @@ import java.util.Set;
 @Data
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@EntityListeners(JpaListener.class)
 public class EventSignUp implements BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", insertable = false, updatable = false, nullable = false)
     private Event event;
 

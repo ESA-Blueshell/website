@@ -77,7 +77,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.POST,
                                 "/auth/**",
-                                "/events/signups/*/guest",
+                                "/events/*/signups",
                                 "/users",
                                 "/users/guest"
                         ).permitAll()

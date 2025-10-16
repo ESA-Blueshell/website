@@ -53,12 +53,16 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
 
 
     @PostMapping(value = "/events/{eventId}/signups")
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'signUp')")
+    @PreAuthorize("#eventId == #dto.eventId && hasPermission(#eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
     public EventSignUpDTO createEventSignup(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventSignUpDTO dto) {
-        dto.setEventId(eventId);
-        dto.setUserId(getPrincipal().getId());
+        if (getPrincipal() != null) {
+            dto.setUserId(getPrincipal().getId());
+        }
         var eventSignUp = mapper.fromDTO(dto);
+        log.info("Creating event signup for event {}", eventSignUp);
+        log.info("from dto {}", dto);
+        log.info("guest dto {}", dto.getGuest());
         eventSignUp = service.create(eventSignUp);
         return mapper.toDTO(eventSignUp);
     }

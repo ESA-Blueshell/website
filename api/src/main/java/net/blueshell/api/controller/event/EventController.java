@@ -38,22 +38,7 @@ public class EventController extends BaseController<EventService, EventMapper> {
         return mapper.toDTO(event);
     }
 
-//    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.committeeId, 'Committee', 'createEvent')")
-//    @PostMapping("/events")
-//    public EventDTO createOrUpdateEvent(@Valid @RequestBody EventDTO dto) {
-//        Event event;
-//        if (dto.getId() == null) {
-//            event = mapper.fromDTO(dto);
-//            event = service.create(event);
-//        } else {
-//            event = service.findById(dto.getId());
-//            mapper.fromDTO(dto, event);
-//            event = service.update(event);
-//        }
-//        return mapper.toDTO(event);
-//    }
-
-    @PreAuthorize("hasAuthority('BOARD') || (#id == dto.id && hasPermission(#id, 'Event', 'write'))")
+    @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Event', 'write'))")
     @PutMapping("/events/{id}")
     public EventDTO updateEvent(@PathVariable("id") Long id, @Valid @RequestBody EventDTO dto) {
         var event = service.findById(id);

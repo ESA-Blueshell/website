@@ -32,11 +32,11 @@ export enum Role {
 }
 
 export type AdvancedUser = {
-    fullName?: string;
     discord: string;
     email: string;
     phoneNumber: string;
     id?: number;
+    fullName?: string;
     initials: string;
     firstName: string;
     prefix?: string;
@@ -58,11 +58,11 @@ export type AdvancedUser = {
 };
 
 export type SimpleUser = {
-    fullName?: string;
     discord: string;
     email: string;
     phoneNumber: string;
     id?: number;
+    fullName?: string;
     initials: string;
     firstName: string;
     prefix?: string;
@@ -157,13 +157,12 @@ export type EventSignUp = {
 };
 
 export type Guest = {
-    fullName: string;
     discord: string;
     email: string;
     phoneNumber: string;
     id?: number;
     createdAt?: string;
-    accessToken?: string;
+    name: string;
 };
 
 export type ContributionPeriod = {
@@ -354,7 +353,6 @@ export type FieldValidationError = {
 };
 
 export type PersonalInfo = {
-    fullName: string;
     discord: string;
     email: string;
     phoneNumber: string;

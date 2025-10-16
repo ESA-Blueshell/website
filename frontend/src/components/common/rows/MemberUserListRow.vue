@@ -25,7 +25,6 @@
             {{ user.roles.at(-1).toLocaleLowerCase() }}
           </v-chip>
 
-
           <v-chip
             :color="hasContribution ? 'green' : 'red'"
             class="mr-3 d-flex justify-center align-center"

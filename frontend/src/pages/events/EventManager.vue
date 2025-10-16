@@ -107,27 +107,25 @@ onMounted(async () => {
         Create new event
       </v-btn>
 
-      <template v-if="isBoard">
-        <v-divider class="mt-5 my-3" />
-        <p class="mt-8 mx-3 text-h3 text-center">
-          Non-public events (to be approved)
-        </p>
-        <template v-if="!committees.length">
-          <h3 class="text-center">
-            There are no unapproved events.
-          </h3>
-        </template>
-        <template v-else>
-          <event-list
-            :committees="committees"
-            :event-sign-ups="eventSignUps"
-            :events="events.filter((e: Event) => !e.approved)"
-            @delete:event="deleteEvent"
-            @update:event="updateEvent"
-            @delete:sign-up="deleteSignUp"
-            @update:sign-up="updateSignUp"
-          />
-        </template>
+      <v-divider class="mt-5 my-3" />
+      <p class="mt-8 mx-3 text-h3 text-center">
+        Non-public events (to be approved)
+      </p>
+      <template v-if="!committees.length">
+        <h3 class="text-center">
+          There are no unapproved events.
+        </h3>
+      </template>
+      <template v-else>
+        <event-list
+          :committees="committees"
+          :event-sign-ups="eventSignUps"
+          :events="events.filter((e: Event) => !e.approved)"
+          @delete:event="deleteEvent"
+          @update:event="updateEvent"
+          @delete:sign-up="deleteSignUp"
+          @update:sign-up="updateSignUp"
+        />
       </template>
 
       <v-divider class="mt-5 my-3" />

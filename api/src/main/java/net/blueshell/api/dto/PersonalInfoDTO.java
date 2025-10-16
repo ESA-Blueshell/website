@@ -13,9 +13,6 @@ import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "PersonalInfo")
 public class PersonalInfoDTO extends BaseDTO {
-    @NotNull
-    private String fullName;
-
     @NotBlank
     private String discord;
 

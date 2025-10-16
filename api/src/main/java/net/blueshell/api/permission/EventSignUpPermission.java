@@ -1,7 +1,9 @@
 package net.blueshell.api.permission;
 
 import net.blueshell.api.base.BasePermissionEvaluator;
+import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.event.EventSignUp;
+import net.blueshell.api.service.event.EventService;
 import net.blueshell.api.service.event.EventSignUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -10,9 +12,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventSignUpPermission extends BasePermissionEvaluator<EventSignUp, EventSignUpService> {
 
+    private final EventService events;
+
     @Autowired
-    public EventSignUpPermission(EventSignUpService service) {
+    public EventSignUpPermission(EventSignUpService service, EventService events) {
         super(service);
+        this.events = events;
     }
 
     @Override
@@ -22,14 +27,14 @@ public class EventSignUpPermission extends BasePermissionEvaluator<EventSignUp, 
         }
 
         EventSignUp signUp = (EventSignUp) targetDomainObject;
-        if (getPrincipal() == null) {
-            return false;
-        }
+        var event = events.findById(signUp.getEventId());
+        var user = getPrincipal();
 
         return switch (permission) {
             case "read" ->
-                    signUp.getUser().equals(getPrincipal()) || signUp.getEvent().getCommittee().hasMember(getPrincipal());
-            case "write", "delete" -> signUp.getUser().equals(getPrincipal());
+                    signUp.getUser().equals(user) || signUp.getEvent().getCommittee().hasMember(getPrincipal());
+            case "write" -> event.isApproved() && (!event.isMembersOnly() || hasAuthority(Role.MEMBER));
+            case "delete" -> (user != null && signUp.getUser().equals(getPrincipal()));
             default -> false;
         };
     }

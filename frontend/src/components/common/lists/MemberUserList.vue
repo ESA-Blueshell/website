@@ -19,9 +19,9 @@
         <v-expand-transition>
           <div v-if="expanded === -1">
             <advanced-user-form
-              :model-value="{}"
               class="mt-4"
-              @user-changed="createdUserChanged"
+              show-submit
+              @update:model-value="updateUser"
             />
           </div>
         </v-expand-transition>
@@ -88,7 +88,7 @@ const membershipChanged = (membership: Membership) => emit("update:membership", 
 const userChanged = (user: AdvancedUser) => emit("update:user", user)
 const deleteUser = (user: AdvancedUser) => emit("delete:user", user)
 
-const createdUserChanged = (user: AdvancedUser) => {
+const updateUser = (user: AdvancedUser) => {
   emit("update:expanded", 0)
   emit("update:user", user)
 }

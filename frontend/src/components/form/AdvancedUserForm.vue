@@ -8,13 +8,14 @@
         <v-col cols="4">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.initials"
+            v-model="user.initials"
             name="initials"
             rules="required"
           >
             <v-text-field
               :error-messages="errors"
               :model-value="value"
+              :disabled="isReadonly"
               label="Initials"
               @blur="handleBlur"
               @update:model-value="handleChange"
@@ -25,13 +26,14 @@
         <v-col cols="8">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.firstName"
+            v-model="user.firstName"
             name="firstName"
             rules="required"
           >
             <v-text-field
               :error-messages="errors"
               :model-value="value"
+              :disabled="isReadonly"
               label="First Name"
               @blur="handleBlur"
               @update:model-value="handleChange"
@@ -44,12 +46,13 @@
         <v-col cols="4">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.prefix"
+            v-model="user.prefix"
             name="prefix"
           >
             <v-text-field
               :error-messages="errors"
               :model-value="value"
+              :disabled="isReadonly"
               label="Prefix"
               @blur="handleBlur"
               @update:model-value="handleChange"
@@ -60,13 +63,14 @@
         <v-col cols="8">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.lastName"
+            v-model="user.lastName"
             name="lastName"
             rules="required"
           >
             <v-text-field
               :error-messages="errors"
               :model-value="value"
+              :disabled="isReadonly"
               label="Surname"
               @blur="handleBlur"
               @update:model-value="handleChange"
@@ -79,13 +83,14 @@
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.username"
+            v-model="user.username"
             name="username"
             rules="required|alphaNum"
           >
             <v-text-field
               :error-messages="errors"
               :model-value="value"
+              :disabled="isReadonly"
               label="Username"
               @blur="handleBlur"
               @update:model-value="handleChange"
@@ -96,7 +101,7 @@
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.discord"
+            v-model="user.discord"
             name="discord"
             rules="required"
           >
@@ -115,7 +120,8 @@
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.email"
+            v-model="user.email"
+            :disabled="isReadonly"
             name="email"
             rules="required|email|noStudentEmail"
           >
@@ -132,7 +138,7 @@
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.phoneNumber"
+            v-model="user.phoneNumber"
             :rules="`required|phoneMobile:${country}`"
             name="phoneNumber"
           >
@@ -152,11 +158,11 @@
         </v-col>
       </v-row>
 
-      <v-row v-if="showPasswordFields">
+      <v-row v-if="showPassword">
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.password"
+            v-model="user.password"
             name="password"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
           >
@@ -198,23 +204,7 @@
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.studentNumber"
-            name="studentNumber"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Student Number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-
-        <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.dateOfBirth"
+            v-model="user.dateOfBirth"
             name="dateOfBirth"
             rules="dateRequired"
           >
@@ -228,13 +218,30 @@
             />
           </Field>
         </v-col>
+
+        <v-col cols="6">
+          <Field
+            v-slot="{ value, errors, handleChange, handleBlur }"
+            v-model="user.nationality"
+            rules="required"
+            name="nationality"
+          >
+            <nationality-select
+              :error-messages="errors"
+              :model-value="value"
+              label="Nationality"
+              @blur="handleBlur"
+              @update:model-value="handleChange"
+            />
+          </Field>
+        </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.gender"
+            v-model="user.gender"
             name="gender"
           >
             <v-text-field
@@ -250,14 +257,13 @@
         <v-col cols="6">
           <Field
             v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="advancedUser.nationality"
-            rules="required"
-            name="nationality"
+            v-model="user.studentNumber"
+            name="studentNumber"
           >
-            <nationality-select
+            <v-text-field
               :error-messages="errors"
               :model-value="value"
-              label="Nationality"
+              label="Student Number"
               @blur="handleBlur"
               @update:model-value="handleChange"
             />
@@ -272,7 +278,7 @@
         <v-col cols="auto">
           <Field
             v-slot="{ value, handleChange }"
-            v-model="advancedUser.ehbo"
+            v-model="user.ehbo"
             name="ehbo"
           >
             <v-checkbox
@@ -287,7 +293,7 @@
         <v-col cols="auto">
           <Field
             v-slot="{ value, handleChange }"
-            v-model="advancedUser.bhv"
+            v-model="user.bhv"
             name="bhv"
           >
             <v-checkbox
@@ -302,7 +308,7 @@
         <v-col cols="auto">
           <Field
             v-slot="{ value, handleChange }"
-            v-model="advancedUser.newsletter"
+            v-model="user.newsletter"
             name="newsletter"
           >
             <v-checkbox
@@ -317,13 +323,12 @@
 
       <v-row
         align="center"
-        class="mb-3"
         justify="space-evenly"
       >
         <v-col cols="auto">
           <Field
             v-slot="{ value, handleChange }"
-            v-model="advancedUser.photoConsent"
+            v-model="user.photoConsent"
             name="photoConsent"
           >
             <v-checkbox
@@ -339,15 +344,17 @@
       <v-row
         align="end"
         justify="end"
+        class="mb-5"
       >
         <v-col
-          v-if="showSaveButton"
+          v-if="showSubmit"
           cols="auto"
         >
           <v-btn
             :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             :loading="isSaving"
             :disabled="isSaving"
+            size="large"
             @click="save"
           >
             Save
@@ -359,7 +366,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, type Ref, watch} from "vue"
+import {computed, ref, type Ref} from "vue"
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
@@ -369,66 +376,50 @@ import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {Field, Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {useStore} from "vuex"
 
-interface Props {
-  modelValue?: AdvancedUser
-  showPasswordFields?: boolean
-  showSaveButton?: boolean
-}
+const {
+  showPassword = false,
+  showSubmit = false,
+} = defineProps<{
+  showPassword?: boolean
+  showSubmit?: boolean
+}>()
 
-type Emits = (e: "update:modelValue", user: AdvancedUser) => void
-
-const props = withDefaults(defineProps<Props>(), {
-  showPasswordFields: false,
-  showSaveButton: false,
-  modelValue: () =>
-    ({
-      discord: "",
-      email: "",
-      initials: "",
-      firstName: "",
-      lastName: "",
-      username: "",
-      newsletter: true,
-      dateOfBirth: "",
-      phoneNumber: "",
-      ehbo: false,
-      bhv: false,
-      photoConsent: false,
-      gender: "",
-      nationality: "NL",
-      studentNumber: "",
-      password: "",
-    } as AdvancedUser),
+const user = defineModel<AdvancedUser>({
+  default: () => ({
+    discord: "",
+    email: "",
+    initials: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    newsletter: true,
+    dateOfBirth: "",
+    phoneNumber: "",
+    ehbo: false,
+    bhv: false,
+    photoConsent: false,
+    gender: "",
+    nationality: "NL",
+    studentNumber: "",
+    password: "",
+  }),
 })
 
-const emit = defineEmits<Emits>()
 const {apply} = useBackendValidation()
+const store = useStore()
 
-const isCreating = computed<boolean>(() => !advancedUser.value?.id)
-
-const advancedUser: Ref<AdvancedUser> = ref({...props.modelValue})
+const isCreating = computed<boolean>(() => !user.value?.id)
 const country: Ref<CountryCode> = ref("NL")
 
 const formRef = ref<FormContext>()
 const confirmPassword = ref<string>("")
 const showPass = ref<boolean>(false)
 const isSaving = ref<boolean>(false)
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (!val) return
-    advancedUser.value = {...val}
-  },
-  {deep: true, immediate: true},
-)
-
-watch(
-  advancedUser,
-  (newVal) => emit("update:modelValue", newVal),
-  {deep: true},
-)
+const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
+const isBoard = computed((): boolean => store.getters.isBoard)
+const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
 
 const updateCountry = (newCountry: string): void => {
   country.value = newCountry as CountryCode
@@ -444,19 +435,19 @@ const save = async (): Promise<AdvancedUser | null> => {
 
   isSaving.value = true
   try {
-    const hasId = Boolean(advancedUser.value?.id)
+    const hasId = Boolean(user.value?.id)
     const resp = hasId
       ? await updateUser({
-        path: {id: advancedUser.value.id!},
-        body: advancedUser.value,
+        path: {id: user.value!.id!},
+        body: user.value!,
         throwOnError: true,
       })
       : await createUser({
-        body: advancedUser.value!,
+        body: user.value!,
         throwOnError: true,
       })
 
-    advancedUser.value = resp.data!
+    user.value = resp.data!
     return resp.data!
   } catch (error: unknown) {
     if (!formRef.value || apply(formRef.value, error)) {

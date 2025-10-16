@@ -35,9 +35,9 @@
           class="mt-10"
         >
           <v-form ref="form">
-            <AdvancedUserForm
+            <advanced-user-form
               v-model="user"
-              editing
+              show-submit
             />
           </v-form>
         </div>

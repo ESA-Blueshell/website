@@ -82,15 +82,15 @@
         </div>
       </div>
 
-      <!-- Editable user form -->
       <v-expand-transition>
         <div
           v-if="expanded === user.id"
           @click.stop
         >
-          <AdvancedUserForm
+          <advanced-user-form
             v-model="userModel"
             class="mt-6"
+            show-submit
             @user-changed="userChanged"
           />
         </div>

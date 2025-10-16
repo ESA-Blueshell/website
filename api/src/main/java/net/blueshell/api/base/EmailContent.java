@@ -7,6 +7,7 @@ public record EmailContent(
         String subject,
         String markdownContent,
         String senderName,
-        String senderAddress
+        String senderAddress,
+        String replyTo
 ) {
 }

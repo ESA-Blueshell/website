@@ -30,13 +30,17 @@ public abstract class BaseEmail {
      * Get the sender name for this email type
      */
     public String getSenderName() {
-        return "ESA Blueshell";
+        return "Blueshell";
     }
 
     /**
      * Get the sender email address
      */
     public String getSenderAddress() {
+        return "sitecie@blueshell.utwente.nl";
+    }
+
+    public String getReplyTo() {
         return "sitecie@blueshell.utwente.nl";
     }
 
@@ -49,7 +53,8 @@ public abstract class BaseEmail {
                 getSubject(),
                 getMarkdownContent(),
                 getSenderName(),
-                getSenderAddress()
+                getSenderAddress(),
+                getReplyTo()
         );
     }
 }

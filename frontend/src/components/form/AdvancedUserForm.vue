@@ -227,13 +227,14 @@
           cols="auto"
         >
           <v-btn
+            type="button"
             :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             :loading="isSaving"
             :disabled="isSaving"
             size="large"
             @click="save"
           >
-            Save
+            {{ submitText }}
           </v-btn>
         </v-col>
       </v-row>
@@ -254,13 +255,20 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {useStore} from "vuex"
 import VvField from "@/components/form/fields/VvField.vue"
-import { VCheckbox } from "vuetify/components"
+import {VCheckbox} from "vuetify/components"
+
 const {
   showPassword = false,
   showSubmit = false,
+  submitText = "Submit",
 } = defineProps<{
   showPassword?: boolean
   showSubmit?: boolean
+  submitText?: string
+}>()
+
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
 }>()
 
 const user = defineModel<AdvancedUser>({
@@ -308,7 +316,10 @@ const validate = async (): Promise<boolean> => {
 }
 
 const save = async (): Promise<AdvancedUser | null> => {
-  if (!(await validate())) return null
+  if (!(await validate())) {
+    emit("submitted", false)
+    return null
+  }
 
   isSaving.value = true
   try {
@@ -325,16 +336,19 @@ const save = async (): Promise<AdvancedUser | null> => {
       })
 
     user.value = resp.data!
+    emit("submitted", true)
     return resp.data!
   } catch (error: unknown) {
-    if (!formRef.value || apply(formRef.value, error)) {
+    if (!formRef.value || !apply(formRef.value, error)) {
       $handleNetworkError(error)
     }
+    emit("submitted", false)
     return null
   } finally {
     isSaving.value = false
   }
 }
+
 
 defineExpose({validate, save})
 </script>

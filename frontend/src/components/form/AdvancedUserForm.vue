@@ -176,7 +176,7 @@
             v-model="user.ehbo"
             name="ehbo"
             label="EHBO Diploma"
-            :component="'v-checkbox'"
+            :component="VCheckbox"
             :component-props="{ hideDetails: true }"
           />
         </v-col>
@@ -186,7 +186,7 @@
             v-model="user.bhv"
             name="bhv"
             label="BHV Diploma"
-            :component="'v-checkbox'"
+            :component="VCheckbox"
             :component-props="{ hideDetails: true }"
           />
         </v-col>
@@ -195,8 +195,8 @@
           <VvField
             v-model="user.newsletter"
             name="newsletter"
-            label="Subscribe to newsletter"
-            :component="'v-checkbox'"
+            label="Newsletter"
+            :component="VCheckbox"
             :component-props="{ hideDetails: true }"
           />
         </v-col>
@@ -210,8 +210,8 @@
           <VvField
             v-model="user.photoConsent"
             name="photoConsent"
-            label="Give consent for your photo to be taken at events"
-            :component="'v-checkbox'"
+            label="Photo Consent"
+            :component="VCheckbox"
             :component-props="{ hideDetails: true }"
           />
         </v-col>
@@ -254,7 +254,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {useStore} from "vuex"
 import VvField from "@/components/form/fields/VvField.vue"
-
+import { VCheckbox } from "vuetify/components"
 const {
   showPassword = false,
   showSubmit = false,

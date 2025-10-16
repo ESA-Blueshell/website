@@ -16,9 +16,6 @@ public class AddressDTO extends BaseDTO {
     private Long id;
 
     @NotNull
-    private Long userId;
-
-    @NotNull
     @ValidCountryCode
     private String country;
 

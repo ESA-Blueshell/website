@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -45,9 +47,13 @@ public class Address implements BaseModel {
     @OneToOne(mappedBy = "address")
     @ToString.Exclude
     private User user;
+
     @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    private Timestamp deletedAt = Timestamp.valueOf("9999-12-31 23:59:59");
+    @ColumnDefault("9999-12-31 23:59:59")
+    private Timestamp deletedAt;
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Generated
     private Timestamp createdAt;
 
     public Address() {

@@ -22,12 +22,6 @@ public class MembershipService extends BaseModelService<Membership, MemberReposi
         super(repository);
     }
 
-    @Transactional(readOnly = true)
-    public Membership findBySignature(File signature) {
-        return repository.findBySignature(signature).orElseThrow(() ->
-                new NotFoundException("Member not found for signature: " + signature.getName()));
-    }
-
     public boolean existsByUserId(Long userId) {
         return repository.existsByUserId(userId);
     }

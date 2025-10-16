@@ -7,7 +7,6 @@ import lombok.Getter;
 @Getter
 public enum FileType {
     DOCUMENT("documents"),
-    SIGNATURE("signatures"),
     PROFILE_PICTURE("profile-pictures"),
     EVENT_BANNER("event-banners"),
     EVENT_PICTURE("event-pictures"),

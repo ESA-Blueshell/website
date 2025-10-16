@@ -3,7 +3,7 @@
     <top-banner title="Membership Form" />
 
     <div
-      v-if="!succeeded"
+      v-if="currentStep <= 3"
       class="mx-3 pb-10"
     >
       <v-stepper
@@ -13,21 +13,18 @@
         hide-actions
         style="max-width: 800px"
       >
-        <!-- Step 1: User Information -->
         <template #item.1>
           <v-card class="pa-4">
             <advanced-user-form
-              ref="userEditRef"
-              v-model="userData"
-              :creating="!loggedIn"
-              :editing="loggedIn"
+              ref="userRef"
+              v-model="user"
             />
 
             <v-row class="mt-4">
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :loading="saving"
+                  :loading="submitting"
                   color="primary"
                   @click="nextStep"
                 >
@@ -38,12 +35,12 @@
           </v-card>
         </template>
 
-        <!-- Step 2: Address Information -->
         <template #item.2>
           <v-card class="pa-4">
             <address-form
-              ref="AddressFormRef"
-              v-model="addressData"
+              ref="addressRef"
+              v-model="address"
+              :user-id="user.id"
             />
 
             <v-row class="mt-4">
@@ -58,7 +55,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :loading="saving"
+                  :loading="submitting"
                   color="primary"
                   @click="nextStep"
                 >
@@ -72,10 +69,9 @@
         <!-- Step 3: Membership Information -->
         <template #item.3>
           <v-card class="pa-4">
-            <v-card-title>Membership Agreement</v-card-title>
             <membership-form
-              ref="MembershipFormRef"
-              v-model="membershipData"
+              ref="membershipRef"
+              v-model="membership"
             />
 
             <v-row class="mt-4">
@@ -92,7 +88,7 @@
                 <v-btn
                   :loading="saving"
                   color="primary"
-                  @click="completeMembership"
+                  @click="nextStep"
                 >
                   Complete Membership
                 </v-btn>
@@ -104,7 +100,7 @@
     </div>
 
     <div
-      v-else-if="succeeded"
+      v-else
       class="mx-auto my-10"
       style="max-width: 600px"
     >
@@ -140,71 +136,52 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
-import {
-  type Address,
-  type AdvancedUser,
-  findAddressById,
-  findUserById,
-  type Membership,
-} from "@/services/api"
+import {type Address, type AdvancedUser, findAddressById, findUserById, type Membership} from "@/services/api"
 
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
 
-// Reactive state
 const currentStep: Ref<number> = ref(1)
-const succeeded: Ref<boolean> = ref(false)
-const saving: Ref<boolean> = ref(false)
-const loggedIn: Ref<boolean> = ref(false)
 
-// Form data
-const userData: Ref<AdvancedUser | undefined> = ref()
+const user = ref<AdvancedUser>()
+const address = ref<Address>()
+const membership = ref<Membership>()
+const submitting: Ref<boolean> = ref(false)
 
-const addressData: Ref<Address> = ref({
-  street: "",
-  houseNumber: "",
-  zipCode: "",
-  city: "",
-  country: "",
-} as Address)
+const userRef = ref<InstanceType<typeof AdvancedUserForm>>()
+const addressRef = ref<InstanceType<typeof AddressForm>>()
+const membershipRef = ref<InstanceType<typeof MembershipForm>>()
 
-const membershipData: Ref<Membership | undefined> = ref()
-
-// Template refs
-const userEditRef = ref<InstanceType<typeof AdvancedUserForm>>()
-const AddressFormRef: Ref = ref(null)
-const MembershipFormRef: Ref = ref(null)
-
-// Steps configuration
 const steps = [
   {title: "Personal Information", value: 1},
   {title: "Address", value: 2},
-  {title: "Membership", value: 3},
+  {title: "Confirm Membership", value: 3},
 ]
 
-// Methods
 const nextStep = async (): Promise<void> => {
-  saving.value = true
-
   try {
+    submitting.value = true
     if (currentStep.value === 1) {
-      // Validate and save user data
-      if (!await saveUser()) {
-        return
+      const savedUser = await userRef.value?.save()
+      if (savedUser) {
+        await fetchAddress()
+        currentStep.value += 1
       }
     } else if (currentStep.value === 2) {
-      // Validate and save address data
-      if (!await validateAndSaveAddressData()) {
-        return
+      const savedAddress = await addressRef.value?.save()
+      if (savedAddress) {
+        currentStep.value += 1
+        user.value!.addressId = savedAddress.id!
+      }
+    } else if (currentStep.value === 3) {
+      const savedMembership = await membershipRef.value?.save()
+      if (savedMembership) {
+        currentStep.value += 1
       }
     }
-
-    currentStep.value += 1
-  } catch (error: unknown) {
-    $handleNetworkError(error)
   } finally {
-    saving.value = false
+    submitting.value = false
   }
 }
 
@@ -214,103 +191,45 @@ const previousStep = (): void => {
   }
 }
 
-const saveUser = async (): Promise<boolean> => {
-  if (!userEditRef.value) return false;
-  const user = await userEditRef.value.save()
-
-  if (user) {
-    userData.value = user
-    membershipData.value!.userId = user.id!
-    return true
-  } else {
-    return false
-  }
-}
-
-const validateAndSaveAddressData = async (): Promise<boolean> => {
-  if (!AddressFormRef.value) {
-    return false
-  }
-
-  // Validate address using child component validation
-  if (!AddressFormRef.value.validateAddress()) {
-    return false
+const fetchAddress = async (): Promise<void> => {
+  if (!user.value?.addressId) {
+    address.value = {
+      userId: user.value!.id!,
+      country: "NL",
+      city: "",
+      street: "",
+      houseNumber: "",
+      zipCode: "",
+    }
+    return
   }
 
   try {
-    // Save address using child component method
-    await AddressFormRef.value.saveAddress()
+    const response = await findAddressById({
+      path: {
+        id: user.value.addressId!,
+      },
+    })
 
-    return true
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-    return false
+    address.value = response.data!
+  } catch (e) {
+    $handleNetworkError(e)
   }
 }
 
-const completeMembership = async (): Promise<void> => {
-  saving.value = true
-
-  try {
-    if (!MembershipFormRef.value) {
-      return
-    }
-
-    // Validate and save membership using child component method
-    const membershipSaved = await MembershipFormRef.value.saveMembership()
-
-    if (!membershipSaved) {
-      return
-    }
-
-    // Mark as succeeded
-    succeeded.value = true
-
-    // Update user roles if logged in
-    if (loggedIn.value && userData.value?.id) {
-      // Fetch updated user data to get new roles
-      const response = await findUserById({
-        path: {userId: userData.value.id},
-        throwOnError: true,
-      })
-
-      if (response.data) {
-        store.commit("setRoles", response.data.roles)
-      }
-    }
-
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-  } finally {
-    saving.value = false
-  }
-}
-
-// Lifecycle hooks
 onMounted(async () => {
   const login = store.getters.getLogin
-  loggedIn.value = !!login
 
-  if (login && login.userId) {
-    try {
-      // Fetch existing user data
-      const response = await findUserById({
-        path: {userId: login.userId},
-      })
+  try {
+    const response = await findUserById({
+      path: {
+        userId: login.userId,
+      },
+    })
 
-      if (response.data) {
-        userData.value = {...response.data}
-        membershipData.value!.userId = response.data.id!
-
-        if (userData.value?.addressId) {
-          const addResp = await findAddressById({path: {id: userData.value.addressId}, throwOnError: true})
-          addressData.value = addResp.data!
-        }
-      }
-    } catch (error: unknown) {
-      console.error("Failed to fetch user data:", error)
-      $handleNetworkError(error)
-    }
+    user.value = response.data!
+  } catch (e) {
+    $handleNetworkError(e)
   }
 })
 </script>

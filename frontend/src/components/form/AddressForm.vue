@@ -7,96 +7,75 @@
       class="pa-4"
       style="border-radius: 10px"
     >
-      <strong>Address Information</strong><br>
-
       <v-row>
         <v-col cols="8">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="address.street"
             name="street"
+            label="Street"
             rules="required|minChars:2"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Street"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+          />
         </v-col>
 
         <v-col cols="4">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="address.houseNumber"
             name="houseNumber"
-            rules="required|houseNumber"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="House Number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="House Number"
+            rules="required"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="address.zipCode"
             name="zipCode"
-            rules="required|zipByCountry:@country"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Zipcode"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Zipcode"
+            rules="required|minChars:2"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="address.city"
             name="city"
-            rules="required|cityName|minChars:2"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="City"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="City"
+            rules="required|minChars:2"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="12">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="address.country"
             name="country"
+            label="Country"
             rules="required"
+            :component="CountrySelect"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row
+        v-if="showSubmit"
+        align="end"
+        justify="end"
+        class="mt-2"
+      >
+        <v-col cols="auto">
+          <v-btn
+            type="button"
+            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+            :loading="isSaving"
+            :disabled="isSaving"
+            size="large"
+            @click="save"
           >
-            <country-select
-              :error-messages="errors"
-              :model-value="value"
-              label="Country"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            {{ submitText }}
+          </v-btn>
         </v-col>
       </v-row>
     </v-sheet>
@@ -104,42 +83,44 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, type Ref, watch} from "vue"
+import {computed, ref} from "vue"
+import {Form, type FormContext} from "vee-validate"
+
+import VvField from "@/components/form/fields/VvField.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
-import {createAddress, updateAddress, type Address} from "@/services/api"
-import {Field, Form, type FormContext, useForm} from "vee-validate"
+
+import {type Address, createAddress, updateAddress} from "@/services/api"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
-interface Props {
-  modelValue: Address
-}
+const {
+  showSubmit = false,
+  submitText = "Submit",
+  userId = 0,
+} = defineProps<{
+  showSubmit?: boolean
+  submitText?: string
+  userId?: number
+}>()
 
-type Emits = (e: "update:modelValue", value: Address) => void
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+}>()
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const address: Ref<Address> = ref({...props.modelValue})
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (JSON.stringify(val) !== JSON.stringify(address.value)) {
-      address.value = {...val}
-    }
-  },
-  {deep: true, immediate: true},
-)
-
-watch(
-  address,
-  (val) => emit("update:modelValue", val),
-  {deep: true},
-)
+const address = defineModel<Address>({
+  default: () => ({
+    country: "",
+    city: "",
+    street: "",
+    houseNumber: "",
+    zipCode: "",
+  }),
+})
 
 const formRef = ref<FormContext>()
-const {resetForm} = useForm()
+const isSaving = ref<boolean>(false)
+const isCreating = computed<boolean>(() => !address.value?.id)
+
 const {apply} = useBackendValidation()
 
 const validate = async (): Promise<boolean> => {
@@ -147,49 +128,50 @@ const validate = async (): Promise<boolean> => {
   return !!result?.valid
 }
 
-const save = async (): Promise<void> => {
-  if (!(await validate())) throw new Error("Address validation failed")
+const save = async (): Promise<Address | null> => {
+  if (!(await validate())) {
+    emit("submitted", false)
+    return null
+  }
+
+  isSaving.value = true
   try {
-    const resp = address.value.id
+    const hasId = Boolean(address.value?.id)
+    const resp = hasId
       ? await updateAddress({
-        path: {id: address.value.id!},
-        body: address.value,
+        path: {id: address.value!.id!},
+        body: address.value!,
         throwOnError: true,
       })
       : await createAddress({
-        body: address.value,
+        path: {userId},
+        body: address.value!,
         throwOnError: true,
       })
 
-    if (resp?.data) {
-      address.value = resp.data
-      emit("update:modelValue", resp.data)
-      resetForm({values: {...resp.data}})
+    address.value = resp.data!
+    emit("submitted", true)
+    return resp.data!
+  } catch (error: unknown) {
+    if (!formRef.value || !apply(formRef.value, error)) {
+      $handleNetworkError(error)
     }
-  } catch (err: unknown) {
-    if (!apply(formRef.value!, err)) $handleNetworkError(err)
+    emit("submitted", false)
+    return null
+  } finally {
+    isSaving.value = false
   }
 }
 
-const clear = (): void => {
-  const empty: Address = {
-    id: undefined,
-    userId: address.value.userId,
-    street: "",
-    houseNumber: "",
-    zipCode: "",
-    city: "",
-    country: "",
-  }
-  address.value = empty
-  resetForm({values: {...empty}})
-}
-
-defineExpose({save, validate, clear})
+defineExpose({validate, save})
 </script>
 
 <style lang="scss" scoped>
-.v-sheet {
-  background: white;
+.v-col:first-child {
+  padding-left: 0;
+}
+
+.v-col:last-child {
+  padding-right: 0;
 }
 </style>

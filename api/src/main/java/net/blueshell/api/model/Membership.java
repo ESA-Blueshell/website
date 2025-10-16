@@ -21,10 +21,6 @@ import java.time.LocalDate;
                 @UniqueConstraint(
                         name = "uk_memberships_user_id_deleted_at",
                         columnNames = {"user_id", "deleted_at"}
-                ),
-                @UniqueConstraint(
-                        name = "uk_memberships_signature_deleted_at",
-                        columnNames = {"signature_id", "deleted_at"}
                 )
         },
         indexes = {
@@ -71,10 +67,6 @@ public class Membership implements BaseModel {
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     private MemberType memberType;
-
-    @JoinColumn(name = "signature_id", updatable = false, insertable = false)
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private File signature;
 
     @Column(name = "incasso", nullable = false)
     private boolean incasso;

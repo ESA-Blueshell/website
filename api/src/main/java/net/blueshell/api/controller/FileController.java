@@ -39,23 +39,6 @@ public class FileController extends BaseController<FileService, FileRepository> 
     }
 
     @PostMapping(
-            value = "/users/signature",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('COMMITTEE')")
-    public FileDTO uploadSignature(
-            @RequestPart("file")
-            @NotNull(message = "File is required")
-            @FileSize(max = 2 * 1024 * 1024)
-            @AllowedContentTypes({"image/png"})
-            MultipartFile file
-    ) {
-        var stored = service.storeMultipart(file, FileType.SIGNATURE);
-        return fileMapper.toDTO(stored);
-    }
-
-    @PostMapping(
             value = "/events/banners",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )

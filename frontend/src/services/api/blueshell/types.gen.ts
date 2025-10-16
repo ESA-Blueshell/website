@@ -112,7 +112,6 @@ export type File = {
 
 export enum FileType {
     DOCUMENT = 'DOCUMENT',
-    SIGNATURE = 'SIGNATURE',
     PROFILE_PICTURE = 'PROFILE_PICTURE',
     EVENT_BANNER = 'EVENT_BANNER',
     EVENT_PICTURE = 'EVENT_PICTURE',
@@ -193,7 +192,6 @@ export type CommitteeMember = {
 
 export type Address = {
     id?: number;
-    userId: number;
     country: string;
     city: string;
     street: string;
@@ -1373,16 +1371,16 @@ export type CreateUserResponses = {
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
 
-export type UploadSignatureData = {
-    body: {
-        file: Blob | File;
+export type CreateAddressData = {
+    body: Address;
+    path: {
+        userId: number;
     };
-    path?: never;
     query?: never;
-    url: '/users/signature';
+    url: '/users/{userId}/addresses';
 };
 
-export type UploadSignatureErrors = {
+export type CreateAddressErrors = {
     /**
      * Validation error
      */
@@ -1405,16 +1403,16 @@ export type UploadSignatureErrors = {
     500: ApiError;
 };
 
-export type UploadSignatureError = UploadSignatureErrors[keyof UploadSignatureErrors];
+export type CreateAddressError = CreateAddressErrors[keyof CreateAddressErrors];
 
-export type UploadSignatureResponses = {
+export type CreateAddressResponses = {
     /**
      * Created
      */
-    201: File;
+    201: Address;
 };
 
-export type UploadSignatureResponse = UploadSignatureResponses[keyof UploadSignatureResponses];
+export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
 
 export type CreateMemberData = {
     body: AdvancedUser;
@@ -2762,88 +2760,6 @@ export type MemberActivateResponses = {
     200: unknown;
 };
 
-export type FindAllAddressesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/addresses';
-};
-
-export type FindAllAddressesErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindAllAddressesError = FindAllAddressesErrors[keyof FindAllAddressesErrors];
-
-export type FindAllAddressesResponses = {
-    /**
-     * OK
-     */
-    200: Array<Address>;
-};
-
-export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
-
-export type CreateAddressData = {
-    body: Address;
-    path?: never;
-    query?: never;
-    url: '/addresses';
-};
-
-export type CreateAddressErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateAddressError = CreateAddressErrors[keyof CreateAddressErrors];
-
-export type CreateAddressResponses = {
-    /**
-     * Created
-     */
-    201: Address;
-};
-
-export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
-
 export type DeleteUserByIdData = {
     body?: never;
     path: {
@@ -3359,6 +3275,47 @@ export type FindCommitteesForCurrentUserResponses = {
 };
 
 export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
+
+export type FindAllAddressesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/addresses';
+};
+
+export type FindAllAddressesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindAllAddressesError = FindAllAddressesErrors[keyof FindAllAddressesErrors];
+
+export type FindAllAddressesResponses = {
+    /**
+     * OK
+     */
+    200: Array<Address>;
+};
+
+export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
 
 export type DeleteEventByIdData = {
     body?: never;

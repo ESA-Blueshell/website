@@ -11,10 +11,21 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public abstract class AddressMapper extends BaseMapper<Address, AddressDTO> {
 
-    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "country")
+    @Mapping(target = "city")
+    @Mapping(target = "street")
+    @Mapping(target = "houseNumber")
+    @Mapping(target = "zipCode")
+    @Mapping(target = "createdAt")
     public abstract AddressDTO toDTO(Address address);
 
-    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "country")
+    @Mapping(target = "city")
+    @Mapping(target = "street")
+    @Mapping(target = "houseNumber")
+    @Mapping(target = "zipCode")
+    @Mapping(target = "createdAt")
     public abstract Address fromDTO(AddressDTO dto, @MappingTarget Address address);
 }

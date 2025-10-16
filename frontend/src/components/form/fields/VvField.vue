@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {Field} from "vee-validate"
-import {defineModel, defineOptions} from "vue"
 import {VTextField} from "vuetify/components"
 
 defineOptions({inheritAttrs: false})

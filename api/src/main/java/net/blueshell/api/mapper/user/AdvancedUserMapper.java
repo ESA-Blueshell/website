@@ -73,14 +73,15 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
         if (hasAuthority(Role.BOARD)) {
             user.setCreatorId(getPrincipal().getId());
             user.setPassword(passwordEncoder.encode(generatePassword()));
-            applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
-            applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
-            applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
-            applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
-            applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
-            applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
         } else {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
+
+        applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
+        applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
+        applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
+        applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
+        applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
+        applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
     }
 }

@@ -69,6 +69,7 @@ const isMember = computed<boolean>(() => store.getters.isMember)
 
 onMounted(async () => {
   const login = store.getters.getLogin
+  if (!login) return
 
   try {
     const response = await findUserById({

@@ -329,15 +329,11 @@ export const findMemberships = <ThrowOnError extends boolean = false>(options?: 
     });
 };
 
-export const createMembership = <ThrowOnError extends boolean = false>(options: Options<CreateMembershipData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateMembershipResponses, CreateMembershipErrors, ThrowOnError>({
+export const createMembership = <ThrowOnError extends boolean = false>(options?: Options<CreateMembershipData, ThrowOnError>) => {
+    return (options?.client ?? client).post<CreateMembershipResponses, CreateMembershipErrors, ThrowOnError>({
         responseType: 'json',
         url: '/memberships',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
+        ...options
     });
 };
 

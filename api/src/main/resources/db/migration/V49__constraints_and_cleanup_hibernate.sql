@@ -53,6 +53,19 @@ INSERT INTO blogs (title, html, published_at, created_at)
 SELECT title, content, posted_at, posted_at
 FROM news;
 
+-- Set a default authority
+insert into authorities (user_id, authority)
+SELECT users.id, 'GUEST'
+FROM users
+WHERE users.id NOT IN (SELECT user_id FROM authorities WHERE authority = 'GUEST');
+
+-- Clean contributions
+DELETE FROM contributions
+WHERE NOT paid;
+
+ALTER TABLE contributions
+    DROP COLUMN reminded_at,
+    DROP COLUMN paid;
 
 ALTER TABLE events
     DROP FOREIGN KEY fk_events_banner_id;
@@ -282,10 +295,6 @@ CREATE INDEX idx_contribution_periods_list_id ON contribution_periods (list_id);
 
 CREATE INDEX idx_contribution_periods_start_date ON contribution_periods (start_date);
 
-CREATE INDEX idx_contributions_paid ON contributions (paid);
-
-CREATE INDEX idx_contributions_reminded_at ON contributions (reminded_at);
-
 CREATE INDEX idx_events_approved ON events (approved);
 
 CREATE INDEX idx_events_end_time ON events (end_time);
@@ -491,9 +500,6 @@ ALTER TABLE files
 ALTER TABLE sponsors
     MODIFY name VARCHAR(255) NOT NULL;
 
-ALTER TABLE contributions
-    MODIFY paid BIT(1) NOT NULL;
-
 ALTER TABLE event_pictures
     MODIFY picture_id BIGINT NOT NULL;
 
@@ -547,3 +553,19 @@ ALTER TABLE memberships
 
 ALTER TABLE users
     MODIFY username VARCHAR(255) NOT NULL;
+
+ALTER TABLE event_signups
+    DROP CONSTRAINT event_signups_user_id_guest_id_one_or_the_other;
+
+ALTER TABLE addresses
+    ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE memberships
+    DROP FOREIGN KEY IF EXISTS fk_memberships_signature_id,
+    DROP INDEX IF EXISTS uk_memberships_signature_deleted_at,
+    DROP COLUMN IF EXISTS signature_id,
+    DROP COLUMN IF EXISTS city,
+    DROP COLUMN IF EXISTS country;
+
+ALTER TABLE guests
+    ADD phone_number VARCHAR(255) NULL;

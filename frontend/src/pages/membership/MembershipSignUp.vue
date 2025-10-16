@@ -18,6 +18,7 @@
             <advanced-user-form
               ref="userRef"
               v-model="user"
+              :show-password="!user?.id"
             />
 
             <v-row class="mt-4">
@@ -194,7 +195,6 @@ const previousStep = (): void => {
 const fetchAddress = async (): Promise<void> => {
   if (!user.value?.addressId) {
     address.value = {
-      userId: user.value!.id!,
       country: "NL",
       city: "",
       street: "",
@@ -219,6 +219,7 @@ const fetchAddress = async (): Promise<void> => {
 
 onMounted(async () => {
   const login = store.getters.getLogin
+  if (!login?.userId) return
 
   try {
     const response = await findUserById({

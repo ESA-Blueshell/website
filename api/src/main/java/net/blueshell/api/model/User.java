@@ -77,10 +77,10 @@ public class User implements UserDetails, BaseModel {
     @Column
     private String initials;
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "address_id", updatable = false, insertable = false)
+    @JoinColumn(name = "address_id")
     @ToString.Exclude
     private Address address;
-    @Column(name = "address_id")
+    @Column(name = "address_id", updatable = false, insertable = false)
     @ToString.Exclude
     private Long addressId;
     @Column(name = "phone_number")

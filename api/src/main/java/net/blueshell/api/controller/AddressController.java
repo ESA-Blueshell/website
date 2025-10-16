@@ -30,14 +30,13 @@ public class AddressController extends BaseController<AddressService, AddressMap
     public AddressDTO createAddress(@PathVariable("userId") Long userId, @Valid @RequestBody AddressDTO dto) {
         var user = users.findById(userId);
         var address = mapper.fromDTO(dto);
-        address = service.create(address);
         user.setAddress(address);
         users.update(user);
         return mapper.toDTO(address);
     }
 
     @PutMapping("/addresses/{id}")
-    @PreAuthorize("hasAuthority('BOARD') || (#id == dto.id && hasPermission(#id, 'Address', 'write'))")
+    @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Address', 'write'))")
     public AddressDTO updateAddress(@PathVariable("id") Long id, @Valid @RequestBody AddressDTO dto) {
         var address = service.findById(id);
         mapper.fromDTO(dto, address);

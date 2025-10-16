@@ -49,12 +49,14 @@ export function $handleNetworkError(error: any): void {
         break
       default:
         errorMessage = `Oh no. An error happened that we don't know about (error code ${error.response.status}). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
+        console.log(error)
         break
     }
   } else if (error.request) {
     errorMessage = "Oh no. The request was made but no response was received. Please check your internet connection."
   } else {
     errorMessage = "Oh no. An error happened that we don't know about. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+    console.log(error)
   }
 
   store.commit("setStatusSnackbarMessage", errorMessage)

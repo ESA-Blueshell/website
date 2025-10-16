@@ -88,11 +88,6 @@ services:
       - ./storage:/home/storage
     ports:
       - "8081:8080"
-    command: [
-      "sh",
-      "-c",
-      "mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
-    ]
     networks:
       - global_network
     env_file:

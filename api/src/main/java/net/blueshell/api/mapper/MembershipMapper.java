@@ -2,13 +2,10 @@ package net.blueshell.api.mapper;
 
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.MemberType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.MembershipDTO;
 import net.blueshell.api.model.Membership;
 import org.mapstruct.*;
-
-import java.time.LocalDate;
 
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 
@@ -19,8 +16,6 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "memberType")
-    @Mapping(target = "city")
-    @Mapping(target = "country")
     @Mapping(target = "startDate")
     @Mapping(target = "endDate")
     @Mapping(target = "incasso")
@@ -28,8 +23,6 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
-    @Mapping(target = "city")
-    @Mapping(target = "country")
     @BeanMapping(ignoreByDefault = true)
     public abstract Membership fromDTO(MembershipDTO dto, @MappingTarget Membership membership);
 
@@ -40,9 +33,6 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
             membership.setEndDate(dto.getEndDate()); // Must be applied, in order to be able to resume memberships
             applyIfFieldIsNotNull(membership, dto.getMemberType(), Membership::setMemberType);
             applyIfFieldIsNotNull(membership, dto.isIncasso(), Membership::setIncasso);
-        } else {
-            membership.setStartDate(LocalDate.now());
-            membership.setMemberType(MemberType.REGULAR);
         }
     }
 }

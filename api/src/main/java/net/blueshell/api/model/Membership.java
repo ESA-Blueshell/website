@@ -29,9 +29,7 @@ import java.time.LocalDate;
                 @Index(name = "idx_memberships_start_date", columnList = "start_date"),
                 @Index(name = "idx_memberships_end_date", columnList = "end_date"),
                 @Index(name = "idx_memberships_member_type", columnList = "type"),
-                @Index(name = "idx_memberships_incasso", columnList = "incasso"),
-                @Index(name = "idx_memberships_city", columnList = "city"),
-                @Index(name = "idx_memberships_country", columnList = "country")
+                @Index(name = "idx_memberships_incasso", columnList = "incasso")
         }
 )
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
@@ -52,24 +50,18 @@ public class Membership implements BaseModel {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "country")
-    private String country;
-
-    @Column(name = "city")
-    private String city;
-
     @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    private LocalDate startDate = LocalDate.now();
 
     @Column(name = "end_date")
     private LocalDate endDate;
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
-    private MemberType memberType;
+    private MemberType memberType = MemberType.REGULAR;
 
     @Column(name = "incasso", nullable = false)
-    private boolean incasso;
+    private boolean incasso = false;
 
     @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
     @ColumnDefault("9999-12-31 23:59:59")

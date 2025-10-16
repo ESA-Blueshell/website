@@ -1753,7 +1753,7 @@ export type FindMembershipsResponses = {
 export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
 
 export type CreateMembershipData = {
-    body: Membership;
+    body?: never;
     path?: never;
     query?: never;
     url: '/memberships';

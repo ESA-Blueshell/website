@@ -1,6 +1,7 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.BadRequestException;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.controller.filter.MembershipFilter;
 import net.blueshell.api.dto.MembershipDTO;
@@ -32,13 +33,16 @@ public class MembershipController extends BaseController<MembershipService, Memb
         return mapper.toDTOs(service.findByFilter(filter));
     }
 
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.userId, 'User', 'write')")
+    @PreAuthorize("hasAuthority('GUEST')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
-    public MembershipDTO createMembership(@Validated(Creation.class) @RequestBody MembershipDTO dto
-    ) {
-        var membership = mapper.fromDTO(dto);
-        membership = service.create(membership);
+    public MembershipDTO createMembership() {
+        if (!getPrincipal().getMemberships().isEmpty()) {
+            throw new BadRequestException("User is already a member");
+        }
+        var membership = new Membership();
+        membership.setUserId(getPrincipal().getId());
+        service.create(membership);
         return mapper.toDTO(membership);
     }
 

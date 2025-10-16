@@ -1,7 +1,11 @@
 <template>
-  <div>
+  <v-sheet
+    color="grey-darken-4"
+    rounded="lg"
+    class="pa-2"
+  >
     <!-- Statutes -->
-    <v-row class="my-1 text-center rounded-t">
+    <v-row class="text-center py-4">
       <v-col
         class="text-h6"
         cols="4"
@@ -26,11 +30,12 @@
           English
         </v-btn>
       </v-col>
-      <v-divider />
     </v-row>
 
+    <v-divider class="my-2" />
+
     <!-- Domestic Regulations -->
-    <v-row class="my-1 text-center">
+    <v-row class="text-center py-4">
       <v-col
         class="text-h6"
         cols="4"
@@ -55,11 +60,12 @@
           English
         </v-btn>
       </v-col>
-      <v-divider />
     </v-row>
 
+    <v-divider class="my-2" />
+
     <!-- Privacy Policy -->
-    <v-row class="my-1 text-center">
+    <v-row class="text-center py-4">
       <v-col
         class="text-h6"
         cols="4"
@@ -84,11 +90,12 @@
           English
         </v-btn>
       </v-col>
-      <v-divider />
     </v-row>
 
+    <v-divider class="my-2" />
+
     <!-- Code of Conduct -->
-    <v-row class="my-1 text-center">
+    <v-row class="text-center py-4">
       <v-col
         class="text-h6"
         cols="4"
@@ -113,11 +120,12 @@
           English
         </v-btn>
       </v-col>
-      <v-divider />
     </v-row>
 
+    <v-divider class="my-2" />
+
     <!-- Cookie Policy (Only English) -->
-    <v-row class="my-1 text-center rounded-b">
+    <v-row class="text-center py-4">
       <v-col
         class="text-h6"
         cols="4"
@@ -136,20 +144,13 @@
           English
         </v-btn>
       </v-col>
-      <v-divider />
     </v-row>
-  </div>
+  </v-sheet>
 </template>
 
 <script lang="ts" setup>
 import {$require} from "@/plugins/require.ts"
 
-/**
- * Downloads a file by creating a temporary link.
- *
- * @param path - The path or URL of the file.
- * @param fileName - The desired file name for download.
- */
 function downloadFile(path: string, fileName: string) {
   const url = path.startsWith("http") ? path : $require(path)
   const link = document.createElement("a")
@@ -160,21 +161,3 @@ function downloadFile(path: string, fileName: string) {
   document.body.removeChild(link)
 }
 </script>
-
-<style lang="scss" scoped>
-.v-row {
-  background-color: #212121;
-}
-
-.rounded-t {
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  overflow: hidden;
-}
-
-.rounded-b {
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  overflow: hidden;
-}
-</style>

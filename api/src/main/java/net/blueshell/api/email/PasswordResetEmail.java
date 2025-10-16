@@ -48,14 +48,4 @@ public class PasswordResetEmail extends BaseEmail {
                 appUrl
         );
     }
-
-    @Override
-    public String getSenderName() {
-        return "Blueshell Security";
-    }
-
-    @Override
-    public String getSenderAddress() {
-        return "jorisjonkers@blueshell.utwente.nl";
-    }
 }

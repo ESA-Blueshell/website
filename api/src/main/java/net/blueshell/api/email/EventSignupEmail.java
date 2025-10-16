@@ -78,11 +78,6 @@ public class EventSignupEmail extends BaseEmail {
         return "Blueshell Events";
     }
 
-    @Override
-    public String getSenderAddress() {
-        return "events@blueshell.utwente.nl";
-    }
-
     private String formatEventDate(Event event) {
         if (event.getStartTime() != null) {
             if (event.getEndTime() != null && !event.getStartTime().equals(event.getEndTime())) {

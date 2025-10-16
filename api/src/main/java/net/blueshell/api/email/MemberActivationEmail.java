@@ -33,9 +33,7 @@ public class MemberActivationEmail extends BaseEmail {
                         - The full Blueshell Esports discord
                         - The full Blueshell Esports website
                         
-                        For any questions, feel free to reach out to us via [discord](https://discord.gg/dFam2yqXu7) or our [website](%s).
-                        
-                        Please do not reply to this email, as this is a generated email. Any responses will be ignored.
+                        For any questions, feel free to reach out to us via [discord](https://discord.gg/dFam2yqXu7), our [website](%s), or by replying to this mail.
                         
                         Kind regards,
                         Blueshell Esports
@@ -44,5 +42,10 @@ public class MemberActivationEmail extends BaseEmail {
                 activationLink,
                 appUrl
         );
+    }
+
+    @Override
+    public String getReplyTo() {
+        return "board@blueshell.utwente.nl";
     }
 }

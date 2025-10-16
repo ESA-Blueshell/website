@@ -41,7 +41,7 @@ public class ContributionReminderEmail extends BaseEmail {
                         If you have already made your payment, please disregard this message.
                         
                         Kind regards,
-                        Blueshell Esports Treasury
+                        Treasurer of Blueshell Esports
                         """,
                 recipient.getFullName(),
                 contributionPeriod.getStartDate(),
@@ -55,11 +55,11 @@ public class ContributionReminderEmail extends BaseEmail {
 
     @Override
     public String getSenderName() {
-        return "Blueshell Treasurer";
+        return "Treasurer of Blueshell";
     }
 
     @Override
-    public String getSenderAddress() {
-        return "treasurer@blueshell.utwente.nl";
+    public String getReplyTo() {
+        return "board@blueshell.utwente.nl";
     }
 }

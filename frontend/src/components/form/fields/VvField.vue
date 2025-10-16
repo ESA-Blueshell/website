@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import {Field} from "vee-validate"
 import {defineModel, defineOptions} from "vue"
+import {VTextField} from "vuetify/components"
 
 defineOptions({inheritAttrs: false})
 
 type Rules = string | Record<string, unknown> | undefined
 
-defineProps<{
+withDefaults(defineProps<{
   name: string
   label?: string
   rules?: Rules
   component?: unknown
   componentProps?: Record<string, unknown>
   disabled?: boolean
-}>()
+}>(), {
+  label: "",
+  rules: "",
+  component: VTextField,
+  componentProps: () => ({}),
+})
 
 const model = defineModel<unknown>()
 </script>
@@ -26,7 +32,7 @@ const model = defineModel<unknown>()
     :rules="rules"
   >
     <component
-      :is="component || 'v-text-field'"
+      :is="component"
       v-bind="componentProps"
       :label="label"
       :model-value="value"

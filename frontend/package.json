@@ -41,7 +41,8 @@
     "vuex": "^4.1.0",
     "webfontloader": "^1.6.28",
     "world-countries": "^5.1.0",
-    "xss": "^1.0.15"
+    "xss": "^1.0.15",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

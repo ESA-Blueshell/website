@@ -6,268 +6,164 @@
     >
       <v-row>
         <v-col cols="4">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.initials"
             name="initials"
+            label="Initials*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              :disabled="isReadonly"
-              label="Initials"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="8">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.firstName"
             name="firstName"
+            label="First Name*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              :disabled="isReadonly"
-              label="First Name"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="4">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.prefix"
             name="prefix"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              :disabled="isReadonly"
-              label="Prefix"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Prefix"
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="8">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.lastName"
             name="lastName"
+            label="Surname*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              :disabled="isReadonly"
-              label="Surname"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.username"
             name="username"
+            label="Username*"
             rules="required|alphaNum"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              :disabled="isReadonly"
-              label="Username"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.discord"
             name="discord"
+            label="Discord*"
             rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Discord"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.email"
-            :disabled="isReadonly"
             name="email"
+            label="E-mail*"
             rules="required|email|noStudentEmail"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="E-mail"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :disabled="isReadonly"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.phoneNumber"
-            :rules="`required|phoneMobile:${country}`"
             name="phoneNumber"
-          >
-            <v-phone-input
-              :default-country="'NL'"
-              :error-messages="errors"
-              :model-value="value"
-              country-icon-mode="svg"
-              label="Phone Number"
-              mode="international"
-              placeholder="Phone Number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-              @update:country="updateCountry"
-            />
-          </Field>
+            :rules="`required|phoneMobile:${country}`"
+            :component="VPhoneInput"
+            :component-props="{
+              defaultCountry: 'NL',
+              countryIconMode: 'svg',
+              mode: 'international',
+              placeholder: 'Phone Number'
+            }"
+            label="Phone Number*"
+            @update:country="updateCountry"
+          />
         </v-col>
       </v-row>
 
       <v-row v-if="showPassword">
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.password"
             name="password"
+            label="Password*"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-          >
-            <v-text-field
-              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="errors"
-              :model-value="value"
-              :type="showPass ? 'text' : 'password'"
-              label="Password"
-              @blur="handleBlur"
-              @click:append-inner="showPass = !showPass"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :component-props="{
+              type: showPass ? 'text' : 'password',
+              'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off'
+            }"
+            @click:append-inner="showPass = !showPass"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="confirmPassword"
             name="confirmPassword"
+            label="Password (repeated)"
             rules="required|match:@password"
-          >
-            <v-text-field
-              :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="errors"
-              :model-value="value"
-              :type="showPass ? 'text' : 'password'"
-              label="Password (repeated)"
-              @blur="handleBlur"
-              @click:append-inner="showPass = !showPass"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :component-props="{
+              type: showPass ? 'text' : 'password',
+              'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off'
+            }"
+            @click:append-inner="showPass = !showPass"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.dateOfBirth"
             name="dateOfBirth"
+            label="Date of Birth*"
             rules="dateRequired"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Date of Birth"
-              type="date"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :component-props="{ type: 'date' }"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.nationality"
-            rules="required"
             name="nationality"
-          >
-            <nationality-select
-              :error-messages="errors"
-              :model-value="value"
-              label="Nationality"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Nationality*"
+            rules="required"
+            :component="NationalitySelect"
+          />
         </v-col>
       </v-row>
 
       <v-row>
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.gender"
             name="gender"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Gender"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Gender"
+          />
         </v-col>
 
         <v-col cols="6">
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+          <VvField
             v-model="user.studentNumber"
             name="studentNumber"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Student Number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Student Number"
+          />
         </v-col>
       </v-row>
 
@@ -276,48 +172,33 @@
         justify="space-evenly"
       >
         <v-col cols="auto">
-          <Field
-            v-slot="{ value, handleChange }"
+          <VvField
             v-model="user.ehbo"
             name="ehbo"
-          >
-            <v-checkbox
-              :hide-details="true"
-              :model-value="value"
-              label="EHBO Diploma"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="EHBO Diploma"
+            :component="'v-checkbox'"
+            :component-props="{ hideDetails: true }"
+          />
         </v-col>
 
         <v-col cols="auto">
-          <Field
-            v-slot="{ value, handleChange }"
+          <VvField
             v-model="user.bhv"
             name="bhv"
-          >
-            <v-checkbox
-              :hide-details="true"
-              :model-value="value"
-              label="BHV Diploma"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="BHV Diploma"
+            :component="'v-checkbox'"
+            :component-props="{ hideDetails: true }"
+          />
         </v-col>
 
         <v-col cols="auto">
-          <Field
-            v-slot="{ value, handleChange }"
+          <VvField
             v-model="user.newsletter"
             name="newsletter"
-          >
-            <v-checkbox
-              :hide-details="true"
-              :model-value="value"
-              label="Subscribe to newsletter"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Subscribe to newsletter"
+            :component="'v-checkbox'"
+            :component-props="{ hideDetails: true }"
+          />
         </v-col>
       </v-row>
 
@@ -326,18 +207,13 @@
         justify="space-evenly"
       >
         <v-col cols="auto">
-          <Field
-            v-slot="{ value, handleChange }"
+          <VvField
             v-model="user.photoConsent"
             name="photoConsent"
-          >
-            <v-checkbox
-              :hide-details="true"
-              :model-value="value"
-              label="Give consent for your photo to be taken at events"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            label="Give consent for your photo to be taken at events"
+            :component="'v-checkbox'"
+            :component-props="{ hideDetails: true }"
+          />
         </v-col>
       </v-row>
 
@@ -373,10 +249,11 @@ import {VPhoneInput} from "v-phone-input"
 import {type AdvancedUser, createUser, updateUser} from "@/services/api"
 import {type CountryCode} from "libphonenumber-js/max"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
-import {Field, Form, type FormContext} from "vee-validate"
+import {Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useBackendValidation} from "@/plugins/serverValidation.ts"
 import {useStore} from "vuex"
+import VvField from "@/components/form/fields/VvField.vue"
 
 const {
   showPassword = false,

@@ -22,13 +22,13 @@ public class EmailTemplateService {
     private final HtmlRenderer renderer;
     @Value("${frontend.url}")
     private String appUrl;
-    @Autowired
-    private TemplateEngine templateEngine;
+    private final TemplateEngine templateEngine;
 
-    public EmailTemplateService() {
+    public EmailTemplateService(TemplateEngine templateEngine) {
         var extensions = List.of(TablesExtension.create());
         this.parser = Parser.builder().extensions(extensions).build();
         this.renderer = HtmlRenderer.builder().extensions(extensions).build();
+        this.templateEngine = templateEngine;
     }
 
     private String processTemplate(String templateName, Map<String, Object> variables) {

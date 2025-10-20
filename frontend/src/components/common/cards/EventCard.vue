@@ -24,18 +24,9 @@ const theme = useTheme()
 const route = useRoute()
 
 const props = defineProps({
-  event: {
-    type: Object as PropType<Event>,
-    required: true,
-  },
-  signUps: {
-    type: Array as PropType<EventSignUp[]>,
-    default: () => [],
-  },
-  committees: {
-    type: Array as PropType<AdvancedCommittee[]>,
-    default: () => [],
-  },
+  event: {type: Object as PropType<Event>, required: true},
+  signUps: {type: Array as PropType<EventSignUp[]>, default: () => []},
+  committees: {type: Array as PropType<AdvancedCommittee[]>, default: () => []},
 })
 
 const emit = defineEmits<{
@@ -46,7 +37,6 @@ const emit = defineEmits<{
 }>()
 
 const event = toRef(props, "event")
-
 const signUp = computed<EventSignUp | undefined>(() =>
   props.signUps.find((s) => s.eventId === event.value.id),
 )
@@ -63,6 +53,11 @@ const isBoard = computed<boolean>(() => store.getters.isBoard)
 
 const committee = computed<AdvancedCommittee | undefined>(() =>
   props.committees.find((c) => event.value.committeeId === c.id),
+)
+
+const isPastEvent = computed(() => DateTime.fromISO(event.value.startTime) < DateTime.now())
+const actionsDisabled = computed(
+  () => !event.value.approved || (event.value.membersOnly && !isMember.value) || isPastEvent.value,
 )
 
 async function confirmDeleteEvent() {
@@ -95,7 +90,6 @@ async function toggleEventApproved() {
   })
   emit("update:event", resp.data)
 }
-
 
 onMounted(async () => {
   if (route.hash && event.value.id === Number(route.hash.replace("#", ""))) {
@@ -162,9 +156,7 @@ function formatEventTime() {
     minute: "2-digit",
   })
   result += " - "
-  if (startTime.hasSame(endTime, "day") && startTime.hasSame(endTime, "month") && startTime.hasSame(endTime, "year")) {
-    // same day
-  } else {
+  if (!(startTime.hasSame(endTime, "day") && startTime.hasSame(endTime, "month") && startTime.hasSame(endTime, "year"))) {
     result += endTime.toLocaleString({weekday: "long", day: "numeric", month: "long"})
     result += " at "
   }
@@ -183,13 +175,10 @@ async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
   try {
     const resp = await downloadEventBanner({
-      path: {
-        bannerId: event.value.banner.id!,
-      },
+      path: {bannerId: event.value.banner.id!},
       throwOnError: true,
       responseType: "blob",
     })
-
     const blob = resp?.data as Blob
     if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
     bannerUrl.value = URL.createObjectURL(blob)
@@ -209,258 +198,250 @@ function updateSignUp(updatedSignUp: EventSignUp) {
   emit("update:signUp", updatedSignUp)
   expanded.value = false
 }
+
+const cardStyle = computed(() => {
+  const base = {
+    minHeight: "240px",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+  } as Record<string, string>
+  if (bannerUrl.value) {
+    const overlay = theme.global.current.value.dark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)"
+    return {
+      ...base,
+      backgroundImage: `linear-gradient(to bottom, ${overlay}, ${overlay}), url('${bannerUrl.value}')`,
+    }
+  }
+  return base
+})
 </script>
 
 <template v-if="event.id">
   <div>
     <v-card
-      :style="bannerUrl
-        ? {
-          backgroundImage: theme.global.current.value.dark
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('${bannerUrl}')`
-            : `linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url('${bannerUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          minHeight: '240px'
-        }
-        : {
-          minHeight: '240px'
-        }"
+      class="card--row"
+      :style="cardStyle"
       rounded="sm"
-      style="background-size: cover; background-position: center; min-height: 240px;"
     >
-      <div ref="eventElement">
-        <v-container>
-          <v-row
-            class="align-stretch fill-height flex-nowrap"
-            no-gutters
+      <v-container class="pa-4">
+        <div class="content--row">
+          <!-- main content -->
+          <div
+            ref="eventElement"
+            class="main"
           >
-            <v-col class="flex-grow-1 min-w-0">
-              <v-card-item>
-                <v-card-title class="text-h4 d-flex align-center ga-2">
-                  <span
-                    class="text-wrap"
-                    style="word-break: break-word;"
-                  >
-                    {{ event.title }}
-                    <v-tooltip
-                      v-if="isBoard || committee"
-                      :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
-                      location="bottom"
-                    >
-                      <template #activator="{ props: approveProps }">
-                        <v-btn
-                          :color="approvedColor"
-                          :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
-                          :prepend-icon="approvedIcon"
-                          class="approve-btn text-none"
-                          size="small"
-                          v-bind="approveProps"
-                          variant="tonal"
-                          @click="toggleEventApproved"
-                        >
-                          {{ approvedLabel }}
-                        </v-btn>
-                      </template>
-                    </v-tooltip>
-                  </span>
-                </v-card-title>
-                <v-card-subtitle>
-                  {{ event.location }} <br>
-                  {{ formatEventTime() }} <br>
-                  {{ event.membersOnly ? "Members only" : "" }}
-                </v-card-subtitle>
-              </v-card-item>
-
-              <v-card-text>
-                <div
+            <v-card-item>
+              <v-card-title class="text-h4 d-flex align-center ga-2">
+                <span
                   class="text-wrap"
-                  style="word-break: break-word"
-                  v-html="event.description ? $markdownToHtml(event.description) : 'No description...'"
-                />
-              </v-card-text>
-            </v-col>
-
-            <v-col
-              class="align-self-stretch d-flex shrink-0"
-              cols="auto"
-            >
-              <div class="right-rail d-flex flex-column align-end justify-start h-100">
-                <div
-                  v-if="committee"
-                  class="mb-3"
+                  style="word-break: break-word;"
                 >
-                  <v-sheet
-                    border
-                    class="top-right-header"
+                  {{ event.title }}
+                  <v-tooltip
+                    v-if="isBoard || committee"
+                    :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
+                    location="bottom"
                   >
-                    <span class="committee-name text-caption font-weight-medium font-weight-bold">
-                      {{ committee.name }}
-                    </span>
-
-                    <div class="top-right-actions">
-                      <v-tooltip
-                        location="bottom"
-                        text="Check signups"
+                    <template #activator="{ props: approveProps }">
+                      <v-btn
+                        :color="approvedColor"
+                        :disabled="!isBoard || isPastEvent"
+                        :prepend-icon="approvedIcon"
+                        class="approve-btn text-none"
+                        size="small"
+                        v-bind="approveProps"
+                        variant="tonal"
+                        @click="toggleEventApproved"
                       >
-                        <template #activator="{ props: checkSignUpsProp }">
-                          <v-btn
-                            :disabled="!event.signUp"
-                            icon="mdi-list-status"
-                            v-bind="checkSignUpsProp"
-                            variant="plain"
-                            @click="router.push(`/events/signups/${event.id}`)"
-                          />
-                        </template>
-                      </v-tooltip>
+                        {{ approvedLabel }}
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                </span>
+              </v-card-title>
 
-                      <v-tooltip
-                        location="bottom"
-                        text="Edit event"
-                      >
-                        <template #activator="{ props: editEventProps }">
-                          <v-btn
-                            icon="mdi-pencil"
-                            v-bind="editEventProps"
-                            variant="plain"
-                            @click="router.push(`/events/edit/${event.id}`)"
-                          />
-                        </template>
-                      </v-tooltip>
+              <v-card-subtitle>
+                {{ event.location }} <br>
+                {{ formatEventTime() }} <br>
+                {{ event.membersOnly ? "Members only" : "" }}
+              </v-card-subtitle>
+            </v-card-item>
 
-                      <v-tooltip
-                        location="bottom"
-                        text="Delete event"
-                      >
-                        <template #activator="{ props: deleteProps }">
-                          <v-btn
-                            icon="mdi-delete"
-                            v-bind="deleteProps"
-                            variant="plain"
-                            @click="showDeleteDialog = true"
-                          />
-                        </template>
-                      </v-tooltip>
-                    </div>
-                  </v-sheet>
-                </div>
-
-                <template v-if="event.signUp">
-                  <template v-if="(isLoggedIn || !event.membersOnly)">
-                    <v-tooltip
-                      v-if="isLoggedIn && signUp?.id !== undefined"
-                      location="left"
-                      text="Cancel sign-up"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-btn
-                          :disabled="!event.approved
-                            || (event.membersOnly && !isMember)
-                            || DateTime.fromISO(event.startTime) < DateTime.now()"
-                          :loading="submitting"
-                          icon="mdi-close"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="removeSignUp()"
-                        />
-                      </template>
-                    </v-tooltip>
-
-                    <v-tooltip
-                      :text="
-                        signUp?.id
-                          ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
-                          : (expanded ? 'Cancel signing up' : 'Sign up')
-                      "
-                      location="left"
-                    >
-                      <template #activator="{ props: tooltipProps }">
-                        <v-badge
-                          :content="event.signUpCount"
-                          color="blue"
-                          offset-x="8"
-                          offset-y="8"
-                        />
-                        <v-btn
-                          :color="signUp?.id ? 'green' : 'orange'"
-                          :disabled="!event.approved
-                            || (event.membersOnly && !isMember)
-                            || DateTime.fromISO(event.startTime) < DateTime.now()"
-                          :loading="submitting"
-                          icon="mdi-list-status"
-                          v-bind="tooltipProps"
-                          variant="plain"
-                          @click="toggleExpanded()"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </template>
-                </template>
-
-                <v-tooltip
-                  location="left"
-                  text="Find location"
-                >
-                  <template #activator="{ props: tooltipProps }">
-                    <v-btn
-                      icon="mdi-google-maps"
-                      v-bind="tooltipProps"
-                      variant="plain"
-                      @click="findLocation()"
-                    />
-                  </template>
-                </v-tooltip>
-
-                <v-tooltip
-                  location="left"
-                  text="Add to your calendar"
-                >
-                  <template #activator="{ props: tooltipProps }">
-                    <v-btn
-                      icon="mdi-calendar"
-                      v-bind="tooltipProps"
-                      variant="plain"
-                      @click="downloadIcs()"
-                    />
-                  </template>
-                </v-tooltip>
-
-                <v-tooltip
-                  location="left"
-                  text="Copy share link"
-                >
-                  <template #activator="{ props: tooltipProps }">
-                    <v-btn
-                      icon="mdi-share-variant"
-                      v-bind="tooltipProps"
-                      variant="plain"
-                      @click="copyShareLink()"
-                    />
-                  </template>
-                </v-tooltip>
-              </div>
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-expand-transition :key="event.id">
+            <v-card-text>
               <div
-                v-if="expanded"
-                class="form-border mx-auto rounded-b w-100"
+                class="text-wrap"
+                style="word-break: break-word"
+                v-html="event.description ? $markdownToHtml(event.description) : 'No description...'"
+              />
+            </v-card-text>
+          </div>
+
+          <v-card-actions class="actions-rail d-flex flex-column align-end">
+            <div
+              v-if="committee"
+              class="mb-3 w-100"
+            >
+              <v-sheet
+                border
+                class="top-right-header"
               >
-                <event-sign-up-form
-                  :event="event"
-                  :initial-sign-up="signUp"
-                  :show-guest-form="!isLoggedIn"
-                  class="form mx-auto"
-                  @update:sign-up="updateSignUp"
+                <span class="committee-name text-caption font-weight-medium">
+                  {{ committee.name }}
+                </span>
+                <div class="top-right-actions">
+                  <v-tooltip
+                    location="left"
+                    text="Check signups"
+                  >
+                    <template #activator="{ props: p }">
+                      <v-btn
+                        :disabled="!event.signUp"
+                        icon="mdi-list-status"
+                        v-bind="p"
+                        variant="plain"
+                        @click="router.push(`/events/signups/${event.id}`)"
+                      />
+                    </template>
+                  </v-tooltip>
+
+                  <v-tooltip
+                    location="left"
+                    text="Edit event"
+                  >
+                    <template #activator="{ props: p }">
+                      <v-btn
+                        icon="mdi-pencil"
+                        v-bind="p"
+                        variant="plain"
+                        @click="router.push(`/events/edit/${event.id}`)"
+                      />
+                    </template>
+                  </v-tooltip>
+
+                  <v-tooltip
+                    location="left"
+                    text="Delete event"
+                  >
+                    <template #activator="{ props: p }">
+                      <v-btn
+                        icon="mdi-delete"
+                        v-bind="p"
+                        variant="plain"
+                        @click="showDeleteDialog = true"
+                      />
+                    </template>
+                  </v-tooltip>
+                </div>
+              </v-sheet>
+            </div>
+
+            <template v-if="event.signUp && (isLoggedIn || !event.membersOnly)">
+              <v-tooltip
+                v-if="isLoggedIn && signUp?.id !== undefined"
+                location="left"
+                text="Cancel sign-up"
+              >
+                <template #activator="{ props: p }">
+                  <v-btn
+                    :disabled="actionsDisabled"
+                    :loading="submitting"
+                    icon="mdi-close"
+                    v-bind="p"
+                    variant="plain"
+                    @click="removeSignUp()"
+                  />
+                </template>
+              </v-tooltip>
+
+              <v-tooltip
+                :text="
+                  signUp?.id
+                    ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
+                    : (expanded ? 'Cancel signing up' : 'Sign up')
+                "
+                location="left"
+              >
+                <template #activator="{ props: p }">
+                  <v-badge
+                    :content="event.signUpCount"
+                    color="blue"
+                    offset-x="8"
+                    offset-y="8"
+                  >
+                    <v-btn
+                      :color="signUp?.id ? 'green' : 'orange'"
+                      :disabled="actionsDisabled"
+                      :loading="submitting"
+                      icon="mdi-list-status"
+                      v-bind="p"
+                      variant="plain"
+                      @click="toggleExpanded()"
+                    />
+                  </v-badge>
+                </template>
+              </v-tooltip>
+            </template>
+
+            <v-tooltip
+              location="left"
+              text="Find location"
+            >
+              <template #activator="{ props: p }">
+                <v-btn
+                  icon="mdi-google-maps"
+                  v-bind="p"
+                  variant="plain"
+                  @click="findLocation()"
                 />
-              </div>
-            </v-expand-transition>
-          </v-row>
-        </v-container>
-      </div>
+              </template>
+            </v-tooltip>
+
+            <v-tooltip
+              location="left"
+              text="Add to your calendar"
+            >
+              <template #activator="{ props: p }">
+                <v-btn
+                  icon="mdi-calendar"
+                  v-bind="p"
+                  variant="plain"
+                  @click="downloadIcs()"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip
+              location="left"
+              text="Copy share link"
+            >
+              <template #activator="{ props: p }">
+                <v-btn
+                  icon="mdi-share-variant"
+                  v-bind="p"
+                  variant="plain"
+                  @click="copyShareLink()"
+                />
+              </template>
+            </v-tooltip>
+          </v-card-actions>
+        </div>
+
+        <v-expand-transition :key="event.id">
+          <div
+            v-if="expanded"
+            class="form-border mx-auto rounded-b w-100"
+          >
+            <event-sign-up-form
+              :event="event"
+              :initial-sign-up="signUp"
+              :show-guest-form="!isLoggedIn"
+              class="form mx-auto"
+              @update:sign-up="updateSignUp"
+            />
+          </div>
+        </v-expand-transition>
+      </v-container>
     </v-card>
 
     <deletion-confirmation-dialog
@@ -472,19 +453,32 @@ function updateSignUp(updatedSignUp: EventSignUp) {
   </div>
 </template>
 
-
 <style lang="scss" scoped>
-.flex-nowrap {
-  flex-wrap: nowrap !important;
+.card--row {
+  display: flex;
+  flex-direction: column;
+}
+
+.content--row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.actions-rail {
+  width: 80px;
+  padding: 8px 4px;
+  gap: 6px;
 }
 
 .approve-btn {
   flex: 0 0 auto;
   white-space: nowrap;
-}
-
-.right-rail {
-  inline-size: max-content;
 }
 
 .form-border {
@@ -497,7 +491,6 @@ function updateSignUp(updatedSignUp: EventSignUp) {
 .form {
   padding: 16px;
 }
-
 
 .top-right-header {
   display: grid;
@@ -520,16 +513,5 @@ function updateSignUp(updatedSignUp: EventSignUp) {
 .committee-name {
   opacity: var(--v-medium-emphasis-opacity);
   padding-inline-start: 10px;
-  padding-left: 10px;
 }
-
-.middle-actions {
-  align-self: stretch;
-}
-
-.medium-emphasis-opacity {
-  opacity: var(--v-medium-emphasis-opacity)
-}
-
-
 </style>

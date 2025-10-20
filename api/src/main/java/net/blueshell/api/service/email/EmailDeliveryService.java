@@ -41,7 +41,7 @@ public class EmailDeliveryService {
 
             // keep your inline assets
             helper.addInline("logo", new ClassPathResource("templates/assets/BSLOGO.png"), "image/png");
-            helper.addInline("bg", new ClassPathResource("templates/assets/BackdropBlack.jpg"), "image/jpeg");
+            helper.addInline("bg", new ClassPathResource("templates/assets/BackdropBlack.png"), "image/png");
 
             mailSender.send(message);
             log.info("Sent email to {} with subject {}", toEmail, subject);

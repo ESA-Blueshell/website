@@ -40,8 +40,7 @@ public class SimpleUserDTO extends PersonalInfoDTO {
     private String lastName;
 
     @JsonProperty
-    @NotBlank(groups = {Update.class, Creation.class})
-    @Null(groups = {Administration.class})
+    @NotBlank
     private String username;
 
     @JsonProperty

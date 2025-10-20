@@ -28,7 +28,7 @@
           </v-row>
           <v-row>
             <VvField
-              v-model="form.passwordAgain"
+              v-model="passwordAgain"
               :component-props="{
                 type: showPass ? 'text' : 'password',
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
@@ -103,25 +103,23 @@ const showPass = ref(false)
 const errorMessage = ref<string | null>(null)
 
 const token = ref<string>("")
-const username = ref<string>("")
+const passwordAgain = ref<string>("")
 
-const form = ref({
+const form = ref<PasswordResetRequest>({
   password: "",
-  passwordAgain: "",
+  token: "",
 })
 
 const {handleSubmit} = useForm()
 
 onMounted(() => {
-  token.value = (route.query.token as string) || ""
-  username.value = (route.query.username as string) || ""
-
-  if (!token.value || !username.value) {
+  form.value.token = (route.query.token as string) || ""
+  if (!form.value.token) {
     router.replace({name: "home"})
     return
   }
 
-  router.replace({name: "resetPassword", query: {username: username.value, token: token.value}})
+  router.replace({name: "resetPassword", query: {token: token.value}})
 })
 
 const onSubmit = handleSubmit(async () => {
@@ -129,13 +127,7 @@ const onSubmit = handleSubmit(async () => {
   errorMessage.value = null
 
   try {
-    const payload: PasswordResetRequest = {
-      token: token.value,
-      username: username.value,
-      password: form.value.password,
-    }
-
-    await setPassword({body: payload, throwOnError: true})
+    await setPassword({body: form.value, throwOnError: true})
     succeeded.value = true
   } catch (e: unknown) {
     $handleNetworkError(e)

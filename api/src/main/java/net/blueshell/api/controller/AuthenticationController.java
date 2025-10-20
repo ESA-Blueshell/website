@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@RestController("/auth")
+@RestController
 @Tag(name = "Authentication")
 @RequiredArgsConstructor
 public class AuthenticationController extends JWTAuthBase {
@@ -31,7 +31,7 @@ public class AuthenticationController extends JWTAuthBase {
     @Value("${app.jwt.expiration}")
     private Long expiration;
 
-    @PostMapping
+    @PostMapping(("/auth"))
     @PermitAll
     public AuthenticationDTO authenticate(@Validated @RequestBody JwtRequest authenticationRequest) {
         authenticate(

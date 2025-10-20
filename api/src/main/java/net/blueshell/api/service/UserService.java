@@ -2,15 +2,12 @@ package net.blueshell.api.service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.event.job.RecoveryEmailEvent;
 import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
 import net.blueshell.api.repository.spec.UserSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -21,21 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
-
 @Slf4j
 @Service
 public class UserService extends BaseModelService<User, UserRepository> implements UserDetailsService {
 
-    private final ApplicationEventPublisher eventPublisher;
-    private final RecoveryService recoveryTokens;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository repository, ApplicationEventPublisher eventPublisher, RecoveryService recoveryTokens, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository repository, PasswordEncoder passwordEncoder) {
         super(repository);
-        this.eventPublisher = eventPublisher;
-        this.recoveryTokens = recoveryTokens;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -90,27 +81,6 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
             user.removeRole(role);
             self().update(user);
         }
-    }
-
-    @Override
-    @Transactional
-    public User create(User user) {
-        // If BOARD creates a member, username will be set during activation
-        if (hasAuthority(Role.BOARD)) {
-            user.setUsername(null);
-        }
-
-        user = super.create(user);
-
-        if (hasAuthority(Role.BOARD)) {
-            var token = recoveryTokens.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
-            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), token, ResetType.MEMBER_ACTIVATION));
-        } else {
-            var token = recoveryTokens.issue(user, ResetType.USER_ACTIVATION, Duration.ofDays(1));
-            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), token, ResetType.USER_ACTIVATION));
-        }
-
-        return user;
     }
 
     public Page<User> findByFilter(UserFilter filter, Pageable pageable) {

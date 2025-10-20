@@ -535,12 +535,13 @@ CREATE INDEX idx_contributions_created_at ON contributions (created_at);
 ALTER TABLE contribution_reminders
     ADD CONSTRAINT fk_contribution_reminders_contribution_period_id FOREIGN KEY (contribution_period_id) REFERENCES contribution_periods (id);
 
-CREATE INDEX idx_contribution_reminders_contribution_period_id ON contribution_reminders (contribution_period_id);
+
+CREATE INDEX idx_contribution_reminders_contribution_period_id ON contribution_reminders (contribution_period_id, deleted_at);
+
+CREATE INDEX idx_contribution_reminders_user_id ON contribution_reminders (user_id, deleted_at);
 
 ALTER TABLE contribution_reminders
     ADD CONSTRAINT fk_contribution_reminders_user_id FOREIGN KEY (user_id) REFERENCES users (id);
-
-CREATE INDEX idx_contribution_reminders_user_id ON contribution_reminders (user_id);
 
 UPDATE event_signups
 SET created_at = signed_up_at

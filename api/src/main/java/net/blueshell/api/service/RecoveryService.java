@@ -3,7 +3,9 @@ package net.blueshell.api.service;
 import jakarta.transaction.Transactional;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.ResetType;
+import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.job.RecoveryEmailEvent;
+import net.blueshell.api.common.event.jpa.PostPersistEvent;
 import net.blueshell.api.model.RecoveryToken;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.RecoveryTokenRepository;
@@ -11,6 +13,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
@@ -34,6 +39,24 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
         this.encoder = encoder;
         this.eventPublisher = eventPublisher;
         this.users = users;
+    }
+
+    /**
+     * React to user creation: issue appropriate token and send mail.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
+    public void onUserCreated(PostPersistEvent<User> event) {
+        String rawToken;
+        var user = event.getSource();
+        if (hasAuthority(Role.BOARD)) {
+            rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));
+        } else {
+            rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.USER_ACTIVATION));
+        }
     }
 
     /**

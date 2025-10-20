@@ -32,18 +32,14 @@ import java.util.Set;
                 @UniqueConstraint(name = "uk_users_student_number_deleted_at", columnNames = {"student_number", "deleted_at"}),
                 @UniqueConstraint(name = "uk_users_discord_deleted_at", columnNames = {"discord", "deleted_at"}),
                 @UniqueConstraint(name = "uk_users_phone_number_deleted_at", columnNames = {"phone_number", "deleted_at"}),
-                @UniqueConstraint(name = "uk_users_reset_key_deleted_at", columnNames = {"reset_key", "deleted_at"}),
                 @UniqueConstraint(name = "uk_users_address_id_deleted_at", columnNames = {"address_id", "deleted_at"}),
                 @UniqueConstraint(name = "uk_users_profile_picture_id_deleted_at", columnNames = {"profile_picture_id", "deleted_at"})
         },
         indexes = {
                 @Index(name = "idx_users_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_users_created_at", columnList = "created_at"),
-                @Index(name = "idx_users_creator_id", columnList = "creator_id"),
                 @Index(name = "idx_users_enabled", columnList = "enabled"),
                 @Index(name = "idx_users_newsletter", columnList = "newsletter"),
-                @Index(name = "idx_users_reset_key", columnList = "reset_key"),
-                @Index(name = "idx_users_reset_key_valid_until", columnList = "reset_key_valid_until"),
                 @Index(name = "idx_users_last_name", columnList = "last_name"),
                 @Index(name = "idx_users_first_name", columnList = "first_name")
         }

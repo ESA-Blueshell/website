@@ -214,6 +214,21 @@ export type Telemetry = {
     createdAt?: string;
 };
 
+export type UserActivationRequest = {
+    token: string;
+};
+
+export type PasswordResetRequest = {
+    token: string;
+    password: string;
+};
+
+export type MemberActivationRequest = {
+    token: string;
+    username: string;
+    password?: string;
+};
+
 export type Contribution = {
     id?: number;
     userId: number;
@@ -247,23 +262,6 @@ export type Login = {
     username: string;
     expiration: number;
     roles: Array<Role>;
-};
-
-export type UserActivationRequest = {
-    token: string;
-    username: string;
-};
-
-export type PasswordResetRequest = {
-    token: string;
-    username: string;
-    password: string;
-};
-
-export type MemberActivationRequest = {
-    token: string;
-    username: string;
-    password?: string;
 };
 
 export type PageMetadata = {
@@ -1413,47 +1411,6 @@ export type CreateAddressResponses = {
 
 export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
 
-export type CreateMemberData = {
-    body: AdvancedUser;
-    path?: never;
-    query?: never;
-    url: '/users/member';
-};
-
-export type CreateMemberErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateMemberError = CreateMemberErrors[keyof CreateMemberErrors];
-
-export type CreateMemberResponses = {
-    /**
-     * Created
-     */
-    201: AdvancedUser;
-};
-
-export type CreateMemberResponse = CreateMemberResponses[keyof CreateMemberResponses];
-
 export type CreateGuestUserData = {
     body: SimpleUser;
     path?: never;
@@ -1706,6 +1663,172 @@ export type CreateSponsorResponses = {
 };
 
 export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
+
+export type UserActivateData = {
+    body: UserActivationRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/user/activate';
+};
+
+export type UserActivateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UserActivateError = UserActivateErrors[keyof UserActivateErrors];
+
+export type UserActivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
+
+export type SetPasswordData = {
+    body: PasswordResetRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/password';
+};
+
+export type SetPasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
+
+export type SetPasswordResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
+
+export type ResetPasswordData = {
+    body?: never;
+    path: {
+        username: string;
+    };
+    query?: never;
+    url: '/recovery/password/reset/{username}';
+};
+
+export type ResetPasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
+
+export type ResetPasswordResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
+
+export type MemberActivateData = {
+    body: MemberActivationRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/member/activate';
+};
+
+export type MemberActivateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MemberActivateError = MemberActivateErrors[keyof MemberActivateErrors];
+
+export type MemberActivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type MemberActivateResponse = MemberActivateResponses[keyof MemberActivateResponses];
 
 export type FindMembershipsData = {
     body?: never;
@@ -2600,164 +2723,6 @@ export type AuthenticateResponses = {
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
-
-export type UserActivateData = {
-    body: UserActivationRequest;
-    path?: never;
-    query?: never;
-    url: '/auth/user/activate';
-};
-
-export type UserActivateErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UserActivateError = UserActivateErrors[keyof UserActivateErrors];
-
-export type UserActivateResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type ResetPasswordData = {
-    body?: never;
-    path?: never;
-    query: {
-        username: string;
-    };
-    url: '/auth/password';
-};
-
-export type ResetPasswordErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
-
-export type ResetPasswordResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type SetPasswordData = {
-    body: PasswordResetRequest;
-    path?: never;
-    query?: never;
-    url: '/auth/password';
-};
-
-export type SetPasswordErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
-
-export type SetPasswordResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type MemberActivateData = {
-    body: MemberActivationRequest;
-    path?: never;
-    query?: never;
-    url: '/auth/member/activate';
-};
-
-export type MemberActivateErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type MemberActivateError = MemberActivateErrors[keyof MemberActivateErrors];
-
-export type MemberActivateResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
 
 export type DeleteUserByIdData = {
     body?: never;

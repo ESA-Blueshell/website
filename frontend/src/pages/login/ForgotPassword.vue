@@ -81,7 +81,7 @@ onMounted(() => {
 const onSubmit = handleSubmit(async () => {
   loading.value = true
   try {
-    await resetPassword({query: {username: form.value.username}, throwOnError: false})
+    await resetPassword({path: {username: form.value.username}, throwOnError: false})
   } finally {
     loading.value = false
     succeeded.value = true

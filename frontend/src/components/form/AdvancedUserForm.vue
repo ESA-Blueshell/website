@@ -48,9 +48,7 @@
       </v-row>
 
       <v-row>
-        <v-col
-          v-if="showUsername"
-        >
+        <v-col>
           <VvField
             v-model="user.username"
             :disabled="isReadonly"
@@ -263,12 +261,10 @@ const {
   showPassword = false,
   showSubmit = false,
   submitText = "Submit",
-  showUsername = true,
 } = defineProps<{
   showPassword?: boolean
   showSubmit?: boolean
   submitText?: string
-  showUsername?: boolean
 }>()
 
 const emit = defineEmits<{

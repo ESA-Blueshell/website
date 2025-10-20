@@ -54,7 +54,7 @@
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {userActivate, type UserActivationRequest} from "@/services/api"
+import {userActivate} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const route = useRoute()
@@ -72,19 +72,16 @@ function redirectToLogin(ms = 2000) {
 
 onMounted(async () => {
   const token = (route.query.token as string) || ""
-  const username = (route.query.username as string) || ""
 
-  if (!token || !username) {
+  if (!token) {
     loading.value = false
     errorMessage.value = defaultErrorMessage
     redirectToLogin(2500)
     return
   }
 
-  const payload: UserActivationRequest = {token, username}
-
   try {
-    await userActivate({body: payload, throwOnError: true})
+    await userActivate({body: {token}, throwOnError: true})
     succeeded.value = true
     redirectToLogin(1500)
   } catch (e: unknown) {

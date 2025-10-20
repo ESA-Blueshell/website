@@ -76,16 +76,12 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.POST,
-                                "/auth/**",
+                                "/auth",
+                                "/recovery/**",
                                 "/events/*/signups",
                                 "/users",
                                 "/users/guest"
                         ).permitAll()
-                        .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/auth/password"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/events/**",
                                 "/v3/api-docs**/**",

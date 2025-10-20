@@ -1,15 +1,14 @@
-package net.blueshell.api.email;
+package net.blueshell.api.email.recovery;
 
-import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.model.User;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-public class MemberActivationEmail extends BaseEmail {
+public class MemberActivationEmail extends RecoveryEmail {
 
-    public MemberActivationEmail(User recipient, String frontendUrl, String appUrl) {
-        super(recipient, frontendUrl, appUrl);
+    public MemberActivationEmail(User recipient, String token, String frontendUrl, String appUrl) {
+        super(recipient, token, frontendUrl, appUrl);
     }
 
     @Override
@@ -19,7 +18,7 @@ public class MemberActivationEmail extends BaseEmail {
 
     @Override
     public String getMarkdownContent() {
-        String token = URLEncoder.encode(recipient.getResetKey(), StandardCharsets.UTF_8);
+        String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
         String activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token);
 
         return String.format(

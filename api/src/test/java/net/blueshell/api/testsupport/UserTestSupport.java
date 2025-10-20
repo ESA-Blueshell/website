@@ -55,7 +55,6 @@ public abstract class UserTestSupport {
         user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
         user.setEmail(username + "@example.com");
         user.setEnabled(true);
-        user.setResetType(null);
         user.addRole(role);
         userRepository.save(user);
         return user;

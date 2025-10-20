@@ -1,15 +1,13 @@
 package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.vladsch.flexmark.ext.ins.Ins;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
-import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.util.Util;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.event.EventSignUp;
@@ -19,15 +17,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-
-import static net.blueshell.api.common.util.Util.ACTIVATION_KEY_LENGTH;
-import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
 
 @Entity
 @Table(
@@ -59,6 +53,7 @@ import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
 @Getter
 @Setter
 @EntityListeners(JpaListener.class)
+@NoArgsConstructor
 public class User extends BaseModel implements UserDetails {
 
     @Column(nullable = false)
@@ -110,15 +105,8 @@ public class User extends BaseModel implements UserDetails {
     @Column(nullable = false)
     private boolean enabled;
 
-    @Column(name = "reset_key")
-    private String resetKey;
-
-    @Column(name = "reset_key_valid_until")
-    private Instant resetKeyValidUntil;
-
-    @Column(name = "reset_type")
-    @Enumerated(EnumType.STRING)
-    private ResetType resetType;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<RecoveryToken> recoveryTokens;
 
     @Column(name = "consent_privacy")
     private boolean consentPrivacy;
@@ -141,13 +129,13 @@ public class User extends BaseModel implements UserDetails {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<CommitteeMember> committeeMembers;
+    private Set<CommitteeMember> committeeMembers = new HashSet<>();
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
     @CollectionTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
-    private Set<Role> roles = new HashSet<>();
+    private Set<Role> roles = EnumSet.of(Role.GUEST);
 
     @Column(name = "ehbo")
     private boolean ehbo = false;
@@ -164,13 +152,6 @@ public class User extends BaseModel implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<Membership> memberships;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    private User creator;
-    @Column(name = "creator_id")
-
-    private Long creatorId;
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<EventSignUp> eventSignUps;
 
@@ -179,27 +160,6 @@ public class User extends BaseModel implements UserDetails {
 
     @Column(name = "start_study_year")
     private Long startStudyYear;
-
-    public User() {
-        this.resetKey = Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH);
-        this.resetKeyValidUntil = Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS);
-        this.resetType = ResetType.USER_ACTIVATION;
-    }
-
-    @PrePersist
-    private void prePersist() {
-        if (roles == null || roles.isEmpty()) {
-            roles = new HashSet<>();
-            roles.add(Role.GUEST);
-        }
-        if (this.getId() == null && this.getResetKeyValidUntil() == null) {
-            resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;
-        }
-    }
-
-    public Set<CommitteeMember> getCommitteeMembers() {
-        return committeeMembers == null ? new HashSet<>() : committeeMembers;
-    }
 
     public Set<Long> getCommitteeIds() {
         Set<Long> set = new HashSet<>();
@@ -210,11 +170,6 @@ public class User extends BaseModel implements UserDetails {
             set.add(cm.getCommittee().getId());
         }
         return set;
-    }
-
-    public Set<Role> getRoles() {
-        if (roles == null) roles = new HashSet<>();
-        return roles;
     }
 
     public Set<Role> getInheritedRoles() {

@@ -21,6 +21,7 @@
           :expanded="expanded"
           :memberships="memberships"
           :users="nonMembers"
+          allow-create
           enable-delete
           title="Non-members"
           @update:membership="membershipChanged"
@@ -34,7 +35,6 @@
           :expanded="expanded"
           :memberships="memberships"
           :users="members"
-          allow-create
           class="mt-5"
           title="Members"
           @update:membership="membershipChanged"

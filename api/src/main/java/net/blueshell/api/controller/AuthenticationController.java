@@ -7,23 +7,19 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.auth.JWTAuthBase;
 import net.blueshell.api.auth.JwtTokenUtil;
 import net.blueshell.api.dto.request.JwtRequest;
-import net.blueshell.api.dto.request.MemberActivationRequest;
-import net.blueshell.api.dto.request.PasswordResetRequest;
-import net.blueshell.api.dto.request.UserActivationRequest;
 import net.blueshell.api.dto.response.AuthenticationDTO;
-import net.blueshell.api.mapper.activation.MemberActivationRequestMapper;
-import net.blueshell.api.mapper.activation.PasswordResetRequestMapper;
-import net.blueshell.api.mapper.activation.UserActivationRequestMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@RestController
+@RestController("/auth")
 @Tag(name = "Authentication")
 @RequiredArgsConstructor
 public class AuthenticationController extends JWTAuthBase {
@@ -31,45 +27,11 @@ public class AuthenticationController extends JWTAuthBase {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService users;
-    private final MemberActivationRequestMapper memberActivationMapper;
-    private final UserActivationRequestMapper userActivationMapper;
-    private final PasswordResetRequestMapper passwordResetMapper;
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
 
-    @PostMapping("/auth/user/activate")
-    @PermitAll
-    public void userActivate(@Validated @RequestBody UserActivationRequest request) {
-        var user = users.findByUsername(request.getUsername());
-        userActivationMapper.fromDTO(request, user);
-        users.update(user);
-    }
-
-    @DeleteMapping("/auth/password")
-    @PermitAll
-    public void resetPassword(@Validated @RequestParam String username) {
-        var user = users.findByUsername(username);
-        users.reset(user);
-    }
-
-    @PostMapping("/auth/member/activate")
-    @PermitAll
-    public void memberActivate(@Validated @RequestBody MemberActivationRequest request) {
-        var user = users.findByUsername(request.getUsername());
-        memberActivationMapper.fromDTO(request, user);
-        users.update(user);
-    }
-
-    @PostMapping("/auth/password")
-    @PermitAll
-    public void setPassword(@Validated @RequestBody PasswordResetRequest request) {
-        var user = users.findByUsername(request.getUsername());
-        passwordResetMapper.fromDTO(request, user);
-        users.update(user);
-    }
-
-    @PostMapping("/auth")
+    @PostMapping
     @PermitAll
     public AuthenticationDTO authenticate(@Validated @RequestBody JwtRequest authenticationRequest) {
         authenticate(

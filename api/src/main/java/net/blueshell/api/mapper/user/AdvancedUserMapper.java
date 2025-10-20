@@ -70,7 +70,6 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
         if (user.getId() != null) return;
 
         if (hasAuthority(Role.BOARD)) {
-            user.setCreatorId(getPrincipal().getId());
             user.setPassword(passwordEncoder.encode(generatePassword()));
         } else {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));

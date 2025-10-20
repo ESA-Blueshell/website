@@ -1,4 +1,4 @@
-package net.blueshell.api.dto.request;
+package net.blueshell.api.dto.recovery;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -7,21 +7,13 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.validation.request.ValidPasswordResetRequest;
-import net.blueshell.api.validation.user.ExistingUsername;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@ValidPasswordResetRequest
 @Schema(name = "PasswordResetRequest")
 public class PasswordResetRequest extends BaseDTO {
-
     @NotBlank
     private String token;
-
-    @NotBlank
-    @ExistingUsername
-    private String username;
 
     @NotBlank
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")

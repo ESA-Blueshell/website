@@ -2,6 +2,7 @@ package net.blueshell.api.job.email;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.service.email.EmailService;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserResetEmailJob {
+public class RecoveryEmailJob {
 
     private static final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
 
@@ -24,15 +25,15 @@ public class UserResetEmailJob {
     @Async
     @Retryable(retryFor = {Exception.class}, maxAttempts = 3,
             backoff = @Backoff(delay = 2000, multiplier = 2))
-    public CompletableFuture<Void> send(Long userId) {
-        String key = jobKey("reset", userId);
+    public CompletableFuture<Void> send(Long userId, String token, ResetType resetType) {
+        String key = jobKey(resetType.toString(), userId);
         if (processing.putIfAbsent(key, true) != null) {
             log.info("Reset email already processing for userId={}", userId);
             return CompletableFuture.completedFuture(null);
         }
 
         try {
-            emails.sendUserResetEmail(userId);
+            emails.sendUserResetEmail(userId, token, resetType);
             return CompletableFuture.completedFuture(null);
         } finally {
             processing.remove(key);

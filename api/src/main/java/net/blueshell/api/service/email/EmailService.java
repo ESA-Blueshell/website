@@ -3,10 +3,15 @@ package net.blueshell.api.service.email;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.base.EmailContent;
+import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.email.*;
+import net.blueshell.api.email.recovery.MemberActivationEmail;
+import net.blueshell.api.email.recovery.PasswordResetEmail;
+import net.blueshell.api.email.recovery.UserActivationEmail;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.contribution.ContributionReminder;
 import net.blueshell.api.model.event.EventSignUp;
+import net.blueshell.api.service.RecoveryService;
 import net.blueshell.api.service.UserService;
 import net.blueshell.api.service.contribution.ContributionReminderService;
 import net.blueshell.api.service.event.EventSignUpService;
@@ -84,19 +89,19 @@ public class EmailService {
         );
     }
 
-    public void sendUserResetEmail(Long userId) {
+    public void sendUserResetEmail(Long userId, String token, ResetType resetType) {
         User user = users.findById(userId);
-        if (user == null || user.getResetType() == null) {
+        if (user == null || resetType == null || token == null) {
             log.info("Activation skipped: user={} or resetType missing", userId);
             return;
         } else {
-            log.info("Sending {} email for user={}", user.getResetType(), userId);
+            log.info("Sending {} email for user={}", resetType, userId);
         }
 
-        BaseEmail email = switch (user.getResetType()) {
-            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, frontendUrl, appUrl);
-            case USER_ACTIVATION -> new UserActivationEmail(user, frontendUrl, appUrl);
-            case PASSWORD_RESET -> new PasswordResetEmail(user, frontendUrl, appUrl);
+        BaseEmail email = switch (resetType) {
+            case MEMBER_ACTIVATION -> new MemberActivationEmail(user, token, frontendUrl, appUrl);
+            case USER_ACTIVATION -> new UserActivationEmail(user, token, frontendUrl, appUrl);
+            case PASSWORD_RESET -> new PasswordResetEmail(user, token, frontendUrl, appUrl);
             default -> null;
         };
         if (email == null) return;

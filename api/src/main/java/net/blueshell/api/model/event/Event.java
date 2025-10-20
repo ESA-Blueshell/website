@@ -60,17 +60,6 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 public class Event extends BaseModel {
-    @Column(name = "creator_Id")
-    private Long creatorId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    private User creator;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_editor_id", insertable = false, updatable = false)
-    private User lastEditor;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
     private Committee committee;

@@ -11,7 +11,7 @@
             class="d-flex justify-space-between align-center"
             style="width: 100%;"
           >
-            <v-list-item-title>Add Member</v-list-item-title>
+            <v-list-item-title>Add User</v-list-item-title>
             <v-icon>mdi-plus</v-icon>
           </div>
         </v-list-item>
@@ -21,6 +21,7 @@
             <advanced-user-form
               class="mt-4"
               show-submit
+              :show-username="false"
               @update:model-value="updateUser"
             />
           </div>

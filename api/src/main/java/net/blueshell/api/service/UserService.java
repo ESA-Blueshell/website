@@ -4,8 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.event.job.UserResetEmailEvent;
-import net.blueshell.api.common.util.Util;
+import net.blueshell.api.common.event.job.RecoveryEmailEvent;
 import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
@@ -17,26 +16,27 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-
-import static net.blueshell.api.common.util.Util.ACTIVATION_KEY_LENGTH;
-import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
+import java.time.Duration;
 
 @Slf4j
 @Service
 public class UserService extends BaseModelService<User, UserRepository> implements UserDetailsService {
 
     private final ApplicationEventPublisher eventPublisher;
+    private final RecoveryService recoveryTokens;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository repository, ApplicationEventPublisher eventPublisher) {
+    public UserService(UserRepository repository, ApplicationEventPublisher eventPublisher, RecoveryService recoveryTokens, PasswordEncoder passwordEncoder) {
         super(repository);
         this.eventPublisher = eventPublisher;
+        this.recoveryTokens = recoveryTokens;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -92,6 +92,27 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
         }
     }
 
+    @Override
+    @Transactional
+    public User create(User user) {
+        // If BOARD creates a member, username will be set during activation
+        if (hasAuthority(Role.BOARD)) {
+            user.setUsername(null);
+        }
+
+        user = super.create(user);
+
+        if (hasAuthority(Role.BOARD)) {
+            var token = recoveryTokens.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), token, ResetType.MEMBER_ACTIVATION));
+        } else {
+            var token = recoveryTokens.issue(user, ResetType.USER_ACTIVATION, Duration.ofDays(1));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), token, ResetType.USER_ACTIVATION));
+        }
+
+        return user;
+    }
+
     public Page<User> findByFilter(UserFilter filter, Pageable pageable) {
         if (filter == null) filter = new UserFilter();
         if (pageable == null) pageable = Pageable.unpaged();
@@ -99,16 +120,25 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
         return repository.findAll(spec, pageable);
     }
 
-    public void reset(User user) {
-        user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
-        user.setResetKeyValidUntil(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
-
-        if (user.getResetType() == null) {
-            user.setResetType(ResetType.PASSWORD_RESET);
-        }
-
+    @Transactional
+    public void updatePassword(Long userId, String rawPassword) {
+        var user = self().findById(userId);
+        user.setPassword(passwordEncoder.encode(rawPassword));
         self().update(user);
+    }
 
-        eventPublisher.publishEvent(new UserResetEmailEvent(user.getId()));
+    @Transactional
+    public void activateUser(Long userId) {
+        var user = self().findById(userId);
+        user.setEnabled(true);
+        self().update(user);
+    }
+
+    @Transactional
+    public void setUsernameAndPassword(Long userId, String username, String rawPassword) {
+        var user = self().findById(userId);
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        self().update(user);
     }
 }

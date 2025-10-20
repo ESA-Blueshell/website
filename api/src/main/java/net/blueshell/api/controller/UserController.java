@@ -2,7 +2,12 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
+import jakarta.xml.bind.ValidationException;
 import net.blueshell.api.base.AdvancedController;
+import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
@@ -19,6 +24,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.SmartValidator;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,24 +36,29 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users")
 public class UserController extends AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper> {
 
-    public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper) {
+    private final Validator validator;
+
+    public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper, Validator validator) {
         super(service, advancedUserMapper, simpleUserMapper);
+        this.validator = validator;
     }
 
     @PostMapping("/users")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
-    public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
-        var user = advancedMapper.fromDTO(dto, new User());
-        user = service.create(user);
-        return advancedMapper.toDTO(user);
-    }
+    // TODO: Once all members are in the site, remove the ability for admins to create new users
+    public AdvancedUserDTO createUser(@RequestBody AdvancedUserDTO dto) {
+        Class<?>[] groups = hasAuthority(Role.BOARD)
+                ? new Class<?>[]{Administration.class}
+                : new Class<?>[]{Creation.class};
 
-    @PostMapping("/users/member")
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('BOARD')")
-    public AdvancedUserDTO createMember(@Validated(Administration.class) @RequestBody AdvancedUserDTO dto) {
-        var user = advancedMapper.fromDTO(dto);
+        var violations = validator.validate(dto, groups);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
+
+        var user = advancedMapper.fromDTO(dto, new User());
+
         user = service.create(user);
         return advancedMapper.toDTO(user);
     }
@@ -64,7 +78,7 @@ public class UserController extends AdvancedController<UserService, AdvancedUser
                                          @Validated(Update.class) @RequestBody SimpleUserDTO dto) {
         var user = service.findById(id);
         simpleMapper.fromDTO(dto, user);
-        user = service.create(user);
+        user = service.update(user);
         return simpleMapper.toDTO(user);
     }
 

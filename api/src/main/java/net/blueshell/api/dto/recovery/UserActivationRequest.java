@@ -1,21 +1,15 @@
-package net.blueshell.api.dto.request;
+package net.blueshell.api.dto.recovery;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.validation.request.ValidUserActivationRequest;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@ValidUserActivationRequest
 @Schema(name = "UserActivationRequest")
 public class UserActivationRequest extends BaseDTO {
-
     @NotBlank
     private String token;
-
-    @NotBlank
-    private String username;
 }

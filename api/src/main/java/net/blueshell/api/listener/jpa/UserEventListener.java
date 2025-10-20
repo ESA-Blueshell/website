@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.job.SyncContactEvent;
-import net.blueshell.api.common.event.job.UserResetEmailEvent;
+import net.blueshell.api.common.event.job.RecoveryEmailEvent;
 import net.blueshell.api.common.event.jpa.PostPersistEvent;
 import net.blueshell.api.common.event.jpa.PostUpdateEvent;
 import net.blueshell.api.model.User;
@@ -28,7 +28,6 @@ public class UserEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void postPersist(PostPersistEvent<User> evt) {
         User u = evt.getSource();
-        eventPublisher.publishEvent(new UserResetEmailEvent(u.getId()));
         eventPublisher.publishEvent(new SyncContactEvent(u.getId()));
     }
 

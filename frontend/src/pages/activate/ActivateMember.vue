@@ -9,48 +9,67 @@
       <v-card class="pa-6">
         <Form
           v-slot="{ meta }"
+          ref="formRef"
           as="form"
           @submit="onSubmit"
         >
           <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="form.username"
-                :component-props="{ label: 'Username', autocomplete: 'username' }"
-                name="username"
-                rules="required|alphaNum"
-              />
-            </v-col>
+            <VvField
+              v-model="form.username"
+              :component-props="{ label: 'Username', autocomplete: 'username' }"
+              name="username"
+              rules="required|alphaNum"
+            />
+          </v-row>
+          <v-row>
+            <VvField
+              v-model="form.password"
+              :component-props="{
+                type: showPass ? 'text' : 'password',
+                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
+                label: 'Password',
+                autocomplete: 'new-password'
+              }"
+              name="password"
+              rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
+              @click:append-inner="showPass = !showPass"
+            />
+          </v-row>
 
-            <v-col cols="12">
-              <VvField
-                v-model="form.password"
-                :component-props="{
-                  type: showPass ? 'text' : 'password',
-                  'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
-                  label: 'Password',
-                  autocomplete: 'new-password'
-                }"
-                name="password"
-                rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
-                @click:append-inner="showPass = !showPass"
-              />
-            </v-col>
+          <v-row>
+            <VvField
+              v-model="passwordAgain"
+              :component-props="{
+                type: showPass ? 'text' : 'password',
+                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
+                label: 'Repeat Password',
+                autocomplete: 'new-password'
+              }"
+              name="passwordAgain"
+              rules="required|match:@password"
+              @click:append-inner="showPass = !showPass"
+            />
+          </v-row>
 
-            <v-col cols="12">
-              <VvField
-                v-model="form.passwordAgain"
-                :component-props="{
-                  type: showPass ? 'text' : 'password',
-                  'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
-                  label: 'Repeat Password',
-                  autocomplete: 'new-password'
-                }"
-                name="passwordAgain"
-                rules="required|match:@password"
-                @click:append-inner="showPass = !showPass"
+
+          <v-row>
+            <Field
+              v-slot="{ value, errors }"
+              v-model="form.token"
+              name="token"
+              rules="required"
+            >
+              <v-text-field
+                :model-value="value"
+                disabled
+                label="Reset token"
+                name="token"
               />
-            </v-col>
+              <br>
+              <span class="v-field--error">
+                {{ errors[0] }}
+              </span>
+            </Field>
           </v-row>
 
           <v-row
@@ -77,14 +96,13 @@
             {{ errorMessage }}
           </v-alert>
 
-          <div
+          <v-alert
             v-if="succeeded"
-            class="mt-6"
+            type="success"
+            class="mb-2"
           >
-            <p class="text-subtitle-1">
-              Membership activated! You can now log in.
-            </p>
-          </div>
+            Account activated! You will be redirected to the login page.
+          </v-alert>
         </Form>
       </v-card>
     </div>
@@ -94,52 +112,61 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Form, useForm} from "vee-validate"
+import {Field, Form, type FormContext, useForm} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {memberActivate, type MemberActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {useBackendValidation} from "@/plugins/serverValidation.ts"
 
 const route = useRoute()
 const router = useRouter()
+const {apply} = useBackendValidation()
 
 const loading = ref(false)
 const succeeded = ref(false)
 const showPass = ref(false)
-const token = ref<string>("")
 const errorMessage = ref<string | null>(null)
 
-const form = ref({
+const form = ref<MemberActivationRequest>({
   username: "",
   password: "",
-  passwordAgain: "",
+  token: "",
 })
 
-const {handleSubmit} = useForm()
+const passwordAgain = ref("")
+
+const formRef = ref<FormContext>()
+
+const {handleSubmit, validate} = useForm()
 
 onMounted(() => {
-  token.value = (route.query.token as string) || ""
+  form.value.token = (route.query.token as string) || ""
 
-  if (!token.value) {
+  if (!form.value.token) {
     router.replace({name: "home"})
   }
 })
 
+function redirectToLogin(ms = 2000) {
+  window.setTimeout(() => router.push({name: "login"}), ms)
+}
+
 const onSubmit = handleSubmit(async () => {
+  if (!await validate()) return
+
   loading.value = true
   errorMessage.value = null
 
   try {
-    const payload: MemberActivationRequest = {
-      token: token.value,
-      username: form.value.username,
-      password: form.value.password,
-    }
-    await memberActivate({body: payload, throwOnError: true})
+    await memberActivate({body: form.value, throwOnError: true})
     succeeded.value = true
+    redirectToLogin(2500)
   } catch (e: unknown) {
-    $handleNetworkError(e)
-    errorMessage.value = "We couldn’t activate your membership. The link may be invalid or expired."
+    if (!formRef.value || !apply(formRef.value, e)) {
+      $handleNetworkError(e)
+      errorMessage.value = "We couldn’t activate your membership. The link may be invalid or expired."
+    }
   } finally {
     loading.value = false
   }

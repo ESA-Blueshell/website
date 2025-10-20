@@ -28,7 +28,6 @@
           </v-row>
         </v-form>
       </v-card-text>
-      >
 
       <v-card-actions>
         <v-spacer />
@@ -55,7 +54,7 @@
 import {computed, type Ref, ref} from "vue"
 import {DateTime} from "luxon"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
-import {createMembership, type Membership, MemberType} from "@/services/api"
+import {boardCreateMembership, type Membership, MemberType} from "@/services/api"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import type {VForm} from "vuetify/lib/components"
 
@@ -99,7 +98,7 @@ const confirm = async () => {
     isSubmitting.value = true
 
     const membershipData: Membership = membership.value
-    const response = await createMembership({body: membershipData})
+    const response = await boardCreateMembership({body: membershipData})
 
     if (response.data) {
       emit("update:membership", response.data)

@@ -5,11 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
-
-import java.sql.Timestamp;
 
 @Entity
 @Table(

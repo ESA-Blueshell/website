@@ -1,7 +1,6 @@
 package net.blueshell.api.model.event;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

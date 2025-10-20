@@ -1,16 +1,13 @@
 package net.blueshell.api.service;
 
-import jakarta.ws.rs.NotFoundException;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.controller.filter.MembershipFilter;
-import net.blueshell.api.model.File;
 import net.blueshell.api.model.Membership;
 import net.blueshell.api.repository.MemberRepository;
 import net.blueshell.api.repository.spec.MembershipSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

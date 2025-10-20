@@ -1,7 +1,6 @@
 package net.blueshell.api.permission;
 
 import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.model.event.Guest;
 import net.blueshell.api.service.GuestService;
 import org.springframework.beans.factory.annotation.Autowired;

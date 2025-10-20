@@ -1,20 +1,14 @@
 package net.blueshell.api.model.committee;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
-
-import java.sql.Timestamp;
-import java.util.Objects;
 
 @Entity
 @Table(

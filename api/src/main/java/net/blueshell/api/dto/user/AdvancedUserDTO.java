@@ -7,10 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;

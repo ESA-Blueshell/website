@@ -3,6 +3,9 @@ package net.blueshell.api.email;
 import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.model.User;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 public class MemberActivationEmail extends BaseEmail {
 
     public MemberActivationEmail(User recipient, String frontendUrl, String appUrl) {
@@ -16,10 +19,8 @@ public class MemberActivationEmail extends BaseEmail {
 
     @Override
     public String getMarkdownContent() {
-        String activationLink = String.format(
-                frontendUrl + "/account/activate/member/%s",
-                recipient.getResetKey()
-        );
+        String token = URLEncoder.encode(recipient.getResetKey(), StandardCharsets.UTF_8);
+        String activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token);
 
         return String.format(
                 """

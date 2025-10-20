@@ -1,5 +1,4 @@
 <template>
-  <!-- VeeValidate handles validation + form submit; Vuetify is purely UI -->
   <Form
     v-slot="{ meta }"
     as="form"
@@ -7,6 +6,21 @@
     style="max-width: 500px"
     @submit="onSubmit"
   >
+    <Field
+      v-slot="{ value, errors, handleBlur, handleChange }"
+      name="username"
+      rules="required|alphaNum"
+    >
+      <v-text-field
+        :model-value="value"
+        :error-messages="errors"
+        label="Username"
+        autocomplete="username"
+        @blur="handleBlur"
+        @update:model-value="handleChange"
+      />
+    </Field>
+
     <Field
       v-slot="{ value, errors, handleBlur, handleChange }"
       name="password"
@@ -17,7 +31,7 @@
         :type="showPass ? 'text' : 'password'"
         :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
         :error-messages="errors"
-        label="New Password"
+        label="Password"
         autocomplete="new-password"
         @blur="handleBlur"
         @update:model-value="handleChange"
@@ -35,7 +49,7 @@
         :type="showPass ? 'text' : 'password'"
         :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
         :error-messages="errors"
-        label="Repeat New Password"
+        label="Repeat Password"
         autocomplete="new-password"
         @blur="handleBlur"
         @update:model-value="handleChange"
@@ -54,7 +68,7 @@
         :disabled="!meta.valid || loading"
         :loading="loading"
       >
-        Reset Password
+        Activate Member
       </v-btn>
     </v-row>
 
@@ -72,13 +86,7 @@
       class="mt-6"
     >
       <p class="text-subtitle-1">
-        Your password has been reset successfully.
-        <RouterLink
-          :to="{ name: 'login' }"
-          class="text-decoration-none"
-        >
-          Sign in
-        </RouterLink>
+        Membership activated! You can now log in.
       </p>
     </div>
   </Form>
@@ -88,7 +96,7 @@
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Field, Form, useForm} from "vee-validate"
-import {type PasswordResetRequest, setPassword} from "@/services/api"
+import {memberActivate, type MemberActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const route = useRoute()
@@ -97,41 +105,41 @@ const router = useRouter()
 const loading = ref(false)
 const succeeded = ref(false)
 const showPass = ref(false)
+const token = ref<string>("")
 const errorMessage = ref<string | null>(null)
 
-const token = ref<string>("")
-const username = ref<string>("")
-
-const {handleSubmit} = useForm()
+const {handleSubmit, setFieldValue} = useForm<{
+  username: string
+  password: string
+  passwordAgain: string
+}>({
+  initialValues: {username: "", password: "", passwordAgain: ""},
+})
 
 onMounted(() => {
   token.value = (route.query.token as string) || ""
-  username.value = (route.query.username as string) || ""
+  const maybeUsername = (route.query.username as string) || ""
+  if (maybeUsername) setFieldValue("username", maybeUsername)
 
-  if (!token.value || !username.value) {
+  if (!token.value) {
     router.replace({name: "home"})
-    return
   }
-
-  router.replace({name: "resetPassword", query: {username: username.value, token: token.value}})
 })
 
 const onSubmit = handleSubmit(async (values) => {
   loading.value = true
   errorMessage.value = null
-
   try {
-    const payload: PasswordResetRequest = {
+    const payload: MemberActivationRequest = {
       token: token.value,
-      username: username.value,
+      username: values.username,
       password: values.password,
     }
-
-    await setPassword({body: payload, throwOnError: true})
+    await memberActivate({body: payload, throwOnError: true})
     succeeded.value = true
   } catch (e: unknown) {
     $handleNetworkError(e)
-    errorMessage.value = "We couldn't reset your password. The link may be invalid or expired."
+    errorMessage.value = "We couldn’t activate your membership. The link may be invalid or expired."
   } finally {
     loading.value = false
   }

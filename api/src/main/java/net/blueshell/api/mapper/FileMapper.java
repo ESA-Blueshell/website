@@ -13,8 +13,6 @@ import org.springframework.core.io.UrlResource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Timestamp;
-import java.time.Instant;
 
 @Mapper(componentModel = "spring")
 public abstract class FileMapper extends BaseMapper<File, FileDTO> {

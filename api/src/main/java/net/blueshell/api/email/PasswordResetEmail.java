@@ -3,6 +3,9 @@ package net.blueshell.api.email;
 import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.model.User;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 public class PasswordResetEmail extends BaseEmail {
 
     public PasswordResetEmail(User recipient, String frontendUrl, String appUrl) {
@@ -16,11 +19,9 @@ public class PasswordResetEmail extends BaseEmail {
 
     @Override
     public String getMarkdownContent() {
-        String resetLink = String.format(
-                frontendUrl + "/account/reset-password/%s/%s",
-                recipient.getUsername(),
-                recipient.getResetKey()
-        );
+        String username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8);
+        String token = URLEncoder.encode(recipient.getResetKey(), StandardCharsets.UTF_8);
+        String resetLink = String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token);
 
         return String.format(
                 """

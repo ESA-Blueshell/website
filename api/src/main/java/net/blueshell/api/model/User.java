@@ -2,7 +2,8 @@ package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.ResetType;
@@ -11,8 +12,6 @@ import net.blueshell.api.common.util.Util;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.event.EventSignUp;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,7 +23,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import static net.blueshell.api.common.util.Util.ACTIVATION_KEY_LENGTH;
@@ -60,7 +58,7 @@ import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
 @Getter
 @Setter
 @EntityListeners(JpaListener.class)
-public class User  extends BaseModel implements UserDetails {
+public class User extends BaseModel implements UserDetails {
 
     @Column(nullable = false)
     private String username;
@@ -193,7 +191,7 @@ public class User  extends BaseModel implements UserDetails {
             roles = new HashSet<>();
             roles.add(Role.GUEST);
         }
-        if (resetType == null) {
+        if (this.getId() == null && this.getResetKeyValidUntil() == null) {
             resetType = hasAuthority(Role.BOARD) ? ResetType.MEMBER_ACTIVATION : ResetType.USER_ACTIVATION;
         }
     }

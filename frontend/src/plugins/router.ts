@@ -15,12 +15,12 @@ import ElNino from "@/pages/partners/ElNino.vue"
 import Partners from "@/pages/partners/Partners.vue"
 import NotFound from "@/pages/NotFound.vue"
 import Login from "@/pages/login/Login.vue"
-import Account from "@/pages/login/Account.vue"
+import Account from "@/pages/account/Account.vue"
 import EventManager from "@/pages/events/EventManager.vue"
 import EditEvent from "@/pages/events/EditEvent.vue"
 import EventSignUps from "@/pages/events/EventSignUps.vue"
 import CommitteeManager from "@/pages/management/CommitteeManager.vue"
-import CreateAccount from "@/pages/login/CreateAccount.vue"
+import CreateAccount from "@/pages/account/CreateAccount.vue"
 import MemberManager from "@/pages/management/MemberManager.vue"
 import ContributionManager from "@/pages/management/ContributionManager.vue"
 import RocketLeague from "@/pages/esports/RocketLeague.vue"
@@ -30,8 +30,8 @@ import store from "./store"
 import CircuitShowdown from "@/pages/events/CircuitShowdown.vue"
 import BlogView from "@/pages/blogs/BlogView.vue"
 import BlogsView from "@/pages/blogs/BlogsView.vue"
-import ActivateMember from "@/pages/login/ActivateMember.vue"
-import ActivateUser from "@/pages/login/ActivateUser.vue"
+import ActivateMember from "@/pages/activate/ActivateMember.vue"
+import ActivateUser from "@/pages/activate/ActivateUser.vue"
 import Geoguessr from "@/pages/esports/Geoguessr.vue"
 import ForgotPassword from "@/pages/login/ForgotPassword.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
@@ -149,22 +149,48 @@ const routes: RouteRecordRaw[] = [
     component: CreateAccount,
   },
   {
-    path: "/account/reset-password/:username/:token",
+    path: "/account/reset-password",
     name: "resetPassword",
     component: ResetPassword,
-    props: true,
+  },
+  {
+    path: "/account/activate/member",
+    name: "activateMember",
+    component: ActivateMember,
+  },
+  {
+    path: "/account/activate/user",
+    name: "activateUser",
+    component: ActivateUser,
+  },
+  // TODO: Remove the below redirects if you encounter this text after 01-01-2025, as all links will have expired
+  //       LEGACY: Redirect old path-param links to the new query-param routes
+  {
+    path: "/account/reset-password/:username/:token",
+    redirect: (to) => ({
+      name: "resetPassword",
+      query: {
+        username: String(to.params.username ?? ""),
+        token: String(to.params.token ?? ""),
+      },
+    }),
   },
   {
     path: "/account/activate/member/:token",
-    name: "activateMember",
-    component: ActivateMember,
-    props: true,
+    redirect: (to) => ({
+      name: "activateMember",
+      query: { token: String(to.params.token ?? "") },
+    }),
   },
   {
     path: "/account/activate/user/:username/:token",
-    name: "activateUser",
-    component: ActivateUser,
-    props: true,
+    redirect: (to) => ({
+      name: "activateUser",
+      query: {
+        username: String(to.params.username ?? ""),
+        token: String(to.params.token ?? ""),
+      },
+    }),
   },
   {
     path: "/events",

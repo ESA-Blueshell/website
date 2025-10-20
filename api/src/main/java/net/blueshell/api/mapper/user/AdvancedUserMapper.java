@@ -4,7 +4,6 @@ import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.model.User;
-import net.blueshell.api.service.UserService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;

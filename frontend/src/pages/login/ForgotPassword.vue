@@ -1,4 +1,3 @@
-<!-- ForgotPassword.vue -->
 <template>
   <v-main>
     <top-banner title="Forgot Password" />
@@ -9,47 +8,48 @@
         style="max-width: 500px"
       >
         <div v-if="!succeeded">
-          <p>
-            Enter your username, and we'll send you an email with a link to reset your password.
-          </p>
+          <p>Enter your username, and we’ll email you a link to reset your password.</p>
 
-          <v-form
-            ref="form"
-            v-model="valid"
-            @submit.prevent
+          <Form
+            v-slot="{ meta }"
+            as="form"
+            @submit="onSubmit"
           >
-            <v-text-field
-              ref="usernameInput"
-              v-model="username"
-              :rules="[(v: string) => !!v || 'Username is required']"
-              label="Username"
-              @keydown.enter="sendResetMail"
-            />
+            <Field
+              v-slot="{ value, errors, handleBlur, handleChange }"
+              name="username"
+              rules="required|alphaNum"
+            >
+              <v-text-field
+                ref="usernameInput"
+                :model-value="value"
+                :error-messages="errors"
+                label="Username"
+                autocomplete="username"
+                @blur="handleBlur"
+                @update:model-value="handleChange"
+              />
+            </Field>
 
             <v-row>
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :disabled="!valid || !username"
+                  type="submit"
+                  :disabled="!meta.valid || loading"
                   :loading="loading"
-                  @click="sendResetMail"
                 >
                   Send reset mail
                 </v-btn>
               </v-col>
             </v-row>
-          </v-form>
+          </Form>
         </div>
 
         <div v-else>
           <p>
-            All right, you should get a mail with a link you can use to reset your password at the email address
-            associated to your username. If you don't receive anything, please report it in the
-            <a
-              class="text-decoration-none"
-              href="https://discord.com/channels/324285132133629963/1020245710987350047"
-              target="_blank"
-            >Sitecie suggestions channel on discord</a> and we'll help you out.
+            If an account with that username exists, you’ll receive an email with a password reset link.
+            Didn’t get it? Check your spam folder or try again later.
           </p>
         </div>
       </div>
@@ -60,58 +60,34 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
-import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {Field, Form, useForm} from "vee-validate"
 import {resetPassword} from "@/services/api"
-
-type VFormValidateResult = { valid: boolean }
-type VFormRef = {
-  validate: () => Promise<VFormValidateResult> | VFormValidateResult
-  resetValidation?: () => void
-}
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const route = useRoute()
-const store = useStore()
-
-const username = ref<string>("")
-const valid = ref<boolean>(false)
-const succeeded = ref<boolean>(false)
-const loading = ref<boolean>(false)
-
-const form = ref<VFormRef | null>(null)
+const loading = ref(false)
+const succeeded = ref(false)
 const usernameInput = ref<HTMLInputElement | null>(null)
+
+const {setFieldValue, handleSubmit} = useForm<{ username: string }>({
+  initialValues: {username: ""},
+})
 
 onMounted(() => {
   const q = route.query.username
-  if (typeof q === "string") {
-    username.value = q
-  }
+  if (typeof q === "string") setFieldValue("username", q)
 })
 
-const sendResetMail = async () => {
-  const result = await form.value?.validate()
-  if (!result?.valid) return
-
+const onSubmit = handleSubmit(async (values) => {
   loading.value = true
   try {
-    await resetPassword({query: {username: username.value}, throwOnError: true})
-
+    await resetPassword({query: {username: values.username}, throwOnError: false})
     succeeded.value = true
   } catch (e: unknown) {
-    // The generated client surfaces HTTP status on e.response?.status (Axios-style).
-    const anyErr = e as { response?: { status?: number } }
-    if (anyErr?.response?.status === 404) {
-      store.commit(
-        "setStatusSnackbarMessage",
-        "Uhhh, we don't know that username... Maybe check the spelling?",
-      )
-    } else {
-      $handleNetworkError(e)
-    }
+    $handleNetworkError(e)
   } finally {
     loading.value = false
   }
-}
+})
 </script>

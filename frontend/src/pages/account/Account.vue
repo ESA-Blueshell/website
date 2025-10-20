@@ -58,7 +58,7 @@
 import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
 import {type AdvancedUser, findUserById, type SimpleUser} from "@/services/api"
 import SimpleUserForm from "@/components/form/SimpleUserForm.vue"

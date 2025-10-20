@@ -31,7 +31,8 @@ public class ValidAnswerValidator implements ConstraintValidator<ValidAnswer, An
 
         return switch (question.getType()) {
             case QuestionType.OPEN -> !dto.getTextResponse().isEmpty();
-            case QuestionType.CHECKBOX -> dto.getOptionSelections() != null && dto.getOptionSelections().size() == question.getChoiceLabels().size();
+            case QuestionType.CHECKBOX ->
+                    dto.getOptionSelections() != null && dto.getOptionSelections().size() == question.getChoiceLabels().size();
             case QuestionType.RADIO -> {
                 if (dto.getOptionSelections() == null) {
                     yield false;

@@ -7,7 +7,6 @@
       class="mx-auto text-center"
       style="max-width: 520px; width: 100%; padding: 16px;"
     >
-      <!-- Loading -->
       <div
         v-if="loading"
         class="d-flex align-center justify-center"
@@ -22,14 +21,12 @@
         </p>
       </div>
 
-      <!-- Success -->
       <div v-else-if="succeeded">
         <p class="text-subtitle-1">
           Account activated! You will be redirected to the login page.
         </p>
       </div>
 
-      <!-- Non-success: show the single DTO-level message -->
       <v-alert
         v-else
         type="warning"
@@ -55,35 +52,31 @@ const router = useRouter()
 const loading = ref(true)
 const succeeded = ref(false)
 const errorMessage = ref<string | null>(null)
-const defaultErrorMessage =
-  "We couldn’t verify your activation link. It may be invalid, expired, or already used."
-
-const form = ref<UserActivationRequest>({
-  token: "",
-  username: "",
-})
 
 function redirectToLogin(ms = 2000) {
   window.setTimeout(() => router.push({name: "login"}), ms)
 }
 
 onMounted(async () => {
-  const tokenFromUrl =
-    (route.params.token as string) || (route.query.token as string) || ""
-  const usernameFromUrl =
-    (route.params.username as string) || (route.query.username as string) || ""
+  const token = (route.query.token as string) || ""
+  const username = (route.query.username as string) || ""
 
-  form.value.token = tokenFromUrl
-  form.value.username = usernameFromUrl
+  if (!token || !username) {
+    loading.value = false
+    errorMessage.value = "We couldn’t verify your activation link. It may be invalid, expired, or already used."
+    redirectToLogin(2500)
+    return
+  }
+
+  const payload: UserActivationRequest = {token, username}
 
   try {
-    await userActivate({body: form.value, throwOnError: true})
+    await userActivate({body: payload, throwOnError: true})
     succeeded.value = true
     redirectToLogin(1500)
   } catch (e: unknown) {
     $handleNetworkError(e)
-    errorMessage.value =
-      e?.response?.data?.errors?.[0]?.defaultMessage || defaultErrorMessage
+    errorMessage.value = "We couldn’t verify your activation link. It may be invalid, expired, or already used."
     redirectToLogin(2500)
   } finally {
     loading.value = false

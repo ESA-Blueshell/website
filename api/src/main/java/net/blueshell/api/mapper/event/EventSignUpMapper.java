@@ -7,7 +7,10 @@ import net.blueshell.api.dto.event.EventSignUpDTO;
 import net.blueshell.api.mapper.survey.AnswerMapper;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.event.EventSignUp;
-import org.mapstruct.*;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Slf4j
 @Mapper(componentModel = "spring",

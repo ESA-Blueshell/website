@@ -33,7 +33,10 @@ const committee = toRef(props, "committee")
               {{ committee.name }}
             </div>
           </div>
-          <v-divider class="mb-1" />
+          <v-divider
+            class="mb-1"
+            style="border-color: grey"
+          />
 
           <div
             class="text-wrap"

@@ -13,7 +13,9 @@ import {
   type EventSignUp,
   findCommitteesForCurrentUser,
   findEvents,
+  findEventSignUpsByAccessToken,
   findEventSignUps,
+  type Guest,
   type Login,
 } from "@/services/api"
 import PastEventsPane from "@/components/base/PastEventsPane.vue"
@@ -27,20 +29,24 @@ const eventSignUps = ref<EventSignUp[]>([])
 const calendarRef = ref<InstanceType<typeof EventCalendar>>()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed<Login>(() => store.getters.getLogin)
+const guest = computed<Guest>(() => store.getters.getGuest)
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
 
 onMounted(async () => {
   try {
+
     const [eventsResp, signupsResp, committeesResp] = await Promise.all([
       findEvents({
         query: {from: startOfTodayIso, sort: ["startTime", "asc"]},
       }),
-      isLoggedIn.value
+      login.value
         ? findEventSignUps({
           query: {from: startOfTodayIso, userId: login.value.userId},
         })
-        : Promise.resolve({data: [] as EventSignUp[]}),
+        : guest.value?.accessToken
+          ? findEventSignUpsByAccessToken({path: {accessToken: guest.value.accessToken}})
+          : Promise.resolve({data: [] as EventSignUp[]}),
       isLoggedIn.value
         ? findCommitteesForCurrentUser()
         : Promise.resolve({data: [] as AdvancedCommittee[]}),

@@ -1,10 +1,10 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type Login, Role} from "@/services/api"
+import {type Guest, type Login, Role} from "@/services/api"
 
 export interface State {
   login: Login | null;
-  guestData: Record<string, unknown> | null;
+  guestData: Guest | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
   xsrfToken: string | null;
@@ -98,7 +98,7 @@ const store = createStore<State>({
         state.statusSnackbarMessage = null
       }
     },
-    saveGuestData(state: State, data: Record<string, unknown>): void {
+    saveGuestData(state: State, data: Guest): void {
       writeJsonCookie("guestData", data)
       state.guestData = data
     },
@@ -124,6 +124,9 @@ const store = createStore<State>({
     },
     isMember(state: State): boolean {
       return state.login?.roles.includes(Role.MEMBER) || false
+    },
+    getGuestData(state: State): Guest | null {
+      return state.guestData
     },
     getXsrfToken(state: State): string | null {
       return state.xsrfToken

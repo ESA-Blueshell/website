@@ -7,8 +7,6 @@ import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.repository.event.EventSignUpRepository;
 import net.blueshell.api.repository.spec.EventSignUpSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,24 +31,12 @@ public class EventSignUpService extends BaseModelService<EventSignUp, EventSignU
     }
 
     @Transactional(readOnly = true)
-    public EventSignUp findByGuestAccessToken(String accessToken) {
-        return repository.findByGuestAccessToken(accessToken)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found for accessToken: %s".formatted(accessToken)));
-    }
-
-    public List<EventSignUp> findByUserId(Long userId) {
-        return repository.findByUserId(userId);
+    public List<EventSignUp> findByGuestAccessToken(String accessToken) {
+        return repository.findByGuestAccessToken(accessToken);
     }
 
     public List<EventSignUp> findByEventId(Long eventId) {
         return repository.findByEventId(eventId);
-    }
-
-    public Page<EventSignUp> findByFilter(Pageable pageable, EventSignUpFilter filter) {
-        if (filter == null) filter = new EventSignUpFilter();
-        if (pageable == null) pageable = Pageable.unpaged();
-        var spec = EventSignUpSpecifications.fromFilter(filter, getPrincipal());
-        return repository.findAll(spec, pageable);
     }
 
     public List<EventSignUp> findByFilter(EventSignUpFilter filter) {
@@ -61,5 +47,10 @@ public class EventSignUpService extends BaseModelService<EventSignUp, EventSignU
 
     public Set<EventSignUp> findBySurveyId(Long surveyId) {
         return repository.findAllByEventSignUpFormId(surveyId);
+    }
+
+    public EventSignUp findByGuestAccessTokenAndEventId(String accessToken, Long eventId) {
+        return repository.findByGuestAccessTokenAndEventId(accessToken, eventId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found for accessToken: %s and event: %d".formatted(accessToken, eventId)));
     }
 }

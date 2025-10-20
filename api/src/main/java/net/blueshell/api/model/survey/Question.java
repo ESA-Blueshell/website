@@ -1,19 +1,19 @@
 package net.blueshell.api.model.survey;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.QuestionType;
 import net.blueshell.api.model.converter.StringListConverter;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Set;
+
 
 @Entity
 @Table(
@@ -32,14 +32,12 @@ import java.util.Set;
         }
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@SQLDelete(sql = "UPDATE questions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@Data
+@SQLDelete(sql = "UPDATE questions SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener.class)
-public class Question implements BaseModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+@Getter
+@Setter
+@NoArgsConstructor
+public class Question extends BaseModel {
     @Column(name = "idx", nullable = false)
     private Long idx;
 
@@ -66,13 +64,4 @@ public class Question implements BaseModel {
 
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
     private long answerCount;
-
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }
-

@@ -51,7 +51,6 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     ) {
         file.setName(name);
         file.setMediaType(mediaType);
-        file.setCreatedAt(Timestamp.from(Instant.now()));
         file.setUploaderId(getPrincipal().getId());
         try {
             file.setSize(Files.size(fullPath));

@@ -39,9 +39,9 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
 
     @GetMapping(value = "/events/signups/byAccessToken/{accessToken}")
     @PreAuthorize("hasPermission(#accessToken, 'Guest', 'read')")
-    public EventSignUpDTO findEventSignUpByAccessToken(@PathVariable("accessToken") String accessToken) {
-        var signUp = service.findByGuestAccessToken(accessToken);
-        return mapper.toDTO(signUp);
+    public List<EventSignUpDTO> findEventSignUpsByAccessToken(@PathVariable("accessToken") String accessToken) {
+        var signUps = service.findByGuestAccessToken(accessToken);
+        return mapper.toDTOs(signUps);
     }
 
     @GetMapping(value = "/events/{eventId}/signups")
@@ -76,7 +76,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
         if (accessToken == null) {
             signUp = service.findByUserIdAndEventId(getPrincipal().getId(), eventId);
         } else {
-            signUp = service.findByGuestAccessToken(accessToken);
+            signUp = service.findByGuestAccessTokenAndEventId(accessToken, eventId);
         }
         mapper.fromDTO(dto, signUp);
         signUp = service.update(signUp);

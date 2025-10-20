@@ -11,6 +11,7 @@ import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,7 +34,7 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     @NotNull
     private boolean bhv;
     private boolean enabled;
-    private Timestamp createdAt;
+    private Instant createdAt;
     private String gender;
     private String studentNumber;
     private Long addressId;

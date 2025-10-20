@@ -4,7 +4,6 @@ package net.blueshell.api.mapper.event;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
 import net.blueshell.api.dto.event.EventSignUpDTO;
-import net.blueshell.api.mapper.GuestMapper;
 import net.blueshell.api.mapper.survey.AnswerMapper;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.event.EventSignUp;
@@ -26,10 +25,6 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
     @Mapping(target = "eventId")
     @Mapping(target = "guest")
     @Mapping(target = "userId")
-    @Mapping(
-            target = "signedUpAt",
-            expression = "java(signUp.getSignedUpAt() == null ? java.time.LocalDateTime.now() : signUp.getSignedUpAt())"
-    )
     @Mapping(target = "answers")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUp fromDTO(EventSignUpDTO dto, @MappingTarget EventSignUp signUp);

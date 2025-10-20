@@ -1,8 +1,7 @@
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.MemberType;
@@ -32,16 +31,13 @@ import java.time.LocalDate;
                 @Index(name = "idx_memberships_incasso", columnList = "incasso")
         }
 )
-@SQLDelete(sql = "UPDATE memberships SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE memberships SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
 @EntityListeners(JpaListener.class)
-public class Membership implements BaseModel {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+@Getter
+@Setter
+@NoArgsConstructor
+public class Membership extends BaseModel {
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     @ToString.Exclude
@@ -62,12 +58,4 @@ public class Membership implements BaseModel {
 
     @Column(name = "incasso", nullable = false)
     private boolean incasso = false;
-
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

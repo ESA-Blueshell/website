@@ -1,20 +1,16 @@
 package net.blueshell.api.model.event;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.File;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
-
-@Data
-@NoArgsConstructor
 @Entity
 @Table(
         name = "event_banners",
@@ -27,16 +23,13 @@ import java.sql.Timestamp;
                 @Index(name = "idx_event_banners_file", columnList = "file_id"),
         }
 )
-@SQLDelete(sql = "UPDATE event_banners SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE event_banners SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
-public class EventBanner implements BaseModel {
-
-    @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+@Getter
+@Setter
+@NoArgsConstructor
+public class EventBanner extends BaseModel {
     @Column(name = "event_id", nullable = false, insertable = false, updatable = false)
     private Long eventId;
 
@@ -56,12 +49,4 @@ public class EventBanner implements BaseModel {
     )
     @ToString.Exclude
     private File file;
-
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @org.hibernate.annotations.Generated
-    private Timestamp createdAt;
 }

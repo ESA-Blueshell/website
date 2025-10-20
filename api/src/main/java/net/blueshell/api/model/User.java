@@ -2,8 +2,7 @@ package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.ResetType;
@@ -56,107 +55,129 @@ import static net.blueshell.api.common.util.Util.ACTIVATION_VALID_SECONDS;
                 @Index(name = "idx_users_first_name", columnList = "first_name")
         }
 )
-@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
+@Getter
+@Setter
 @EntityListeners(JpaListener.class)
-public class User implements UserDetails, BaseModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class User  extends BaseModel implements UserDetails {
+
     @Column(nullable = false)
     private String username;
+
     @Column(nullable = false)
     private String password;
+
     @Column(name = "first_name", nullable = false)
     private String firstName;
+
     @Column(name = "last_name", nullable = false)
     private String lastName;
+
     @Column
     private String prefix;
+
     @Column
     private String initials;
+
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
-    @ToString.Exclude
     private Address address;
+
     @Column(name = "address_id", updatable = false, insertable = false)
-    @ToString.Exclude
     private Long addressId;
+
     @Column(name = "phone_number")
     private String phoneNumber;
+
     @Column(nullable = false)
     private String email;
+
     @Column(name = "student_number")
     private String studentNumber;
+
     @Column(name = "date_of_birth")
     private Date dateOfBirth;
+
     @Column
     private String discord;
+
     @Column
     private String steamid;
+
     @Column(nullable = false)
     private boolean newsletter;
+
     @Column(nullable = false)
     private boolean enabled;
+
     @Column(name = "reset_key")
     private String resetKey;
+
     @Column(name = "reset_key_valid_until")
     private Timestamp resetKeyValidUntil;
+
     @Column(name = "reset_type")
     @Enumerated(EnumType.STRING)
     private ResetType resetType;
+
     @Column(name = "consent_privacy")
     private boolean consentPrivacy;
+
     @Column(name = "consent_gdpr")
     private boolean consentGdpr;
+
     @Column
     private String gender;
+
     @Column(name = "photo_consent")
     private boolean photoConsent;
+
     @Column
     private String nationality;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
     private File profilePicture;
+
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<CommitteeMember> committeeMembers;
+
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
     @CollectionTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
     private Set<Role> roles = new HashSet<>();
+
     @Column(name = "ehbo")
     private boolean ehbo = false;
+
     @Column(name = "contact_id")
     private Long contactId;
+
     @Column(name = "bhv")
     private boolean bhv = false;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @ToString.Exclude
     private Set<Contribution> contributions;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @ToString.Exclude
     private Set<Membership> memberships;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    @ToString.Exclude
     private User creator;
     @Column(name = "creator_id")
+
     private Long creatorId;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @ToString.Exclude
     private Set<EventSignUp> eventSignUps;
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
+
     @Column(name = "study")
     private String study;
+
     @Column(name = "start_study_year")
     private Long startStudyYear;
 
@@ -203,19 +224,6 @@ public class User implements UserDetails, BaseModel {
                 .flatMap(role -> role.getAllInheritedRoles().stream()).toList());
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
     public boolean hasRole(Role role) {
         return getRoles().stream().anyMatch(r -> r.equals(role));
     }
@@ -249,11 +257,6 @@ public class User implements UserDetails, BaseModel {
 
     public void setEmail(String email) {
         this.email = email.toLowerCase();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
     }
 
     public String getFullName() {

@@ -8,6 +8,7 @@ import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.common.enums.PlatformType;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -16,6 +17,6 @@ public class TelemetryDTO extends BaseDTO {
     private String id;
     private String url;
     private PlatformType platform;
-    private Timestamp createdAt;
+    private Instant createdAt;
 }
 

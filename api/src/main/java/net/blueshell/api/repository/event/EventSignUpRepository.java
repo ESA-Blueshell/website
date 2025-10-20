@@ -17,7 +17,7 @@ public interface EventSignUpRepository extends BaseRepository<EventSignUp> {
     Optional<EventSignUp> findByUserIdAndEventId(Long userId, Long event);
 
     @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessToken = :accessToken")
-    Optional<EventSignUp> findByGuestAccessToken(@Param("accessToken") String accessToken);
+    List<EventSignUp> findByGuestAccessToken(@Param("accessToken") String accessToken);
 
     List<EventSignUp> findByUserId(Long user);
 
@@ -26,4 +26,6 @@ public interface EventSignUpRepository extends BaseRepository<EventSignUp> {
     User user(User user);
 
     Set<EventSignUp> findAllByEventSignUpFormId(Long surveyId);
+
+    Optional<EventSignUp> findByGuestAccessTokenAndEventId(String accessToken, Long eventId);
 }

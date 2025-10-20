@@ -3,6 +3,8 @@ package net.blueshell.api.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Generated;
@@ -27,16 +29,12 @@ import java.sql.Timestamp;
                 @Index(name = "idx_blogs_created_at", columnList = "created_at")
         }
 )
-@SQLDelete(sql = "UPDATE blogs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE blogs SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-public class Blog implements BaseModel {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Getter
-    private Long id;
-
+@Getter
+@Setter
+@NoArgsConstructor
+public class Blog extends BaseModel {
     @Column(name = "title", nullable = false)
     private String title;
 
@@ -46,12 +44,4 @@ public class Blog implements BaseModel {
 
     @Column(name = "published_at", nullable = false)
     private Timestamp publishedAt;
-
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
 }

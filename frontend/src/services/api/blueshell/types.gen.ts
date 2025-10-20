@@ -163,6 +163,7 @@ export type Guest = {
     id?: number;
     createdAt?: string;
     name: string;
+    accessToken?: string;
 };
 
 export type ContributionPeriod = {
@@ -352,16 +353,16 @@ export type FieldValidationError = {
     code?: string;
 };
 
-export type PersonalInfo = {
-    discord: string;
-    email: string;
-    phoneNumber: string;
-};
-
 export type SimpleCommittee = {
     id?: number;
     name?: string;
     description?: string;
+};
+
+export type PersonalInfo = {
+    discord: string;
+    email: string;
+    phoneNumber: string;
 };
 
 export type FindMembershipByIdData = {
@@ -3020,7 +3021,7 @@ export type FindEventSignUpsResponses = {
 
 export type FindEventSignUpsResponse = FindEventSignUpsResponses[keyof FindEventSignUpsResponses];
 
-export type FindEventSignUpByAccessTokenData = {
+export type FindEventSignUpsByAccessTokenData = {
     body?: never;
     path: {
         accessToken: string;
@@ -3029,7 +3030,7 @@ export type FindEventSignUpByAccessTokenData = {
     url: '/events/signups/byAccessToken/{accessToken}';
 };
 
-export type FindEventSignUpByAccessTokenErrors = {
+export type FindEventSignUpsByAccessTokenErrors = {
     /**
      * Validation error
      */
@@ -3052,16 +3053,16 @@ export type FindEventSignUpByAccessTokenErrors = {
     500: ApiError;
 };
 
-export type FindEventSignUpByAccessTokenError = FindEventSignUpByAccessTokenErrors[keyof FindEventSignUpByAccessTokenErrors];
+export type FindEventSignUpsByAccessTokenError = FindEventSignUpsByAccessTokenErrors[keyof FindEventSignUpsByAccessTokenErrors];
 
-export type FindEventSignUpByAccessTokenResponses = {
+export type FindEventSignUpsByAccessTokenResponses = {
     /**
      * OK
      */
-    200: EventSignUp;
+    200: Array<EventSignUp>;
 };
 
-export type FindEventSignUpByAccessTokenResponse = FindEventSignUpByAccessTokenResponses[keyof FindEventSignUpByAccessTokenResponses];
+export type FindEventSignUpsByAccessTokenResponse = FindEventSignUpsByAccessTokenResponses[keyof FindEventSignUpsByAccessTokenResponses];
 
 export type DownloadEventBannerData = {
     body?: never;

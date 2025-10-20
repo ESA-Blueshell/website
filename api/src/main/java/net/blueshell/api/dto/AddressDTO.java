@@ -8,6 +8,7 @@ import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.address.ValidCountryCode;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -31,5 +32,5 @@ public class AddressDTO extends BaseDTO {
     @NotNull
     private String zipCode;
 
-    private Timestamp createdAt;
+    private Instant createdAt;
 }

@@ -10,8 +10,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService> {
-
-
     @Autowired
     public GuestPermission(GuestService service) {
         super(service);
@@ -24,10 +22,8 @@ public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService
         }
 
         Guest guest = (Guest) targetDomainObject;
-
-        EventSignUp signUp = guest.getEventSignUp();
         return switch (permission) {
-            case "read", "write", "delete" -> signUp != null;
+            case "read", "write" -> guest != null;
             default -> false;
         };
     }

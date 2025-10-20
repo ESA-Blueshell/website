@@ -1,17 +1,14 @@
 package net.blueshell.api.model.contribution;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
-import org.hibernate.annotations.*;
-
-import java.sql.Timestamp;
-import java.util.Objects;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -26,19 +23,16 @@ import java.util.Objects;
                 @Index(name = "idx_contributions_deleted_at", columnList = "deleted_at"),
                 @Index(name = "idx_contributions_user_id", columnList = "user_id"),
                 @Index(name = "idx_contributions_contribution_period_id", columnList = "contribution_period_id"),
-                @Index(name = "idx_contributions_paid", columnList = "paid"),
-                @Index(name = "idx_contributions_reminded_at", columnList = "reminded_at")
+                @Index(name = "idx_contributions_created_at", columnList = "created_at")
         }
 )
-@Data
-@SQLDelete(sql = "UPDATE contributions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE contributions SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
-public class Contribution implements BaseModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+@Getter
+@Setter
+@NoArgsConstructor
+public class Contribution extends BaseModel {
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
     @NotFound(action = NotFoundAction.IGNORE)
@@ -54,27 +48,4 @@ public class Contribution implements BaseModel {
 
     @Column(name = "contribution_period_id", nullable = false)
     private Long contributionPeriodId;
-    @Column(name = "deleted_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("9999-12-31 23:59:59")
-    private Timestamp deletedAt;
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Generated
-    private Timestamp createdAt;
-
-    public Contribution() {
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Contribution that = (Contribution) o;
-        return id != null && Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
 }

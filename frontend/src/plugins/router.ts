@@ -179,7 +179,7 @@ const routes: RouteRecordRaw[] = [
     path: "/account/activate/member/:token",
     redirect: (to) => ({
       name: "activateMember",
-      query: { token: String(to.params.token ?? "") },
+      query: {token: String(to.params.token ?? "")},
     }),
   },
   {

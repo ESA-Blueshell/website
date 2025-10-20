@@ -1,8 +1,8 @@
 <template>
   <v-sheet
+    class="pa-2"
     color="grey-darken-4"
     rounded="lg"
-    class="pa-2"
   >
     <!-- Statutes -->
     <v-row class="text-center py-4">

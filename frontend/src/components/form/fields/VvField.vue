@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {Field} from "vee-validate"
 import {VTextField} from "vuetify/components"
 
@@ -32,14 +32,14 @@ const model = defineModel<unknown>()
   >
     <component
       :is="component"
-      v-bind="componentProps"
+      :disabled="disabled"
+      :error-messages="errors"
       :label="label"
       :model-value="value"
-      :error-messages="errors"
-      :disabled="disabled"
-      @update:model-value="handleChange"
+      v-bind="componentProps"
       @blur="handleBlur"
       v-on="$attrs"
+      @update:model-value="handleChange"
     />
   </Field>
 </template>

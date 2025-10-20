@@ -45,28 +45,28 @@ const previewHtml = computed(() =>
   <div class="md-editor">
     <div class="md-field">
       <div
+        aria-label="Markdown mode"
         class="md-tabs"
         role="tablist"
-        aria-label="Markdown mode"
       >
         <button
-          type="button"
-          class="md-tab"
-          :class="{ active: tab === 'write' }"
-          role="tab"
           :aria-selected="tab === 'write'"
+          :class="{ active: tab === 'write' }"
           aria-controls="md-write"
+          class="md-tab"
+          role="tab"
+          type="button"
           @click="tab = 'write'"
         >
           Write
         </button>
         <button
-          type="button"
-          class="md-tab"
-          :class="{ active: tab === 'preview' }"
-          role="tab"
           :aria-selected="tab === 'preview'"
+          :class="{ active: tab === 'preview' }"
           aria-controls="md-preview"
+          class="md-tab"
+          role="tab"
+          type="button"
           @click="tab = 'preview'"
         >
           Preview
@@ -84,7 +84,6 @@ const previewHtml = computed(() =>
         v-if="tab === 'write'"
         id="md-write"
         v-model="value"
-        class="md-textarea"
         :auto-grow="autoGrow"
         :density="density"
         :disabled="disabled"
@@ -95,6 +94,7 @@ const previewHtml = computed(() =>
         :readonly="readonly"
         :rows="rows"
         :variant="variant"
+        class="md-textarea"
         v-bind="$attrs"
         @blur="emit('blur')"
         @focus="emit('focus')"
@@ -103,9 +103,9 @@ const previewHtml = computed(() =>
       <div
         v-else
         id="md-preview"
-        class="md-preview"
-        :style="{ minHeight: `calc(${rows} * 1.5em + 24px)` }"
         :aria-live="previewAriaLive"
+        :style="{ minHeight: `calc(${rows} * 1.5em + 24px)` }"
+        class="md-preview"
       >
         <div
           v-if="!modelValue || !modelValue.trim().length"

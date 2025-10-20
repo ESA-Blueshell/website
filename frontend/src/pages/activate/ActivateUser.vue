@@ -12,9 +12,9 @@
         class="d-flex align-center justify-center"
       >
         <v-progress-circular
+          class="mr-3"
           indeterminate
           size="32"
-          class="mr-3"
         />
         <p class="text-subtitle-1 mb-0">
           Please wait a moment, we’re activating your account.

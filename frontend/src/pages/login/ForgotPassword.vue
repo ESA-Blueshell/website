@@ -22,10 +22,10 @@
             >
               <v-text-field
                 ref="usernameInput"
-                :model-value="value"
                 :error-messages="errors"
-                label="Username"
+                :model-value="value"
                 autocomplete="username"
+                label="Username"
                 @blur="handleBlur"
                 @update:model-value="handleChange"
               />
@@ -35,9 +35,9 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  type="submit"
                   :disabled="!meta.valid || loading"
                   :loading="loading"
+                  type="submit"
                 >
                   Send reset mail
                 </v-btn>

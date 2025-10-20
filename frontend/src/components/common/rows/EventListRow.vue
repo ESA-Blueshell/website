@@ -383,11 +383,11 @@ function updateSignUp(updatedSignUp: EventSignUp) {
                           offset-y="8"
                         />
                         <v-btn
+                          :color="signUp?.id ? 'green' : 'orange'"
                           :disabled="!event.approved
                             || (event.membersOnly && !isMember)
                             || DateTime.fromISO(event.startTime) < DateTime.now()"
                           :loading="submitting"
-                          :color="signUp?.id ? 'green' : 'orange'"
                           icon="mdi-list-status"
                           v-bind="tooltipProps"
                           variant="plain"

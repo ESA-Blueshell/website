@@ -12,10 +12,10 @@
       rules="required|alphaNum"
     >
       <v-text-field
-        :model-value="value"
         :error-messages="errors"
-        label="Username"
+        :model-value="value"
         autocomplete="username"
+        label="Username"
         @blur="handleBlur"
         @update:model-value="handleChange"
       />
@@ -27,12 +27,12 @@
       rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
     >
       <v-text-field
-        :model-value="value"
-        :type="showPass ? 'text' : 'password'"
         :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
         :error-messages="errors"
-        label="Password"
+        :model-value="value"
+        :type="showPass ? 'text' : 'password'"
         autocomplete="new-password"
+        label="Password"
         @blur="handleBlur"
         @update:model-value="handleChange"
         @click:append-inner="showPass = !showPass"
@@ -45,12 +45,12 @@
       rules="required|match:@password"
     >
       <v-text-field
-        :model-value="value"
-        :type="showPass ? 'text' : 'password'"
         :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
         :error-messages="errors"
-        label="Repeat Password"
+        :model-value="value"
+        :type="showPass ? 'text' : 'password'"
         autocomplete="new-password"
+        label="Repeat Password"
         @blur="handleBlur"
         @update:model-value="handleChange"
         @click:append-inner="showPass = !showPass"
@@ -58,15 +58,15 @@
     </Field>
 
     <v-row
-      class="mt-2"
       align="center"
+      class="mt-2"
       justify="end"
     >
       <v-btn
-        type="submit"
-        color="primary"
         :disabled="!meta.valid || loading"
         :loading="loading"
+        color="primary"
+        type="submit"
       >
         Activate Member
       </v-btn>
@@ -74,9 +74,9 @@
 
     <v-alert
       v-if="errorMessage"
+      class="mt-4"
       type="error"
       variant="tonal"
-      class="mt-4"
     >
       {{ errorMessage }}
     </v-alert>

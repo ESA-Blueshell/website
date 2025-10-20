@@ -34,8 +34,8 @@ onMounted(async () => {
     >
       <iframe
         :srcdoc="blog.html"
-        title="Blog content"
         style="width: 100%; height: 100vh;"
+        title="Blog content"
       />
     </div>
     <div

@@ -13,8 +13,8 @@ import {
   type EventSignUp,
   findCommitteesForCurrentUser,
   findEvents,
-  findEventSignUpsByAccessToken,
   findEventSignUps,
+  findEventSignUpsByAccessToken,
   type Guest,
   type Login,
 } from "@/services/api"

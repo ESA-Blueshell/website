@@ -8,7 +8,8 @@
       style="border-radius: 10px"
     >
       <strong>Membership conditions</strong><br>
-      By submitting this form you declare to be a member of Blueshell E-Sports Association Enschede until further notice.
+      By submitting this form you declare to be a member of Blueshell E-Sports Association Enschede until further
+      notice.
       You hereby agree to the Statutes, privacy policy and the Domestic Regulations (Huishoudelijk reglement) of
       this association. Cancellation must take place no later than four weeks before the beginning of the new academic
       year.
@@ -24,19 +25,19 @@
 
       <v-row
         align="end"
-        justify="end"
         class="mb-5 mt-2"
+        justify="end"
       >
         <v-col
           v-if="showSubmit"
           cols="auto"
         >
           <v-btn
-            type="button"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :loading="isSaving"
             :disabled="isSaving"
+            :loading="isSaving"
+            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             size="large"
+            type="button"
             @click="save"
           >
             {{ submitText }}

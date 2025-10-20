@@ -8,20 +8,20 @@
         <v-col cols="4">
           <VvField
             v-model="user.initials"
-            name="initials"
-            label="Initials*"
-            rules="required"
             :disabled="isReadonly"
+            label="Initials*"
+            name="initials"
+            rules="required"
           />
         </v-col>
 
         <v-col cols="8">
           <VvField
             v-model="user.firstName"
-            name="firstName"
-            label="First Name*"
-            rules="required"
             :disabled="isReadonly"
+            label="First Name*"
+            name="firstName"
+            rules="required"
           />
         </v-col>
       </v-row>
@@ -30,19 +30,19 @@
         <v-col cols="4">
           <VvField
             v-model="user.prefix"
-            name="prefix"
-            label="Prefix"
             :disabled="isReadonly"
+            label="Prefix"
+            name="prefix"
           />
         </v-col>
 
         <v-col cols="8">
           <VvField
             v-model="user.lastName"
-            name="lastName"
-            label="Surname*"
-            rules="required"
             :disabled="isReadonly"
+            label="Surname*"
+            name="lastName"
+            rules="required"
           />
         </v-col>
       </v-row>
@@ -51,18 +51,18 @@
         <v-col cols="6">
           <VvField
             v-model="user.username"
-            name="username"
-            label="Username*"
-            rules="required|alphaNum"
             :disabled="isReadonly"
+            label="Username*"
+            name="username"
+            rules="required|alphaNum"
           />
         </v-col>
 
         <v-col cols="6">
           <VvField
             v-model="user.discord"
-            name="discord"
             label="Discord*"
+            name="discord"
             rules="required"
           />
         </v-col>
@@ -72,18 +72,16 @@
         <v-col cols="6">
           <VvField
             v-model="user.email"
-            name="email"
-            label="E-mail*"
-            rules="required|email|noStudentEmail"
             :disabled="isReadonly"
+            label="E-mail*"
+            name="email"
+            rules="required|email|noStudentEmail"
           />
         </v-col>
 
         <v-col cols="6">
           <VvField
             v-model="user.phoneNumber"
-            name="phoneNumber"
-            :rules="`required|phoneMobile:${country}`"
             :component="VPhoneInput"
             :component-props="{
               defaultCountry: 'NL',
@@ -91,7 +89,9 @@
               mode: 'international',
               placeholder: 'Phone Number'
             }"
+            :rules="`required|phoneMobile:${country}`"
             label="Phone Number*"
+            name="phoneNumber"
             @update:country="updateCountry"
           />
         </v-col>
@@ -101,13 +101,13 @@
         <v-col cols="6">
           <VvField
             v-model="user.password"
-            name="password"
-            label="Password*"
-            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
             :component-props="{
               type: showPass ? 'text' : 'password',
               'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off'
             }"
+            label="Password*"
+            name="password"
+            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
             @click:append-inner="showPass = !showPass"
           />
         </v-col>
@@ -115,13 +115,13 @@
         <v-col cols="6">
           <VvField
             v-model="confirmPassword"
-            name="confirmPassword"
-            label="Password (repeated)"
-            rules="required|match:@password"
             :component-props="{
               type: showPass ? 'text' : 'password',
               'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off'
             }"
+            label="Password (repeated)"
+            name="confirmPassword"
+            rules="required|match:@password"
             @click:append-inner="showPass = !showPass"
           />
         </v-col>
@@ -131,20 +131,20 @@
         <v-col cols="6">
           <VvField
             v-model="user.dateOfBirth"
-            name="dateOfBirth"
-            label="Date of Birth*"
-            rules="dateRequired"
             :component-props="{ type: 'date' }"
+            label="Date of Birth*"
+            name="dateOfBirth"
+            rules="dateRequired"
           />
         </v-col>
 
         <v-col cols="6">
           <VvField
             v-model="user.nationality"
-            name="nationality"
-            label="Nationality*"
-            rules="required"
             :component="NationalitySelect"
+            label="Nationality*"
+            name="nationality"
+            rules="required"
           />
         </v-col>
       </v-row>
@@ -153,16 +153,16 @@
         <v-col cols="6">
           <VvField
             v-model="user.gender"
-            name="gender"
             label="Gender"
+            name="gender"
           />
         </v-col>
 
         <v-col cols="6">
           <VvField
             v-model="user.studentNumber"
-            name="studentNumber"
             label="Student Number"
+            name="studentNumber"
           />
         </v-col>
       </v-row>
@@ -174,30 +174,30 @@
         <v-col cols="auto">
           <VvField
             v-model="user.ehbo"
-            name="ehbo"
-            label="EHBO Diploma"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
+            label="EHBO Diploma"
+            name="ehbo"
           />
         </v-col>
 
         <v-col cols="auto">
           <VvField
             v-model="user.bhv"
-            name="bhv"
-            label="BHV Diploma"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
+            label="BHV Diploma"
+            name="bhv"
           />
         </v-col>
 
         <v-col cols="auto">
           <VvField
             v-model="user.newsletter"
-            name="newsletter"
-            label="Newsletter"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
+            label="Newsletter"
+            name="newsletter"
           />
         </v-col>
       </v-row>
@@ -209,29 +209,29 @@
         <v-col cols="auto">
           <VvField
             v-model="user.photoConsent"
-            name="photoConsent"
-            label="Consent to pictures being taken at event"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
+            label="Consent to pictures being taken at event"
+            name="photoConsent"
           />
         </v-col>
       </v-row>
 
       <v-row
         align="end"
-        justify="end"
         class="mb-5"
+        justify="end"
       >
         <v-col
           v-if="showSubmit"
           cols="auto"
         >
           <v-btn
-            type="button"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :loading="isSaving"
             :disabled="isSaving"
+            :loading="isSaving"
+            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             size="large"
+            type="button"
             @click="save"
           >
             {{ submitText }}

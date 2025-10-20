@@ -11,8 +11,8 @@
         <v-col cols="8">
           <VvField
             v-model="address.street"
-            name="street"
             label="Street"
+            name="street"
             rules="required|minChars:2"
           />
         </v-col>
@@ -20,8 +20,8 @@
         <v-col cols="4">
           <VvField
             v-model="address.houseNumber"
-            name="houseNumber"
             label="House Number"
+            name="houseNumber"
             rules="required"
           />
         </v-col>
@@ -31,8 +31,8 @@
         <v-col cols="6">
           <VvField
             v-model="address.zipCode"
-            name="zipCode"
             label="Zipcode"
+            name="zipCode"
             rules="required|minChars:2"
           />
         </v-col>
@@ -40,8 +40,8 @@
         <v-col cols="6">
           <VvField
             v-model="address.city"
-            name="city"
             label="City"
+            name="city"
             rules="required|minChars:2"
           />
         </v-col>
@@ -51,10 +51,10 @@
         <v-col cols="12">
           <VvField
             v-model="address.country"
-            name="country"
-            label="Country"
-            rules="required"
             :component="CountrySelect"
+            label="Country"
+            name="country"
+            rules="required"
           />
         </v-col>
       </v-row>
@@ -62,16 +62,16 @@
       <v-row
         v-if="showSubmit"
         align="end"
-        justify="end"
         class="mt-2"
+        justify="end"
       >
         <v-col cols="auto">
           <v-btn
-            type="button"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :loading="isSaving"
             :disabled="isSaving"
+            :loading="isSaving"
+            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             size="large"
+            type="button"
             @click="save"
           >
             {{ submitText }}

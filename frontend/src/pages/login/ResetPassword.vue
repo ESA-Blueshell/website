@@ -13,12 +13,12 @@
       rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
     >
       <v-text-field
-        :model-value="value"
-        :type="showPass ? 'text' : 'password'"
         :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
         :error-messages="errors"
-        label="New Password"
+        :model-value="value"
+        :type="showPass ? 'text' : 'password'"
         autocomplete="new-password"
+        label="New Password"
         @blur="handleBlur"
         @update:model-value="handleChange"
         @click:append-inner="showPass = !showPass"
@@ -31,12 +31,12 @@
       rules="required|match:@password"
     >
       <v-text-field
-        :model-value="value"
-        :type="showPass ? 'text' : 'password'"
         :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
         :error-messages="errors"
-        label="Repeat New Password"
+        :model-value="value"
+        :type="showPass ? 'text' : 'password'"
         autocomplete="new-password"
+        label="Repeat New Password"
         @blur="handleBlur"
         @update:model-value="handleChange"
         @click:append-inner="showPass = !showPass"
@@ -44,15 +44,15 @@
     </Field>
 
     <v-row
-      class="mt-2"
       align="center"
+      class="mt-2"
       justify="end"
     >
       <v-btn
-        type="submit"
-        color="primary"
         :disabled="!meta.valid || loading"
         :loading="loading"
+        color="primary"
+        type="submit"
       >
         Reset Password
       </v-btn>
@@ -60,9 +60,9 @@
 
     <v-alert
       v-if="errorMessage"
+      class="mt-4"
       type="error"
       variant="tonal"
-      class="mt-4"
     >
       {{ errorMessage }}
     </v-alert>

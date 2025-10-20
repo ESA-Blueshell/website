@@ -471,7 +471,7 @@ const cardStyle = computed(() => {
 }
 
 .actions-rail {
-  width: 80px;
+  width: fit-content;
   padding: 8px 4px;
   gap: 6px;
 }

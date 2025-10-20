@@ -41,6 +41,7 @@ spring:
       hibernate.connection.serverTimezone: Europe/Amsterdam
       hibernate.connection.allowPublicKeyRetrieval: true
       hibernate.connection.collation: utf8mb4_unicode_ci
+      hibernate.default_batch_fetch_size: 50
 
   flyway:
     enabled: true

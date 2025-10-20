@@ -40,7 +40,6 @@ import java.time.LocalDate;
 public class Membership extends BaseModel {
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    @ToString.Exclude
     private User user;
 
     @Column(name = "user_id", nullable = false)

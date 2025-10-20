@@ -38,8 +38,6 @@ import org.hibernate.annotations.SQLRestriction;
 public class Contribution extends BaseModel {
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
-    @NotFound(action = NotFoundAction.IGNORE)
-    @ToString.Exclude
     private User user;
 
     @Column(name = "user_id", nullable = false)

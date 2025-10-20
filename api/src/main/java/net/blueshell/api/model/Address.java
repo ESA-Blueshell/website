@@ -39,6 +39,5 @@ public class Address extends BaseModel {
     private String zipCode;
 
     @OneToOne(mappedBy = "address")
-    @ToString.Exclude
     private User user;
 }

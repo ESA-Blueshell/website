@@ -1,13 +1,10 @@
 package net.blueshell.api.repository.spec;
 
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.SetJoin;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.controller.filter.EventFilter;
 import net.blueshell.api.model.User;
-import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.event.Event;
 import org.springframework.data.jpa.domain.Specification;
@@ -51,10 +48,21 @@ public final class EventSpecifications {
     }
 
     public static Specification<Event> userIsCommitteeMember(User user) {
+        if (user == null || user.getId() == null) {
+            return (root, q, cb) -> cb.disjunction();
+        }
         return (root, q, cb) -> {
-            var committee = root.join("committee", JoinType.LEFT);
-            SetJoin<Committee, CommitteeMember> members = committee.joinSet("members", JoinType.LEFT);
-            return cb.equal(members.get("user"), user);
+            q.distinct(true);
+
+            var sq = q.subquery(Long.class);
+            var cm = sq.from(CommitteeMember.class);
+            sq.select(cb.literal(1L))
+                    .where(
+                            cb.equal(cm.get("committee").get("id"), root.get("committee").get("id")),
+                            cb.equal(cm.get("userId"), user.getId())
+                    );
+
+            return cb.exists(sq);
         };
     }
 
@@ -71,8 +79,11 @@ public final class EventSpecifications {
     public static Specification<Event> fromFilter(EventFilter f, User user) {
         Specification<Event> spec = (root, query, cb) -> cb.conjunction();
 
-        if (f.getFrom() != null || f.getTo() != null) {
-            spec = spec.and(timeBetween(f.getFrom(), f.getTo()));
+        if (f.getFrom() != null) {
+            spec = spec.and(startTimeFrom(f.getFrom()));
+        }
+        if (f.getTo() != null) {
+            spec = spec.and(startTimeTo(f.getTo()));
         }
         if (f.getApproved() != null) {
             spec = spec.and(approved(f.getApproved()));
@@ -94,7 +105,7 @@ public final class EventSpecifications {
         } else if (!user.hasAuthority(Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
             // And approved events are included
-            spec = spec.and(userIsCommitteeMember(user).or(approved()));
+            spec = spec.and(approved().or(userIsCommitteeMember(user)));
             log.info("User {} has member role", user);
         }
 

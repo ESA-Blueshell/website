@@ -38,7 +38,6 @@ public class EventBanner extends BaseModel {
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
-    @ToString.Exclude
     private Event event;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -47,6 +46,5 @@ public class EventBanner extends BaseModel {
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_event_banners_file")
     )
-    @ToString.Exclude
     private File file;
 }

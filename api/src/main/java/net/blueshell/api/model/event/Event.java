@@ -34,6 +34,25 @@ import java.util.Set;
                 @Index(name = "idx_events_sign_up", columnList = "sign_up")
         }
 )
+@NamedEntityGraphs({
+        @NamedEntityGraph(
+                name = "Event.withBannerFileAndFormQuestions",
+                attributeNodes = {
+                        @NamedAttributeNode(value = "banner", subgraph = "bannerSub"),
+                        @NamedAttributeNode(value = "signUpForm", subgraph = "formSub")
+                },
+                subgraphs = {
+                        @NamedSubgraph(
+                                name = "bannerSub",
+                                attributeNodes = {@NamedAttributeNode("file")}
+                        ),
+                        @NamedSubgraph(
+                                name = "formSub",
+                                attributeNodes = {@NamedAttributeNode("questions")}
+                        )
+                }
+        )
+})
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)

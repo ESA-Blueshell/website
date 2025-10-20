@@ -37,6 +37,17 @@ import java.util.Set;
                 @Index(name = "idx_event_signups_guest_id", columnList = "guest_id"),
         }
 )
+@NamedEntityGraph(
+        name = "EventSignUp.withGuestAndAnswers",
+        attributeNodes = {
+                @NamedAttributeNode("guest"),
+                @NamedAttributeNode(value = "answers", subgraph = "answersSub")
+        },
+        subgraphs = @NamedSubgraph(
+                name = "answersSub",
+                attributeNodes = { @NamedAttributeNode("question") }
+        )
+)
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)

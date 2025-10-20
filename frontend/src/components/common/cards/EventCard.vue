@@ -213,7 +213,7 @@ function updateSignUp(updatedSignUp: EventSignUp) {
 
 <template v-if="event.id">
   <div>
-    <v-list-item
+    <v-card
       :style="bannerUrl
         ? {
           backgroundImage: theme.global.current.value.dark
@@ -227,7 +227,6 @@ function updateSignUp(updatedSignUp: EventSignUp) {
         : {
           minHeight: '240px'
         }"
-      class="py-4"
       rounded="sm"
       style="background-size: cover; background-position: center; min-height: 240px;"
     >
@@ -238,48 +237,49 @@ function updateSignUp(updatedSignUp: EventSignUp) {
             no-gutters
           >
             <v-col class="flex-grow-1 min-w-0">
-              <v-list-item-title class="text-h4 d-flex align-center ga-2">
-                <span
-                  class="text-wrap"
-                  style="word-break: break-word;"
-                >
-                  {{ event.title }}
-                  <v-tooltip
-                    v-if="isBoard || committee"
-                    :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
-                    location="bottom"
+              <v-card-item>
+                <v-card-title class="text-h4 d-flex align-center ga-2">
+                  <span
+                    class="text-wrap"
+                    style="word-break: break-word;"
                   >
-                    <template #activator="{ props: approveProps }">
-                      <v-btn
-                        :color="approvedColor"
-                        :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
-                        :prepend-icon="approvedIcon"
-                        class="approve-btn text-none"
-                        size="small"
-                        v-bind="approveProps"
-                        variant="tonal"
-                        @click="toggleEventApproved"
-                      >
-                        {{ approvedLabel }}
-                      </v-btn>
-                    </template>
-                  </v-tooltip>
-                </span>
-              </v-list-item-title>
+                    {{ event.title }}
+                    <v-tooltip
+                      v-if="isBoard || committee"
+                      :text="isApproved ? 'Mark as awaiting approval' : 'Mark as approved'"
+                      location="bottom"
+                    >
+                      <template #activator="{ props: approveProps }">
+                        <v-btn
+                          :color="approvedColor"
+                          :disabled="!isBoard || DateTime.fromISO(event.startTime) < DateTime.now()"
+                          :prepend-icon="approvedIcon"
+                          class="approve-btn text-none"
+                          size="small"
+                          v-bind="approveProps"
+                          variant="tonal"
+                          @click="toggleEventApproved"
+                        >
+                          {{ approvedLabel }}
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                  </span>
+                </v-card-title>
+                <v-card-subtitle>
+                  {{ event.location }} <br>
+                  {{ formatEventTime() }} <br>
+                  {{ event.membersOnly ? "Members only" : "" }}
+                </v-card-subtitle>
+              </v-card-item>
 
-              <div
-                class="text-subtitle-2 mb-2 medium-emphasis-opacity"
-              >
-                {{ event.location }} <br>
-                {{ formatEventTime() }} <br>
-                {{ event.membersOnly ? "Members only" : "" }}
-              </div>
-
-              <div
-                class="text-wrap"
-                style="word-break: break-word"
-                v-html="event.description ? $markdownToHtml(event.description) : 'No description...'"
-              />
+              <v-card-text>
+                <div
+                  class="text-wrap"
+                  style="word-break: break-word"
+                  v-html="event.description ? $markdownToHtml(event.description) : 'No description...'"
+                />
+              </v-card-text>
             </v-col>
 
             <v-col
@@ -461,7 +461,7 @@ function updateSignUp(updatedSignUp: EventSignUp) {
           </v-row>
         </v-container>
       </div>
-    </v-list-item>
+    </v-card>
 
     <deletion-confirmation-dialog
       v-model="showDeleteDialog"

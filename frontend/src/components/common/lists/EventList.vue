@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {useRoute} from "vue-router"
-import EventListRow from "@/components/common/rows/EventListRow.vue"
+import EventCard from "@/components/common/cards/EventCard.vue"
 import type {AdvancedCommittee, Event, EventSignUp} from "@/services/api"
 
 interface Emits {
@@ -66,11 +66,10 @@ function deleteSignUp(signUpId: number): void {
         class="my-3"
         rounded="lg"
       >
-        <event-list-row
+        <event-card
           :committees="props.committees"
           :event="event"
           :sign-ups="props.eventSignUps"
-          class="event-list-item"
           @delete:event="deleteEvent"
           @delete:sign-up="deleteSignUp"
           @update:sign-up="updateSignUp"

@@ -45,22 +45,22 @@
         </p>
       </div>
 
-      <v-expansion-panels
+      <div
         v-else
-        variant="accordion"
+        class="mx-3 my-6"
       >
-        <v-expansion-panel
-          v-for="committee in committees"
-          :key="committee.id ?? committee.name"
-        >
-          <v-expansion-panel-title class="text-h5 font-weight-light">
-            {{ committee.name }}
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <p v-html="$markdownToHtml(committee.description)" />
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+        <v-container class="pa-0">
+          <v-row dense>
+            <v-col
+              v-for="committee in committees"
+              :key="committee.id ?? committee.name"
+              cols="12"
+            >
+              <committee-card :committee="committee" />
+            </v-col>
+          </v-row>
+        </v-container>
+      </div>
     </div>
   </v-main>
 </template>
@@ -72,7 +72,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 
 import {findCommittees, type SimpleCommittee} from "@/services/api"
-import $markdownToHtml from "@/plugins/markdownToHtml.ts"
+import CommitteeCard from "@/components/common/cards/CommitteeCard.vue"
 
 const committees = ref<SimpleCommittee[]>([])
 const loading = ref<boolean>(false)

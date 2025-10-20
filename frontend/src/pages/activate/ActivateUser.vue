@@ -1,48 +1,59 @@
 <template>
-  <div
-    class="d-flex align-center justify-center"
-    style="min-height: 100vh;"
-  >
+  <v-main>
+    <top-banner title="Account Activation" />
+
     <div
-      class="mx-auto text-center"
-      style="max-width: 520px; width: 100%; padding: 16px;"
+      class="mx-auto my-10"
+      style="max-width: 600px"
     >
-      <div
-        v-if="loading"
-        class="d-flex align-center justify-center"
-      >
-        <v-progress-circular
-          class="mr-3"
-          indeterminate
-          size="32"
-        />
-        <p class="text-subtitle-1 mb-0">
-          Please wait a moment, we’re activating your account.
-        </p>
-      </div>
-
-      <div v-else-if="succeeded">
-        <p class="text-subtitle-1">
-          Account activated! You will be redirected to the login page.
-        </p>
-      </div>
-
-      <v-alert
-        v-else
-        type="warning"
-      >
-        <div>{{ errorMessage || defaultErrorMessage }}</div>
-        <div class="mt-2">
-          You will be redirected to the login page.
+      <v-card class="pa-6 text-center">
+        <div
+          v-if="loading"
+          class="d-flex align-center justify-center"
+        >
+          <v-progress-circular
+            indeterminate
+            size="32"
+            class="mr-3"
+          />
+          <p class="text-subtitle-1 mb-0">
+            Please wait a moment, we’re activating your account.
+          </p>
         </div>
-      </v-alert>
+
+        <div v-else-if="succeeded">
+          <v-icon
+            size="48"
+            color="success"
+            class="mb-2"
+          >
+            mdi-check-circle
+          </v-icon>
+          <p class="text-subtitle-1">
+            Account activated! You will be redirected to the login page.
+          </p>
+        </div>
+
+        <!-- Error -->
+        <v-alert
+          v-else
+          type="warning"
+          variant="tonal"
+        >
+          <div>{{ errorMessage || defaultErrorMessage }}</div>
+          <div class="mt-2">
+            You will be redirected to the login page.
+          </div>
+        </v-alert>
+      </v-card>
     </div>
-  </div>
+  </v-main>
 </template>
 
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
+import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {userActivate, type UserActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
@@ -52,6 +63,8 @@ const router = useRouter()
 const loading = ref(true)
 const succeeded = ref(false)
 const errorMessage = ref<string | null>(null)
+const defaultErrorMessage =
+  "We couldn’t verify your activation link. It may be invalid, expired, or already used."
 
 function redirectToLogin(ms = 2000) {
   window.setTimeout(() => router.push({name: "login"}), ms)
@@ -63,7 +76,7 @@ onMounted(async () => {
 
   if (!token || !username) {
     loading.value = false
-    errorMessage.value = "We couldn’t verify your activation link. It may be invalid, expired, or already used."
+    errorMessage.value = defaultErrorMessage
     redirectToLogin(2500)
     return
   }
@@ -76,10 +89,16 @@ onMounted(async () => {
     redirectToLogin(1500)
   } catch (e: unknown) {
     $handleNetworkError(e)
-    errorMessage.value = "We couldn’t verify your activation link. It may be invalid, expired, or already used."
+    errorMessage.value = defaultErrorMessage
     redirectToLogin(2500)
   } finally {
     loading.value = false
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.v-card {
+  border-radius: 12px;
+}
+</style>

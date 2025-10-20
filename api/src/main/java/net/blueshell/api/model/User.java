@@ -1,6 +1,7 @@
 package net.blueshell.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.vladsch.flexmark.ext.ins.Ins;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,9 +19,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,7 +79,7 @@ public class User extends BaseModel implements UserDetails {
     @Column
     private String initials;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
     private Address address;
 
@@ -95,7 +96,7 @@ public class User extends BaseModel implements UserDetails {
     private String studentNumber;
 
     @Column(name = "date_of_birth")
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
 
     @Column
     private String discord;
@@ -113,7 +114,7 @@ public class User extends BaseModel implements UserDetails {
     private String resetKey;
 
     @Column(name = "reset_key_valid_until")
-    private Timestamp resetKeyValidUntil;
+    private Instant resetKeyValidUntil;
 
     @Column(name = "reset_type")
     @Enumerated(EnumType.STRING)
@@ -181,7 +182,7 @@ public class User extends BaseModel implements UserDetails {
 
     public User() {
         this.resetKey = Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH);
-        this.resetKeyValidUntil = Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
+        this.resetKeyValidUntil = Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS);
         this.resetType = ResetType.USER_ACTIVATION;
     }
 

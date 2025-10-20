@@ -2,11 +2,11 @@
   <v-main>
     <top-banner title="Forgot Password" />
 
-    <div class="mx-3">
-      <div
-        class="mx-auto mt-10"
-        style="max-width: 500px"
-      >
+    <div
+      class="mx-auto my-10"
+      style="max-width: 600px"
+    >
+      <v-card class="pa-6">
         <div v-if="!succeeded">
           <p>Enter your username, and we’ll email you a link to reset your password.</p>
 
@@ -15,29 +15,25 @@
             as="form"
             @submit="onSubmit"
           >
-            <Field
-              v-slot="{ value, errors, handleBlur, handleChange }"
-              name="username"
-              rules="required|alphaNum"
-            >
-              <v-text-field
-                ref="usernameInput"
-                :error-messages="errors"
-                :model-value="value"
-                autocomplete="username"
-                label="Username"
-                @blur="handleBlur"
-                @update:model-value="handleChange"
-              />
-            </Field>
+            <v-row>
+              <v-col cols="12">
+                <VvField
+                  v-model="form.username"
+                  :component-props="{ label: 'Username', autocomplete: 'username' }"
+                  name="username"
+                  rules="required|alphaNum"
+                />
+              </v-col>
+            </v-row>
 
             <v-row>
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
+                  type="submit"
                   :disabled="!meta.valid || loading"
                   :loading="loading"
-                  type="submit"
+                  color="primary"
                 >
                   Send reset mail
                 </v-btn>
@@ -52,7 +48,7 @@
             Didn’t get it? Check your spam folder or try again later.
           </p>
         </div>
-      </div>
+      </v-card>
     </div>
   </v-main>
 </template>
@@ -61,33 +57,40 @@
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {Field, Form, useForm} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
+import {Form, useForm} from "vee-validate"
 import {resetPassword} from "@/services/api"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const route = useRoute()
 const loading = ref(false)
 const succeeded = ref(false)
-const usernameInput = ref<HTMLInputElement | null>(null)
 
-const {setFieldValue, handleSubmit} = useForm<{ username: string }>({
+const form = ref({username: ""})
+const {handleSubmit, setFieldValue} = useForm<{ username: string }>({
   initialValues: {username: ""},
 })
 
 onMounted(() => {
   const q = route.query.username
-  if (typeof q === "string") setFieldValue("username", q)
+  if (typeof q === "string") {
+    setFieldValue("username", q)
+    form.value.username = q
+  }
 })
 
-const onSubmit = handleSubmit(async (values) => {
+const onSubmit = handleSubmit(async () => {
   loading.value = true
   try {
-    await resetPassword({query: {username: values.username}, throwOnError: false})
-    succeeded.value = true
-  } catch (e: unknown) {
-    $handleNetworkError(e)
+    await resetPassword({query: {username: form.value.username}, throwOnError: false})
   } finally {
     loading.value = false
+    succeeded.value = true
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.v-card {
+  border-radius: 12px;
+}
+</style>

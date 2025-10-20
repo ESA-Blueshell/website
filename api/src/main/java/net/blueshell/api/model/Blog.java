@@ -8,7 +8,7 @@ import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 
 @Entity
 @Table(
@@ -40,5 +40,5 @@ public class Blog extends BaseModel {
     private String html;
 
     @Column(name = "published_at", nullable = false)
-    private Timestamp publishedAt;
+    private Instant publishedAt;
 }

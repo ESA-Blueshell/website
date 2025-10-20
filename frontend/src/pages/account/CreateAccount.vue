@@ -7,7 +7,7 @@
       class="mx-auto pb-10 mt-10"
       style="max-width: 600px"
     >
-      <SimpleUserForm
+      <simple-user-form
         ref="simpleUserForm"
         show-password
         show-submit

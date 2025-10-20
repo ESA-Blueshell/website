@@ -16,7 +16,6 @@ import org.springframework.web.client.RestClientResponseException;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 @Slf4j
@@ -103,12 +102,11 @@ public class ContactService {
 
         ContactsApi api = getContactsApi();
         CreateList createList = new CreateList();
-        Calendar startCalendar = Calendar.getInstance();
-        Calendar endCalendar = Calendar.getInstance();
-        startCalendar.setTime(contributionPeriod.getStartDate());
-        endCalendar.setTime(contributionPeriod.getEndDate());
-        String periodName = String.format("Contribution Paid %d - %d",
-                startCalendar.get(Calendar.YEAR), endCalendar.get(Calendar.YEAR));
+        String periodName = String.format(
+                "Contribution Paid %d - %d",
+                contributionPeriod.getStartDate().getYear(),
+                contributionPeriod.getEndDate().getYear()
+        );
         createList.name(periodName);
         createList.setFolderId(contributionPeriodsFolder);
         CreateModel createModel = api.createList(createList);

@@ -1,93 +1,96 @@
 <template>
-  <!-- VeeValidate handles validation + form submit; Vuetify is purely UI -->
-  <Form
-    v-slot="{ meta }"
-    as="form"
-    class="mx-auto"
-    style="max-width: 500px"
-    @submit="onSubmit"
-  >
-    <Field
-      v-slot="{ value, errors, handleBlur, handleChange }"
-      name="password"
-      rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
-    >
-      <v-text-field
-        :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-        :error-messages="errors"
-        :model-value="value"
-        :type="showPass ? 'text' : 'password'"
-        autocomplete="new-password"
-        label="New Password"
-        @blur="handleBlur"
-        @update:model-value="handleChange"
-        @click:append-inner="showPass = !showPass"
-      />
-    </Field>
-
-    <Field
-      v-slot="{ value, errors, handleBlur, handleChange }"
-      name="passwordAgain"
-      rules="required|match:@password"
-    >
-      <v-text-field
-        :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-        :error-messages="errors"
-        :model-value="value"
-        :type="showPass ? 'text' : 'password'"
-        autocomplete="new-password"
-        label="Repeat New Password"
-        @blur="handleBlur"
-        @update:model-value="handleChange"
-        @click:append-inner="showPass = !showPass"
-      />
-    </Field>
-
-    <v-row
-      align="center"
-      class="mt-2"
-      justify="end"
-    >
-      <v-btn
-        :disabled="!meta.valid || loading"
-        :loading="loading"
-        color="primary"
-        type="submit"
-      >
-        Reset Password
-      </v-btn>
-    </v-row>
-
-    <v-alert
-      v-if="errorMessage"
-      class="mt-4"
-      type="error"
-      variant="tonal"
-    >
-      {{ errorMessage }}
-    </v-alert>
+  <v-main>
+    <top-banner title="Reset Password" />
 
     <div
-      v-if="succeeded"
-      class="mt-6"
+      class="mx-auto my-10"
+      style="max-width: 600px"
     >
-      <p class="text-subtitle-1">
-        Your password has been reset successfully.
-        <RouterLink
-          :to="{ name: 'login' }"
-          class="text-decoration-none"
+      <v-card class="pa-6">
+        <Form
+          v-slot="{ meta }"
+          as="form"
+          @submit="onSubmit"
         >
-          Sign in
-        </RouterLink>
-      </p>
+          <v-row>
+            <VvField
+              v-model="form.password"
+              :component-props="{
+                type: showPass ? 'text' : 'password',
+                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
+                autocomplete: 'new-password',
+                label: 'New Password',
+                'onClick:append-inner': () => (showPass = !showPass)
+              }"
+              name="password"
+              rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
+            />
+          </v-row>
+          <v-row>
+            <VvField
+              v-model="form.passwordAgain"
+              :component-props="{
+                type: showPass ? 'text' : 'password',
+                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
+                autocomplete: 'new-password',
+                label: 'Repeat New Password',
+                'onClick:append-inner': () => (showPass = !showPass)
+              }"
+              name="passwordAgain"
+              rules="required|match:@password"
+            />
+          </v-row>
+
+          <v-row
+            class="mt-2"
+            align="center"
+            justify="end"
+          >
+            <v-btn
+              type="submit"
+              color="primary"
+              :disabled="!meta.valid || loading"
+              :loading="loading"
+            >
+              Reset Password
+            </v-btn>
+          </v-row>
+
+          <v-alert
+            v-if="errorMessage"
+            class="mt-4"
+            type="error"
+            variant="tonal"
+          >
+            {{ errorMessage }}
+          </v-alert>
+
+          <div
+            v-if="succeeded"
+            class="mt-6"
+          >
+            <p class="text-subtitle-1">
+              Your password has been reset successfully.
+              <RouterLink
+                :to="{ name: 'login' }"
+                class="text-decoration-none"
+              >
+                Sign in
+              </RouterLink>
+            </p>
+          </div>
+        </Form>
+      </v-card>
     </div>
-  </Form>
+  </v-main>
 </template>
 
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Field, Form, useForm} from "vee-validate"
+import {Form, useForm} from "vee-validate"
+import TopBanner from "@/components/common/banners/TopBanner.vue"
+import VvField from "@/components/form/fields/VvField.vue"
 import {type PasswordResetRequest, setPassword} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
@@ -101,6 +104,11 @@ const errorMessage = ref<string | null>(null)
 
 const token = ref<string>("")
 const username = ref<string>("")
+
+const form = ref({
+  password: "",
+  passwordAgain: "",
+})
 
 const {handleSubmit} = useForm()
 
@@ -116,7 +124,7 @@ onMounted(() => {
   router.replace({name: "resetPassword", query: {username: username.value, token: token.value}})
 })
 
-const onSubmit = handleSubmit(async (values) => {
+const onSubmit = handleSubmit(async () => {
   loading.value = true
   errorMessage.value = null
 
@@ -124,7 +132,7 @@ const onSubmit = handleSubmit(async (values) => {
     const payload: PasswordResetRequest = {
       token: token.value,
       username: username.value,
-      password: values.password,
+      password: form.value.password,
     }
 
     await setPassword({body: payload, throwOnError: true})
@@ -137,3 +145,9 @@ const onSubmit = handleSubmit(async (values) => {
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.v-card {
+  border-radius: 12px;
+}
+</style>

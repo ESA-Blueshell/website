@@ -101,7 +101,7 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
 
     public void reset(User user) {
         user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS)));
+        user.setResetKeyValidUntil(Instant.now().plusSeconds(ACTIVATION_VALID_SECONDS));
 
         if (user.getResetType() == null) {
             user.setResetType(ResetType.PASSWORD_RESET);

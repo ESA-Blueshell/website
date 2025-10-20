@@ -109,7 +109,6 @@
             label="Password*"
             name="password"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-            @click:append-inner="isPasswordVisible = !isPasswordVisible"
           />
         </v-col>
 

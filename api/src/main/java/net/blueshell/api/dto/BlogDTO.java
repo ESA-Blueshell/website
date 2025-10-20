@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -19,6 +20,6 @@ public class BlogDTO extends BaseDTO {
     private String title;
     @NotBlank
     private String html;
-    private Timestamp publishedAt;
+    private Instant publishedAt;
 }
 

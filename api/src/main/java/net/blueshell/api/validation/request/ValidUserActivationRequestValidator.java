@@ -41,7 +41,7 @@ public class ValidUserActivationRequestValidator implements ConstraintValidator<
 
         // Expired token
         if (user.getResetKeyValidUntil() != null
-                && user.getResetKeyValidUntil().before(Timestamp.from(Instant.now()))) {
+                && user.getResetKeyValidUntil().compareTo(Instant.now()) < 0 ) {
             return reject(context, "Your activation link has expired. Please request a new activation email.");
         }
 

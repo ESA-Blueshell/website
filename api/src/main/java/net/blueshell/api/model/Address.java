@@ -1,3 +1,4 @@
+// Address.java
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
@@ -6,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -16,16 +19,16 @@ import net.blueshell.api.base.BaseModel;
                 @Index(name = "idx_addresses_zip_code", columnList = "zip_code")
         }
 )
+@SQLDelete(sql = "UPDATE addresses SET deleted_at = NOW() WHERE id = ? AND version = ?")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Address extends BaseModel {
     @Column
     private String country;
-
     @Column
     private String city;
-
     @Column
     private String street;
 

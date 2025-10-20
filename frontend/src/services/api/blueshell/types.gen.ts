@@ -353,16 +353,16 @@ export type FieldValidationError = {
     code?: string;
 };
 
-export type SimpleCommittee = {
-    id?: number;
-    name?: string;
-    description?: string;
-};
-
 export type PersonalInfo = {
     discord: string;
     email: string;
     phoneNumber: string;
+};
+
+export type SimpleCommittee = {
+    id?: number;
+    name?: string;
+    description?: string;
 };
 
 export type FindMembershipByIdData = {

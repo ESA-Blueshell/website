@@ -42,7 +42,7 @@ public class Committee extends BaseModel {
             mappedBy = "committee",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.EAGER)
+            fetch = FetchType.LAZY)
     private Set<CommitteeMember> members = new HashSet<>();
 
     public boolean hasMember(User user) {

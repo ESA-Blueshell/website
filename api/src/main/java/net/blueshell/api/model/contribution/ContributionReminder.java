@@ -24,9 +24,9 @@ import org.hibernate.annotations.SQLRestriction;
         },
         indexes = {
                 @Index(name = "idx_contribution_reminders_deleted_at", columnList = "deleted_at"),
-                @Index(name = "idx_contribution_reminders_created_at", columnList = "deleted_at"),
-                @Index(name = "idx_contribution_reminders_user_id", columnList = "user_id"),
-                @Index(name = "idx_contribution_reminders_contribution_period_id", columnList = "contribution_period_id"),
+                @Index(name = "idx_contribution_reminders_created_at", columnList = "created_at"),
+                @Index(name = "idx_contribution_reminders_user_id", columnList = "user_id, deleted_at"),
+                @Index(name = "idx_contribution_reminders_contribution_period_id", columnList = "contribution_period_id, deleted_at"),
         }
 )
 @SQLDelete(sql = "UPDATE contribution_reminders SET deleted_at = NOW() WHERE id = ? AND version = ?")
@@ -38,17 +38,15 @@ import org.hibernate.annotations.SQLRestriction;
 public class ContributionReminder extends BaseModel {
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
-    @NotFound(action = NotFoundAction.IGNORE)
-    @ToString.Exclude
     private User user;
 
-    @Column(name = "user_id", insertable = false, updatable = false, nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     private ContributionPeriod contributionPeriod;
 
-    @Column(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
+    @Column(name = "contribution_period_id", nullable = false)
     private Long contributionPeriodId;
 }

@@ -9,6 +9,7 @@ import net.blueshell.api.model.File;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.Set;
 
@@ -52,10 +53,10 @@ public class Board extends BaseModel {
     private String candidate;
 
     @Column(name = "start_date", nullable = false)
-    private Date startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private Date endDate;
+    private LocalDate endDate;
 
     @OneToMany(mappedBy = "board")
     private Set<BoardDocument> documents;

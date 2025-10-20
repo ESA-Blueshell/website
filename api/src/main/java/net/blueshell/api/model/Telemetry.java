@@ -36,7 +36,8 @@ public class Telemetry extends BaseModel {
     @Column(nullable = false)
     private String url;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false)
     private PlatformType platform;
 
     @OneToMany(mappedBy = "telemetry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

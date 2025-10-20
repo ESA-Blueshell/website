@@ -15,17 +15,6 @@ import java.time.ZoneId;
 @Slf4j
 @Mapper(componentModel = "spring", uses = {EventBannerMapper.class, SurveyMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
-
-    static LocalDateTime map(OffsetDateTime t) {
-        return t == null ? null
-                : t.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
-    }
-
-    static OffsetDateTime map(LocalDateTime t) {
-        return t == null ? null
-                : t.atZone(ZoneId.systemDefault()).toOffsetDateTime();
-    }
-
     @Mapping(target = "id")
     @Mapping(target = "committeeId")
     @Mapping(target = "title")
@@ -45,10 +34,6 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
 
     @AfterMapping
     protected void afterFromDTO(EventDTO dto, @MappingTarget Event event) {
-        if (event.getCreatorId() == null) {
-            event.setCreatorId(getPrincipal().getId());
-        }
-        event.setLastEditorId(getPrincipal().getId());
         if (event.getBanner() != null) {
             event.getBanner().setEvent(event);
         }

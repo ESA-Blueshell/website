@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -19,6 +20,7 @@ import org.hibernate.annotations.SQLDelete;
 @Getter
 @Setter
 @NoArgsConstructor
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 public class EventFeedback extends BaseModel {
     @Column(name = "feedback", nullable = false)
     private String feedback;

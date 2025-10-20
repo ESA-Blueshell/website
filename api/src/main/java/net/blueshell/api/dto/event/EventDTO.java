@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.survey.SurveyDTO;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 @Data
@@ -29,9 +30,9 @@ public class EventDTO extends BaseDTO {
     @JsonProperty("location")
     private String location;
     @NotNull
-    private OffsetDateTime startTime;
+    private Instant startTime;
     @NotNull
-    private OffsetDateTime endTime;
+    private Instant endTime;
     private Double memberPrice;
     private Double publicPrice;
     private boolean approved;

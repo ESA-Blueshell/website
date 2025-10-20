@@ -12,7 +12,7 @@ import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Set;
 
 @Entity
@@ -41,21 +41,18 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 public class Event extends BaseModel {
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    private User creator;
-
     @Column(name = "creator_Id")
     private Long creatorId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
+    private User creator;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_editor_id", insertable = false, updatable = false)
     private User lastEditor;
 
-    @Column(name = "last_editor_id")
-    private Long lastEditorId;
-
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
     private Committee committee;
 
@@ -72,10 +69,10 @@ public class Event extends BaseModel {
     private String location;
 
     @Column(name = "start_time", nullable = false)
-    private LocalDateTime startTime;
+    private Instant startTime;
 
     @Column(name = "end_time", nullable = false)
-    private LocalDateTime endTime;
+    private Instant endTime;
 
     @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private EventBanner banner;

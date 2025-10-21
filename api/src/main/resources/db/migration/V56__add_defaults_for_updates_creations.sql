@@ -1,0 +1,86 @@
+ALTER TABLE contribution_reminders
+    ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE recovery_tokens
+    ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE addresses
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE answers
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE blogs
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE board_documents
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE board_members
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE boards
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE committee_members
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE committees
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE contribution_periods
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE contribution_reminders
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE contributions
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE event_banners
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE event_feedback
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE event_pictures
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE event_sign_up_answers
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE event_signups
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE events
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE files
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE guests
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE memberships
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE questions
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE recovery_tokens
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE redirects
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE sponsors
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE surveys
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE telemetries
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);
+
+ALTER TABLE users
+    ALTER updated_at SET DEFAULT (CURRENT_TIMESTAMP);

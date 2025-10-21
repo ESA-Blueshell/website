@@ -53,17 +53,22 @@ const signUp = computed<EventSignUp>(() => {
 })
 
 async function validate() {
+  console.log("VALIDATING")
   if (!isLoggedIn.value) {
+    console.log("LOGGEDIN")
     const guestFormValid = await guestRef.value?.validate()
     if (!guestFormValid) return false
   }
 
   if (!survey.value) return true
+  console.log("SURVEYING")
 
+  console.log("ANSERSREF VALUE:", answersRef.value)
   return answersRef.value?.validate()
 }
 
 async function save() {
+  console.log("SAVING!")
   if (!await validate()) return
 
   const payload: EventSignUp = {
@@ -115,7 +120,7 @@ defineExpose({save, validate})
 
     <answers-form
       v-if="survey"
-      ref="surveyRef"
+      ref="answersRef"
       v-model="answers"
       :survey="survey"
       class="mb-4"

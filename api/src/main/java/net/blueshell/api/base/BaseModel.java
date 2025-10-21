@@ -28,7 +28,8 @@ public abstract class BaseModel {
     private Instant deletedAt;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
+    @Column(name = "created_at", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt;
 
     @CreatedBy
@@ -37,7 +38,8 @@ public abstract class BaseModel {
     private User createdBy;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", updatable = false, nullable = false)
+    @Column(name = "updated_at", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant updatedAt;
 
     @LastModifiedBy
@@ -47,5 +49,6 @@ public abstract class BaseModel {
 
     @Version
     @Column(name = "version", nullable = false)
+    @ColumnDefault("0")
     private Long version;
 }

@@ -28,7 +28,7 @@ public abstract class BaseModel {
     private Instant deletedAt;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt;
 

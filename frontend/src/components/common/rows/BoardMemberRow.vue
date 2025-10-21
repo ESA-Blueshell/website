@@ -1,51 +1,78 @@
 <template>
-  <!-- Image + text -->
   <div
     v-if="member.image"
-    :class="[
-      'member-card',
-      'bg-surface',
-      'rounded-lg',
-      'elevation-1',
-      'mx-auto',
-      reverse && 'is-right'
-    ]"
+    class="mx-auto overflow-hidden"
+    :style="{ minHeight: 'clamp(240px, 38vw, 440px)' }"
   >
-    <div class="member-photo">
-      <v-img
-        :src="member.image"
-        class="w-100 h-100"
-      />
-    </div>
+    <v-row
+      no-gutters
+      align="center"
+    >
+      <v-col
+        v-if="!reverse"
+        cols="12"
+        md="5"
+        class="d-flex order-1 order-md-1"
+      >
+        <div :class="['w-100', 'fade-edge', 'img-box', 'round-start']">
+          <v-img
+            :src="member.image"
+            cover
+            class="w-100"
+          />
+        </div>
+      </v-col>
 
-    <!-- remove px-6; side padding now controlled in CSS -->
-    <div class="member-info">
-      <p :class="['text-h4','text-md-h3', reverse && 'text-right']">
+      <v-col
+        cols="12"
+        md="7"
+        :class="['order-2', reverse ? 'order-md-1' : 'order-md-2']"
+      >
+        <div class="pa-2 pa-md-2">
+          <p :class="['text-h4','text-md-h3', reverse && 'text-end']">
+            {{ member.name }}
+          </p>
+          <p :class="['text-subtitle-1','mt-1','mb-4', reverse && 'text-end']">
+            {{ member.title }}
+          </p>
+          <p :class="[reverse && 'text-end']">
+            {{ member.description }}
+          </p>
+        </div>
+      </v-col>
+
+      <v-col
+        v-if="reverse"
+        cols="12"
+        md="5"
+        class="d-flex order-1 order-md-2"
+      >
+        <div :class="['w-100', 'fade-edge', 'reverse', 'img-box', 'round-end']">
+          <v-img
+            :src="member.image"
+            cover
+            class="w-100"
+          />
+        </div>
+      </v-col>
+    </v-row>
+  </div>
+
+  <div
+    v-else
+    class="mx-auto"
+  >
+    <div class="pa-2 pa-md-2">
+      <p :class="['text-h4','text-md-h3', reverse && 'text-end']">
         {{ member.name }}
       </p>
-      <p :class="['text-subtitle-1','mt-1','mb-4', reverse && 'text-right']">
+      <p :class="['text-subtitle-1','mt-1','mb-4', reverse && 'text-end']">
         {{ member.title }}
       </p>
-      <p :class="[reverse && 'text-right']">
+      <p :class="[reverse && 'text-end']">
         {{ member.description }}
       </p>
     </div>
-  </div>
-
-  <!-- Text-only fallback -->
-  <div
-    v-else
-    class="mx-auto px-6 bg-surface rounded-lg elevation-1"
-  >
-    <p :class="['text-h4','text-md-h3', reverse && 'text-right']">
-      {{ member.name }}
-    </p>
-    <p :class="['text-subtitle-1','mt-1','mb-4', reverse && 'text-right']">
-      {{ member.title }}
-    </p>
-    <p :class="[reverse && 'text-right']">
-      {{ member.description }}
-    </p>
   </div>
 </template>
 
@@ -64,81 +91,92 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-.member-card {
-  --img-w: clamp(220px, 32vw, 420px);
-  --gap: clamp(8px, 2vw, 20px);
-  --fade: clamp(24px, 5vw, 72px);
-
-  display: grid;
-  grid-template-columns: var(--img-w) 1fr;
-  grid-template-areas: "photo info";
-  gap: var(--gap);
-  align-items: center;
-
-  min-height: clamp(240px, 38vw, 440px);
+.fade-edge {
   position: relative;
+  overflow: hidden;
+
+  --fade-start: 70%;
+  --fade-end: 100%;
+
+  mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 1) 0%,
+      rgba(0, 0, 0, 1) var(--fade-start),
+      rgba(0, 0, 0, 0) var(--fade-end)
+  );
+  -webkit-mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 1) 0%,
+      rgba(0, 0, 0, 1) var(--fade-start),
+      rgba(0, 0, 0, 0) var(--fade-end)
+  );
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.fade-edge.reverse {
+  mask-image: linear-gradient(
+      to left,
+      rgba(0, 0, 0, 1) 0%,
+      rgba(0, 0, 0, 1) var(--fade-start),
+      rgba(0, 0, 0, 0) var(--fade-end)
+  );
+  -webkit-mask-image: linear-gradient(
+      to left,
+      rgba(0, 0, 0, 1) 0%,
+      rgba(0, 0, 0, 1) var(--fade-start),
+      rgba(0, 0, 0, 0) var(--fade-end)
+  );
+}
+
+@media (max-width: 960px) {
+  .fade-edge,
+  .fade-edge.reverse {
+    --fade-start: 78%;
+
+    mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 1) var(--fade-start),
+        rgba(0, 0, 0, 0) var(--fade-end)
+    );
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 1) var(--fade-start),
+        rgba(0, 0, 0, 0) var(--fade-end)
+    );
+  }
+}
+
+@media (max-width: 960px) {
+  .rounded-mobile-top {
+    --radius-lg: var(--v-border-radius-lg, 24px);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+  }
+}
+
+.img-box {
+  --radius-lg: var(--v-border-radius-lg, 24px);
   overflow: hidden;
 }
 
-.member-photo {
-  grid-area: photo;
+.round-start {
+  border-start-start-radius: var(--radius-lg);
+  border-end-start-radius: var(--radius-lg);
 }
 
-.member-info {
-  grid-area: info;
+.round-end {
+  border-start-end-radius: var(--radius-lg);
+  border-end-end-radius: var(--radius-lg);
 }
 
-.member-card.is-right {
-  grid-template-columns: 1fr var(--img-w);
-  grid-template-areas: "info photo";
-}
-
-.member-photo {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.member-card:not(.is-right) .member-photo::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: var(--fade);
-  background: linear-gradient(to left, var(--v-theme-surface), transparent);
-  pointer-events: none;
-}
-
-.member-card.is-right .member-photo::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--fade);
-  background: linear-gradient(to right, var(--v-theme-surface), transparent);
-  pointer-events: none;
-}
-
-.member-info {
-  max-width: 65ch;
-  padding-block: 1.25rem;
-  padding-inline: 0.25rem 1.25rem;
-}
-
-.member-card.is-right .member-info {
-  padding-inline: 1.25rem 0.25rem;
-}
-
-@media (max-width: 600px) {
-  .member-card,
-  .member-card.is-right {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "photo"
-      "info";
-    min-height: unset;
-  }
-
-  .member-photo::after {
-    display: none;
+@media (max-width: 960px) {
+  .round-start,
+  .round-end {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
   }
 }
+
 </style>
+

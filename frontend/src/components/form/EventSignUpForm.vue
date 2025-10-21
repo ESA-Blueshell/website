@@ -44,11 +44,9 @@ const answers = ref<Answer[]>(
 const signUp = computed<EventSignUp>(() => {
   const s = props.initialSignUp
   return {
-    id: s?.id,
-    eventId: props.event.id!,
-    userId: s?.userId,
-    guest: s?.guest,
+    eventId: s?.eventId ?? props.event.id!,
     answers: answers.value ?? [],
+    ...s,
   }
 })
 
@@ -71,30 +69,25 @@ async function save() {
   console.log("SAVING!")
   if (!await validate()) return
 
-  const payload: EventSignUp = {
-    ...signUp.value,
-    answers: answers.value ?? [],
-  }
-
   if (isLoggedIn.value) {
-    payload.userId = login.value.userId
+    signUp.value.userId = login.value.userId
   } else {
-    payload.guest = guest.value ?? {}
+    signUp.value.guest = guest.value ?? {}
   }
 
   let eventSignUp: EventSignUp
 
-  if (isLoggedIn.value && payload.id) {
+  if (isLoggedIn.value && signUp.value.id) {
     const resp = await updateEventSignUp({
       path: {eventId: props.event.id!},
-      body: payload,
+      body: signUp.value,
       throwOnError: true,
     })
     eventSignUp = resp.data!
   } else {
     const resp = await createEventSignup({
       path: {eventId: props.event.id!},
-      body: payload,
+      body: signUp.value,
       throwOnError: true,
     })
     eventSignUp = resp.data!

@@ -10,7 +10,7 @@
         v-for="(board, boardIndex) in boards"
         :key="board.name"
       >
-        <section class="my-3">
+        <section class="mt-3 mb-5">
           <template v-if="boardIndex === 0">
             <h1 class="text-center">
               {{ board.name }}
@@ -28,7 +28,7 @@
               :key="member.name"
             >
               <board-member-row
-                class="my-4"
+                class="my-10"
                 :member="member"
                 :reverse="i % 2 === 1"
               />
@@ -68,7 +68,7 @@
                   :key="member.name"
                 >
                   <board-member-row
-                    class="my-4"
+                    class="my-10"
                     :member="member"
                     :reverse="i % 2 === 1"
                   />

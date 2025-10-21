@@ -12,9 +12,9 @@
       >
         <section class="my-3">
           <template v-if="boardIndex === 0">
-            <h2 class="text-h3 text-md-h2 text-center my-6">
+            <h1 class="text-center">
               {{ board.name }}
-            </h2>
+            </h1>
 
             <v-img
               v-if="board.boardImage"

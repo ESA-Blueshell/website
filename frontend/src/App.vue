@@ -234,6 +234,12 @@
             >
               Manage events
             </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/recovery/manage"
+            >
+              Manage account recovery
+            </v-list-item>
             <v-list-item @click="logOut">
               Log Out
             </v-list-item>

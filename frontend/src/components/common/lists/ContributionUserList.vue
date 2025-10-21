@@ -8,7 +8,7 @@
         v-for="user in users"
         :key="user.id ?? user.username"
       >
-        <contribution-user-list-row
+        <contribution-user-row
           :contribution-period-id="contributionPeriodId"
           :contributions="contributions"
           :disabled="disabled"
@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts" setup>
-import ContributionUserListRow from "../rows/ContributionUserListRow.vue"
+import ContributionUserRow from "../rows/ContributionUserRow.vue"
 import type {AdvancedUser, Contribution} from "@/services/api"
 import {toRefs} from "vue"
 

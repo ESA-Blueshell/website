@@ -13,7 +13,7 @@ public class MemberActivationEmail extends RecoveryEmail {
 
     @Override
     public String getSubject() {
-        return "Welcome to Blueshell - Member Account Activation";
+        return "Activate your Account";
     }
 
     @Override
@@ -21,26 +21,21 @@ public class MemberActivationEmail extends RecoveryEmail {
         String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
         String activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token);
 
-        return String.format(
-                """
+        return String.format("""
                         Dear %s,
                         
-                        Welcome to Blueshell Esports as a member!
-                        Please activate your member account by clicking on [this link](%s).
-                        
-                        As a member, you now have access to:
-                        - Exclusive member events
-                        - The full Blueshell Esports discord
-                        - The full Blueshell Esports website
-                        
-                        For any questions, feel free to reach out to us via [discord](https://discord.gg/dFam2yqXu7), our [website](%s), or by replying to this mail.
+                        A member of the board of Blueshell has created an account on the website for you. This was done
+                        for administrative purposes and you do not need to take any action. You can use [this link](%s)
+                        to activate your account on the website which can be done within 7 days of receiving this email.
+                        If you do not activate your account in time you can contact a member of the board, or send a
+                        message in the SiteCie suggestion channel of our discord to have a new activation email sent to
+                        you :)
                         
                         Kind regards,
-                        Blueshell Esports
+                        Board of ESA Blueshell
                         """,
                 recipient.getFullName(),
-                activationLink,
-                appUrl
+                activationLink
         );
     }
 

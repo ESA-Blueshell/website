@@ -1,6 +1,5 @@
 package net.blueshell.api.email.recovery;
 
-import net.blueshell.api.base.BaseEmail;
 import net.blueshell.api.model.User;
 
 import java.net.URLEncoder;
@@ -23,11 +22,10 @@ public class PasswordResetEmail extends RecoveryEmail {
         String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
         String resetLink = String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token);
 
-        return String.format(
-                """
+        return String.format("""
                         Dear %s,
                         
-                        We received a request to reset your password for your Blueshell account.
+                        We received a request to reset your account's password.
                         
                         If you requested this password reset, please click on [this link](%s) to create a new password.
                         

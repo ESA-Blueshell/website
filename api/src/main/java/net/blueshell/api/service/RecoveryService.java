@@ -11,6 +11,7 @@ import net.blueshell.api.model.User;
 import net.blueshell.api.repository.RecoveryTokenRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -151,5 +152,35 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
         byte[] bytes = new byte[numBytes];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    // in RecoveryService
+
+    @Transactional
+    public void resendActivation(String username) {
+        try {
+            User user = users.findByUsername(username);
+            if (user.isEnabled()) return;
+            String rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.USER_ACTIVATION));
+        } catch (ResponseStatusException ignored) {
+            // swallow 404 to avoid enumeration
+        }
+    }
+
+    @PreAuthorize("hasAuthority('BOARD')")
+    @Transactional
+    public void resendActivationEmail(Long userId) {
+        var user = users.findById(userId);
+        if (user.isEnabled()) return;
+
+        var recoveryTokens = repository.findAllByUser_IdAndConsumedAtIsNull(userId);
+        if (recoveryTokens.stream().anyMatch(r -> r.getType().equals(ResetType.MEMBER_ACTIVATION))) {
+            var rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));
+        } else if (recoveryTokens.stream().anyMatch(r -> r.getType().equals(ResetType.USER_ACTIVATION))) {
+            var rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1));
+            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));
+        }
     }
 }

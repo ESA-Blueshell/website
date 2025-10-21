@@ -12,4 +12,5 @@ public interface RecoveryTokenRepository extends BaseRepository<RecoveryToken> {
     Optional<RecoveryToken> findBySelector(String selector);
 
     List<RecoveryToken> findAllByUser_IdAndTypeAndConsumedAtIsNull(Long userId, ResetType type);
+    List<RecoveryToken> findAllByUser_IdAndConsumedAtIsNull(Long userId);
 }

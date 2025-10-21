@@ -20,8 +20,12 @@ public class UserActivationEmail extends RecoveryEmail {
     public String getMarkdownContent() {
         String username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8);
         String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
-        String activationLink = String.format("%s/account/activate/user?username=%s&token=%s", frontendUrl, username, token);
+        String redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8);
 
+        String activationLink = String.format(
+                "%s/account/activate/user?username=%s&token=%s&redirect=%s",
+                frontendUrl, username, token, redirectEnc
+        );
         return String.format(
                 """
                         Dear %s,

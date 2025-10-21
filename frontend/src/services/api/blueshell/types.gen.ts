@@ -1664,6 +1664,91 @@ export type CreateSponsorResponses = {
 
 export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
 
+export type ResendMemberActivationEmailData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/recovery/users/{userId}/resend/recovery';
+};
+
+export type ResendMemberActivationEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendMemberActivationEmailError = ResendMemberActivationEmailErrors[keyof ResendMemberActivationEmailErrors];
+
+export type ResendMemberActivationEmailResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
+
+export type UserActivateGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        token: string;
+        redirect?: string;
+    };
+    url: '/recovery/user/activate';
+};
+
+export type UserActivateGetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UserActivateGetError = UserActivateGetErrors[keyof UserActivateGetErrors];
+
+export type UserActivateGetResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type UserActivateData = {
     body: UserActivationRequest;
     path?: never;
@@ -1704,6 +1789,49 @@ export type UserActivateResponses = {
 };
 
 export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
+
+export type ResendUserActivationData = {
+    body?: never;
+    path: {
+        username: string;
+    };
+    query?: never;
+    url: '/recovery/user/activate/resend/{username}';
+};
+
+export type ResendUserActivationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendUserActivationError = ResendUserActivationErrors[keyof ResendUserActivationErrors];
+
+export type ResendUserActivationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResendUserActivationResponse = ResendUserActivationResponses[keyof ResendUserActivationResponses];
 
 export type SetPasswordData = {
     body: PasswordResetRequest;

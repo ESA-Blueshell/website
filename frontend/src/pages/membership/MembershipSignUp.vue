@@ -34,6 +34,43 @@
               </v-col>
             </v-row>
           </v-card>
+
+          <v-expand-transition>
+            <v-alert
+              v-if="waitingForVerification"
+              type="info"
+              variant="tonal"
+              class="mt-4"
+            >
+              <div class="mb-2">
+                We’ve emailed <strong>{{ infoEmail }}</strong> a link to activate your account.
+              </div>
+              <div class="text-medium-emphasis">
+                Open the email and click the link. Once verified, we’ll automatically take you to the next step.
+              </div>
+
+              <div
+                class="d-flex align-center mt-3"
+                style="gap: 8px;"
+              >
+                <v-btn
+                  :loading="resendBusy"
+                  size="small"
+                  variant="outlined"
+                  @click="resendActivation"
+                >
+                  Resend email
+                </v-btn>
+                <v-btn
+                  size="small"
+                  color="primary"
+                  @click="refreshUser"
+                >
+                  I’ve verified
+                </v-btn>
+              </div>
+            </v-alert>
+          </v-expand-transition>
         </template>
 
         <template #item.2>
@@ -132,12 +169,19 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref, type Ref} from "vue"
+import {computed, onMounted, ref, type Ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
-import {type Address, type AdvancedUser, findAddressById, findUserById, type Membership} from "@/services/api"
+import {
+  type Address,
+  type AdvancedUser,
+  findAddressById,
+  findUserById,
+  type Membership,
+  resendUserActivation,
+} from "@/services/api"
 
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -160,13 +204,57 @@ const steps = [
   {title: "Confirm Membership", value: 3},
 ]
 
+const waitingForVerification = ref(false)
+const resendBusy = ref(false)
+const infoEmail = computed(() => user.value?.email ?? "")
+
+async function refreshUser(): Promise<void> {
+  if (!user.value?.id) return
+
+  try {
+    const response = await findUserById({path: {userId: user.value.id}, throwOnError: true})
+    user.value = response.data!
+  } catch (e: unknown) {
+    $handleNetworkError(e)
+  }
+}
+
+async function resendActivation(): Promise<void> {
+  if (!user.value?.username) return
+  try {
+    resendBusy.value = true
+    await resendUserActivation({path: {username: user.value.username}})
+  } finally {
+    resendBusy.value = false
+  }
+}
+
 const nextStep = async (): Promise<void> => {
   try {
     submitting.value = true
     if (currentStep.value === 1) {
       const savedUser = await userRef.value?.save()
       if (savedUser) {
+        user.value = savedUser
         await fetchAddress()
+
+        await refreshUser()
+        if (!user.value?.enabled) {
+          waitingForVerification.value = true
+          const started = Date.now()
+          const poll = setInterval(async () => {
+            await refreshUser()
+            if (user.value?.enabled) {
+              clearInterval(poll)
+              waitingForVerification.value = false
+              currentStep.value += 1
+            } else if (Date.now() - started > 120000) { // stop after 2 min
+              clearInterval(poll)
+            }
+          }, 5000)
+          return
+        }
+
         currentStep.value += 1
       }
     } else if (currentStep.value === 2) {

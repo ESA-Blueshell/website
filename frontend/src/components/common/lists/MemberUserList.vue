@@ -33,7 +33,7 @@
         v-for="user in users"
         :key="user.id ?? user.username"
       >
-        <member-user-list-row
+        <member-user-row
           :contributions="contributions"
           :enable-delete="enableDelete"
           :expanded="expanded"
@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts" setup>
-import MemberUserListRow from "../rows/MemberUserListRow.vue"
+import MemberUserRow from "../rows/MemberUserRow.vue"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
 import type {AdvancedUser, Contribution, Membership} from "@/services/api"
 import {toRefs} from "vue"

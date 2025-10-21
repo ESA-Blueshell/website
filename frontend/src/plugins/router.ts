@@ -35,6 +35,7 @@ import ActivateUser from "@/pages/activate/ActivateUser.vue"
 import Geoguessr from "@/pages/esports/Geoguessr.vue"
 import ForgotPassword from "@/pages/login/ForgotPassword.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
+import RecoveryManager from "@/pages/management/RecoveryManager.vue"
 
 const routes: RouteRecordRaw[] = [
   {
@@ -245,6 +246,12 @@ const routes: RouteRecordRaw[] = [
     path: "/contributions/manage",
     name: "contributionManager",
     component: ContributionManager,
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/recovery/manage",
+    name: "recoveryManager",
+    component: RecoveryManager,
     meta: {requiresAuth: true},
   },
   {

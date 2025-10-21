@@ -60,6 +60,15 @@ public class AddressController extends BaseController<AddressService, AddressMap
         return mapper.toDTO(address);
     }
 
+    @DeleteMapping("/users/{userId}/addresses")
+    @PreAuthorize("hasAuthority('BOARD')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUserAddress(@PathVariable("userId") Long userId) {
+        var user = users.findById(userId);
+        user.setAddress(null);
+        users.update(user);
+    }
+
     @DeleteMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

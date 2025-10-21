@@ -90,6 +90,7 @@ const hasAddress = (u: AdvancedUser) => addresses.value.some((a) => a.id === u.a
 
 const updateLists = () => {
   const filtered = users.value.filter((v) => isSearched(v))
+  console.log("FILTERING!")
   usersWithAddress.value = filtered.filter((u) => hasAddress(u))
   usersWithoutAddress.value = filtered.filter((u) => !hasAddress(u))
 }

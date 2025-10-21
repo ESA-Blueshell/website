@@ -40,8 +40,4 @@ public class Address extends BaseModel {
 
     @Column(name = "zip_code")
     private String zipCode;
-
-    @OneToOne(mappedBy = "address")
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    private User user;
 }

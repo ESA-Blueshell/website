@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Slf4j
 @Component
 public class AddressPermission extends BasePermissionEvaluator<Address, AddressService> {
@@ -24,7 +26,7 @@ public class AddressPermission extends BasePermissionEvaluator<Address, AddressS
         var target = (Address) object;
         var principal = getPrincipal();
         return switch (permission) {
-            case "read", "write" -> principal.getId().equals(target.getUser().getId());
+            case "read", "write" -> Objects.equals(principal.getAddressId(), target.getId());
             default -> false;
         };
     }

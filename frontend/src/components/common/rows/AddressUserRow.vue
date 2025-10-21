@@ -26,7 +26,7 @@
           </v-chip>
 
           <v-btn
-            v-if="!!user.addressId"
+            v-if="hasAddress"
             :disabled="user?.roles?.includes('MEMBER')"
             class="btn-tight"
             color="red"
@@ -76,7 +76,7 @@
 import {computed, ref} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type Address, type AdvancedUser, deleteAddressById} from "@/services/api"
+import {type Address, type AdvancedUser, deleteUserAddress} from "@/services/api"
 
 interface Props {
   user: AdvancedUser
@@ -116,11 +116,11 @@ const openDelete = () => {
 }
 
 const confirmDeleteAddress = async () => {
-  if (!address.value?.id) return
+  if (!props.user.id || !address.value?.id) return
 
   try {
     deleteDialog.value = false
-    await deleteAddressById({path: {id: address.value.id}})
+    await deleteUserAddress({path: {userId: props.user.id}})
     emit("delete:address", address.value.id)
   } catch (error) {
     console.error("Failed to delete user:", error)

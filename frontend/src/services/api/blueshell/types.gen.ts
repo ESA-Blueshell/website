@@ -351,16 +351,16 @@ export type FieldValidationError = {
     code?: string;
 };
 
-export type PersonalInfo = {
-    discord: string;
-    email: string;
-    phoneNumber: string;
-};
-
 export type SimpleCommittee = {
     id?: number;
     name?: string;
     description?: string;
+};
+
+export type PersonalInfo = {
+    discord: string;
+    email: string;
+    phoneNumber: string;
 };
 
 export type FindMembershipByIdData = {
@@ -1367,6 +1367,49 @@ export type CreateUserResponses = {
 };
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
+
+export type DeleteUserAddressData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/addresses';
+};
+
+export type DeleteUserAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteUserAddressError = DeleteUserAddressErrors[keyof DeleteUserAddressErrors];
+
+export type DeleteUserAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteUserAddressResponse = DeleteUserAddressResponses[keyof DeleteUserAddressResponses];
 
 export type CreateAddressData = {
     body: Address;

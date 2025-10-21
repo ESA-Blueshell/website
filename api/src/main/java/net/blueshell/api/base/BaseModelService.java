@@ -168,15 +168,12 @@ public abstract class BaseModelService<T extends BaseModel, R extends BaseReposi
      */
     @Transactional
     public void deleteById(Long id) {
-        var entity = findById(id);
-        delete(entity);
+        repository.deleteById(id);
     }
 
     @Transactional
     public void deleteAllById(Set<Long> ids) {
-        for (var id : ids) {
-            deleteById(id);
-        }
+        repository.deleteAllByIdInBatch(ids);
     }
 
     /**
@@ -189,8 +186,6 @@ public abstract class BaseModelService<T extends BaseModel, R extends BaseReposi
 
     @Transactional
     public void deleteAll(Set<T> entities) {
-        for (var entity : entities) {
-            delete(entity);
-        }
+        repository.deleteAllInBatch(entities);
     }
 }

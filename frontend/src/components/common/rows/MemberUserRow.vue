@@ -87,10 +87,9 @@
           @click.stop
         >
           <advanced-user-form
-            v-model="userModel"
+            v-model="user"
             class="mt-6"
             show-submit
-            @user-changed="userChanged"
           />
         </div>
       </v-expand-transition>
@@ -161,7 +160,7 @@ const contribution = computed<Contribution | undefined>(() =>
 
 const hasContribution = computed(() => !!contribution.value)
 
-const userModel = computed<AdvancedUser>(() => props.user)
+const user = computed<AdvancedUser>(() => props.user)
 
 const toggleExpanded = () => emit("update:expanded", props.user.id as number)
 const startMembership = () => {
@@ -216,9 +215,6 @@ const confirmDeleteUser = async () => {
   }
 }
 
-const userChanged = (userData: AdvancedUser) => {
-  emit("update:user", userData)
-}
 </script>
 
 <style lang="scss">

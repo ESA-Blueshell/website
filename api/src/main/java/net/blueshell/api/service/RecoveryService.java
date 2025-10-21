@@ -1,6 +1,7 @@
 package net.blueshell.api.service;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
 import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 
+@Slf4j
 @Service
 public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTokenRepository> {
 
@@ -51,6 +53,7 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
     public void onUserCreated(PostPersistEvent<User> event) {
         String rawToken;
         var user = event.getSource();
+        log.info("User {} roles {}", user, user.getRoles());
         if (hasAuthority(Role.BOARD)) {
             rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
             eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));

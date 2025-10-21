@@ -240,6 +240,12 @@
             >
               Manage account recovery
             </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/addresses/manage"
+            >
+              Manage addresses
+            </v-list-item>
             <v-list-item @click="logOut">
               Log Out
             </v-list-item>

@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
-import static net.blueshell.api.common.util.MappingUtil.generatePassword;
+import static net.blueshell.api.common.util.MappingUtil.generateRandomString;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 @Mapper(componentModel = "spring")
@@ -70,16 +70,17 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
         if (user.getId() != null) return;
 
         if (hasAuthority(Role.BOARD)) {
-            user.setPassword(passwordEncoder.encode(generatePassword()));
+            user.setPassword(passwordEncoder.encode(generateRandomString()));
+            user.setUsername("NOT_SET_" + generateRandomString()); // TODO remove once all accounts have been made
         } else {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
         }
 
         applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
         applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
         applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
         applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
-        applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
         applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
     }
 }

@@ -15,7 +15,7 @@ public class MappingUtil {
         }
     }
 
-    public static String generatePassword() {
+    public static String generateRandomString() {
         StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
         for (int i = 0; i < PASSWORD_LENGTH; i++) {
             int index = random.nextInt(CHAR_SET.length());

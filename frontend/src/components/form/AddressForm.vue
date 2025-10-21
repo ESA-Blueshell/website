@@ -109,7 +109,7 @@ const emit = defineEmits<{
 
 const address = defineModel<Address>({
   default: () => ({
-    country: "",
+    country: "NL",
     city: "",
     street: "",
     houseNumber: "",
@@ -118,7 +118,7 @@ const address = defineModel<Address>({
 })
 
 const formRef = ref<FormContext>()
-const isSaving = ref<boolean>(false)
+const isSaving = ref(false)
 const isCreating = computed<boolean>(() => !address.value?.id)
 
 const {apply} = useBackendValidation()
@@ -166,12 +166,17 @@ const save = async (): Promise<Address | null> => {
 defineExpose({validate, save})
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .v-col:first-child {
   padding-left: 0;
 }
 
 .v-col:last-child {
   padding-right: 0;
+}
+
+.v-col {
+  padding-bottom: 0;
+  padding-top: 0;
 }
 </style>

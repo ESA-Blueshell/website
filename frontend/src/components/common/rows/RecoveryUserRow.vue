@@ -53,7 +53,7 @@ const props = defineProps<{
 const loading = ref(false)
 
 const buttonLabel = computed(() =>
-  props.actionType === "activation" ? "Resend Activation" : "Resend Password",
+  props.actionType === "activation" ? "Resend Activation Email" : "Send Password Reset Email",
 )
 
 const handleResend = async () => {

@@ -11,7 +11,6 @@ import net.blueshell.api.common.enums.PlatformType;
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "Social")
 public class SocialDTO extends BaseDTO {
-    private String id;
     private String title;
     private String text;
     private String url;

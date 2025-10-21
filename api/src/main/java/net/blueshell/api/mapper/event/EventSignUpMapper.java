@@ -22,6 +22,7 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
     @Mapping(target = "guest")
     @Mapping(target = "user")
     @Mapping(target = "answers")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUpDTO toDTO(EventSignUp signUp);
 
@@ -29,6 +30,7 @@ public abstract class EventSignUpMapper extends BaseMapper<EventSignUp, EventSig
     @Mapping(target = "guest")
     @Mapping(target = "userId")
     @Mapping(target = "answers")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventSignUp fromDTO(EventSignUpDTO dto, @MappingTarget EventSignUp signUp);
 }

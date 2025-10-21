@@ -79,6 +79,7 @@ public abstract class FileMapper extends BaseMapper<File, FileDTO> {
     @Mapping(target = "mediaType")
     @Mapping(target = "type")
     @Mapping(target = "size")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract FileDTO toDTO(File file);
 

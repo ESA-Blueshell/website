@@ -14,6 +14,7 @@ public abstract class GuestMapper extends BaseMapper<Guest, GuestDTO> {
     @Mapping(target = "email")
     @Mapping(target = "phoneNumber")
     @Mapping(target = "accessToken", ignore = true)
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract void fromDTO(GuestDTO dto, @MappingTarget Guest guest);
 
@@ -29,6 +30,7 @@ public abstract class GuestMapper extends BaseMapper<Guest, GuestDTO> {
     @Mapping(target = "email")
     @Mapping(target = "phoneNumber")
     @Mapping(target = "accessToken")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract GuestDTO toDTO(Guest guest);
 }

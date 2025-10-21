@@ -16,7 +16,7 @@ import org.hibernate.annotations.SQLRestriction;
                 @Index(name = "idx_event_feedback_event_id", columnList = "event_id")
         }
 )
-@SQLDelete(sql = "UPDATE event_feedback SET deleted_at = NOW() WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE event_feedback SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @Getter
 @Setter
 @NoArgsConstructor

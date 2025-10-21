@@ -20,6 +20,7 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
     @Mapping(target = "id")
     @Mapping(target = "role")
     @Mapping(target = "userId")
+    @Mapping(target = "version")
     public abstract CommitteeMemberDTO toDTO(CommitteeMember member);
 
     @ObjectFactory
@@ -35,5 +36,6 @@ public abstract class CommitteeMemberMapper extends BaseMapper<CommitteeMember, 
     @Mapping(target = "id")
     @Mapping(target = "role")
     @Mapping(target = "userId")
+    @Mapping(target = "version")
     public abstract CommitteeMember fromDTO(CommitteeMemberDTO dto, @MappingTarget CommitteeMember member);
 }

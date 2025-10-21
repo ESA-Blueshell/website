@@ -15,6 +15,7 @@ import org.mapstruct.Mapping;
 public abstract class SimpleCommitteeMapper extends BaseMapper<Committee, SimpleCommitteeDTO> {
     @Mapping(target = "name")
     @Mapping(target = "description")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract SimpleCommitteeDTO toDTO(Committee committee);
 }

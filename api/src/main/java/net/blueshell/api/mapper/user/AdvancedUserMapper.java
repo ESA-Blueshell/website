@@ -41,6 +41,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract AdvancedUserDTO toDTO(User user);
 
@@ -62,6 +63,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "gender")
     @Mapping(target = "studentNumber")
     @Mapping(target = "addressId")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
     public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);
 

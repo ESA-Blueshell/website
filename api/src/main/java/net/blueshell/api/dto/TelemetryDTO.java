@@ -13,7 +13,6 @@ import java.time.Instant;
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "Telemetry")
 public class TelemetryDTO extends BaseDTO {
-    private String id;
     private String url;
     private PlatformType platform;
     private Instant createdAt;

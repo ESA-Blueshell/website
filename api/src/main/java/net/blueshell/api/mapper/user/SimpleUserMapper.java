@@ -28,6 +28,7 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "newsletter")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract SimpleUserDTO toDTO(User user);
 
@@ -41,6 +42,7 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "phoneNumber")
     @Mapping(target = "newsletter")
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
     public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
 

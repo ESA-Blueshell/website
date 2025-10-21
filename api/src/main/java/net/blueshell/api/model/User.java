@@ -46,7 +46,7 @@ import java.util.Set;
                 @Index(name = "idx_users_first_name", columnList = "first_name")
         }
 )
-@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Getter
 @Setter

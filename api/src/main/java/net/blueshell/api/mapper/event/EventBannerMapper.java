@@ -15,11 +15,13 @@ import org.mapstruct.MappingTarget;
 public abstract class EventBannerMapper extends BaseMapper<EventBanner, EventBannerDTO> {
     @Mapping(target = "id")
     @Mapping(target = "file")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventBanner fromDTO(EventBannerDTO dto, @MappingTarget EventBanner banner);
 
     @Mapping(target = "id")
     @Mapping(target = "file")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract EventBannerDTO toDTO(EventBanner banner);
 }

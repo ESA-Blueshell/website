@@ -17,6 +17,7 @@ public abstract class QuestionMapper extends BaseMapper<Question, QuestionDTO> {
     @Mapping(target = "type")
     @Mapping(target = "idx")
     @Mapping(target = "choiceLabels")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract Question fromDTO(QuestionDTO dto, @MappingTarget Question question);
 
@@ -25,6 +26,7 @@ public abstract class QuestionMapper extends BaseMapper<Question, QuestionDTO> {
     @Mapping(target = "type")
     @Mapping(target = "idx")
     @Mapping(target = "choiceLabels")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract QuestionDTO toDTO(Question question);
 }

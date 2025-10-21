@@ -19,10 +19,12 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     @Mapping(target = "startDate")
     @Mapping(target = "endDate")
     @Mapping(target = "incasso")
+    @Mapping(target = "version")
     public abstract MembershipDTO toDTO(Membership membership);
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract Membership fromDTO(MembershipDTO dto, @MappingTarget Membership membership);
 

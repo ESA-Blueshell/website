@@ -29,7 +29,7 @@ import org.hibernate.annotations.SQLRestriction;
                 @Index(name = "idx_event_sign_up_answers_answer_id", columnList = "answer_id")
         }
 )
-@SQLDelete(sql = "UPDATE event_sign_up_answers SET deleted_at = NOW() WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE event_sign_up_answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
 @Getter

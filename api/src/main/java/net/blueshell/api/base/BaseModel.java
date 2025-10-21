@@ -46,6 +46,6 @@ public abstract class BaseModel {
     private User updatedBy;
 
     @Version
-    @Column(name = "version", updatable = false, nullable = false)
+    @Column(name = "version", nullable = false)
     private Long version;
 }

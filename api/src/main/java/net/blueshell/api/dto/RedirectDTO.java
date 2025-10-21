@@ -12,7 +12,6 @@ import java.time.Instant;
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "Redirect")
 public class RedirectDTO extends BaseDTO {
-    private String id;
     private Instant createdAt;
     private TelemetryDTO telemetry;
 }

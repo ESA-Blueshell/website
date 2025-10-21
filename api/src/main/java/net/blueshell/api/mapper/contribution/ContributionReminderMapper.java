@@ -13,12 +13,14 @@ public abstract class ContributionReminderMapper extends BaseMapper<Contribution
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract ContributionReminderDTO toDTO(ContributionReminder reminder);
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract ContributionReminder fromDTO(ContributionReminderDTO dto, @MappingTarget ContributionReminder reminder);
 }

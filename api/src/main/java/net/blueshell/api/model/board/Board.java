@@ -34,7 +34,7 @@ import java.util.Set;
         }
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@SQLDelete(sql = "UPDATE boards SET deleted_at = NOW() WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE boards SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @Getter
 @Setter
 @NoArgsConstructor

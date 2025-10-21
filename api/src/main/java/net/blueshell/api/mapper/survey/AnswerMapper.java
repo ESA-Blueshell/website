@@ -16,6 +16,7 @@ public abstract class AnswerMapper extends BaseMapper<Answer, AnswerDTO> {
     @Mapping(target = "questionId")
     @Mapping(target = "optionSelections")
     @Mapping(target = "textResponse")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract Answer fromDTO(AnswerDTO dto, @MappingTarget Answer answer);
 
@@ -23,6 +24,7 @@ public abstract class AnswerMapper extends BaseMapper<Answer, AnswerDTO> {
     @Mapping(target = "questionId")
     @Mapping(target = "optionSelections")
     @Mapping(target = "textResponse")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract AnswerDTO toDTO(Answer answer);
 }

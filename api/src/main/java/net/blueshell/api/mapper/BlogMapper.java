@@ -23,6 +23,7 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "title")
     @Mapping(target = "publishedAt")
+    @Mapping(target = "version")
     public abstract Blog fromDTO(BlogDTO dto, @MappingTarget Blog blog);
 
     @AfterMapping
@@ -41,6 +42,7 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
     @Mapping(target = "title")
     @Mapping(target = "html")
     @Mapping(target = "publishedAt")
+    @Mapping(target = "version")
     public abstract BlogDTO toDTO(Blog blog);
 
     @AfterMapping

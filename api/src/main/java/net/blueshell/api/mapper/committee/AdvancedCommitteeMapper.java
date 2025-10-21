@@ -18,6 +18,7 @@ public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, Adva
     @Mapping(target = "name")
     @Mapping(target = "description")
     @Mapping(target = "members")
+    @Mapping(target = "version")
     public abstract Committee fromDTO(AdvancedCommitteeDTO dto, @MappingTarget Committee committee);
 
     @AfterMapping
@@ -34,5 +35,6 @@ public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, Adva
     @Mapping(target = "name")
     @Mapping(target = "description")
     @Mapping(target = "members")
+    @Mapping(target = "version")
     public abstract AdvancedCommitteeDTO toDTO(Committee committee);
 }

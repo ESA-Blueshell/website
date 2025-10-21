@@ -19,6 +19,7 @@ public abstract class ContributionPeriodMapper extends BaseMapper<ContributionPe
     @Mapping(target = "fullYearFee")
     @Mapping(target = "alumniFee")
     @Mapping(target = "listId")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract ContributionPeriodDTO toDTO(ContributionPeriod contributionPeriod);
 
@@ -29,6 +30,7 @@ public abstract class ContributionPeriodMapper extends BaseMapper<ContributionPe
     @Mapping(target = "halfYearFee")
     @Mapping(target = "fullYearFee")
     @Mapping(target = "alumniFee")
+    @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     public abstract ContributionPeriod fromDTO(ContributionPeriodDTO dto, @MappingTarget ContributionPeriod contributionPeriod);
 }

@@ -17,6 +17,7 @@ public abstract class AddressMapper extends BaseMapper<Address, AddressDTO> {
     @Mapping(target = "houseNumber")
     @Mapping(target = "zipCode")
     @Mapping(target = "createdAt")
+    @Mapping(target = "version")
     public abstract AddressDTO toDTO(Address address);
 
     @Mapping(target = "id")
@@ -26,5 +27,6 @@ public abstract class AddressMapper extends BaseMapper<Address, AddressDTO> {
     @Mapping(target = "houseNumber")
     @Mapping(target = "zipCode")
     @Mapping(target = "createdAt")
+    @Mapping(target = "version")
     public abstract Address fromDTO(AddressDTO dto, @MappingTarget Address address);
 }

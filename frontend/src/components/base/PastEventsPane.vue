@@ -79,7 +79,6 @@ watch(
     <p class="mx-3 mb-2 text-h3 text-center">
       Past Events
     </p>
-    <v-divider class="my-3" />
 
     <div
       v-if="(pageMeta?.totalPages ?? 1) > 1"

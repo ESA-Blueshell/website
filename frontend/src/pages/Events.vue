@@ -133,8 +133,6 @@ const deleteSignUp = (id: number) => {
           @delete:sign-up="deleteSignUp"
         />
 
-        <v-divider class="my-3" />
-
         <past-events-pane
           :committees="committees"
           :event-sign-ups="eventSignUps"

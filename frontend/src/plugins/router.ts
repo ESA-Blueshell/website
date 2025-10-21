@@ -12,6 +12,7 @@ import Cs2 from "@/pages/esports/Cs2.vue"
 import Valorant from "@/pages/esports/Valorant.vue"
 import Documents from "@/pages/Documents.vue"
 import ElNino from "@/pages/partners/ElNino.vue"
+import MarketingMaatwerk from "@/pages/partners/MarketingMaatwerk.vue"
 import Partners from "@/pages/partners/Partners.vue"
 import NotFound from "@/pages/NotFound.vue"
 import Login from "@/pages/login/Login.vue"
@@ -128,6 +129,11 @@ const routes: RouteRecordRaw[] = [
     path: "/partners/el-nino",
     name: "elnino",
     component: ElNino,
+  },
+  {
+    path: "/partners/marketing-maatwerk",
+    name: "marketingmaatwerk",
+    component: MarketingMaatwerk,
   },
   {
     path: "/login",

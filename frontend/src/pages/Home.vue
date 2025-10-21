@@ -257,6 +257,11 @@ const partners = ref<Partner[]>([
     url: "/partners/el-nino",
   },
   {
+    logo: $require("@/assets/marketing_maatwerk_logo_big.png"),
+    logoDark: $require("@/assets/marketing_maatwerk_logo_big.png"),
+    url: "https://marketingmaatwerk.nl/",
+  },
+  {
     logo: $require("@/assets/ett.png"),
     logoDark: $require("@/assets/ettdark.png"),
     url: "https://esportsteamtwente.nl/",
@@ -275,7 +280,7 @@ const partners = ref<Partner[]>([
   transition: transform .2s;
 }
 
-.expand:hover .icon {
+.expand:hover {
   transform: scale(1.1) translateY(-10px);
 }
 </style>

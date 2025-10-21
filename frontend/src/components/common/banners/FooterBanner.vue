@@ -33,6 +33,10 @@ const textLinks = [
     href: "https://www.elnino.tech/",
   },
   {
+    text: "Marketing Maatwerk",
+    href: "https://marketingmaatwerk.nl/",
+  },
+  {
     text: "ETT",
     href: "https://esportsteamtwente.nl/",
   },

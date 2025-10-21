@@ -4,7 +4,7 @@
 
     <div class="mx-3">
       <div
-        class="mx-auto my-10"
+        class="mx-auto my-5"
         style="max-width: 800px"
       >
         <v-text-field
@@ -15,10 +15,8 @@
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
-          :users="usersWithoutAddress"
-          allow-create
-          enable-delete
-          title="Users without address"
+          :users="usersWithAddress"
+          title="Users with address"
           @update:address="addressChanged"
           @update:expanded="toggleExpanded"
           @delete:address="deleteAddress"
@@ -27,9 +25,10 @@
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
-          :users="usersWithAddress"
-          class="mt-5"
-          title="Users with address"
+          :users="usersWithoutAddress"
+          allow-create
+          enable-delete
+          title="Users without address"
           @update:address="addressChanged"
           @update:expanded="toggleExpanded"
           @delete:address="deleteAddress"

@@ -19,7 +19,7 @@
             <v-img
               v-if="board.boardImage"
               :src="board.boardImage"
-              class="rounded-lg mb-6"
+              class="rounded-lg"
               cover
             />
 
@@ -28,6 +28,7 @@
               :key="member.name"
             >
               <board-member-row
+                class="my-4"
                 :member="member"
                 :reverse="i % 2 === 1"
               />
@@ -54,12 +55,11 @@
             <v-expand-transition>
               <div
                 v-show="expandedBoards[boardIndex]"
-                class="mt-5"
               >
                 <v-img
                   v-if="board.boardImage"
                   :src="board.boardImage"
-                  class="rounded-lg mb-6"
+                  class="rounded-lg mt-2"
                   cover
                 />
 
@@ -68,6 +68,7 @@
                   :key="member.name"
                 >
                   <board-member-row
+                    class="my-4"
                     :member="member"
                     :reverse="i % 2 === 1"
                   />
@@ -165,7 +166,7 @@ const boards = ref<Board[]>([
         title: "Secretary and Commissioner of External Affairs",
         description:
           "Heyoo! I’m Joris ‘ExtraToast’ Jonkers, 26 years old, studying Computer Science, and serving as Secretary and Commissioner of External Affairs. I’ve been gaming since childhood, from old consoles to PC gaming. I love working on old vehicles, collecting retro games, and going to concerts and festivals. I look forward to keeping Blueshell organized and connecting with more gaming enthusiasts!",
-        image: $require("@/assets/board8/Joris.png"),
+        image: $require("@/assets/board8/Joris.jpg"),
       },
       {
         name: "Chris Wong",

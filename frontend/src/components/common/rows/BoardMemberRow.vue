@@ -8,7 +8,6 @@
       'rounded-lg',
       'elevation-1',
       'mx-auto',
-      'my-12',
       reverse && 'is-right'
     ]"
   >
@@ -36,7 +35,7 @@
   <!-- Text-only fallback -->
   <div
     v-else
-    class="mx-auto my-12 px-6 py-8 bg-surface rounded-lg elevation-1"
+    class="mx-auto px-6 bg-surface rounded-lg elevation-1"
   >
     <p :class="['text-h4','text-md-h3', reverse && 'text-right']">
       {{ member.name }}
@@ -65,15 +64,14 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-/* Responsive grid with an image column and a text column */
 .member-card {
-  --img-w: clamp(220px, 32vw, 420px); /* image column width */
-  --gap: clamp(8px, 2vw, 20px); /* tighter space between columns */
-  --fade: clamp(24px, 5vw, 72px); /* gradient width */
+  --img-w: clamp(220px, 32vw, 420px);
+  --gap: clamp(8px, 2vw, 20px);
+  --fade: clamp(24px, 5vw, 72px);
 
   display: grid;
   grid-template-columns: var(--img-w) 1fr;
-  grid-template-areas: "photo info"; /* explicit areas for robustness */
+  grid-template-areas: "photo info";
   gap: var(--gap);
   align-items: center;
 
@@ -82,7 +80,6 @@ defineProps<{
   overflow: hidden;
 }
 
-/* Area mapping (default = image left, text right) */
 .member-photo {
   grid-area: photo;
 }
@@ -91,20 +88,17 @@ defineProps<{
   grid-area: info;
 }
 
-/* Right variant flips areas (keeps text on the LEFT) */
 .member-card.is-right {
   grid-template-columns: 1fr var(--img-w);
   grid-template-areas: "info photo";
 }
 
-/* Photo cell */
 .member-photo {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* Gradient hugs the inner edge of the image and fades into the card bg */
 .member-card:not(.is-right) .member-photo::after {
   content: "";
   position: absolute;
@@ -123,21 +117,16 @@ defineProps<{
   pointer-events: none;
 }
 
-/* Text block spacing:
-   - minimal padding on the side that touches the image
-   - a bit more padding on the outer edge
-*/
 .member-info {
   max-width: 65ch;
-  padding-block: 1.25rem; /* vertical padding */
-  padding-inline: 0.25rem 1.25rem; /* inner | outer (image on left) */
+  padding-block: 1.25rem;
+  padding-inline: 0.25rem 1.25rem;
 }
 
 .member-card.is-right .member-info {
-  padding-inline: 1.25rem 0.25rem; /* outer | inner (image on right) */
+  padding-inline: 1.25rem 0.25rem;
 }
 
-/* Stack on small screens; reset areas */
 @media (max-width: 600px) {
   .member-card,
   .member-card.is-right {

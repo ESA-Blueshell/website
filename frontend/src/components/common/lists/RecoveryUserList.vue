@@ -1,8 +1,11 @@
 <template>
   <div>
-    <p class="text-h5">
-      {{ title }} ({{ users.length }})
-    </p>
+    <v-card>
+      <h2 class="text-center">
+        {{ title }} ({{ users.length }})
+      </h2>
+    </v-card>
+
     <v-list class="mt-3">
       <div
         v-for="user in users"

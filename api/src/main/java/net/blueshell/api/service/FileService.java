@@ -120,9 +120,9 @@ public class FileService extends BaseModelService<File, FileRepository> {
             entity.setType(type);
 
             if (entity.getId() != null) {
-                return self().update(entity);
+                return update(entity);
             } else {
-                return self().create(entity);
+                return create(entity);
             }
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);

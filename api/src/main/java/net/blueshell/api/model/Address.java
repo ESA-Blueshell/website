@@ -5,8 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -27,8 +28,10 @@ import org.hibernate.annotations.SQLRestriction;
 public class Address extends BaseModel {
     @Column
     private String country;
+
     @Column
     private String city;
+
     @Column
     private String street;
 
@@ -39,5 +42,6 @@ public class Address extends BaseModel {
     private String zipCode;
 
     @OneToOne(mappedBy = "address")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User user;
 }

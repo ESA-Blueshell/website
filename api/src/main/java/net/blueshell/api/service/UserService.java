@@ -54,32 +54,32 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
 
     @Transactional
     public User toggleRole(Long id, Role role) {
-        var user = self().findById(id);
+        var user = findById(id);
 
         if (user.hasRole(role)) {
             user.removeRole(role);
         } else {
             user.addRole(role);
         }
-        self().update(user);
+        update(user);
         return user;
     }
 
     @Transactional
     public void addRole(Long id, Role role) {
-        var user = self().findById(id);
+        var user = findById(id);
         if (!user.hasRole(role)) {
             user.addRole(role);
-            self().update(user);
+            update(user);
         }
     }
 
     @Transactional
     public void removeRole(Long id, Role role) {
-        var user = self().findById(id);
+        var user = findById(id);
         if (user.hasRole(role)) {
             user.removeRole(role);
-            self().update(user);
+            update(user);
         }
     }
 
@@ -92,23 +92,23 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
 
     @Transactional
     public void updatePassword(Long userId, String rawPassword) {
-        var user = self().findById(userId);
+        var user = findById(userId);
         user.setPassword(passwordEncoder.encode(rawPassword));
-        self().update(user);
+        update(user);
     }
 
     @Transactional
     public void activateUser(Long userId) {
-        var user = self().findById(userId);
+        var user = findById(userId);
         user.setEnabled(true);
-        self().update(user);
+        update(user);
     }
 
     @Transactional
     public void setUsernameAndPassword(Long userId, String username, String rawPassword) {
-        var user = self().findById(userId);
+        var user = findById(userId);
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(rawPassword));
-        self().update(user);
+        update(user);
     }
 }

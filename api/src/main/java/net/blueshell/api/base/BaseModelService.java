@@ -3,7 +3,6 @@ package net.blueshell.api.base;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.aop.framework.AopContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,14 +33,10 @@ import java.util.Set;
  * extra logic (validation, auditing, events, etc.).</p>
  */
 @Slf4j
-public abstract class BaseModelService<
-        T extends BaseModel,
-        R extends BaseRepository<T>>
-        extends IdentityProvider {
+public abstract class BaseModelService<T extends BaseModel, R extends BaseRepository<T>> extends IdentityProvider {
 
     protected final R repository;
 
-    // Resolved simple name of the entity class (e.g., "User")
     private final String entityLabel;
 
     @PersistenceContext
@@ -50,17 +45,8 @@ public abstract class BaseModelService<
     protected BaseModelService(R repository) {
         this.repository = repository;
         // Try to resolve T from the repository generic type for a nice label like "User"
-        Class<?> resolved = ResolvableType
-                .forClass(repository.getClass())
-                .as(BaseRepository.class)
-                .getGeneric(0)
-                .resolve();
+        Class<?> resolved = ResolvableType.forClass(repository.getClass()).as(BaseRepository.class).getGeneric(0).resolve();
         this.entityLabel = resolved != null ? resolved.getSimpleName() : "Resource";
-    }
-
-    @SuppressWarnings("unchecked")
-    protected BaseModelService<T, R> self() {
-        return (BaseModelService<T, R>) AopContext.currentProxy();
     }
 
     /* -----------------------------------------------------------------
@@ -103,10 +89,7 @@ public abstract class BaseModelService<
     public T update(T entity) {
         var id = entity.getId();
         if (id == null || !repository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "%s not found with id: %s".formatted(entityLabel, id)
-            );
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "%s not found with id: %s".formatted(entityLabel, id));
         }
         entity = repository.saveAndFlush(entity);
         em.refresh(entity);
@@ -134,11 +117,7 @@ public abstract class BaseModelService<
      */
     @Transactional(readOnly = true)
     public T findById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "%s not found with id: %s".formatted(entityLabel, id)
-                ));
+        return repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "%s not found with id: %s".formatted(entityLabel, id)));
     }
 
     /**
@@ -176,9 +155,7 @@ public abstract class BaseModelService<
         if (!(repository instanceof org.springframework.data.jpa.repository.JpaSpecificationExecutor<?> specRepo)) {
             throw new UnsupportedOperationException("Repository does not support Specifications");
         }
-        @SuppressWarnings("unchecked")
-        var result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo)
-                .findAll(spec, pageable);
+        @SuppressWarnings("unchecked") var result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo).findAll(spec, pageable);
         return result;
     }
 
@@ -191,14 +168,14 @@ public abstract class BaseModelService<
      */
     @Transactional
     public void deleteById(Long id) {
-        var entity = self().findById(id);
-        self().delete(entity);
+        var entity = findById(id);
+        delete(entity);
     }
 
     @Transactional
     public void deleteAllById(Set<Long> ids) {
         for (var id : ids) {
-            self().deleteById(id);
+            deleteById(id);
         }
     }
 
@@ -213,7 +190,7 @@ public abstract class BaseModelService<
     @Transactional
     public void deleteAll(Set<T> entities) {
         for (var entity : entities) {
-            self().delete(entity);
+            delete(entity);
         }
     }
 }

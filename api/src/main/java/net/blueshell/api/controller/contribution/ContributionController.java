@@ -42,8 +42,7 @@ public class ContributionController extends BaseController<ContributionService, 
     @DeleteMapping("/contributions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteContribution(@PathVariable("id") Long id) {
-        var contribution = service.findById(id);
-        service.delete(contribution);
+        service.deleteById(id);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

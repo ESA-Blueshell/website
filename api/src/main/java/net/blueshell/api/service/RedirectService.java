@@ -32,9 +32,9 @@ public class RedirectService extends BaseModelService<Redirect, RedirectReposito
         Telemetry telemetry = telemetryService.findById(telemetryId);
         Redirect newRedirect = new Redirect(telemetry);
         log.info("TL Created redirect for telemetry: {}", telemetry.getId());
-        self().create(newRedirect);
+        create(newRedirect);
 
-        List<Redirect> redirects = self().findAll();
+        List<Redirect> redirects = findAll();
         log.info("TL Found all redirects");
         webSocketMessageService.sendMessage("/clicks/updates", redirects);
 

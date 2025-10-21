@@ -11,13 +11,11 @@
       >
         <address-user-row
           :addresses="addresses"
-          :enable-delete="enableDelete"
           :expanded="expanded"
           :user="user"
-          @update:expanded="toggleExpanded"
-          @update:address="addressChanged"
-          @update:user="userChanged"
-          @delete:user="deleteUser"
+          @update:expanded="updateExpanded"
+          @update:address="updateAddress"
+          @delete:address="deleteAddress"
         />
         <v-divider />
       </div>
@@ -43,12 +41,12 @@ const props = withDefaults(defineProps<{
 const {title, users, addresses, expanded} = toRefs(props)
 
 const emit = defineEmits<{
-  (e: "delete:user", user: AdvancedUser): void
-  (e: "update:user", user: AdvancedUser): void
   (e: "update:address", address: Address): void
+  (e: "delete:address", addressId: number): void
   (e: "update:expanded", userId: number): void
 }>()
 
-const toggleExpanded = (userId: number) => emit("update:expanded", userId)
-const addressChanged = (address: Address) => emit("update:address", address)
+const updateExpanded = (userId: number) => emit("update:expanded", userId)
+const updateAddress = (address: Address) => emit("update:address", address)
+const deleteAddress = (addressId: number) => emit("delete:address", addressId)
 </script>

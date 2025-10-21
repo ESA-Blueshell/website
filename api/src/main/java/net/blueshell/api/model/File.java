@@ -6,6 +6,8 @@ import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.FileType;
 import net.blueshell.api.model.event.EventBanner;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -54,5 +56,6 @@ public class File extends BaseModel {
     private FileType type;
 
     @OneToMany(mappedBy = "file")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<EventBanner> eventBanners;
 }

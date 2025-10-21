@@ -11,6 +11,8 @@ import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.model.contribution.Contribution;
 import net.blueshell.api.model.event.EventSignUp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
@@ -124,7 +126,6 @@ public class User extends BaseModel implements UserDetails {
     private File profilePicture;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JsonIgnore
     private Set<CommitteeMember> committeeMembers = new HashSet<>();
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)

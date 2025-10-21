@@ -115,7 +115,7 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
         token.setVerifierHash(encoder.encode(verifier));
         token.setExpiresAt(Instant.now().plus(ttl));
 
-        self().create(token);
+        create(token);
         return selector + "." + verifier;
     }
 
@@ -144,7 +144,7 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
     @Transactional
     void consume(RecoveryToken token) {
         token.setConsumedAt(Instant.now());
-        self().update(token);
+        update(token);
     }
 
     private ResponseStatusException notFound() {

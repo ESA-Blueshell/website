@@ -61,7 +61,6 @@ public class ContributionPeriodController extends BaseController<ContributionPer
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteContributionPeriodById(@PathVariable("id") Long id) {
-        ContributionPeriod contributionPeriod = service.findById(id);
-        service.delete(contributionPeriod);
+        service.deleteById(id);
     }
 }

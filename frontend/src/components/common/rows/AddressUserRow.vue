@@ -116,10 +116,12 @@ const openDelete = () => {
 }
 
 const confirmDeleteAddress = async () => {
+  if (!address.value?.id) return
+
   try {
     deleteDialog.value = false
-    await deleteAddressById({path: {id: props.user.addressId as number}})
-    emit("delete:address", props.user.addressId as number)
+    await deleteAddressById({path: {id: address.value.id}})
+    emit("delete:address", address.value.id)
   } catch (error) {
     console.error("Failed to delete user:", error)
   }

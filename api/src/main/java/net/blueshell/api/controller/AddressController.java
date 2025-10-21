@@ -2,6 +2,7 @@ package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.AddressDTO;
 import net.blueshell.api.mapper.AddressMapper;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Addresses")
+@Slf4j
 public class AddressController extends BaseController<AddressService, AddressMapper> {
 
     private final UserService users;

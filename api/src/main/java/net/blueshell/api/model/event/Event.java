@@ -9,6 +9,8 @@ import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.survey.Survey;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 

@@ -21,8 +21,7 @@
           title="Users without address"
           @update:address="addressChanged"
           @update:expanded="toggleExpanded"
-          @update:user="userChanged"
-          @delete:user="deleteUser"
+          @delete:address="deleteAddress"
         />
 
         <address-user-list
@@ -33,8 +32,7 @@
           title="Users with address"
           @update:address="addressChanged"
           @update:expanded="toggleExpanded"
-          @update:user="userChanged"
-          @delete:user="deleteUser"
+          @delete:address="deleteAddress"
         />
       </div>
     </div>
@@ -98,21 +96,8 @@ const updateLists = () => {
 
 watch([addresses, users, search], () => updateLists(), {deep: true})
 
-const deleteUser = (user: AdvancedUser) => {
-  users.value = users.value.filter((u) => u.id !== user.id)
-}
-
 const toggleExpanded = (userId: number) => {
   expanded.value = userId === expanded.value ? 0 : userId
-}
-
-const userChanged = (user: AdvancedUser) => {
-  const index = users.value.findIndex((u) => u.id === user.id)
-  if (index === -1) {
-    users.value.push(user)
-  } else {
-    users.value.splice(index, 1, user)
-  }
 }
 
 const addressChanged = (updated: Address) => {
@@ -122,6 +107,10 @@ const addressChanged = (updated: Address) => {
   } else {
     addresses.value.splice(index, 1, updated)
   }
+}
+
+const deleteAddress = (addressId: number) => {
+  addresses.value = addresses.value.filter((a) => a.id !== addressId)
 }
 
 onMounted(async () => {

@@ -79,7 +79,7 @@ const props = withDefaults(defineProps<{
   actionType: "activation" | "password"
   startOpen?: boolean
 }>(), {
-  startOpen: true,
+  startOpen: false,
 })
 
 const {title, users, actionType, startOpen} = toRefs(props)

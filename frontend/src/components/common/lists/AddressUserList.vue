@@ -100,7 +100,7 @@ const props = withDefaults(defineProps<{
   expanded: null,
   allowCreate: false,
   enableDelete: false,
-  startOpen: true,
+  startOpen: false,
 })
 
 const {title, users, addresses, expanded, allowCreate, enableDelete, startOpen} = toRefs(props)

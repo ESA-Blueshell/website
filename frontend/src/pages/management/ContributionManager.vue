@@ -4,7 +4,7 @@
 
     <div class="mx-3">
       <div
-        class="mx-auto my-10"
+        class="mx-auto my-3"
         style="max-width: 800px"
       >
         <contribution-period-list @update:contribution-period="contributionPeriodChanged" />
@@ -15,6 +15,7 @@
           :disabled="!selectedPeriodId"
           :users="membersPaid"
           title="Contribution paid"
+          class="mt-3"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"
         />
@@ -24,7 +25,7 @@
           :contributions="contributions"
           :disabled="!selectedPeriodId"
           :users="membersUnpaid"
-          class="mt-5"
+          class="mt-3"
           title="Contribution unpaid"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"

@@ -4,7 +4,7 @@
 
     <div class="mx-3">
       <div
-        class="mx-auto my-10"
+        class="mx-auto my-3"
         style="max-width: 800px"
       >
         <recovery-user-list
@@ -14,7 +14,7 @@
         />
 
         <recovery-user-list
-          class="mt-5"
+          class="mt-3"
           :users="activeUsers"
           title="Active accounts"
           action-type="password"

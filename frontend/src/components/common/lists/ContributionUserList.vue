@@ -86,7 +86,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   contributions: () => [],
   disabled: false,
-  startOpen: true,
+  startOpen: false,
 })
 
 const {title, users, contributions, disabled, contributionPeriodId, startOpen} = toRefs(props)

@@ -5,7 +5,7 @@
 
     <div class="mx-3">
       <div
-        class="mx-auto my-5"
+        class="mx-auto my-3"
         style="max-width: 800px"
       >
         <address-user-list
@@ -19,7 +19,7 @@
         />
 
         <address-user-list
-          class="mt-5"
+          class="mt-3"
           :addresses="addresses"
           :expanded="expanded"
           :users="usersWithoutAddress"

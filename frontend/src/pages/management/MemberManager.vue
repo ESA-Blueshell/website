@@ -4,11 +4,10 @@
 
     <div class="mx-3">
       <div
-        class="mx-auto my-10"
+        class="mx-auto my-3"
         style="max-width: 800px"
       >
         <contribution-period-list
-          class="mb-3"
           @update:contribution-period="contributionPeriodChanged"
         />
 
@@ -19,6 +18,7 @@
           :users="nonMembers"
           allow-create
           enable-delete
+          class="mt-3"
           title="Non-members"
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"
@@ -31,7 +31,7 @@
           :expanded="expanded"
           :memberships="memberships"
           :users="members"
-          class="mt-5"
+          class="mt-3"
           title="Members"
           @update:membership="membershipChanged"
           @update:expanded="toggleExpanded"

@@ -1,3 +1,4 @@
+<!-- AddressManager.vue -->
 <template>
   <v-main>
     <top-banner title="Address Manager" />
@@ -7,11 +8,6 @@
         class="mx-auto my-5"
         style="max-width: 800px"
       >
-        <v-text-field
-          v-model="search"
-          label="Search for a user"
-        />
-
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
@@ -23,6 +19,7 @@
         />
 
         <address-user-list
+          class="mt-5"
           :addresses="addresses"
           :expanded="expanded"
           :users="usersWithoutAddress"
@@ -42,7 +39,6 @@
 import {onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AddressUserList from "@/components/common/lists/AddressUserList.vue"
-
 import {type Address, type AdvancedUser, findAllAddresses, findUsers} from "@/services/api"
 
 const users = ref<AdvancedUser[]>([])
@@ -52,7 +48,6 @@ const usersWithAddress = ref<AdvancedUser[]>([])
 const usersWithoutAddress = ref<AdvancedUser[]>([])
 
 const expanded = ref<number>(0)
-const search = ref("")
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -76,25 +71,15 @@ const getAddresses = async () => {
   }
 }
 
-const isSearched = (user: AdvancedUser) => {
-  if (!search.value) return true
-  const searchTerms = search.value.toLowerCase().split(" ").filter(Boolean)
-  const userValues = Object.values(user ?? {})
-    .filter(Boolean)
-    .map((v) => String(v).toLowerCase())
-  return searchTerms.every((term) => userValues.some((value) => value.includes(term)))
-}
-
 const hasAddress = (u: AdvancedUser) => addresses.value.some((a) => a.id === u.addressId)
 
 const updateLists = () => {
-  const filtered = users.value.filter((v) => isSearched(v))
-  console.log("FILTERING!")
-  usersWithAddress.value = filtered.filter((u) => hasAddress(u))
-  usersWithoutAddress.value = filtered.filter((u) => !hasAddress(u))
+  const all = users.value
+  usersWithAddress.value = all.filter((u) => hasAddress(u))
+  usersWithoutAddress.value = all.filter((u) => !hasAddress(u))
 }
 
-watch([addresses, users, search], () => updateLists(), {deep: true})
+watch([addresses, users], () => updateLists(), {deep: true})
 
 const toggleExpanded = (userId: number) => {
   expanded.value = userId === expanded.value ? 0 : userId

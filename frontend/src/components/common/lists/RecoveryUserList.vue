@@ -1,40 +1,99 @@
 <template>
-  <div>
-    <v-card>
-      <h2 class="text-center">
-        {{ title }} ({{ users.length }})
-      </h2>
-    </v-card>
-
-    <v-list class="mt-3">
+  <v-card class="overflow-hidden">
+    <div
+      class="px-5 py-3 d-flex align-center justify-space-between"
+      role="button"
+      :aria-expanded="String(isOpen)"
+      :aria-controls="panelId"
+      tabindex="0"
+      @click="isOpen = !isOpen"
+      @keydown.enter.prevent="isOpen = !isOpen"
+      @keydown.space.prevent="isOpen = !isOpen"
+    >
       <div
-        v-for="user in users"
-        :key="user.id ?? user.username"
+        class="d-flex align-center"
+        style="gap: 12px;"
       >
-        <recovery-user-row
-          :user="user"
-          :action-type="actionType"
-        />
-        <v-divider />
+        <h2 class="ma-0">
+          {{ title }}
+        </h2>
+        <v-chip
+          size="small"
+          variant="tonal"
+        >
+          {{ countLabel }}
+        </v-chip>
       </div>
-    </v-list>
-  </div>
+      <v-icon
+        size="24"
+        color="grey-darken-1"
+      >
+        {{ isOpen ? "mdi-chevron-up" : "mdi-chevron-down" }}
+      </v-icon>
+    </div>
+
+    <v-expand-transition>
+      <div
+        v-show="isOpen"
+        :id="panelId"
+        class="px-5 pb-4 pt-2"
+      >
+        <v-text-field
+          v-model="localSearch"
+          label="Search for a user"
+          clearable
+          density="comfortable"
+          prepend-inner-icon="mdi-magnify"
+        />
+
+        <v-list class="mt-1">
+          <template
+            v-for="user in filtered"
+            :key="user.id ?? user.username"
+          >
+            <recovery-user-row
+              :user="user"
+              :action-type="actionType"
+            />
+            <v-divider />
+          </template>
+
+          <div
+            v-if="filtered.length === 0"
+            class="text-medium-emphasis text-center py-6"
+          >
+            No users found.
+          </div>
+        </v-list>
+      </div>
+    </v-expand-transition>
+  </v-card>
 </template>
 
 <script lang="ts" setup>
-import {toRefs} from "vue"
+import {computed, ref, toRefs} from "vue"
 import RecoveryUserRow from "../rows/RecoveryUserRow.vue"
 import type {AdvancedUser} from "@/services/api"
+import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{
   title: string
   users: AdvancedUser[]
-  /**
-   * 'activation' => resend activation / recovery mail (inactive users)
-   * 'password'   => resend password recovery mail (active users)
-   */
+  /** 'activation' => resend activation (inactive) | 'password' => password reset (active) */
   actionType: "activation" | "password"
-}>(), {})
+  startOpen?: boolean
+}>(), {
+  startOpen: true,
+})
 
-toRefs(props)
+const {title, users, actionType, startOpen} = toRefs(props)
+
+const localSearch = ref("")
+const isOpen = ref<boolean>(startOpen.value)
+const panelId = `rul-${Math.random().toString(36).slice(2)}`
+
+const filtered = computed(() => filterUsers(users.value, localSearch.value))
+const countLabel = computed(() =>
+  localSearch.value ? `${filtered.value.length} / ${users.value.length}` : `${users.value.length}`,
+)
 </script>

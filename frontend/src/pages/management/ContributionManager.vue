@@ -7,15 +7,7 @@
         class="mx-auto my-10"
         style="max-width: 800px"
       >
-        <contribution-period-list
-          @update:contribution-period="contributionPeriodChanged"
-        />
-
-
-        <v-text-field
-          v-model="search"
-          label="Search for a user"
-        />
+        <contribution-period-list @update:contribution-period="contributionPeriodChanged" />
 
         <contribution-user-list
           :contribution-period-id="selectedPeriodId"
@@ -65,7 +57,6 @@ const contributions = ref<Contribution[]>([])
 const membersPaid = ref<AdvancedUser[]>([])
 const membersUnpaid = ref<AdvancedUser[]>([])
 
-const search = ref("")
 const contributionPeriod = ref<ContributionPeriod | undefined>()
 const selectedPeriodId = ref<number>(0)
 
@@ -75,11 +66,8 @@ if ("scrollRestoration" in globalThis.history) {
 
 const getUsers = async () => {
   const response = await findUsers()
-  if (response.status === 200) {
-    users.value = response.data?.content ?? []
-  } else {
-    console.log(response.error)
-  }
+  if (response.status === 200) users.value = response.data?.content ?? []
+  else console.log(response.error)
 }
 
 const getMemberships = async () => {
@@ -91,37 +79,23 @@ const getMemberships = async () => {
   }
 }
 
-const isSearched = (user: AdvancedUser) => {
-  if (!search.value) return true
-  const searchTerms = search.value.toLowerCase().split(" ").filter(Boolean)
-  const userValues = Object.values(user ?? {})
-    .filter(Boolean)
-    .map((v) => String(v).toLowerCase())
-  return searchTerms.every((term) => userValues.some((value) => value.includes(term)))
-}
-
 const hasContribution = (userId: number) =>
   contributions.value.some(
     (c) => c.userId === userId && c.contributionPeriodId === selectedPeriodId.value,
   )
 
 const updateLists = () => {
-  const searched = users.value.filter((u) => isSearched(u))
-  membersPaid.value = searched.filter((u) => hasContribution(u.id!))
-  membersUnpaid.value = searched.filter((u) => !hasContribution(u.id!))
+  const all = users.value
+  membersPaid.value = all.filter((u) => hasContribution(u.id!))
+  membersUnpaid.value = all.filter((u) => !hasContribution(u.id!))
 }
 
-watch([contributions, memberships, users, selectedPeriodId, search], () => {
-  updateLists()
-}, {deep: true})
+watch([contributions, memberships, users, selectedPeriodId], updateLists, {deep: true})
 
 const contributionAddedOrUpdated = (updated: Contribution) => {
   const idx = contributions.value.findIndex((c) => c.id === updated.id)
-  if (idx === -1) {
-    contributions.value.push(updated)
-  } else {
-    contributions.value.splice(idx, 1, updated)
-  }
+  if (idx === -1) contributions.value.push(updated)
+  else contributions.value.splice(idx, 1, updated)
 }
 
 const contributionDeleted = (id: number) => {
@@ -136,8 +110,6 @@ const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
   contributions.value = resp.data ?? []
 }
 
-
-// Lifecycle
 onMounted(async () => {
   try {
     await Promise.all([getUsers(), getMemberships()])

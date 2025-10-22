@@ -1,73 +1,79 @@
 <template>
-  <div>
-    <p class="text-h3">
-      Contribution Periods
-    </p>
+  <v-card class="overflow-hidden">
+    <div class="px-5 d-flex align-center justify-space-between">
+      <div
+        class="d-flex align-center"
+      >
+        <h2 class="ma-0">
+          Contribution Periods
+        </h2>
+      </div>
 
-    <v-row class="d-flex align-center mb-4">
-      <v-col cols="11">
-        <v-slide-group
-          v-model="selectedPeriodId"
-          :show-arrows="true"
-          center-active
-          mandatory
-          selected-class="bg-primary"
-          @update:model-value="selectedPeriodIdChanged"
-        >
-          <v-slide-group-item
-            v-for="period in contributionPeriods"
-            :key="period.id"
-            v-slot="{ toggle, selectedClass }"
-            :value="period.id"
+      <v-btn
+        icon
+        @click="openAddPeriodDialog"
+      >
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+    </div>
+
+    <div class="px-5 pt-2">
+      <v-row class="d-flex align-center mb-4">
+        <v-col cols="12">
+          <v-slide-group
+            v-model="selectedPeriodId"
+            :show-arrows="true"
+            center-active
+            mandatory
+            selected-class="bg-primary"
+            @update:model-value="selectedPeriodIdChanged"
           >
-            <div
-              @mouseleave="hoveredPeriodId = null"
-              @mouseover="hoveredPeriodId = period.id ?? null"
+            <v-slide-group-item
+              v-for="period in contributionPeriods"
+              :key="period.id"
+              v-slot="{ toggle, selectedClass }"
+              :value="period.id"
             >
-              <v-btn
-                :class="['mr-2', selectedClass]"
-                class="mr-2"
-                @click="toggle"
+              <div
+                @mouseover="hoveredPeriodId = period.id ?? null"
+                @mouseleave="hoveredPeriodId = null"
               >
-                {{ formatPeriod(period) }}
-                <v-icon
-                  v-if="hoveredPeriodId === period.id"
-                  class="edit-icon"
-                  style="padding-left: 10px"
-                  @click.stop="openEditPeriodDialog(period)"
+                <v-btn
+                  :class="['mr-2', selectedClass, 'text-body-1']"
+                  class="mr-2 text-none"
+                  @click="toggle"
                 >
-                  mdi-pencil
-                </v-icon>
-              </v-btn>
-            </div>
-          </v-slide-group-item>
-        </v-slide-group>
-      </v-col>
-      <v-col cols="1">
-        <v-btn
-          class="ml-auto"
-          icon
-          @click="openAddPeriodDialog"
-        >
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
+                  {{ formatPeriod(period) }}
+                  <v-icon
+                    v-if="hoveredPeriodId === period.id"
+                    class="edit-icon"
+                    style="padding-left: 10px"
+                    @click.stop="openEditPeriodDialog(period)"
+                  >
+                    mdi-pencil
+                  </v-icon>
+                </v-btn>
+              </div>
+            </v-slide-group-item>
+          </v-slide-group>
+        </v-col>
+      </v-row>
 
-    <contribution-period-dialog
-      v-model:show-dialog="showAddPeriodDialog"
-      :contribution-period="selectedPeriod"
-      @delete="deleteContributionPeriod"
-      @refresh-periods="getContributionPeriods"
-    />
+      <contribution-period-dialog
+        v-model:show-dialog="showAddPeriodDialog"
+        :contribution-period="selectedPeriod"
+        @delete="deleteContributionPeriod"
+        @refresh-periods="getContributionPeriods"
+      />
 
-    <delete-confirmation-dialog
-      v-model="deleteDialog"
-      :message="`Are you sure you want to delete the contribution period from ${formatPeriod(selectedPeriod)}?`"
-      title="Confirm Period Deletion"
-      @confirm="confirmDeleteContributionPeriod"
-    />
-  </div>
+      <delete-confirmation-dialog
+        v-model="deleteDialog"
+        :message="`Are you sure you want to delete the contribution period from ${formatPeriod(selectedPeriod)}?`"
+        title="Confirm Period Deletion"
+        @confirm="confirmDeleteContributionPeriod"
+      />
+    </div>
+  </v-card>
 </template>
 
 <script lang="ts" setup>
@@ -129,11 +135,7 @@ const deleteContributionPeriod = () => {
 const confirmDeleteContributionPeriod = async () => {
   isEditing.value = false
   deleteDialog.value = false
-  await deleteContributionPeriodById({
-    path: {
-      id: selectedPeriodId.value!,
-    },
-  })
+  await deleteContributionPeriodById({path: {id: selectedPeriodId.value!}})
   selectedPeriod.value = null
   selectedPeriodId.value = undefined
   await getContributionPeriods()
@@ -149,7 +151,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-
 span {
   font-weight: bold;
 }
@@ -161,5 +162,9 @@ span {
 .hover-shadow:hover {
   box-shadow: 0 4px 8px rgba(186, 181, 181, 0.2);
   border-radius: 50% !important;
+}
+
+.text-none {
+  text-transform: none;
 }
 </style>

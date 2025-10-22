@@ -14,15 +14,19 @@
         class="d-flex align-center"
         style="gap: 12px;"
       >
-        <h2 class="ma-0">
-          {{ title }}
-        </h2>
-        <v-chip
-          size="small"
-          variant="tonal"
+        <div
+          class="d-flex align-center"
+          style="gap: 12px;"
         >
-          {{ countLabel }}
-        </v-chip>
+          <v-badge
+            :content="countLabel"
+            color="primary"
+          >
+            <h2 class="ma-0">
+              {{ title }}
+            </h2>
+          </v-badge>
+        </div>
       </div>
       <v-icon
         size="24"
@@ -44,6 +48,7 @@
           clearable
           density="comfortable"
           prepend-inner-icon="mdi-magnify"
+          hide-details
         />
 
         <v-list>

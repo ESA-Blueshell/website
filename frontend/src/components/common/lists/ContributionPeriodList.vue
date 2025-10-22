@@ -1,25 +1,19 @@
 <template>
   <v-card class="overflow-hidden">
     <div class="px-5 d-flex align-center justify-space-between">
-      <div
-        class="d-flex align-center"
-      >
-        <h2 class="ma-0">
+      <div class="d-flex align-center">
+        <h2 class="contrib-title">
           Contribution Periods
         </h2>
       </div>
-
-      <v-btn
-        icon
-        @click="openAddPeriodDialog"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
     </div>
 
-    <div class="px-5 pt-2">
-      <v-row class="d-flex align-center mb-4">
-        <v-col cols="12">
+    <div class="px-5">
+      <v-row
+        class="d-flex align-center mb-2"
+        no-gutters
+      >
+        <v-col class="flex-grow-1">
           <v-slide-group
             v-model="selectedPeriodId"
             :show-arrows="true"
@@ -31,7 +25,7 @@
             <v-slide-group-item
               v-for="period in contributionPeriods"
               :key="period.id"
-              v-slot="{ toggle, selectedClass }"
+              v-slot="{ toggle, selectedClass, isSelected }"
               :value="period.id"
             >
               <div
@@ -39,8 +33,14 @@
                 @mouseleave="hoveredPeriodId = null"
               >
                 <v-btn
-                  :class="['mr-2', selectedClass, 'text-body-1']"
-                  class="mr-2 text-none"
+                  :class="[
+                    'text-body-1',
+                    'text-none',
+                    isSelected && selectedClass,
+                    'ma-2'
+                  ]"
+                  :variant="isSelected ? 'flat' : 'elevated'"
+                  :elevation="isSelected ? 0 : 4"
                   @click="toggle"
                 >
                   {{ formatPeriod(period) }}
@@ -56,6 +56,18 @@
               </div>
             </v-slide-group-item>
           </v-slide-group>
+        </v-col>
+
+        <v-col
+          cols="auto"
+          class="pl-2"
+        >
+          <v-btn
+            icon
+            @click="openAddPeriodDialog"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
         </v-col>
       </v-row>
 

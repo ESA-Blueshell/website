@@ -10,20 +10,15 @@
       @keydown.enter.prevent="isOpen = !isOpen"
       @keydown.space.prevent="isOpen = !isOpen"
     >
-      <div
-        class="d-flex align-center"
-        style="gap: 12px;"
+      <v-badge
+        :content="countLabel"
+        color="primary"
       >
         <h2 class="ma-0">
           {{ title }}
         </h2>
-        <v-chip
-          size="small"
-          variant="tonal"
-        >
-          {{ countLabel }}
-        </v-chip>
-      </div>
+      </v-badge>
+
       <v-icon
         size="24"
         color="grey-darken-1"
@@ -44,6 +39,7 @@
           clearable
           density="comfortable"
           prepend-inner-icon="mdi-magnify"
+          hide-details
         />
 
         <v-list class="mt-1">

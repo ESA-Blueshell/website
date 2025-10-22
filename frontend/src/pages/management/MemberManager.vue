@@ -7,7 +7,10 @@
         class="mx-auto my-10"
         style="max-width: 800px"
       >
-        <contribution-period-list @update:contribution-period="contributionPeriodChanged" />
+        <contribution-period-list
+          class="mb-3"
+          @update:contribution-period="contributionPeriodChanged"
+        />
 
         <member-user-list
           :contributions="contributions"

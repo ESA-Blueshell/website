@@ -19,6 +19,7 @@
             :src="member.image"
             cover
             class="w-100"
+            eager
           />
         </div>
       </v-col>
@@ -28,14 +29,14 @@
         md="7"
         :class="['order-2', reverse ? 'order-md-1' : 'order-md-2']"
       >
-        <div class="pa-2 pa-md-2">
-          <p :class="['text-h4','text-md-h3', reverse && 'text-end']">
+        <div :class="['pa-2', 'pa-md-2', reverse ? 'text-md-end' : 'text-md-start']">
+          <p class="text-h4 text-md-h3">
             {{ member.name }}
           </p>
-          <p :class="['text-subtitle-1','mt-1','mb-4', reverse && 'text-end']">
+          <p class="text-subtitle-1 mt-1 mb-4">
             {{ member.title }}
           </p>
-          <p :class="[reverse && 'text-end']">
+          <p>
             {{ member.description }}
           </p>
         </div>
@@ -52,6 +53,7 @@
             :src="member.image"
             cover
             class="w-100"
+            eager
           />
         </div>
       </v-col>
@@ -62,16 +64,16 @@
     v-else
     class="mx-auto"
   >
-    <div class="pa-2 pa-md-2">
-      <p :class="['text-h4','text-md-h3', reverse && 'text-end']">
-        {{ member.name }}
-      </p>
-      <p :class="['text-subtitle-1','mt-1','mb-4', reverse && 'text-end']">
-        {{ member.title }}
-      </p>
-      <p :class="[reverse && 'text-end']">
-        {{ member.description }}
-      </p>
+    <div class="mx-auto">
+      <div :class="['pa-2', 'pa-md-2', 'text-end', reverse ? 'text-md-end' : 'text-md-start']">
+        <p class="text-h4 text-md-h3">
+          {{ member.name }}
+        </p>
+        <p class="text-subtitle-1 mt-1 mb-4">
+          {{ member.title }}
+        </p>
+        <p>{{ member.description }}</p>
+      </div>
     </div>
   </div>
 </template>

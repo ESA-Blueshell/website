@@ -21,6 +21,7 @@
               :src="board.boardImage"
               class="rounded-lg"
               cover
+              eager
             />
 
             <template
@@ -61,6 +62,7 @@
                   :src="board.boardImage"
                   class="rounded-lg mt-2"
                   cover
+                  eager
                 />
 
                 <template
@@ -68,7 +70,7 @@
                   :key="member.name"
                 >
                   <board-member-row
-                    class="my-10"
+                    class="my-16"
                     :member="member"
                     :reverse="i % 2 === 1"
                   />

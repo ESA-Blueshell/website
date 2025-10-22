@@ -30,10 +30,10 @@
         :class="['order-2', reverse ? 'order-md-1' : 'order-md-2']"
       >
         <div :class="['pa-2', 'pa-md-2', reverse ? 'text-md-end' : 'text-md-start']">
-          <p class="text-h4 text-md-h3">
+          <p class="text-h2">
             {{ member.name }}
           </p>
-          <p class="text-subtitle-1 mt-1 mb-4">
+          <p class="text-subtitle-1 mt-n6">
             {{ member.title }}
           </p>
           <p>
@@ -66,10 +66,10 @@
   >
     <div class="mx-auto">
       <div :class="['pa-2', 'pa-md-2', 'text-end', reverse ? 'text-md-end' : 'text-md-start']">
-        <p class="text-h4 text-md-h3">
+        <p class="text-h2">
           {{ member.name }}
         </p>
-        <p class="text-subtitle-1 mt-1 mb-4">
+        <p class="text-subtitle-1 mt-n6">
           {{ member.title }}
         </p>
         <p>{{ member.description }}</p>

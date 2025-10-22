@@ -3,8 +3,8 @@
     <top-banner title="Board" />
 
     <div
-      class="mx-auto px-4"
-      style="max-width: 960px"
+      class="mx-auto"
+      style="max-width: 800px"
     >
       <template
         v-for="(board, boardIndex) in boards"

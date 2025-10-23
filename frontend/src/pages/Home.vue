@@ -32,15 +32,14 @@
           md="4"
           sm="5"
           style="max-width:450px;min-height: 250px"
+          class="expand"
         >
           <a
-            class="expand"
             style="width: 100%"
             @click="$goto(col.url)"
           >
             <v-icon
               :color="col.color"
-              class="icon"
               size="x-large"
             >
               {{ col.icon }}
@@ -274,10 +273,6 @@ const partners = ref<Partner[]>([
 .expand {
   transition: transform .2s;
   cursor: pointer;
-}
-
-.icon {
-  transition: transform .2s;
 }
 
 .expand:hover {

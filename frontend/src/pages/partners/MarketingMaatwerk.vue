@@ -12,15 +12,22 @@
             cols="12"
             md="auto"
             class="d-flex justify-center expand"
-            href="https://marketingmaatwerk.nl/"
           >
-            <v-img
-              :src="logoUrl"
-              alt="Marketing Maatwerk logo"
-              class="rounded-lg mb-6 mb-md-0 mr-10"
-              width="420"
-              cover
-            />
+            <a
+              href="https://marketingmaatwerk.nl/"
+              target="_blank"
+              rel="noopener"
+              aria-label="Visit Marketing Maatwerk"
+              class="d-inline-flex"
+            >
+              <v-img
+                :src="logoUrl"
+                alt="Marketing Maatwerk logo"
+                class="rounded-lg mb-6 mb-md-0 mr-10"
+                width="420"
+                cover
+              />
+            </a>
           </v-col>
 
           <v-col

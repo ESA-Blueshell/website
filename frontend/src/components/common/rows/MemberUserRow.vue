@@ -82,7 +82,6 @@
           v-if="expanded === user.id"
           @click.stop
         >
-          <!-- Writable v-model proxy pushes updates upward via emit -->
           <advanced-user-form
             v-model="userModel"
             class="mt-6"

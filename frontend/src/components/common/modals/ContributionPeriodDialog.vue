@@ -5,97 +5,66 @@
   >
     <v-card>
       <v-card-title class="mt-6 align-center justify-center text-center">
-        <span class="text-h4">{{
-          contributionPeriod?.id ? "Edit Contribution Period" : "Add Contribution Period"
-        }}</span>
+        <span class="text-h4">
+          {{ contributionPeriod?.id ? "Edit Contribution Period" : "Add Contribution Period" }}
+        </span>
       </v-card-title>
+
       <v-card-text>
         <Form
+          ref="formRef"
           as="div"
         >
           <v-row dense>
             <v-col cols="6">
-              <Field
-                v-slot="{ value, errors, handleChange, handleBlur }"
+              <VvField
                 v-model="periodForm.startDate"
                 name="startDate"
+                label="Start Date"
                 rules="required|dateBefore:@endDate"
-              >
-                <v-text-field
-                  :error-messages="errors"
-                  :model-value="value"
-                  label="Start Date"
-                  type="date"
-                  @blur="handleBlur"
-                  @update:model-value="handleChange"
-                />
-              </Field>
+                :component-props="{ type: 'date' }"
+              />
             </v-col>
             <v-col cols="6">
-              <Field
-                v-slot="{ value, errors, handleChange, handleBlur }"
+              <VvField
                 v-model="periodForm.endDate"
                 name="endDate"
+                label="End Date"
                 rules="required|dateAfter:@startDate"
-              >
-                <v-text-field
-                  :error-messages="errors"
-                  :model-value="value"
-                  label="End Date"
-                  type="date"
-                  @blur="handleBlur"
-                  @update:model-value="handleChange"
-                />
-              </Field>
+                :component-props="{ type: 'date' }"
+              />
             </v-col>
           </v-row>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+
+          <VvField
             v-model="periodForm.halfYearFee"
             name="halfYearFee"
+            label="Half Year Fee"
             rules="required|minValue:0"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Half Year Fee"
-              type="number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :update="(raw, handle) => handle(raw === '' ? '' : Number(raw))"
+          />
+
+          <VvField
             v-model="periodForm.fullYearFee"
             name="fullYearFee"
+            label="Full Year Fee"
             rules="required|minValue:0"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Full Year Fee"
-              type="number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :update="(raw, handle) => handle(raw === '' ? '' : Number(raw))"
+          />
+
+          <VvField
             v-model="periodForm.alumniFee"
             name="alumniFee"
+            label="Alumni Fee"
             rules="required|minValue:0"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Alumni Fee"
-              type="number"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :update="(raw, handle) => handle(raw === '' ? '' : Number(raw))"
+          />
         </Form>
       </v-card-text>
+
       <v-card-actions>
         <v-spacer />
         <v-btn
@@ -121,16 +90,19 @@
 
 <script lang="ts" setup>
 import {computed, reactive, ref, watch} from "vue"
+import {Form, type FormContext} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
 import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
-import {Field, Form, type FormContext} from "vee-validate"
 
 defineOptions({name: "ContributionPeriodDialog"})
 
-const props = defineProps<{
-  contributionPeriod?: ContributionPeriod,
-  showDialog: boolean
+const props = defineProps<{ contributionPeriod?: ContributionPeriod; showDialog: boolean }>()
+const emit = defineEmits<{
+  (e: "update:showDialog", value: boolean): void;
+  (e: "changed", value: ContributionPeriod): void;
+  (e: "delete", value: number): void;
 }>()
 
 const emptyPeriod = (): ContributionPeriod => ({
@@ -163,53 +135,39 @@ watch(
   },
 )
 
-const emit = defineEmits<{
-  (e: "update:showDialog", value: boolean): void; // ← correct event
-  (e: "changed", value: ContributionPeriod): void;
-  (e: "delete", value: number): void;
-}>()
-
 const showDialog = computed({
   get: () => props.showDialog,
   set: (value: boolean) => emit("update:showDialog", value),
 })
 
-
 const closeDialog = () => {
   showDialog.value = false
 }
-
 const confirmDeletePeriod = () => {
   showDialog.value = false
-  emit("delete", periodForm.id!)
+  if (periodForm.id != null) emit("delete", periodForm.id)
 }
 
 const saveContributionPeriod = async () => {
   const result = await formRef.value?.validate()
-  if (result?.valid) return
+  if (!result?.valid) return
 
-  if (periodForm?.id) {
-    const resp = await updateContributionPeriod({
-      body: periodForm,
-      path: {id: periodForm.id as number},
-    })
-
-    if (resp.status === 200) {
+  try {
+    if (periodForm?.id) {
+      const resp = await updateContributionPeriod({
+        body: periodForm,
+        path: {id: periodForm.id as number},
+        throwOnError: true,
+      })
       emit("changed", resp.data!)
       closeDialog()
-    } else if (!apply(formRef.value!, resp)) {
-      $handleNetworkError(resp)
-    }
-  } else {
-    const resp = await createContributionPeriod({body: periodForm})
-
-    if (resp.status === 201) {
+    } else {
+      const resp = await createContributionPeriod({body: periodForm, throwOnError: true})
       emit("changed", resp.data!)
       closeDialog()
-    } else if (!apply(formRef.value!, resp)) {
-      $handleNetworkError(resp)
     }
+  } catch (err) {
+    if (!apply(formRef.value!, err)) $handleNetworkError(err)
   }
 }
-
 </script>

@@ -75,7 +75,7 @@
         v-model:show-dialog="showAddPeriodDialog"
         :contribution-period="selectedPeriod"
         @delete="deleteContributionPeriod"
-        @refresh-periods="getContributionPeriods"
+        @changed="onPeriodChanged"
       />
 
       <delete-confirmation-dialog
@@ -120,7 +120,7 @@ const getContributionPeriods = async () => {
   const response = await findContributionPeriods()
   contributionPeriods.value = response.data ?? []
   if (contributionPeriods.value.length > 0) {
-    selectedPeriodId.value = contributionPeriods.value[contributionPeriods.value.length - 1]!.id
+    selectedPeriodId.value = contributionPeriods.value.at(-1)!.id
     selectedPeriodIdChanged(selectedPeriodId.value)
   } else {
     selectedPeriodId.value = undefined
@@ -147,14 +147,24 @@ const deleteContributionPeriod = () => {
 const confirmDeleteContributionPeriod = async () => {
   isEditing.value = false
   deleteDialog.value = false
-  await deleteContributionPeriodById({path: {id: selectedPeriodId.value!}})
+  if (selectedPeriodId.value != null) {
+    await deleteContributionPeriodById({path: {id: selectedPeriodId.value}})
+  }
   selectedPeriod.value = null
   selectedPeriodId.value = undefined
   await getContributionPeriods()
 }
 
 const selectedPeriodIdChanged = (id: number | undefined) => {
-  emit("update:contribution-period", contributionPeriods.value.find((cp) => cp.id === id)!)
+  const period = contributionPeriods.value.find((cp) => cp.id === id)
+  emit("update:contribution-period", period)
+}
+
+/** Refresh periods and keep/restore selection after dialog save */
+const onPeriodChanged = async (p: ContributionPeriod) => {
+  await getContributionPeriods()
+  selectedPeriodId.value = p?.id
+  selectedPeriodIdChanged(selectedPeriodId.value)
 }
 
 onMounted(() => {

@@ -78,8 +78,14 @@ async function save() {
     else signUp.value.guest = guest.value ?? {}
 
     const eventId = props.event.id!
-    const resp = (isLoggedIn.value && signUp.value.id)
-      ? await updateEventSignUp({path: {eventId}, body: signUp.value, throwOnError: true})
+
+    const resp = signUp.value.id
+      ? await updateEventSignUp({
+        path: {eventId},
+        query: {accessToken: signUp.value.guest?.accessToken},
+        body: signUp.value,
+        throwOnError: true,
+      })
       : await createEventSignup({path: {eventId}, body: signUp.value, throwOnError: true})
 
     const eventSignUp = resp.data!

@@ -51,8 +51,9 @@
           v-if="expanded === user.id"
           @click.stop
         >
+          <!-- Writable v-model proxy pushes updates upward via emit -->
           <address-form
-            v-model="address"
+            v-model="addressModel"
             class="mt-6"
             show-submit
             :user-id="user.id"
@@ -100,14 +101,23 @@ const deleteDialog = ref(false)
 const address = computed<Address | undefined>(() =>
   props.addresses.find((a) => a.id === props.user.addressId),
 )
-
 const hasAddress = computed(() => !!address.value)
+
+/** Writable proxy so AddressForm v-model updates bubble up to the list */
+const addressModel = computed<Address | undefined>({
+  get: () => address.value,
+  set: (next?: Address) => {
+    if (next) emit("update:address", next)
+  },
+})
+
+const user = computed(() => props.user)
 
 const toggleExpanded = () => emit("update:expanded", props.user.id as number)
 
 const onSubmitted = (ok: boolean) => {
   if (!ok) return
-  emit("update:address", address.value as Address)
+  if (address.value) emit("update:address", address.value)
   emit("update:expanded", 0)
 }
 
@@ -117,7 +127,6 @@ const openDelete = () => {
 
 const confirmDeleteAddress = async () => {
   if (!props.user.id || !address.value?.id) return
-
   try {
     deleteDialog.value = false
     await deleteUserAddress({path: {userId: props.user.id}})

@@ -7,26 +7,48 @@
       <v-card-title class="text-h5">
         Start Membership
       </v-card-title>
+
       <v-card-text>
-        <v-form
-          ref="form"
+        <Form
+          ref="formRef"
+          as="div"
         >
           <v-row>
-            <v-text-field
-              v-model="membership.startDate"
-              :max="new Date().toISOString()"
-              label="Start Date"
-              required
-              type="date"
-            />
+            <v-col cols="12">
+              <VvField
+                v-model="membership.startDate"
+                name="startDate"
+                label="Start Date"
+                rules="required"
+                :component-props="{ type: 'date', max: maxDate }"
+              />
+            </v-col>
           </v-row>
+
           <v-row>
-            <member-type-select v-model="membership.memberType" />
+            <v-col cols="12">
+              <VvField
+                v-model="membership.memberType"
+                :component="MemberTypeSelect"
+                name="memberType"
+                label="Member Type"
+                rules="required"
+              />
+            </v-col>
           </v-row>
+
           <v-row>
-            <country-select v-model="membership.country" />
+            <v-col cols="12">
+              <VvField
+                v-model="membership.country"
+                :component="CountrySelect"
+                name="country"
+                label="Country"
+                rules="required"
+              />
+            </v-col>
           </v-row>
-        </v-form>
+        </Form>
       </v-card-text>
 
       <v-card-actions>
@@ -41,7 +63,7 @@
         <v-btn
           :loading="isSubmitting"
           color="primary"
-          @click="confirm()"
+          @click="confirm"
         >
           Confirm
         </v-btn>
@@ -51,12 +73,15 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, type Ref, ref} from "vue"
+import {computed, ref} from "vue"
 import {DateTime} from "luxon"
+import {Form, type FormContext} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
-import {boardCreateMembership, type Membership, MemberType} from "@/services/api"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
-import type {VForm} from "vuetify/lib/components"
+import {boardCreateMembership, type Membership, MemberType} from "@/services/api"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {apply} from "@/plugins/validation.ts"
 
 interface Props {
   modelValue: boolean;
@@ -70,17 +95,16 @@ const emit = defineEmits<{
   (e: "update:membership", value: Membership): void;
 }>()
 
-const form: Ref<VForm | undefined> = ref()
-
-// Local v-model proxy
+const formRef = ref<FormContext>()
 const open = computed({
   get: () => props.modelValue,
   set: (val: boolean) => emit("update:modelValue", val),
 })
 
-// Local state for the dialog
+const maxDate = DateTime.now().toISODate()
+
 const membership = ref<Membership>({
-  startDate: DateTime.now().toISODate(),
+  startDate: maxDate,
   memberType: MemberType.REGULAR,
   userId: props.userId,
   city: "",
@@ -91,21 +115,18 @@ const membership = ref<Membership>({
 const isSubmitting = ref(false)
 
 const confirm = async () => {
+  const validation = await formRef.value?.validate()
+  if (!validation?.valid) return
+
+  isSubmitting.value = true
   try {
-    const validationResult = await form.value?.validate()
-    if (!validationResult?.valid) return
-
-    isSubmitting.value = true
-
-    const membershipData: Membership = membership.value
-    const response = await boardCreateMembership({body: membershipData})
-
+    const response = await boardCreateMembership({body: membership.value, throwOnError: true})
     if (response.data) {
       emit("update:membership", response.data)
       open.value = false
     }
   } catch (error) {
-    console.error("Failed to create membership:", error)
+    if (!apply(formRef.value!, error)) $handleNetworkError(error)
   } finally {
     isSubmitting.value = false
   }

@@ -29,13 +29,13 @@ const eventSignUps = ref<EventSignUp[]>([])
 const calendarRef = ref<InstanceType<typeof EventCalendar>>()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed<Login>(() => store.getters.getLogin)
-const guest = computed<Guest>(() => store.getters.getGuest)
+const guest = computed<Guest>(() => store.getters.getGuestData)
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
 
 onMounted(async () => {
   try {
-
+    console.log(guest.value)
     const [eventsResp, signupsResp, committeesResp] = await Promise.all([
       findEvents({
         query: {from: startOfTodayIso, sort: ["startTime", "asc"]},

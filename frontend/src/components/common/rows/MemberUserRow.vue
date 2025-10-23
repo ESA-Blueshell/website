@@ -35,7 +35,6 @@
             {{ hasContribution ? "Paid" : "Unpaid" }}
           </v-chip>
 
-
           <v-btn
             v-if="enableDelete"
             :disabled="user?.roles?.includes('ADMIN')"
@@ -47,10 +46,7 @@
             Delete
           </v-btn>
 
-
-          <template
-            v-if="membership"
-          >
+          <template v-if="membership">
             <v-btn
               v-if="membership.endDate"
               class="btn-tight"
@@ -86,8 +82,9 @@
           v-if="expanded === user.id"
           @click.stop
         >
+          <!-- Writable v-model proxy pushes updates upward via emit -->
           <advanced-user-form
-            v-model="user"
+            v-model="userModel"
             class="mt-6"
             show-submit
           />
@@ -119,7 +116,6 @@ import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import {DateTime} from "luxon"
 import StartMembershipDialog from "@/components/common/modals/StartMembershipDialog.vue"
-
 import {type AdvancedUser, type Contribution, deleteUserById, type Membership, updateMembership} from "@/services/api"
 
 interface Props {
@@ -150,17 +146,18 @@ const showStartModal = ref(false)
 const membership = computed<Membership | undefined>(() =>
   props.memberships.find((m) => m.userId === props.user.id),
 )
-
-
 const contribution = computed<Contribution | undefined>(() =>
-  props.contributions.find(
-    (c) => c.userId === props.user.id,
-  ),
+  props.contributions.find((c) => c.userId === props.user.id),
 )
-
 const hasContribution = computed(() => !!contribution.value)
 
-const user = computed<AdvancedUser>(() => props.user)
+/** Writable proxy so child form can v-model while we bubble updates up */
+const userModel = computed<AdvancedUser>({
+  get: () => props.user,
+  set: (next: AdvancedUser) => emit("update:user", next),
+})
+
+const user = computed(() => props.user)
 
 const toggleExpanded = () => emit("update:expanded", props.user.id as number)
 const startMembership = () => {
@@ -214,7 +211,6 @@ const confirmDeleteUser = async () => {
     console.error("Failed to delete user:", error)
   }
 }
-
 </script>
 
 <style lang="scss">

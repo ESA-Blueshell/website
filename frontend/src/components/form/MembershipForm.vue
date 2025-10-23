@@ -78,7 +78,7 @@ import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
 defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
 
 const {showSubmit = false, submitText = "Submit"} = defineProps<{ showSubmit?: boolean; submitText?: string }>()
-const emit = defineEmits<{ (e: "submitted", ok: boolean): void; (e: "update:modelValue", value: Membership): void }>()
+const emit = defineEmits<{ (e: "submitted", ok: boolean): void;}>()
 const membership = defineModel<Membership>({default: () => ({}) as Membership})
 
 const {formRef, validate} = useVeeForm()
@@ -99,7 +99,6 @@ const save = async (): Promise<Membership | null> => {
     })
     membership.value = resp.data!
     emit("submitted", true)
-    emit("update:modelValue", membership.value)
     return membership.value
   } catch (err: unknown) {
     handleSubmitError(formRef.value, err)

@@ -36,7 +36,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Setter
 @NoArgsConstructor
 public class EventSignUpAnswer extends BaseModel {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_sign_up_id", nullable = false)
     private EventSignUp eventSignUp;
 

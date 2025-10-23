@@ -297,7 +297,6 @@ const props = defineProps({
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
-  (e: "update:modelValue", value: Event): void
 }>()
 
 const event = defineModel<Event>({
@@ -431,7 +430,6 @@ const save = async () => {
         : await createEvent({body: event.value, throwOnError: true})
 
       event.value = resp.data!
-      emit("update:modelValue", event.value)
       emit("submitted", true)
       router.back()
     })

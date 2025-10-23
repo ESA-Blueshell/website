@@ -1,3 +1,100 @@
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import "flag-icons/css/flag-icons.min.css"
+import "v-phone-input/dist/v-phone-input.css"
+import {VPhoneInput} from "v-phone-input"
+import {type AdvancedUser, createUser, updateUser} from "@/services/api"
+import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
+import {Form} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
+import {VCheckbox} from "vuetify/components"
+import {
+  handleSubmitError,
+  useCountry,
+  usePasswordToggle,
+  useReadonly,
+  useSaving,
+  useVeeForm,
+} from "@/composables/formUtils"
+
+defineOptions({name: "AdvancedUserForm"})
+
+const {
+  showPassword = false,
+  showSubmit = false,
+  submitText = "Submit",
+  showUsername = true,
+} = defineProps<{
+  showPassword?: boolean
+  showSubmit?: boolean
+  submitText?: string
+  showUsername?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+}>()
+
+const user = defineModel<AdvancedUser>({
+  default: () => ({
+    discord: "",
+    email: "",
+    initials: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    newsletter: true,
+    dateOfBirth: "",
+    phoneNumber: "",
+    ehbo: false,
+    bhv: false,
+    photoConsent: false,
+    gender: "",
+    nationality: "NL",
+    studentNumber: "",
+    password: "",
+  }),
+})
+
+const {isReadonly} = useReadonly()
+const isCreating = computed<boolean>(() => !user.value?.id)
+
+const {country, onCountryUpdate} = useCountry("NL")
+const {isSaving, withSaving} = useSaving()
+const {formRef, validate} = useVeeForm()
+
+const confirmPassword = ref<string>("")
+const {passwordFieldProps} = usePasswordToggle()
+
+const save = async (): Promise<AdvancedUser | null> => {
+  if (!(await validate())) {
+    emit("submitted", false)
+    return null
+  }
+  try {
+    const resp = await withSaving(async () => {
+      const hasId = Boolean(user.value?.id)
+      return hasId
+        ? await updateUser({
+          path: {id: user.value!.id!},
+          body: user.value!,
+          throwOnError: true,
+        })
+        : await createUser({body: user.value!, throwOnError: true})
+    })
+    user.value = resp.data!
+    emit("submitted", true)
+    return user.value
+  } catch (error: unknown) {
+    handleSubmitError(formRef.value, error)
+    emit("submitted", false)
+    return null
+  }
+}
+
+defineExpose({validate, save})
+</script>
+
 <template>
   <div>
     <Form
@@ -127,7 +224,6 @@
             rules="dateRequired"
           />
         </v-col>
-
         <v-col cols="6">
           <VvField
             v-model="user.nationality"
@@ -231,96 +327,13 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import {computed, ref} from "vue"
-import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/dist/v-phone-input.css"
-import {VPhoneInput} from "v-phone-input"
-import {type AdvancedUser, createUser, updateUser} from "@/services/api"
-import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
-import {VCheckbox} from "vuetify/components"
-
-import {
-  handleSubmitError,
-  useCountry,
-  usePasswordToggle,
-  useReadonly,
-  useSaving,
-  useVeeForm,
-} from "@/composables/formUtils"
-
-const {
-  showPassword = false,
-  showSubmit = false,
-  submitText = "Submit",
-  showUsername = true,
-} = defineProps<{
-  showPassword?: boolean
-  showSubmit?: boolean
-  submitText?: string
-  showUsername?: boolean
-}>()
-
-const emit = defineEmits<{
-  (e: "submitted", ok: boolean): void
-  (e: "update:modelValue", value: AdvancedUser): void
-}>()
-
-const user = defineModel<AdvancedUser>({
-  default: () => ({
-    discord: "",
-    email: "",
-    initials: "",
-    firstName: "",
-    lastName: "",
-    username: "",
-    newsletter: true,
-    dateOfBirth: "",
-    phoneNumber: "",
-    ehbo: false,
-    bhv: false,
-    photoConsent: false,
-    gender: "",
-    nationality: "NL",
-    studentNumber: "",
-    password: "",
-  }),
-})
-
-const {isReadonly} = useReadonly()
-const isCreating = computed<boolean>(() => !user.value?.id)
-
-const {country, onCountryUpdate} = useCountry("NL")
-const {isSaving, withSaving} = useSaving()
-const {formRef, validate} = useVeeForm()
-
-const confirmPassword = ref<string>("")
-const {passwordFieldProps} = usePasswordToggle()
-
-const save = async (): Promise<AdvancedUser | null> => {
-  if (!(await validate())) {
-    emit("submitted", false)
-    return null
-  }
-  try {
-    const resp = await withSaving(async () => {
-      const hasId = Boolean(user.value?.id)
-      return hasId
-        ? await updateUser({path: {id: user.value!.id!}, body: user.value!, throwOnError: true})
-        : await createUser({body: user.value!, throwOnError: true})
-    })
-    user.value = resp.data!
-    emit("submitted", true)
-    emit("update:modelValue", user.value)
-    return user.value
-  } catch (error: unknown) {
-    handleSubmitError(formRef.value, error)
-    emit("submitted", false)
-    return null
-  }
+<style lang="scss">
+span {
+  font-weight: bold;
 }
 
-defineExpose({validate, save})
-</script>
+.btn-tight {
+  padding-inline: 6px !important;
+  min-width: auto !important;
+}
+</style>

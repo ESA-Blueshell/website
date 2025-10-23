@@ -200,7 +200,6 @@ const user = defineModel<SimpleUser>({
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
-  (e: "update:modelValue", value: SimpleUser): void
 }>()
 
 const {isReadonly} = useReadonly()
@@ -226,7 +225,6 @@ const save = async (): Promise<SimpleUser | null> => {
     })
     user.value = resp.data!
     emit("submitted", true)
-    emit("update:modelValue", user.value)
     return user.value
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)

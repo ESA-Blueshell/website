@@ -1,6 +1,7 @@
 package net.blueshell.api.listener.jpa;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.QuestionType;
 import net.blueshell.api.common.event.jpa.PostPersistEvent;
 import net.blueshell.api.common.event.jpa.PostRemoveEvent;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class QuestionEventListener {
@@ -26,11 +28,12 @@ public class QuestionEventListener {
     public void onPersist(PostPersistEvent<Question> evt) {
         var q = evt.getSource();
 
+        log.info("On persist question {}", q.getId());
+
         // If a new description is added, there is no need to clear the survey.
         // If a new question is added, then we do need to wipe the answers and signups.
         // This is because the surveys will need to be filled in again.
         if (q.getType() != QuestionType.DESCRIPTION && q.getSurveyId() != null) {
-            answers.deleteAll(answers.findBySurveyId(q.getSurveyId()));
             signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()));
         }
     }
@@ -43,7 +46,6 @@ public class QuestionEventListener {
         // When a question is updated, the survey will need to be re-filled.
         // Therefore, all answers for the survey need to be wiped.
         if (q.getAnswers() != null && !q.getAnswers().isEmpty()) {
-            answers.deleteAll(answers.findBySurveyId(q.getSurveyId()));
             signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()));
         }
     }

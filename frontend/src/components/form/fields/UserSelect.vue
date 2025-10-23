@@ -65,5 +65,4 @@ defineExpose({validate, resetValidation, focus})
 </script>
 
 <style lang="scss" scoped>
-/* optional styles */
 </style>

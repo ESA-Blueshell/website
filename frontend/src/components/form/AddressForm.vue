@@ -96,7 +96,6 @@ const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
-  (e: "update:modelValue", value: Address): void
 }>()
 
 const address = defineModel<Address>({
@@ -127,7 +126,6 @@ const save = async (): Promise<Address | null> => {
     })
     address.value = resp.data!
     emit("submitted", true)
-    emit("update:modelValue", address.value)
     return address.value
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)

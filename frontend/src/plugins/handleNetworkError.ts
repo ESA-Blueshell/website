@@ -38,6 +38,9 @@ export function $handleNetworkError(error: any): void {
       case 408:
         errorMessage = "Zzzzzzzzzzzz... there seems to have been a request timeout (error code 408). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
         break
+      case 409:
+        errorMessage = "Woopsie daysies, it seems somebody else changed the same thing as you... You'll have to reload the page and make your changes again ;-;"
+        break
       case 413:
         errorMessage = "Your file is too large. Please compress it and try again"
         break

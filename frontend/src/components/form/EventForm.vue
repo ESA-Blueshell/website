@@ -1,13 +1,286 @@
+<template>
+  <Form
+    ref="formRef"
+    as="div"
+  >
+    <v-container style="padding: 0;">
+      <v-row>
+        <v-col
+          cols="12"
+          lg="8"
+        >
+          <VvField
+            v-model="event.title"
+            name="title"
+            label="Event name"
+            rules="required"
+          />
+        </v-col>
+
+        <v-col
+          cols="12"
+          lg="4"
+        >
+          <VvField
+            v-model="event.location"
+            name="location"
+            label="Location"
+            rules="required"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row class="mb-8">
+        <v-col>
+          <VvField
+            v-model="event.description"
+            :component="MarkdownField"
+            name="description"
+            label="Description"
+            rules="required"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <VvField
+            v-model="event.memberPrice"
+            name="memberPrice"
+            label="Price for members"
+            rules="minValue:0|maxValue:99.99"
+            :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :update="(raw: string, handle) => handle(raw === '' ? '' : Number(raw))"
+          />
+        </v-col>
+
+        <v-col>
+          <VvField
+            v-model="event.publicPrice"
+            name="publicPrice"
+            label="Price for non-members"
+            rules="minValue:0|maxValue:99.99"
+            :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :update="(raw: string, handle) => handle(raw === '' ? '' : Number(raw))"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <VvField
+            v-model="sameEndDate"
+            :component="VCheckbox"
+            name="sameEndDate"
+            :component-props="{ label: 'Same start and end date' }"
+          />
+        </v-col>
+
+        <v-col>
+          <VvField
+            v-model="event.membersOnly"
+            :component="VCheckbox"
+            name="membersOnly"
+            :component-props="{ label: 'Members only' }"
+          />
+        </v-col>
+
+        <v-col>
+          <VvField
+            v-if="isBoard"
+            v-model="event.approved"
+            :component="VCheckbox"
+            name="approved"
+            :component-props="{ label: 'Approved' }"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <VvField
+            v-model="event.startTime"
+            name="startDate"
+            label="Start date"
+            rules="required"
+            :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
+            :display="(v) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
+            :update="(date, handle) => handle(toISO({ date: String(date), dateTime: event.startTime }))"
+          />
+        </v-col>
+
+        <v-col>
+          <VvField
+            v-model="event.startTime"
+            name="startTime"
+            label="Start time"
+            :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
+            :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
+            :display="(v) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+            :update="(time, handle) => handle(toISO({ time: String(time), dateTime: event.startTime }))"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <VvField
+            v-model="event.endTime"
+            name="endDate"
+            label="End date"
+            rules="required|dateTimeAfter:@startDate"
+            :disabled="sameEndDate"
+            :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
+            :display="(v) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
+            :update="(date, handle) => handle(toISO({ date: String(date), dateTime: event.endTime }))"
+          />
+        </v-col>
+
+        <v-col>
+          <VvField
+            v-model="event.endTime"
+            name="endTime"
+            label="End time"
+            rules="required|dateTimeAfter:@startTime"
+            :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
+            :display="(v) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+            :update="(time, handle) => handle(toISO({ time: String(time), dateTime: event.endTime }))"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <VvField
+            v-model="event.committeeId"
+            name="committeeId"
+            label="Representative committee"
+            rules="required"
+            :component="VSelect"
+            :component-props="{
+              items: committees,
+              'item-title': 'name',
+              'item-value': 'id',
+              'prepend-icon': 'mdi-account-group',
+              disabled: !committees.length
+            }"
+          />
+        </v-col>
+
+        <v-col>
+          <VvField
+            v-model="bannerFile"
+            name="banner"
+            label="Promo image (Max 2MB)"
+            rules="fileSize"
+            :component="VFileInput"
+            :component-props="{
+              accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif',
+              clearable: true,
+              'show-size': true
+            }"
+            :update="(file, handle) => onBannerChange(file as File | null, handle)"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <VvField
+            v-model="event.signUp"
+            :component="VCheckbox"
+            name="signUp"
+            :component-props="{ label: 'Enable sign-up', 'hide-details': true }"
+          />
+        </v-col>
+        <v-col>
+          <VvField
+            v-model="enableSignUpForm"
+            :component="VCheckbox"
+            name="enableSignUpForm"
+            :component-props="{ label: 'Enable sign-up form', 'hide-details': true }"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row v-if="enableSignUpForm">
+        <v-col>
+          <VvField
+            v-model="event.signUpForm"
+            :component="SurveyForm"
+            name="signUpForm"
+            rules="required"
+          />
+        </v-col>
+      </v-row>
+
+      <v-expand-transition>
+        <v-alert
+          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !event.signUpForm)"
+          class="mt-4 mx-3"
+          prominent
+          type="warning"
+          variant="outlined"
+        >
+          Woah there! Looks like you changed sign-up settings. Once you submit, any existing sign-ups <b>will be
+            removed</b>!
+        </v-alert>
+      </v-expand-transition>
+    </v-container>
+
+    <v-expand-transition class="mt-4">
+      <v-alert
+        v-if="isDirty && !isBoard"
+        prominent
+        type="warning"
+        variant="outlined"
+      >
+        Making changes to this event will cause it to be hidden from the calendar until a board member has re-approved
+        it.
+      </v-alert>
+    </v-expand-transition>
+
+    <v-expand-transition class="mt-4">
+      <v-alert
+        v-if="event.id && hasStarted"
+        prominent
+        type="error"
+        variant="outlined"
+      >
+        It is not allowed to make changes to events which have already started.
+      </v-alert>
+    </v-expand-transition>
+
+    <v-row>
+      <v-col cols="12">
+        <v-btn
+          :disabled="hasStarted"
+          :loading="isSaving"
+          block
+          class="mt-8 mx-auto"
+          color="primary"
+          :prepend-icon="event.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
+          @click="save"
+        >
+          Submit event
+        </v-btn>
+      </v-col>
+    </v-row>
+  </Form>
+</template>
+
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {defineRule, Field, Form, type FormContext} from "vee-validate"
+import {defineRule, Form, type FormContext} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import router from "@/plugins/router.ts"
-import {apply} from "@/plugins/validation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {apply} from "@/plugins/validation.ts"
+import VvField from "@/components/form/fields/VvField.vue"
+import {VCheckbox, VFileInput, VSelect} from "vuetify/components"
 import {
   type AdvancedCommittee,
   createEvent,
@@ -24,10 +297,13 @@ const props = defineProps({
   hasPromo: {type: Boolean, default: false},
 })
 
-const store = useStore()
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+  (e: "update:modelValue", value: Event): void
+}>()
 
-function getDefaultEvent(): Event {
-  return {
+const event = defineModel<Event>({
+  default: () => ({
     id: undefined,
     title: "",
     location: "",
@@ -41,20 +317,23 @@ function getDefaultEvent(): Event {
     signUp: false,
     banner: undefined,
     committeeId: 0,
-  }
-}
+  }),
+})
 
-const event = ref<Event>({...getDefaultEvent(), ...(props.initialEvent || {})})
-const hadSignUp = ref<boolean>(!!event.value.signUp)
-const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm)
+const store = useStore()
+const isBoard = computed<boolean>(() => store.getters.isBoard)
+
 const committees = ref<AdvancedCommittee[]>([])
 const sameEndDate = ref(true)
-
 const formRef = ref<FormContext>()
-const submitting = ref(false)
+const isSaving = ref(false)
+const nowISO = DateTime.now().toISO()
+const hasStarted = computed(() => !!event.value.id && DateTime.fromISO(event.value.startTime) < DateTime.now())
+
+const hadSignUp = ref<boolean>(!!event.value.signUp)
+const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm)
 const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
 
-const isBoard = computed<boolean>(() => store.getters.isBoard)
 const initialJson = ref(JSON.stringify(event.value))
 const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
 
@@ -63,7 +342,9 @@ function safeFormatISO(iso: string, fmt: string) {
   return dt.isValid ? dt.toFormat(fmt) : ""
 }
 
-function toISO({date, time, dateTime}: { date?: string; time?: string; dateTime?: string }): string {
+/** Convert separate date/time edits to full ISO strings */
+function toISO(args: { date?: string; time?: string; dateTime?: string }): string {
+  const {date, time, dateTime} = args
   const base = dateTime ? DateTime.fromISO(dateTime) : null
   const hasBase = !!base && base.isValid
   const d = date ?? (hasBase ? base!.toFormat("yyyy-MM-dd") : undefined)
@@ -82,6 +363,7 @@ function toISO({date, time, dateTime}: { date?: string; time?: string; dateTime?
   return ""
 }
 
+// Keep end-date equal to start date while toggle is on
 watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
   if (!sameEndDate.value) return
   const end = DateTime.fromISO(event.value.endTime)
@@ -89,16 +371,12 @@ watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () 
   event.value.endTime = toISO({time, dateTime: event.value.startTime})
 })
 
-watch(
-  () => event.value.signUp,
-  (on) => {
-    if (!on) {
-      event.value.signUpForm = undefined
-      enableSignUpForm.value = false
-    }
-  },
-)
-
+watch(() => event.value.signUp, (on) => {
+  if (!on) {
+    event.value.signUpForm = undefined
+    enableSignUpForm.value = false
+  }
+})
 watch(enableSignUpForm, (on) => {
   if (on) event.value.signUp = true
   else event.value.signUpForm = undefined
@@ -133,8 +411,8 @@ async function loadBanner() {
       lastModified: Date.now(),
     })
     bannerDirty.value = false
-  } catch (e) {
-    console.error("Failed to download event banner:", e)
+  } catch {
+    /* optional */
   }
 }
 
@@ -142,7 +420,6 @@ async function onBannerChange(val: File | null, handleChange: (v: File | null) =
   const file = getFirstFile(val)
   const res = await formRef.value?.validateField("banner")
   if (file && !res?.valid) return
-
   bannerFile.value = file ?? null
   bannerDirty.value = true
   handleChange(file ?? null)
@@ -158,22 +435,28 @@ onMounted(async () => {
   await Promise.all([loadBanner(), fetchCommittees()])
 })
 
-async function submit() {
+const validate = async (): Promise<boolean> => {
   const result = await formRef.value?.validate()
-  if (!result?.valid) return
-  submitting.value = true
+  return !!result?.valid
+}
+
+const save = async () => {
+  if (!(await validate())) {
+    emit("submitted", false)
+    return
+  }
+  isSaving.value = true
   try {
     if (bannerDirty.value) {
       if (bannerFile.value) {
         const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
         if (uploadResp.status === 201) {
-          // If the banner is the same as before, then we can just keep the old ref.
           if (event.value.banner?.file.id !== uploadResp.data?.id) {
             event.value.banner = {file: uploadResp.data!} as EventBanner
           }
         } else if (!apply(formRef.value!, uploadResp)) {
           $handleNetworkError(uploadResp)
-          submitting.value = false
+          isSaving.value = false
           return
         }
       } else {
@@ -181,395 +464,24 @@ async function submit() {
       }
     }
 
-    if (event.value?.id)
-      await updateEvent({path: {id: event.value.id}, body: event.value, throwOnError: true})
-    else
-      await createEvent({body: event.value, throwOnError: true})
+    const resp = event.value?.id
+      ? await updateEvent({path: {id: event.value.id!}, body: event.value, throwOnError: true})
+      : await createEvent({body: event.value, throwOnError: true})
 
+    event.value = resp.data!
+    emit("update:modelValue", event.value)
+    emit("submitted", true)
     router.back()
   } catch (e: unknown) {
     if (!apply(formRef.value!, e)) $handleNetworkError(e)
+    emit("submitted", false)
   } finally {
-    submitting.value = false
+    isSaving.value = false
   }
 }
 
+defineExpose({validate, save})
 </script>
-
-<template>
-  <Form
-    ref="formRef"
-    as="div"
-  >
-    <v-container style="padding: 0;">
-      <v-row>
-        <v-col
-          cols="12"
-          lg="8"
-        >
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.title"
-            name="title"
-            rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Event name"
-              required
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-        <v-col
-          cols="12"
-          lg="4"
-        >
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.location"
-            name="location"
-            rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Location"
-              required
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row class="mb-8">
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.description"
-            name="description"
-            rules="required"
-          >
-            <markdown-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Description"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.memberPrice"
-            name="memberPrice"
-            rules="minValue:0|maxValue:99.99"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Price for members"
-              prepend-icon="mdi-currency-eur"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.publicPrice"
-            name="publicPrice"
-            rules="minValue:0|maxValue:99.99"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="value"
-              label="Price for non-members"
-              prepend-icon="mdi-currency-eur"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <Field
-            v-slot="{ value, handleChange }"
-            v-model="sameEndDate"
-            name="sameEndDate"
-          >
-            <v-checkbox
-              :model-value="value"
-              label="Same start and end date"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-        <v-col>
-          <Field
-            v-slot="{ value, handleChange }"
-            v-model="event.membersOnly"
-            name="membersOnly"
-          >
-            <v-checkbox
-              :model-value="value"
-              label="Members only"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-        <v-col>
-          <Field
-            v-if="isBoard"
-            v-slot="{ value, errors, handleChange }"
-            v-model="event.approved"
-            name="approved"
-          >
-            <v-checkbox
-              :error-messages="errors"
-              :model-value="value"
-              label="Approved"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.startTime"
-            name="startDate"
-            rules="required"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="safeFormatISO(value, 'yyyy-MM-dd')"
-              label="Start date"
-              prepend-icon="mdi-calendar"
-              type="date"
-              @blur="handleBlur"
-              @update:model-value="(date: string) => handleChange(toISO({ date, dateTime: event.startTime }))"
-            />
-          </Field>
-        </v-col>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.startTime"
-            :rules="event.id ? 'required' : `required|dateTimeAfter:${DateTime.now().toISO()}`"
-            name="startTime"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="safeFormatISO(value, 'HH:mm')"
-              label="Start time"
-              prepend-icon="mdi-clock"
-              type="time"
-              @blur="handleBlur"
-              @update:model-value="(time: string) => handleChange(toISO({ time, dateTime: event.startTime }))"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.endTime"
-            name="endDate"
-            rules="required|dateTimeAfter:@startDate"
-          >
-            <v-text-field
-              :disabled="sameEndDate"
-              :error-messages="errors"
-              :model-value="safeFormatISO(value, 'yyyy-MM-dd')"
-              label="End date"
-              prepend-icon="mdi-calendar"
-              type="date"
-              @blur="handleBlur"
-              @update:model-value="(date: string) => handleChange(toISO({ date, dateTime: event.endTime }))"
-            />
-          </Field>
-        </v-col>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.endTime"
-            name="endTime"
-            rules="required|dateTimeAfter:@startTime"
-          >
-            <v-text-field
-              :error-messages="errors"
-              :model-value="safeFormatISO(value, 'HH:mm')"
-              label="End time"
-              prepend-icon="mdi-clock"
-              type="time"
-              @blur="handleBlur"
-              @update:model-value="(time: string) => handleChange(toISO({ time, dateTime: event.endTime }))"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="event.committeeId"
-            name="committeeId"
-            rules="required"
-          >
-            <v-select
-              :disabled="!committees.length"
-              :error-messages="errors"
-              :items="committees"
-              :model-value="value"
-              item-title="name"
-              item-value="id"
-              label="Representative committee"
-              prepend-icon="mdi-account-group"
-              @blur="handleBlur"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-
-        <!-- CHANGED: bind the field to bannerFile and defer upload -->
-        <v-col>
-          <Field
-            v-slot="{ value, errors, handleChange, handleBlur }"
-            v-model="bannerFile"
-            name="banner"
-            rules="fileSize"
-          >
-            <v-file-input
-              :error-messages="errors"
-              :model-value="value as File"
-              accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
-              clearable
-              label="Promo image (Max 2MB)"
-              show-size
-              @blur="handleBlur"
-              @update:model-value="(blob: File) => onBannerChange(blob, handleChange)"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <Field
-            v-slot="{ value, handleChange }"
-            v-model="event.signUp"
-            name="signUp"
-          >
-            <v-checkbox
-              :model-value="value"
-              hide-details
-              label="Enable sign-up"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-        <v-col>
-          <Field
-            v-slot="{ value, handleChange }"
-            v-model="enableSignUpForm"
-            name="enableSignUpForm"
-          >
-            <v-checkbox
-              :model-value="value"
-              hide-details
-              label="Enable sign-up form"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-row v-if="enableSignUpForm">
-        <v-col>
-          <Field
-            v-slot="{ errors, handleChange }"
-            v-model="event.signUpForm"
-            name="signUpForm"
-            rules="required"
-          >
-            <survey-form
-              v-model="event.signUpForm"
-              :error-messages="errors"
-              @update:model-value="handleChange"
-            />
-          </Field>
-        </v-col>
-      </v-row>
-
-      <v-expand-transition>
-        <v-alert
-          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !event.signUpForm)"
-          class="mt-4 mx-3"
-          prominent
-          type="warning"
-          variant="outlined"
-        >
-          Woah there! Looks like you changed sign-up settings. Once you submit, any existing sign-ups <b>will be
-            removed</b>!
-        </v-alert>
-      </v-expand-transition>
-    </v-container>
-
-    <v-expand-transition class="mt-4">
-      <v-alert
-        v-if="isDirty && !isBoard"
-        prominent
-        type="warning"
-        variant="outlined"
-      >
-        Making changes to this event will cause it to be hidden from the calendar until a board member has re-approved
-        it.
-      </v-alert>
-    </v-expand-transition>
-
-    <v-expand-transition class="mt-4">
-      <v-alert
-        v-if="event.id && DateTime.fromISO(event.startTime) < DateTime.now()"
-        prominent
-        type="error"
-        variant="outlined"
-      >
-        It is not allowed to make changes to events which have already started.
-      </v-alert>
-    </v-expand-transition>
-
-    <v-row>
-      <v-col cols="12">
-        <v-btn
-          :disabled="event.id && DateTime.fromISO(event.startTime) < DateTime.now()"
-          :loading="submitting"
-          block
-          class="mt-8 mx-auto"
-          color="primary"
-          @click="submit"
-        >
-          Submit event
-        </v-btn>
-      </v-col>
-    </v-row>
-  </Form>
-</template>
 
 <style lang="scss">
 .v-col:first-child {

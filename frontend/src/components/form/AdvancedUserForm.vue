@@ -92,7 +92,7 @@
             :rules="`required|phoneMobile:${country}`"
             label="Phone Number*"
             name="phoneNumber"
-            @update:country="updateCountry"
+            @update:country="onCountryUpdate"
           />
         </v-col>
       </v-row>
@@ -102,13 +102,13 @@
           <VvField
             v-model="user.password"
             :component-props="{
-              type: showPass ? 'text' : 'password',
-              'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off'
+              type: isPasswordVisible ? 'text' : 'password',
+              'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
+              'click:append-inner': togglePasswordVisibility,
             }"
             label="Password*"
             name="password"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-            @click:append-inner="showPass = !showPass"
           />
         </v-col>
 
@@ -116,13 +116,13 @@
           <VvField
             v-model="confirmPassword"
             :component-props="{
-              type: showPass ? 'text' : 'password',
-              'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off'
+              type: isPasswordVisible ? 'text' : 'password',
+              'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
+              'click:append-inner': togglePasswordVisibility,
             }"
             label="Password (repeated)"
             name="confirmPassword"
             rules="required|match:@password"
-            @click:append-inner="showPass = !showPass"
           />
         </v-col>
       </v-row>
@@ -157,7 +157,6 @@
             name="gender"
           />
         </v-col>
-
         <v-col cols="6">
           <VvField
             v-model="user.studentNumber"
@@ -180,7 +179,6 @@
             name="ehbo"
           />
         </v-col>
-
         <v-col cols="auto">
           <VvField
             v-model="user.bhv"
@@ -190,7 +188,6 @@
             name="bhv"
           />
         </v-col>
-
         <v-col cols="auto">
           <VvField
             v-model="user.newsletter"
@@ -247,7 +244,7 @@ import {computed, ref, type Ref} from "vue"
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
-import {type AdvancedUser, createUser, type SimpleUser, updateUser} from "@/services/api"
+import {type AdvancedUser, createUser, updateUser} from "@/services/api"
 import {type CountryCode} from "libphonenumber-js/max"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {Form, type FormContext} from "vee-validate"
@@ -296,20 +293,23 @@ const user = defineModel<AdvancedUser>({
 })
 
 const store = useStore()
+const isLoggedIn = computed(() => store.getters.isLoggedIn)
+const isBoard = computed(() => store.getters.isBoard)
+const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
 
 const isCreating = computed<boolean>(() => !user.value?.id)
 const country: Ref<CountryCode> = ref("NL")
 
 const formRef = ref<FormContext>()
 const confirmPassword = ref<string>("")
-const showPass = ref<boolean>(false)
+const isPasswordVisible = ref<boolean>(false)
 const isSaving = ref<boolean>(false)
-const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
-const isBoard = computed((): boolean => store.getters.isBoard)
-const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
 
-const updateCountry = (newCountry: string): void => {
+const onCountryUpdate = (newCountry: string) => {
   country.value = newCountry as CountryCode
+}
+const togglePasswordVisibility = () => {
+  isPasswordVisible.value = !isPasswordVisible.value
 }
 
 const validate = async (): Promise<boolean> => {
@@ -322,21 +322,12 @@ const save = async (): Promise<AdvancedUser | null> => {
     emit("submitted", false)
     return null
   }
-
   isSaving.value = true
   try {
     const hasId = Boolean(user.value?.id)
     const resp = hasId
-      ? await updateUser({
-        path: {id: user.value!.id!},
-        body: user.value!,
-        throwOnError: true,
-      })
-      : await createUser({
-        body: user.value!,
-        throwOnError: true,
-      })
-
+      ? await updateUser({path: {id: user.value!.id!}, body: user.value!, throwOnError: true})
+      : await createUser({body: user.value!, throwOnError: true})
     user.value = resp.data!
     emit("submitted", true)
     emit("update:modelValue", user.value)
@@ -351,7 +342,6 @@ const save = async (): Promise<AdvancedUser | null> => {
     isSaving.value = false
   }
 }
-
 
 defineExpose({validate, save})
 </script>

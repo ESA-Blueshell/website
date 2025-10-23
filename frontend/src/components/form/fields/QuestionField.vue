@@ -1,71 +1,3 @@
-<script lang="ts" setup>
-import {Field} from "vee-validate"
-import {type Question, QuestionType} from "@/services/api"
-
-interface Props {
-  canMoveUp?: boolean
-  canMoveDown?: boolean
-}
-
-interface Emits {
-  (e: "moveUp"): void;
-
-  (e: "moveDown"): void;
-
-  (e: "remove"): void;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  canMoveUp: true,
-  canMoveDown: true,
-})
-const emit = defineEmits<Emits>()
-const model = defineModel<Question>({required: true})
-
-function setLabel(v: string) {
-  model.value = {...model.value, label: v}
-}
-
-function ensureChoices(): string[] {
-  return model.value.choiceLabels ?? []
-}
-
-function setChoiceLabel(j: number, v: string) {
-  const next = ensureChoices().slice()
-  next[j] = v
-  model.value = {...model.value, choiceLabels: next}
-}
-
-function addChoice() {
-  const next = [...ensureChoices(), ""]
-  model.value = {...model.value, choiceLabels: next}
-}
-
-function moveChoiceUp(j: number) {
-  const next = ensureChoices().slice()
-  if (j <= 0) return
-    ;
-  [next[j - 1]!, next[j]!] = [next[j]!, next[j - 1]!]
-  model.value = {...model.value, choiceLabels: next}
-}
-
-function moveChoiceDown(j: number) {
-  const next = ensureChoices().slice()
-  if (j >= next.length - 1) return
-    ;
-  [next[j + 1]!, next[j]!] = [next[j]!, next[j + 1]!]
-  model.value = {...model.value, choiceLabels: next}
-}
-
-function removeChoice(j: number) {
-  const next = ensureChoices().slice()
-  if (next.length <= 2) return
-  next.splice(j, 1)
-  model.value = {...model.value, choiceLabels: next}
-}
-
-</script>
-
 <template>
   <Field
     v-slot="{ value, errors, handleChange, handleBlur }"
@@ -164,3 +96,56 @@ function removeChoice(j: number) {
     </template>
   </template>
 </template>
+
+<script lang="ts" setup>
+import {Field} from "vee-validate"
+import {type Question, QuestionType} from "@/services/api"
+
+const props = withDefaults(defineProps<{ canMoveUp?: boolean; canMoveDown?: boolean }>(), {
+  canMoveUp: true,
+  canMoveDown: true,
+})
+const emit = defineEmits<{ (e: "moveUp"): void; (e: "moveDown"): void; (e: "remove"): void }>()
+const model = defineModel<Question>({required: true})
+
+function setLabel(v: string) {
+  model.value = {...model.value, label: v}
+}
+
+function ensureChoices(): string[] {
+  return model.value.choiceLabels ?? []
+}
+
+function setChoiceLabel(j: number, v: string) {
+  const next = ensureChoices().slice()
+  next[j] = v
+  model.value = {...model.value, choiceLabels: next}
+}
+
+function addChoice() {
+  model.value = {...model.value, choiceLabels: [...ensureChoices(), ""]}
+}
+
+function moveChoiceUp(j: number) {
+  const next = ensureChoices().slice()
+  if (j <= 0) return
+    ;
+  [next[j - 1]!, next[j]!] = [next[j]!, next[j - 1]!]
+  model.value = {...model.value, choiceLabels: next}
+}
+
+function moveChoiceDown(j: number) {
+  const next = ensureChoices().slice()
+  if (j >= next.length - 1) return
+    ;
+  [next[j + 1]!, next[j]!] = [next[j]!, next[j + 1]!]
+  model.value = {...model.value, choiceLabels: next}
+}
+
+function removeChoice(j: number) {
+  const next = ensureChoices().slice()
+  if (next.length <= 2) return
+  next.splice(j, 1)
+  model.value = {...model.value, choiceLabels: next}
+}
+</script>

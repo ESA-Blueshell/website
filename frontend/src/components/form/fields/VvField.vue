@@ -1,3 +1,24 @@
+<template>
+  <Field
+    v-slot="{ value, errors, handleChange, handleBlur }"
+    v-model="model"
+    :name="name"
+    :rules="rules"
+  >
+    <component
+      :is="component"
+      :disabled="disabled"
+      :error-messages="errors"
+      :label="label"
+      :model-value="display ? display(value) : value"
+      v-bind="componentProps"
+      @blur="handleBlur"
+      @update:model-value="(v: unknown) => update ? update(v, handleChange) : handleChange(v)"
+      v-on="$attrs"
+    />
+  </Field>
+</template>
+
 <script lang="ts" setup>
 import {Field} from "vee-validate"
 import {VTextField} from "vuetify/components"
@@ -13,33 +34,14 @@ withDefaults(defineProps<{
   component?: unknown
   componentProps?: Record<string, unknown>
   disabled?: boolean
+  display?: (value: unknown) => unknown
+  update?: (incoming: unknown, handleChange: (v: unknown) => void) => void
 }>(), {
   label: "",
   rules: "",
   component: () => VTextField,
-  componentProps: () => ({}),
+  componentProps: () => ({})
 })
 
 const model = defineModel<unknown>()
 </script>
-
-<template>
-  <Field
-    v-slot="{ value, errors, handleChange, handleBlur }"
-    v-model="model"
-    :name="name"
-    :rules="rules"
-  >
-    <component
-      :is="component"
-      :disabled="disabled"
-      :error-messages="errors"
-      :label="label"
-      :model-value="value"
-      v-bind="componentProps"
-      @blur="handleBlur"
-      v-on="$attrs"
-      @update:model-value="handleChange"
-    />
-  </Field>
-</template>

@@ -1,43 +1,3 @@
-<script lang="ts" setup>
-import {computed, ref, type Ref} from "vue"
-import {useStore} from "vuex"
-import {Form, type FormContext} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
-
-import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/dist/v-phone-input.css"
-import {VPhoneInput} from "v-phone-input"
-import type {CountryCode} from "libphonenumber-js/max"
-import type {Guest} from "@/services/api"
-
-const guest = defineModel<Guest>({
-  default: () => ({
-    name: "",
-    discord: "",
-    email: "",
-    phoneNumber: "",
-  }),
-})
-
-const store = useStore()
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-
-const country: Ref<CountryCode> = ref("NL")
-const updateCountry = (newCountry: string): void => {
-  country.value = newCountry as CountryCode
-}
-
-const formRef = ref<FormContext>()
-const isSaving = ref<boolean>(false)
-
-const validate = async (): Promise<boolean> => {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
-}
-
-defineExpose({validate})
-</script>
-
 <template>
   <Form
     v-if="!isLoggedIn"
@@ -64,7 +24,6 @@ defineExpose({validate})
           rules="required"
         />
       </v-col>
-
       <v-col
         cols="12"
         md="6"
@@ -85,9 +44,7 @@ defineExpose({validate})
       >
         <VvField
           v-model="guest.email"
-          :component-props="{
-            hint: `We'll use this to send you a link you can use to edit your sign-up form later`
-          }"
+          :component-props="{ hint: `We'll use this to send you a link you can use to edit your sign-up form later` }"
           label="Email*"
           name="email"
           rules="required|email|noStudentEmail"
@@ -110,12 +67,49 @@ defineExpose({validate})
           :rules="`required|phoneMobile:${country}`"
           label="Phone Number*"
           name="phoneNumber"
-          @update:country="updateCountry"
+          @update:country="onCountryUpdate"
         />
       </v-col>
     </v-row>
   </Form>
 </template>
+
+<script lang="ts" setup>
+import {computed, ref, type Ref} from "vue"
+import {useStore} from "vuex"
+import {Form, type FormContext} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
+
+import "flag-icons/css/flag-icons.min.css"
+import "v-phone-input/dist/v-phone-input.css"
+import {VPhoneInput} from "v-phone-input"
+import type {CountryCode} from "libphonenumber-js/max"
+import type {Guest} from "@/services/api"
+
+const guest = defineModel<Guest>({
+  default: () => ({
+    name: "",
+    discord: "",
+    email: "",
+    phoneNumber: "",
+  }),
+})
+
+const store = useStore()
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+
+const country: Ref<CountryCode> = ref("NL")
+const onCountryUpdate = (newCountry: string) => {
+  country.value = newCountry as CountryCode
+}
+
+const formRef = ref<FormContext>()
+const validate = async (): Promise<boolean> => {
+  const result = await formRef.value?.validate()
+  return !!result?.valid
+}
+defineExpose({validate})
+</script>
 
 <style lang="scss" scoped>
 .v-checkbox .v-selection-control {

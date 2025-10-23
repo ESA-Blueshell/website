@@ -14,7 +14,6 @@
             rules="required"
           />
         </v-col>
-
         <v-col cols="8">
           <VvField
             v-model="user.firstName"
@@ -35,7 +34,6 @@
             name="prefix"
           />
         </v-col>
-
         <v-col cols="8">
           <VvField
             v-model="user.lastName"
@@ -57,7 +55,6 @@
             rules="required|alphaNum"
           />
         </v-col>
-
         <v-col cols="6">
           <VvField
             v-model="user.discord"
@@ -78,7 +75,6 @@
             rules="required|email|noStudentEmail"
           />
         </v-col>
-
         <v-col cols="6">
           <VvField
             v-model="user.phoneNumber"
@@ -104,11 +100,11 @@
             :component-props="{
               type: isPasswordVisible ? 'text' : 'password',
               'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
-              'onClick:append-inner': () => (isPasswordVisible = !isPasswordVisible)
             }"
             label="Password*"
             name="password"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+            @click:append-inner="isPasswordVisible = !isPasswordVisible"
           />
         </v-col>
 
@@ -118,11 +114,11 @@
             :component-props="{
               type: isPasswordVisible ? 'text' : 'password',
               'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
-              'onClick:append-inner': () => (isPasswordVisible = !isPasswordVisible)
             }"
             label="Password (repeated)"
             name="confirmPassword"
             rules="required|match:@password"
+            @click:append-inner="isPasswordVisible = !isPasswordVisible"
           />
         </v-col>
       </v-row>
@@ -211,6 +207,9 @@ const emit = defineEmits<{
 }>()
 
 const store = useStore()
+const isLoggedIn = computed(() => store.getters.isLoggedIn)
+const isBoard = computed(() => store.getters.isBoard)
+const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
 
 const isCreating = computed<boolean>(() => !user.value?.id)
 const country: Ref<CountryCode> = ref("NL")
@@ -219,9 +218,6 @@ const formRef = ref<FormContext>()
 const confirmPassword = ref<string>("")
 const isPasswordVisible = ref<boolean>(false)
 const isSaving = ref<boolean>(false)
-const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
-const isBoard = computed((): boolean => store.getters.isBoard)
-const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
 
 const onCountryUpdate = (newCountry: string): void => {
   country.value = newCountry as CountryCode
@@ -242,15 +238,8 @@ const save = async (): Promise<SimpleUser | null> => {
   try {
     const hasId = Boolean(user.value?.id)
     const resp = hasId
-      ? await updateGuestUser({
-        path: {id: user.value!.id!},
-        body: user.value!,
-        throwOnError: true,
-      })
-      : await createGuestUser({
-        body: user.value!,
-        throwOnError: true,
-      })
+      ? await updateGuestUser({path: {id: user.value!.id!}, body: user.value!, throwOnError: true})
+      : await createGuestUser({body: user.value!, throwOnError: true})
 
     user.value = resp.data!
     emit("submitted", true)

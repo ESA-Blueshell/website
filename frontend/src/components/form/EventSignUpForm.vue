@@ -1,107 +1,3 @@
-<script lang="ts" setup>
-import {computed, ref, type Ref} from "vue"
-import {useStore} from "vuex"
-import type {VForm} from "vuetify/lib/components"
-import {type Answer, createEventSignup, type Event, type EventSignUp, updateEventSignUp} from "@/services/api"
-import AnswersForm from "@/components/form/AnswersForm.vue"
-import GuestForm from "@/components/form/GuestForm.vue"
-
-interface Emits {
-  (e: "update:signUp", value: EventSignUp): void;
-}
-
-const emit = defineEmits<Emits>()
-
-interface Props {
-  event: Event
-  buttonLoading?: boolean
-  initialSignUp?: EventSignUp
-}
-
-const props = defineProps<Props>()
-const store = useStore()
-
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-const login = computed(() => store.getters.getLogin)
-
-const survey = computed(() => props.event.signUpForm ?? null)
-const guest = ref(
-  store.getters.getGuestData ?? {
-    name: "",
-    discord: "",
-    email: "",
-    phoneNumber: "",
-  },
-)
-
-const guestRef: Ref<VForm | undefined> = ref()
-const answersRef = ref<InstanceType<typeof AnswersForm>>()
-
-const answers = ref<Answer[]>(
-  props.initialSignUp?.answers ?? [],
-)
-
-const signUp = computed<EventSignUp>(() => {
-  const s = props.initialSignUp
-  return {
-    eventId: s?.eventId ?? props.event.id!,
-    answers: answers.value ?? [],
-    ...s,
-  }
-})
-
-async function validate() {
-  console.log("VALIDATING")
-  if (!isLoggedIn.value) {
-    console.log("LOGGEDIN")
-    const guestFormValid = await guestRef.value?.validate()
-    if (!guestFormValid) return false
-  }
-
-  if (!survey.value) return true
-  console.log("SURVEYING")
-
-  console.log("ANSERSREF VALUE:", answersRef.value)
-  return answersRef.value?.validate()
-}
-
-async function save() {
-  console.log("SAVING!")
-  if (!await validate()) return
-
-  if (isLoggedIn.value) {
-    signUp.value.userId = login.value.userId
-  } else {
-    signUp.value.guest = guest.value ?? {}
-  }
-
-  let eventSignUp: EventSignUp
-
-  if (isLoggedIn.value && signUp.value.id) {
-    const resp = await updateEventSignUp({
-      path: {eventId: props.event.id!},
-      body: signUp.value,
-      throwOnError: true,
-    })
-    eventSignUp = resp.data!
-  } else {
-    const resp = await createEventSignup({
-      path: {eventId: props.event.id!},
-      body: signUp.value,
-      throwOnError: true,
-    })
-    eventSignUp = resp.data!
-  }
-
-  emit("update:signUp", eventSignUp)
-  if (!isLoggedIn.value) {
-    store.commit("saveGuestData", eventSignUp.guest!)
-  }
-}
-
-defineExpose({save, validate})
-</script>
-
 <template>
   <div>
     <guest-form
@@ -110,7 +6,6 @@ defineExpose({save, validate})
       v-model="guest"
       class="mb-4"
     />
-
     <answers-form
       v-if="survey"
       ref="answersRef"
@@ -119,9 +14,7 @@ defineExpose({save, validate})
       class="mb-4"
     />
 
-    <v-expand-transition
-      class="mb-3"
-    >
+    <v-expand-transition class="mb-3">
       <v-alert
         prominent
         type="warning"
@@ -141,6 +34,64 @@ defineExpose({save, validate})
     </v-btn>
   </div>
 </template>
+
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import {useStore} from "vuex"
+import {type Answer, createEventSignup, type Event, type EventSignUp, updateEventSignUp} from "@/services/api"
+import AnswersForm from "@/components/form/AnswersForm.vue"
+import GuestForm from "@/components/form/GuestForm.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+
+const emit = defineEmits<{ (e: "update:signUp", value: EventSignUp): void }>()
+const props = defineProps<{ event: Event; buttonLoading?: boolean; initialSignUp?: EventSignUp }>()
+
+const store = useStore()
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const login = computed(() => store.getters.getLogin)
+
+const survey = computed(() => props.event.signUpForm ?? null)
+const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "", phoneNumber: ""})
+
+const guestRef = ref<InstanceType<typeof GuestForm>>()
+const answersRef = ref<InstanceType<typeof AnswersForm>>()
+
+const answers = ref<Answer[]>(props.initialSignUp?.answers ?? [])
+const signUp = computed<EventSignUp>(() => {
+  const s = props.initialSignUp
+  return {eventId: s?.eventId ?? props.event.id!, answers: answers.value ?? [], ...s}
+})
+
+async function validate() {
+  if (!isLoggedIn.value) {
+    const guestFormValid = await guestRef.value?.validate?.()
+    if (!guestFormValid) return false
+  }
+  if (!survey.value) return true
+  return (await answersRef.value?.validate?.()) === true
+}
+
+async function save() {
+  if (!(await validate())) return
+  try {
+    if (isLoggedIn.value) signUp.value.userId = login.value.userId
+    else signUp.value.guest = guest.value ?? {}
+
+    const eventId = props.event.id!
+    const resp = (isLoggedIn.value && signUp.value.id)
+      ? await updateEventSignUp({path: {eventId}, body: signUp.value, throwOnError: true})
+      : await createEventSignup({path: {eventId}, body: signUp.value, throwOnError: true})
+
+    const eventSignUp = resp.data!
+    emit("update:signUp", eventSignUp)
+    if (!isLoggedIn.value) store.commit("saveGuestData", eventSignUp.guest!)
+  } catch (e) {
+    $handleNetworkError(e)
+  }
+}
+
+defineExpose({save, validate})
+</script>
 
 <style lang="scss" scoped>
 .v-checkbox .v-selection-control {

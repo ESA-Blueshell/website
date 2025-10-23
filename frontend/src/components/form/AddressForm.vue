@@ -16,7 +16,6 @@
             rules="required|minChars:2"
           />
         </v-col>
-
         <v-col cols="4">
           <VvField
             v-model="address.houseNumber"
@@ -36,7 +35,6 @@
             rules="required|minChars:2"
           />
         </v-col>
-
         <v-col cols="6">
           <VvField
             v-model="address.city"
@@ -85,19 +83,13 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 import {Form, type FormContext} from "vee-validate"
-
 import VvField from "@/components/form/fields/VvField.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
-
-import {type Address, createAddress, type SimpleUser, updateAddress} from "@/services/api"
+import {type Address, createAddress, updateAddress} from "@/services/api"
 import {apply} from "@/plugins/validation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
-const {
-  showSubmit = false,
-  submitText = "Submit",
-  userId = 0,
-} = defineProps<{
+const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
   showSubmit?: boolean
   submitText?: string
   userId?: number
@@ -137,16 +129,8 @@ const save = async (): Promise<Address | null> => {
   try {
     const hasId = Boolean(address.value?.id)
     const resp = hasId
-      ? await updateAddress({
-        path: {id: address.value!.id!},
-        body: address.value!,
-        throwOnError: true,
-      })
-      : await createAddress({
-        path: {userId},
-        body: address.value!,
-        throwOnError: true,
-      })
+      ? await updateAddress({path: {id: address.value!.id!}, body: address.value!, throwOnError: true})
+      : await createAddress({path: {userId}, body: address.value!, throwOnError: true})
 
     address.value = resp.data!
     emit("submitted", true)

@@ -5,7 +5,7 @@
       as="div"
     >
       <v-container>
-        <v-row class="mt-1">
+        <v-row class="mt-1 tight-row">
           <v-col cols="12">
             <VvField
               v-model="committee.name"
@@ -17,7 +17,7 @@
           </v-col>
         </v-row>
 
-        <v-row>
+        <v-row class="tight-row">
           <v-col>
             <VvField
               v-model="committee.description"
@@ -34,7 +34,7 @@
           <v-row
             v-for="(member, i) in committee.members ?? []"
             :key="member.id ?? i"
-            class="mt-4"
+            class="mt-4 tight-row"
           >
             <v-col cols="4">
               <VvField
@@ -82,8 +82,8 @@
 
       <v-row
         align="end"
-        class="mb-5"
         justify="end"
+        class="mb-5 tight-row"
       >
         <v-col
           v-if="props.showSubmit"
@@ -106,10 +106,8 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue"
-import {defineRule, Form, type FormContext} from "vee-validate"
-import {apply} from "@/plugins/validation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {computed} from "vue"
+import {defineRule, Form} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
 import VvField from "@/components/form/fields/VvField.vue"
@@ -121,7 +119,7 @@ import {
   Role,
   updateCommittee,
 } from "@/services/api"
-import {useStore} from "vuex"
+import {handleSubmitError, useReadonly, useSaving, useVeeForm} from "@/composables/formUtils"
 
 const props = withDefaults(defineProps<{ users: AdvancedUser[]; showSubmit?: boolean; submitText?: string }>(), {
   showSubmit: false,
@@ -133,14 +131,11 @@ const committee = defineModel<AdvancedCommittee>({
   default: () => ({name: "", description: "", members: []} as AdvancedCommittee),
 })
 
-const store = useStore()
-const isLoggedIn = computed(() => store.getters.isLoggedIn)
-const isBoard = computed(() => store.getters.isBoard)
-const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
+const {isReadonly} = useReadonly()
 
 defineRule("committeeUserIsMember", (userId: number | string) => {
   if (!userId && userId !== 0) return "Select a user"
-  const u = props.users.find(u => Number(u.id) === Number(userId))
+  const u = props.users.find((u) => Number(u.id) === Number(userId))
   if (!u) return "Select a user"
   return u.roles?.includes(Role.MEMBER) || "Committee members must be members of the association"
 })
@@ -152,8 +147,8 @@ defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[]) => {
   return !dup || "Member already in this committee"
 })
 
-const formRef = ref<FormContext>()
-const isSaving = ref<boolean>(false)
+const {formRef, validate} = useVeeForm()
+const {isSaving, withSaving} = useSaving()
 const isCreating = computed<boolean>(() => !committee.value?.id)
 
 function addMember() {
@@ -166,34 +161,25 @@ function removeMember(id: number) {
   committee.value.members = committee.value.members.filter((m: CommitteeMember) => id !== m.userId)
 }
 
-const validate = async (): Promise<boolean> => {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
-}
-
 const save = async (): Promise<AdvancedCommittee | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     return null
   }
-  isSaving.value = true
   try {
-    const hasId = Boolean(committee.value?.id)
-    const resp = hasId
-      ? await updateCommittee({path: {id: committee.value!.id!}, body: committee.value!, throwOnError: true})
-      : await createCommittee({body: committee.value!, throwOnError: true})
-
+    const resp = await withSaving(async () => {
+      const hasId = Boolean(committee.value?.id)
+      return hasId
+        ? await updateCommittee({path: {id: committee.value!.id!}, body: committee.value!, throwOnError: true})
+        : await createCommittee({body: committee.value!, throwOnError: true})
+    })
     committee.value = resp.data!
     emit("submitted", true)
     return resp.data!
   } catch (error: unknown) {
-    if (!formRef.value || !apply(formRef.value, error)) {
-      $handleNetworkError(error)
-    }
+    handleSubmitError(formRef.value, error)
     emit("submitted", false)
     return null
-  } finally {
-    isSaving.value = false
   }
 }
 
@@ -201,19 +187,6 @@ defineExpose({validate, save})
 </script>
 
 <style lang="scss" scoped>
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-
-.v-col {
-  padding-bottom: 0;
-  padding-top: 0;
-}
-
 .text-error {
   color: rgb(var(--v-theme-error));
 }

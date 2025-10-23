@@ -12,7 +12,7 @@
       variant="outlined"
     />
 
-    <v-row>
+    <v-row class="tight-row">
       <v-col
         cols="12"
         md="6"
@@ -37,7 +37,7 @@
       </v-col>
     </v-row>
 
-    <v-row>
+    <v-row class="tight-row">
       <v-col
         cols="12"
         md="6"
@@ -75,16 +75,15 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, type Ref} from "vue"
+import {computed} from "vue"
 import {useStore} from "vuex"
-import {Form, type FormContext} from "vee-validate"
+import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
-import type {CountryCode} from "libphonenumber-js/max"
 import type {Guest} from "@/services/api"
+import {useCountry, useVeeForm} from "@/composables/formUtils"
 
 const guest = defineModel<Guest>({
   default: () => ({
@@ -98,16 +97,9 @@ const guest = defineModel<Guest>({
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 
-const country: Ref<CountryCode> = ref("NL")
-const onCountryUpdate = (newCountry: string) => {
-  country.value = newCountry as CountryCode
-}
+const {country, onCountryUpdate} = useCountry("NL")
+const {formRef, validate} = useVeeForm()
 
-const formRef = ref<FormContext>()
-const validate = async (): Promise<boolean> => {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
-}
 defineExpose({validate})
 </script>
 

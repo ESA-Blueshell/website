@@ -4,7 +4,7 @@
       ref="formRef"
       as="div"
     >
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="4">
           <VvField
             v-model="user.initials"
@@ -25,7 +25,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="4">
           <VvField
             v-model="user.prefix"
@@ -45,7 +45,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="6">
           <VvField
             v-model="user.username"
@@ -65,7 +65,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="6">
           <VvField
             v-model="user.email"
@@ -93,32 +93,27 @@
         </v-col>
       </v-row>
 
-      <v-row v-if="showPassword">
+      <v-row
+        v-if="showPassword"
+        class="tight-row"
+      >
         <v-col cols="6">
           <VvField
             v-model="user.password"
-            :component-props="{
-              type: isPasswordVisible ? 'text' : 'password',
-              'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
-            }"
+            :component-props="passwordFieldProps"
             label="Password*"
             name="password"
             rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-            @click:append-inner="isPasswordVisible = !isPasswordVisible"
           />
         </v-col>
 
         <v-col cols="6">
           <VvField
             v-model="confirmPassword"
-            :component-props="{
-              type: isPasswordVisible ? 'text' : 'password',
-              'append-inner-icon': isPasswordVisible ? 'mdi-eye' : 'mdi-eye-off',
-            }"
+            :component-props="passwordFieldProps"
             label="Password (repeated)"
             name="confirmPassword"
             rules="required|match:@password"
-            @click:append-inner="isPasswordVisible = !isPasswordVisible"
           />
         </v-col>
       </v-row>
@@ -126,6 +121,7 @@
       <v-row
         align="center"
         justify="space-evenly"
+        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -140,8 +136,8 @@
 
       <v-row
         align="end"
-        class="mb-5"
         justify="end"
+        class="mb-5 tight-row"
       >
         <v-col
           v-if="showSubmit"
@@ -164,24 +160,25 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, type Ref} from "vue"
+import {computed, ref} from "vue"
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
 import {createGuestUser, type SimpleUser, updateGuestUser} from "@/services/api"
-import {type CountryCode} from "libphonenumber-js/max"
-import {Form, type FormContext} from "vee-validate"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {apply} from "@/plugins/validation.ts"
-import {useStore} from "vuex"
+import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
 
-const {
-  showPassword = false,
-  showSubmit = false,
-  submitText = "Submit",
-} = defineProps<{
+import {
+  handleSubmitError,
+  useCountry,
+  usePasswordToggle,
+  useReadonly,
+  useSaving,
+  useVeeForm,
+} from "@/composables/formUtils"
+
+const {showPassword = false, showSubmit = false, submitText = "Submit"} = defineProps<{
   showPassword?: boolean
   showSubmit?: boolean
   submitText?: string
@@ -206,70 +203,37 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: SimpleUser): void
 }>()
 
-const store = useStore()
-const isLoggedIn = computed(() => store.getters.isLoggedIn)
-const isBoard = computed(() => store.getters.isBoard)
-const isReadonly = computed(() => isLoggedIn.value && !isBoard.value)
-
+const {isReadonly} = useReadonly()
 const isCreating = computed<boolean>(() => !user.value?.id)
-const country: Ref<CountryCode> = ref("NL")
 
-const formRef = ref<FormContext>()
+const {country, onCountryUpdate} = useCountry("NL")
+const {isSaving, withSaving} = useSaving()
+const {formRef, validate} = useVeeForm()
 const confirmPassword = ref<string>("")
-const isPasswordVisible = ref<boolean>(false)
-const isSaving = ref<boolean>(false)
-
-const onCountryUpdate = (newCountry: string): void => {
-  country.value = newCountry as CountryCode
-}
-
-const validate = async (): Promise<boolean> => {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
-}
+const {passwordFieldProps} = usePasswordToggle()
 
 const save = async (): Promise<SimpleUser | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     return null
   }
-
-  isSaving.value = true
   try {
-    const hasId = Boolean(user.value?.id)
-    const resp = hasId
-      ? await updateGuestUser({path: {id: user.value!.id!}, body: user.value!, throwOnError: true})
-      : await createGuestUser({body: user.value!, throwOnError: true})
-
+    const resp = await withSaving(async () => {
+      const hasId = Boolean(user.value?.id)
+      return hasId
+        ? await updateGuestUser({path: {id: user.value!.id!}, body: user.value!, throwOnError: true})
+        : await createGuestUser({body: user.value!, throwOnError: true})
+    })
     user.value = resp.data!
     emit("submitted", true)
     emit("update:modelValue", user.value)
     return user.value
   } catch (error: unknown) {
-    if (!formRef.value || !apply(formRef.value, error)) {
-      $handleNetworkError(error)
-    }
+    handleSubmitError(formRef.value, error)
     emit("submitted", false)
     return null
-  } finally {
-    isSaving.value = false
   }
 }
 
 defineExpose({validate, save})
 </script>
-
-<style lang="scss">
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-
-.v-col {
-  padding-bottom: 0;
-  padding-top: 0;
-}
-</style>

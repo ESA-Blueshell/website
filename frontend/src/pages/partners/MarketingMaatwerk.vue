@@ -11,7 +11,8 @@
           <v-col
             cols="12"
             md="auto"
-            class="d-flex justify-center"
+            class="d-flex justify-center expand"
+            href="https://marketingmaatwerk.nl/"
           >
             <v-img
               :src="logoUrl"
@@ -148,7 +149,10 @@
             cols="12"
             md="4"
           >
-            <v-card class="h-100 rounded-lg elevation-3">
+            <v-card
+              class="h-100 rounded-lg elevation-3 expand"
+              :href="pillar.href"
+            >
               <v-card-item>
                 <div class="d-flex align-center">
                   <v-icon
@@ -212,23 +216,26 @@ const contact: Contact = {
 
 const phoneHref = computed(() => `tel:${contact.phone.replace(/\s+/g, "")}`)
 
-type Pillar = { title: string; body: string; icon: string }
+type Pillar = { title: string; body: string; icon: string, href: string }
 
 const pillars: Pillar[] = [
   {
     title: "Professional Websites",
     icon: "mdi-web",
     body: "From fully custom builds to the 'Website in 1 Day' concept—fast, user-friendly and conversion-focused websites.",
+    href: "https://marketingmaatwerk.nl/website-maatwerk/",
   },
   {
     title: "Search Engine Optimization (SEO)",
     icon: "mdi-magnify",
     body: "Technical audits, continuous optimization and clear reporting to rank for the keywords that truly matter.",
+    href: "https://marketingmaatwerk.nl/seo/",
   },
   {
     title: "Reliable Web Hosting",
     icon: "mdi-shield-check",
     body: "Optimized hosting with WordPress core and plugin maintenance included for a fast, secure foundation.",
+    href: "https://marketingmaatwerk.nl/webhosting/",
   },
 ]
 </script>
@@ -236,5 +243,15 @@ const pillars: Pillar[] = [
 <style lang="scss" scoped>
 .list-unstyled {
   list-style: none;
+}
+
+.expand {
+  transition: transform .2s;
+  cursor: pointer;
+}
+
+.expand:hover {
+  transform: scale(1.05);
+  z-index: 5;
 }
 </style>

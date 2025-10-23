@@ -7,7 +7,7 @@
       class="pa-4"
       style="border-radius: 10px"
     >
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="8">
           <VvField
             v-model="address.street"
@@ -26,7 +26,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="6">
           <VvField
             v-model="address.zipCode"
@@ -45,7 +45,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col cols="12">
           <VvField
             v-model="address.country"
@@ -60,8 +60,8 @@
       <v-row
         v-if="showSubmit"
         align="end"
-        class="mt-2"
         justify="end"
+        class="mt-2 tight-row"
       >
         <v-col cols="auto">
           <v-btn
@@ -81,13 +81,12 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue"
-import {Form, type FormContext} from "vee-validate"
+import {computed} from "vue"
+import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import {type Address, createAddress, updateAddress} from "@/services/api"
-import {apply} from "@/plugins/validation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
 
 const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
   showSubmit?: boolean
@@ -110,57 +109,32 @@ const address = defineModel<Address>({
   }),
 })
 
-const formRef = ref<FormContext>()
-const isSaving = ref(false)
 const isCreating = computed<boolean>(() => !address.value?.id)
-
-const validate = async (): Promise<boolean> => {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
-}
+const {formRef, validate} = useVeeForm()
+const {isSaving, withSaving} = useSaving()
 
 const save = async (): Promise<Address | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     return null
   }
-
-  isSaving.value = true
   try {
-    const hasId = Boolean(address.value?.id)
-    const resp = hasId
-      ? await updateAddress({path: {id: address.value!.id!}, body: address.value!, throwOnError: true})
-      : await createAddress({path: {userId}, body: address.value!, throwOnError: true})
-
+    const resp = await withSaving(async () => {
+      const hasId = Boolean(address.value?.id)
+      return hasId
+        ? await updateAddress({path: {id: address.value!.id!}, body: address.value!, throwOnError: true})
+        : await createAddress({path: {userId}, body: address.value!, throwOnError: true})
+    })
     address.value = resp.data!
     emit("submitted", true)
     emit("update:modelValue", address.value)
-    return resp.data!
+    return address.value
   } catch (error: unknown) {
-    if (!formRef.value || !apply(formRef.value, error)) {
-      $handleNetworkError(error)
-    }
+    handleSubmitError(formRef.value, error)
     emit("submitted", false)
     return null
-  } finally {
-    isSaving.value = false
   }
 }
 
 defineExpose({validate, save})
 </script>
-
-<style lang="scss">
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-
-.v-col {
-  padding-bottom: 0;
-  padding-top: 0;
-}
-</style>

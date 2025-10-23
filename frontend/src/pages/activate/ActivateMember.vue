@@ -28,11 +28,11 @@
                 type: showPass ? 'text' : 'password',
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 label: 'Password',
-                autocomplete: 'new-password'
+                autocomplete: 'new-password',
+                'onClick:append-inner': () => (showPass.value = !showPass.value)
               }"
               name="password"
               rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
-              @click:append-inner="showPass = !showPass"
             />
           </v-row>
 
@@ -43,11 +43,11 @@
                 type: showPass ? 'text' : 'password',
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 label: 'Repeat Password',
-                autocomplete: 'new-password'
+                autocomplete: 'new-password',
+                'onClick:append-inner': () => (showPass.value = !showPass.value)
               }"
               name="passwordAgain"
               rules="required|match:@password"
-              @click:append-inner="showPass = !showPass"
             />
           </v-row>
 

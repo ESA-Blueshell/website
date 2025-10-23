@@ -4,27 +4,29 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
 import {type ContributionPeriod, findCurrentContributionPeriod} from "@/services/api"
 
+const props = withDefaults(defineProps<{
+  isForm?: boolean
+}>(), {
+  isForm: false,
+})
+
 const contributionPeriod = ref<ContributionPeriod>()
 const currentPeriod = ref(false)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 
 const euros = new Intl.NumberFormat("nl-NL", {style: "currency", currency: "EUR"})
 
-const formatPeriod = (period: ContributionPeriod | undefined) => {
-  if (!period || !period.startDate || !period.endDate) return "N/A"
+const formatCurrency = (amount?: number) => euros.format(amount ?? 0)
+
+const formatPeriod = (period?: ContributionPeriod) => {
+  if (!period?.startDate || !period?.endDate) return "N/A"
   const start = DateTime.fromISO(period.startDate).toFormat("yyyy")
   const end = DateTime.fromISO(period.endDate).toFormat("yyyy")
   return currentPeriod.value ? `${start}/${end}` : `${start}/${end}*`
 }
 
-
-const formatCurrency = (amount: number | undefined) => {
-  if (amount === null || amount === undefined) return "€0.00"
-  return euros.format(amount)
-}
-
-const getContributionPeriod = async () => {
+async function getContributionPeriod() {
   try {
     const response = await findCurrentContributionPeriod()
     contributionPeriod.value = response.data
@@ -35,26 +37,25 @@ const getContributionPeriod = async () => {
     currentPeriod.value = now >= startDate && now <= endDate
   } catch (err: unknown) {
     $handleNetworkError(err)
+    error.value = "Failed to fetch current contribution period"
   } finally {
-    // Update loading state
     loading.value = false
   }
 }
 
 onMounted(() => {
-  getContributionPeriod()
+  void getContributionPeriod()
 })
 </script>
+
 <template>
   <div>
     <strong>Contribution</strong><br>
 
-    <!-- Loading State -->
     <div v-if="loading">
       Loading contribution information...
     </div>
 
-    <!-- Error State -->
     <div
       v-else-if="error"
       class="bg-error"
@@ -62,16 +63,13 @@ onMounted(() => {
       Error fetching contribution information: {{ error }}
     </div>
 
-    <!-- Display Contribution Information -->
     <div v-else>
-      <p v-if="$props.isForm">
+      <p v-if="props.isForm">
         The undersigned understands that they will need to pay the {{ formatPeriod(contributionPeriod) }} contribution
-        fee,
-        for which they will receive payment information by email.
+        fee, for which they will receive payment information by email.
       </p>
       <p>
-        The membership fees for the academic year
-        {{ formatPeriod(contributionPeriod) }} are:
+        The membership fees for the academic year {{ formatPeriod(contributionPeriod) }} are:
       </p>
       <ul>
         <li><b>{{ formatCurrency(contributionPeriod?.fullYearFee) }}</b> for a full year membership</li>
@@ -92,14 +90,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-<script lang="ts">
-export default {
-  name: "ContributionPeriodComponent",
-  props: {
-    isForm: {
-      type: Boolean,
-      defaultValue: false,
-    },
-  },
-}
-</script>

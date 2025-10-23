@@ -4,7 +4,7 @@
     as="div"
   >
     <v-container style="padding: 0;">
-      <v-row>
+      <v-row class="tight-row">
         <v-col
           cols="12"
           lg="8"
@@ -16,7 +16,6 @@
             rules="required"
           />
         </v-col>
-
         <v-col
           cols="12"
           lg="4"
@@ -30,7 +29,7 @@
         </v-col>
       </v-row>
 
-      <v-row class="mb-8">
+      <v-row class="mb-8 tight-row">
         <v-col>
           <VvField
             v-model="event.description"
@@ -42,7 +41,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col>
           <VvField
             v-model="event.memberPrice"
@@ -53,7 +52,6 @@
             :update="(raw: string, handle) => handle(raw === '' ? '' : Number(raw))"
           />
         </v-col>
-
         <v-col>
           <VvField
             v-model="event.publicPrice"
@@ -66,7 +64,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col>
           <VvField
             v-model="sameEndDate"
@@ -75,7 +73,6 @@
             :component-props="{ label: 'Same start and end date' }"
           />
         </v-col>
-
         <v-col>
           <VvField
             v-model="event.membersOnly"
@@ -84,7 +81,6 @@
             :component-props="{ label: 'Members only' }"
           />
         </v-col>
-
         <v-col>
           <VvField
             v-if="isBoard"
@@ -96,7 +92,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col>
           <VvField
             v-model="event.startTime"
@@ -108,7 +104,6 @@
             :update="(date, handle) => handle(toISO({ date: String(date), dateTime: event.startTime }))"
           />
         </v-col>
-
         <v-col>
           <VvField
             v-model="event.startTime"
@@ -122,7 +117,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col>
           <VvField
             v-model="event.endTime"
@@ -135,7 +130,6 @@
             :update="(date, handle) => handle(toISO({ date: String(date), dateTime: event.endTime }))"
           />
         </v-col>
-
         <v-col>
           <VvField
             v-model="event.endTime"
@@ -149,7 +143,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col>
           <VvField
             v-model="event.committeeId"
@@ -184,7 +178,7 @@
         </v-col>
       </v-row>
 
-      <v-row>
+      <v-row class="tight-row">
         <v-col>
           <VvField
             v-model="event.signUp"
@@ -203,7 +197,10 @@
         </v-col>
       </v-row>
 
-      <v-row v-if="enableSignUpForm">
+      <v-row
+        v-if="enableSignUpForm"
+        class="tight-row"
+      >
         <v-col>
           <VvField
             v-model="event.signUpForm"
@@ -272,12 +269,11 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {defineRule, Form, type FormContext} from "vee-validate"
+import {defineRule, Form} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import router from "@/plugins/router.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox, VFileInput, VSelect} from "vuetify/components"
@@ -291,6 +287,8 @@ import {
   updateEvent,
   uploadEventBanner,
 } from "@/services/api"
+import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
+import {safeFormatISO, toISO} from "@/utils/datetime"
 
 const props = defineProps({
   initialEvent: {type: Object as () => Event, default: () => null},
@@ -325,8 +323,8 @@ const isBoard = computed<boolean>(() => store.getters.isBoard)
 
 const committees = ref<AdvancedCommittee[]>([])
 const sameEndDate = ref(true)
-const formRef = ref<FormContext>()
-const isSaving = ref(false)
+const {formRef, validate} = useVeeForm()
+const {isSaving, withSaving} = useSaving()
 const nowISO = DateTime.now().toISO()
 const hasStarted = computed(() => !!event.value.id && DateTime.fromISO(event.value.startTime) < DateTime.now())
 
@@ -337,31 +335,11 @@ const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
 const initialJson = ref(JSON.stringify(event.value))
 const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
 
-function safeFormatISO(iso: string, fmt: string) {
-  const dt = DateTime.fromISO(iso || "")
-  return dt.isValid ? dt.toFormat(fmt) : ""
-}
-
-/** Convert separate date/time edits to full ISO strings */
-function toISO(args: { date?: string; time?: string; dateTime?: string }): string {
-  const {date, time, dateTime} = args
-  const base = dateTime ? DateTime.fromISO(dateTime) : null
-  const hasBase = !!base && base.isValid
-  const d = date ?? (hasBase ? base!.toFormat("yyyy-MM-dd") : undefined)
-  const t = time ?? (hasBase ? base!.toFormat("HH:mm") : undefined)
-  if (!d && !t) return ""
-  if (d && t) return DateTime.fromFormat(`${d} ${t}`, "yyyy-MM-dd HH:mm").toISO() || ""
-  if (d) return (DateTime.fromFormat(d, "yyyy-MM-dd").set({
-    hour: hasBase ? base!.hour : 0,
-    minute: hasBase ? base!.minute : 0,
-  }).toISO() || "")
-  if (t) {
-    const ref = hasBase ? base! : DateTime.now()
-    const [h, m] = (t || "00:00").split(":").map(Number)
-    return ref.set({hour: h ?? 0, minute: m ?? 0}).toISO() || ""
-  }
-  return ""
-}
+defineRule("fileSize", (value: File | File[] | null) => {
+  const f = Array.isArray(value) ? value[0] ?? null : (value as File | null)
+  if (!f) return true
+  return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
+})
 
 // Keep end-date equal to start date while toggle is on
 watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
@@ -385,17 +363,6 @@ watch(enableSignUpForm, (on) => {
 const bannerFile = ref<File | null>(null)
 const bannerDirty = ref(false)
 
-function getFirstFile(value: File | File[] | null | undefined): File | null {
-  if (Array.isArray(value)) return value[0] ?? null
-  return (value as File | null) ?? null
-}
-
-defineRule("fileSize", (value: File | File[] | null) => {
-  const f = getFirstFile(value)
-  if (!f) return true
-  return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
-})
-
 async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
   try {
@@ -417,7 +384,7 @@ async function loadBanner() {
 }
 
 async function onBannerChange(val: File | null, handleChange: (v: File | null) => void) {
-  const file = getFirstFile(val)
+  const file = Array.isArray(val) ? val[0] ?? null : val
   const res = await formRef.value?.validateField("banner")
   if (file && !res?.valid) return
   bannerFile.value = file ?? null
@@ -428,72 +395,51 @@ async function onBannerChange(val: File | null, handleChange: (v: File | null) =
 async function fetchCommittees() {
   const resp = await findCommitteesForCurrentUser()
   if (resp.status === 200) committees.value = (resp.data ?? []) as AdvancedCommittee[]
-  else $handleNetworkError(resp)
+  else handleSubmitError(formRef.value, resp)
 }
 
 onMounted(async () => {
   await Promise.all([loadBanner(), fetchCommittees()])
 })
 
-const validate = async (): Promise<boolean> => {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
-}
-
 const save = async () => {
   if (!(await validate())) {
     emit("submitted", false)
     return
   }
-  isSaving.value = true
+
   try {
-    if (bannerDirty.value) {
-      if (bannerFile.value) {
-        const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
-        if (uploadResp.status === 201) {
-          if (event.value.banner?.file.id !== uploadResp.data?.id) {
-            event.value.banner = {file: uploadResp.data!} as EventBanner
+    await withSaving(async () => {
+      if (bannerDirty.value) {
+        if (bannerFile.value) {
+          const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
+          if (uploadResp.status === 201) {
+            if (event.value.banner?.file.id !== uploadResp.data?.id) {
+              event.value.banner = {file: uploadResp.data!} as EventBanner
+            }
+          } else if (!apply(formRef.value!, uploadResp)) {
+            handleSubmitError(formRef.value, uploadResp)
+            return
           }
-        } else if (!apply(formRef.value!, uploadResp)) {
-          $handleNetworkError(uploadResp)
-          isSaving.value = false
-          return
+        } else {
+          event.value.banner = undefined
         }
-      } else {
-        event.value.banner = undefined
       }
-    }
 
-    const resp = event.value?.id
-      ? await updateEvent({path: {id: event.value.id!}, body: event.value, throwOnError: true})
-      : await createEvent({body: event.value, throwOnError: true})
+      const resp = event.value?.id
+        ? await updateEvent({path: {id: event.value.id!}, body: event.value, throwOnError: true})
+        : await createEvent({body: event.value, throwOnError: true})
 
-    event.value = resp.data!
-    emit("update:modelValue", event.value)
-    emit("submitted", true)
-    router.back()
+      event.value = resp.data!
+      emit("update:modelValue", event.value)
+      emit("submitted", true)
+      router.back()
+    })
   } catch (e: unknown) {
-    if (!apply(formRef.value!, e)) $handleNetworkError(e)
+    handleSubmitError(formRef.value, e)
     emit("submitted", false)
-  } finally {
-    isSaving.value = false
   }
 }
 
 defineExpose({validate, save})
 </script>
-
-<style lang="scss">
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
-}
-
-.v-col {
-  padding-bottom: 0;
-  padding-top: 0;
-}
-</style>

@@ -26,6 +26,7 @@
       <v-row
         align="center"
         justify="space-evenly"
+        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -41,8 +42,8 @@
 
       <v-row
         align="end"
-        class="mb-5 mt-2"
         justify="end"
+        class="mb-5 mt-2 tight-row"
       >
         <v-col
           v-if="showSubmit"
@@ -68,12 +69,11 @@
 import {computed, ref} from "vue"
 import DocumentTable from "@/components/base/DocumentTable.vue"
 import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
-import {defineRule, Form, type FormContext} from "vee-validate"
-import {apply} from "@/plugins/validation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {defineRule, Form} from "vee-validate"
 import {createMembership, type Membership, updateMembership} from "@/services/api"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
+import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
 
 defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
 
@@ -81,39 +81,30 @@ const {showSubmit = false, submitText = "Submit"} = defineProps<{ showSubmit?: b
 const emit = defineEmits<{ (e: "submitted", ok: boolean): void; (e: "update:modelValue", value: Membership): void }>()
 const membership = defineModel<Membership>({default: () => ({}) as Membership})
 
-const formRef = ref<FormContext>()
+const {formRef, validate} = useVeeForm()
+const {isSaving, withSaving} = useSaving()
 const consented = ref(false)
-const isSaving = ref(false)
 const isCreating = computed<boolean>(() => !membership.value?.id)
-
-const validate = async (): Promise<boolean> => {
-  const res = await formRef.value?.validate()
-  return !!res?.valid
-}
 
 const save = async (): Promise<Membership | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     return null
   }
-  isSaving.value = true
   try {
-    const resp = membership.value?.id
-      ? await updateMembership({path: {id: membership.value.id}, body: membership.value!, throwOnError: true})
-      : await createMembership({throwOnError: true})
-
+    const resp = await withSaving(async () => {
+      return membership.value?.id
+        ? await updateMembership({path: {id: membership.value.id}, body: membership.value!, throwOnError: true})
+        : await createMembership({throwOnError: true})
+    })
     membership.value = resp.data!
     emit("submitted", true)
     emit("update:modelValue", membership.value)
     return membership.value
   } catch (err: unknown) {
-    if (!formRef.value || !apply(formRef.value, err)) {
-      $handleNetworkError(err)
-    }
+    handleSubmitError(formRef.value, err)
     emit("submitted", false)
     return null
-  } finally {
-    isSaving.value = false
   }
 }
 

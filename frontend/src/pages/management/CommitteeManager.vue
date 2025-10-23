@@ -100,7 +100,6 @@ onMounted(async () => {
             style="border-top-width: 0"
           >
             <committee-form
-              :model-value="committee"
               :users="users"
               class="form"
               @submitting="(submitting: boolean) => loading = submitting"

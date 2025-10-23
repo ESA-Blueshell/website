@@ -1,0 +1,12 @@
+.tight-row > .v-col {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.tight-row > .v-col:first-child {
+  padding-left: 0;
+}
+
+.tight-row > .v-col:last-child {
+  padding-right: 0;
+}

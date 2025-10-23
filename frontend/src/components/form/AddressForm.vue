@@ -89,8 +89,8 @@ import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 
-import {type Address, createAddress, updateAddress} from "@/services/api"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {type Address, createAddress, type SimpleUser, updateAddress} from "@/services/api"
+import {apply} from "@/plugins/validation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const {
@@ -105,6 +105,7 @@ const {
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
+  (e: "update:modelValue", value: Address): void
 }>()
 
 const address = defineModel<Address>({
@@ -120,8 +121,6 @@ const address = defineModel<Address>({
 const formRef = ref<FormContext>()
 const isSaving = ref(false)
 const isCreating = computed<boolean>(() => !address.value?.id)
-
-const {apply} = useBackendValidation()
 
 const validate = async (): Promise<boolean> => {
   const result = await formRef.value?.validate()
@@ -151,6 +150,7 @@ const save = async (): Promise<Address | null> => {
 
     address.value = resp.data!
     emit("submitted", true)
+    emit("update:modelValue", address.value)
     return resp.data!
   } catch (error: unknown) {
     if (!formRef.value || !apply(formRef.value, error)) {

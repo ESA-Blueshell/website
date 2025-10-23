@@ -1,7 +1,9 @@
 // vee-validate v4
-import {configure, defineRule, type GenericObject} from "vee-validate"
+import {configure, defineRule, type FormContext, type GenericObject} from "vee-validate"
 import {parsePhoneNumber} from "libphonenumber-js/max"
 import {DateTime} from "luxon"
+import type {AxiosError} from "axios"
+import type {ApiError, FieldValidationError} from "@/services/api"
 
 // --- Helpers ---
 export const isEmpty = (v: unknown) =>
@@ -191,3 +193,67 @@ defineRule("dateTimeAfter", (value: string, [other]: string[], ctx) => {
 configure({
   validateOnInput: true,
 })
+
+type HeyApiException = {
+  response?: {
+    status?: number
+    data?: ApiError
+  }
+} & Partial<AxiosError>
+
+export type ParsedValidation = {
+  objectName?: string | null
+  fieldErrors: Record<string, string[]>
+  detail?: string | null
+  status?: number
+  traceId?: string | null
+}
+
+
+function isHeyApiError(e: unknown): e is HeyApiException {
+  return !!(e && typeof e === "object" && (e as any).response?.status)
+}
+
+export function parseApiValidation(err: unknown): ParsedValidation | null {
+  if (!isHeyApiError(err)) return null
+  const data = err.response?.data as ApiError | undefined
+  if (!data) return null
+
+  const list = (data as any).errors as FieldValidationError[] | undefined
+  if (!list?.length) {
+    if (err.response?.status !== 400) return null
+    return null
+  }
+
+  const out: ParsedValidation = {
+    objectName: list[0]?.objectName ?? null,
+    fieldErrors: {},
+    detail: (data as any).detail ?? null,
+    status: (data as any).status,
+    traceId: (data as any).traceId ?? null,
+  }
+
+  for (const fe of list) {
+    const name = fe.field
+    if (!name) continue
+    if (!out.fieldErrors[name]) out.fieldErrors[name] = []
+    out.fieldErrors[name].push(fe.message!)
+  }
+  return out
+}
+
+/**
+ * Composable to apply backend validation to current VeeValidate <Form>.
+ * Optionally pass:
+ *  - objectName: only apply errors matching this DTO name
+ *  - fieldMap:   map backend field -> local field (e.g., { last_name: "lastName" })
+ */
+export function apply(formContext: FormContext, err: unknown) {
+  const parsed = parseApiValidation(err)
+  if (!parsed) return false
+
+  for (const [field, msgs] of Object.entries(parsed.fieldErrors)) {
+    formContext.setFieldError(field, msgs)
+  }
+  return true
+}

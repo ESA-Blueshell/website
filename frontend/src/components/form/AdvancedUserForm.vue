@@ -247,12 +247,12 @@ import {computed, ref, type Ref} from "vue"
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
-import {type AdvancedUser, createUser, updateUser} from "@/services/api"
+import {type AdvancedUser, createUser, type SimpleUser, updateUser} from "@/services/api"
 import {type CountryCode} from "libphonenumber-js/max"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {apply} from "@/plugins/validation.ts"
 import {useStore} from "vuex"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
@@ -271,6 +271,7 @@ const {
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
+  (e: "update:modelValue", value: AdvancedUser): void
 }>()
 
 const user = defineModel<AdvancedUser>({
@@ -294,7 +295,6 @@ const user = defineModel<AdvancedUser>({
   }),
 })
 
-const {apply} = useBackendValidation()
 const store = useStore()
 
 const isCreating = computed<boolean>(() => !user.value?.id)
@@ -339,7 +339,8 @@ const save = async (): Promise<AdvancedUser | null> => {
 
     user.value = resp.data!
     emit("submitted", true)
-    return resp.data!
+    emit("update:modelValue", user.value)
+    return user.value
   } catch (error: unknown) {
     if (!formRef.value || !apply(formRef.value, error)) {
       $handleNetworkError(error)

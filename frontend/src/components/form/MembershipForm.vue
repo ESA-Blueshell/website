@@ -70,13 +70,12 @@ import {computed, ref} from "vue"
 import DocumentTable from "@/components/base/DocumentTable.vue"
 import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
 import {defineRule, Form, type FormContext} from "vee-validate"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {apply} from "@/plugins/validation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {createMembership, type Membership, updateMembership} from "@/services/api"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
 
-// ✅ Require checkbox to be checked (boolean true)
 defineRule("accepted", (value: unknown) => {
   return value === true || "You must accept the membership conditions to continue."
 })
@@ -86,12 +85,14 @@ const {showSubmit = false, submitText = "Submit"} = defineProps<{
   submitText?: string
 }>()
 
-const emit = defineEmits<{ (e: "submitted", ok: boolean): void }>()
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+  (e: "update:modelValue", value: Membership): void
+}>()
 
 const membership = defineModel<Membership>({default: () => ({}) as Membership})
 
 const formRef = ref<FormContext>()
-const {apply} = useBackendValidation()
 const consented = ref(false)
 
 const isSaving = ref(false)
@@ -120,12 +121,10 @@ const save = async (): Promise<Membership | null> => {
         throwOnError: true,
       })
 
-    if (resp?.data) {
-      membership.value = resp.data
-    }
-
+    membership.value = resp.data!
     emit("submitted", true)
-    return resp?.data ?? null
+    emit("update:modelValue", membership.value)
+    return membership.value
   } catch (err: unknown) {
     if (!formRef.value || !apply(formRef.value, err)) {
       $handleNetworkError(err)

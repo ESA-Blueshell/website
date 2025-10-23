@@ -117,11 +117,10 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {memberActivate, type MemberActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {apply} from "@/plugins/validation.ts"
 
 const route = useRoute()
 const router = useRouter()
-const {apply} = useBackendValidation()
 
 const loading = ref(false)
 const succeeded = ref(false)

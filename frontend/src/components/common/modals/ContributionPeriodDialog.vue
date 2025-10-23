@@ -123,11 +123,10 @@
 import {computed, reactive, ref, watch} from "vue"
 import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {apply} from "@/plugins/validation.ts"
 import {Field, Form, type FormContext} from "vee-validate"
 
 defineOptions({name: "ContributionPeriodDialog"})
-const {apply} = useBackendValidation()
 
 const props = defineProps<{
   contributionPeriod?: ContributionPeriod,

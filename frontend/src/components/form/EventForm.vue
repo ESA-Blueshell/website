@@ -6,7 +6,7 @@ import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import router from "@/plugins/router.ts"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {apply} from "@/plugins/validation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {
   type AdvancedCommittee,
@@ -25,7 +25,6 @@ const props = defineProps({
 })
 
 const store = useStore()
-const {apply} = useBackendValidation()
 
 function getDefaultEvent(): Event {
   return {

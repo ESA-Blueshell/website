@@ -5,7 +5,7 @@ import store from "./plugins/store"
 import VueSignaturePad from "vue-signature-pad"
 import vuetify from "@/plugins/vuetify.ts"
 import {loadFonts} from "@/plugins/webfontloader.ts"
-import "./plugins/localValidation.ts"
+import "@/plugins/validation.ts"
 
 const app = createApp(App)
 app.use(store)

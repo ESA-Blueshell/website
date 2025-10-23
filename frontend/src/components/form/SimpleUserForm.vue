@@ -176,7 +176,7 @@ import {createGuestUser, type SimpleUser, updateGuestUser} from "@/services/api"
 import {type CountryCode} from "libphonenumber-js/max"
 import {Form, type FormContext} from "vee-validate"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {useBackendValidation} from "@/plugins/serverValidation.ts"
+import {apply} from "@/plugins/validation.ts"
 import {useStore} from "vuex"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
@@ -207,9 +207,9 @@ const user = defineModel<SimpleUser>({
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
+  (e: "update:modelValue", value: SimpleUser): void
 }>()
 
-const {apply} = useBackendValidation()
 const store = useStore()
 
 const isCreating = computed<boolean>(() => !user.value?.id)
@@ -254,7 +254,8 @@ const save = async (): Promise<SimpleUser | null> => {
 
     user.value = resp.data!
     emit("submitted", true)
-    return resp.data!
+    emit("update:modelValue", user.value)
+    return user.value
   } catch (error: unknown) {
     if (!formRef.value || !apply(formRef.value, error)) {
       $handleNetworkError(error)

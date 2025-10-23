@@ -9,8 +9,7 @@ const initialQuestions = ref<Question[]>(JSON.parse(JSON.stringify(model.value.q
 const initialJson = ref(JSON.stringify(initialQuestions.value))
 const isDirty = computed(() => JSON.stringify(model.value.questions) !== initialJson.value)
 
-function
-addQuestion(type: QuestionType) {
+function addQuestion(type: QuestionType) {
   model.value.questions ??= []
   const nextIdx = model.value.questions.length
   const base = {type, label: "", idx: nextIdx} as Question

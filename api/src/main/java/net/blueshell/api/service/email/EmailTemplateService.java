@@ -5,7 +5,6 @@ import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -20,9 +19,9 @@ public class EmailTemplateService {
 
     private final Parser parser;
     private final HtmlRenderer renderer;
+    private final TemplateEngine templateEngine;
     @Value("${frontend.url}")
     private String appUrl;
-    private final TemplateEngine templateEngine;
 
     public EmailTemplateService(TemplateEngine templateEngine) {
         var extensions = List.of(TablesExtension.create());

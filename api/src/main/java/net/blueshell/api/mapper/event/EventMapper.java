@@ -8,10 +8,6 @@ import net.blueshell.api.mapper.survey.SurveyMapper;
 import net.blueshell.api.model.event.Event;
 import org.mapstruct.*;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-
 @Slf4j
 @Mapper(componentModel = "spring", uses = {EventBannerMapper.class, SurveyMapper.class})
 public abstract class EventMapper extends BaseMapper<Event, EventDTO> {

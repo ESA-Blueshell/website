@@ -68,7 +68,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);
 
     @AfterMapping
-    protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {
+    protected void onCreation(AdvancedUserDTO dto, @MappingTarget User user) {
         if (user.getId() != null) return;
 
         if (hasAuthority(Role.BOARD)) {
@@ -79,6 +79,19 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
             applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
         }
 
+        applyRestrictedFields(dto, user);
+    }
+
+    @AfterMapping
+    protected void onUpdate(AdvancedUserDTO dto, @MappingTarget User user) {
+        if (user.getId() == null) return;
+
+        if (hasAuthority(Role.BOARD)) {
+            applyRestrictedFields(dto, user);
+        }
+    }
+
+    private void applyRestrictedFields(AdvancedUserDTO dto, @MappingTarget User user) {
         applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
         applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
         applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);

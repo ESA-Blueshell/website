@@ -2,16 +2,17 @@ package net.blueshell.api.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.dto.PersonalInfoDTO;
 import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
-import net.blueshell.api.validation.user.UniquePhoneNumber;
 import net.blueshell.api.validation.user.UniqueUser;
-import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

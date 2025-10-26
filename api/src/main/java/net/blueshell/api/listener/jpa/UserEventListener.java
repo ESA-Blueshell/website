@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.common.event.job.SyncContactEvent;
-import net.blueshell.api.common.event.job.RecoveryEmailEvent;
 import net.blueshell.api.common.event.jpa.PostPersistEvent;
 import net.blueshell.api.common.event.jpa.PostUpdateEvent;
 import net.blueshell.api.model.User;

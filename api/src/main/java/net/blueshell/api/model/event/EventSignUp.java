@@ -45,7 +45,7 @@ import java.util.Set;
         },
         subgraphs = @NamedSubgraph(
                 name = "answersSub",
-                attributeNodes = { @NamedAttributeNode("question") }
+                attributeNodes = {@NamedAttributeNode("question")}
         )
 )
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")

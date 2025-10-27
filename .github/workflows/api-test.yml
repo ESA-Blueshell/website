@@ -60,7 +60,7 @@ jobs:
       SMTP_PASSWORD: your_smtp_password
 
       # Storage
-      STORAGE_LOCATION: /home/storage
+      STORAGE_LOCATION: ./storage
 
       # Brevo
       BREVO_API_KEY: something

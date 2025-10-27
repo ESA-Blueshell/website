@@ -52,9 +52,6 @@ public class SyncContactJob {
             // Perform the contact synchronization
             contacts.sync(user);
 
-            // Update the user in the database with the potentially new contactId
-            users.update(user);
-
             log.info("Successfully synchronized contact for user: {} (ID: {})", user.getEmail(), userId);
 
         } catch (RestClientResponseException e) {

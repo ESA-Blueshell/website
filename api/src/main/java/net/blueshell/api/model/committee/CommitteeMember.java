@@ -1,9 +1,9 @@
 package net.blueshell.api.model.committee;
 
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
@@ -29,8 +29,8 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE committee_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 public class CommitteeMember extends BaseModel {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -43,6 +43,9 @@ public class CommitteeMember extends BaseModel {
     @ManyToOne(optional = false)
     @JoinColumn(name = "committee_id", nullable = false)
     private Committee committee;
+
+    @Column(name = "committee_id", insertable = false, updatable = false)
+    private Long committeeId;
 
     @Column(name = "role", length = 255)
     private String role;

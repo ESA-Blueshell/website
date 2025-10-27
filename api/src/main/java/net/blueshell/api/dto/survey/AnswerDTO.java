@@ -10,7 +10,7 @@ import net.blueshell.api.validation.survey.ValidAnswer;
 import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Answer")
 @ValidAnswer
 public class AnswerDTO extends BaseDTO {

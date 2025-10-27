@@ -9,7 +9,7 @@ import net.blueshell.api.base.BaseDTO;
 import java.time.Instant;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Redirect")
 public class RedirectDTO extends BaseDTO {
     private Instant createdAt;

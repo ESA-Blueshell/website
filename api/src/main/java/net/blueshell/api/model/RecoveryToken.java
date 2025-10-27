@@ -1,9 +1,7 @@
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.common.enums.ResetType;
 import org.hibernate.annotations.SQLDelete;
@@ -20,8 +18,8 @@ import java.time.Instant;
                 @Index(name = "idx_recovery_tokens_expires", columnList = "expires_at")
         }
 )
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE recovery_tokens SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

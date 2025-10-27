@@ -5,9 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -23,8 +21,8 @@ import org.hibernate.annotations.SQLRestriction;
 )
 @SQLDelete(sql = "UPDATE addresses SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 public class Address extends BaseModel {
     @Column

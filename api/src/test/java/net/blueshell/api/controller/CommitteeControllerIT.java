@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
+import net.blueshell.api.dto.event.EventDTO;
 import net.blueshell.api.model.User;
 import net.blueshell.api.testsupport.UserTestSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,8 +21,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static java.lang.Thread.sleep;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -62,7 +64,6 @@ class CommitteeControllerIT extends UserTestSupport {
     }
 
     @Test
-    @Commit
     void committeesAreCreatedCorrectly() throws Exception {
         var board = userMap.get(Role.BOARD);
         var member = userMap.get(Role.MEMBER);
@@ -81,7 +82,7 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.members[*].userId",
                         containsInAnyOrder(board.getId().intValue(), member.getId().intValue())));
 
-        // Refresh entities to get updated state from database
+        // Refresh entities
         member = refreshUser(member);
         board = refreshUser(board);
 
@@ -130,44 +131,38 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.members", hasSize(2)));
     }
 
-    @Test
-    void updatingCommitteesRemovesMembers() throws Exception {
-        // initial create
-        MvcResult createResult = mvc.perform(post("/committees")
+    private AdvancedCommitteeDTO createCommittee() throws Exception {
+        MvcResult result = mvc.perform(post("/committees")
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        AdvancedCommitteeDTO created = mapper.readValue(
-                createResult.getResponse().getContentAsByteArray(),
-                AdvancedCommitteeDTO.class
-        );
+        return mapper.readValue(result.getResponse().getContentAsByteArray(), AdvancedCommitteeDTO.class);
+    }
+
+    @Test
+    void updatingCommitteesRemovesMembers() throws Exception {
+        // initial create
+        AdvancedCommitteeDTO dto = createCommittee();
 
         // prepare updated payload (switch to a single member, using the existing MEMBER account)
         var board = userMap.get(Role.BOARD);
         var member = userMap.get(Role.MEMBER);
 
-        Map<String, Object> updatedPayload = Map.of(
-                "name", "Updated Committee Name",
-                "description", "Updated description text",
-                "members", List.of(
-                        Map.of(
-                                "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId(),
-                                "role", "No longer chair",
-                                "userId", board.getId()
-                        )
-                )
-        );
+        dto.getMembers().remove(1);
+        dto.setName("Updated Committee Name");
+        dto.setDescription("Updated description text");
+        dto.getMembers().get(0).setRole("No longer chair");
 
         // perform update
-        mvc.perform(put("/committees/{id}", created.getId())
+        mvc.perform(put("/committees/{id}", dto.getId())
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(updatedPayload)))
+                        .content(mapper.writeValueAsBytes(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(created.getId().toString()))
+                .andExpect(jsonPath("$.id").value(dto.getId().toString()))
                 .andExpect(jsonPath("$.name").value("Updated Committee Name"))
                 .andExpect(jsonPath("$.description").value("Updated description text"))
                 .andExpect(jsonPath("$.members", hasSize(1)))
@@ -181,46 +176,24 @@ class CommitteeControllerIT extends UserTestSupport {
     @Test
     void updatingCommitteesUpdatesMembers() throws Exception {
         // initial create
-        MvcResult createResult = mvc.perform(post("/committees")
-                        .with(bearer(userMap.get(Role.BOARD)))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        AdvancedCommitteeDTO created = mapper.readValue(
-                createResult.getResponse().getContentAsByteArray(),
-                AdvancedCommitteeDTO.class
-        );
+        AdvancedCommitteeDTO dto = createCommittee();
 
         // prepare updated payload (switch to a single member, using the existing MEMBER account)
         var board = userMap.get(Role.BOARD);
         var member = userMap.get(Role.MEMBER);
 
-        Map<String, Object> updatedPayload = Map.of(
-                "name", "Updated Committee Name",
-                "description", "Updated description text",
-                "members", List.of(
-                        Map.of(
-                                "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId(),
-                                "role", "No longer chair",
-                                "userId", board.getId()
-                        ),
-                        Map.of(
-                                "id", refreshUser(member).getCommitteeMembers().stream().findFirst().get().getId(),
-                                "role", "No longer member",
-                                "userId", member.getId()
-                        )
-                )
-        );
+        dto.setName("Updated Committee Name");
+        dto.setDescription("Updated description text");
+        dto.getMembers().get(0).setRole("No longer chair");
+        dto.getMembers().get(1).setRole("No longer member");
 
         // perform update
-        mvc.perform(put("/committees/{id}", created.getId())
+        mvc.perform(put("/committees/{id}", dto.getId())
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(updatedPayload)))
+                        .content(mapper.writeValueAsBytes(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(created.getId().toString()))
+                .andExpect(jsonPath("$.id").value(dto.getId().toString()))
                 .andExpect(jsonPath("$.name").value("Updated Committee Name"))
                 .andExpect(jsonPath("$.description").value("Updated description text"))
                 .andExpect(jsonPath("$.members", hasSize(2)))

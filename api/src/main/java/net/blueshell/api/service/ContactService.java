@@ -81,7 +81,7 @@ public class ContactService {
         ContactsApi api = getContactsApi();
         CreateContact createContact = mapper.toCreate(user);
         CreateUpdateContactModel response = api.createContact(createContact);
-        user.setContactId(response.getId());
+        users.updateContactId(user.getId(), response.getId());
     }
 
     private void sendUpdate(User user) throws RestClientResponseException {

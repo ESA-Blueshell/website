@@ -194,7 +194,7 @@ const boards = ref<Board[]>([
         name: "Reini Strating",
         title: "Chair",
         description:
-          "Hello, I'm Reini Strating but you can call me whatever you want – there is no limit. I'm still searching for a suitable study, that's why this is my break year! I enjoy playing any type of games if I get invited. Always trying to have fun with others, whatever suits their boat. I joined Blueshell after a friend introduced me to it last year and got me instantly hooked with the friendliness and good times. It got me excited enough to join the board and here I am! CHAIR ready for base-service.yaml!",
+          "Hello, I'm Reini Strating but you can call me whatever you want – there is no limit. I'm still searching for a suitable study, that's why this is my break year! I enjoy playing any type of games if I get invited. Always trying to have fun with others, whatever suits their boat. I joined Blueshell after a friend introduced me to it last year and got me instantly hooked with the friendliness and good times. It got me excited enough to join the board and here I am! CHAIR ready for service!",
         image: $require("@/assets/board7/reinout.jpg"),
       },
       {

@@ -45,7 +45,8 @@ const deleteUser = (user: AdvancedUser) => {
   users.value = users.value.filter((u) => u.id !== user.id)
 }
 
-const userChanged = (user: AdvancedUser) => {
+const updateUser = (user: AdvancedUser) => {
+  console.log("member mamanger user:", user)
   const index = users.value.findIndex((u) => u.id === user.id)
   if (index === -1) {
     users.value = [...users.value, user]
@@ -59,6 +60,7 @@ const userChanged = (user: AdvancedUser) => {
   expanded.value = 0
 }
 
+
 const membershipChanged = async (updatedMembership: Membership) => {
   const index = memberships.value.findIndex((m) => m.id === updatedMembership.id)
   if (index === -1) memberships.value = [...memberships.value, updatedMembership]
@@ -69,7 +71,7 @@ const membershipChanged = async (updatedMembership: Membership) => {
   ]
 
   const resp = await findUserById({path: {userId: updatedMembership.userId!}})
-  if (resp.data) userChanged(resp.data)
+  if (resp.data) updateUser(resp.data)
 }
 
 const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
@@ -114,7 +116,7 @@ onMounted(async () => {
           class="mt-3"
           title="Non-members"
           @update:membership="membershipChanged"
-          @update:user="userChanged"
+          @update:user="updateUser"
           @delete:user="deleteUser"
         />
 
@@ -126,7 +128,7 @@ onMounted(async () => {
           class="mt-3"
           title="Members"
           @update:membership="membershipChanged"
-          @update:user="userChanged"
+          @update:user="updateUser"
           @delete:user="deleteUser"
         />
       </div>

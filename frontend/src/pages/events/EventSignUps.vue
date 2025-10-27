@@ -70,17 +70,6 @@ const openQuestions = computed<Question[]>(() =>
   allQuestions.value.filter(q => q.type === QuestionType.OPEN),
 )
 
-watch(radioQuestions, (radioQuestions: Question[]) => {
-  console.log("radio questions:", radioQuestions)
-})
-watch(allQuestions, (allQuestions: Question[]) => {
-  console.log("all questions: ", allQuestions)
-})
-
-watch(responses, (responses: Response[]) => {
-  console.log("responses ", responses)
-})
-
 function totalForQuestion(question: Question): number[] | undefined {
   if (!question) return
 

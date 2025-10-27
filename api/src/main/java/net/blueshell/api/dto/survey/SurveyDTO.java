@@ -13,7 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Survey")
 public class SurveyDTO extends BaseDTO {
     @NotEmpty

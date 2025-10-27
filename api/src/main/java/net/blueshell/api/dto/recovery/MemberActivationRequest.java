@@ -10,7 +10,7 @@ import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.validation.user.UniqueUsername;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Data
 @Schema(name = "MemberActivationRequest")
 public class MemberActivationRequest extends BaseDTO {

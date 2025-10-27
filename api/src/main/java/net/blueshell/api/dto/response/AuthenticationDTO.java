@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Login")
 public class AuthenticationDTO extends BaseDTO {
 

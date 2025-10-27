@@ -1,9 +1,7 @@
 package net.blueshell.api.model.committee;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.User;
 import org.hibernate.annotations.SQLDelete;
@@ -28,8 +26,8 @@ import java.util.Set;
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 public class Committee extends BaseModel {
     @Column(name = "name", nullable = false)

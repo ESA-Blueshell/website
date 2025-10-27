@@ -55,7 +55,7 @@ public abstract class UserTestSupport {
         user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
         user.setEmail(username + "@example.com");
         user.setEnabled(true);
-        user.addRole(role);
+        user.setRoles(role.getAllInheritedRoles());
         userRepository.save(user);
         return user;
     }

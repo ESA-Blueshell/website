@@ -9,7 +9,7 @@ import net.blueshell.api.validation.address.ValidCountryCode;
 
 import java.time.Instant;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Data
 @Schema(name = "Address")
 public class AddressDTO extends BaseDTO {

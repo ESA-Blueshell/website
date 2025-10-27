@@ -16,9 +16,9 @@ import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.event.Event;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -34,44 +34,58 @@ public class CalendarService {
 
     private static final String APPLICATION_NAME = "Blueshell Google Calendar API";
     private static final List<String> SCOPES = List.of(CalendarScopes.CALENDAR_EVENTS);
-    private final String calendarId;
-    private final HtmlRenderer htmlRenderer;
-    private final Parser htmlParser;
+    private static final String TZ_ID = "Europe/Amsterdam";
+    private static final ZoneId ZONE = ZoneId.of(TZ_ID);
 
-    private final Calendar service;
+    @Value("${google.calendar.id}")
+    private String calendarId;
 
-    @Autowired
-    public CalendarService(
-            @Value("${google.calendar.id}") String calendarId,
-            @Value("${google.calendar.clientId}") String clientId,
-            @Value("${google.calendar.clientEmail}") String clientEmail,
-            @Value("${google.calendar.privateKeyPkcs8}") String privateKeyPkcs8,
-            @Value("${google.calendar.privateKeyId}") String privateKeyId
-    ) throws GeneralSecurityException, IOException {
-        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+    @Value("${google.calendar.clientId}")
+    private String clientId;
 
-        GoogleCredentials credentials = ServiceAccountCredentials
-                .fromPkcs8(clientId, clientEmail, privateKeyPkcs8, privateKeyId, SCOPES);
+    @Value("${google.calendar.clientEmail}")
+    private String clientEmail;
 
-        // Build a new authorized API client service.
-        service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), new HttpCredentialsAdapter(credentials))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
+    @Value("${google.calendar.privateKeyPkcs8}")
+    private String privateKeyPkcs8;
 
+    @Value("${google.calendar.privateKeyId}")
+    private String privateKeyId;
 
-        MutableDataSet options = new MutableDataSet();
+    private Calendar service;
+    private HtmlRenderer htmlRenderer;
+    private Parser htmlParser;
 
-        // uncomment to set optional extensions
-        options.set(Parser.EXTENSIONS, Arrays.asList(
-                TablesExtension.create(),
-                StrikethroughExtension.create()
-        ));
+    @PostConstruct
+    void init() {
+        try {
+            final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
 
-        htmlParser = Parser.builder(options).build();
-        htmlRenderer = HtmlRenderer.builder(options).build();
-        this.calendarId = calendarId;
+            GoogleCredentials credentials = ServiceAccountCredentials
+                    .fromPkcs8(clientId, clientEmail, privateKeyPkcs8, privateKeyId, SCOPES);
+
+            service = new Calendar.Builder(
+                    httpTransport,
+                    GsonFactory.getDefaultInstance(),
+                    new HttpCredentialsAdapter(credentials)
+            )
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
+
+            MutableDataSet options = new MutableDataSet();
+            options.set(Parser.EXTENSIONS, Arrays.asList(
+                    TablesExtension.create(),
+                    StrikethroughExtension.create()
+            ));
+            htmlParser = Parser.builder(options).build();
+            htmlRenderer = HtmlRenderer.builder(options).build();
+
+            log.info("Initialized Google Calendar client for calendarId={}", calendarId);
+        } catch (GeneralSecurityException | IOException e) {
+            log.error("Failed to initialize GoogleCalendarService", e);
+            throw new IllegalStateException("GoogleCalendarService initialization failed", e);
+        }
     }
-
 
     public void add(Event event) throws IOException {
         var googleEvent = toGoogleEvent(event);
@@ -82,7 +96,8 @@ public class CalendarService {
             event.setGoogleId(googleEvent.getId());
             log.info("Added a new event to the calendar at: {}", googleEvent.getHtmlLink());
         } catch (GoogleJsonResponseException e) {
-            log.error("Google Calendar API returned HTTP response code during insert: {}", e.getStatusCode());
+            log.error("Google Calendar API returned HTTP code {} during insert", e.getStatusCode(), e);
+            throw e;
         }
     }
 
@@ -92,57 +107,47 @@ public class CalendarService {
             service.events()
                     .update(calendarId, event.getGoogleId(), googleEvent)
                     .execute();
+            log.info("Updated event {} in calendar {}", event.getGoogleId(), calendarId);
         } catch (GoogleJsonResponseException e) {
-            log.error("Google Calendar API returned HTTP response code during update: {}", e.getStatusCode());
+            log.error("Google Calendar API returned HTTP code {} during update", e.getStatusCode(), e);
+            throw e;
         }
     }
 
     public void remove(Event event) throws IOException {
-        if (event.getGoogleId() == null) {
-            return;
-        }
-
+        if (event.getGoogleId() == null) return;
         try {
-            service.events()
-                    .delete(calendarId, event.getGoogleId())
-                    .execute();
+            service.events().delete(calendarId, event.getGoogleId()).execute();
+            log.info("Removed event {} from calendar {}", event.getGoogleId(), calendarId);
+            event.setGoogleId(null);
         } catch (GoogleJsonResponseException e) {
-            log.error("Google Calendar API returned HTTP response code during removal: {}", e.getStatusCode());
+            log.error("Google Calendar API returned HTTP code {} during removal", e.getStatusCode(), e);
+            throw e;
         }
-        event.setGoogleId(null);
-    }
-
-
-    private com.google.api.services.calendar.model.Event toGoogleEvent(Event event) {
-        com.google.api.services.calendar.model.Event googleEvent = new com.google.api.services.calendar.model.Event();
-        googleEvent.setSummary(event.getTitle())
-                .setLocation(event.getLocation());
-
-        //Convert description from markdown to html for cool styling
-        String preProcessedHtml = htmlRenderer.render(htmlParser.parse(event.getDescription()));
-        preProcessedHtml = preProcessedHtml.replaceAll("<p>", "");
-        preProcessedHtml = preProcessedHtml.replaceAll("</p>", "");
-        googleEvent.setDescription(preProcessedHtml);
-
-        DateTime startDateTime = new DateTime(event.getStartTime().atZone(ZoneId.of("Europe/Amsterdam")).toEpochSecond() * 1000);
-        EventDateTime start = new EventDateTime()
-                .setDateTime(startDateTime)
-                .setTimeZone("Europe/Amsterdam");
-        googleEvent.setStart(start);
-
-        DateTime endDateTime = new DateTime(event.getEndTime().atZone(ZoneId.of("Europe/Amsterdam")).toEpochSecond() * 1000);
-        EventDateTime end = new EventDateTime()
-                .setDateTime(endDateTime)
-                .setTimeZone("Europe/Amsterdam");
-        googleEvent.setEnd(end);
-        return googleEvent;
     }
 
     public void sync(Event event) throws IOException {
-        if (event.getGoogleId() != null) {
-            update(event);
-        } else {
-            add(event);
-        }
+        if (event.getGoogleId() != null) update(event);
+        else add(event);
+    }
+
+    private com.google.api.services.calendar.model.Event toGoogleEvent(Event event) {
+        var googleEvent = new com.google.api.services.calendar.model.Event()
+                .setSummary(event.getTitle())
+                .setLocation(event.getLocation());
+
+        String preProcessedHtml = htmlRenderer.render(htmlParser.parse(event.getDescription()));
+        preProcessedHtml = preProcessedHtml.replace("<p>", "").replace("</p>", "");
+        googleEvent.setDescription(preProcessedHtml);
+
+        DateTime startDateTime = new DateTime(event.getStartTime().atZone(ZONE).toEpochSecond() * 1000L);
+        DateTime endDateTime = new DateTime(event.getEndTime().atZone(ZONE).toEpochSecond() * 1000L);
+
+        EventDateTime start = new EventDateTime().setDateTime(startDateTime).setTimeZone(TZ_ID);
+        EventDateTime end = new EventDateTime().setDateTime(endDateTime).setTimeZone(TZ_ID);
+
+        googleEvent.setStart(start);
+        googleEvent.setEnd(end);
+        return googleEvent;
     }
 }

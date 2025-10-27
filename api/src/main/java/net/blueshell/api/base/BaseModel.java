@@ -1,10 +1,9 @@
 package net.blueshell.api.base;
 
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import net.blueshell.api.model.User;
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -12,15 +11,13 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @MappedSuperclass
-@Getter
-@Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Data
 public abstract class BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "deleted_at", insertable = false, updatable = false, nullable = false)
@@ -51,4 +48,19 @@ public abstract class BaseModel {
     @Column(name = "version", nullable = false)
     @ColumnDefault("0")
     private Long version;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        BaseModel that = (BaseModel) o;
+        if (this.id == null || that.id == null) return false;
+        return Objects.equals(this.id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return (id != null) ? id.hashCode() : Hibernate.getClass(this).hashCode();
+    }
 }

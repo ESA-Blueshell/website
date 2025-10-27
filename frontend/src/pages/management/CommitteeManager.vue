@@ -102,6 +102,7 @@ onMounted(async () => {
             <committee-form
               :users="users"
               class="form"
+              show-submit
               @submitting="(submitting: boolean) => loading = submitting"
               @update:model-value="updateCommittee"
             />
@@ -164,6 +165,7 @@ onMounted(async () => {
                   :model-value="committee"
                   :users="users"
                   class="form"
+                  show-submit
                   @submitting="(submitting: boolean) => submittingId = submitting ? committee.id : null"
                   @update:model-value="updateCommittee"
                 />

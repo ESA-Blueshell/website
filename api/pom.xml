@@ -333,24 +333,12 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-
-            <!-- Unit tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.version}</version>
-                <executions>
-                    <execution>
-                        <id>unit-tests-on-verify</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
-            <!-- Exec (optional) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -409,14 +397,6 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-maven-plugin</artifactId>
                 <version>1.5</version>
-                <executions>
-                    <execution>
-                        <id>generate-openapi</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <outputDir>../openapi</outputDir>
                     <outputFileName>blueshell.json</outputFileName>

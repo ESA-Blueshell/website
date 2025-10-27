@@ -35,7 +35,7 @@ class BlogControllerIT extends UserTestSupport {
     private final Map<Role, User> userMap = new EnumMap<>(Role.class);
     Map<String, Object> examplePayload = Map.of(
             "title", "New Blog",
-            "publishedAt", "2025-07-01T12:00:00.000+00:00",
+            "publishedAt", "2025-07-01T12:00:00Z",
             "html", "<div><span>cool story bro</span></div>"
     );
     @Autowired

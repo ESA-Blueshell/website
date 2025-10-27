@@ -30,11 +30,11 @@
           </v-col>
         </v-row>
 
-        <v-container>
+        <v-container :key="forceUpdateKey">
           <v-row
-            v-for="(member, i) in committee.members ?? []"
-            :key="member.id ?? i"
-            class="mt-4 tight-row"
+            v-for="(member, i) in committee.members"
+            :key="member.userId || `new-${i}`"
+            class="tight-row my-3"
           >
             <v-col cols="4">
               <VvField
@@ -106,7 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
 import {defineRule, Form} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
@@ -121,14 +121,33 @@ import {
 } from "@/services/api"
 import {handleSubmitError, useReadonly, useSaving, useVeeForm} from "@/composables/formUtils"
 
-const props = withDefaults(defineProps<{ users: AdvancedUser[]; showSubmit?: boolean; submitText?: string }>(), {
+const props = withDefaults(defineProps<{
+  users: AdvancedUser[];
+  showSubmit?: boolean;
+  submitText?: string
+}>(), {
   showSubmit: false,
   submitText: "Submit",
 })
 
-const emit = defineEmits<{ (e: "submitted", ok: boolean): void }>()
+const forceUpdateKey = ref(0)
+
+const getDefaultMember: () => CommitteeMember = () => ({
+  role: "",
+  userId: null as unknown as number,
+  committeeId: committee.value.id,
+})
+
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+}>()
+
 const committee = defineModel<AdvancedCommittee>({
-  default: () => ({name: "", description: "", members: []} as AdvancedCommittee),
+  default: () => ({
+    name: "",
+    description: "",
+    members: [{role: "", userId: null as unknown as number}],
+  } as AdvancedCommittee),
 })
 
 const {isReadonly} = useReadonly()
@@ -139,10 +158,10 @@ defineRule("committeeUserIsMember", (userId: number | string) => {
   if (!u) return "Select a user"
   return u.roles?.includes(Role.MEMBER) || "Committee members must be members of the association"
 })
+
 defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[]) => {
   if (!userId && userId !== 0) return true
   const i = Number(idx)
-  committee.value.members ??= []
   const dup = committee.value.members.some((m: CommitteeMember, pos: number) => pos !== i && Number(m?.userId) === Number(userId))
   return !dup || "Member already in this committee"
 })
@@ -152,13 +171,13 @@ const {isSaving, withSaving} = useSaving()
 const isCreating = computed<boolean>(() => !committee.value?.id)
 
 function addMember() {
-  committee.value.members ??= []
-  committee.value.members.push({role: "", userId: undefined as unknown as number, committeeId: committee.value.id})
+  committee.value.members = [...committee.value.members, getDefaultMember()]
+  forceUpdateKey.value++
 }
 
 function removeMember(id: number) {
-  committee.value.members ??= []
   committee.value.members = committee.value.members.filter((m: CommitteeMember) => id !== m.userId)
+  forceUpdateKey.value++
 }
 
 const save = async (): Promise<AdvancedCommittee | null> => {

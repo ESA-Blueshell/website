@@ -8,7 +8,7 @@ import net.blueshell.api.base.BaseDTO;
 
 import java.io.Serial;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Data
 @NoArgsConstructor
 @Schema(name = "JwtRequest")

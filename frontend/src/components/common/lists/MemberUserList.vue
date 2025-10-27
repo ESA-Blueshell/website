@@ -51,7 +51,10 @@ const toggleCreate = () => {
 }
 
 const membershipChanged = (membership: Membership) => emit("update:membership", membership)
-const userChanged = (user: AdvancedUser) => emit("update:user", user)
+const updateUser = (user: AdvancedUser) => {
+  console.log("user", user)
+  emit("update:user", user)
+}
 const deleteUser = (user: AdvancedUser) => emit("delete:user", user)
 
 const createDraft = ref<AdvancedUser>()
@@ -125,6 +128,7 @@ const onCreateSubmitted = (ok: boolean) => {
                   show-submit
                   :show-username="false"
                   @submitted="onCreateSubmitted"
+                  @update:expanded="toggleExpanded"
                 />
               </div>
             </v-expand-transition>
@@ -132,18 +136,19 @@ const onCreateSubmitted = (ok: boolean) => {
           </div>
 
           <template
-            v-for="u in filteredUsers"
-            :key="u.id"
+            v-for="user in filteredUsers"
+            :key="user.id"
           >
             <member-user-row
               v-model:expanded="expanded"
               :contributions="contributions"
               :enable-delete="enableDelete"
               :memberships="memberships"
-              :user="u"
+              :user="user"
               @update:membership="membershipChanged"
-              @update:user="userChanged"
+              @update:user="updateUser"
               @delete:user="deleteUser"
+              @update:expanded="toggleExpanded"
             />
             <v-divider />
           </template>

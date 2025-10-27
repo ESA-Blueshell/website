@@ -1,3 +1,37 @@
+<script lang="ts" setup generic="T">
+import {Field} from "vee-validate"
+import {VTextField} from "vuetify/components"
+import type {DefineComponent} from "vue"
+import type {DisplayFn, HandleChange, UpdateFn} from "@/types/VVField.types.ts"
+
+defineOptions({inheritAttrs: false})
+
+type Rules = string | Record<string, unknown> | undefined
+
+withDefaults(defineProps<{
+  name: string
+  label?: string
+  rules?: Rules
+  component?: DefineComponent | string
+  componentProps?: Record<string, unknown>
+  disabled?: boolean
+  display?: DisplayFn<T>
+  update?: UpdateFn<T>
+}>(), {
+  label: "",
+  rules: "",
+  component: () => VTextField as unknown as DefineComponent,
+  componentProps: () => ({}),
+  disabled: false,
+  display: (v: T) => v,
+  update: (incoming: T, handleChange: HandleChange<T>) => {
+    handleChange(incoming)
+  },
+})
+
+const model = defineModel<T>()
+</script>
+
 <template>
   <Field
     v-slot="{ value, errors, handleChange, handleBlur }"
@@ -10,38 +44,11 @@
       :disabled="disabled"
       :error-messages="errors"
       :label="label"
-      :model-value="display ? display(value) : value"
+      :model-value="display(value as T)"
       v-bind="componentProps"
       @blur="handleBlur"
-      @update:model-value="(v: unknown) => update ? update(v, handleChange) : handleChange(v)"
+      @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
       v-on="$attrs"
     />
   </Field>
 </template>
-
-<script lang="ts" setup>
-import {Field} from "vee-validate"
-import {VTextField} from "vuetify/components"
-
-defineOptions({inheritAttrs: false})
-
-type Rules = string | Record<string, unknown> | undefined
-
-withDefaults(defineProps<{
-  name: string
-  label?: string
-  rules?: Rules
-  component?: unknown
-  componentProps?: Record<string, unknown>
-  disabled?: boolean
-  display?: (value: unknown) => unknown
-  update?: (incoming: unknown, handleChange: (v: unknown) => void) => void
-}>(), {
-  label: "",
-  rules: "",
-  component: () => VTextField,
-  componentProps: () => ({})
-})
-
-const model = defineModel<unknown>()
-</script>

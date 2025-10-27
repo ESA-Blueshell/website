@@ -22,12 +22,6 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * MockJavaMailSender: drop-in replacement for JavaMailSender that never sends mail.
- * <p>
- * Activate with @ActiveProfiles("mail-mock") in tests or spring.profiles.active=mail-mock locally.
- * Captures every MimeMessage in-memory for assertions.
- */
 @Slf4j
 @Component
 @Primary

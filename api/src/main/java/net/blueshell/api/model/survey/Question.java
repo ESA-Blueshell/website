@@ -1,9 +1,7 @@
 package net.blueshell.api.model.survey;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.QuestionType;
@@ -34,8 +32,8 @@ import java.util.Set;
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener.class)
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 public class Question extends BaseModel {
     @Column(name = "idx", nullable = false)

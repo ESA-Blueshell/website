@@ -12,7 +12,7 @@ spring:
 
   datasource:
     host: ${MYSQL_HOST}
-    username: ${MYSQL_USERNAME}
+    username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.db}

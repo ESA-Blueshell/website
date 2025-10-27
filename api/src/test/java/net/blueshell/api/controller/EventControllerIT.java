@@ -141,8 +141,8 @@ class EventControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.title").value("New Event"))
                 .andExpect(jsonPath("$.location").value("Esports Lounge Twente"))
                 .andExpect(jsonPath("$.description").value("The best description"))
-                .andExpect(jsonPath("$.startTime").value(containsString("2025-10-05T19:00:00+02:00")))
-                .andExpect(jsonPath("$.endTime").value(containsString("2025-10-05T22:00:00+02:00")))
+                .andExpect(jsonPath("$.startTime").value(containsString("2025-10-05T17:00:00Z")))
+                .andExpect(jsonPath("$.endTime").value(containsString("2025-10-05T20:00:00Z")))
                 .andExpect(jsonPath("$.approved").value(true))
                 .andExpect(jsonPath("$.membersOnly").value(true))
                 .andExpect(jsonPath("$.signUp").value(true))
@@ -179,6 +179,13 @@ class EventControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().is4xxClientError());
 
+        EventDTO fresh = mapper.readValue(
+                mvc.perform(get("/events/{id}", dto.getId()).with(bearer(userMap.get(Role.BOARD))))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsByteArray(),
+                EventDTO.class
+        );
+
         dto.getSignUpForm().getQuestions().remove(
                 dto.getSignUpForm().getQuestions().stream()
                         .skip(3)
@@ -190,6 +197,7 @@ class EventControllerIT extends UserTestSupport {
         dto.setDescription("Updated Description");
         dto.setApproved(false);
         dto.setSignUp(false);
+        dto.setVersion(fresh.getVersion());
 
         mvc.perform(put("/events/{id}", dto.getId())
                         .with(bearer(userMap.get(Role.BOARD)))

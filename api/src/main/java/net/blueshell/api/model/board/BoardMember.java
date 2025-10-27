@@ -1,9 +1,7 @@
 package net.blueshell.api.model.board;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;
@@ -31,17 +29,23 @@ import org.hibernate.annotations.SQLRestriction;
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 public class BoardMember extends BaseModel {
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne
     private Board board;
 
+    @Column(name = "board_id", updatable = false, insertable = false)
+    private Long boardId;
+
     @JoinColumn(name = "user_id", nullable = false)
     @ManyToOne
     private User user;
+
+    @Column(name = "user_id", updatable = false, insertable = false)
+    private Long userId;
 
     @JoinColumn(name = "picture_id")
     @OneToOne

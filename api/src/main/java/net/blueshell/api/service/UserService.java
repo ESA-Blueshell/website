@@ -111,4 +111,11 @@ public class UserService extends BaseModelService<User, UserRepository> implemen
         user.setPassword(passwordEncoder.encode(rawPassword));
         update(user);
     }
+
+    @Transactional
+    public void updateContactId(Long userId, Long contactId) {
+        User user = findById(userId);
+        user.setContactId(contactId);
+        update(user);
+    }
 }

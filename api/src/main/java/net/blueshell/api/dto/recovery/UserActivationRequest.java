@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.blueshell.api.base.BaseDTO;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Data
 @Schema(name = "UserActivationRequest")
 public class UserActivationRequest extends BaseDTO {

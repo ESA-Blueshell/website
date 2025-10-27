@@ -18,7 +18,6 @@ import PastEventsPane from "@/components/base/PastEventsPane.vue"
 const store = useStore()
 
 const login = computed<Login>(() => store.getters.getLogin)
-const isBoard = computed<boolean>(() => store.getters.isBoard)
 
 const events = ref<Event[]>([])
 const committees = ref<AdvancedCommittee[]>([])

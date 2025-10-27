@@ -65,7 +65,7 @@
         theme="light"
       >
         <v-carousel-item
-          v-for="(game, idx) in flatGames"
+          v-for="(game) in flatGames"
           :key="`slide-${game.__uid}`"
           style="z-index: 1;"
           @mouseenter="hover(null,null)"

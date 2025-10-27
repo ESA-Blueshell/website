@@ -8,7 +8,7 @@ import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.FileDTO;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "EventBanner")
 public class EventBannerDTO extends BaseDTO {
     private Long id;

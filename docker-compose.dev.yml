@@ -15,7 +15,6 @@ services:
       - ./env/.db.env
     environment:
       - TZ=Europe/Amsterdam
-    command: --log-bin-trust-function-creators=1
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s

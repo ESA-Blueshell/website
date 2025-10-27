@@ -1,9 +1,7 @@
 package net.blueshell.api.model.contribution;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import org.hibernate.annotations.SQLDelete;
@@ -31,8 +29,8 @@ import java.util.Set;
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener.class)
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 public class ContributionPeriod extends BaseModel {
     @OneToMany(mappedBy = "contributionPeriod", cascade = CascadeType.ALL)

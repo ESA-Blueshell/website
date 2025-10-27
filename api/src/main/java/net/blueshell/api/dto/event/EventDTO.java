@@ -14,7 +14,7 @@ import net.blueshell.api.dto.survey.SurveyDTO;
 import java.time.Instant;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Event")
 public class EventDTO extends BaseDTO {
     private Long id;

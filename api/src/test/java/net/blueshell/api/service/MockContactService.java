@@ -16,16 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * MockContactService: drop-in replacement for ContactService that never calls Brevo.
- * <p>
- * Activate with either `@ActiveProfiles("brevo-mock")` in tests or
- * `spring.profiles.active=brevo-mock` for local runs.
- * <p>
- * This class keeps all state in-memory:
- * - contacts are keyed by email -> generated contactId
- * - lists are keyed by listId -> set of contactIds
- */
 @Slf4j
 @Service
 @Primary
@@ -68,6 +58,7 @@ public class MockContactService extends ContactService {
         if (user.getContactId() == null) {
             long id = emailToContactId.computeIfAbsent(user.getEmail(), k -> contactSeq.getAndIncrement());
             user.setContactId(id);
+            users.updateContactId(user.getId(), id);
             log.info("[brevo-mock] created contact email={} -> id={}", user.getEmail(), id);
         } else {
             log.info("[brevo-mock] updated contact email={} id={}", user.getEmail(), user.getContactId());

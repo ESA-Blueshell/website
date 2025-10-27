@@ -49,7 +49,7 @@
             label="Price for members"
             rules="minValue:0|maxValue:99.99"
             :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle) => handle(raw === '' ? '' : Number(raw))"
+            :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
           />
         </v-col>
         <v-col>
@@ -59,7 +59,7 @@
             label="Price for non-members"
             rules="minValue:0|maxValue:99.99"
             :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle) => handle(raw === '' ? '' : Number(raw))"
+            :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
           />
         </v-col>
       </v-row>
@@ -100,8 +100,8 @@
             label="Start date"
             rules="required"
             :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
-            :display="(v) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
-            :update="(date, handle) => handle(toISO({ date: String(date), dateTime: event.startTime }))"
+            :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
+            :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date: String(date), dateTime: event.startTime }))"
           />
         </v-col>
         <v-col>
@@ -111,8 +111,8 @@
             label="Start time"
             :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
             :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
-            :display="(v) => safeFormatISO(String(v ?? ''), 'HH:mm')"
-            :update="(time, handle) => handle(toISO({ time: String(time), dateTime: event.startTime }))"
+            :display="(v: DisplayFn<string>) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+            :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.startTime }))"
           />
         </v-col>
       </v-row>
@@ -126,8 +126,8 @@
             rules="required|dateTimeAfter:@startDate"
             :disabled="sameEndDate"
             :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
-            :display="(v) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
-            :update="(date, handle) => handle(toISO({ date: String(date), dateTime: event.endTime }))"
+            :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
+            :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date: String(date), dateTime: event.endTime }))"
           />
         </v-col>
         <v-col>
@@ -137,8 +137,8 @@
             label="End time"
             rules="required|dateTimeAfter:@startTime"
             :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
-            :display="(v) => safeFormatISO(String(v ?? ''), 'HH:mm')"
-            :update="(time, handle) => handle(toISO({ time: String(time), dateTime: event.endTime }))"
+            :display="(v: string) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+            :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.endTime }))"
           />
         </v-col>
       </v-row>
@@ -173,7 +173,7 @@
               clearable: true,
               'show-size': true
             }"
-            :update="(file, handle) => onBannerChange(file as File | null, handle)"
+            :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
           />
         </v-col>
       </v-row>
@@ -213,7 +213,7 @@
 
       <v-expand-transition>
         <v-alert
-          v-if="(hadSignUp && !event.signUp) || (oldEnableSignUpForm && !event.signUpForm)"
+          v-if="(hadSignUp && !event.signUp) || signUpFormIsDirty"
           class="mt-4 mx-3"
           prominent
           type="warning"
@@ -227,7 +227,7 @@
 
     <v-expand-transition class="mt-4">
       <v-alert
-        v-if="isDirty && !isBoard"
+        v-if="eventIsDirty && !isBoard"
         prominent
         type="warning"
         variant="outlined"
@@ -289,11 +289,7 @@ import {
 } from "@/services/api"
 import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
 import {safeFormatISO, toISO} from "@/utils/datetime"
-
-const props = defineProps({
-  initialEvent: {type: Object as () => Event, default: () => null},
-  hasPromo: {type: Boolean, default: false},
-})
+import type {DisplayFn, HandleChange} from "@/types/VVField.types.ts"
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
@@ -328,11 +324,14 @@ const nowISO = DateTime.now().toISO()
 const hasStarted = computed(() => !!event.value.id && DateTime.fromISO(event.value.startTime) < DateTime.now())
 
 const hadSignUp = ref<boolean>(!!event.value.signUp)
-const oldEnableSignUpForm = ref<boolean>(!!event.value.signUpForm)
-const enableSignUpForm = ref<boolean>(!!props.initialEvent?.signUpForm)
+const enableSignUpForm = ref<boolean>(!!event.value.signUpForm)
 
-const initialJson = ref(JSON.stringify(event.value))
-const isDirty = computed(() => JSON.stringify(event.value) !== initialJson.value)
+const initialEvent = ref(JSON.stringify(event.value))
+const eventIsDirty = computed(() => JSON.stringify(event.value) !== initialEvent.value)
+
+const initialSignUpForm = ref(JSON.stringify(event.value.signUpForm))
+const signUpFormIsDirty = computed(() => JSON.stringify(event.value.signUpForm) != initialSignUpForm.value)
+
 
 defineRule("fileSize", (value: File | File[] | null) => {
   const f = Array.isArray(value) ? value[0] ?? null : (value as File | null)

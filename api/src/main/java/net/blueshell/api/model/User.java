@@ -1,9 +1,7 @@
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.Role;
@@ -45,10 +43,10 @@ import java.util.Set;
 )
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Getter
-@Setter
-@EntityListeners(JpaListener.class)
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@EntityListeners(JpaListener.class)
 public class User extends BaseModel implements UserDetails {
 
     @Column(nullable = false)

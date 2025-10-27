@@ -10,7 +10,7 @@ import net.blueshell.api.common.enums.PlatformType;
 import java.time.Instant;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Telemetry")
 public class TelemetryDTO extends BaseDTO {
     private String url;

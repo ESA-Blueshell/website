@@ -8,7 +8,7 @@ import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.common.enums.PlatformType;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Schema(name = "Social")
 public class SocialDTO extends BaseDTO {
     private String title;

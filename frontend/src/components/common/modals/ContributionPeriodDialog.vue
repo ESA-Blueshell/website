@@ -42,7 +42,7 @@
             label="Half Year Fee"
             rules="required|minValue:0"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw, handle) => handle(raw === '' ? '' : Number(raw))"
+            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
           />
 
           <VvField
@@ -51,7 +51,7 @@
             label="Full Year Fee"
             rules="required|minValue:0"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw, handle) => handle(raw === '' ? '' : Number(raw))"
+            :update="(raw: string, hande: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
           />
 
           <VvField
@@ -60,7 +60,7 @@
             label="Alumni Fee"
             rules="required|minValue:0"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw, handle) => handle(raw === '' ? '' : Number(raw))"
+            :update="(raw: string, hande: HandleChange<number>) => handle(raw === '' ? '' : Number(raw))"
           />
         </Form>
       </v-card-text>
@@ -95,6 +95,7 @@ import VvField from "@/components/form/fields/VvField.vue"
 import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
+import type {HandleChange} from "@/types/VVField.types.ts"
 
 defineOptions({name: "ContributionPeriodDialog"})
 

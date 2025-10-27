@@ -1,65 +1,44 @@
 package net.blueshell.api.mapper.committee;
 
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.AdvancedCommitteeDTO;
-import net.blueshell.api.dto.BlogDTO;
-import net.blueshell.api.mapper.CommitteeMemberMapper;
-import net.blueshell.api.model.Committee;
-import net.blueshell.api.model.CommitteeMember;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.springframework.beans.factory.annotation.Autowired;
+import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
+import net.blueshell.api.model.committee.Committee;
+import net.blueshell.api.model.committee.CommitteeMember;
+import org.mapstruct.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+@Slf4j
 @Mapper(
         componentModel = "spring",
         uses = {CommitteeMemberMapper.class}
 )
 public abstract class AdvancedCommitteeMapper extends BaseMapper<Committee, AdvancedCommitteeDTO> {
-
-    @Autowired
-    protected CommitteeMemberMapper memberMapper;
-
-    @Mapping(target = "members", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "users", ignore = true)
-    public abstract Committee fromDTO(AdvancedCommitteeDTO dto);
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "members")
+    @Mapping(target = "version")
+    public abstract Committee fromDTO(AdvancedCommitteeDTO dto, @MappingTarget Committee committee);
 
     @AfterMapping
-    protected void afterFromDTO(AdvancedCommitteeDTO dto,
-                                @MappingTarget Committee committee) {
-
-        if (dto.getMembers() == null) {
-            committee.setMembers(new HashSet<>());
-            return;
-        }
-
-        Set<CommitteeMember> members = memberMapper.fromDTOs(dto.getMembers())
-                .stream()
-                .peek(cm -> cm.setCommittee(committee))
-                .collect(Collectors.toSet());
-
-        committee.setMembers(members);
-    }
-
-    @Mapping(target = "members", ignore = true)
-    public abstract AdvancedCommitteeDTO toDTO(Committee committee);
-
-    @AfterMapping
-    protected void afterToDTO(Committee committee,
-                              @MappingTarget AdvancedCommitteeDTO dto) {
+    protected void wireBackRefs(AdvancedCommitteeDTO dto, @MappingTarget Committee committee) {
+        log.info("Wiring back refs for committee {}", committee);
+        log.info("dto: {}", dto);
         if (committee.getMembers() != null) {
-            dto.setMembers(
-                    memberMapper.toDTOs(new ArrayList<>(committee.getMembers()))
-            );
+            log.info("Wiring members for committee {}", committee.getMembers());
+            for (CommitteeMember m : committee.getMembers()) {
+                log.info("Member of committee member: {}", m);
+                m.setCommittee(committee);
+            }
         }
     }
+
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "members")
+    @Mapping(target = "version")
+    public abstract AdvancedCommitteeDTO toDTO(Committee committee);
 }

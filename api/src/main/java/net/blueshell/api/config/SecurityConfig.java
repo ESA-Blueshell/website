@@ -4,7 +4,6 @@ import net.blueshell.api.auth.JwtAuthFilter;
 import net.blueshell.api.auth.JwtAuthenticationEntryPoint;
 import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.permission.CompositePermissionEvaluator;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,15 +39,9 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
-
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
         return cfg.getAuthenticationManager();
-    }
-
-    @Bean
-    public FilterRegistrationBean<JwtAuthFilter> jwtFilterRegistration(JwtAuthFilter f) {
-        return new FilterRegistrationBean<>(f);
     }
 
     @Bean
@@ -64,7 +57,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of("https://localhost"));
+        cfg.setAllowedOrigins(List.of("https://localhost", "https://esa-blueshell.nl"));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setAllowCredentials(true);
@@ -82,20 +75,21 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers(HttpMethod.POST, "/auth").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/identity").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth",
+                                "/recovery/**",
+                                "/events/*/signups",
+                                "/users",
+                                "/users/guest"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/events/**",
                                 "/v3/api-docs**/**",
                                 "/swagger-ui**/**",
                                 "/download/**",
                                 "/committees/**",
-                                "/contributionPeriods",
+                                "/contributionPeriods/current",
                                 "/health").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/events/signups/*/guest",
-                                "/users",
-                                "/users/guest").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();

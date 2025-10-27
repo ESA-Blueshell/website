@@ -1,39 +1,42 @@
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
-import java.util.UUID;
+import java.time.Instant;
 
 @Entity
-@Table(name = "blogs")
-@SQLDelete(sql = "UPDATE blogs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@Table(
+        name = "blogs",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_blogs_title_deleted_at",
+                        columnNames = {"title", "deleted_at"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_blogs_deleted_at", columnList = "deleted_at"),
+                @Index(name = "idx_blogs_title", columnList = "title"),
+                @Index(name = "idx_blogs_published_at", columnList = "published_at"),
+                @Index(name = "idx_blogs_created_at", columnList = "created_at")
+        }
+)
+@SQLDelete(sql = "UPDATE blogs SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
-public class Blog implements BaseModel<UUID> {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@NoArgsConstructor
+public class Blog extends BaseModel {
+    @Column(name = "title", nullable = false)
     private String title;
 
-    private String text;
-
+    @Lob
+    @Column(name = "html", nullable = false)
     private String html;
 
-    private String markdown;
-
-    @Column(name = "published_at")
-    private Timestamp publishedAt;
-
-    @Column(name = "created_at")
-    private Timestamp createdAt;
-
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
+    @Column(name = "published_at", nullable = false)
+    private Instant publishedAt;
 }

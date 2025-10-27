@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import net.blueshell.api.base.BaseController;
 import net.blueshell.api.dto.SponsorDTO;
 import net.blueshell.api.mapper.SponsorMapper;
-import net.blueshell.api.model.Sponsor;
 import net.blueshell.api.service.SponsorService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,24 +29,19 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/sponsors")
+    @ResponseStatus(HttpStatus.CREATED)
     public SponsorDTO createSponsor(@Valid @RequestBody SponsorDTO dto) {
-        Sponsor sponsor = mapper.fromDTO(dto);
-        service.create(sponsor);
+        var sponsor = mapper.fromDTO(dto);
+        sponsor = service.create(sponsor);
         return mapper.toDTO(sponsor);
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = "/sponsors/{id}")
-    public Object createOrUpdateSponsor(@PathVariable("id") Long id, @RequestBody SponsorDTO dto) {
-        service.findById(id);
-        Sponsor sponsor = mapper.fromDTO(dto);
-        if (id != null) {
-            sponsor.setId(id);
-            service.update(sponsor);
-        } else {
-            service.create(sponsor);
-        }
-
+    public SponsorDTO updateSponsor(@PathVariable("id") Long id, @RequestBody SponsorDTO dto) {
+        var sponsor = service.findById(id);
+        mapper.fromDTO(dto, sponsor);
+        sponsor = service.update(sponsor);
         return mapper.toDTO(sponsor);
     }
 
@@ -61,6 +55,6 @@ public class SponsorController extends BaseController<SponsorService, SponsorMap
     @DeleteMapping(value = "/sponsors/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSponsorById(@PathVariable("id") Long id) {
-        service.delete(id);
+        service.deleteById(id);
     }
 }

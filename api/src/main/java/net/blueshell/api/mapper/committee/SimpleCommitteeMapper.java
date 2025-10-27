@@ -2,23 +2,20 @@ package net.blueshell.api.mapper.committee;
 
 
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.SimpleCommitteeDTO;
-import net.blueshell.api.mapper.CommitteeMemberMapper;
-import net.blueshell.api.model.Committee;
-import net.blueshell.api.repository.CommitteeMemberRepository;
+import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
+import net.blueshell.api.model.committee.Committee;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mapstruct.Mapping;
 
 @Mapper(
         componentModel = "spring",
         uses = {CommitteeMemberMapper.class}
 )
 public abstract class SimpleCommitteeMapper extends BaseMapper<Committee, SimpleCommitteeDTO> {
-
-    @Autowired
-    protected CommitteeMemberMapper memberMapper;
-    @Autowired
-    protected CommitteeMemberRepository committeeMemberRepository;
-
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
     public abstract SimpleCommitteeDTO toDTO(Committee committee);
 }

@@ -1,16 +1,18 @@
 package net.blueshell.api.testsupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.blueshell.api.controller.request.JwtRequest;
-import net.blueshell.api.controller.response.JwtResponse;
+import net.blueshell.api.dto.request.JwtRequest;
+import net.blueshell.api.dto.response.AuthenticationDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Super-class for tests that need an authenticated Bearer token.
@@ -26,15 +28,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * }
  * }</pre>
  */
+@Component
 public abstract class JwtTestSupport {
-
-    @Autowired protected MockMvc mvc;
-    @Autowired protected ObjectMapper mapper;
 
     /* lazily initialised, then reused */
     private static String cachedAdminToken;
+    @Autowired
+    protected MockMvc mvc;
+    @Autowired
+    protected ObjectMapper mapper;
 
-    /** Obtain (and cache) a JWT for the seeded <i>admin/admin</i> account. */
+    /**
+     * Obtain (and cache) a JWT for the seeded <i>admin/admin</i> account.
+     */
     protected String adminToken() throws Exception {
         if (cachedAdminToken != null) {
             return cachedAdminToken;
@@ -50,14 +56,16 @@ public abstract class JwtTestSupport {
                         .andExpect(jsonPath("$.token").isNotEmpty())
                         .andReturn();
 
-        JwtResponse response =
+        AuthenticationDTO response =
                 mapper.readValue(result.getResponse().getContentAsByteArray(),
-                        JwtResponse.class);
+                        AuthenticationDTO.class);
 
         return cachedAdminToken = response.getToken();
     }
 
-    /** Convenience wrapper so you can write <code>.with(bearer())</code>. */
+    /**
+     * Convenience wrapper so you can write <code>.with(bearer())</code>.
+     */
     protected RequestPostProcessor bearer() throws Exception {
         String token = adminToken();
         return request -> {

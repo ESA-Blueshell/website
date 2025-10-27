@@ -12,8 +12,8 @@ public class RestClientConfig {
      * Central RestTemplate bean.
      * <p>
      * - Uses Spring’s {@link RestTemplateBuilder} so any
-     *   auto-registered customisers (Jackson, timeouts, interceptors, etc.)
-     *   are applied automatically.
+     * auto-registered customisers (Jackson, timeouts, interceptors, etc.)
+     * are applied automatically.
      */
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {

@@ -1,0 +1,2 @@
+ALTER TABLE memberships
+    ADD COLUMN country VARCHAR(2) NOT NULL DEFAULT 'NL';

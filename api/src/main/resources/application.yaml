@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   main:
     web-application-type: servlet
 
@@ -8,7 +12,7 @@ spring:
 
   datasource:
     host: ${MYSQL_HOST}
-    username: ${MYSQL_USERNAME}
+    username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.db}
@@ -34,16 +38,20 @@ spring:
       hibernate.connection.characterEncoding: utf8mb4
       hibernate.connection.useUnicode: true
       hibernate.connection.useSSL: false
-      hibernate.connection.serverTimezone: UTC
+      hibernate.connection.serverTimezone: Europe/Amsterdam
       hibernate.connection.allowPublicKeyRetrieval: true
       hibernate.connection.collation: utf8mb4_unicode_ci
+      hibernate.default_batch_fetch_size: 50
 
   flyway:
     enabled: true
     locations: classpath:db/migration
+    validate-migration-naming: true
 
   mvc:
     dispatch-options-request: true
+    problemdetails.enabled: true
+
 
   thymeleaf:
     prefix: classpath:/templates/
@@ -54,30 +62,30 @@ spring:
 
   mail:
     host: ${SMTP_HOST}
-    port: ${SMTP_PORT:587}
+    port: ${SMTP_PORT:465}
     username: ${SMTP_USERNAME}
     password: ${SMTP_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
+          ssl:
+            enable: ${SMTP_USE_SSL}
           starttls:
-            enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+            enable: ${SMTP_USE_TLS}
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
-    path: /swagger-ui.html
-  info:
-    title: Blueshell API
-    description: The API for the Blueshell Esports website
-    version: 1.0.0
+    path: /swagger-ui
+    url: /api/v3/api-docs
+  default-produces-media-type: application/json
 
 app:
+  url: ${APP_URL}
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
@@ -111,6 +119,13 @@ google:
     privateKeyPkcs8: ${GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8}
     privateKeyId: ${GOOGLE_CALENDAR_PRIVATE_KEY_ID}
 
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
+
 facebook:
   page:
     id: ${FACEBOOK_PAGE_ID}
@@ -124,3 +139,12 @@ x:
   access:
     token: ${X_ACCESS_TOKEN}
     secret: ${X_ACCESS_SECRET}
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+        hibernate: INFO
+        security: INFO
+        flywaydb: DEBUG

@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
 # 1) install openssl
-RUN apk add --no-cache openssl
+RUN apk update && apk add --no-cache openssl
 
 # 2) copy our tiny `service` shim script
 COPY service.sh /usr/local/bin/service

@@ -1,50 +1,64 @@
 package net.blueshell.api.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.common.enums.MemberType;
-import net.blueshell.api.common.enums.ResetType;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.util.TimeUtil;
+import net.blueshell.api.model.committee.CommitteeMember;
+import net.blueshell.api.model.contribution.Contribution;
+import net.blueshell.api.model.event.EventSignUp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "users")
-@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_users_username_deleted_at", columnNames = {"username", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_email_deleted_at", columnNames = {"email", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_student_number_deleted_at", columnNames = {"student_number", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_discord_deleted_at", columnNames = {"discord", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_phone_number_deleted_at", columnNames = {"phone_number", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_address_id_deleted_at", columnNames = {"address_id", "deleted_at"}),
+                @UniqueConstraint(name = "uk_users_profile_picture_id_deleted_at", columnNames = {"profile_picture_id", "deleted_at"})
+        },
+        indexes = {
+                @Index(name = "idx_users_deleted_at", columnList = "deleted_at"),
+                @Index(name = "idx_users_created_at", columnList = "created_at"),
+                @Index(name = "idx_users_enabled", columnList = "enabled"),
+                @Index(name = "idx_users_newsletter", columnList = "newsletter"),
+                @Index(name = "idx_users_last_name", columnList = "last_name"),
+                @Index(name = "idx_users_first_name", columnList = "first_name")
+        }
+)
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
-public class User implements UserDetails, BaseModel<Long> {
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@NoArgsConstructor
+@EntityListeners(JpaListener.class)
+public class User extends BaseModel implements UserDetails {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column
+    @Column(nullable = false)
     private String username;
 
-    @Column
+    @Column(nullable = false)
     private String password;
 
-    @Column(name = "first_name")
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(name = "last_name")
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
     @Column
@@ -53,25 +67,24 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column
     private String initials;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
-    @ToString.Exclude
     private Address address;
+
+    @Column(name = "address_id", updatable = false, insertable = false)
+    private Long addressId;
 
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column
+    @Column(nullable = false)
     private String email;
 
     @Column(name = "student_number")
     private String studentNumber;
 
     @Column(name = "date_of_birth")
-    private Timestamp dateOfBirth;
-
-    @Column(name = "created_at")
-    private Timestamp createdAt;
+    private LocalDate dateOfBirth;
 
     @Column
     private String discord;
@@ -79,21 +92,14 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column
     private String steamid;
 
-    @Column
+    @Column(nullable = false)
     private boolean newsletter;
 
-    @Column
+    @Column(nullable = false)
     private boolean enabled;
 
-    @Column(name = "reset_key")
-    private String resetKey;
-
-    @Column(name = "reset_key_valid_until")
-    private Timestamp resetKeyValidUntil;
-
-    @Column(name = "reset_type")
-    @Enumerated(EnumType.STRING)
-    private ResetType resetType;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<RecoveryToken> recoveryTokens;
 
     @Column(name = "consent_privacy")
     private boolean consentPrivacy;
@@ -110,23 +116,18 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column
     private String nationality;
 
-    @OneToOne
-    @JoinColumn(name = "profile_picture", insertable = false, updatable = false)
-    @JsonIgnore
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
     private File profilePicture;
 
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<CommitteeMember> committeeMembers = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Set<CommitteeMember> committeeMembers;
-
-    @JoinTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
+    @CollectionTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
-    private Set<Role> roles;
+    private Set<Role> roles = EnumSet.of(Role.GUEST);
 
     @Column(name = "ehbo")
     private boolean ehbo = false;
@@ -137,44 +138,21 @@ public class User implements UserDetails, BaseModel<Long> {
     @Column(name = "bhv")
     private boolean bhv = false;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Contribution> contributions;
 
-    @OneToOne(mappedBy = "user")
-    @ToString.Exclude
-    private Membership membership;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<Membership> memberships;
 
-    @OneToOne
-    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
-    @JsonIgnore
-    @ToString.Exclude
-    private User creator;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<EventSignUp> eventSignUps;
 
-    @Column(name = "creator_id")
-    private Long creatorId;
+    @Column(name = "study")
+    private String study;
 
-    public User() {
-        this.createdAt = Timestamp.from(Instant.now());
-        addRole(Role.GUEST);
-    }
+    @Column(name = "start_study_year")
+    private Long startStudyYear;
 
-    public User(String username, String password, String firstName, String lastName, String email) {
-        this();
-        this.username = username;
-        this.password = password;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-    }
-
-    @JsonProperty("profilePicture")
-    public Long getProfilePictureId() {
-        return getProfilePicture() == null ? 0 : getProfilePicture().getId();
-    }
-
-    @JsonProperty("committees")
     public Set<Long> getCommitteeIds() {
         Set<Long> set = new HashSet<>();
         if (getCommitteeMembers() == null) {
@@ -190,34 +168,6 @@ public class User implements UserDetails, BaseModel<Long> {
         return new HashSet<>(getRoles()
                 .stream()
                 .flatMap(role -> role.getAllInheritedRoles().stream()).toList());
-    }
-
-    @JsonProperty("roles")
-    public Set<String> getRoleStrings() {
-        return getInheritedRoles().stream().map(Objects::toString).collect(Collectors.toSet());
-    }
-
-    @JsonIgnore
-    public String getPassword() {
-        return password;
-    }
-
-    @JsonProperty("password")
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
     }
 
     public boolean hasRole(Role role) {
@@ -244,30 +194,15 @@ public class User implements UserDetails, BaseModel<Long> {
     }
 
     public void addRole(Role role) {
-        var roles = getRoles();
-        if (roles == null) {
-            roles = new HashSet<>();
-        }
-        roles.add(role);
-        setRoles(roles);
+        getRoles().add(role);
     }
 
     public void removeRole(Role role) {
-        var roles = getRoles();
-        if (roles == null) {
-            return;
-        }
-        roles.remove(role);
-        setRoles(roles);
+        getRoles().remove(role);
     }
 
     public void setEmail(String email) {
         this.email = email.toLowerCase();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled && (getDeletedAt() == null || !TimeUtil.hasExpired(getDeletedAt()));
     }
 
     public String getFullName() {
@@ -275,13 +210,5 @@ public class User implements UserDetails, BaseModel<Long> {
             return firstName + " " + lastName;
         }
         return firstName + " " + prefix + " " + lastName;
-    }
-
-    public MemberType getMemberType() {
-        return getMembership() != null ? getMembership().getMemberType() : null;
-    }
-
-    public boolean getIncasso() {
-        return getMembership() != null && getMembership().isIncasso();
     }
 }

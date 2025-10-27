@@ -1,56 +1,33 @@
 package net.blueshell.api.service;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.common.enums.ResetType;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.common.exception.ResourceNotFoundException;
-import net.blueshell.api.controller.request.ActivationRequest;
-import net.blueshell.api.controller.request.PasswordResetRequest;
-import net.blueshell.api.mapper.RequestMapper;
-import net.blueshell.api.model.File;
-import net.blueshell.api.model.Membership;
+import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.model.User;
 import net.blueshell.api.repository.UserRepository;
-import net.blueshell.api.service.brevo.ContactService;
-import net.blueshell.api.service.brevo.EmailService;
-import net.blueshell.api.util.Util;
+import net.blueshell.api.repository.spec.UserSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
+@Slf4j
 @Service
-public class UserService extends BaseModelService<User, Long, UserRepository> implements UserDetailsService {
+public class UserService extends BaseModelService<User, UserRepository> implements UserDetailsService {
 
-    private static final int ACTIVATION_KEY_LENGTH = 15;
-    private static final long USER_ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
-    private static final int PASSWORD_RESET_KEY_LENGTH = 15;
-    private static final long PASSWORD_RESET_VALID_SECONDS = 3600 * 2; // 2 hours
-
-    private static final int MEMBER_ACTIVATION_KEY_LENGTH = 25;
-    private static final long MEMBER_ACTIVATION_VALID_SECONDS = 3600L * 24 * 365 * 100; // 100 years
-
-
-    private final EmailService emails;
-    private final ContactService contacts;
-    private final RequestMapper requestMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository repository,  EmailService emails, ContactService contacts, RequestMapper requestMapper) {
+    public UserService(UserRepository repository, PasswordEncoder passwordEncoder) {
         super(repository);
-        this.emails = emails;
-        this.contacts = contacts;
-        this.requestMapper = requestMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -59,19 +36,11 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
     }
 
     public User findByUsername(String username) {
-        return repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        return repository.findByUsername(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with username: %s".formatted(username)));
     }
 
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
-    }
-
-    public User findByResetKey(String resetKey) {
-        return repository.findByResetKey(resetKey).orElseThrow(() -> new ResourceNotFoundException("User not found with reset key: " + resetKey));
-    }
-
-    public User findByEmail(String email) {
-        return repository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
     public boolean existsByEmail(String email) {
@@ -82,159 +51,71 @@ public class UserService extends BaseModelService<User, Long, UserRepository> im
         return repository.existsByPhoneNumber(phoneNumber);
     }
 
-    public List<User> findByMembershipNotNull() {
-        return repository.findByMembershipNotNull();
-    }
-
-    @Transactional
-    public void createUser(User user) {
-        contacts.sync(user);
-
-        if (hasAuthority(Role.BOARD)) {
-            sendMemberActivationEmail(user);
-        } else {
-            sendUserActivationEmail(user);
-        }
-
-        if (user.hasRole(Role.MEMBER)) {
-            emails.sendContributionEmail(user);
-        }
-
-        self().create(user);
-    }
-
-    @Transactional
-    public void updateUser(User user) {
-        contacts.sync(user);
-        self().update(user);
-    }
-
-    private void sendUserActivationEmail(User user) {
-        user.setResetKey(Util.getRandomCapitalString(ACTIVATION_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(USER_ACTIVATION_VALID_SECONDS)));
-        user.setResetType(ResetType.USER_ACTIVATION);
-        emails.sendUserActivationEmail(user);
-    }
-
-    private void sendMemberActivationEmail(User user) {
-        user.setResetKey(Util.getRandomCapitalString(MEMBER_ACTIVATION_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(MEMBER_ACTIVATION_VALID_SECONDS)));
-        user.setResetType(ResetType.MEMBER_ACTIVATION);
-        emails.sendMemberActivationEmail(user);
-    }
-
-    @Transactional
-    public void resetPassword(String username) {
-        User user = findByUsername(username);
-
-        user.setResetKey(Util.getRandomCapitalString(PASSWORD_RESET_KEY_LENGTH));
-        user.setResetKeyValidUntil(Timestamp.from(Instant.now().plusSeconds(PASSWORD_RESET_VALID_SECONDS)));
-        user.setResetType(ResetType.PASSWORD_RESET);
-        emails.sendPasswordResetEmail(user);
-
-        self().update(user);
-    }
-
-    @Transactional
-    public void activate(ActivationRequest request) {
-        User user;
-        if (request.getResetType() == ResetType.MEMBER_ACTIVATION) {
-            user = findByResetKey(request.getToken());
-        } else {
-            user = findByUsername(request.getUsername());
-        }
-        requestMapper.fromRequest(request, user);
-        self().update(user);
-    }
-
-    @Transactional
-    public void setPassword(PasswordResetRequest request) {
-        User user = findByUsername(request.getUsername());
-        requestMapper.fromRequest(request, user);
-        self().update(user);
-    }
-
-
-    @Transactional
-    public User updateMembership(Long id, Boolean isMember) {
-        User user = self().findById(id);
-
-        if (Boolean.TRUE.equals(isMember)) {
-            if (user.hasRole(Role.MEMBER)) {
-                return user;
-            }
-            user.addRole(Role.MEMBER);
-            if (user.getMembership() == null) {
-                Membership membership = new Membership();
-                membership.setStartDate(LocalDate.now());
-            } else {
-                user.getMembership().setEndDate(null);
-            }
-        } else {
-            user.removeRole(Role.MEMBER);
-            if (user.getMembership() != null) {
-                user.getMembership().setEndDate(LocalDate.now());
-            }
-        }
-
-        self().update(user);
-        return user;
-    }
 
     @Transactional
     public User toggleRole(Long id, Role role) {
-        User user = self().findById(id);
+        var user = findById(id);
 
         if (user.hasRole(role)) {
             user.removeRole(role);
         } else {
             user.addRole(role);
         }
-        self().update(user);
+        update(user);
         return user;
     }
 
     @Transactional
-    public void addRole(User user, Role role) {
-        System.out.println("Add role: in user service" + role);
+    public void addRole(Long id, Role role) {
+        var user = findById(id);
         if (!user.hasRole(role)) {
             user.addRole(role);
-            self().update(user);
+            update(user);
         }
     }
 
     @Transactional
-    public void removeRole(User user, Role role) {
+    public void removeRole(Long id, Role role) {
+        var user = findById(id);
         if (user.hasRole(role)) {
             user.removeRole(role);
-            self().update(user);
+            update(user);
         }
     }
 
-    public User findBySignature(File signature) {
-        return repository.findByMembershipSignature(signature).orElseThrow(() -> new NotFoundException("User not found for signature: " + signature.getName()));
-    }
-
-    public User findByProfilePicture(File profilePicture) {
-        return repository.findByProfilePicture(profilePicture).orElseThrow(() -> new NotFoundException("User not found for profile picture: " + profilePicture.getName()));
+    public Page<User> findByFilter(UserFilter filter, Pageable pageable) {
+        if (filter == null) filter = new UserFilter();
+        if (pageable == null) pageable = Pageable.unpaged();
+        var spec = UserSpecifications.fromFilter(filter, getPrincipal());
+        return repository.findAll(spec, pageable);
     }
 
     @Transactional
-    public void synchronizeRole(Role role) {
-        List<User> toRemoveRole = new ArrayList<>();
-        List<User> toAddRole = new ArrayList<>();
-        switch (role) {
-            case COMMITTEE -> {
-                toRemoveRole = repository.findUsersWithRoleWithoutActiveCommittees();
-                toAddRole = repository.findUsersWithoutRoleWithActiveCommittees();
-            }
-            case MEMBER -> {
-                toRemoveRole = repository.findUsersWithRoleWithoutActiveMembership();
-                toAddRole = repository.findUsersWithoutRoleWithActiveMembership();
-            }
-        }
+    public void updatePassword(Long userId, String rawPassword) {
+        var user = findById(userId);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        update(user);
+    }
 
-        toRemoveRole.forEach(u -> removeRole(u, role));
-        toAddRole.forEach(u -> addRole(u, role));
+    @Transactional
+    public void activateUser(Long userId) {
+        var user = findById(userId);
+        user.setEnabled(true);
+        update(user);
+    }
+
+    @Transactional
+    public void setUsernameAndPassword(Long userId, String username, String rawPassword) {
+        var user = findById(userId);
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        update(user);
+    }
+
+    @Transactional
+    public void updateContactId(Long userId, Long contactId) {
+        User user = findById(userId);
+        user.setContactId(contactId);
+        update(user);
     }
 }

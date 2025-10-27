@@ -3,11 +3,7 @@ package net.blueshell.api.base;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.security.core.Authentication;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
-
-public abstract class BasePermissionEvaluator<T extends BaseModel<ID>, ID, S extends BaseModelService<T, ID, ?>> extends IdentityProvider {
+public abstract class BasePermissionEvaluator<T extends BaseModel, S extends BaseModelService<T, ?>> extends IdentityProvider {
 
     public final Class<T> domainType;
     protected final S service;
@@ -18,12 +14,12 @@ public abstract class BasePermissionEvaluator<T extends BaseModel<ID>, ID, S ext
     }
 
     private Class<T> determineDomainType() {
-        Class<?>[] resolvedTypes = GenericTypeResolver.resolveTypeArguments(getClass(), BasePermissionEvaluator.class);
+        var resolvedTypes = GenericTypeResolver.resolveTypeArguments(getClass(), BasePermissionEvaluator.class);
         if (resolvedTypes == null || resolvedTypes.length < 1) {
             throw new IllegalStateException("Unable to determine domain type for " + getClass().getName());
         }
         @SuppressWarnings("unchecked")
-        Class<T> castedType = (Class<T>) resolvedTypes[0];
+        var castedType = (Class<T>) resolvedTypes[0];
         return castedType;
     }
 

@@ -1,0 +1,92 @@
+<template>
+  <v-main>
+    <top-banner title="Committees" />
+
+    <div
+      class="mx-auto my-10"
+      style="max-width: 800px"
+    >
+      <div class="mx-3">
+        <p class="text-body-1">
+          Would you like to make the most of your student life, and experience what it is to work
+          together with other students to make great things happen? If so, then perhaps joining a
+          committee is something for you! Committees are groups of students that work together to
+          organize events or provide services for the association, while also having a lot of fun
+          and getting some professional experience.
+        </p>
+        <p class="text-body-1">
+          If you would like to join a meeting to see if we are something for you, or if you have a
+          question, feel free to contact the board at
+          <a
+            class="text-decoration-none"
+            href="mailto:internal-affairs@blueshell.utwente.nl"
+            target="_blank"
+          >internal-affairs@blueshell.utwente.nl</a>
+          . You could also ask us on Discord or in person at one of the events.
+        </p>
+        <p class="text-body-1">
+          Do you have a great idea for an event or a new committee, then be sure to contact us!
+        </p>
+      </div>
+
+      <div
+        v-if="loading"
+        class="mx-3 my-6"
+      >
+        <v-progress-circular indeterminate />
+      </div>
+
+      <div
+        v-else-if="!committees.length"
+        class="mx-3 my-6"
+      >
+        <p class="text-body-1">
+          No committees found.
+        </p>
+      </div>
+
+      <div
+        v-else
+        class="mx-3 my-6"
+      >
+        <v-container class="pa-0">
+          <v-row dense>
+            <v-col
+              v-for="committee in committees"
+              :key="committee.id ?? committee.name"
+              cols="12"
+            >
+              <committee-card :committee="committee" />
+            </v-col>
+          </v-row>
+        </v-container>
+      </div>
+    </div>
+  </v-main>
+</template>
+
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import TopBanner from "@/components/common/banners/TopBanner.vue"
+
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+
+import {findCommittees, type SimpleCommittee} from "@/services/api"
+import CommitteeCard from "@/components/common/cards/CommitteeCard.vue"
+
+const committees = ref<SimpleCommittee[]>([])
+const loading = ref<boolean>(false)
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const {data} = await findCommittees()
+    committees.value = (data ?? []) as SimpleCommittee[]
+  } catch (e) {
+    $handleNetworkError(e)
+    committees.value = []
+  } finally {
+    loading.value = false
+  }
+})
+</script>

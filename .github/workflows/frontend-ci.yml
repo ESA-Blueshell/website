@@ -1,0 +1,76 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ 'main' ]
+    paths: [ 'frontend/**' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.sha }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  YARN_VERSION: '4.9.4'
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node & Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+  typecheck:
+    name: Typecheck
+    needs: [ setup ]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node & Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Run typecheck
+        run: yarn typecheck
+
+  lint:
+    name: Lint
+    needs: [ setup ]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node & Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Run lint
+        run: yarn lint

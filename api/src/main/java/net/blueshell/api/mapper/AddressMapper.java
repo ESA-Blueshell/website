@@ -5,16 +5,28 @@ import net.blueshell.api.dto.AddressDTO;
 import net.blueshell.api.model.Address;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class AddressMapper extends BaseMapper<Address, AddressDTO> {
 
-    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "id")
+    @Mapping(target = "country")
+    @Mapping(target = "city")
+    @Mapping(target = "street")
+    @Mapping(target = "houseNumber")
+    @Mapping(target = "zipCode")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "version")
     public abstract AddressDTO toDTO(Address address);
 
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "user", ignore = true)
-    public abstract Address fromDTO(AddressDTO dto);
+    @Mapping(target = "id")
+    @Mapping(target = "country")
+    @Mapping(target = "city")
+    @Mapping(target = "street")
+    @Mapping(target = "houseNumber")
+    @Mapping(target = "zipCode")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "version")
+    public abstract Address fromDTO(AddressDTO dto, @MappingTarget Address address);
 }

@@ -1,0 +1,137 @@
+name: Test API
+
+on:
+  push:
+    branches: [ 'main' ]
+    paths: [ 'api/**' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-ci-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: "blueshell"
+          MYSQL_DATABASE: "blueshell-test"
+          MYSQL_PORT: 3306
+          MYSQL_USER: "blueshell"
+          MYSQL_PASSWORD: "blueshell"
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+
+    env:
+      # MySQL
+      MYSQL_ROOT_PASSWORD: blueshell
+      MYSQL_DATABASE: blueshell-test
+      MYSQL_PORT: '3306'
+      MYSQL_USER: blueshell
+      MYSQL_PASSWORD: blueshell
+      MYSQL_HOST: 127.0.0.1
+
+      # App URLs
+      APP_URL: https://localhost/api
+      FRONTEND_URL: https://localhost
+
+      # JWT
+      JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
+
+      # SMTP
+      SMTP_HOST: mail.blueshell.utwente.nl
+      SMTP_PORT: '465'
+      SMTP_USERNAME: your_smtp_username
+      SMTP_PASSWORD: your_smtp_password
+
+      # Storage
+      STORAGE_LOCATION: ./storage
+
+      # Brevo
+      BREVO_API_KEY: something
+      BREVO_TEMPLATE_USER_ACTIVATION_ID: '1234'
+      BREVO_TEMPLATE_MEMBER_ACTIVATION_ID: '1234'
+      BREVO_TEMPLATE_EVENT_SIGNUP_ID: '1234'
+      BREVO_TEMPLATE_PASSWORD_RESET_ID: '1234'
+      BREVO_TEMPLATE_CONTRIBUTION_ID: '1234'
+      BREVO_TEMPLATE_CONTRIBUTION_REMINDER_ID: '1234'
+      BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
+
+      # Google Calendar
+      GOOGLE_CALENDAR_ID: something
+      GOOGLE_CALENDAR_CLIENT_ID: something
+      GOOGLE_CALENDAR_CLIENT_EMAIL: something
+      GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: |
+        -----BEGIN PRIVATE KEY-----
+        MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJNOI74ADXzV2H63
+        s/wyuR7hW61c0ORfHSBSSIgmdglGqtSb8ERzet79zodXvmeZu2Cl6phtEIsXZ0uF
+        dfNBmIFjI2i3LT9+7zb+n5OcwKgwSxyKCeL6sB4aOQ/gljH2mpsTFkk6UdoKZ0NH
+        4Kkmbq2qsMr1P0y1j3X0uXg+uGNhAgMBAAECgYAePOMPZJlgL9GSKYmT0qG3mhEk
+        pDHpPzEOanWjJSoDu3Lj0+LdWks1rSoRFEzsnV0eeNCQW4sS0koM8aeFuMhiLc8Q
+        KP7UecthtjLxzjqQPDwj5z90pkSg9GPKkoKC9h83Ioj6KqhvE3vN2NfGrWX/Gcmr
+        BvVnw+btaoFgxzjncQJBAOtwr4+8qTHVxDApKteymCljlli4hS3KQGOrPiQUtszl
+        HpckKJfFJeuvB8kLxPEdhKSegu1BCd7WCPbWPfiYL3UCQQCgKy3Dkx29PcP+O36m
+        aS9G2rvivUh0ceD3fIqeUuhcCa+Gd4JH4g3/HUpOj8lV8HacI+MM4B/DF46lbLoy
+        JrK9AkB3hY86kvX5vKGKKXv8YEfqywmqJJJHeqNRdb9oJbPfNHlhFRQeaBEmIob7
+        QyRJm0iZIXcp5piSLWoDlSOErg15AkARLlCMaB2KjTOW897UDvhpS1FYMyGwi/6r
+        zYo5DX+rT8aqT+uDtnX15bhw0O+x7kdq3FagrPH7RW2hxRX8BzapAkB8TTIWgCgu
+        YOYLy5TUv9YKShgfe50C6j1HyZajzJBV1PdS7298SB2n2dvbUGWvUohXXMCXVRdS
+        wRRHv41dPOIL
+        -----END PRIVATE KEY-----
+      GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for database to be ready
+        run: |
+          # Install MySQL client
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
+
+          for i in {1..30}; do
+            if mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SELECT 1;" > /dev/null 2>&1; then
+              echo "Database is ready!"
+              break
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+
+      - name: Prepare db
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
+          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
+          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 24
+          cache: maven
+
+      - name: Run tests with Maven
+        run: |
+          mvn -B \
+            -Dsurefire.printSummary=true \
+            -Dfailsafe.printSummary=true \
+            verify
+        working-directory: api
+        env:
+          MAVEN_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m

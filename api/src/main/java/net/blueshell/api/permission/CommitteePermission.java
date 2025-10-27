@@ -1,16 +1,14 @@
 package net.blueshell.api.permission;
 
 import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.model.Committee;
-import net.blueshell.api.model.User;
+import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.service.CommitteeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CommitteePermission extends BasePermissionEvaluator<Committee, Long, CommitteeService> {
+public class CommitteePermission extends BasePermissionEvaluator<Committee, CommitteeService> {
 
     @Autowired
     public CommitteePermission(CommitteeService service) {
@@ -26,8 +24,7 @@ public class CommitteePermission extends BasePermissionEvaluator<Committee, Long
         Committee committee = (Committee) targetDomainObject;
         return switch (permission) {
             case "read" -> true;
-            case "write", "delete" -> principal.hasRole(Role.BOARD);
-            case "createEvent" -> principal.hasRole(Role.BOARD) || committee.hasMember(principal);
+            case "events" -> committee.hasMember(principal);
             default -> false;
         };
     }

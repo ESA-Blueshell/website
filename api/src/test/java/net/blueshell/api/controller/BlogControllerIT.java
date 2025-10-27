@@ -7,32 +7,20 @@ import net.blueshell.api.dto.BlogDTO;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.BlogService;
 import net.blueshell.api.testsupport.UserTestSupport;
-import net.blueshell.api.controller.request.JwtRequest;
-import net.blueshell.api.controller.response.JwtResponse;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,22 +30,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class BlogControllerIT extends UserTestSupport {
 
+    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
+    Map<String, Object> examplePayload = Map.of(
+            "title", "New Blog",
+            "publishedAt", "2025-07-01T12:00:00Z",
+            "html", "<div><span>cool story bro</span></div>"
+    );
+    @Autowired
+    BlogService blogService;
     @Autowired
     private MockMvc mvc;
-
     @Autowired
     private ObjectMapper mapper;
-
-    Map<String, Object> examplePayload = Map.of(
-            "type", "BlogDTO",
-            "publishedAt", "2025-07-01T12:00:00.000+00:00",
-            "html", "<div><span>cool story bro"
-    );
-
-    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
 
     @BeforeEach
     void setup() {
@@ -71,9 +57,10 @@ class BlogControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
+                .andExpect(jsonPath("$.title").value(examplePayload.get("title")))
                 .andReturn();
     }
 
@@ -83,9 +70,10 @@ class BlogControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
+                .andExpect(jsonPath("$.title").value(examplePayload.get("title")))
                 .andReturn();
 
         mvc.perform(get("/blogs").with(bearer(userMap.get(Role.BOARD))))
@@ -93,18 +81,16 @@ class BlogControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$", hasSize(1)));
     }
 
-    @Autowired
-    BlogService blogService;
-
     @Test
     void fetchingBlogsByIdWorks() throws Exception {
         MvcResult result = mvc.perform(post("/blogs")
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
+                .andExpect(jsonPath("$.title").value(examplePayload.get("title")))
                 .andReturn();
 
         BlogDTO dto = mapper.readValue(result.getResponse().getContentAsByteArray(), BlogDTO.class);
@@ -112,7 +98,8 @@ class BlogControllerIT extends UserTestSupport {
         mvc.perform(get("/blogs/{id}", dto.getId()).with(bearer(userMap.get(Role.BOARD))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(dto.getId().toString()))
-                .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")));
+                .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
+                .andExpect(jsonPath("$.title").value(examplePayload.get("title")));
     }
 
     @Test
@@ -121,9 +108,10 @@ class BlogControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.publishedAt").value(examplePayload.get("publishedAt")))
+                .andExpect(jsonPath("$.title").value(examplePayload.get("title")))
                 .andReturn();
 
         BlogDTO dto = mapper.readValue(result.getResponse().getContentAsByteArray(), BlogDTO.class);

@@ -1,16 +1,17 @@
 package net.blueshell.api.common.enums;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
+@Schema(enumAsRef = true)
 public enum Role {
     ANONYMOUS("ANONYMOUS"),
+    VEGAN("VEGAN"),
     GUEST("GUEST", ANONYMOUS),
     COMPANY("COMPANY"),
     MEMBER("MEMBER", GUEST),
-    VEGAN("VEGAN"),
     COMMITTEE("COMMITTEE", MEMBER),
     BOARD("BOARD", COMMITTEE),
     TREASURER("TREASURER", BOARD),
@@ -27,12 +28,22 @@ public enum Role {
         this.inheritedRoles = inheritedRoles;
     }
 
+    public static Set<Role> allThatInherit(Role base) {
+        EnumSet<Role> res = EnumSet.noneOf(Role.class);
+        for (Role r : Role.values()) {
+            if (r.matchesRole(base)) {
+                res.add(r);
+            }
+        }
+        return res;
+    }
+
     public boolean matchesRole(Role role) {
         return role == this || Arrays.stream(inheritedRoles).anyMatch(r -> r.matchesRole(role));
     }
 
     /**
-     * Depth- (or breadth idk) first search for all inherited roles of this Role.
+     * Search for all inherited roles of this Role.
      */
     public Set<Role> getAllInheritedRoles() {
         Set<Role> res = new HashSet<>();

@@ -1,25 +1,30 @@
+// Address.java
 package net.blueshell.api.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.sql.Timestamp;
-
 @Entity
-@Table(name = "addresses")
-@SQLDelete(sql = "UPDATE addresses SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@Table(
+        name = "addresses",
+        indexes = {
+                @Index(name = "idx_addresses_deleted_at", columnList = "deleted_at"),
+                @Index(name = "idx_addresses_city", columnList = "city"),
+                @Index(name = "idx_addresses_zip_code", columnList = "zip_code")
+        }
+)
+@SQLDelete(sql = "UPDATE addresses SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
-public class Address implements BaseModel<Long> {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@NoArgsConstructor
+public class Address extends BaseModel {
     @Column
     private String country;
 
@@ -34,27 +39,4 @@ public class Address implements BaseModel<Long> {
 
     @Column(name = "zip_code")
     private String zipCode;
-
-    @OneToOne(mappedBy = "address")
-    @ToString.Exclude
-    private User user;
-
-    @Column(name = "created_at")
-    private Timestamp createdAt;
-
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
-
-    public Address() {
-        this.createdAt = Timestamp.from(java.time.Instant.now());
-    }
-
-    public Address(String country, String city, String street, String houseNumber, String zipCode) {
-        this();
-        this.country = country;
-        this.city = city;
-        this.street = street;
-        this.houseNumber = houseNumber;
-        this.zipCode = zipCode;
-    }
 }

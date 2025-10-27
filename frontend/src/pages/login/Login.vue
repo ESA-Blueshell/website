@@ -1,0 +1,134 @@
+<template>
+  <v-main>
+    <top-banner title="Login" />
+
+    <div class="mx-3">
+      <v-form
+        ref="form"
+        v-model="valid"
+        class="mx-auto mt-10"
+        style="max-width: 500px"
+        @submit.prevent
+      >
+        <v-row>
+          <v-text-field
+            ref="usernameField"
+            v-model="username"
+            :rules="usernameRules"
+            label="Username"
+            required
+            @keydown.enter="login"
+          />
+        </v-row>
+        <v-row>
+          <v-text-field
+            v-model="password"
+            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :rules="passwordRules"
+            :type="showPass ? 'text' : 'password'"
+            hide-details
+            label="Password"
+            required
+            @keydown.enter="login"
+            @click:append-inner="showPass = !showPass"
+          />
+        </v-row>
+        <v-row class="justify-end">
+          <v-btn
+            :to="`login/forgor?username=${username}`"
+            size="small"
+            variant="text"
+          >
+            forgot password?
+          </v-btn>
+        </v-row>
+        <v-row>
+          <v-col cols="auto">
+            <v-btn
+              color="accent"
+              to="account/create"
+              variant="outlined"
+            >
+              Create Account
+            </v-btn>
+          </v-col>
+          <v-spacer />
+          <v-col cols="auto">
+            <v-btn
+              :disabled="!valid"
+              color="primary"
+              @click="login"
+            >
+              Login
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-form>
+    </div>
+  </v-main>
+</template>
+
+<script lang="ts" setup>
+import {onMounted, ref} from "vue"
+import {useRoute, useRouter} from "vue-router"
+import {useStore} from "vuex"
+import TopBanner from "@/components/common/banners/TopBanner.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
+import {authenticate, type Login} from "@/services/api"
+import type {State} from "@/plugins/store"
+import type {VForm} from "vuetify/lib/components"
+
+const router = useRouter()
+const route = useRoute()
+const store = useStore<State>()
+
+const form = ref<VForm>()
+const usernameField = ref()
+const username = ref<string>("")
+const password = ref<string>("")
+const valid = ref<boolean>(false)
+const loading = ref<boolean>(false)
+const showPass = ref<boolean>(false)
+
+const usernameRules = [
+  (v: string) => !!v || "Username is required",
+]
+
+const passwordRules = [
+  (v: string) => !!v || "Password is required",
+]
+
+onMounted(() => {
+  if (!store.getters.tokenExpired) {
+    router.push("/account")
+  }
+})
+
+const login = async () => {
+  // Check if form is valid (meaning username and password are not empty)
+  if (form.value && (await form.value.validate()).valid) {
+    loading.value = true
+
+    const response = await authenticate({
+      body: {
+        username: username.value,
+        password: password.value,
+      },
+    })
+
+    loading.value = false
+
+    if (response.status === 200) {
+      const loginData = response.data as Login
+      store.commit("setLogin", loginData)
+
+      // Go to redirect page or home page
+      await router.push(route.query.redirect?.toString() || "/")
+    } else if (response?.status === 401) {
+      store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
+    } else {
+      $handleNetworkError(response)
+    }
+  }
+}
+</script>

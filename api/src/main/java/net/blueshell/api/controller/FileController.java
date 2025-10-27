@@ -1,97 +1,57 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseController;
+import net.blueshell.api.common.enums.FileType;
 import net.blueshell.api.dto.FileDTO;
 import net.blueshell.api.mapper.FileMapper;
-import net.blueshell.api.model.*;
 import net.blueshell.api.repository.FileRepository;
-import net.blueshell.api.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import net.blueshell.api.service.FileService;
+import net.blueshell.api.validation.file.AllowedContentTypes;
+import net.blueshell.api.validation.file.FileSize;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
-/**
- * yoinked from <a href="https://attacomsian.com/blog/uploading-files-spring-boot">https://attacomsian.com/blog/uploading-files-spring-boot</a>
- */
-
-@Controller
+@Slf4j
+@RestController
 @Tag(name = "Files")
 public class FileController extends BaseController<FileService, FileRepository> {
 
     private final FileMapper fileMapper;
-    private final UserService userService;
-    private final EventService eventService;
-    private final MembershipService membershipService;
-    private final EventPictureService eventPictureService;
 
-    @Autowired
-    public FileController(FileService service, FileRepository repository, FileMapper fileMapper, UserService userService, EventService eventService, MembershipService membershipService, EventPictureService eventPictureService) {
+    public FileController(FileService service, FileRepository repository, FileMapper fileMapper) {
         super(service, repository);
         this.fileMapper = fileMapper;
-        this.userService = userService;
-        this.eventService = eventService;
-        this.membershipService = membershipService;
-        this.eventPictureService = eventPictureService;
     }
 
-    @GetMapping("/download/{filename:.+}")
-    @ResponseBody
-    @PreAuthorize("hasPermission(#filename, 'File', 'read')")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
-        File file = service.findByName(filename);
+    @GetMapping("/events/banners/{bannerId}")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
+    public ResponseEntity<Resource> downloadEventBanner(@PathVariable("bannerId") Long bannerId) {
+        var file = service.findByEventBannerId(bannerId);
         return service.prepareFileResponse(file);
     }
 
-    @GetMapping("/assets/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> downloadAsset(@PathVariable String filename) {
-        return service.prepareAssetResponse(filename);
-    }
-
-    @PostMapping("/files")
-    public List<FileDTO> uploadFile(List<FileDTO> dtos) {
-        List<File> files = fileMapper.fromDTOs(dtos);
-        return fileMapper.toDTOs(files);
-    }
-
-    @GetMapping("/eventPictures/{eventPictureId}")
-    @ResponseBody
-    @PreAuthorize("hasAuthority('MEMBER')")
-    public ResponseEntity<Resource> downloadEventPicture(@PathVariable Long eventPictureId) {
-        EventPicture eventPicture = eventPictureService.findById(eventPictureId);
-        return service.prepareFileResponse(eventPicture.getPicture());
-    }
-
-    @GetMapping("/events/{eventId}/banner")
-    @ResponseBody
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
-    public ResponseEntity<Resource> downloadBanner(@PathVariable Long eventId) {
-        Event event = eventService.findById(eventId);
-        return service.prepareFileResponse(event.getBanner());
-    }
-
-    @GetMapping("/memberships/{membershipId}/signature")
-    @ResponseBody
-    @PreAuthorize("hasPermission(#membershipId, 'Membership', 'read')")
-    public ResponseEntity<Resource> downloadSignature(@PathVariable Long membershipId) {
-        Membership membership = membershipService.findById(membershipId);
-        return service.prepareFileResponse(membership.getSignature());
-    }
-
-    @GetMapping("/users/{userId}/profilePicture")
-    @ResponseBody
-    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
-    public ResponseEntity<Resource> downloadProfilePicture(@PathVariable Long userId) {
-        User user = userService.findById(userId);
-        return service.prepareFileResponse(user.getProfilePicture());
+    @PostMapping(
+            value = "/events/banners",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('COMMITTEE')")
+    public FileDTO uploadEventBanner(
+            @RequestPart("file")
+            @NotNull(message = "File is required")
+            @FileSize(max = 2 * 1024 * 1024)
+            @AllowedContentTypes({"image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"})
+            MultipartFile file
+    ) {
+        var stored = service.storeMultipart(file, FileType.EVENT_BANNER);
+        return fileMapper.toDTO(stored);
     }
 }

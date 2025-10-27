@@ -2,7 +2,6 @@ package net.blueshell.api.permission;
 
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.common.enums.Role;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class UserPermission extends BasePermissionEvaluator<User, Long, UserService> {
+public class UserPermission extends BasePermissionEvaluator<User, UserService> {
 
     @Autowired
     public UserPermission(UserService service) {
@@ -25,8 +24,7 @@ public class UserPermission extends BasePermissionEvaluator<User, Long, UserServ
         User user = (User) object;
         var principal = getPrincipal();
         return switch (permission) {
-            case "read", "write", "delete" -> principal.hasRole(Role.BOARD) || principal.getId() == user.getId();
-            case "changeRole", "getBrevo" -> principal.hasRole(Role.BOARD);
+            case "read", "write" -> principal.getId().equals(user.getId());
             default -> false;
         };
     }

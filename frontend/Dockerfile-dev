@@ -1,13 +1,20 @@
-FROM node:22
+FROM node:24
 
 WORKDIR /usr/app
-COPY package.json ./
-COPY yarn.lock ./
 
-RUN yarn install
+# Enable Corepack
+RUN corepack enable
+ENV CHOKIDAR_USEPOLLING=1
+ENV WATCHPACK_POLLING=true
 
+# Copy only what's needed for dependency install
+COPY package.json yarn.lock .yarnrc.yml ./
+
+# Run corepack and yarn install
+RUN corepack install && yarn install --immutable
+
+# App/config files
 COPY . .
 
 EXPOSE 3000
-
-CMD ["yarn", "run", "dev", "--host"]
+CMD ["yarn", "dev", "--host"]

@@ -5,14 +5,16 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - "./data:/var/lib/mysql"
-      - "./env/dump.sql:/docker-entrypoint-initdb.d/init.sql"
+      - data:/var/lib/mysql
+      - "./env/0_init.sql:/docker-entrypoint-initdb.d/0_init.sql"
+      - "./env/1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
     networks:
       - global_network
     restart: unless-stopped
     env_file:
       - ./env/.db.env
-    command: --log-bin-trust-function-creators=1
+    environment:
+      - TZ=Europe/Amsterdam
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -30,6 +32,8 @@ services:
       - "443:443"
     networks:
       - global_network
+    environment:
+      - TZ=Europe/Amsterdam
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - nginx_certs:/etc/nginx/ssl:rw
@@ -46,16 +50,20 @@ services:
     build:
       context: frontend
       dockerfile: Dockerfile-dev
+    expose:
+      - 3000
     ports:
       - "3000:3000"
     volumes:
       - "./frontend:/usr/app"
-      - "./api/openapi/blueshell.json:/usr/openapi/blueshell.json"
-      - /usr/app/node_modules
+      - ./openapi:/usr/openapi
+      - /usr/app/.yarn
     networks:
       - global_network
     env_file:
       - ./env/.app.env
+    environment:
+      - TZ=Europe/Amsterdam
     depends_on:
       - api
     healthcheck:
@@ -70,24 +78,22 @@ services:
     build:
       context: api
       dockerfile: Dockerfile-dev
+      additional_contexts:
+        root: .
     volumes:
       - ./api:/app
       - maven-repo:/root/.m2
-      - "./storage:/home/storage"
+      - ./openapi:/openapi
+      - ./storage:/home/storage
     ports:
       - "8081:8080"
-    command: [
-      "sh",
-      "-c",
-      "mvn install -am -DskipTests && \
-       mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"
-    ]
     networks:
       - global_network
-    restart: unless-stopped
     env_file:
       - ./env/.db.env
       - ./env/.app.env
+    environment:
+      - TZ=Europe/Amsterdam
     depends_on:
       - db
     healthcheck:
@@ -102,6 +108,7 @@ networks:
     driver: bridge
 
 volumes:
+  data:
   maven-repo:
   nginx_certs:
     driver: local

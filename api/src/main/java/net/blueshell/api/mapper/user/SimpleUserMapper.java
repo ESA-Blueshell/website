@@ -1,44 +1,55 @@
 package net.blueshell.api.mapper.user;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
 import net.blueshell.api.model.User;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.function.BiConsumer;
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Slf4j
+@Mapper(componentModel = "spring")
 public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Mapping(target = "id")
+    @Mapping(target = "initials")
+    @Mapping(target = "firstName")
+    @Mapping(target = "prefix")
+    @Mapping(target = "lastName")
+    @Mapping(target = "username")
+    @Mapping(target = "discord")
+    @Mapping(target = "email")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "newsletter")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
     public abstract SimpleUserDTO toDTO(User user);
 
-    @ObjectFactory
-    protected User newUser(@TargetType Class<User> type, SimpleUserDTO dto) {
-        return new User();
-    }
-
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "profilePicture", ignore = true)
-    @Mapping(target = "committeeMembers", ignore = true)
-    @Mapping(target = "contributions", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "resetKey", ignore = true)
-    @Mapping(target = "resetKeyValidUntil", ignore = true)
-    @Mapping(target = "resetType", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "initials", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "firstName", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "prefix", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "lastName", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "username", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "email", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "discord")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "newsletter")
     @Mapping(target = "password", ignore = true)
-    public abstract User fromDTO(SimpleUserDTO dto);
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
+    public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
 
     @AfterMapping
-    protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {
+    protected void afterFromDTO(SimpleUserDTO dto, @MappingTarget User user) {
+        if (user.getId() != null) return;
+
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
     }
 }

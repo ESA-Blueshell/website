@@ -10,10 +10,10 @@
 
       <router-link to="/">
         <img
-          src="@/assets/topbarlogo.png"
           alt="Blueshell logo"
-          style="max-height: 64px;width: 100%"
           class="mr-2"
+          src="@/assets/topbarlogo.png"
+          style="max-height: 64px;width: 100%"
         >
       </router-link>
 
@@ -34,15 +34,15 @@
           Membership
         </v-btn>
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/aboutus"
+              v-bind="props"
             >
               Association
               <v-icon>mdi-chevron-down</v-icon>
@@ -69,15 +69,15 @@
 
 
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/events"
+              v-bind="props"
             >
               events
               <v-icon>mdi-chevron-down</v-icon>
@@ -103,15 +103,15 @@
 
 
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/esports/competitive-scene"
+              v-bind="props"
             >
               Esports
               <v-icon>mdi-chevron-down</v-icon>
@@ -133,21 +133,21 @@
             <v-list-item to="/esports/rocketleague">
               Rocket League
             </v-list-item>
-            <v-list-item to="/esports/trackmania">
-              Trackmania
+            <v-list-item to="/esports/geoguessr">
+              Geoguessr
             </v-list-item>
           </v-list>
         </v-menu>
         <v-menu
+          :offset="3"
           :open-on-hover="true"
           open-delay="0"
-          :offset="3"
         >
           <template #activator="{ props }">
             <v-btn
               class="bar-button"
-              v-bind="props"
               to="/partners/become-a-partner"
+              v-bind="props"
             >
               Partners
               <v-icon>mdi-chevron-down</v-icon>
@@ -159,6 +159,9 @@
             </v-list-item>
             <v-list-item to="/partners/el-nino">
               El Niño – Digital Development
+            </v-list-item>
+            <v-list-item to="/partners/marketing-maatwerk">
+              Marketing Maatwerk
             </v-list-item>
           </v-list>
         </v-menu>
@@ -176,10 +179,10 @@
       <div style="height: 90%;display: flex;align-items: center;flex-wrap: nowrap;">
         <!--  Dark mode toggle    -->
         <v-btn
-          class="mr-2"
-          :icon="isDarkMode ? 'mdi-moon-waxing-crescent' : 'mdi-white-balance-sunny'"
-          :color="isDarkMode ? 'accent' : 'white'"
           :class="{'roll-on': isDarkMode,'roll-off': !isDarkMode }"
+          :color="isDarkMode ? 'accent' : 'white'"
+          :icon="isDarkMode ? 'mdi-moon-waxing-crescent' : 'mdi-white-balance-sunny'"
+          class="mr-2"
           @click="toggleDarkMode"
         />
 
@@ -198,8 +201,8 @@
           <template #activator="{ props }">
             <v-btn
               class="bar-button ma-0 mr-2"
-              variant="text"
               v-bind="props"
+              variant="text"
             >
               <v-icon size="x-large">
                 mdi-account
@@ -218,6 +221,12 @@
             </v-list-item>
             <v-list-item
               v-if="isBoard"
+              to="/contributions/manage"
+            >
+              Manage contributions
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
               to="/committees/manage"
             >
               Manage committees
@@ -227,6 +236,18 @@
               to="/events/manage"
             >
               Manage events
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/recovery/manage"
+            >
+              Manage account recovery
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/addresses/manage"
+            >
+              Manage addresses
             </v-list-item>
             <v-list-item @click="logOut">
               Log Out
@@ -241,8 +262,8 @@
       temporary
     >
       <v-list
-        nav
         class="pa-2"
+        nav
       >
         <v-list-item to="/">
           Home
@@ -336,6 +357,9 @@
           <v-list-item to="/partners/el-nino">
             El Niño – Digital Development
           </v-list-item>
+          <v-list-item to="/partners/marketing-maatwerk">
+            Marketing Maatwerk
+          </v-list-item>
           <v-divider dark />
         </v-list-group>
 
@@ -346,45 +370,45 @@
 
       <template #append>
         <v-btn
-          icon="mdi-email"
           href="mailto:board@blueshell.utwente.nl"
-          variant="plain"
+          icon="mdi-email"
           style="width: calc(100%/3)"
+          variant="plain"
         />
         <v-btn
-          icon="mdi-instagram"
           href="https://www.instagram.com/esablueshell/"
+          icon="mdi-instagram"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-facebook"
           href="https://www.facebook.com/BlueshellEsports/"
+          icon="mdi-facebook"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-twitch"
           href="https://www.twitch.tv/blueshellesports"
+          icon="mdi-twitch"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-twitter"
           href="https://twitter.com/BlueshellESA"
+          icon="mdi-twitter"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
         <v-btn
-          icon="mdi-linkedin"
           href="https://www.linkedin.com/company/blueshell-esports"
+          icon="mdi-linkedin"
+          style="width: calc(100%/3)"
           target="_blank"
           variant="plain"
-          style="width: calc(100%/3)"
         />
       </template>
     </v-navigation-drawer>
@@ -392,7 +416,7 @@
 
     <router-view />
 
-    <bs-footer />
+    <footer-banner />
 
 
     <v-snackbar
@@ -402,8 +426,8 @@
     >
       <audio
         v-if="poggers"
-        controls
         autoplay
+        controls
       >
         <source
           src="@/assets/blueshellanthem.mp3"
@@ -436,8 +460,8 @@
     >
       We're using cookies to keep you logged in. You can read more about how we use cookies in our
       <a
-        href="https://esa-blueshell.nl/api/download/bsCookiePolicy.pdf"
         class="text-decoration-none"
+        href="https://esa-blueshell.nl/api/download/bsCookiePolicy.pdf"
         target="_blank"
       >Cookie Policy</a>.
 
@@ -454,137 +478,121 @@
   </v-app>
 </template>
 
-<script lang="ts">
-import {ref, computed, onMounted} from 'vue'
-import {useStore} from 'vuex'
-import {useRouter, useRoute} from 'vue-router'
-import {useTheme, useDisplay} from 'vuetify'
-import axios from 'axios'
-import FooterBanner from "@/components/banners/FooterBanner.vue";
-import {$goto} from "@/plugins/goto";
-import {$handleNetworkError} from "@/plugins/handleNetworkError";
-import DOMPurify from "dompurify";
+<script lang="ts" setup>
+import {computed, onMounted, ref} from "vue"
+import {useStore} from "vuex"
+import {useRoute} from "vue-router"
+import {useDisplay, useTheme} from "vuetify"
+import FooterBanner from "@/components/common/banners/FooterBanner.vue"
+import {$goto} from "@/plugins/goto"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import DOMPurify from "dompurify"
+import {type AdvancedUser, findUserById, type Login} from "@/services/api"
 
-export default {
-  components: {BsFooter: FooterBanner},
-  setup() {
-    const drawer = ref(false);
-    const poggers = ref(false);
-    const showCookieSnackbar = ref(false);
-    const store = useStore();
-    const router = useRouter();
-    const route = useRoute();
-    const theme = useTheme();
-    const display = useDisplay();
+// Reactive state
+const drawer = ref<boolean>(false)
+const poggers = ref<boolean>(false)
+const showCookieSnackbar = ref<boolean>(false)
 
-    const statusSnackbarMessage = computed({
-      get: () => store.state.statusSnackbarMessage,
-      set: (message) => store.commit('setStatusSnackbarMessage', message)
-    });
+// Composables
+const store = useStore()
+const route = useRoute()
+const theme = useTheme()
+const display = useDisplay()
 
-    const isLoggedIn = computed(() => store.getters.isLoggedIn);
-    const isActive = computed(() => store.getters.isActive);
-    const isBoard = computed(() => store.getters.isBoard);
-    const login = computed(() => store.getters.getLogin);
+// Computed properties
+const statusSnackbarMessage = computed({
+  get: (): string => store.state.statusSnackbarMessage,
+  set: (message: string) => store.commit("setStatusSnackbarMessage", message),
+})
 
-    const isDarkMode = computed(() => theme.global.current.value.dark);
+const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
+const isActive = computed((): boolean => store.getters.isActive)
+const isBoard = computed((): boolean => store.getters.isBoard)
+const login = computed(() => store.getters.getLogin)
 
-    const checkPrefersColorScheme = () => {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setDarkMode(true)
-      } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-        setDarkMode(false)
-      }
-    }
+const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 
-    const setDarkMode = (dark: boolean) => {
-      localStorage.setItem('esa-blueshell.nl:darkMode', dark.toString())
-      theme.global.name.value = dark ? 'dark' : 'light'
-    }
-
-    const toggleDarkMode = () => {
-      setDarkMode(!theme.global.current.value.dark)
-    }
-
-    const logOut = () => {
-      document.cookie = 'login=;expires=Thu, 01 Jan 1970 00:00:01 GMT'
-      store.commit('logout')
-      if (route.meta.requiresAuth) {
-        $goto('/')
-      }
-    }
-
-    const acceptCookies = () => {
-      localStorage.setItem('esa-blueshell.nl:cookiesAccepted', 'true')
-      showCookieSnackbar.value = false
-    }
-
-    onMounted(() => {
-      if (localStorage.getItem('esa-blueshell.nl:cookiesAccepted') !== 'true') {
-        showCookieSnackbar.value = true;
-      }
-
-      const loginData = login.value;
-      if (loginData) {
-        axios
-          .get(`users/${loginData.userId}`, {headers: {'Authorization': `Bearer ${loginData.token}`}})
-          .then(response => {
-            store.commit('setRoles', response.data.roles)
-          })
-          .catch(e => {
-            if (e.response?.status === 401) {
-              store.commit('statusSnackbarMessage', 'Login expired. You have been logged out.')
-              store.commit('logout')
-              if (route.meta.requiresAuth) {
-                $goto('/')
-              }
-            } else {
-              $handleNetworkError(e)
-            }
-          })
-      }
-
-      let keysPressed: string[] = [];
-      window.addEventListener('keydown', event => {
-        if (event.key) {
-          const key = event.key.toLowerCase();
-          keysPressed.push(key);
-          if (keysPressed.toString().endsWith("arrowup,arrowup,arrowdown,arrowdown,arrowleft,arrowright,arrowleft,arrowright,b,a,enter")) {
-            poggers.value = true;
-            alert("BIG SITECIE ENERGY")
-          }
-        }
-      });
-
-      if (!localStorage.getItem('esa-blueshell.nl:darkMode')) {
-        checkPrefersColorScheme();
-      }
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => checkPrefersColorScheme())
-
-      theme.global.name.value = localStorage.getItem('esa-blueshell.nl:darkMode') === 'true' ? 'dark' : 'light'
-    });
-
-    return {
-      drawer,
-      poggers,
-      showCookieSnackbar,
-      statusSnackbarMessage,
-      display,
-      isLoggedIn,
-      isActive,
-      isBoard,
-      isDarkMode,
-      toggleDarkMode,
-      logOut,
-      acceptCookies,
-      theme,
-      DOMPurify
-    }
-  },
+// Methods
+const checkPrefersColorScheme = (): void => {
+  if (globalThis.matchMedia("(prefers-color-scheme: dark)").matches) {
+    setDarkMode(true)
+  } else if (globalThis.matchMedia("(prefers-color-scheme: light)").matches) {
+    setDarkMode(false)
+  }
 }
+
+const setDarkMode = (dark: boolean): void => {
+  localStorage.setItem("esa-blueshell.nl:darkMode", dark.toString())
+  theme.change(dark ? "dark" : "light")
+}
+
+const toggleDarkMode = (): void => {
+  setDarkMode(!theme.global.current.value.dark)
+}
+
+const logOut = (): void => {
+  document.cookie = "login=;expires=Thu, 01 Jan 1970 00:00:01 GMT"
+  store.commit("logout")
+  if (route.meta.requiresAuth) {
+    $goto("/")
+  } else {
+    globalThis.location.reload()
+  }
+}
+
+const acceptCookies = (): void => {
+  localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
+  showCookieSnackbar.value = false
+}
+
+// Lifecycle
+onMounted(async () => {
+  if (localStorage.getItem("esa-blueshell.nl:cookiesAccepted") !== "true") {
+    showCookieSnackbar.value = true
+  }
+
+  const loginData: Login = login.value
+  if (loginData) {
+    try {
+      const resp = await findUserById({
+        path: {
+          userId: loginData.userId,
+        },
+        throwOnError: true,
+      })
+
+      const userData: AdvancedUser = resp.data!
+      store.commit("setRoles", userData.roles)
+    } catch (e: unknown) {
+      $handleNetworkError(e)
+    }
+  }
+
+  const keysPressed: string[] = []
+  globalThis.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key) {
+      const key = event.key.toLowerCase()
+      keysPressed.push(key)
+      if (keysPressed.toString().endsWith("arrowup,arrowup,arrowdown,arrowdown,arrowleft,arrowright,arrowleft,arrowright,b,a,enter")) {
+        poggers.value = true
+        alert("BIG SITECIE ENERGY")
+      }
+    }
+  })
+
+  if (!localStorage.getItem("esa-blueshell.nl:darkMode")) {
+    checkPrefersColorScheme()
+  }
+
+  globalThis.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => checkPrefersColorScheme())
+
+  const savedTheme = localStorage.getItem("esa-blueshell.nl:darkMode")
+  theme.change(savedTheme === "true" ? "dark" : "light")
+})
 </script>
 
-<style>
+<style lang="scss" scoped>
 
 .v-btn.bar-button {
   margin: 0 2px;
@@ -627,6 +635,4 @@ export default {
     transform: rotate(0);
   }
 }
-
-
 </style>

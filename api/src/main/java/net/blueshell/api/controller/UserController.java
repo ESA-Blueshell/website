@@ -1,126 +1,116 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.ws.rs.PathParam;
+import jakarta.annotation.security.PermitAll;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 import net.blueshell.api.base.AdvancedController;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.controller.request.ActivationRequest;
-import net.blueshell.api.controller.request.PasswordResetRequest;
+import net.blueshell.api.controller.filter.UserFilter;
 import net.blueshell.api.dto.user.AdvancedUserDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
-import net.blueshell.api.mapper.RequestMapper;
 import net.blueshell.api.mapper.user.AdvancedUserMapper;
 import net.blueshell.api.mapper.user.SimpleUserMapper;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
+import net.blueshell.api.validation.group.Administration;
 import net.blueshell.api.validation.group.Creation;
 import net.blueshell.api.validation.group.Update;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping
 @Tag(name = "Users")
 public class UserController extends AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper> {
 
-    private final RequestMapper requestMapper;
+    private final Validator validator;
 
-    @Autowired
-    public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper, RequestMapper requestMapper) {
+    public UserController(UserService service, AdvancedUserMapper advancedUserMapper, SimpleUserMapper simpleUserMapper, Validator validator) {
         super(service, advancedUserMapper, simpleUserMapper);
-        this.requestMapper = requestMapper;
+        this.validator = validator;
     }
 
     @PostMapping("/users")
-    public AdvancedUserDTO createUser(@Validated(Creation.class) @RequestBody AdvancedUserDTO dto) {
-        User user = advancedMapper.fromDTO(dto);
-        service.createUser(user);
+    @PermitAll
+    @ResponseStatus(HttpStatus.CREATED)
+    // TODO: Once all members are in the site, remove the ability for admins to create new users
+    public AdvancedUserDTO createUser(@RequestBody AdvancedUserDTO dto) {
+        Class<?>[] groups = hasAuthority(Role.BOARD)
+                ? new Class<?>[]{Administration.class}
+                : new Class<?>[]{Creation.class};
+
+        var violations = validator.validate(dto, groups);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
+
+        var user = advancedMapper.fromDTO(dto, new User());
+
+        user = service.create(user);
         return advancedMapper.toDTO(user);
     }
 
     @PostMapping("/users/guest")
-    public SimpleUserDTO createGuestUser(@Validated @RequestBody SimpleUserDTO dto) {
-        User user = simpleMapper.fromDTO(dto);
-        service.createUser(user);
+    @PermitAll
+    @ResponseStatus(HttpStatus.CREATED)
+    public SimpleUserDTO createGuestUser(@Validated(Creation.class) @RequestBody SimpleUserDTO dto) {
+        var user = simpleMapper.fromDTO(dto, new User());
+        user = service.create(user);
         return simpleMapper.toDTO(user);
     }
 
-    @PutMapping(value = "/users/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'User', 'write')")
-    public AdvancedUserDTO updateUser(@PathVariable("userId") Long userId,
-                                  @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
-        dto.setId(userId);
-        User user = advancedMapper.fromDTO(dto);
-        service.updateUser(user);
+    @PutMapping("/users/guest/{id}")
+    @PermitAll
+    public SimpleUserDTO updateGuestUser(@PathVariable("id") Long id,
+                                         @Validated(Update.class) @RequestBody SimpleUserDTO dto) {
+        var user = service.findById(id);
+        simpleMapper.fromDTO(dto, user);
+        user = service.update(user);
+        return simpleMapper.toDTO(user);
+    }
+
+    @PutMapping(value = "/users/{id}")
+    @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
+    public AdvancedUserDTO updateUser(@PathVariable("id") Long id,
+                                      @Validated(Update.class) @RequestBody AdvancedUserDTO dto) {
+        var user = service.findById(id);
+        advancedMapper.fromDTO(dto, user);
+        user = service.update(user);
         return advancedMapper.toDTO(user);
-    }
-
-    @PostMapping(value = "/users/reset")
-    public void resetPassword(@RequestParam("username") String username) {
-        service.resetPassword(username);
-    }
-
-    @PostMapping(value = "/users/activate")
-    @PreAuthorize("hasPermission(#request, 'User', 'activate')")
-    public void activateUser(@Valid @RequestBody ActivationRequest request) {
-        User user = service.findByResetKey(request.getToken());
-        requestMapper.fromRequest(request, user);
-        service.update(user);
-    }
-
-    @PostMapping(value = "/users/password")
-    @PreAuthorize("hasPermission(#request, 'User', 'password')")
-    public void setPassword(@Valid @RequestBody PasswordResetRequest request) {
-        User user = service.findByResetKey(request.getToken());
-        requestMapper.fromRequest(request, user);
-        service.update(user);
     }
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
-    public List<AdvancedUserDTO> findUsers(@PathParam("isMember") boolean isMember) {
-        List<User> users;
-        if (isMember) {
-            users = service.findByMembershipNotNull();
-        } else {
-            users = service.findAll();
-        }
+    public Page<AdvancedUserDTO> findUsers(@ParameterObject UserFilter filter, @ParameterObject Pageable pageable) {
+        var users = service.findByFilter(filter, pageable);
         return advancedMapper.toDTOs(users);
     }
 
     @GetMapping(value = "/users/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
     public AdvancedUserDTO findUserById(@PathVariable("userId") Long userId) {
-        User user = service.findById(userId);
-        return advancedMapper.toDTO(user);
-    }
-
-    @PutMapping(value = "/users/{id}/membership")
-    @PreAuthorize("hasAuthority('BOARD')")
-    public AdvancedUserDTO updateUserMembership(@PathVariable("id") Long userId,
-                                            @RequestParam(defaultValue = "isMember") Boolean isMember) {
-        User user = service.updateMembership(userId, isMember);
+        var user = service.findById(userId);
         return advancedMapper.toDTO(user);
     }
 
     @DeleteMapping(value = "/users/{userId}")
-    @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
+    @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable("userId") Long userId) {
-        service.delete(userId);
+    public void deleteUserById(@PathVariable("userId") Long userId) {
+        service.deleteById(userId);
     }
 
     @PutMapping(value = "/users/{userId}/roles")
-    @PreAuthorize("hasPermission(#userId, 'User', 'changeRole')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public AdvancedUserDTO toggleUserRole(@PathVariable("userId") Long userId,
-                                      @RequestParam(value = "role") Role role) {
-        User user = service.toggleRole(userId, role);
+                                          @RequestParam(value = "role") Role role) {
+        var user = service.toggleRole(userId, role);
         return advancedMapper.toDTO(user);
     }
 }

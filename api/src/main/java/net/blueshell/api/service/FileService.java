@@ -2,13 +2,14 @@ package net.blueshell.api.service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.common.exception.FileNotFoundException;
-import net.blueshell.api.common.exception.StorageException;
-import net.blueshell.api.config.StorageConfig;
+import net.blueshell.api.common.enums.FileType;
+import net.blueshell.api.mapper.FileMapper;
 import net.blueshell.api.model.File;
 import net.blueshell.api.repository.FileRepository;
+import net.blueshell.api.service.event.EventBannerService;
+import net.blueshell.api.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -16,34 +17,50 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
-public class FileService extends BaseModelService<File, Long, FileRepository> {
+public class FileService extends BaseModelService<File, FileRepository> {
 
     private final Path rootLocation;
     private final Path assetsLocation = Paths.get("assets");
+    private final FileMapper fileMapper;
+    private final EventService events;
+    private final EventBannerService banners;
 
-    @Value("${app.url}")
-    private String appUrl;
 
     @Autowired
-    public FileService(FileRepository fileRepository, StorageConfig properties) {
+    public FileService(
+            FileRepository fileRepository,
+            FileMapper fileMapper,
+            EventService events,
+            EventBannerService banners,
+            @Value("${storage.location}") String storageLocation
+    ) {
         super(fileRepository);
-        this.rootLocation = Paths.get(properties.getLocation());
+        this.rootLocation = Paths.get(storageLocation);
+        this.fileMapper = fileMapper;
+        this.events = events;
+        this.banners = banners;
     }
 
     @Transactional(readOnly = true)
     public File findByName(String name) {
         return repository.findByName(name).orElseThrow(() ->
-                new NotFoundException("File not found with name: " + name));
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(name)));
     }
 
     @PostConstruct
@@ -51,38 +68,77 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
-            throw new StorageException("Could not initialize storage location", e);
+            throw new RuntimeException(e.getCause());
         }
     }
 
-    public Path storeFile(String fileName, byte[] data) {
-        Path filePath = this.rootLocation.resolve(fileName);
-        if (Files.exists(filePath)) {
-            throw new BadRequestException();
+    /**
+     * Store multipart file using content-hash path. Returns persisted File entity.
+     */
+    @Transactional
+    public File storeMultipart(MultipartFile multipart, FileType type) {
+        if (multipart == null || multipart.isEmpty()) {
+            throw new BadRequestException("Empty file");
         }
 
-        try (FileOutputStream outputStream = new FileOutputStream(filePath.toString())) {
-            outputStream.write(data);
+        try {
+            Files.createDirectories(rootLocation.resolve(type.getDirectory()));
+
+            var tmp = Files.createTempFile(rootLocation, "upload-", ".tmp");
+            var md = MessageDigest.getInstance("SHA-256");
+
+            try (InputStream in = multipart.getInputStream();
+                 DigestInputStream dis = new DigestInputStream(in, md);
+                 OutputStream out = Files.newOutputStream(tmp, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                dis.transferTo(out);
+            }
+            var sha256 = HexFormat.of().formatHex(md.digest());
+
+            var hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.getOriginalFilename());
+            var path = type.getDirectory() + "/" + hashedFilename;
+            var fullPath = rootLocation.resolve(path).normalize();
+
+            log.info("Storing {} at {}", multipart.getOriginalFilename(), fullPath);
+
+            if (Files.exists(fullPath)) {
+                Files.deleteIfExists(tmp);
+            } else {
+                try {
+                    Files.move(tmp, fullPath, StandardCopyOption.ATOMIC_MOVE);
+                } catch (FileAlreadyExistsException ignore) {
+                    Files.deleteIfExists(tmp);
+                }
+            }
+
+            var entity = repository.findByPath(path).orElse(null);
+            if (entity == null) {
+                entity = new File();
+            }
+
+            var mediaType = fileMapper.resolveMediaType(hashedFilename, fullPath, multipart.getContentType());
+            fileMapper.populateAfterStore(entity, multipart.getOriginalFilename(), fullPath, path, mediaType);
+            entity.setType(type);
+
+            if (entity.getId() != null) {
+                return update(entity);
+            } else {
+                return create(entity);
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "SHA-256 not available", e);
         }
-
-        return filePath;
     }
-
 
     private Resource loadAsResource(File file) {
         try {
-            Path filePath = rootLocation.resolve(file.getName());
+            Path filePath = rootLocation.resolve(file.getPath());
             Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new FileNotFoundException(
-                        "Could not read file: " + file.getName());
-            }
+            if (resource.exists() || resource.isReadable()) return resource;
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(file.getName()));
         } catch (MalformedURLException e) {
-            throw new FileNotFoundException("Could not read file: " + file.getName(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(file.getName()));
         }
     }
 
@@ -90,32 +146,19 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
         try {
             Path filePath = assetsLocation.resolve(filename);
             Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new FileNotFoundException(
-                        "Could not read asset: " + filename);
-            }
+            if (resource.exists() || resource.isReadable()) return resource;
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(filename));
         } catch (MalformedURLException e) {
-            throw new FileNotFoundException("Could not read file: " + filename, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(filename));
         }
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> prepareFileResponse(File file) {
         Resource resource = loadAsResource(file);
-
-        // Set headers
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf(file.getMediaType()));
-
-        // Use ContentDisposition builder for proper filename handling
-        ContentDisposition disposition = ContentDisposition.attachment()
-                .filename(file.getName())
-                .build();
-        headers.setContentDisposition(disposition);
-
-        // Build ResponseEntity with CacheControl
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.getName()).build());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
                 .headers(headers)
@@ -124,73 +167,29 @@ public class FileService extends BaseModelService<File, Long, FileRepository> {
 
     public ResponseEntity<Resource> prepareAssetResponse(String filename) {
         Resource resource = loadAssetAsResource(filename);
-
-        // Set headers
         HttpHeaders headers = new HttpHeaders();
-
-        // Get content type from the resource filename or detect from the file
-        String contentType = determineContentType(filename, resource);
-        headers.setContentType(MediaType.valueOf(contentType));
-
-        // Use ContentDisposition builder for proper filename handling
-        ContentDisposition disposition = ContentDisposition.attachment()
-                .filename(filename)
-                .build();
-        headers.setContentDisposition(disposition);
-
-        // Build ResponseEntity with CacheControl
+        headers.setContentType(MediaType.valueOf(fileMapper.detectContentTypeForAsset(filename, resource)));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
                 .headers(headers)
                 .body(resource);
     }
 
-    private String determineContentType(String filename, Resource resource) {
-        try {
-            // First, try to determine content type from filename extension
-            String contentType = Files.probeContentType(Paths.get(filename));
-            if (contentType != null) {
-                return contentType;
-            }
-
-            // If that fails, try to determine from the actual file
-            resource.getFile();
-            contentType = Files.probeContentType(resource.getFile().toPath());
-            if (contentType != null) {
-                return contentType;
-            }
-
-            // Fall back to common file extensions
-            String extension = getFileExtension(filename).toLowerCase();
-            return switch (extension) {
-                case "jpg", "jpeg" -> "image/jpeg";
-                case "png" -> "image/png";
-                case "gif" -> "image/gif";
-                case "svg" -> "image/svg+xml";
-                case "pdf" -> "application/pdf";
-                case "txt" -> "text/plain";
-                case "html" -> "text/html";
-                case "css" -> "text/css";
-                case "js" -> "application/javascript";
-                case "json" -> "application/json";
-                case "xml" -> "application/xml";
-                case "zip" -> "application/zip";
-                case "mp4" -> "video/mp4";
-                case "mp3" -> "audio/mpeg";
-                default -> "application/octet-stream";
-            };
-
-        } catch (Exception e) {
-            // If all else fails, return generic binary content type
-            return "application/octet-stream";
-        }
+    public File findByEventBannerId(Long bannerId) {
+        return repository.findByEventBanners_Id(bannerId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Event banner not found with id: %s".formatted(bannerId)));
     }
 
-    private String getFileExtension(String filename) {
-        int lastDotIndex = filename.lastIndexOf('.');
-        if (lastDotIndex == -1 || lastDotIndex == filename.length() - 1) {
-            return "";
+    public void deleteFromStorage(File file) {
+        var fullPath = rootLocation.resolve(file.getPath()).normalize();
+
+        try {
+            if (Files.exists(fullPath)) {
+                Files.deleteIfExists(fullPath);
+            }
+        } catch (IOException e) {
+            log.error("Failed to delete file {}", fullPath, e);
         }
-        return filename.substring(lastDotIndex + 1);
     }
 }

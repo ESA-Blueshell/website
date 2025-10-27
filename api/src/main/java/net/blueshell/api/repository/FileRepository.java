@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface FileRepository extends BaseRepository<File, Long> {
+public interface FileRepository extends BaseRepository<File> {
     Optional<File> findByName(String name);
+
+    Optional<File> findByEventBanners_Id(Long bannerId);
+
+    Optional<File> findByPath(String path);
 }

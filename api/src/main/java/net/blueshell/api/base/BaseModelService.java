@@ -1,13 +1,18 @@
 package net.blueshell.api.base;
 
-import net.blueshell.api.common.exception.ResourceNotFoundException;
-import org.springframework.aop.framework.AopContext;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ResolvableType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * <h2>Generic CRUD service</h2>
@@ -27,21 +32,21 @@ import java.util.List;
  * {@code pre…} / {@code post…} hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).</p>
  */
-public abstract class BaseModelService<
-        T extends BaseModel<ID>,
-        ID,
-        R extends BaseRepository<T, ID>>
-        extends IdentityProvider {
+@Slf4j
+public abstract class BaseModelService<T extends BaseModel, R extends BaseRepository<T>> extends IdentityProvider {
 
     protected final R repository;
 
+    private final String entityLabel;
+
+    @PersistenceContext
+    private EntityManager em;
+
     protected BaseModelService(R repository) {
         this.repository = repository;
-    }
-
-    @SuppressWarnings("unchecked")
-    protected BaseModelService<T, ID, R> self() {
-        return (BaseModelService<T, ID, R>) AopContext.currentProxy();
+        // Try to resolve T from the repository generic type for a nice label like "User"
+        Class<?> resolved = ResolvableType.forClass(repository.getClass()).as(BaseRepository.class).getGeneric(0).resolve();
+        this.entityLabel = resolved != null ? resolved.getSimpleName() : "Resource";
     }
 
     /* -----------------------------------------------------------------
@@ -54,9 +59,23 @@ public abstract class BaseModelService<
      * {@code preCreate → save&flush → refresh → postCreate}</p>
      */
     @Transactional
-    public void create(T entity) {
-        repository.saveAndFlush(entity);
+    public T create(T entity) {
+        entity = repository.saveAndFlush(entity);
+        em.refresh(entity);
+        return entity;
     }
+
+
+    /**
+     * Create a collection of entities.
+     * <p>Each element is processed individually, so every item still triggers
+     * the pre/post hooks and id-existence check.</p>
+     */
+    @Transactional
+    public List<T> createAll(List<T> entities) {
+        return entities.stream().map(this::create).toList();
+    }
+
 
     /* -----------------------------------------------------------------
      * UPDATE (single + batch)
@@ -64,15 +83,17 @@ public abstract class BaseModelService<
 
     /**
      * Update an existing entity.
-     * <p>Throws {@link ResourceNotFoundException} if the id is unknown.</p>
+     * <p>Throws {@link ResponseStatusException} if the id is unknown.</p>
      */
     @Transactional
-    public void update(T entity) {
-        ID id = entity.getId();
+    public T update(T entity) {
+        var id = entity.getId();
         if (id == null || !repository.existsById(id)) {
-            throw new ResourceNotFoundException("Entity not found with id: " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "%s not found with id: %s".formatted(entityLabel, id));
         }
-        repository.saveAndFlush(entity);
+        entity = repository.saveAndFlush(entity);
+        em.refresh(entity);
+        return entity;
     }
 
     /**
@@ -81,8 +102,8 @@ public abstract class BaseModelService<
      * the pre/post hooks and id-existence check.</p>
      */
     @Transactional
-    public void updateAll(List<T> entities) {
-        entities.forEach(this::update);
+    public List<T> updateAll(List<T> entities) {
+        return entities.stream().map(this::update).toList();
     }
 
     /* -----------------------------------------------------------------
@@ -92,13 +113,11 @@ public abstract class BaseModelService<
     /**
      * Find one by its primary key.
      *
-     * @throws ResourceNotFoundException if not present
+     * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)
-    public T findById(ID id) {
-        return repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Resource not found with id: " + id));
+    public T findById(Long id) {
+        return repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "%s not found with id: %s".formatted(entityLabel, id)));
     }
 
     /**
@@ -123,7 +142,7 @@ public abstract class BaseModelService<
      * primary-key order).</p>
      */
     @Transactional(readOnly = true)
-    public List<T> findAllById(List<ID> ids) {
+    public List<T> findAllById(List<Long> ids) {
         return repository.findAllById(ids);
     }
 
@@ -136,9 +155,7 @@ public abstract class BaseModelService<
         if (!(repository instanceof org.springframework.data.jpa.repository.JpaSpecificationExecutor<?> specRepo)) {
             throw new UnsupportedOperationException("Repository does not support Specifications");
         }
-        @SuppressWarnings("unchecked")
-        Page<T> result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo)
-                .findAll(spec, pageable);
+        @SuppressWarnings("unchecked") var result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo).findAll(spec, pageable);
         return result;
     }
 
@@ -150,9 +167,13 @@ public abstract class BaseModelService<
      * Delete the entity with the given primary key
      */
     @Transactional
-    public void delete(ID id) {
-        T entity = self().findById(id);
-        self().delete(entity);
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteAllById(Set<Long> ids) {
+        repository.deleteAllByIdInBatch(ids);
     }
 
     /**
@@ -161,5 +182,10 @@ public abstract class BaseModelService<
     @Transactional
     public void delete(T entity) {
         repository.delete(entity);
+    }
+
+    @Transactional
+    public void deleteAll(Set<T> entities) {
+        repository.deleteAllInBatch(entities);
     }
 }

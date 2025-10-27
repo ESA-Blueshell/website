@@ -3,61 +3,42 @@ package net.blueshell.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.AdvancedCommitteeDTO;
-import net.blueshell.api.model.CommitteeMember;
+import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
+import net.blueshell.api.dto.event.EventDTO;
 import net.blueshell.api.model.User;
-import net.blueshell.api.service.CommitteeMemberService;
-import net.blueshell.api.service.CommitteeService;
 import net.blueshell.api.testsupport.UserTestSupport;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.SqlConfig;
-import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.TransactionManager;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static java.lang.Thread.sleep;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class CommitteeControllerIT extends UserTestSupport {
 
+    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
     @Autowired
     private MockMvc mvc;
-
     @Autowired
     private ObjectMapper mapper;
-
-    @Autowired
-    private CommitteeMemberService memberService;
-    @Autowired
-    private CommitteeService committeeService;
-
-    private final Map<Role, User> userMap = new EnumMap<>(Role.class);
 
     @BeforeEach
     void setup() {
@@ -67,17 +48,14 @@ class CommitteeControllerIT extends UserTestSupport {
 
     private Map<String, Object> examplePayload() {
         return Map.of(
-                "type", "AdvancedCommitteeDTO",
                 "name", "Test Committee",
                 "description", "A test committee for integration tests",
                 "members", List.of(
                         Map.of(
-                                "type", "CommitteeMemberDTO",
                                 "role", "Chair",
                                 "userId", userMap.get(Role.BOARD).getId()
                         ),
                         Map.of(
-                                "type", "CommitteeMemberDTO",
                                 "role", "Member",
                                 "userId", userMap.get(Role.MEMBER).getId()
                         )
@@ -86,31 +64,25 @@ class CommitteeControllerIT extends UserTestSupport {
     }
 
     @Test
-    @Sql(scripts = "/cleanup.sql", executionPhase = AFTER_TEST_METHOD,
-            config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED))
     void committeesAreCreatedCorrectly() throws Exception {
         var board = userMap.get(Role.BOARD);
         var member = userMap.get(Role.MEMBER);
-
-        TestTransaction.flagForCommit();
 
         mvc.perform(post("/committees")
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.name").value("Test Committee"))
                 .andExpect(jsonPath("$.description").value("A test committee for integration tests"))
                 .andExpect(jsonPath("$.members", hasSize(2)))
                 .andExpect(jsonPath("$.members[*].role",
                         containsInAnyOrder("Chair", "Member")))
-                .andExpect(jsonPath("$.members[*].user.id",
+                .andExpect(jsonPath("$.members[*].userId",
                         containsInAnyOrder(board.getId().intValue(), member.getId().intValue())));
 
-        TestTransaction.end();
-
-        // Refresh entities to get updated state from database
+        // Refresh entities
         member = refreshUser(member);
         board = refreshUser(board);
 
@@ -126,7 +98,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // fetch all
         mvc.perform(get("/committees").with(bearer(userMap.get(Role.BOARD))))
@@ -141,7 +113,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         AdvancedCommitteeDTO created = mapper.readValue(
@@ -159,62 +131,77 @@ class CommitteeControllerIT extends UserTestSupport {
                 .andExpect(jsonPath("$.members", hasSize(2)));
     }
 
-    @Test
-    @Sql(scripts = "/cleanup.sql", executionPhase = AFTER_TEST_METHOD,
-            config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED))
-    void updatingCommitteesUpdatesMembers() throws Exception {
-        TestTransaction.flagForCommit();
-        // initial create
-        MvcResult createResult = mvc.perform(post("/committees")
+    private AdvancedCommitteeDTO createCommittee() throws Exception {
+        MvcResult result = mvc.perform(post("/committees")
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
-        AdvancedCommitteeDTO created = mapper.readValue(
-                createResult.getResponse().getContentAsByteArray(),
-                AdvancedCommitteeDTO.class
-        );
-        TestTransaction.end();
+        return mapper.readValue(result.getResponse().getContentAsByteArray(), AdvancedCommitteeDTO.class);
+    }
+
+    @Test
+    void updatingCommitteesRemovesMembers() throws Exception {
+        // initial create
+        AdvancedCommitteeDTO dto = createCommittee();
 
         // prepare updated payload (switch to a single member, using the existing MEMBER account)
         var board = userMap.get(Role.BOARD);
         var member = userMap.get(Role.MEMBER);
 
-        Map<String, Object> updatedPayload = Map.of(
-                "type", "AdvancedCommitteeDTO",
-                "name", "Updated Committee Name",
-                "description", "Updated description text",
-                "members", List.of(
-                        Map.of(
-                                "type", "CommitteeMemberDTO",
-                                "role", "Lead",
-                                "userId", board.getId(),
-                                "id", refreshUser(board).getCommitteeMembers().stream().findFirst().get().getId()
-                        )
-                )
-        );
-
-        TestTransaction.start();
-        TestTransaction.flagForCommit();
+        dto.getMembers().remove(1);
+        dto.setName("Updated Committee Name");
+        dto.setDescription("Updated description text");
+        dto.getMembers().get(0).setRole("No longer chair");
 
         // perform update
-        mvc.perform(put("/committees/{id}", created.getId())
+        mvc.perform(put("/committees/{id}", dto.getId())
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(updatedPayload)))
+                        .content(mapper.writeValueAsBytes(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(created.getId().toString()))
+                .andExpect(jsonPath("$.id").value(dto.getId().toString()))
                 .andExpect(jsonPath("$.name").value("Updated Committee Name"))
                 .andExpect(jsonPath("$.description").value("Updated description text"))
                 .andExpect(jsonPath("$.members", hasSize(1)))
-                .andExpect(jsonPath("$.members[0].role").value("Lead"))
-                .andExpect(jsonPath("$.members[0].user.id").value(board.getId().intValue()));
-
-        TestTransaction.end();
+                .andExpect(jsonPath("$.members[0].role").value("No longer chair"))
+                .andExpect(jsonPath("$.members[0].userId").value(board.getId().intValue()));
 
         assertFalse(refreshUser(member).hasRole(Role.COMMITTEE));
+        assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));
+    }
+
+    @Test
+    void updatingCommitteesUpdatesMembers() throws Exception {
+        // initial create
+        AdvancedCommitteeDTO dto = createCommittee();
+
+        // prepare updated payload (switch to a single member, using the existing MEMBER account)
+        var board = userMap.get(Role.BOARD);
+        var member = userMap.get(Role.MEMBER);
+
+        dto.setName("Updated Committee Name");
+        dto.setDescription("Updated description text");
+        dto.getMembers().get(0).setRole("No longer chair");
+        dto.getMembers().get(1).setRole("No longer member");
+
+        // perform update
+        mvc.perform(put("/committees/{id}", dto.getId())
+                        .with(bearer(userMap.get(Role.BOARD)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(dto.getId().toString()))
+                .andExpect(jsonPath("$.name").value("Updated Committee Name"))
+                .andExpect(jsonPath("$.description").value("Updated description text"))
+                .andExpect(jsonPath("$.members", hasSize(2)))
+                .andExpect(jsonPath("$.members[0].role").value("No longer chair"))
+                .andExpect(jsonPath("$.members[0].userId").value(board.getId().intValue()))
+                .andExpect(jsonPath("$.members[1].role").value("No longer member"))
+                .andExpect(jsonPath("$.members[1].userId").value(member.getId().intValue()));
+
         assertTrue(refreshUser(board).hasRole(Role.COMMITTEE));
     }
 
@@ -225,7 +212,7 @@ class CommitteeControllerIT extends UserTestSupport {
                         .with(bearer(userMap.get(Role.BOARD)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(examplePayload())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         AdvancedCommitteeDTO created = mapper.readValue(

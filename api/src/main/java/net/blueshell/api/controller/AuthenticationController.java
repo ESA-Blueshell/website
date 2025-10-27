@@ -1,60 +1,54 @@
 package net.blueshell.api.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import jakarta.annotation.security.PermitAll;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.auth.JWTAuthBase;
 import net.blueshell.api.auth.JwtTokenUtil;
-import net.blueshell.api.controller.request.JwtRequest;
-import net.blueshell.api.controller.response.JwtResponse;
+import net.blueshell.api.dto.request.JwtRequest;
+import net.blueshell.api.dto.response.AuthenticationDTO;
 import net.blueshell.api.model.User;
 import net.blueshell.api.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 @Tag(name = "Authentication")
+@RequiredArgsConstructor
 public class AuthenticationController extends JWTAuthBase {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
-    private final UserService userService;
-    private final PasswordEncoder encoder;
+    private final UserService users;
 
     @Value("${app.jwt.expiration}")
     private Long expiration;
 
-    public AuthenticationController(
-            AuthenticationManager authenticationManager,
-            JwtTokenUtil jwtTokenUtil,
-            UserService userService, PasswordEncoder encoder) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenUtil = jwtTokenUtil;
-        this.userService = userService;
-        this.encoder = encoder;
-    }
-
-    @PostMapping("/auth")
-    public JwtResponse authenticate(
-            @Valid @RequestBody JwtRequest authenticationRequest) {
+    @PostMapping(("/auth"))
+    @PermitAll
+    public AuthenticationDTO authenticate(@Validated @RequestBody JwtRequest authenticationRequest) {
         authenticate(
                 authenticationRequest.getUsername(),
                 authenticationRequest.getPassword()
         );
 
-        User user = userService.findByUsername(authenticationRequest.getUsername());
+        User user = users.findByUsername(authenticationRequest.getUsername());
         String token = jwtTokenUtil.generateToken(user);
         long expirationTime = System.currentTimeMillis() + expiration;
 
-        return new JwtResponse(token,
+        return new AuthenticationDTO(token,
                 user.getId(),
                 user.getUsername(),
                 expirationTime,
-                user.getRoleStrings());
+                user.getInheritedRoles()
+        );
     }
 
     private void authenticate(String username, String password) {

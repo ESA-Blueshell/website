@@ -2,4 +2,29 @@
   $border-radius-root: 10px,
   $chip-border-radius: 5px,
   $list-padding: 0,
+
+  // borders/grid
+  $calendar-line-width: 1px,
+  $calendar-event-border-radius: 5px,
+  $calendar-grid-color: #e0e0e0,
+  $calendar-outline-color: #e0e0e0,
+
+  // weekly spacing/labels (replaces your 0 4px padding etc.)
+  $calendar-weekly-weekday-padding: 0px 0px 0px 0px,
+  $calendar-weekly-weekday-font-size: 11px,
+  $calendar-weekly-day-padding: 0px 0px 0px 0px,
+  $calendar-weekly-day-label-size: 32px,
+  $calendar-weekly-day-label-font-size: 12px,
+  $calendar-weekly-day-label-margin: 4px 0 0 0,
+  $calendar-weekly-day-month-left: 36px,
+
+  // week number column
+  $calendar-weekly-weeknumber-flex-basis: 24px,
+  $calendar-weekly-weeknumber-padding-top: 8px,
+
+  // event "chip" shape/typography
+  $calendar-event-font-size: 12px,
+  $calendar-event-line-height: 20px,
+  $calendar-event-border-width: 1px,
+  $calendar-event-bottom-space: 5px,
 );

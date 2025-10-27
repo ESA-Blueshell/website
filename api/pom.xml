@@ -13,25 +13,18 @@
     <description>The API for the Blueshell Esports website</description>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
+        <java.version>24</java.version>
+        <maven.compiler.release>24</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.5.3</spring-boot.version>
-        <kotlin.version>1.9.22</kotlin.version>
-        <maven.compiler.version>3.14.0</maven.compiler.version>
-        <maven.surefire.version>3.5.3</maven.surefire.version>
-
-        <!-- Lint plugins -->
-        <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
-        <pmd.plugin.version>3.22.0</pmd.plugin.version>
-        <spotbugs.plugin.version>4.8.6.5</spotbugs.plugin.version>
-        <spotbugs.tool.version>4.8.6</spotbugs.tool.version>
+        <spring-boot.version>3.5.6</spring-boot.version>
+        <maven.compiler.version>3.14.1</maven.compiler.version>
+        <maven.surefire.version>3.5.4</maven.surefire.version>
 
         <!-- libs -->
         <mapstruct.version>1.6.3</mapstruct.version>
-        <lombok.version>1.18.32</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
 
-        <rest-assured.version>5.5.5</rest-assured.version>
+        <rest-assured.version>5.5.6</rest-assured.version>
         <db-rider.version>1.44.0</db-rider.version>
     </properties>
 
@@ -81,23 +74,23 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.47</version>
+            <version>10.5</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.11.5</version>
+            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.11.5</version>
+            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.5</version>
+            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -105,12 +98,12 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-calendar</artifactId>
-            <version>v3-rev20250115-2.0.0</version>
+            <version>v3-rev20250404-2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.30.0</version>
+            <version>1.39.1</version>
         </dependency>
 
         <!-- MapStruct & Lombok -->
@@ -130,13 +123,6 @@
             <artifactId>lombok-mapstruct-binding</artifactId>
             <version>0.2.0</version>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- Kotlin -->
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
-            <version>${kotlin.version}</version>
         </dependency>
 
         <!-- DB / Flyway -->
@@ -178,19 +164,14 @@
             <version>0.64.8</version>
         </dependency>
         <dependency>
-            <groupId>be.woutschoovaerts</groupId>
-            <artifactId>mollie</artifactId>
-            <version>4.6.3</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.3</version>
         </dependency>
         <dependency>
             <groupId>com.googlecode.libphonenumber</groupId>
             <artifactId>libphonenumber</artifactId>
-            <version>8.13.51</version>
+            <version>9.0.15</version>
         </dependency>
         <dependency>
             <groupId>com.github.scribejava</groupId>
@@ -221,25 +202,34 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
-            <version>11.3.4</version>
+            <version>11.13.2</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.2.7</version>
+        </dependency>
 
         <!-- MariaDB Driver -->
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.3.2</version>
+            <version>3.5.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.5</version>
+            <version>2.8.13</version>
         </dependency>
 
         <!-- Tests -->
@@ -260,20 +250,23 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.4.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--   Something else     -->
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.openapitools</groupId>
-            <artifactId>jackson-databind-nullable</artifactId>
-            <version>0.2.6</version>
-        </dependency>
 
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-groupssettings</artifactId>
-            <version>v1-rev82-1.25.0</version>
+            <version>v1-rev20220614-2.0.0</version>
         </dependency>
 
         <!-- Mailing -->
@@ -284,6 +277,17 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+            <version>0.21.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+            <version>0.21.0</version>
         </dependency>
     </dependencies>
 
@@ -327,50 +331,14 @@
                             <version>0.2.0</version>
                         </path>
                     </annotationProcessorPaths>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
                 </configuration>
             </plugin>
-
-            <!-- Kotlin -->
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile-kotlin</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>kapt</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <source>${project.build.directory}/generated-sources/annotations</source>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Unit tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.version}</version>
-                <executions>
-                    <execution>
-                        <id>unit-tests-on-verify</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
-            <!-- Exec (optional) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -429,16 +397,8 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-maven-plugin</artifactId>
                 <version>1.5</version>
-                <executions>
-                    <execution>
-                        <id>generate-openapi</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
-                    <outputDir>${project.basedir}/openapi</outputDir>
+                    <outputDir>../openapi</outputDir>
                     <outputFileName>blueshell.json</outputFileName>
                 </configuration>
             </plugin>
@@ -472,7 +432,7 @@
                             <!-- <inputSpec>-->
                             <!-- https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json-->
                             <!-- </inputSpec>-->
-                            <inputSpec>${project.basedir}/openapi/discord.json</inputSpec>
+                            <inputSpec>${project.basedir}/../openapi/discord.json</inputSpec>
                             <output>${project.build.directory}/generated-sources/openapi/discord</output>
                             <apiPackage>net.blueshell.clients.discord.api</apiPackage>
                             <modelPackage>net.blueshell.clients.discord.model</modelPackage>
@@ -498,40 +458,33 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
+                            <apisToGenerate>TransactionalEmails,Contacts</apisToGenerate>
+
                             <!-- TODO: Check that the swagger def is up to date in github action -->
                             <!-- <inputSpec>https://api.brevo.com/v3/swagger_definition_v3.yml</inputSpec>-->
-                            <inputSpec>${project.basedir}/openapi/brevo.yml</inputSpec>
+                            <inputSpec>${project.basedir}/../openapi/brevo.yml</inputSpec>
                             <output>${project.build.directory}/generated-sources/openapi/brevo</output>
                             <apiPackage>net.blueshell.clients.brevo.api</apiPackage>
                             <modelPackage>net.blueshell.clients.brevo.model</modelPackage>
                             <invokerPackage>net.blueshell.clients.brevo.invoker</invokerPackage>
+                            <inlineSchemaOptions>RESOLVE_INLINE_ENUMS=true</inlineSchemaOptions>
+                            <configOptions>
+                                <jackson>true</jackson>
+                                <serializationLibrary>jackson</serializationLibrary>
+                            </configOptions>
+                            <additionalProperties>
+                                <additionalProperty>withXml=false</additionalProperty>
+                                <additionalProperty>jackson=true</additionalProperty>
+                                <additionalProperty>serializationLibrary=jackson</additionalProperty>
+                            </additionalProperties>
+
                             <schemaMappings>
-                                <!-- Map schema names directly to Object -->
-                                <schemaMapping>getContactInfo_identifier_parameter=Object</schemaMapping>
+                                <schemaMapping>getContactInfo_identifier_parameter=String</schemaMapping>
+                                <schemaMapping>updateContact_identifier_parameter=String</schemaMapping>
                                 <schemaMapping>createDoiContact_attributes_value=Object</schemaMapping>
-                                <schemaMapping>event_event_properties_value=Object</schemaMapping>
-                                <schemaMapping>event_contact_properties_value=Object</schemaMapping>
-                                <schemaMapping>order_metaInfo_value=Object</schemaMapping>
+                                <schemaMapping>getContactInfo_identifierType_parameter=String</schemaMapping>
+                                <schemaMapping>updateContact_identifierType_parameter=String</schemaMapping>
                             </schemaMappings>
-                            <typeMappings>
-                                <!-- Keep existing type mappings as backup -->
-                                <typeMapping>CreateDoiContactAttributesValue=Object</typeMapping>
-                                <typeMapping>EventEventPropertiesValue=Object</typeMapping>
-                                <typeMapping>EventContactPropertiesValue=Object</typeMapping>
-                                <typeMapping>OrderMetaInfoValue=Object</typeMapping>
-                                <typeMapping>PostContactInfoContactsFailure=Object</typeMapping>
-                                <typeMapping>PostContactInfoContactsSuccess=Object</typeMapping>
-                                <typeMapping>GetContactInfoIdentifierParameter=Object</typeMapping>
-                            </typeMappings>
-                            <importMappings>
-                                <importMapping>CreateDoiContactAttributesValue=java.lang.Object</importMapping>
-                                <importMapping>EventEventPropertiesValue=java.lang.Object</importMapping>
-                                <importMapping>EventContactPropertiesValue=java.lang.Object</importMapping>
-                                <importMapping>OrderMetaInfoValue=java.lang.Object</importMapping>
-                                <importMapping>PostContactInfoContactsFailure=java.lang.Object</importMapping>
-                                <importMapping>PostContactInfoContactsSuccess=java.lang.Object</importMapping>
-                                <importMapping>GetContactInfoIdentifierParameter=java.lang.Object</importMapping>
-                            </importMappings>
                         </configuration>
                     </execution>
 
@@ -546,7 +499,7 @@
                             <skipValidateSpec>true</skipValidateSpec>
                             <!-- TODO: Check that the swagger def is up to date in github action -->
                             <!-- <inputSpec>https://hornet.snt.utwente.nl/en/api/download</inputSpec>-->
-                            <inputSpec>${project.basedir}/openapi/hornet.json</inputSpec>
+                            <inputSpec>${project.basedir}/../openapi/hornet.json</inputSpec>
                             <output>${project.build.directory}/generated-sources/openapi/hornet</output>
                             <apiPackage>net.blueshell.clients.hornet.api</apiPackage>
                             <modelPackage>net.blueshell.clients.hornet.model</modelPackage>

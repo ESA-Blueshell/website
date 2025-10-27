@@ -8,89 +8,94 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.security.SecureRandom;
-import java.util.function.BiConsumer;
+import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
+import static net.blueshell.api.common.util.MappingUtil.generateRandomString;
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring")
 public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDTO> {
-
-    private static final String CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*()-_=+<>?";
-    private static final int PASSWORD_LENGTH = 12;
-    private static final SecureRandom random = new SecureRandom();
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public static void applyCreationFields(AdvancedUserDTO dto, User user) {
+    @Mapping(target = "id")
+    @Mapping(target = "initials")
+    @Mapping(target = "firstName")
+    @Mapping(target = "prefix")
+    @Mapping(target = "lastName")
+    @Mapping(target = "username")
+    @Mapping(target = "discord")
+    @Mapping(target = "email")
+    @Mapping(target = "dateOfBirth")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "nationality")
+    @Mapping(target = "photoConsent")
+    @Mapping(target = "bhv")
+    @Mapping(target = "ehbo")
+    @Mapping(target = "enabled")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "gender")
+    @Mapping(target = "studentNumber")
+    @Mapping(target = "addressId")
+    @Mapping(target = "newsletter")
+    @Mapping(target = "fullName", expression = "java(user.getFullName())")
+    @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
+    public abstract AdvancedUserDTO toDTO(User user);
+
+    @Mapping(target = "initials", ignore = true)
+    @Mapping(target = "firstName", ignore = true)
+    @Mapping(target = "prefix", ignore = true)
+    @Mapping(target = "lastName", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "discord")
+    @Mapping(target = "dateOfBirth")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "nationality")
+    @Mapping(target = "photoConsent")
+    @Mapping(target = "bhv")
+    @Mapping(target = "ehbo")
+    @Mapping(target = "newsletter")
+    @Mapping(target = "gender")
+    @Mapping(target = "studentNumber")
+    @Mapping(target = "addressId")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
+    public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);
+
+    @AfterMapping
+    protected void onCreation(AdvancedUserDTO dto, @MappingTarget User user) {
+        if (user.getId() != null) return;
+
+        if (hasAuthority(Role.BOARD)) {
+            user.setPassword(passwordEncoder.encode(generateRandomString()));
+            user.setUsername("NOT_SET_" + generateRandomString()); // TODO remove once all accounts have been made
+        } else {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
+        }
+
+        applyRestrictedFields(dto, user);
+    }
+
+    @AfterMapping
+    protected void onUpdate(AdvancedUserDTO dto, @MappingTarget User user) {
+        if (user.getId() == null) return;
+
+        if (hasAuthority(Role.BOARD)) {
+            applyRestrictedFields(dto, user);
+        }
+    }
+
+    private void applyRestrictedFields(AdvancedUserDTO dto, @MappingTarget User user) {
         applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
         applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
         applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
         applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
         applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
-    }
-
-    private static <T> void applyIfFieldIsNotNull(User user, T obj, BiConsumer<User, T> applier) {
-        if (obj != null) {
-            applier.accept(user, obj);
-        }
-    }
-
-    public static String generatePassword() {
-        StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            int index = random.nextInt(CHAR_SET.length());
-            password.append(CHAR_SET.charAt(index));
-        }
-        return password.toString();
-    }
-
-    @Mapping(target = "fullName", expression = "java(user.getFullName())")
-    @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
-    public abstract AdvancedUserDTO toDTO(User user);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "initials")
-    @Mapping(target = "firstName")
-    @Mapping(target = "prefix")
-    @Mapping(target = "lastName")
-    @Mapping(target = "username", conditionExpression = "java(hasAuthority(net.blueshell.api.common.enums.Role.BOARD))")
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "email")
-    @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "profilePicture", ignore = true)
-    @Mapping(target = "committeeMembers", ignore = true)
-    @Mapping(target = "contributions", ignore = true)
-    @Mapping(target = "resetKey", ignore = true)
-    @Mapping(target = "resetKeyValidUntil", ignore = true)
-    @Mapping(target = "resetType", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "address", ignore = true)
-    @Mapping(target = "creator", ignore = true)
-    public abstract User fromDTO(AdvancedUserDTO dto);
-
-    @ObjectFactory
-    protected User newUser(@TargetType Class<User> type, AdvancedUserDTO dto) {
-        return new User();
-    }
-
-    @AfterMapping
-    protected void afterFromDTO(AdvancedUserDTO dto, @MappingTarget User user) {
-        // Newly created or Board update
-        if (user.getCreatedAt() == null || hasAuthority(Role.BOARD)) {
-            applyCreationFields(dto, user);
-
-            // If creating a account for the first time, set the password. Otherwise create a random one
-            if (dto.getPassword() != null && !hasAuthority(Role.BOARD)) {
-                user.setPassword(passwordEncoder.encode(dto.getPassword()));
-            } else if (dto.getPassword() == null && dto.getId() == null && hasAuthority(Role.BOARD)) {
-                user.setPassword(passwordEncoder.encode(generatePassword()));
-            }
-
-            if (hasAuthority(Role.BOARD)) {
-                user.setCreatorId(getPrincipal().getId());
-            }
-        }
     }
 }

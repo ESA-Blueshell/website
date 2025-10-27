@@ -1,16 +1,17 @@
 package net.blueshell.api.permission;
 
+import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.base.BasePermissionEvaluator;
 import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.model.Event;
-import net.blueshell.api.model.User;
-import net.blueshell.api.service.EventService;
+import net.blueshell.api.model.event.Event;
+import net.blueshell.api.service.event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EventPermission extends BasePermissionEvaluator<Event, Long, EventService> {
+@Slf4j
+public class EventPermission extends BasePermissionEvaluator<Event, EventService> {
 
     @Autowired
     public EventPermission(EventService service) {
@@ -25,17 +26,11 @@ public class EventPermission extends BasePermissionEvaluator<Event, Long, EventS
         Event event = (Event) targetDomainObject;
         var principal = getPrincipal();
         return switch (permission) {
-            case "read" -> event.isVisible() || hasAuthority(Role.BOARD) || event.getCommittee().hasMember(principal);
-            case "write", "delete", "seeSignUps" ->
-                    hasAuthority(Role.BOARD) || event.getCommittee().hasMember(principal);
-            case "signUp" -> canSignUp(event);
+            case "read" -> event.isApproved() || event.getCommittee().hasMember(principal);
+            case "write" -> event.getCommittee().hasMember(principal);
+            case "signUp" -> event.isApproved() && (!event.isMembersOnly() || hasAuthority(Role.MEMBER));
             default -> false;
         };
-    }
-
-    private boolean canSignUp(Event event) {
-        if (!event.isVisible()) return false;
-        return !event.isMembersOnly() || hasAuthority(Role.MEMBER);
     }
 
     @Override

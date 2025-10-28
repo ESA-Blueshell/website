@@ -23,7 +23,8 @@ services:
       start_period: 30s
 
   frontend:
-    container_name: frontend-dev
+    image: frontend:dev
+    pull_policy: never
     build:
       context: frontend
       dockerfile: Dockerfile-dev
@@ -51,7 +52,8 @@ services:
       start_period: 30s
 
   api:
-    container_name: api-dev
+    image: api:dev
+    pull_policy: never
     build:
       context: api
       dockerfile: Dockerfile-dev

@@ -106,7 +106,6 @@ import GamesWePlay from "@/components/base/GamesWePlay.vue"
 
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
-import "@/assets/animalcrossing.png"
 
 interface GameTitle {
   title: string

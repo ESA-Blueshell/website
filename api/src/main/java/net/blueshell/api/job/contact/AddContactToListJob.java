@@ -44,9 +44,8 @@ public class AddContactToListJob {
 
             // Ensure list exists (period listener also creates it; this is a safety net).
             if (period.getListId() == null) {
-                Long listId = contacts.createList(period);
-                period.setListId(listId);
-                contributionPeriods.update(period);
+                var listId = contacts.createList(period);
+                contributionPeriods.updateListId(periodId, listId);
                 log.info("Created list {} for periodId={}", listId, periodId);
             }
 

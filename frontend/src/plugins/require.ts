@@ -1,8 +1,14 @@
-/**
- *
- * @param url absolute path of asset (must begin with @/assets/)
- * @returns a vite transformed url string
- */
-export function $require(url: string): string {
-  return new URL(url.replace("@/assets", `/src/assets`), import.meta.url).href
+const assetUrlMap = import.meta.glob("/src/assets/**/*", {
+  eager: true,
+  import: "default",
+  query: "?url",
+}) as Record<string, string>
+
+function normalize(p: string) {
+  return p.replace(/^@\//, "/src/").replace(/^\/+/, "/")
+}
+
+export function $require(url?: string): string {
+  if (!url) return ""
+  return assetUrlMap[normalize(url)] ?? ""
 }

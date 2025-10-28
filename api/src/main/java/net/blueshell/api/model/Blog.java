@@ -31,12 +31,15 @@ import java.time.Instant;
 @NoArgsConstructor
 public class Blog extends BaseModel {
     @Column(name = "title", nullable = false)
+    @ToString.Include
     private String title;
 
     @Lob
     @Column(name = "html", nullable = false)
+    @ToString.Include
     private String html;
 
     @Column(name = "published_at", nullable = false)
+    @ToString.Include
     private Instant publishedAt;
 }

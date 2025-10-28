@@ -30,12 +30,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Contribution extends BaseModel {
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
     private User user;
 
     @Column(name = "user_id", nullable = false)
+    @ToString.Include
     private Long userId;
 
     @ManyToOne
@@ -43,5 +45,6 @@ public class Contribution extends BaseModel {
     private ContributionPeriod contributionPeriod;
 
     @Column(name = "contribution_period_id", nullable = false)
+    @ToString.Include
     private Long contributionPeriodId;
 }

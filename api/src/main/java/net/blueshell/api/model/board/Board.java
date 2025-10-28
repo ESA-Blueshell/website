@@ -35,8 +35,10 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Board extends BaseModel {
     @Column(name = "name", nullable = false)
+    @ToString.Include
     private String name;
 
     @JoinColumn(name = "picture_id")
@@ -47,12 +49,15 @@ public class Board extends BaseModel {
     private Set<BoardMember> members;
 
     @Column(name = "candidate", nullable = false)
+    @ToString.Include
     private String candidate;
 
     @Column(name = "start_date", nullable = false)
+    @ToString.Include
     private LocalDate startDate;
 
     @Column(name = "end_date")
+    @ToString.Include
     private LocalDate endDate;
 
     @OneToMany(mappedBy = "board")

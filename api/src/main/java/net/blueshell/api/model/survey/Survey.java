@@ -27,10 +27,12 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Survey extends BaseModel {
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Question> questions;
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)
+    @ToString.Include
     private long responseCount;
 }

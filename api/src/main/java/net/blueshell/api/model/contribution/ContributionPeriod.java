@@ -32,31 +32,38 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class ContributionPeriod extends BaseModel {
     @OneToMany(mappedBy = "contributionPeriod", cascade = CascadeType.ALL)
     private Set<Contribution> contributions;
 
     @Column(name = "start_date", nullable = false)
     @Setter
+    @ToString.Include
     private LocalDate startDate;
 
     @Column(name = "end_date")
     @Setter
+    @ToString.Include
     private LocalDate endDate;
 
     @Column(name = "half_year_fee", nullable = false)
     @Setter
+    @ToString.Include
     private double halfYearFee;
 
     @Column(name = "full_year_fee", nullable = false)
     @Setter
+    @ToString.Include
     private double fullYearFee;
 
     @Column(name = "alumni_fee", nullable = false)
     @Setter
+    @ToString.Include
     private double alumniFee;
 
     @Column(name = "list_id")
     @Setter
+    @ToString.Include
     private Long listId;
 }

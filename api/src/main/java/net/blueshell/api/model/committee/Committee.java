@@ -29,11 +29,14 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Committee extends BaseModel {
     @Column(name = "name", nullable = false)
+    @ToString.Include
     private String name;
 
     @Column(name = "description", nullable = false, length = 4095)
+    @ToString.Include
     private String description;
 
     @OneToMany(

@@ -24,11 +24,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Sponsor extends BaseModel {
     @Column(nullable = false)
+    @ToString.Include
     private String name;
 
     @Column(nullable = false, length = 4095)
+    @ToString.Include
     private String description;
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -36,5 +39,6 @@ public class Sponsor extends BaseModel {
     private File picture;
 
     @Column(name = "logo_id")
+    @ToString.Include
     private Long pictureId;
 }

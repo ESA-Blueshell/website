@@ -25,8 +25,10 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Answer extends BaseModel {
     @Column(name = "question_id", nullable = false)
+    @ToString.Include
     private Long questionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,9 +37,11 @@ public class Answer extends BaseModel {
 
     @Column(name = "option_selections", columnDefinition = "JSON")
     @Convert(converter = BooleanListConverter.class)
+    @ToString.Include
     private List<Boolean> optionSelections;
 
     @Column(name = "text_response")
+    @ToString.Include
     private String textResponse;
 
     @OneToOne(mappedBy = "answer", cascade = CascadeType.ALL)

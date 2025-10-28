@@ -31,12 +31,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class BoardDocument extends BaseModel {
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne
     private Board board;
 
     @Column(name = "name", nullable = false)
+    @ToString.Include
     private String name;
 
     @JoinColumn(name = "file_id", nullable = false)

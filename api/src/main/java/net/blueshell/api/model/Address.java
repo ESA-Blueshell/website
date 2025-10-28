@@ -24,19 +24,25 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Address extends BaseModel {
     @Column
+    @ToString.Include
     private String country;
 
     @Column
+    @ToString.Include
     private String city;
 
     @Column
+    @ToString.Include
     private String street;
 
     @Column(name = "house_number")
+    @ToString.Include
     private String houseNumber;
 
     @Column(name = "zip_code")
+    @ToString.Include
     private String zipCode;
 }

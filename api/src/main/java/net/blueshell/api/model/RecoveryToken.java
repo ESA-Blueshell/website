@@ -23,6 +23,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE recovery_tokens SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class RecoveryToken extends BaseModel {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -30,18 +31,23 @@ public class RecoveryToken extends BaseModel {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
+    @ToString.Include
     private ResetType type;
 
     @Column(name = "selector", nullable = false, length = 64)
+    @ToString.Include
     private String selector;
 
     @Column(name = "verifier_hash", nullable = false, length = 255)
+    @ToString.Include
     private String verifierHash;
 
     @Column(name = "expires_at", nullable = false)
+    @ToString.Include
     private Instant expiresAt;
 
     @Column(name = "consumed_at")
+    @ToString.Include
     private Instant consumedAt;
 
     public boolean isExpired() {

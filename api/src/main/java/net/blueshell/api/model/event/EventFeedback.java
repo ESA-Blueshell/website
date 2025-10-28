@@ -19,6 +19,7 @@ import org.hibernate.annotations.SQLRestriction;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class EventFeedback extends BaseModel {
     @Column(name = "feedback", nullable = false)
     private String feedback;

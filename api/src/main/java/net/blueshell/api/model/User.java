@@ -47,24 +47,30 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @EntityListeners(JpaListener.class)
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class User extends BaseModel implements UserDetails {
 
     @Column(nullable = false)
+    @ToString.Include
     private String username;
 
     @Column(nullable = false)
     private String password;
 
     @Column(name = "first_name", nullable = false)
+    @ToString.Include
     private String firstName;
 
     @Column(name = "last_name", nullable = false)
+    @ToString.Include
     private String lastName;
 
     @Column
+    @ToString.Include
     private String prefix;
 
     @Column
+    @ToString.Include
     private String initials;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
@@ -72,48 +78,62 @@ public class User extends BaseModel implements UserDetails {
     private Address address;
 
     @Column(name = "address_id", updatable = false, insertable = false)
+    @ToString.Include
     private Long addressId;
 
     @Column(name = "phone_number")
+    @ToString.Include
     private String phoneNumber;
 
     @Column(nullable = false)
+    @ToString.Include
     private String email;
 
     @Column(name = "student_number")
+    @ToString.Include
     private String studentNumber;
 
     @Column(name = "date_of_birth")
+    @ToString.Include
     private LocalDate dateOfBirth;
 
     @Column
+    @ToString.Include
     private String discord;
 
     @Column
+    @ToString.Include
     private String steamid;
 
     @Column(nullable = false)
+    @ToString.Include
     private boolean newsletter;
 
     @Column(nullable = false)
+    @ToString.Include
     private boolean enabled;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RecoveryToken> recoveryTokens;
 
     @Column(name = "consent_privacy")
+    @ToString.Include
     private boolean consentPrivacy;
 
     @Column(name = "consent_gdpr")
+    @ToString.Include
     private boolean consentGdpr;
 
     @Column
+    @ToString.Include
     private String gender;
 
     @Column(name = "photo_consent")
+    @ToString.Include
     private boolean photoConsent;
 
     @Column
+    @ToString.Include
     private String nationality;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -127,15 +147,19 @@ public class User extends BaseModel implements UserDetails {
     @CollectionTable(name = "authorities", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
+    @ToString.Include
     private Set<Role> roles = EnumSet.of(Role.GUEST);
 
     @Column(name = "ehbo")
+    @ToString.Include
     private boolean ehbo = false;
 
     @Column(name = "contact_id")
+    @ToString.Include
     private Long contactId;
 
     @Column(name = "bhv")
+    @ToString.Include
     private boolean bhv = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -148,9 +172,11 @@ public class User extends BaseModel implements UserDetails {
     private Set<EventSignUp> eventSignUps;
 
     @Column(name = "study")
+    @ToString.Include
     private String study;
 
     @Column(name = "start_study_year")
+    @ToString.Include
     private Long startStudyYear;
 
     public Set<Long> getCommitteeIds() {

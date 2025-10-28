@@ -27,8 +27,11 @@ services:
     restart: unless-stopped
     env_file:
       - ./env/.db.env
-      - ./env/.app.env
       - ./env/.api.env
+    environment:
+      - TZ=Europe/Amsterdam
+      - APP_URL=https://esa-blueshell.nl/api
+      - FRONTEND_URL=https://esa-blueshell.nl
     volumes:
       - "./storage:/home/storage"
     depends_on:
@@ -52,6 +55,9 @@ services:
       dockerfile: Dockerfile
     networks:
       - frontback
+    environment:
+      - TZ=Europe/Amsterdam
+      - VITE_APP_URL=https://esa-blueshell.nl/api
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/healthz" ]
       interval: 30s

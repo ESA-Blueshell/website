@@ -38,10 +38,9 @@ services:
       - /usr/app/.yarn
     networks:
       - global_network
-    env_file:
-      - ./env/.app.env
     environment:
       - TZ=Europe/Amsterdam
+      - VITE_APP_URL=http://localhost:8080
     depends_on:
       - api
     healthcheck:
@@ -70,10 +69,11 @@ services:
       - global_network
     env_file:
       - ./env/.db.env
-      - ./env/.app.env
       - ./env/.api.env
     environment:
       - TZ=Europe/Amsterdam
+      - APP_URL=http://localhost:8080
+      - FRONTEND_URL=http://localhost:3000
     depends_on:
       - db
     healthcheck:

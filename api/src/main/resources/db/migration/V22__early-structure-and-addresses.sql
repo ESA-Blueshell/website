@@ -136,7 +136,7 @@ CREATE TABLE blogs
     published_at datetime     NULL,
     created_at   datetime     NULL,
     deleted_at   datetime     NULL,
-    CONSTRAINT pk_blogs PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 /* =========================
@@ -148,7 +148,7 @@ CREATE TABLE redirects
     telemetry_id bigint   NULL,
     created_at   datetime NULL,
     deleted_at   datetime NULL,
-    CONSTRAINT pk_redirects PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 CREATE TABLE telemetries
@@ -158,7 +158,7 @@ CREATE TABLE telemetries
     platform   SMALLINT     NULL,
     created_at datetime     NULL,
     deleted_at datetime     NULL,
-    CONSTRAINT pk_telemetries PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 ALTER TABLE redirects

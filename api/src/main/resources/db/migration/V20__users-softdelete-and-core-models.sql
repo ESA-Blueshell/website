@@ -78,7 +78,7 @@ CREATE TABLE board_documents
     name       VARCHAR(255)          NULL,
     file_id    BIGINT                NULL,
     deleted_at datetime              NULL,
-    CONSTRAINT pk_board_documents PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 CREATE TABLE board_members
@@ -88,7 +88,7 @@ CREATE TABLE board_members
     user_id    BIGINT                NULL,
     picture_id BIGINT                NULL,
     deleted_at datetime              NULL,
-    CONSTRAINT pk_board_members PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 CREATE TABLE boards
@@ -100,7 +100,7 @@ CREATE TABLE boards
     start_date date                  NULL,
     end_date   date                  NULL,
     deleted_at datetime              NULL,
-    CONSTRAINT pk_boards PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 CREATE TABLE event_pictures
@@ -109,7 +109,7 @@ CREATE TABLE event_pictures
     picture_id BIGINT                NULL,
     event_id   BIGINT                NULL,
     deleted_at datetime              NULL,
-    CONSTRAINT pk_event_pictures PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 CREATE TABLE files
@@ -123,7 +123,7 @@ CREATE TABLE files
     size        BIGINT                NULL,
     type        VARCHAR(255)          NULL,
     deleted_at  datetime              NULL,
-    CONSTRAINT pk_files PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 CREATE TABLE memberships
@@ -137,7 +137,7 @@ CREATE TABLE memberships
     incasso      tinyint(1)            NULL,
     signature_id BIGINT                NULL,
     deleted_at   datetime              NULL,
-    CONSTRAINT pk_memberships PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 /* =========================

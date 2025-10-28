@@ -13,7 +13,7 @@ CREATE TABLE contribution_reminders
     version                BIGINT                                 NOT NULL,
     user_id                BIGINT                                 NOT NULL,
     contribution_period_id BIGINT                                 NOT NULL,
-    CONSTRAINT pk_contribution_reminders PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 ALTER TABLE addresses

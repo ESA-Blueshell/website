@@ -374,6 +374,6 @@ ALTER TABLE `users`
             ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 /* ---------- Cleanup helper ---------- */
-DROP PROCEDURE drop_index_if_exists;
+DROP PROCEDURE IF EXISTS drop_index_if_exists;
 
 SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;

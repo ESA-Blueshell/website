@@ -28,7 +28,7 @@ CREATE TABLE recovery_tokens
     verifier_hash VARCHAR(255)                           NOT NULL,
     expires_at    datetime                               NOT NULL,
     consumed_at   datetime                               NULL,
-    CONSTRAINT pk_recovery_tokens PRIMARY KEY (id)
+    CONSTRAINT PRIMARY KEY (id)
 );
 
 ALTER TABLE recovery_tokens

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS event_banners
     event_id   BIGINT   NOT NULL,
     file_id    BIGINT   NOT NULL,
     deleted_at DATETIME NOT NULL DEFAULT '9999-12-31 23:59:59',
-    CONSTRAINT pk_event_banners PRIMARY KEY (id),
+    CONSTRAINT PRIMARY KEY (id),
     CONSTRAINT fk_event_banners_event
         FOREIGN KEY (event_id) REFERENCES events (id),
     CONSTRAINT fk_event_banners_file

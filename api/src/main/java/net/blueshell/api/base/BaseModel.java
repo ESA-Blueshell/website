@@ -2,6 +2,7 @@ package net.blueshell.api.base;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import net.blueshell.api.model.User;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.ColumnDefault;
@@ -15,18 +16,22 @@ import java.util.Objects;
 
 @MappedSuperclass
 @Data
+@ToString(onlyExplicitlyIncluded = true)
 public abstract class BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
     private Long id;
 
     @Column(name = "deleted_at", insertable = false, updatable = false, nullable = false)
     @ColumnDefault("'9999-12-31 23:59:59'")
+    @ToString.Include
     private Instant deletedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
+    @ToString.Include
     private Instant createdAt;
 
     @CreatedBy
@@ -37,6 +42,7 @@ public abstract class BaseModel {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
+    @ToString.Include
     private Instant updatedAt;
 
     @LastModifiedBy
@@ -47,6 +53,7 @@ public abstract class BaseModel {
     @Version
     @Column(name = "version", nullable = false)
     @ColumnDefault("0")
+    @ToString.Include
     private Long version;
 
     @Override

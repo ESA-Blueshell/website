@@ -24,17 +24,22 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Guest extends BaseModel {
     @Column(nullable = false)
+    @ToString.Include
     private String name;
 
     @Column(nullable = false)
+    @ToString.Include
     private String discord;
 
     @Column(nullable = false)
+    @ToString.Include
     private String email;
 
     @Column
+    @ToString.Include
     private String phoneNumber;
 
     @Column(name = "access_token", nullable = false)

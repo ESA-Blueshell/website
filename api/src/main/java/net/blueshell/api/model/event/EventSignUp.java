@@ -52,12 +52,14 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class EventSignUp extends BaseModel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", insertable = false, updatable = false, nullable = false)
     private Event event;
 
     @Column(name = "event_id", nullable = false)
+    @ToString.Include
     private Long eventId;
 
     @ManyToOne
@@ -65,6 +67,7 @@ public class EventSignUp extends BaseModel {
     private User user;
 
     @Column(name = "user_id")
+    @ToString.Include
     private Long userId;
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

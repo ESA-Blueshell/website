@@ -31,6 +31,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class EventPicture extends BaseModel {
     @OneToOne
     @JoinColumn(name = "picture_id", nullable = false)

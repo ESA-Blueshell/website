@@ -26,11 +26,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class EventBanner extends BaseModel {
     @Column(name = "event_id", nullable = false, insertable = false, updatable = false)
+    @ToString.Include
     private Long eventId;
 
     @Column(name = "file_id", nullable = false, insertable = false, updatable = false)
+    @ToString.Include
     private Long fileId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)

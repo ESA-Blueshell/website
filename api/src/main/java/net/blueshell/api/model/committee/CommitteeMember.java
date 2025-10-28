@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.User;
@@ -32,12 +33,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class CommitteeMember extends BaseModel {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, updatable = false, insertable = false)
     private User user;
 
     @Column(name = "user_id", nullable = false)
+    @ToString.Include
     private Long userId;
 
     @ManyToOne(optional = false)
@@ -45,8 +48,10 @@ public class CommitteeMember extends BaseModel {
     private Committee committee;
 
     @Column(name = "committee_id", insertable = false, updatable = false)
+    @ToString.Include
     private Long committeeId;
 
     @Column(name = "role", length = 255)
+    @ToString.Include
     private String role;
 }

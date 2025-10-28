@@ -35,11 +35,14 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Question extends BaseModel {
     @Column(name = "idx", nullable = false)
+    @ToString.Include
     private Long idx;
 
     @Column(name = "survey_id", insertable = false, updatable = false, nullable = false)
+    @ToString.Include
     private Long surveyId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -51,9 +54,11 @@ public class Question extends BaseModel {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
+    @ToString.Include
     private QuestionType type;
 
     @Column(name = "label", nullable = false, length = 2047)
+    @ToString.Include
     private String label;
 
     @Column(name = "choice_labels", columnDefinition = "JSON")

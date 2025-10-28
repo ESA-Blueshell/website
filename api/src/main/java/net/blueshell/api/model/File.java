@@ -33,11 +33,14 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @EntityListeners(JpaListener.class)
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class File extends BaseModel {
     @Column(nullable = false)
+    @ToString.Include
     private String name;
 
     @Column(nullable = false)
+    @ToString.Include
     private String path;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -45,16 +48,20 @@ public class File extends BaseModel {
     private User uploader;
 
     @Column(name = "uploader_id", nullable = false)
+    @ToString.Include
     private long uploaderId;
 
     @Column(name = "media_type", nullable = false)
+    @ToString.Include
     private String mediaType;
 
     @Column(name = "size")
+    @ToString.Include
     private Long size;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
+    @ToString.Include
     private FileType type;
 
     @OneToMany(mappedBy = "file")

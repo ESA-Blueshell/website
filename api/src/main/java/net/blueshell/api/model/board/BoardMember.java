@@ -32,12 +32,14 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class BoardMember extends BaseModel {
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne
     private Board board;
 
     @Column(name = "board_id", updatable = false, insertable = false)
+    @ToString.Include
     private Long boardId;
 
     @JoinColumn(name = "user_id", nullable = false)
@@ -45,6 +47,7 @@ public class BoardMember extends BaseModel {
     private User user;
 
     @Column(name = "user_id", updatable = false, insertable = false)
+    @ToString.Include
     private Long userId;
 
     @JoinColumn(name = "picture_id")

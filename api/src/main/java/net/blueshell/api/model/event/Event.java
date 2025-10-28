@@ -54,36 +54,45 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Event extends BaseModel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
     private Committee committee;
 
     @Column(name = "committee_id")
+    @ToString.Include
     private Long committeeId;
 
     @Column(name = "title", nullable = false)
+    @ToString.Include
     private String title;
 
     @Column(name = "description", length = 4095)
+    @ToString.Include
     private String description;
 
     @Column(name = "location")
+    @ToString.Include
     private String location;
 
     @Column(name = "start_time", nullable = false)
+    @ToString.Include
     private Instant startTime;
 
     @Column(name = "end_time", nullable = false)
+    @ToString.Include
     private Instant endTime;
 
     @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private EventBanner banner;
 
     @Column(name = "price_member")
+    @ToString.Include
     private Double memberPrice;
 
     @Column(name = "price_public")
+    @ToString.Include
     private Double publicPrice;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "event", fetch = FetchType.LAZY)
@@ -93,18 +102,22 @@ public class Event extends BaseModel {
     private Set<EventPicture> pictures;
 
     @Column(name = "google_id")
+    @ToString.Include
     private String googleId;
 
     @Getter
     @Column(name = "approved", nullable = false)
+    @ToString.Include
     private boolean approved;
 
     @Getter
     @Column(name = "members_only", nullable = false)
+    @ToString.Include
     private boolean membersOnly;
 
     @Getter
     @Column(name = "sign_up", nullable = false)
+    @ToString.Include
     private boolean signUp;
 
     @JoinColumn(name = "survey_id")
@@ -112,8 +125,10 @@ public class Event extends BaseModel {
     private Survey signUpForm;
 
     @Column(name = "survey_id", updatable = false, insertable = false)
+    @ToString.Include
     private Long signUpFormId;
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
+    @ToString.Include
     private Long signUpCount;
 }

@@ -20,9 +20,11 @@ import org.hibernate.annotations.SQLRestriction;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class Redirect extends BaseModel {
     @ManyToOne
     @JoinColumn(name = "telemetry_id", nullable = false)
+    @ToString.Include
     private Telemetry telemetry;
 
     public Redirect(Telemetry telemetry) {

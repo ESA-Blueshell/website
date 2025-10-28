@@ -1,32 +1,26 @@
-FROM node:24-bookworm-slim AS deps
+# syntax=docker/dockerfile:1.7
+
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 
-# Use Corepack/Yarn exactly as defined in package.json ("packageManager")
-RUN corepack enable && corepack install
-
-# Copy only what Yarn needs first for better layer caching
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/ .yarn/
+RUN corepack enable \
+ && yarn --version \
+ && yarn install --immutable
 
-# Install dependencies strictly against lockfile
-RUN yarn install --immutable
-
-# Build stage
 FROM deps AS build
-# Copy the rest of the project
+WORKDIR /app
 COPY . .
-
-# Create production build
+ENV NODE_ENV=production
 RUN yarn build
 
-FROM nginx:stable-alpine AS runtime
-# Keep nginx config you already have (expects root /app)
+FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-# Serve the built app
-COPY --from=build /app/dist /app
 
-EXPOSE 8080
+COPY --from=build /app/dist/ /usr/share/nginx/html/
 
-# Optional: simple healthcheck
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget -qO- http://localhost:8080/ >/dev/null 2>&1 || exit 1
+EXPOSE 3000
+
+HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/healthz || exit 1

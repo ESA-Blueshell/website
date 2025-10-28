@@ -116,7 +116,6 @@ public class ContactService {
     public void addToList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
         if (user.getContactId() == null) {
             sync(user);
-            users.update(user);
         }
 
         ContactsApi api = getContactsApi();

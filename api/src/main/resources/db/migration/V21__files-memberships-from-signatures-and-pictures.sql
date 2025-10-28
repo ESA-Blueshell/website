@@ -1,3 +1,9 @@
+-- Concern(s): files/pictures/signatures migration, memberships backfill, event banners (to files)
+-- Phases are preserved; order is critical due to auto-increment and mapping logic
+
+/* =========================
+   (2) Data moves – signatures -> files & memberships
+   ========================= */
 -- Create a temporary table to map signature IDs to new file IDs
 CREATE TEMPORARY TABLE IF NOT EXISTS signature_file_mapping
 (
@@ -59,11 +65,17 @@ WHERE u.member_since <= CURRENT_TIME
   AND u.id NOT IN (SELECT user_id FROM memberships);
 
 
+/* =========================
+   (5) Cleanup – temp + signatures
+   ========================= */
 -- Cleanup temporary table
 DROP TEMPORARY TABLE IF EXISTS signature_file_mapping;
 -- Drop signature table
 DROP TABLE signatures;
 
+/* =========================
+   (2) Data moves – pictures -> files (event banners)
+   ========================= */
 -- Create temporary table to map picture IDs to new file IDs
 CREATE TEMPORARY TABLE IF NOT EXISTS picture_file_mapping
 (
@@ -152,11 +164,17 @@ UPDATE events e
     JOIN picture_file_mapping m ON e.banner_id = m.picture_id
 SET e.banner_id = m.file_id;
 
+/* =========================
+   (4) Constraints – fk from events.banner_id to files.id
+   ========================= */
 -- Add foreign key constraint
 ALTER TABLE events
     ADD CONSTRAINT fk_events_banner_file
         FOREIGN KEY (banner_id) REFERENCES files (id);
 
+/* =========================
+   (5) Cleanup – temps & pictures; users field removals
+   ========================= */
 -- Cleanup temporary tables
 DROP TEMPORARY TABLE IF EXISTS temp_picture_order;
 DROP TEMPORARY TABLE IF EXISTS temp_file_order;

@@ -1,3 +1,9 @@
+-- Concern(s): broad secondary indexes and created_at defaults (no logic change)
+-- Phases: indexes first, then default adjustments
+
+/* =========================
+   (4) Indexes
+   ========================= */
 CREATE INDEX idx_addresses_deleted_at ON addresses (deleted_at);
 
 CREATE INDEX idx_answers_deleted_at ON answers (deleted_at);
@@ -78,6 +84,9 @@ CREATE INDEX idx_telemetries_deleted_at ON telemetries (deleted_at);
 
 CREATE INDEX idx_users_deleted_at ON users (deleted_at);
 
+/* =========================
+   (3) Defaults – created_at defaults to CURRENT_TIMESTAMP
+   ========================= */
 ALTER TABLE board_documents
     ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
 

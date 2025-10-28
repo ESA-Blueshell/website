@@ -1,5 +1,5 @@
--- Rename legacy foreign keys to Spring-style names (fk_<table>_<column...>; lowercase)
--- and drop obsolete indexes you enumerated.
+-- Concern(s): drop obsolete indexes, rename legacy FKs to Spring-style names
+-- Order-critical: FOREIGN_KEY_CHECKS disabled during FK churn; helper procedure preserved
 
 SET @OLD_FOREIGN_KEY_CHECKS := @@FOREIGN_KEY_CHECKS;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -374,6 +374,6 @@ ALTER TABLE `users`
             ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 /* ---------- Cleanup helper ---------- */
-DROP PROCEDURE drop_index_if_exists;
+DROP PROCEDURE IF EXISTS drop_index_if_exists;
 
 SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;

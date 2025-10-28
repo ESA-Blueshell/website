@@ -1,3 +1,8 @@
+-- Concern(s): add created_by_id / updated_by_id across tables + FKs to users
+
+/* =========================
+   (1) Structures – add auditing columns
+   ========================= */
 ALTER TABLE addresses
     ADD created_by_id BIGINT NULL;
 
@@ -154,6 +159,9 @@ ALTER TABLE users
 ALTER TABLE users
     ADD updated_by_id BIGINT NULL;
 
+/* =========================
+   (4) Constraints – FK to users for audit columns
+   ========================= */
 ALTER TABLE addresses
     ADD CONSTRAINT fk_addresses_on_created_by FOREIGN KEY (created_by_id) REFERENCES users (id);
 

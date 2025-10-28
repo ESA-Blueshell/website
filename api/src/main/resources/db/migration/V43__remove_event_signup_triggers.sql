@@ -1,2 +1,0 @@
-DROP TRIGGER delete_signups_trigger;
-DROP TRIGGER update_signups_trigger;

@@ -1,3 +1,10 @@
+-- Contains: V42, V43, V44
+-- Concern(s): introduce surveys/questions/answers model, migrate sign-up forms & answers, drop legacy triggers, rename visibility
+-- Order-critical: migration (V42) precedes trigger cleanup (V43) and rename (V44)
+
+/* =========================
+   (1) Structures – new survey model
+   ========================= */
 CREATE TABLE surveys
 (
     id         BIGINT   NOT NULL AUTO_INCREMENT,
@@ -72,6 +79,9 @@ ALTER TABLE events
 ALTER TABLE events
     ADD INDEX ix_events_sign_up_form_deleted (survey_id, deleted_at);
 
+/* =========================
+   (2) Data – seed surveys from events.sign_up_form
+   ========================= */
 INSERT INTO surveys (deleted_at, event_id)
 SELECT events.deleted_at, events.id
 FROM events
@@ -85,6 +95,9 @@ WHERE events.id = surveys.event_id;
 ALTER TABLE surveys
     DROP COLUMN event_id;
 
+/* =========================
+   (2) Data – explode questions from sign_up_form JSON
+   ========================= */
 INSERT INTO questions (survey_id, type, label, idx, deleted_at, choice_labels)
 WITH RECURSIVE
     base AS (SELECT e.id,
@@ -115,6 +128,9 @@ ALTER TABLE questions
     MODIFY COLUMN idx INT NOT NULL,
     MODIFY COLUMN deleted_at DATETIME NOT NULL DEFAULT '9999-12-31 23:59:59';
 
+/* =========================
+   (2) Data – materialize (signup x questions) answers
+   ========================= */
 -- Insert one row per (signup x question) into event_sign_up_answers
 -- - Skips DESCRIPTION (no answer)
 -- - For OPEN:   text_response = answer text, option_selections = NULL
@@ -290,3 +306,12 @@ ALTER TABLE answers
 ALTER TABLE event_sign_up_answers
     MODIFY COLUMN event_sign_up_id BIGINT NOT NULL,
     MODIFY COLUMN answer_id BIGINT NOT NULL;
+
+/* =========================
+   (5) Cleanup – drop legacy signup triggers; (4) rename visible->approved
+   ========================= */
+DROP TRIGGER delete_signups_trigger;
+DROP TRIGGER update_signups_trigger;
+
+ALTER TABLE events
+    CHANGE COLUMN visible approved TINYINT(1) NOT NULL DEFAULT 0;

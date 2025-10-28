@@ -1,4 +1,9 @@
--- Remove duplicates from the events table, otherwise it's not possible to add new unique constraints
+-- Concern(s): deduplication, relinking, massive constraint/index additions, type/NULLability changes, removals
+-- Order-critical sequences preserved
+
+/* =========================
+   (2) Data – remove duplicate events
+   ========================= */
 DELETE e
 FROM events e
          JOIN (SELECT google_id, title, MIN(id) AS keep_id
@@ -9,6 +14,9 @@ FROM events e
                   AND d.title = e.title
 WHERE e.id <> d.keep_id;
 
+/* =========================
+   (2) Data – relink event_banners to single file per path
+   ========================= */
 -- For files which share duplicate paths, relink the events banners to the same file
 -- This will help in having only one file instance in the DB per physical file.
 UPDATE event_banners eb
@@ -32,10 +40,15 @@ FROM files
 WHERE files.type = 'EVENT_BANNER'
   AND files.id NOT IN (SELECT file_id FROM event_banners);
 
--- Change the role column in committee members to be shorter
+/* =========================
+   (1) Structures – committee_members.role shorter
+   ========================= */
 ALTER TABLE committee_members
     MODIFY COLUMN role VARCHAR(255) NULL;
 
+/* =========================
+   (2) Data – event times fix & fill missing end dates
+   ========================= */
 -- Repair the old events which had their times offset by 1 hour
 UPDATE events
 SET
@@ -48,17 +61,24 @@ UPDATE events
 SET end_time = DATE_ADD(DATE(start_time), INTERVAL 1 DAY) - INTERVAL 1 SECOND
 WHERE end_time IS NULL;
 
--- Migrate news table entries into blogs
+/* =========================
+   (2) Data – migrate news to blogs
+   ========================= */
 INSERT INTO blogs (title, html, published_at, created_at)
 SELECT title, content, posted_at, posted_at
 FROM news;
 
--- Set a default authority
+/* =========================
+   (2) Data – default authority
+   ========================= */
 insert into authorities (user_id, authority)
 SELECT users.id, 'GUEST'
 FROM users
 WHERE users.id NOT IN (SELECT user_id FROM authorities WHERE authority = 'GUEST');
 
+/* =========================
+   (2/5/1/4) Contributions cleanup, constraint churn, and many structural changes
+   ========================= */
 -- Clean contributions
 DELETE FROM contributions
 WHERE NOT paid;
@@ -359,6 +379,9 @@ CREATE INDEX idx_users_reset_key ON users (reset_key);
 
 CREATE INDEX idx_users_reset_key_valid_until ON users (reset_key_valid_until);
 
+/* =========================
+   (5) Cleanup – remove news, columns
+   ========================= */
 DROP TABLE news;
 
 ALTER TABLE events

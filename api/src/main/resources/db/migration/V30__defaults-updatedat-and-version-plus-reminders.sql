@@ -1,3 +1,9 @@
+-- Concern(s): add updated_at + version across, populate, tighten nullability, new contribution_reminders table, indexes/constraints
+-- Order-critical population and NOT NULL promotions preserved
+
+/* =========================
+   (1) Structures – new table + add updated_at columns
+   ========================= */
 CREATE TABLE contribution_reminders
 (
     id                     BIGINT AUTO_INCREMENT                  NOT NULL,
@@ -84,6 +90,9 @@ ALTER TABLE telemetries
 ALTER TABLE users
     ADD updated_at datetime NULL;
 
+/* =========================
+   (2) Data – fill updated_at defaults
+   ========================= */
 UPDATE `boards`
 SET updated_at = COALESCE(updated_at, created_at, NOW())
 WHERE updated_at IS NULL;
@@ -187,6 +196,9 @@ UPDATE `questions`
 SET updated_at = COALESCE(updated_at, created_at, NOW())
 WHERE updated_at IS NULL;
 
+/* =========================
+   (1/3) Structures – add version columns and tighten updated_at NOT NULL
+   ========================= */
 ALTER TABLE addresses
     ADD version BIGINT NULL;
 
@@ -335,7 +347,9 @@ ALTER TABLE telemetries
 ALTER TABLE users
     ADD version BIGINT NULL;
 
-
+/* =========================
+   (2) Data – initialize versions to 0
+   ========================= */
 UPDATE `boards`
 SET version = COALESCE(version, 0)
 WHERE version IS NULL;
@@ -444,6 +458,9 @@ UPDATE `questions`
 SET version = COALESCE(version, 0)
 WHERE version IS NULL;
 
+/* =========================
+   (1) Structures – enforce NOT NULL on version/updated_at where required
+   ========================= */
 ALTER TABLE users
     MODIFY updated_at datetime NOT NULL;
 
@@ -522,6 +539,9 @@ ALTER TABLE telemetries
 ALTER TABLE users
     MODIFY version BIGINT NOT NULL;
 
+/* =========================
+   (4) Constraints & indexes – for contribution_reminders & misc
+   ========================= */
 ALTER TABLE contribution_reminders
     ADD CONSTRAINT uk_contribution_reminders_user_period_deleted_at UNIQUE (user_id, contribution_period_id, deleted_at);
 
@@ -535,7 +555,6 @@ CREATE INDEX idx_contributions_created_at ON contributions (created_at);
 ALTER TABLE contribution_reminders
     ADD CONSTRAINT fk_contribution_reminders_contribution_period_id FOREIGN KEY (contribution_period_id) REFERENCES contribution_periods (id);
 
-
 CREATE INDEX idx_contribution_reminders_contribution_period_id ON contribution_reminders (contribution_period_id, deleted_at);
 
 CREATE INDEX idx_contribution_reminders_user_id ON contribution_reminders (user_id, deleted_at);
@@ -543,6 +562,9 @@ CREATE INDEX idx_contribution_reminders_user_id ON contribution_reminders (user_
 ALTER TABLE contribution_reminders
     ADD CONSTRAINT fk_contribution_reminders_user_id FOREIGN KEY (user_id) REFERENCES users (id);
 
+/* =========================
+   (2/5) Data & cleanup – finalize event_signups.created_at and drop signed_up_at later
+   ========================= */
 UPDATE event_signups
 SET created_at = signed_up_at
 WHERE signed_up_at IS NOT NULL;

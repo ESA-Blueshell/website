@@ -1,3 +1,9 @@
+-- Concern(s): recovery_tokens, detach creator/updater legacy FKs, remove reset columns; indexes & FKs
+-- Order-critical: drop FKs first, perform data transfers, then drop columns
+
+/* =========================
+   (4/5/2/1) FK drops then structures; data copies then drops
+   ========================= */
 ALTER TABLE events
     DROP FOREIGN KEY fk_events_creator_id;
 
@@ -43,6 +49,9 @@ ALTER TABLE recovery_tokens
 ALTER TABLE recovery_tokens
     ADD CONSTRAINT FK_RECOVERY_TOKENS_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
+/* =========================
+   (2) Data – move legacy creator/last_editor into auditing fields then drop legacy columns
+   ========================= */
 UPDATE events
 SET created_by_id = creator_id
 WHERE creator_id IS NOT NUll;
@@ -61,6 +70,9 @@ UPDATE users
 SET created_by_id = creator_id
 WHERE creator_id IS NOT NULL;
 
+/* =========================
+   (4/5) Drop user reset-key artifacts and creator column
+   ========================= */
 ALTER TABLE users
     DROP CONSTRAINT uk_users_reset_key_deleted_at;
 

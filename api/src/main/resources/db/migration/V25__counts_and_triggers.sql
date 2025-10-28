@@ -1,3 +1,9 @@
+-- Concern(s): response/sign-up counters and triggers
+-- Order-critical: backfills before trigger creation; DELIMITER blocks preserved
+
+/* =========================
+   (1) Structures – counter columns (IF NOT EXISTS)
+   ========================= */
 ALTER TABLE questions
     ADD COLUMN IF NOT EXISTS answer_count BIGINT UNSIGNED NOT NULL DEFAULT 0;
 
@@ -7,6 +13,9 @@ ALTER TABLE surveys
 ALTER TABLE events
     ADD COLUMN IF NOT EXISTS sign_up_count BIGINT UNSIGNED NOT NULL DEFAULT 0;
 
+/* =========================
+   (4) Indexes (IF NOT EXISTS)
+   ========================= */
 CREATE INDEX IF NOT EXISTS ix_answers_qid_deleted
     ON answers (question_id, deleted_at);
 
@@ -16,7 +25,9 @@ CREATE INDEX IF NOT EXISTS ix_questions_survey_deleted_type_count
 CREATE INDEX IF NOT EXISTS ix_event_signups_event_deleted
     ON event_signups (event_id, deleted_at);
 
-
+/* =========================
+   (2) Data – initialize counters
+   ========================= */
 UPDATE questions q
 SET q.answer_count = (SELECT COUNT(*)
                       FROM answers a
@@ -36,6 +47,9 @@ SET e.sign_up_count = (SELECT COUNT(*)
                        WHERE es.event_id = e.id
                          AND es.deleted_at = '9999-12-31 23:59:59');
 
+/* =========================
+   (5) Cleanup – drop old triggers if present
+   ========================= */
 DROP TRIGGER IF EXISTS trg_answers_ai;
 DROP TRIGGER IF EXISTS trg_answers_au;
 DROP TRIGGER IF EXISTS trg_answers_ad;
@@ -48,6 +62,9 @@ DROP TRIGGER IF EXISTS trg_event_signups_ai;
 DROP TRIGGER IF EXISTS trg_event_signups_au;
 DROP TRIGGER IF EXISTS trg_event_signups_ad;
 
+/* =========================
+   (4) Triggers – create after backfill
+   ========================= */
 DELIMITER $$
 
 CREATE TRIGGER trg_answers_ai

@@ -1,3 +1,5 @@
+-- Concern(s): DEFAULT CURRENT_TIMESTAMP for updated_at across entities
+
 ALTER TABLE contribution_reminders
     ALTER created_at SET DEFAULT (CURRENT_TIMESTAMP);
 

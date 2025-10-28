@@ -1,5 +1,0 @@
-ALTER TABLE event_signups
-    MODIFY COLUMN id BIGINT NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE contribution_periods
-    MODIFY COLUMN list_id BIGINT NULL;

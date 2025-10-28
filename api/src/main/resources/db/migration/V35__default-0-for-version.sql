@@ -1,3 +1,5 @@
+-- Concern(s): default version = 0 everywhere
+
 ALTER TABLE addresses
     ALTER version SET DEFAULT 0;
 

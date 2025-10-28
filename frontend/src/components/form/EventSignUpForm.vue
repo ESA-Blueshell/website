@@ -9,7 +9,7 @@
 
     <answers-form
       v-if="survey"
-      :key="questionsShapeKey"
+      :key="survey.questions.map((q: Question) => q.id).join('')"
       ref="answersRef"
       v-model="answers"
       :survey="survey"
@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref} from "vue"
 import {useStore} from "vuex"
 import {
   type Answer,
@@ -46,7 +46,6 @@ import {
   type Event,
   type EventSignUp,
   type Question,
-  QuestionType,
   updateEventSignUp,
 } from "@/services/api"
 import AnswersForm from "@/components/form/AnswersForm.vue"
@@ -61,8 +60,6 @@ const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed(() => store.getters.getLogin)
 
 const survey = computed(() => props.event.signUpForm ?? null)
-const questions = computed<Question[]>(() => survey.value?.questions ?? [])
-
 const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "", phoneNumber: ""})
 
 const guestRef = ref<InstanceType<typeof GuestForm>>()
@@ -74,47 +71,6 @@ const signUp = computed<EventSignUp>(() => {
   const s = props.initialSignUp
   return {eventId: s?.eventId ?? props.event.id!, answers: answers.value ?? [], ...s}
 })
-
-function normalizeForQuestion(q: Question, a: Answer | undefined): Answer {
-  const next: Answer = {...(a ?? {}), questionId: q.id!}
-  if (q.type === QuestionType.OPEN) {
-    next.textResponse = typeof next.textResponse === "string" ? next.textResponse : ""
-    delete next.optionSelections
-  } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
-    const need = q.choiceLabels?.length ?? 0
-    const curr = Array.isArray(next.optionSelections) ? next.optionSelections.slice() : []
-    while (curr.length < need) curr.push(false)
-    if (curr.length > need) curr.length = need
-    next.optionSelections = curr
-    delete next.textResponse
-  }
-  return next
-}
-
-function alignAnswers(qs: Question[], base: Answer[]): Answer[] {
-  const byId = new Map(base.map(a => [a.questionId, a] as const))
-  const out: Answer[] = []
-  for (const q of qs) {
-    if (q.type === QuestionType.DESCRIPTION) continue
-    out.push(normalizeForQuestion(q, byId.get(q.id!)))
-  }
-  return out
-}
-
-watch(
-  [questions, () => props.initialSignUp?.answers],
-  ([qs, incoming]) => {
-    const base = (incoming ?? answers.value) ?? []
-    answers.value = alignAnswers(qs ?? [], base)
-  },
-  {immediate: true, deep: true},
-)
-
-const questionsShapeKey = computed(() =>
-  (questions.value ?? [])
-    .map(q => `${q.id}:${q.type}:${q.choiceLabels?.length ?? 0}`)
-    .join("|"),
-)
 
 async function validate() {
   if (!isLoggedIn.value) {

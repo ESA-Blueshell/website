@@ -26,7 +26,7 @@
             target="_blank"
           >
             <img
-              :src="discordIconUrl"
+              src="@/assets/discord.svg"
               alt="discord icon"
               style="width: 35px"
             >
@@ -133,7 +133,6 @@ import {computed, onMounted, ref} from "vue"
 import axios from "axios"
 import {useTheme} from "vuetify"
 import DiscordUser from "@/components/base/DiscordUser.vue"
-import {$require} from "@/plugins/require.ts"
 import type {SnowflakeType, WidgetChannel, WidgetMember, WidgetResponse} from "@/services/api"
 
 const theme = useTheme()
@@ -158,8 +157,6 @@ const channelEntries = computed<[SnowflakeType, string][]>(() =>
   Object.entries(channels.value) as [SnowflakeType, string][],
 )
 const hasChannels = computed(() => channelEntries.value.length > 0)
-
-const discordIconUrl = $require("@/assets/discord.svg") as string
 
 onMounted(async () => {
   try {

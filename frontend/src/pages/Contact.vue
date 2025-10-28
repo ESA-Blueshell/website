@@ -59,7 +59,6 @@
               width="600"
             />
             <iframe
-              :style="{filter: theme.global.current.value.dark ? 'invert(90%)' : ''}"
               allowfullscreen=""
               height="450"
               loading="lazy"

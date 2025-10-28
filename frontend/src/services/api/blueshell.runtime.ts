@@ -5,10 +5,7 @@ import type {ApiError as ApiErrorSchema} from "@/services/api/blueshell/types.ge
 
 // Vite note: public env vars must be prefixed with VITE_*
 function resolveBaseURL(): string {
-  const fromEnv =
-    (import.meta.env.VITE_APP_URL as string | undefined) ||
-    (import.meta.env.APP_URL as string | undefined) // keep for backward compat if you already set this
-  if (fromEnv) return fromEnv
+  if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL
   // Reasonable dev fallback; avoid https on localhost unless you know it's configured
   if (typeof window !== "undefined") return `${window.location.origin}/api`
   return "https://localhost/api"

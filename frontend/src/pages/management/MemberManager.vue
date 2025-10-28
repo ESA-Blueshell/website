@@ -46,7 +46,6 @@ const deleteUser = (user: AdvancedUser) => {
 }
 
 const updateUser = (user: AdvancedUser) => {
-  console.log("member mamanger user:", user)
   const index = users.value.findIndex((u) => u.id === user.id)
   if (index === -1) {
     users.value = [...users.value, user]

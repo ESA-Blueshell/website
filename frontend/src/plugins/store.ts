@@ -117,13 +117,13 @@ const store = createStore<State>({
       return !state.login || Date.now() > state.login.expiration
     },
     isBoard(state: State): boolean {
-      return state.login?.roles.includes(Role.BOARD) || false
+      return state.login?.roles?.includes(Role.BOARD) || false
     },
     isActive(state: State): boolean {
-      return state.login?.roles.includes(Role.COMMITTEE) || false
+      return state.login?.roles?.includes(Role.COMMITTEE) || false
     },
     isMember(state: State): boolean {
-      return state.login?.roles.includes(Role.MEMBER) || false
+      return state.login?.roles?.includes(Role.MEMBER) || false
     },
     getGuestData(state: State): Guest | null {
       return state.guestData

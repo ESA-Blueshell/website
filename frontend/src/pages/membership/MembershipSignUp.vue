@@ -11,7 +11,7 @@
         :items="stepItems"
         hide-actions
       >
-        <!-- Step 1: Personal information / create-or-update user -->
+        <!-- Step 1: Personal information -->
         <template #[`item.1`]>
           <v-card class="pa-4">
             <advanced-user-form
@@ -19,10 +19,7 @@
               v-model="user"
               :show-password="!user?.id"
             />
-
-            <v-row
-              align="center"
-            >
+            <v-row align="center">
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
@@ -77,8 +74,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
-                  color="primary"
-                  variant="text"
+                  variant="outlined"
                   @click="previousStep"
                 >
                   Previous
@@ -121,10 +117,7 @@
               v-model="address"
               :user-id="user?.id"
             />
-
-            <v-row
-              align="center"
-            >
+            <v-row align="center">
               <v-col cols="auto">
                 <v-btn
                   variant="outlined"
@@ -147,17 +140,14 @@
           </v-card>
         </template>
 
-        <!-- Step 4: Membership Information / submit -->
+        <!-- Step 4: Membership Information -->
         <template #[`item.4`]>
           <v-card class="pa-4">
             <membership-form
               ref="membershipRef"
               v-model="membership"
             />
-
-            <v-row
-              align="center"
-            >
+            <v-row align="center">
               <v-col cols="auto">
                 <v-btn
                   variant="outlined"
@@ -181,9 +171,7 @@
         </template>
       </v-stepper>
 
-      <div
-        v-if="currentStep == 5"
-      >
+      <div v-if="currentStep === 5">
         <v-card class="pa-6 text-center">
           <v-icon
             class="mb-4"
@@ -212,7 +200,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, type Ref, watch} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
@@ -224,9 +212,8 @@ import {
   findAddressById,
   findUserById,
   type Membership,
-  resendUserActivation,
+  resendUserActivation, Role,
 } from "@/services/api"
-
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
@@ -234,12 +221,11 @@ import router from "@/plugins/router.ts"
 
 const route = useRoute()
 
-const currentStep: Ref<number> = ref(1)
-const submitting: Ref<boolean> = ref(false)
+const Steps = {Personal: 1, ConfirmEmail: 2, Address: 3, Membership: 4, Done: 5} as const
 
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-const isMember = computed(() => store.getters.isMember)
-const login = computed(() => store.getters.getLogin)
+const currentStep = ref<number>(Steps.Personal)
+const submitting = ref(false)
+const resendBusy = ref(false)
 
 const user = ref<AdvancedUser>()
 const address = ref<Address>()
@@ -249,188 +235,154 @@ const userRef = ref<InstanceType<typeof AdvancedUserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
 const membershipRef = ref<InstanceType<typeof MembershipForm>>()
 
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const login = computed(() => store.getters.getLogin)
+
 const stepItems = computed(() => [
-  {title: "Personal Information", value: 1},
-  {title: "Confirm Email", value: 2},
-  {title: "Address", value: 3},
-  {title: "Confirm Membership", value: 4},
+  {title: "Personal Information", value: Steps.Personal},
+  {title: "Confirm Email", value: Steps.ConfirmEmail},
+  {title: "Address", value: Steps.Address},
+  {title: "Confirm Membership", value: Steps.Membership},
 ])
 
 const infoEmail = computed(() => user.value?.email ?? "")
 
-function bounceIfMember() {
-  if (!isMember.value) return
-
-  stopLoginPoll?.()
-  store.commit("setStatusSnackbarMessage", "you are already a member")
-  const backTarget = (window.history.state && (window.history.state).back) as string | undefined
-
-  if (backTarget && backTarget !== route.fullPath) {
-    router.replace(backTarget) // replaces the current page with the previous page
-  } else {
-    router.replace("/") // fallback
-  }
-}
-
 async function handleVerified() {
-  if (isLoggedIn.value) {
-    await onLoggedInAfterActivation()
-  } else {
-    await router.push({name: "login", query: {redirect: "/membership/signUp?step=2"}})
-  }
+  if (isLoggedIn.value) await fetchData()
+  else await router.push({name: "login", query: {redirect: "/membership/signUp?step=2"}})
 }
 
-async function refreshUser(): Promise<void> {
-  if (!login.value?.userId) return
+async function fetchUser() {
+  const userId = login.value?.userId
+  if (!userId) return
   try {
-    const response = await findUserById({path: {userId: login.value.userId}, throwOnError: true})
-    user.value = response.data!
-  } catch (e: unknown) {
+    const {data} = await findUserById({path: {userId}, throwOnError: true})
+    user.value = data!
+  } catch (e) {
     $handleNetworkError(e)
   }
 }
 
-async function resendActivation(): Promise<void> {
-  if (!user.value?.username) return
+async function resendActivation() {
+  const username = user.value?.username
+  if (!username) return
   try {
     resendBusy.value = true
-    await resendUserActivation({path: {username: user.value.username}})
+    await resendUserActivation({path: {username}})
   } finally {
     resendBusy.value = false
   }
 }
 
-const resendBusy = ref(false)
-
-const nextStep = async (): Promise<void> => {
+const nextStep = async () => {
   try {
     submitting.value = true
-
-    if (currentStep.value === 1) {
-      const savedUser = await userRef.value?.save()
-      if (!savedUser) return
-
-      user.value = savedUser
-
-      // If not logged in yet, start polling; otherwise skip directly to Address (step 3)
-      if (!isLoggedIn.value) startLoginPoll()
-      currentStep.value = isLoggedIn.value ? 3 : 2
-      return
-    }
-
-    if (currentStep.value === 2) {
-      // If we somehow land here while logged in, just skip ahead
-      if (isLoggedIn.value) {
-        currentStep.value = 3
+    switch (currentStep.value) {
+      case Steps.Personal: {
+        await userRef.value?.save()
+        currentStep.value = isLoggedIn.value ? Steps.Address : Steps.ConfirmEmail
+        break
       }
-      return
-    }
-
-    if (currentStep.value === 3) {
-      const savedAddress = await addressRef.value?.save()
-      if (savedAddress) {
-        if (user.value) user.value.addressId = savedAddress.id!
-        currentStep.value = 4
+      case Steps.ConfirmEmail:
+        if (isLoggedIn.value) currentStep.value = Steps.Address
+        break
+      case Steps.Address: {
+        await addressRef.value?.save()
+        currentStep.value = Steps.Membership
+        break
       }
-      return
-    }
-
-    if (currentStep.value === 4) {
-      const savedMembership = await membershipRef.value?.save()
-      if (savedMembership) {
-        currentStep.value = 5 // show completion screen
+      case Steps.Membership: {
+        const savedMembership = await membershipRef.value?.save()
+        if (savedMembership) currentStep.value = Steps.Done
+        break
       }
-      return
     }
   } finally {
     submitting.value = false
   }
 }
 
-const previousStep = (): void => {
-  if (currentStep.value <= 1) return
+const previousStep = () => {
+  if (currentStep.value <= Steps.Personal) return
   const target = currentStep.value - 1
-  // If user is logged in, skip over email confirmation when going backwards
-  currentStep.value = target === 2 && isLoggedIn.value ? 1 : target
+  currentStep.value = target === Steps.ConfirmEmail && isLoggedIn.value ? Steps.Personal : target
 }
 
-const fetchAddress = async (): Promise<void> => {
-  if (!user.value?.addressId) {
-    address.value = {
-      country: "NL",
-      city: "",
-      street: "",
-      houseNumber: "",
-      zipCode: "",
-    }
-    return
-  }
-
+async function fetchAddress() {
+  const addressId = user.value?.addressId || address.value?.id
+  if (!addressId) return
   try {
-    const response = await findAddressById({path: {id: user.value.addressId!}})
-    address.value = response.data!
+    const {data} = await findAddressById({path: {id: addressId}})
+    address.value = data!
   } catch (e) {
     $handleNetworkError(e)
   }
 }
 
-let loginPollId: number | undefined
-const startLoginPoll = () => {
-  stopLoginPoll()
-  loginPollId = window.setInterval(async () => {
-    if (isLoggedIn.value) {
-      stopLoginPoll()
-      await onLoggedInAfterActivation()
-    }
-  }, 1500)
-}
-const stopLoginPoll = () => {
-  if (loginPollId) {
-    clearInterval(loginPollId)
-    loginPollId = undefined
-  }
-}
+// Keep URL in sync, redirect to correct steps based on state
+watch(currentStep, async (val) => {
+  let step = Math.max(0, Math.min(val, Steps.Membership))
 
-const onLoggedInAfterActivation = async () => {
-  await refreshUser()
-  await fetchAddress()
-  if (currentStep.value === 2 || currentStep.value === 1) currentStep.value = 3
-}
+  const userValid = Boolean(user.value?.id && await userRef.value?.validate())
+  const addressValid = Boolean(address.value?.id && await addressRef.value?.validate())
 
-// Keep the URL in sync and ensure step 2 is skipped when logged in
-watch(currentStep, (val) => {
-  if (val === 2 && isLoggedIn.value) {
-    currentStep.value = 3
-    return
+  switch (step) {
+    case Steps.Membership:
+      // It is only allowed to become a member if a user is signed in, is valid, and has a valid address
+      // if that is not the case go back by one step
+      if (!isLoggedIn.value || !userValid || !addressValid) {
+        step = Steps.Address
+      }
+      break
+
+    case Steps.Address:
+      // It is only allowed to modify an address if a user is signed in and is valid
+      // if that is not the case go back by one step
+      if (!isLoggedIn.value || !userValid) {
+        step = Steps.ConfirmEmail
+      }
+      break
+
+    case Steps.ConfirmEmail:
+      // One may only be on the confirm email page if they have done the initial account creation. but have not logged in
+
+      if (isLoggedIn.value && userValid) {
+        // If a user is logged in and has a valid user, then go to the address page
+        step = Steps.Address
+      } else if (!userValid) {
+        // If the user is not valid, go to personal to make it valid
+        step = Steps.Personal
+      }
+      // Otherwise, they are not logged in, but user is valid, they may stay on the page
+      break
   }
-  // Clamp to 4 for URL query
-  const qStep = Math.min(val, 4)
-  router.replace({query: {step: String(qStep)}})
+
+  await router.replace({query: {step}})
+  currentStep.value = step
 })
+
+// If a user is already a member, then redirect them to a different page.
+watch(user, async (val) => {
+  if (!val?.roles?.includes(Role.MEMBER)) return
+
+  store.commit("setStatusSnackbarMessage", "you are already a member")
+  const backTarget = (window.history.state && window.history.state.back) as string | undefined
+  await router.replace(backTarget && backTarget !== route.fullPath ? backTarget : "/")
+})
+
+async function fetchData() {
+  if (!login.value?.userId) return
+  await fetchUser()
+
+  if (!user.value?.addressId && !address.value?.id) return
+  await fetchAddress()
+}
 
 onMounted(async () => {
-  bounceIfMember()
-
-  const qsStep = Number(route.query.step)
-  if ([1, 2, 3, 4].includes(qsStep)) {
-    currentStep.value = isLoggedIn.value && qsStep === 2 ? 3 : qsStep
-  }
-
-  const loginInfo = store.getters.getLogin
-  if (loginInfo?.userId) {
-    try {
-      const response = await findUserById({path: {userId: loginInfo.userId}})
-      user.value = response.data!
-      await fetchAddress()
-    } catch (e) {
-      $handleNetworkError(e)
-    }
-  }
+  await fetchData()
+  currentStep.value = Number(route.query.step ?? 1)
 })
 
-onBeforeUnmount(() => {
-  stopLoginPoll()
-})
 </script>
 
 <style lang="scss" scoped>

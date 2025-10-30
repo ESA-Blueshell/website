@@ -21,4 +21,5 @@ window.addEventListener("storage", (e) => {
   if (e.key !== "auth:ping") return
   const login = readJsonCookie<Login>("login") || null
   store.commit("setLoginState", login)
+  window.location.reload()
 })

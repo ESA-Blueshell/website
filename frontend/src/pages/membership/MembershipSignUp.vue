@@ -39,48 +39,74 @@
 
         <!-- Step 2: Email confirmation -->
         <template #[`item.2`]>
-          <v-card class="pa-4">
+          <v-card class="pa-6">
             <v-row>
               <v-col cols="12">
-                <p class="mb-2">
-                  We’ve emailed <strong>{{ infoEmail }}</strong> a link to <strong>activate your account</strong>.
-                </p>
-                <p class="text-medium-emphasis">
-                  After activating, you’ll be sent to the sign-in page. Once you sign in, we’ll automatically bring you
-                  back here and move on to your address.
-                </p>
+                <div class="d-flex align-center mb-2">
+                  <v-icon
+                    size="28"
+                    color="primary"
+                    class="mr-2"
+                  >
+                    mdi-email-fast-outline
+                  </v-icon>
+                  <span class="text-h6 font-weight-medium">Check your inbox</span>
+                </div>
+
+                <v-alert
+                  variant="tonal"
+                  color="primary"
+                  border="start"
+                  class="mb-4"
+                >
+                  We’ve emailed <strong>{{ infoEmail }}</strong> a link to
+                  <strong>activate your account</strong>.
+                </v-alert>
+
+                <div class="text-body-2 text-medium-emphasis">
+                  <p class="mb-1">
+                    After activating, you’ll be redirected to the sign-in page.
+                  </p>
+                  <p class="mb-0">
+                    Once you sign in, we’ll bring you back here and move on to your address.
+                  </p>
+                </div>
               </v-col>
             </v-row>
 
-            <v-row
-              align="center"
-            >
+            <v-row align="center">
               <v-col cols="auto">
                 <v-btn
                   color="primary"
+                  variant="text"
                   @click="previousStep"
                 >
                   Previous
                 </v-btn>
               </v-col>
+
               <v-spacer />
+
               <v-col
                 cols="auto"
-                class="d-flex gap-2"
+                class="d-flex"
               >
                 <v-btn
                   :loading="resendBusy"
-                  color="primary"
+                  variant="outlined"
+                  class="mr-2"
+                  prepend-icon="mdi-email-arrow-right-outline"
                   @click="resendActivation"
                 >
                   Resend email
                 </v-btn>
+
                 <v-btn
                   color="primary"
-                  class="ml-3"
+                  prepend-icon="mdi-check-circle-outline"
                   @click="handleVerified"
                 >
-                  I’ve activated — Sign me in
+                  I’ve activated — Sign in
                 </v-btn>
               </v-col>
             </v-row>

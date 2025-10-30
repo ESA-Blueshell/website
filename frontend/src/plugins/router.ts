@@ -303,8 +303,6 @@ router.beforeEach((to, from, next) => {
       path: "/login",
       query: {redirect: to.fullPath},
     })
-  } else if (login && to.fullPath === "/membership/signup" && login.roles.includes("MEMBER")) {
-    store.commit("setStatusSnackbarMessage", "You are already a member!")
   } else {
     next()
   }

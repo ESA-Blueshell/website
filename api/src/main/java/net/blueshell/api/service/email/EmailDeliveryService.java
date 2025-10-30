@@ -44,7 +44,7 @@ public class EmailDeliveryService {
             helper.addInline("bg", new ClassPathResource("templates/assets/BackdropBlack.png"), "image/png");
 
             mailSender.send(message);
-            log.info("Sent email to {} with subject {}", toEmail, subject);
+            log.info("Sent email to {} from {} with subject {}", toEmail, senderAddress, subject);
         } catch (MessagingException | UnsupportedEncodingException e) {
             log.error("Failed to send email to {} with subject {}: {}", toEmail, subject, e.getMessage(), e);
             throw new RuntimeException("Failed to send email", e);

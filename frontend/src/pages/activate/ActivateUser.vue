@@ -81,9 +81,13 @@ onMounted(async () => {
   }
 
   try {
-    await userActivate({body: {token}, throwOnError: true})
+    const resp = await userActivate({body: {token}, throwOnError: true})
     succeeded.value = true
-    redirectToLogin(1500)
+    const redirect = resp.data!.path
+    window.setTimeout(
+      () => router.push({name: "login", query: {redirect}}),
+      1500,
+    )
   } catch (e: unknown) {
     $handleNetworkError(e)
     errorMessage.value = defaultErrorMessage

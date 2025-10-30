@@ -85,10 +85,11 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
     }
 
     @Transactional
-    public void activateUser(String rawToken) {
+    public User activateUser(String rawToken) {
         RecoveryToken token = verify(rawToken, ResetType.USER_ACTIVATION);
         users.activateUser(token.getUser().getId());
         consume(token);
+        return token.getUser();
     }
 
     @Transactional

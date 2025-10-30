@@ -33,8 +33,8 @@ public class AddressController extends BaseController<AddressService, AddressMap
         var user = users.findById(userId);
         var address = mapper.fromDTO(dto);
         user.setAddress(address);
-        users.update(user);
-        return mapper.toDTO(address);
+        user = users.update(user);
+        return mapper.toDTO(user.getAddress());
     }
 
     @PutMapping("/addresses/{id}")
@@ -42,7 +42,7 @@ public class AddressController extends BaseController<AddressService, AddressMap
     public AddressDTO updateAddress(@PathVariable("id") Long id, @Valid @RequestBody AddressDTO dto) {
         var address = service.findById(id);
         mapper.fromDTO(dto, address);
-        service.update(address);
+        address = service.update(address);
         return mapper.toDTO(address);
     }
 

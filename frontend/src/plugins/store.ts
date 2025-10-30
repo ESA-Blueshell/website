@@ -13,6 +13,8 @@ export interface State {
 export interface Mutations {
   setLogin(state: State, payload: Login): void;
 
+  setLoginState(stage: State, payload: Login | null): void;
+
   logout(state: State): void;
 
   setRoles(state: State, roles: string[]): void;
@@ -79,11 +81,16 @@ const store = createStore<State>({
       state.login = payload
       writeJsonCookie("login", payload)
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`
+      localStorage.setItem("auth:ping", String(Date.now()))
+    },
+    setLoginState(state: State, payload: Login | null): void {
+      state.login = payload
     },
     async logout(state: State) {
       state.login = null
       deleteCookie("login")
       state.statusSnackbarMessage = "You are now logged out."
+      localStorage.setItem("auth:ping", String(Date.now()))
     },
     setRoles(state: State, roles: Role[]): void {
       if (state.login) {
@@ -117,13 +124,16 @@ const store = createStore<State>({
       return !state.login || Date.now() > state.login.expiration
     },
     isBoard(state: State): boolean {
-      return state.login?.roles?.includes(Role.BOARD) || false
+      const roles = state.login?.roles ?? []
+      return roles.some(r => `${r}` === `${Role.BOARD}`)
     },
     isActive(state: State): boolean {
-      return state.login?.roles?.includes(Role.COMMITTEE) || false
+      const roles = state.login?.roles ?? []
+      return roles.some(r => `${r}` === `${Role.COMMITTEE}`)
     },
     isMember(state: State): boolean {
-      return state.login?.roles?.includes(Role.MEMBER) || false
+      const roles = state.login?.roles ?? []
+      return roles.some(r => `${r}` === `${Role.MEMBER}`)
     },
     getGuestData(state: State): Guest | null {
       return state.guestData

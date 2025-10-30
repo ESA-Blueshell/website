@@ -32,18 +32,6 @@
           />
         </template>
       </v-tooltip>
-      <v-tooltip
-        location="bottom"
-        text="Add to calendar"
-      >
-        <template #activator="{ props: calProps }">
-          <v-btn
-            icon="mdi-calendar"
-            v-bind="calProps"
-            @click="addToCal"
-          />
-        </template>
-      </v-tooltip>
     </v-toolbar>
 
     <img
@@ -194,12 +182,6 @@ const formattedDate = computed(() => {
 
   return `${startTime} - ${endTime}`
 })
-
-function addToCal() {
-  const googleId = event.value.googleId as string | undefined
-  if (!googleId) return
-  $goto(encodeURI(`https://calendar.google.com/event?action=TEMPLATE&tmeid=${googleId}&tmsrc=blueshellesports@gmail.com`))
-}
 
 function findLocation() {
   const loc = location.value

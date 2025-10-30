@@ -12,6 +12,7 @@ import net.blueshell.api.service.MembershipService;
 import net.blueshell.api.validation.group.Administration;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +39,11 @@ public class MembershipController extends BaseController<MembershipService, Memb
     @ResponseStatus(HttpStatus.CREATED)
     public MembershipDTO createMembership() {
         if (hasAuthority(Role.MEMBER)) {
-            throw new BadRequestException("User is already a member");
+            throw new AccessDeniedException("User is already a member");
+        } else if (getPrincipal().getAddressId() == null) {
+            throw new AccessDeniedException("User must have an address");
         }
+
         var membership = new Membership();
         membership.setUserId(getPrincipal().getId());
         service.create(membership);

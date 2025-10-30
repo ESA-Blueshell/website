@@ -3,17 +3,16 @@
     <top-banner title="Membership Form" />
 
     <div
-      v-if="currentStep <= 3"
-      class="mx-3 pb-10"
+      class="mx-auto my-6"
+      style="max-width: 800px"
     >
       <v-stepper
         v-model="currentStep"
-        :items="steps"
-        class="mx-auto mt-10"
+        :items="stepItems"
         hide-actions
-        style="max-width: 800px"
       >
-        <template #item.1>
+        <!-- Step 1: Personal information / create-or-update user -->
+        <template #[`item.1`]>
           <v-card class="pa-4">
             <advanced-user-form
               ref="userRef"
@@ -21,7 +20,9 @@
               :show-password="!user?.id"
             />
 
-            <v-row class="mt-4">
+            <v-row
+              align="center"
+            >
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
@@ -34,54 +35,70 @@
               </v-col>
             </v-row>
           </v-card>
+        </template>
 
-          <v-expand-transition>
-            <v-alert
-              v-if="waitingForVerification"
-              type="info"
-              variant="tonal"
-              class="mt-4"
+        <!-- Step 2: Email confirmation -->
+        <template #[`item.2`]>
+          <v-card class="pa-4">
+            <v-row>
+              <v-col cols="12">
+                <p class="mb-2">
+                  We’ve emailed <strong>{{ infoEmail }}</strong> a link to <strong>activate your account</strong>.
+                </p>
+                <p class="text-medium-emphasis">
+                  After activating, you’ll be sent to the sign-in page. Once you sign in, we’ll automatically bring you
+                  back here and move on to your address.
+                </p>
+              </v-col>
+            </v-row>
+
+            <v-row
+              align="center"
             >
-              <div class="mb-2">
-                We’ve emailed <strong>{{ infoEmail }}</strong> a link to activate your account.
-              </div>
-              <div class="text-medium-emphasis">
-                Open the email and click the link. Once verified, we’ll automatically take you to the next step.
-              </div>
-
-              <div
-                class="d-flex align-center mt-3"
-                style="gap: 8px;"
+              <v-col cols="auto">
+                <v-btn
+                  color="primary"
+                  @click="previousStep"
+                >
+                  Previous
+                </v-btn>
+              </v-col>
+              <v-spacer />
+              <v-col
+                cols="auto"
+                class="d-flex gap-2"
               >
                 <v-btn
                   :loading="resendBusy"
-                  size="small"
-                  variant="outlined"
+                  color="primary"
                   @click="resendActivation"
                 >
                   Resend email
                 </v-btn>
                 <v-btn
-                  size="small"
                   color="primary"
-                  @click="refreshUser"
+                  class="ml-3"
+                  @click="handleVerified"
                 >
-                  I’ve verified
+                  I’ve activated — Sign me in
                 </v-btn>
-              </div>
-            </v-alert>
-          </v-expand-transition>
+              </v-col>
+            </v-row>
+          </v-card>
         </template>
 
-        <template #item.2>
+        <!-- Step 3: Address -->
+        <template #[`item.3`]>
           <v-card class="pa-4">
             <address-form
               ref="addressRef"
               v-model="address"
-              :user-id="user.id"
+              :user-id="user?.id"
             />
 
-            <v-row class="mt-4">
+            <v-row
+              align="center"
+            >
               <v-col cols="auto">
                 <v-btn
                   variant="outlined"
@@ -104,15 +121,17 @@
           </v-card>
         </template>
 
-        <!-- Step 3: Membership Information -->
-        <template #item.3>
+        <!-- Step 4: Membership Information / submit -->
+        <template #[`item.4`]>
           <v-card class="pa-4">
             <membership-form
               ref="membershipRef"
               v-model="membership"
             />
 
-            <v-row class="mt-4">
+            <v-row
+              align="center"
+            >
               <v-col cols="auto">
                 <v-btn
                   variant="outlined"
@@ -124,7 +143,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :loading="saving"
+                  :loading="submitting"
                   color="primary"
                   @click="nextStep"
                 >
@@ -135,41 +154,40 @@
           </v-card>
         </template>
       </v-stepper>
-    </div>
 
-    <div
-      v-else
-      class="mx-auto my-10"
-      style="max-width: 600px"
-    >
-      <v-card class="pa-6 text-center">
-        <v-icon
-          class="mb-4"
-          color="success"
-          size="64"
-        >
-          mdi-check-circle
-        </v-icon>
-        <p class="text-h6 font-weight-medium mb-2">
-          Membership Complete!
-        </p>
-        <p class="text-body-1 text-medium-emphasis">
-          Your membership form has been successfully submitted. Welcome to Blueshell E-Sports!
-        </p>
-        <v-btn
-          class="mt-4"
-          color="primary"
-          @click="$goto('/')"
-        >
-          Go to Homepage
-        </v-btn>
-      </v-card>
+      <div
+        v-if="currentStep == 5"
+      >
+        <v-card class="pa-6 text-center">
+          <v-icon
+            class="mb-4"
+            color="success"
+            size="64"
+          >
+            mdi-check-circle
+          </v-icon>
+          <p class="text-h6 font-weight-medium mb-2">
+            Membership Complete!
+          </p>
+          <p class="text-body-1 text-medium-emphasis">
+            Your membership form has been successfully submitted. Welcome to Blueshell!
+          </p>
+          <v-btn
+            class="mt-4"
+            color="primary"
+            @click="$goto('/')"
+          >
+            Go to Homepage
+          </v-btn>
+        </v-card>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref, type Ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, type Ref, watch} from "vue"
+import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
@@ -186,33 +204,60 @@ import {
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
+import router from "@/plugins/router.ts"
+
+const route = useRoute()
 
 const currentStep: Ref<number> = ref(1)
+const submitting: Ref<boolean> = ref(false)
+
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const isMember = computed(() => store.getters.isMember)
+const login = computed(() => store.getters.getLogin)
 
 const user = ref<AdvancedUser>()
 const address = ref<Address>()
 const membership = ref<Membership>()
-const submitting: Ref<boolean> = ref(false)
 
 const userRef = ref<InstanceType<typeof AdvancedUserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
 const membershipRef = ref<InstanceType<typeof MembershipForm>>()
 
-const steps = [
+const stepItems = computed(() => [
   {title: "Personal Information", value: 1},
-  {title: "Address", value: 2},
-  {title: "Confirm Membership", value: 3},
-]
+  {title: "Confirm Email", value: 2},
+  {title: "Address", value: 3},
+  {title: "Confirm Membership", value: 4},
+])
 
-const waitingForVerification = ref(false)
-const resendBusy = ref(false)
 const infoEmail = computed(() => user.value?.email ?? "")
 
-async function refreshUser(): Promise<void> {
-  if (!user.value?.id) return
+function bounceIfMember() {
+  if (!isMember.value) return
 
+  stopLoginPoll?.()
+  store.commit("setStatusSnackbarMessage", "you are already a member")
+  const backTarget = (window.history.state && (window.history.state).back) as string | undefined
+
+  if (backTarget && backTarget !== route.fullPath) {
+    router.replace(backTarget) // replaces the current page with the previous page
+  } else {
+    router.replace("/") // fallback
+  }
+}
+
+async function handleVerified() {
+  if (isLoggedIn.value) {
+    await onLoggedInAfterActivation()
+  } else {
+    await router.push({name: "login", query: {redirect: "/membership/signUp?step=2"}})
+  }
+}
+
+async function refreshUser(): Promise<void> {
+  if (!login.value?.userId) return
   try {
-    const response = await findUserById({path: {userId: user.value.id}, throwOnError: true})
+    const response = await findUserById({path: {userId: login.value.userId}, throwOnError: true})
     user.value = response.data!
   } catch (e: unknown) {
     $handleNetworkError(e)
@@ -229,45 +274,47 @@ async function resendActivation(): Promise<void> {
   }
 }
 
+const resendBusy = ref(false)
+
 const nextStep = async (): Promise<void> => {
   try {
     submitting.value = true
+
     if (currentStep.value === 1) {
       const savedUser = await userRef.value?.save()
-      if (savedUser) {
-        user.value = savedUser
-        await fetchAddress()
+      if (!savedUser) return
 
-        await refreshUser()
-        if (!user.value?.enabled) {
-          waitingForVerification.value = true
-          const started = Date.now()
-          const poll = setInterval(async () => {
-            await refreshUser()
-            if (user.value?.enabled) {
-              clearInterval(poll)
-              waitingForVerification.value = false
-              currentStep.value += 1
-            } else if (Date.now() - started > 120000) { // stop after 2 min
-              clearInterval(poll)
-            }
-          }, 5000)
-          return
-        }
+      user.value = savedUser
 
-        currentStep.value += 1
+      // If not logged in yet, start polling; otherwise skip directly to Address (step 3)
+      if (!isLoggedIn.value) startLoginPoll()
+      currentStep.value = isLoggedIn.value ? 3 : 2
+      return
+    }
+
+    if (currentStep.value === 2) {
+      // If we somehow land here while logged in, just skip ahead
+      if (isLoggedIn.value) {
+        currentStep.value = 3
       }
-    } else if (currentStep.value === 2) {
+      return
+    }
+
+    if (currentStep.value === 3) {
       const savedAddress = await addressRef.value?.save()
       if (savedAddress) {
-        currentStep.value += 1
-        user.value!.addressId = savedAddress.id!
+        if (user.value) user.value.addressId = savedAddress.id!
+        currentStep.value = 4
       }
-    } else if (currentStep.value === 3) {
+      return
+    }
+
+    if (currentStep.value === 4) {
       const savedMembership = await membershipRef.value?.save()
       if (savedMembership) {
-        currentStep.value += 1
+        currentStep.value = 5 // show completion screen
       }
+      return
     }
   } finally {
     submitting.value = false
@@ -275,9 +322,10 @@ const nextStep = async (): Promise<void> => {
 }
 
 const previousStep = (): void => {
-  if (currentStep.value > 1) {
-    currentStep.value -= 1
-  }
+  if (currentStep.value <= 1) return
+  const target = currentStep.value - 1
+  // If user is logged in, skip over email confirmation when going backwards
+  currentStep.value = target === 2 && isLoggedIn.value ? 1 : target
 }
 
 const fetchAddress = async (): Promise<void> => {
@@ -293,33 +341,69 @@ const fetchAddress = async (): Promise<void> => {
   }
 
   try {
-    const response = await findAddressById({
-      path: {
-        id: user.value.addressId!,
-      },
-    })
-
+    const response = await findAddressById({path: {id: user.value.addressId!}})
     address.value = response.data!
   } catch (e) {
     $handleNetworkError(e)
   }
 }
 
-onMounted(async () => {
-  const login = store.getters.getLogin
-  if (!login?.userId) return
-
-  try {
-    const response = await findUserById({
-      path: {
-        userId: login.userId,
-      },
-    })
-
-    user.value = response.data!
-  } catch (e) {
-    $handleNetworkError(e)
+let loginPollId: number | undefined
+const startLoginPoll = () => {
+  stopLoginPoll()
+  loginPollId = window.setInterval(async () => {
+    if (isLoggedIn.value) {
+      stopLoginPoll()
+      await onLoggedInAfterActivation()
+    }
+  }, 1500)
+}
+const stopLoginPoll = () => {
+  if (loginPollId) {
+    clearInterval(loginPollId)
+    loginPollId = undefined
   }
+}
+
+const onLoggedInAfterActivation = async () => {
+  await refreshUser()
+  await fetchAddress()
+  if (currentStep.value === 2 || currentStep.value === 1) currentStep.value = 3
+}
+
+// Keep the URL in sync and ensure step 2 is skipped when logged in
+watch(currentStep, (val) => {
+  if (val === 2 && isLoggedIn.value) {
+    currentStep.value = 3
+    return
+  }
+  // Clamp to 4 for URL query
+  const qStep = Math.min(val, 4)
+  router.replace({query: {step: String(qStep)}})
+})
+
+onMounted(async () => {
+  bounceIfMember()
+
+  const qsStep = Number(route.query.step)
+  if ([1, 2, 3, 4].includes(qsStep)) {
+    currentStep.value = isLoggedIn.value && qsStep === 2 ? 3 : qsStep
+  }
+
+  const loginInfo = store.getters.getLogin
+  if (loginInfo?.userId) {
+    try {
+      const response = await findUserById({path: {userId: loginInfo.userId}})
+      user.value = response.data!
+      await fetchAddress()
+    } catch (e) {
+      $handleNetworkError(e)
+    }
+  }
+})
+
+onBeforeUnmount(() => {
+  stopLoginPoll()
 })
 </script>
 
@@ -330,13 +414,5 @@ onMounted(async () => {
 
 .v-card {
   border-radius: 12px;
-}
-
-.v-col:first-child {
-  padding-left: 0;
-}
-
-.v-col:last-child {
-  padding-right: 0;
 }
 </style>

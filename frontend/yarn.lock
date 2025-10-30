@@ -1597,7 +1597,7 @@ __metadata:
     vite: "npm:^7.1.12"
     vite-plugin-vuetify: "npm:^2.1.2"
     vite-tsconfig-paths: "npm:^5.1.4"
-    vue: "npm:^3.5.22"
+    vue: "npm:3.5.22"
     vue-axios: "npm:^3.5.2"
     vue-datepicker-next: "npm:^1.0.3"
     vue-eslint-parser: "npm:^10.2.0"
@@ -2547,28 +2547,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-vue@npm:>=9.6.0":
-  version: 10.4.0
-  resolution: "eslint-plugin-vue@npm:10.4.0"
-  dependencies:
-    "@eslint-community/eslint-utils": "npm:^4.4.0"
-    natural-compare: "npm:^1.4.0"
-    nth-check: "npm:^2.1.1"
-    postcss-selector-parser: "npm:^6.0.15"
-    semver: "npm:^7.6.3"
-    xml-name-validator: "npm:^4.0.0"
-  peerDependencies:
-    "@typescript-eslint/parser": ^7.0.0 || ^8.0.0
-    eslint: ^8.57.0 || ^9.0.0
-    vue-eslint-parser: ^10.0.0
-  peerDependenciesMeta:
-    "@typescript-eslint/parser":
-      optional: true
-  checksum: 10c0/385a5c34c4771ec8ac4d72b278e600f0583d7ecb6fcd2879042175bed72ac2c31e1f678cbd11b73f76b116ffdecc18624da2599880d99b3465a79c0a2bfb160f
-  languageName: node
-  linkType: hard
-
-"eslint-plugin-vue@npm:^10.5.1":
+"eslint-plugin-vue@npm:>=9.6.0, eslint-plugin-vue@npm:^10.5.1":
   version: 10.5.1
   resolution: "eslint-plugin-vue@npm:10.5.1"
   dependencies:
@@ -4957,7 +4936,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-eslint-parser@npm:^10.2.0":
+"vue-eslint-parser@npm:^10.0.0, vue-eslint-parser@npm:^10.2.0":
   version: 10.2.0
   resolution: "vue-eslint-parser@npm:10.2.0"
   dependencies:
@@ -5020,6 +4999,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"vue@npm:3.5.22, vue@npm:^3.2.0":
+  version: 3.5.22
+  resolution: "vue@npm:3.5.22"
+  dependencies:
+    "@vue/compiler-dom": "npm:3.5.22"
+    "@vue/compiler-sfc": "npm:3.5.22"
+    "@vue/runtime-dom": "npm:3.5.22"
+    "@vue/server-renderer": "npm:3.5.22"
+    "@vue/shared": "npm:3.5.22"
+  peerDependencies:
+    typescript: "*"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/ceee900a627c2274985da4a6cf1ceb093d3b6c59cc9e9dee606aedd2147918078ccb21bc0a39aacbd29d84449491e46e4b188e4a9fb57ff6c6d146ccb1baf752
+  languageName: node
+  linkType: hard
+
 "vue@npm:^3.0.0, vue@npm:^3.2.19":
   version: 3.5.21
   resolution: "vue@npm:3.5.21"
@@ -5035,24 +5032,6 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/4a635b211e43d00a75f35fbd7413b3a5067f97638be5e11d1b3e2860d7b85444bd0288593c63e068366b9b2371cb5cf05a451ff6bc82246cd7092b17c6711100
-  languageName: node
-  linkType: hard
-
-"vue@npm:^3.5.22":
-  version: 3.5.22
-  resolution: "vue@npm:3.5.22"
-  dependencies:
-    "@vue/compiler-dom": "npm:3.5.22"
-    "@vue/compiler-sfc": "npm:3.5.22"
-    "@vue/runtime-dom": "npm:3.5.22"
-    "@vue/server-renderer": "npm:3.5.22"
-    "@vue/shared": "npm:3.5.22"
-  peerDependencies:
-    typescript: "*"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/ceee900a627c2274985da4a6cf1ceb093d3b6c59cc9e9dee606aedd2147918078ccb21bc0a39aacbd29d84449491e46e4b188e4a9fb57ff6c6d146ccb1baf752
   languageName: node
   linkType: hard
 

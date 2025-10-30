@@ -5,17 +5,15 @@ WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/ .yarn/
-
-RUN test -f .yarn/releases/yarn-4.10.3.cjs
-
-RUN node .yarn/releases/yarn-4.10.3.cjs --version \
- && node .yarn/releases/yarn-4.10.3.cjs install --immutable
+RUN corepack enable \
+ && yarn --version \
+ && yarn install --immutable
 
 FROM deps AS build
 WORKDIR /app
 COPY . .
 ENV NODE_ENV=production
-RUN node .yarn/releases/yarn-4.10.3.cjs build
+RUN yarn build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
 

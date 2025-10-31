@@ -17,7 +17,7 @@
 
 ## 🏗️ Architecture Overview
 
-The backend is built using **Spring Boot 3.x** with **Java 25**, following a layered architecture with clear separation
+The backend is built using **Spring Boot 3.x** with **Java 25**, following a layered architecture with a clear separation
 of concerns:
 
 ```

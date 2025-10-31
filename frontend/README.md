@@ -5,7 +5,7 @@ communications. Built with Vue.js 3, TypeScript, and Vuetify.
 
 ## 🏗️ Architecture
 
-The frontend follows a **component-based architecture** with clear separation of concerns:
+The frontend follows a **component-based architecture** with a clear separation of concerns:
 
 ```
 src/

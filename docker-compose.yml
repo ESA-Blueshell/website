@@ -26,7 +26,6 @@ services:
         api/Dockerfile
     restart: unless-stopped
     env_file:
-      - ./env/.db.env
       - ./env/.api.env
     environment:
       - TZ=Europe/Amsterdam

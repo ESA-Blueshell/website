@@ -70,9 +70,9 @@ spring:
         smtp:
           auth: true
           ssl:
-            enable: ${SMTP_USE_SSL}
+            enable: true
           starttls:
-            enable: ${SMTP_USE_TLS}
+            enable: false
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
@@ -96,18 +96,8 @@ frontend:
 storage:
   location: ${STORAGE_LOCATION}
 
-mollie:
-  apiKey: ${MOLLIE_API_KEY}
-
 brevo:
   apiKey: ${BREVO_API_KEY}
-  templates:
-    userActivationId: ${BREVO_TEMPLATE_USER_ACTIVATION_ID}
-    memberActivationId: ${BREVO_TEMPLATE_MEMBER_ACTIVATION_ID}
-    eventSignupId: ${BREVO_TEMPLATE_EVENT_SIGNUP_ID}
-    passwordResetId: ${BREVO_TEMPLATE_PASSWORD_RESET_ID}
-    contributionId: ${BREVO_TEMPLATE_CONTRIBUTION_ID}
-    contributionReminderId: ${BREVO_TEMPLATE_CONTRIBUTION_REMINDER_ID}
   folders:
     contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID}
 
@@ -125,20 +115,6 @@ server:
     include-binding-errors: always
     include-stacktrace: never
     include-exception: false
-
-facebook:
-  page:
-    id: ${FACEBOOK_PAGE_ID}
-  access:
-    token: ${FACEBOOK_ACCESS_TOKEN}
-
-x:
-  api:
-    key: ${X_API_KEY}
-    secret: ${X_API_SECRET}
-  access:
-    token: ${X_ACCESS_TOKEN}
-    secret: ${X_ACCESS_SECRET}
 
 logging:
   level:

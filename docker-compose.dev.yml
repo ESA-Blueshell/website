@@ -68,7 +68,6 @@ services:
     networks:
       - global_network
     env_file:
-      - ./env/.db.env
       - ./env/.api.env
     environment:
       - TZ=Europe/Amsterdam

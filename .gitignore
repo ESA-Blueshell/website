@@ -53,3 +53,5 @@ data
 /env/.google.env
 /env/.mollie.env
 /storage/
+/env/.api.env.prod
+/env/.db.env.prod

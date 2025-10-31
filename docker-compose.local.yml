@@ -9,7 +9,7 @@ services:
       - "./env/0_init.sql:/docker-entrypoint-initdb.d/0_init.sql"
       - "./env/1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
     env_file:
-      - ./env/.db.env
+      - ./env/.db.env.prod
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -25,8 +25,7 @@ services:
       dockerfile: api/Dockerfile
     restart: unless-stopped
     env_file:
-      - ./env/.db.env
-      - ./env/.api.env
+      - ./env/.api.env.prod
     environment:
       - TZ=Europe/Amsterdam
       - APP_URL=https://localhost/api

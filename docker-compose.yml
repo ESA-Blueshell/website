@@ -18,7 +18,7 @@ services:
       start_period: 30s
 
   api:
-    image: ghcr.io/ESA-Blueshell/website/api:latest
+    image: ghcr.io/esa-blueshell/api:latest
     pull_policy: always
     build:
       context: .
@@ -47,7 +47,7 @@ services:
       start_period: 30s
 
   frontend:
-    image: ghcr.io/ESA-Blueshell/website/frontend:latest
+    image: ghcr.io/esa-blueshell/frontend:latest
     pull_policy: always
     build:
       context: frontend

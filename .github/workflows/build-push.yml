@@ -59,7 +59,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.OWNER }}/api
           tags: |
             type=ref,event=branch
-            type=sha,prefix={{branch}}-
+            type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push API image
@@ -96,7 +96,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.OWNER }}/frontend
           tags: |
             type=ref,event=branch
-            type=sha,prefix={{branch}}-
+            type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Frontend image

@@ -45,7 +45,7 @@ defineRule("minValue", (value: string, [min]: string[]) => {
 defineRule("maxValue", (value: string, [max]: string[]) => {
   if (isEmpty(value)) return true
   const maxValue = Number(max ?? 0)
-  return Number(value) <= maxValue || `Must be at least ${maxValue}`
+  return Number(value) <= maxValue || `May be at most ${maxValue}`
 })
 
 // If you prefer your own email rule over the built-in, keep this and remove the built-in registration above.

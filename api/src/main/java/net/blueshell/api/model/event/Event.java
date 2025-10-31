@@ -3,7 +3,7 @@ package net.blueshell.api.model.event;
 import jakarta.persistence.*;
 import lombok.*;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.base.JpaListener;
+import net.blueshell.api.common.event.jpa.JpaListener;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.survey.Survey;
 import org.hibernate.annotations.SQLDelete;

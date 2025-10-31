@@ -1,10 +1,13 @@
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.common.enums.FileType;
+import net.blueshell.api.common.event.jpa.JpaListener;
 import net.blueshell.api.model.event.EventBanner;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;

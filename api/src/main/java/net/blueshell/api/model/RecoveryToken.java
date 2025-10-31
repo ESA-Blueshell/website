@@ -1,7 +1,10 @@
 package net.blueshell.api.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.common.enums.ResetType;
 import org.hibernate.annotations.SQLDelete;

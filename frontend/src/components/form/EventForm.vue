@@ -47,7 +47,7 @@
             v-model="event.memberPrice"
             name="memberPrice"
             label="Price for members"
-            rules="minValue:0|maxValue:99.99"
+            rules="minValue:0"
             :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
           />
@@ -57,7 +57,7 @@
             v-model="event.publicPrice"
             name="publicPrice"
             label="Price for non-members"
-            rules="minValue:0|maxValue:99.99"
+            rules="minValue:0"
             :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
           />

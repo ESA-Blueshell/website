@@ -18,8 +18,8 @@ services:
       start_period: 30s
 
   api:
-    image: api:prod
-    pull_policy: never
+    image: ghcr.io/esa-blueshell/api:latest
+    pull_policy: always
     build:
       context: .
       dockerfile:
@@ -47,11 +47,14 @@ services:
       start_period: 30s
 
   frontend:
-    image: frontend:prod
-    pull_policy: never
+    image: ghcr.io/esa-blueshell/frontend:latest
+    pull_policy: always
     build:
       context: frontend
       dockerfile: Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
     networks:
       - frontback
     environment:
@@ -72,6 +75,9 @@ services:
       - "443:443"
     networks:
       - frontback
+    depends_on:
+      frontend:
+        condition: service_healthy
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot

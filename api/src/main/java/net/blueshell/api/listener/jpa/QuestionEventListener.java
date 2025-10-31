@@ -28,7 +28,7 @@ public class QuestionEventListener {
     public void onPersist(PostPersistEvent<Question> evt) {
         var q = evt.getSource();
 
-        log.info("On persist question {}", q.getId());
+        log.info("On persist question {}", q);
 
         // If a new description is added, there is no need to clear the survey.
         // If a new question is added, then we do need to wipe the answers and signups.
@@ -43,6 +43,8 @@ public class QuestionEventListener {
     public void onUpdate(PostUpdateEvent<Question> evt) {
         var q = evt.getSource();
 
+        log.info("On update question {}", q);
+
         // When a question is updated, the survey will need to be re-filled.
         // Therefore, all answers for the survey need to be wiped.
         if (q.getAnswers() != null && !q.getAnswers().isEmpty()) {
@@ -55,6 +57,8 @@ public class QuestionEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Question> evt) {
         var q = evt.getSource();
+
+        log.info("On delete question {}", q);
 
         // If a question is just removed, without anything else being changed
         // There is no need to wipe all existing answers for the survey.

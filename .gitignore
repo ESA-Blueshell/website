@@ -55,3 +55,4 @@ data
 /storage/
 /env/.api.env.prod
 /env/.db.env.prod
+/env/1_dump.sql

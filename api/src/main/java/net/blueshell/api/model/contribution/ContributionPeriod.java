@@ -3,7 +3,7 @@ package net.blueshell.api.model.contribution;
 import jakarta.persistence.*;
 import lombok.*;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.base.JpaListener;
+import net.blueshell.api.common.event.jpa.JpaListener;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 

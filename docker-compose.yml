@@ -96,23 +96,28 @@ services:
       - certbot-www:/var/www/certbot
       - /var/run/docker.sock:/var/run/docker.sock
     command: >
-      sh -c '
-        DOMAINS="-d esa-blueshell.nl -d www.esa-blueshell.nl";
-        EMAIL="board@blueshell.utwente.nl";
-        WEBROOT="/var/www/certbot";
-      
+      sh -euxc '
+        # Ensure docker CLI is available for reload hook
+        if ! command -v docker >/dev/null 2>&1; then
+          apt-get update &&
+          apt-get install -y docker.io &&
+          rm -rf /var/lib/apt/lists/*;
+        fi
+
         # First-time issuance if cert is missing
         if [ ! -f /etc/letsencrypt/live/esa-blueshell.nl/fullchain.pem ]; then
           echo "No certificate found; obtaining initial certificate...";
-          certbot certonly --webroot -w "$WEBROOT" $DOMAINS \
-            --email "$EMAIL" --agree-tos --non-interactive || true;
-          docker kill -s HUP nginx || true;
-        fi;
-      
+          certbot certonly --webroot -w /var/www/certbot \
+            -d esa-blueshell.nl -d www.esa-blueshell.nl \
+            --email board@blueshell.utwente.nl --agree-tos --non-interactive || true;
+          # Try clean reload; fall back to HUP
+          docker exec nginx nginx -s reload || docker kill -s HUP nginx || true;
+        fi
+
         # Renew forever; reload nginx after successful renewals
         while :; do
-          certbot renew --webroot -w "$WEBROOT" --quiet \
-            --deploy-hook "docker kill -s HUP nginx" || true;
+          certbot renew --webroot -w /var/www/certbot --quiet \
+            --deploy-hook "docker exec nginx nginx -s reload || docker kill -s HUP nginx" || true;
           sleep 12h;
         done
       '

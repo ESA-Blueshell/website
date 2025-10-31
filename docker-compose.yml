@@ -78,8 +78,6 @@ services:
     depends_on:
       frontend:
         condition: service_healthy
-      init-ssl:
-        condition: service_completed_successfully
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
@@ -108,11 +106,11 @@ services:
     image: certbot/certbot
     restart: unless-stopped
     depends_on:
-      - nginx
+      certbot:
+        condition: service_completed_successfully
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
-      # allow the hook to signal nginx:
       - /var/run/docker.sock:/var/run/docker.sock
     command: >
       sh -c '
@@ -122,21 +120,6 @@ services:
           sleep 30d;
         done
       '
-
-  init-ssl:
-    image: alpine:3
-    command: >
-      sh -c '
-        apk add --no-cache openssl &&
-        mkdir -p /etc/letsencrypt/live/esa-blueshell.nl &&
-        [ -f /etc/letsencrypt/live/esa-blueshell.nl/fullchain.pem ] || \
-        openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-          -keyout /etc/letsencrypt/live/esa-blueshell.nl/privkey.pem \
-          -out /etc/letsencrypt/live/esa-blueshell.nl/fullchain.pem \
-          -subj "/CN=esa-blueshell.nl"
-      '
-    volumes:
-      - letsencrypt:/etc/letsencrypt
 
 networks:
   frontback:

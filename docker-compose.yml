@@ -78,6 +78,8 @@ services:
     depends_on:
       frontend:
         condition: service_healthy
+      init-ssl:
+        condition: service_completed_successfully
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
@@ -96,11 +98,11 @@ services:
     command: >
       certonly --webroot
       -w /var/www/certbot
-      --force-renewal
       --non-interactive
       --agree-tos
       --email board@blueshell.utwente.nl
       -d esa-blueshell.nl
+      -d www.esa-blueshell.nl
 
   certbot-renew:
     image: certbot/certbot
@@ -110,13 +112,31 @@ services:
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
+      # allow the hook to signal nginx:
+      - /var/run/docker.sock:/var/run/docker.sock
     command: >
       sh -c '
         while true; do
-          certbot renew --webroot -w /var/www/certbot --non-interactive || true;
+          certbot renew --webroot -w /var/www/certbot \
+            --deploy-hook "docker kill -s HUP nginx" || true;
           sleep 30d;
         done
       '
+
+  init-ssl:
+    image: alpine:3
+    command: >
+      sh -c '
+        apk add --no-cache openssl &&
+        mkdir -p /etc/letsencrypt/live/esa-blueshell.nl &&
+        [ -f /etc/letsencrypt/live/esa-blueshell.nl/fullchain.pem ] || \
+        openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+          -keyout /etc/letsencrypt/live/esa-blueshell.nl/privkey.pem \
+          -out /etc/letsencrypt/live/esa-blueshell.nl/fullchain.pem \
+          -subj "/CN=esa-blueshell.nl"
+      '
+    volumes:
+      - letsencrypt:/etc/letsencrypt
 
 networks:
   frontback:

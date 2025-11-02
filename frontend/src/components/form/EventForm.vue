@@ -309,7 +309,7 @@ const event = defineModel<Event>({
     membersOnly: false,
     signUp: false,
     banner: undefined,
-    committeeId: 0,
+    committeeId: undefined,
   }),
 })
 

@@ -7,7 +7,7 @@ import {type Event, findEventById} from "@/services/api"
 
 const route = useRoute()
 const router = useRouter()
-const event = ref<Event | null>(null)
+const event = ref<Event>()
 
 const headerTitle = ref("")
 const isEditing = computed(() => Boolean(route.params.id))
@@ -18,7 +18,7 @@ onMounted(async () => {
     headerTitle.value = "Edit Event"
     try {
       const resp = await findEventById({path: {id}})
-      event.value = resp.data ?? ({} as Event)
+      event.value = resp.data
     } catch (err) {
       console.error("Error fetching event:", err)
     }
@@ -41,7 +41,6 @@ function onSuccess() {
         style="max-width: 800px"
       >
         <event-form
-          v-if="event"
           ref="form"
           :model-value="event"
           @success="onSuccess"

@@ -34,22 +34,6 @@ import type Team from "@/types/Team.ts"
 
 const teams = ref<Team[]>([
   {
-    name: "BS PepeDS",
-    bg: $require("@/assets/csgoesports1.jpg"),
-    players: [
-      {name: "Jelle", ign: "TheJellyMan"},
-      {name: "Bob", ign: "Bobbuuz"},
-      {name: "Thomas Dekker", ign: "ItIsIThomas"},
-      {name: "Jesse van Gameren", ign: "Budget_Machom36"},
-      {name: "Taha Aydin", ign: "Rijksoverheid"},
-    ],
-    substitutes: [
-      {name: "Rosalin de Vos", ign: "Lyncxe"},
-      {name: "Reini Strating", ign: "Loafine"},
-      {name: "Mitchell van Poecke", ign: "Tennissky"},
-    ],
-  },
-  {
     name: "BS HyperS",
     bg: $require("@/assets/csgoesports2.jpg"),
     players: [
@@ -65,6 +49,22 @@ const teams = ref<Team[]>([
       {name: "Chris Wong", ign: "FetaBass"},
       {name: "Yannick Sloot", ign: "Yannickryan"},
       {name: "Hielke Kleijsen", ign: "Klutch_"},
+    ],
+  },
+  {
+    name: "BS PepeDS",
+    bg: $require("@/assets/csgoesports1.jpg"),
+    players: [
+      {name: "Jelle", ign: "TheJellyMan"},
+      {name: "Bob", ign: "Bobbuuz"},
+      {name: "Thomas Dekker", ign: "ItIsIThomas"},
+      {name: "Jesse van Gameren", ign: "Budget_Machom36"},
+      {name: "Taha Aydin", ign: "Rijksoverheid"},
+    ],
+    substitutes: [
+      {name: "Rosalin de Vos", ign: "Lyncxe"},
+      {name: "Reini Strating", ign: "Loafine"},
+      {name: "Mitchell van Poecke", ign: "Tennissky"},
     ],
   },
 ])

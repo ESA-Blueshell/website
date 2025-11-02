@@ -28,7 +28,7 @@
           >esports@blueshell.utwente.nl</a></b>
         </p>
         <p class="text-body-1">
-          Currently in Blueshell, there are teams for CS:GO, LoL and Rocket League. To find out the current teams in
+          Currently in Blueshell, there are teams for CS2, LoL and Rocket League. To find out the current teams in
           Blueshell, click one of the pictures below.
         </p>
 

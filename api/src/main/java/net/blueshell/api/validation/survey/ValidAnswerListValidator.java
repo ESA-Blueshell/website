@@ -3,6 +3,8 @@ package net.blueshell.api.validation.survey;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import net.blueshell.api.dto.survey.AnswerDTO;
+import net.blueshell.api.service.survey.SurveyService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashSet;
 import java.util.List;
@@ -10,10 +12,13 @@ import java.util.Set;
 
 public class ValidAnswerListValidator implements ConstraintValidator<ValidAnswerList, List<AnswerDTO>> {
 
+    @Autowired
+    private SurveyService surveys;
+
     @Override
     public boolean isValid(List<AnswerDTO> answers, ConstraintValidatorContext context) {
-        if (answers == null || answers.isEmpty()) {
-            return true; // Let @NotEmpty handle if required
+        if (answers == null) {
+            return true; // Let @NotNull handle if required
         }
 
         Set<Long> seenQuestionIds = new HashSet<>();

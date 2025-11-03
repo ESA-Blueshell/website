@@ -23,7 +23,7 @@
           {{ question.label }}
         </p>
         <answer-field
-          v-model:answers="answers"
+          v-model="answers[question.idx]"
           :question="question"
         />
       </template>
@@ -44,7 +44,7 @@ const formRef = ref<FormContext | undefined>()
 
 async function validate() {
   const result = await formRef.value?.validate()
-  return result?.valid ?? true
+  return !!result?.valid
 }
 
 const questions = computed<Question[]>(() => props.survey?.questions ?? [])

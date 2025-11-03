@@ -1,56 +1,59 @@
 <template>
   <v-toolbar
-    class="px-0"
     color="transparent"
+    class="px-0"
   >
-    <v-toolbar-title class="text-h5 ml-2">
+    <v-toolbar-title class="text-h5 ml-2 toolbar-title">
       {{ monthTitle }}
     </v-toolbar-title>
-    <v-spacer />
-    <v-btn
-      icon
-      variant="text"
-      @click="goPrevMonth"
-    >
-      <v-icon>mdi-chevron-left</v-icon>
-    </v-btn>
-    <v-btn
-      icon
-      variant="text"
-      @click="goNextMonth"
-    >
-      <v-icon>mdi-chevron-right</v-icon>
-    </v-btn>
-    <v-btn
-      class="ml-2"
-      size="small"
-      variant="text"
-      @click="goToCurrentMonth"
-    >
-      Today
-    </v-btn>
 
-    <v-btn
-      :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
-      aria-label="Add the Blueshell events to my Google Calendar"
-      class="ml-2"
-      rel="noopener"
-      size="small"
-      target="_blank"
-      variant="outlined"
-    >
-      Subscribe to calendar
-      <v-icon end>
-        mdi-open-in-new
-      </v-icon>
-    </v-btn>
+    <div class="ms-auto d-flex align-center">
+      <v-btn
+        icon
+        variant="text"
+        @click="goPrevMonth"
+      >
+        <v-icon>mdi-chevron-left</v-icon>
+      </v-btn>
+      <v-btn
+        icon
+        variant="text"
+        @click="goNextMonth"
+      >
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
+      <v-btn
+        class="ml-2"
+        size="small"
+        variant="text"
+        @click="goToCurrentMonth"
+      >
+        Today
+      </v-btn>
+      <v-btn
+        v-if="!display.xs.value"
+        class="ml-2"
+        size="small"
+        variant="outlined"
+        :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
+        target="_blank"
+        rel="noopener"
+        aria-label="Add the Blueshell events to my Google Calendar"
+      >
+        Subscribe to calendar
+        <v-icon end>
+          mdi-open-in-new
+        </v-icon>
+      </v-btn>
+    </div>
   </v-toolbar>
+
 
   <v-calendar
     v-model="displayedMonth"
     :events="calendarEvents"
     :show-adjacent-months="true"
-    :weekdays="weekdays"
+    :weekdays="[1, 2, 3, 4, 5, 6, 0]"
     type="month"
     @click:event="showEvent"
   />
@@ -71,7 +74,6 @@ import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import {type Event, findEvents} from "@/services/api"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
-import type {CalendarWeekdays} from "vuetify/lib/composables/calendar"
 import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/base/EventDetails.vue"
 
@@ -92,8 +94,6 @@ const {current: localeCurrent} = useLocale()
 localeCurrent.value = "en"
 
 const display = useDisplay()
-const isXs = computed(() => display.xs.value)
-const weekdays = computed(() => (isXs.value ? [1, 2, 3, 4, 5] : [1, 2, 3, 4, 5, 6, 0] as CalendarWeekdays[]))
 
 const monthTitle = computed(() =>
   DateTime.fromISO(displayedMonth.value)

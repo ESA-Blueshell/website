@@ -5,9 +5,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.DirtyAwareModel;
+import net.blueshell.api.base.JpaListener;
+import net.blueshell.api.common.hibernate.DirtyField;
+import net.blueshell.api.common.hibernate.DirtyModel;
 import net.blueshell.api.common.enums.QuestionType;
-import net.blueshell.api.common.event.jpa.JpaListener;
 import net.blueshell.api.model.converter.StringListConverter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -39,7 +41,8 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class Question extends BaseModel {
+@DirtyModel
+public class Question extends DirtyAwareModel {
     @Column(name = "idx", nullable = false)
     @ToString.Include
     private Long idx;
@@ -58,14 +61,17 @@ public class Question extends BaseModel {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     @ToString.Include
+    @DirtyField
     private QuestionType type;
 
     @Column(name = "label", nullable = false, length = 2047)
     @ToString.Include
+    @DirtyField
     private String label;
 
     @Column(name = "choice_labels", columnDefinition = "JSON")
     @Convert(converter = StringListConverter.class)
+    @DirtyField
     private List<String> choiceLabels;
 
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)

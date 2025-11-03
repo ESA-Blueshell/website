@@ -41,6 +41,7 @@ function onSuccess() {
         style="max-width: 800px"
       >
         <event-form
+          v-if="!isEditing || event"
           ref="form"
           :model-value="event"
           @success="onSuccess"

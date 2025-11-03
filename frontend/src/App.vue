@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar theme="dark">
       <v-btn
-        v-if="display.mdAndDown"
+        v-if="display.mdAndDown.value"
         class="ml-2"
         icon="mdi-menu"
         @click="drawer = !drawer"
@@ -18,7 +18,7 @@
       </router-link>
 
       <div
-        v-if="display.lgAndUp"
+        v-if="!display.mdAndDown.value"
         style="height: 90%"
       >
         <v-btn

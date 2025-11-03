@@ -41,7 +41,8 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class Question extends BaseModel {
+@DirtyModel
+public class Question extends DirtyAwareModel {
     @Column(name = "idx", nullable = false)
     @ToString.Include
     private Long idx;

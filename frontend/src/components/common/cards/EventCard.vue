@@ -79,6 +79,7 @@ async function confirmDeleteEvent() {
 async function removeSignUp() {
   if (signUp.value?.id === undefined) return
   await deleteEventSignup({path: {eventSignupId: signUp.value.id as number}, throwOnError: true})
+  expanded.value = false
   emit("delete:signUp", signUp.value.id)
 }
 

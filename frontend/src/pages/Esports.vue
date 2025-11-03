@@ -68,7 +68,7 @@ export default {
           url: "/esports/league-of-legends",
         },
         {
-          icon: $require("@/assets/csgo.png"),
+          icon: $require("@/assets/cs2.png"),
           url: "/esports/counter-strike-2",
         },
         {

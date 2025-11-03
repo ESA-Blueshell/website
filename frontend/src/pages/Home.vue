@@ -145,8 +145,8 @@ const games = ref<GameCategory[]>([
       },
       {
         title: "Counter-Strike 2",
-        bg: $require("@/assets/csgobg.jpg"),
-        icon: $require("@/assets/csgo.png"),
+        bg: $require("@/assets/cs2bg.png"),
+        icon: $require("@/assets/cs2.png"),
         esportsLink: "/esports/counter-strike-2",
       },
       {

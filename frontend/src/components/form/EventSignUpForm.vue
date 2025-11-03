@@ -78,7 +78,7 @@ async function validate() {
     if (!guestFormValid) return false
   }
   if (!survey.value) return true
-  return (await answersRef.value?.validate?.()) === true
+  return answersRef.value?.validate?.()
 }
 
 async function save() {

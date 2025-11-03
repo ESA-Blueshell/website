@@ -8,20 +8,21 @@ import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.GuestDTO;
 import net.blueshell.api.dto.survey.AnswerDTO;
 import net.blueshell.api.dto.user.SimpleUserDTO;
-import net.blueshell.api.validation.survey.ValidAnswerList;
+import net.blueshell.api.validation.event.GuestOrUserRequired;
+import net.blueshell.api.validation.event.ValidEventSignUp;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "EventSignUp")
+@ValidEventSignUp
+@GuestOrUserRequired
 public class EventSignUpDTO extends BaseDTO {
     private Long id;
     @NotNull
     private Long eventId;
-    @ValidAnswerList
     @Valid
     private List<AnswerDTO> answers;
     private GuestDTO guest;

@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {
   type Answer,
@@ -65,7 +65,25 @@ const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "
 const guestRef = ref<InstanceType<typeof GuestForm>>()
 const answersRef = ref<InstanceType<typeof AnswersForm>>()
 
-const answers = ref<Answer[]>(props.initialSignUp?.answers ?? [])
+const answers = ref<Answer[]>([...(props.initialSignUp?.answers ?? [])])
+
+function sortAnswersBySurveyIdx() {
+  const qs = survey.value?.questions ?? []
+  if (!qs.length || !answers.value.length) return
+
+  const idxById = new Map<number, number>()
+  for (const q of qs) {
+    if (q.id != null) idxById.set(q.id, q.idx)
+  }
+
+  answers.value.sort((a, b) => {
+    const ia = idxById.get(a.questionId) ?? Number.MAX_SAFE_INTEGER
+    const ib = idxById.get(b.questionId) ?? Number.MAX_SAFE_INTEGER
+    return ia - ib
+  })
+}
+
+watch(survey, sortAnswersBySurveyIdx, {immediate: true})
 
 const signUp = computed<EventSignUp>(() => {
   const s = props.initialSignUp

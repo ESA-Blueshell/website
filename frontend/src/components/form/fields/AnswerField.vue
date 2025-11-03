@@ -1,4 +1,4 @@
-<template>
+<template v-if="answer">
   <template v-if="question.type === QuestionType.OPEN">
     <Field
       v-slot="{ value, errors, handleChange, handleBlur }"
@@ -75,9 +75,10 @@
   </template>
 </template>
 
+
 <script lang="ts" setup>
 import {Field} from "vee-validate"
-import {computed} from "vue"
+import {watch} from "vue"
 import {type Answer, type Question, QuestionType} from "@/services/api"
 
 
@@ -85,29 +86,29 @@ const props = withDefaults(defineProps<{
   question: Question
 }>(), {})
 
-const answers = defineModel<Answer[]>("answers", {default: []})
-const question = computed<Question>(() => props.question)
-
-const answer = computed<Answer>(() => {
-  const previousAnswer = answers.value.find((a: Answer) => a.questionId == question.value.id)
-  if (previousAnswer) return previousAnswer
-
-  if (question.value.type === QuestionType.OPEN) {
-    return {
-      questionId: question.value.id,
-      textResponse: "",
-    } as Answer
-  } else if (question.value.type === QuestionType.RADIO || question.value.type === QuestionType.CHECKBOX) {
-    return {
-      questionId: question.value.id,
-      optionSelections: new Array(question.value.choiceLabels!.length).fill(false),
-    } as Answer
-  } else {
-    return {
-      questionId: question.value.id,
-    } as Answer
-  }
+const answer = defineModel<Answer>({
+  default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
 })
+
+watch(() => props.question, (q) => {
+  if (!answer.value.questionId) {
+    if (q.type === QuestionType.OPEN) {
+      answer.value = {
+        questionId: q.id,
+        textResponse: "",
+      } as Answer
+    } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
+      answer.value = {
+        questionId: q.id,
+        optionSelections: new Array(q.choiceLabels!.length).fill(false),
+      } as Answer
+    } else {
+      answer.value = {
+        questionId: q.id,
+      } as Answer
+    }
+  }
+}, {immediate: true})
 </script>
 
 <style lang="scss" scoped>

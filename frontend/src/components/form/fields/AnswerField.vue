@@ -1,44 +1,44 @@
 <template v-if="answer">
   <template v-if="question.type === QuestionType.OPEN">
     <Field
-      v-slot="{ value, errors, handleChange, handleBlur }"
+      v-slot="{ value, errors, handleChange, handleBlur, meta }"
       v-model="answer.textResponse"
       :name="`${question.idx}.textResponse`"
-      rules="required"
+      :rules="requireText"
+      :validate-on-mount="false"
     >
       <v-text-field
         :label="question.label || 'Answer'"
-        :error-messages="errors"
+        :error-messages="meta.touched ? errors : []"
         :model-value="value"
         required
         @blur="handleBlur"
-        @update:model-value="(v: string) => {
-          handleChange(v)
-        }"
+        @update:model-value="(v: string) => handleChange(v)"
       />
     </Field>
   </template>
 
   <template v-else-if="question.type === QuestionType.RADIO || question.type === QuestionType.CHECKBOX">
     <Field
-      v-slot="{ errors, handleChange, handleBlur }"
-      v-model="answer"
+      v-slot="{ value, errors, handleChange, handleBlur, meta }"
+      v-model="answer.optionSelections"
       :name="`${question.idx}.optionSelections`"
-      :rules="(a: Answer) => (Array.isArray(a.optionSelections) && a.optionSelections.some(Boolean)) || 'Select at least one option'"
+      :rules="requireOptionSelection"
+      :validate-on-mount="false"
     >
       <div>
         <template v-if="question.type === QuestionType.RADIO">
           <v-radio-group
-            :error-messages="errors"
+            :error-messages="meta.touched ? errors : []"
             :model-value="(() => {
-              const i = answer.optionSelections?.findIndex(Boolean) ?? -1
+              const i = (value ?? []).findIndex(Boolean)
               return i >= 0 ? i : null
             })()"
             @blur="handleBlur"
             @update:model-value="(idx: number) => {
-              answer.optionSelections = new Array(question.choiceLabels!.length).fill(false)
-              answer.optionSelections[idx] = true
-              handleChange(answer)
+              const arr = new Array(question.choiceLabels!.length).fill(false)
+              if (idx >= 0) arr[idx] = true
+              handleChange(arr)
             }"
           >
             <v-radio
@@ -55,16 +55,20 @@
             v-for="(opt, j) in question.choiceLabels"
             :key="j"
             :label="opt"
-            :model-value="answer.optionSelections[j]"
+            :model-value="value?.[j]"
             hide-details
             @blur="handleBlur"
             @update:model-value="(checked: boolean) => {
-              answer.optionSelections[j] = checked
-              handleChange(answer)
+              const arr = Array.isArray(value)
+                ? [...value]
+                : new Array(question.choiceLabels!.length).fill(false)
+              arr[j] = checked
+              // user action -> validate
+              handleChange(arr)
             }"
           />
           <div
-            v-if="errors?.length"
+            v-if="meta.touched && errors?.length"
             class="text-error text-caption mt-1"
           >
             {{ errors[0] }}
@@ -75,12 +79,10 @@
   </template>
 </template>
 
-
 <script lang="ts" setup>
 import {Field} from "vee-validate"
 import {watch} from "vue"
 import {type Answer, type Question, QuestionType} from "@/services/api"
-
 
 const props = withDefaults(defineProps<{
   question: Question
@@ -90,25 +92,37 @@ const answer = defineModel<Answer>({
   default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
 })
 
-watch(() => props.question, (q) => {
-  if (!answer.value.questionId) {
-    if (q.type === QuestionType.OPEN) {
-      answer.value = {
-        questionId: q.id,
-        textResponse: "",
-      } as Answer
-    } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
-      answer.value = {
-        questionId: q.id,
-        optionSelections: new Array(q.choiceLabels!.length).fill(false),
-      } as Answer
-    } else {
-      answer.value = {
-        questionId: q.id,
-      } as Answer
+const requireText = (val: string | undefined | null) =>
+  (typeof val === "string" && val.trim().length > 0) || "This field is required"
+
+const requireOptionSelection = (selections: boolean[] | undefined | null) => {
+  const arr = Array.isArray(selections) ? selections : []
+  return arr.some(Boolean) || "Select at least one option"
+}
+
+watch(
+  () => props.question,
+  (q) => {
+    if (!answer.value.questionId) {
+      if (q.type === QuestionType.OPEN) {
+        answer.value = {
+          questionId: q.id,
+          textResponse: "",
+        } as Answer
+      } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
+        answer.value = {
+          questionId: q.id,
+          optionSelections: new Array(q.choiceLabels!.length).fill(false),
+        } as Answer
+      } else {
+        answer.value = {
+          questionId: q.id,
+        } as Answer
+      }
     }
-  }
-}, {immediate: true})
+  },
+  {immediate: true},
+)
 </script>
 
 <style lang="scss" scoped>

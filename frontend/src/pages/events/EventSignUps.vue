@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {
@@ -15,7 +15,6 @@ import {
 } from "@/services/api"
 
 const event = ref<Event>()
-const eventSignUps = ref<EventSignUp[]>([])
 
 export type Response = {
   answers: Map<number, Answer>,
@@ -33,10 +32,7 @@ onMounted(async () => {
       findEventSignUpsByEventId({path: {eventId}}),
     ])
 
-    eventSignUps.value = signupsResp.data ?? []
-    event.value = (eventResp.data ?? {}) as Event
-
-    responses.value = eventSignUps.value.map((es: EventSignUp) => {
+    responses.value = (signupsResp.data ?? []).map((es: EventSignUp) => {
       const answers: Map<number, Answer> = new Map()
       es.answers?.forEach((answer: Answer) => {
         answers.set(answer.questionId, answer)
@@ -47,6 +43,7 @@ onMounted(async () => {
         person: (es.guest ?? es.user)! as PersonalInfo,
       } as Response
     })
+    event.value = (eventResp.data ?? {}) as Event
   } catch (err) {
     console.error(err)
   }
@@ -203,7 +200,7 @@ function totalForQuestion(question: Question): number[] | undefined {
                       {{ response.person.fullName }}
                     </td>
                     <td
-                      v-for="(selection, idx) in response.answers.get(question.id).optionSelections"
+                      v-for="(selection, idx) in response.answers.get(question.id)?.optionSelections ?? []"
                       :key="idx"
                       class="text-center check-cell"
                     >
@@ -287,7 +284,7 @@ function totalForQuestion(question: Question): number[] | undefined {
                       {{ response.person.fullName }}
                     </td>
                     <td
-                      v-for="(selection, idx) in response.answers.get(question.id).optionSelections"
+                      v-for="(selection, idx) in response.answers.get(question.id)?.optionSelections ?? []"
                       :key="idx"
                       class="text-center check-cell"
                     >

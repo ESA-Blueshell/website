@@ -15,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.util.Set;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -25,25 +23,17 @@ public class QuestionEventListener {
     private final AnswerService answers;
     private final EventSignUpService signUps;
 
-    private boolean relevantChanges(Set<String> changes) {
-        return changes.contains("choiceLabels") || changes.contains("label") || changes.contains("type");
-    }
-
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onPersist(PostPersistEvent<Question> evt) {
         var q = evt.getSource();
-        var changes = evt.getChangedProperties();
 
-        log.info("On persist question {}", q);
+        log.info("On persist question {}", q.getId());
 
         // If a new description is added, there is no need to clear the survey.
         // If a new question is added, then we do need to wipe the answers and signups.
         // This is because the surveys will need to be filled in again.
-        if (q.getType() != QuestionType.DESCRIPTION
-                && q.getSurveyId() != null
-                && relevantChanges(changes)
-        ) {
+        if (q.getType() != QuestionType.DESCRIPTION && q.getSurveyId() != null) {
             signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()));
         }
     }
@@ -52,17 +42,11 @@ public class QuestionEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onUpdate(PostUpdateEvent<Question> evt) {
         var q = evt.getSource();
-        var changes = evt.getChangedProperties();
-
-        log.info("On update question {}", q);
-        log.info("On update changed properties {}", changes);
 
         // When a question is updated, the survey will need to be re-filled.
         // Therefore, all answers for the survey need to be wiped.
-        if (q.getType() != QuestionType.DESCRIPTION
-                && q.getSurveyId() != null
-                && relevantChanges(changes)
-        ) {
+        log.info("Question update dirty fields: {}", q.getDirtyFields());
+        if (q.getAnswers() != null && !q.getAnswers().isEmpty() && q.isDirty()) {
             signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()));
         }
     }
@@ -72,8 +56,6 @@ public class QuestionEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDelete(PostRemoveEvent<Question> evt) {
         var q = evt.getSource();
-
-        log.info("On delete question {}", q);
 
         // If a question is just removed, without anything else being changed
         // There is no need to wipe all existing answers for the survey.

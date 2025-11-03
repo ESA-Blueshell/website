@@ -1,12 +1,9 @@
 package net.blueshell.api.model.survey;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.common.event.jpa.JpaListener;
+import net.blueshell.api.base.JpaListener;
 import net.blueshell.api.model.converter.BooleanListConverter;
 import net.blueshell.api.model.event.EventSignUpAnswer;
 import org.hibernate.annotations.SQLDelete;

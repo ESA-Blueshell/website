@@ -1,10 +1,7 @@
 package net.blueshell.api.model.board;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import net.blueshell.api.base.BaseModel;
 import net.blueshell.api.model.File;
 import net.blueshell.api.model.User;

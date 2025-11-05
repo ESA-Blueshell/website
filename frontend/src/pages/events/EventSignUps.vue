@@ -64,13 +64,16 @@ function totalForQuestion(question: Question): number[] | undefined {
     responses.value.forEach((r: Response) => {
       const selections: boolean[] = r.answers.get(question.id!)?.optionSelections ?? []
       for (let i = 0; i < numOptions; i++) {
-        if (selections[i]) counts[i] += 1
+        if (selections[i]) {
+          counts[i] = (counts[i] ?? 0) + 1
+        }
       }
     })
 
     return counts
   }
 }
+
 </script>
 
 <template>

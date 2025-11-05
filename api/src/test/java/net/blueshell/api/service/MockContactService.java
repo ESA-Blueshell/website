@@ -16,6 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Test double for ContactService; models an in-memory contact store and list membership.
+ */
 @Slf4j
 @Service
 @Primary
@@ -34,9 +37,6 @@ public class MockContactService extends ContactService {
         super(mapper, users);
     }
 
-    /**
-     * Does NOT call Brevo. If we already "know" this email, populate the user's contactId.
-     */
     @Override
     public void getUpdate(User user) {
         if (user.getContactId() != null) return;
@@ -49,9 +49,6 @@ public class MockContactService extends ContactService {
         }
     }
 
-    /**
-     * Does NOT call Brevo. If the user has no contactId, we generate one; otherwise act as a no-op update.
-     */
     @Override
     public void sync(User user) {
         getUpdate(user);
@@ -65,9 +62,6 @@ public class MockContactService extends ContactService {
         }
     }
 
-    /**
-     * Does NOT call Brevo. Returns existing listId or creates a new one and tracks it in-memory.
-     */
     @Override
     public Long createList(ContributionPeriod contributionPeriod) throws RestClientResponseException {
         Long listId = contributionPeriod.getListId();
@@ -79,9 +73,6 @@ public class MockContactService extends ContactService {
         return listId;
     }
 
-    /**
-     * Does NOT call Brevo. Ensures the user has a contactId, then adds it to the in-memory list membership.
-     */
     @Override
     public void addToList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
         if (user.getContactId() == null) {
@@ -96,9 +87,6 @@ public class MockContactService extends ContactService {
         log.info("[brevo-mock] added contactId={} to listId={}", user.getContactId(), listId);
     }
 
-    /**
-     * Does NOT call Brevo. Removes the user's contactId from the in-memory list membership if present.
-     */
     @Override
     public void removeFromList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
         Long listId = contributionPeriod.getListId();
@@ -110,9 +98,6 @@ public class MockContactService extends ContactService {
         log.info("[brevo-mock] removed contactId={} from listId={}", user.getContactId(), listId);
     }
 
-    /**
-     * Expose read-only views for assertions in tests.
-     */
     public Map<String, Long> getEmailToContactId() {
         return Collections.unmodifiableMap(emailToContactId);
     }

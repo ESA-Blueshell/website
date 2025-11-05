@@ -7,6 +7,7 @@ import net.blueshell.api.model.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.EnumSet;
 import java.util.Random;
@@ -46,7 +47,7 @@ public class UserFactory {
         user.setAddress(addressFactory.createBasic());
         user.setPhoneNumber(faker.phoneNumber().phoneNumber());
         user.setStudentNumber(String.valueOf(faker.number().numberBetween(1000000, 9999999)));
-        user.setDateOfBirth(LocalDate.now().minusYears(faker.number().numberBetween(18, 30)));
+        user.setDateOfBirth(Date.valueOf(LocalDate.now().minusYears(faker.number().numberBetween(18, 30))));
         user.setDiscord(faker.name().username() + "#" + faker.number().numberBetween(1000, 9999));
         user.setSteamid(String.valueOf(faker.number().randomNumber(17, true)));
         user.setConsentPrivacy(true);
@@ -82,11 +83,17 @@ public class UserFactory {
         });
     }
 
-    public User createAdmin() { return createWithRole(Role.ADMIN); }
+    public User createAdmin() {
+        return createWithRole(Role.ADMIN);
+    }
 
-    public User createBoardMember() { return createWithRole(Role.BOARD); }
+    public User createBoardMember() {
+        return createWithRole(Role.BOARD);
+    }
 
-    public User createCommitteeMember() { return createWithRole(Role.COMMITTEE); }
+    public User createCommitteeMember() {
+        return createWithRole(Role.COMMITTEE);
+    }
 
     private Long generateId() {
         return counter.incrementAndGet();

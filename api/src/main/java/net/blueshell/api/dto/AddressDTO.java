@@ -1,6 +1,7 @@
 package net.blueshell.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,21 +16,19 @@ import java.time.Instant;
 public class AddressDTO extends BaseDTO {
     private Long id;
 
-    @NotNull
+    @NotEmpty
     @ValidCountryCode
     private String country;
 
-    @NotNull
+    @NotEmpty
     private String city;
 
-    @NotNull
+    @NotEmpty
     private String street;
 
-    @NotNull
+    @NotEmpty
     private String houseNumber;
 
-    @NotNull
+    @NotEmpty
     private String zipCode;
-
-    private Instant createdAt;
 }

@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import java.util.Locale;
 
-public class CountryCodeValidatorImpl implements ConstraintValidator<ValidCountryCode, String> {
+public class CountryCodeValidator implements ConstraintValidator<ValidCountryCode, String> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {

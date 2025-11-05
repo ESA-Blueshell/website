@@ -23,7 +23,8 @@ public class NoExistingMembershipForUserIdValidator implements ConstraintValidat
 
     @Override
     public boolean isValid(Long userId, ConstraintValidatorContext context) {
-        log.warn("Should be called!!!!!!!!!");
+        if (userId == null) return true;
+
         return !members.existsByUserId(userId);
     }
 }

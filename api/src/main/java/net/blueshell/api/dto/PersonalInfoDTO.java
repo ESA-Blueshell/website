@@ -1,6 +1,7 @@
 package net.blueshell.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -11,6 +12,7 @@ import net.blueshell.api.validation.user.ValidMobilePhoneNumber;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "PersonalInfo")
+@MappedSuperclass
 public class PersonalInfoDTO extends BaseDTO {
     @NotBlank
     private String discord;

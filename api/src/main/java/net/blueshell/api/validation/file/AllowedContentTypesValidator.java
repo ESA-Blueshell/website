@@ -16,7 +16,7 @@ public class AllowedContentTypesValidator implements ConstraintValidator<Allowed
     @Override
     public void initialize(AllowedContentTypes constraintAnnotation) {
         this.allowed = Arrays.stream(constraintAnnotation.value())
-                .map(MediaType::parseMediaType) // supports wildcards like image/*
+                .map(MediaType::parseMediaType)
                 .collect(Collectors.toList());
     }
 
@@ -29,12 +29,14 @@ public class AllowedContentTypesValidator implements ConstraintValidator<Allowed
 
         String ct = file.getContentType();
         if (ct == null || ct.isBlank()) {
-            return false; // no content type -> reject (adjust if you want to allow "*/*")
+            return false;
         }
 
-        MediaType actual = MediaType.parseMediaType(ct);
-        // Accept if any allowed type includes/compatible with the actual type
-        return allowed.stream().anyMatch(a -> a.includes(actual) || a.isCompatibleWith(actual));
+        try {
+            MediaType actual = MediaType.parseMediaType(ct);
+            return allowed.stream().anyMatch(a -> a.includes(actual));
+        } catch (IllegalArgumentException e) {
+            return false; // Invalid media type format
+        }
     }
 }
-

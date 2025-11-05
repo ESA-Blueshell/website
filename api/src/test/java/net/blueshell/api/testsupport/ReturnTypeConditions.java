@@ -7,20 +7,21 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
+/**
+ * ArchUnit conditions for matching method return types (incl. generic erasures).
+ */
 public final class ReturnTypeConditions {
 
     private ReturnTypeConditions() {
     }
 
-    /**
-     * Existing: passes if the return type matches the predicate
-     */
+    /** Passes if the return type matches the predicate. */
     public static ArchCondition<JavaMethod> haveReturnType(DescribedPredicate<? super JavaType> predicate) {
         String desc = "have return type %s".formatted(predicate.getDescription());
         return new ArchCondition<>(desc) {
             @Override
             public void check(JavaMethod method, ConditionEvents events) {
-                JavaType actual = method.getReturnType(); // includes generics
+                JavaType actual = method.getReturnType();
                 boolean ok = predicate.test(actual);
                 if (!ok) {
                     String message = "Method <%s> has return type <%s> which does not %s"
@@ -31,15 +32,13 @@ public final class ReturnTypeConditions {
         };
     }
 
-    /**
-     * New: passes if the return type does NOT match the predicate
-     */
+    /** Passes if the return type does NOT match the predicate. */
     public static ArchCondition<JavaMethod> notHaveReturnType(DescribedPredicate<? super JavaType> predicate) {
         String desc = "not have return type %s".formatted(predicate.getDescription());
         return new ArchCondition<>(desc) {
             @Override
             public void check(JavaMethod method, ConditionEvents events) {
-                JavaType actual = method.getReturnType(); // includes generics
+                JavaType actual = method.getReturnType();
                 boolean matches = predicate.test(actual);
                 if (matches) {
                     String message = "Method <%s> has return type <%s> which unexpectedly %s"

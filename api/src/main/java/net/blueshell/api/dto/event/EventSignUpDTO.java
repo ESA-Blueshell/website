@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import net.blueshell.api.base.BaseDTO;
 import net.blueshell.api.dto.GuestDTO;
 import net.blueshell.api.dto.survey.AnswerDTO;
@@ -19,6 +20,7 @@ import java.util.List;
 @Schema(name = "EventSignUp")
 @ValidEventSignUp
 @GuestOrUserRequired
+@NoArgsConstructor
 public class EventSignUpDTO extends BaseDTO {
     private Long id;
     @NotNull

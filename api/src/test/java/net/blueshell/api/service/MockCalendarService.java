@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.event.Event;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,18 +14,32 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Test double for CalendarService: in-memory store with stable IDs.
+ */
 @Slf4j
 @Service
 @Primary
 public class MockCalendarService extends CalendarService {
 
     private final AtomicLong seq = new AtomicLong(1_000_000L);
-
     private final Map<String, Event> eventsById = new ConcurrentHashMap<>();
 
     @Getter
     private final Map<String, Event> readOnlyEvents =
             Collections.unmodifiableMap(eventsById);
+
+    private static Event copyOf(Event src) {
+        Event e = new Event();
+        e.setId(src.getId());
+        e.setTitle(src.getTitle());
+        e.setLocation(src.getLocation());
+        e.setDescription(src.getDescription());
+        e.setStartTime(src.getStartTime());
+        e.setEndTime(src.getEndTime());
+        e.setGoogleId(src.getGoogleId());
+        return e;
+    }
 
     @Override
     public void add(@NotNull Event event) throws IOException {
@@ -87,17 +100,5 @@ public class MockCalendarService extends CalendarService {
                             !s.isBefore(startInclusive) && e.isBefore(endExclusive);
                 })
                 .collect(java.util.stream.Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    private static Event copyOf(Event src) {
-        Event e = new Event();
-        e.setId(src.getId());
-        e.setTitle(src.getTitle());
-        e.setLocation(src.getLocation());
-        e.setDescription(src.getDescription());
-        e.setStartTime(src.getStartTime());
-        e.setEndTime(src.getEndTime());
-        e.setGoogleId(src.getGoogleId());
-        return e;
     }
 }

@@ -29,4 +29,3 @@ public class FileSizeValidator implements ConstraintValidator<FileSize, Multipar
         return size >= min && size <= max;
     }
 }
-

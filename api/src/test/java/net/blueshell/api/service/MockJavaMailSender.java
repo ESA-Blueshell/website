@@ -22,12 +22,16 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Test double for JavaMailSender capturing outbox for assertions.
+ */
 @Slf4j
 @Component
 @Primary
 public class MockJavaMailSender implements JavaMailSender {
 
     private final Session session = Session.getInstance(new Properties());
+
     @Getter
     private final List<MimeMessage> outbox = new CopyOnWriteArrayList<>();
 
@@ -67,7 +71,7 @@ public class MockJavaMailSender implements JavaMailSender {
 
     @Override
     public void send(@NotNull MimeMessage mimeMessage) throws MailException {
-        outbox.add(cloneMessage(mimeMessage)); // keep a safe copy
+        outbox.add(cloneMessage(mimeMessage));
         log.info("[mail-mock] captured email: subject='{}' to={}", safeSubject(mimeMessage), safeRecipients(mimeMessage));
     }
 
@@ -92,16 +96,14 @@ public class MockJavaMailSender implements JavaMailSender {
         for (MimeMessagePreparator p : mimeMessagePreparators) send(p);
     }
 
-    /**
-     * Clear outbox between tests.
-     */
+    /** Clear outbox between tests. */
     public void clear() {
         outbox.clear();
     }
 
     private MimeMessage cloneMessage(MimeMessage original) {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            original.saveChanges();          // ensure Message-ID etc.
+            original.saveChanges();
             original.writeTo(bos);
             try (ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray())) {
                 return new MimeMessage(session, bis);
@@ -113,7 +115,6 @@ public class MockJavaMailSender implements JavaMailSender {
 
     @Override
     public void send(@NotNull SimpleMailMessage simpleMessage) throws MailException {
-        // store a defensive copy (SimpleMailMessage has a copy constructor)
         simpleOutbox.add(new SimpleMailMessage(simpleMessage));
         log.info("[mail-mock] captured simple email: subject='{}' to={}",
                 simpleMessage.getSubject(),

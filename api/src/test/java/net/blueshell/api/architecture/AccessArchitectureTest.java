@@ -4,18 +4,18 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import net.blueshell.api.testsupport.DoNotIncludeFactory;
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
- * Ensures that only service-layer classes may depend on repository-layer classes.
- * Scans application classes (tests excluded).
+ * ArchUnit: access restrictions between common app layers.
  */
 @AnalyzeClasses(
         packages = "net.blueshell.api",
-        importOptions = {ImportOption.DoNotIncludeTests.class, DoNotIncludeTestSupport.class}
+        importOptions = {ImportOption.DoNotIncludeTests.class, DoNotIncludeTestSupport.class, DoNotIncludeFactory.class}
 )
 public class AccessArchitectureTest {
 
@@ -29,7 +29,6 @@ public class AccessArchitectureTest {
     private static final String JPA_LISTENER = "net.blueshell.api.listener.jpa..";
     private static final String JOB = "net.blueshell.api.job..";
     private static final String REPOSITORY = "net.blueshell.api.repository..";
-    private static final String VALIDATION = "net.blueshell.api.validation..";
 
     @ArchTest
     public final ArchRule dtoOnlyAccessedAtApiBorder = classes()
@@ -44,7 +43,7 @@ public class AccessArchitectureTest {
     @ArchTest
     public final ArchRule repositoryOnlyAccessedByServicesAndValidation = classes()
             .that().resideInAnyPackage(REPOSITORY)
-            .should().onlyBeAccessed().byAnyPackage(SERVICE, REPOSITORY, VALIDATION);
+            .should().onlyBeAccessed().byAnyPackage(SERVICE, REPOSITORY, VALIDATOR);
 
     @ArchTest
     public final ArchRule jobsOnlyAccessedFromListeners = classes()

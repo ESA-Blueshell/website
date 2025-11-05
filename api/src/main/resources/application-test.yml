@@ -2,6 +2,9 @@ spring:
   application:
     db: blueshell-test
 
+  main:
+    banner-mode: off
+    log-startup-info: false
 
   jpa:
     show-sql: false
@@ -13,17 +16,44 @@ spring:
 
   devtools:
     restart:
-      enabled: true
+      enabled: false
     livereload:
-      enabled: true
+      enabled: false
 
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
 
 logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
   level:
-    org.springframework: DEBUG
-    org.hibernate: INFO
-    com.zaxxer.hikari: DEBUG
-    org.flywaydb: DEBUG
+    root: INFO
+
+    net.blueshell: INFO
+    net.blueshell.api: DEBUG
+
+    org.springframework: WARN
+    org.springframework.web: WARN
+    org.springframework.boot.autoconfigure: WARN
+    org.springframework.jdbc: WARN
+    org.springframework.security: WARN
+
+    # Server (Tomcat/Undertow/Jetty)
+    org.apache.catalina: WARN
+    org.apache.coyote: WARN
+    org.apache.tomcat: WARN
+
+    # DB / ORM
+    org.hibernate: WARN
+    org.hibernate.SQL: OFF
+    org.hibernate.type.descriptor.sql: OFF
+    org.hibernate.type.descriptor.jdbc: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    com.zaxxer.hikari: WARN
+    org.flywaydb: WARN
+
+    # If you use Testcontainers
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN

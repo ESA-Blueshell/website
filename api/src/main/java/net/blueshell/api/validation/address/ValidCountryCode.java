@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({FIELD, PARAMETER})
 @Retention(RUNTIME)
 @Documented
-@Constraint(validatedBy = CountryCodeValidatorImpl.class)
+@Constraint(validatedBy = CountryCodeValidator.class)
 public @interface ValidCountryCode {
     String message() default "Country must be a valid ISO 3166-1 alpha-2 code";
 

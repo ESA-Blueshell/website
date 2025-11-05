@@ -32,7 +32,7 @@ public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService
         if (authentication == null || accessToken == null || permission == null) {
             return false;
         }
-        Guest guest = service.findByAccessToken((String) accessToken);
-        return guest != null && hasPermission(authentication, guest, permission);
+        var guest = service.findByAccessToken((String) accessToken);
+        return guest.isPresent() && hasPermission(authentication, guest.get(), permission);
     }
 }

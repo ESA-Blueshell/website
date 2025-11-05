@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,12 +28,12 @@ public class ValidationProblemDetailsAdvice {
         pd.setInstance(URI.create(request.getRequestURI()));
 
         List<Map<String, Object>> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> Map.of(
-                        "objectName", fe.getObjectName(),
-                        "field", fe.getField(),
-                        "rejectedValue", fe.getRejectedValue(),
-                        "message", fe.getDefaultMessage(),
-                        "code", fe.getCode()
+                .map(fe -> errorMap(
+                        fe.getObjectName(),
+                        fe.getField(),
+                        fe.getRejectedValue(),
+                        fe.getDefaultMessage(),
+                        fe.getCode()
                 ))
                 .toList();
 
@@ -50,12 +51,12 @@ public class ValidationProblemDetailsAdvice {
         pd.setInstance(URI.create(request.getRequestURI()));
 
         List<Map<String, Object>> errors = ex.getConstraintViolations().stream()
-                .map(cv -> Map.of(
-                        "objectName", cv.getRootBeanClass().getSimpleName(),
-                        "field", cv.getPropertyPath().toString(),
-                        "rejectedValue", cv.getInvalidValue(),
-                        "message", cv.getMessage(),
-                        "code", cv.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName()
+                .map(cv -> errorMap(
+                        cv.getRootBeanClass().getSimpleName(),
+                        cv.getPropertyPath().toString(),
+                        cv.getInvalidValue(),
+                        cv.getMessage(),
+                        cv.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName()
                 ))
                 .toList();
 
@@ -65,5 +66,22 @@ public class ValidationProblemDetailsAdvice {
 
         return pd;
     }
-}
 
+    /**
+     * Builds a Map that mirrors the previous Map.of(...) structure but allows null values.
+     * Uses LinkedHashMap to preserve key insertion order.
+     */
+    private static Map<String, Object> errorMap(String objectName,
+                                                String field,
+                                                Object rejectedValue,
+                                                String message,
+                                                String code) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("objectName", objectName);
+        m.put("field", field);
+        m.put("rejectedValue", rejectedValue);
+        m.put("message", message);
+        m.put("code", code);
+        return m;
+    }
+}

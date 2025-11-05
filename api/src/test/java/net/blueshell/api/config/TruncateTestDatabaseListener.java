@@ -12,12 +12,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Test listener that truncates all test-schema tables between tests (excluding Flyway history).
+ * Hard guards against accidental non-test schema truncation.
+ */
 public class TruncateTestDatabaseListener implements TestExecutionListener {
 
-    // Adjust if your exact schema name differs (keep backticks in SQL below if it contains a hyphen)
     private static final String TEST_SCHEMA = "blueshell-test";
-
-    // Flyway table names across versions
     private static final String FLYWAY_V5_TABLE = "flyway_schema_history";
     private static final String FLYWAY_V3_TABLE = "schema_version";
 
@@ -30,7 +31,6 @@ public class TruncateTestDatabaseListener implements TestExecutionListener {
 
             conn.setAutoCommit(true);
 
-            // Safety guard: refuse to run unless we're connected to the test schema
             String currentDb;
             try (ResultSet rs = st.executeQuery("SELECT DATABASE()")) {
                 rs.next();
@@ -42,7 +42,6 @@ public class TruncateTestDatabaseListener implements TestExecutionListener {
                                 "', expected '" + TEST_SCHEMA + "'.");
             }
 
-            // Fetch all base tables in the test schema except Flyway's
             List<String> tables = new ArrayList<>();
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT TABLE_NAME " +
@@ -59,10 +58,8 @@ public class TruncateTestDatabaseListener implements TestExecutionListener {
                 }
             }
 
-            // Disable FK checks, truncate each table, re-enable FK checks
             st.execute("SET FOREIGN_KEY_CHECKS = 0");
             for (String table : tables) {
-                // Qualify with schema so we only ever touch the test DB
                 st.execute("TRUNCATE TABLE `" + TEST_SCHEMA + "`.`" + table + "`");
             }
             st.execute("SET FOREIGN_KEY_CHECKS = 1");

@@ -37,7 +37,7 @@ const model = defineModel<T>()
     v-slot="{ value, errors, handleChange, handleBlur }"
     v-model="model"
     :name="name"
-    :rules="rules"
+    :rules="disabled ? undefined : rules"
   >
     <component
       :is="component"

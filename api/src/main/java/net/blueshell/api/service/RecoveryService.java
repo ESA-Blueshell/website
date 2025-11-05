@@ -53,7 +53,6 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
     public void onUserCreated(PostPersistEvent<User> event) {
         String rawToken;
         var user = event.getSource();
-        log.info("User {} roles {}", user, user.getRoles());
         if (hasAuthority(Role.BOARD)) {
             rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
             eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));
@@ -181,7 +180,8 @@ public class RecoveryService extends BaseModelService<RecoveryToken, RecoveryTok
         var recoveryTokens = repository.findAllByUser_IdAndConsumedAtIsNull(userId);
         if (recoveryTokens.stream().anyMatch(r -> r.getType().equals(ResetType.MEMBER_ACTIVATION))) {
             var rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7));
-            eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));
+            eventPublisher.publishEvent(
+                    new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));
         } else if (recoveryTokens.stream().anyMatch(r -> r.getType().equals(ResetType.USER_ACTIVATION))) {
             var rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1));
             eventPublisher.publishEvent(new RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION));

@@ -20,31 +20,24 @@ import net.blueshell.api.validation.user.UniqueUser;
 @UniqueUser(groups = {Update.class, Creation.class, Administration.class})
 public class SimpleUserDTO extends PersonalInfoDTO {
 
-    @JsonProperty
     private Long id;
 
     private String fullName;
 
-    @JsonProperty
     @NotBlank
     private String initials;
 
-    @JsonProperty
     @NotBlank
     private String firstName;
 
-    @JsonProperty
     private String prefix;
 
-    @JsonProperty
     @NotBlank
     private String lastName;
 
-    @JsonProperty
     @NotBlank
     private String username;
 
-    @JsonProperty
     @NotNull
     private boolean newsletter;
 
@@ -55,6 +48,5 @@ public class SimpleUserDTO extends PersonalInfoDTO {
             message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
             groups = {Creation.class}
     )
-    @JsonProperty
     private String password;
 }

@@ -14,11 +14,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(
@@ -95,7 +93,7 @@ public class User extends BaseModel implements UserDetails {
 
     @Column(name = "date_of_birth")
     @ToString.Include
-    private LocalDate dateOfBirth;
+    private Date dateOfBirth;
 
     @Column
     @ToString.Include

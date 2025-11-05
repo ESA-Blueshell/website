@@ -14,11 +14,11 @@ import java.util.function.BiConsumer;
 @Component
 public class UniqueUserValidator implements ConstraintValidator<UniqueUser, SimpleUserDTO> {
 
-    private final UserRepository userRepository;
+    private final UserRepository users;
 
     @Autowired
-    public UniqueUserValidator(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UniqueUserValidator(UserRepository users) {
+        this.users = users;
     }
 
     @Override
@@ -26,7 +26,7 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Simp
         if (dto == null) return true;
 
         boolean isValid = true;
-        Long currentUserId = dto.getId();
+        var currentUserId = dto.getId();
 
         BiConsumer<String, String> addViolation = (property, message) -> {
             context.disableDefaultConstraintViolation();
@@ -37,8 +37,8 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Simp
 
         if (StringUtils.hasText(dto.getUsername())) {
             boolean taken = (currentUserId == null)
-                    ? userRepository.existsByUsername(dto.getUsername())
-                    : userRepository.existsByUsernameAndIdNot(dto.getUsername(), currentUserId);
+                    ? users.existsByUsername(dto.getUsername())
+                    : users.existsByUsernameAndIdNot(dto.getUsername(), currentUserId);
             if (taken) {
                 isValid = false;
                 addViolation.accept("username", "Username is taken.");
@@ -47,8 +47,8 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Simp
 
         if (StringUtils.hasText(dto.getEmail())) {
             boolean taken = (currentUserId == null)
-                    ? userRepository.existsByEmail(dto.getEmail())
-                    : userRepository.existsByEmailAndIdNot(dto.getEmail(), currentUserId);
+                    ? users.existsByEmail(dto.getEmail())
+                    : users.existsByEmailAndIdNot(dto.getEmail(), currentUserId);
             if (taken) {
                 isValid = false;
                 addViolation.accept("email", "Email is taken.");
@@ -57,8 +57,8 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Simp
 
         if (StringUtils.hasText(dto.getDiscord())) {
             boolean taken = (currentUserId == null)
-                    ? userRepository.existsByDiscord(dto.getDiscord())
-                    : userRepository.existsByDiscordAndIdNot(dto.getDiscord(), currentUserId);
+                    ? users.existsByDiscord(dto.getDiscord())
+                    : users.existsByDiscordAndIdNot(dto.getDiscord(), currentUserId);
             if (taken) {
                 isValid = false;
                 addViolation.accept("discord", "Discord is taken.");
@@ -67,8 +67,8 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, Simp
 
         if (dto instanceof AdvancedUserDTO adv && StringUtils.hasText(adv.getPhoneNumber())) {
             boolean taken = (currentUserId == null)
-                    ? userRepository.existsByPhoneNumber(adv.getPhoneNumber())
-                    : userRepository.existsByPhoneNumberAndIdNot(adv.getPhoneNumber(), currentUserId);
+                    ? users.existsByPhoneNumber(adv.getPhoneNumber())
+                    : users.existsByPhoneNumberAndIdNot(adv.getPhoneNumber(), currentUserId);
             if (taken) {
                 isValid = false;
                 addViolation.accept("phoneNumber", "Phone number is taken.");

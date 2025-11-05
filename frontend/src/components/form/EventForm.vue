@@ -101,7 +101,10 @@
             rules="required"
             :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
             :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
-            :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date: String(date), dateTime: event.startTime }))"
+            :update="(date: string, handle: HandleChange<string>) => {
+              handle(toISO({ date, dateTime: event.startTime }))
+              setEndDate(date)
+            }"
           />
         </v-col>
         <v-col>
@@ -339,13 +342,11 @@ defineRule("fileSize", (value: File | File[] | null) => {
   return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
 })
 
-// Keep end-date equal to start date while toggle is on
-watch([() => event.value.startTime, () => event.value.endTime, sameEndDate], () => {
+const setEndDate = function (date: string) {
   if (!sameEndDate.value) return
-  const end = DateTime.fromISO(event.value.endTime)
-  const time = end.isValid ? end.toFormat("HH:mm") : "00:00"
-  event.value.endTime = toISO({time, dateTime: event.value.startTime})
-})
+  const time = DateTime.fromISO(event.value.endTime).toFormat("HH:mm")
+  event.value.endTime = toISO({time, date})
+}
 
 watch(() => event.value.signUp, (on) => {
   if (!on) {

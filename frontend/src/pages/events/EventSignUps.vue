@@ -49,47 +49,28 @@ onMounted(async () => {
   }
 })
 
-const allQuestions = computed<Question[]>(() => {
+const sortedQuestions = computed<Question[]>(() => {
   const sf: Survey | undefined = event.value?.signUpForm
-  if (!sf) return []
-  return sf.questions
+  if (!sf?.questions?.length) return []
+  return sf.questions.sort((a: Question, b: Question) => a.idx - b.idx)
 })
-
-const checkboxQuestions = computed<Question[]>(() =>
-  allQuestions.value.filter(q => q.type === QuestionType.CHECKBOX),
-)
-
-const radioQuestions = computed<Question[]>(() =>
-  allQuestions.value.filter(q => q.type === QuestionType.RADIO),
-)
-
-const openQuestions = computed<Question[]>(() =>
-  allQuestions.value.filter(q => q.type === QuestionType.OPEN),
-)
 
 function totalForQuestion(question: Question): number[] | undefined {
   if (!question) return
-
-  const answers: Answer[] = responses.value.flatMap((r: Response) =>
-    Array.from(r.answers.values())
-      .filter((a: Answer) => a.questionId === question.id),
-  )
-
   if (question.type === QuestionType.CHECKBOX || question.type === QuestionType.RADIO) {
-    const selections: boolean[][] = answers.map(a => a.optionSelections ?? [])
-    const maxOptions = Math.max(...selections.map(arr => arr.length), 0)
-    const counts = new Array(maxOptions).fill(0)
+    const numOptions = question.choiceLabels?.length ?? 0
+    const counts = Array.from({length: numOptions}, () => 0)
 
-    selections.forEach(arr => {
-      arr.forEach((val, i) => {
-        if (val) counts[i] += 1
-      })
+    responses.value.forEach((r: Response) => {
+      const selections: boolean[] = r.answers.get(question.id!)?.optionSelections ?? []
+      for (let i = 0; i < numOptions; i++) {
+        if (selections[i]) counts[i] += 1
+      }
     })
 
     return counts
   }
 }
-
 </script>
 
 <template>
@@ -112,9 +93,7 @@ function totalForQuestion(question: Question): number[] | undefined {
             >
               <thead>
                 <tr>
-                  <th
-                    class="w-1/10"
-                  >
+                  <th class="w-1/10">
                     #
                   </th>
                   <th class="w-3/10">
@@ -153,220 +132,111 @@ function totalForQuestion(question: Question): number[] | undefined {
           </v-card-text>
         </v-card>
 
-        <template v-if="radioQuestions.length">
-          <h2 class="text-h5">
-            Multiple choice questions
-          </h2>
-          <v-divider class="mt-1 mb-3" />
-
-          <v-card
-            v-for="question in radioQuestions"
-            :key="question.id!"
-            class="mb-8"
+        <v-card
+          v-for="question in sortedQuestions"
+          :key="question.id!"
+          class="mb-8"
+        >
+          <v-card-title
+            class="text-h6 text-wrap flex items-center gap-2"
+            style="word-break: break-word"
           >
-            <v-card-title
-              class="text-h6 text-wrap"
-              style="word-break: break-word"
+            <span>{{ question.idx + 1 }}. {{ question.label }}</span>
+          </v-card-title>
+
+          <v-card-text>
+            <!-- OPEN questions -->
+            <v-table
+              v-if="question.type === QuestionType.OPEN"
+              class="rounded-lg open-table"
+              density="comfortable"
             >
-              {{ question.label }}
-            </v-card-title>
+              <thead>
+                <tr>
+                  <th class="w-1/4">
+                    Name
+                  </th>
+                  <th>Answer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="response in responses"
+                  :key="question.id! + '-' + response.person.email"
+                >
+                  <td>{{ response.person.fullName }}</td>
+                  <td class="whitespace-pre-wrap">
+                    {{ response.answers.get(question.id!)?.textResponse }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
 
-            <v-card-text>
-              <v-table
-                class="rounded-lg radio-table"
-                density="comfortable"
-              >
-                <thead>
-                  <tr>
-                    <th class="sticky-col">
-                      Name
-                    </th>
-                    <th
-                      v-for="(opt, idx) in question.choiceLabels"
-                      :key="idx"
-                      class="text-center"
-                    >
-                      {{ opt }}
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr
-                    v-for="response in responses"
-                    :key="question.id! + '-' + response.person.email"
-                  >
-                    <td class="sticky-col">
-                      {{ response.person.fullName }}
-                    </td>
-                    <td
-                      v-for="(selection, idx) in response.answers.get(question.id)?.optionSelections ?? []"
-                      :key="idx"
-                      class="text-center check-cell"
-                    >
-                      <v-icon
-                        v-if="selection"
-                        icon="mdi-check-bold"
-                        size="18"
-                      />
-                      <v-icon
-                        v-else
-                        icon="mdi-close-thick"
-                        size="18"
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-
-                <tfoot>
-                  <tr>
-                    <td class="font-weight-bold sticky-col">
-                      Totals
-                    </td>
-                    <td
-                      v-for="(val, idx) in totalForQuestion(question)"
-                      :key="'t-' + idx"
-                      class="text-center font-weight-bold"
-                    >
-                      {{ val ?? 0 }}
-                    </td>
-                  </tr>
-                </tfoot>
-              </v-table>
-            </v-card-text>
-          </v-card>
-        </template>
-
-        <template v-if="checkboxQuestions.length">
-          <h2 class="text-h5">
-            Questions with checkboxes
-          </h2>
-          <v-divider class="mt-1 mb-3" />
-
-          <v-card
-            v-for="question in checkboxQuestions"
-            :key="question.id!"
-            class="mb-8"
-          >
-            <v-card-title
-              class="text-h6 text-wrap"
-              style="word-break: break-word"
+            <!-- Choice questions: RADIO or CHECKBOX -->
+            <v-table
+              v-else
+              class="rounded-lg radio-table"
+              density="comfortable"
             >
-              {{ question.label }}
-            </v-card-title>
-
-            <v-card-text>
-              <v-table
-                class="rounded-lg radio-table"
-                density="comfortable"
-              >
-                <thead>
-                  <tr>
-                    <th class="sticky-col">
-                      Name
-                    </th>
-                    <th
-                      v-for="(opt, idx) in question.choiceLabels"
-                      :key="idx"
-                      class="text-center"
-                    >
-                      {{ opt }}
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr
-                    v-for="response in responses"
-                    :key="question.id! + '-' + response.person.email"
+              <thead>
+                <tr>
+                  <th class="sticky-col">
+                    Name
+                  </th>
+                  <th
+                    v-for="(opt, idx) in (question.choiceLabels ?? [])"
+                    :key="idx"
+                    class="text-center"
                   >
-                    <td class="sticky-col">
-                      {{ response.person.fullName }}
-                    </td>
-                    <td
-                      v-for="(selection, idx) in response.answers.get(question.id)?.optionSelections ?? []"
-                      :key="idx"
-                      class="text-center check-cell"
-                    >
-                      <v-icon
-                        v-if="selection"
-                        icon="mdi-check-bold"
-                        size="18"
-                      />
-                      <v-icon
-                        v-else
-                        icon="mdi-close-thick"
-                        size="18"
-                      />
-                    </td>
-                  </tr>
-                </tbody>
+                    {{ opt }}
+                  </th>
+                </tr>
+              </thead>
 
-                <tfoot>
-                  <tr>
-                    <td class="font-weight-bold sticky-col">
-                      Totals
-                    </td>
-                    <td
-                      v-for="(val, idx) in totalForQuestion(question)"
-                      :key="'t-' + idx"
-                      class="text-center font-weight-bold"
-                    >
-                      {{ val ?? 0 }}
-                    </td>
-                  </tr>
-                </tfoot>
-              </v-table>
-            </v-card-text>
-          </v-card>
-        </template>
-
-        <template v-if="openQuestions.length">
-          <h2 class="text-h5">
-            Open questions
-          </h2>
-          <v-divider class="mt-1 mb-3" />
-
-          <v-card
-            v-for="question in openQuestions"
-            :key="question.id"
-            class="mb-8"
-          >
-            <v-card-title
-              class="text-h6 text-wrap"
-              style="word-break: break-word"
-            >
-              {{ question.label }}
-            </v-card-title>
-
-            <v-card-text>
-              <v-table
-                class="rounded-lg open-table"
-                density="comfortable"
-              >
-                <thead>
-                  <tr>
-                    <th class="w-1/4">
-                      Name
-                    </th>
-                    <th>Answer</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="response in responses"
-                    :key="question.id + '-' + response.person.email"
+              <tbody>
+                <tr
+                  v-for="response in responses"
+                  :key="question.id! + '-' + response.person.email"
+                >
+                  <td class="sticky-col">
+                    {{ response.person.fullName }}
+                  </td>
+                  <td
+                    v-for="(opt, idx) in (question.choiceLabels ?? [])"
+                    :key="idx"
+                    class="text-center check-cell"
                   >
-                    <td>{{ response.person.fullName }}</td>
-                    <td class="whitespace-pre-wrap">
-                      {{ response.answers.get(question.id)?.textResponse }}
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </v-card-text>
-          </v-card>
-        </template>
+                    <v-icon
+                      v-if="(response.answers.get(question.id!)?.optionSelections ?? [])[idx]"
+                      icon="mdi-check-bold"
+                      size="18"
+                    />
+                    <v-icon
+                      v-else
+                      icon="mdi-close-thick"
+                      size="18"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <td class="font-weight-bold sticky-col">
+                    Totals
+                  </td>
+                  <td
+                    v-for="(opt, idx) in (question.choiceLabels ?? [])"
+                    :key="'t-' + idx"
+                    class="text-center font-weight-bold"
+                  >
+                    {{ (totalForQuestion(question) ?? [])[idx] ?? 0 }}
+                  </td>
+                </tr>
+              </tfoot>
+            </v-table>
+          </v-card-text>
+        </v-card>
       </div>
     </div>
   </v-main>
@@ -397,7 +267,6 @@ function totalForQuestion(question: Question): number[] | undefined {
   white-space: pre-wrap;
 }
 
-/* Subtle zebra striping */
 tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.02);
 }

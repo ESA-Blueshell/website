@@ -53,9 +53,10 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
 
 
     @PostMapping(value = "/events/{eventId}/signups")
-    @PreAuthorize("#eventId == #dto.eventId && hasPermission(#eventId, 'Event', 'signUp')")
+    @PreAuthorize("#eventId == #dto.eventId && (hasAuthority('BOARD') or hasPermission(#eventId, 'Event', 'signUp'))")
     @ResponseStatus(HttpStatus.CREATED)
     public EventSignUpDTO createEventSignup(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventSignUpDTO dto) {
+        log.info("Get principal: {}", getPrincipal());
         if (getPrincipal() != null) {
             dto.setUserId(getPrincipal().getId());
         }
@@ -67,24 +68,31 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
         return mapper.toDTO(eventSignUp);
     }
 
-    @PutMapping(value = "/events/{eventId}/signups")
-    @PreAuthorize("hasPermission(#eventId, 'Event', 'signUp') or (accessToken != null and hasPermission(accessToken, 'Guest', 'delete'))")
-    public EventSignUpDTO updateEventSignUp(@PathVariable("eventId") Long eventId,
-                                            @Valid @RequestBody EventSignUpDTO dto,
-                                            @RequestParam(value = "accessToken", required = false) String accessToken) {
-        EventSignUp signUp;
-        if (accessToken == null) {
-            signUp = service.findByUserIdAndEventId(getPrincipal().getId(), eventId);
-        } else {
-            signUp = service.findByGuestAccessTokenAndEventId(accessToken, eventId);
-        }
+    @PutMapping("/events/{eventId}/signups")
+    @PreAuthorize("""
+            hasAuthority('BOARD')
+            or hasPermission(#eventId, 'Event', 'signUp')
+            or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))
+            """)
+    public EventSignUpDTO updateEventSignUp(
+            @PathVariable("eventId") Long eventId,
+            @Valid @RequestBody EventSignUpDTO dto,
+            @RequestParam(value = "accessToken", required = false) String accessToken) {
+        EventSignUp signUp = (accessToken == null)
+                ? service.findByUserIdAndEventId(getPrincipal().getId(), eventId)
+                : service.findByGuestAccessTokenAndEventId(accessToken, eventId);
         mapper.fromDTO(dto, signUp);
         signUp = service.update(signUp);
         return mapper.toDTO(signUp);
     }
 
+
     @DeleteMapping(value = "/events/signups/{eventSignupId}")
-    @PreAuthorize("hasPermission(#eventSignupId, 'EventSignUp', 'delete') or hasPermission(#accessToken, 'Guest', 'delete')")
+    @PreAuthorize("""
+            hasAuthority('BOARD')
+            or hasPermission(#eventSignupId, 'EventSignUp', 'delete')
+            or hasPermission(#accessToken, 'Guest', 'delete')
+            """)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEventSignup(@PathVariable("eventSignupId") Long eventSignupId,
                                   @RequestParam(value = "accessToken", required = false) String accessToken) {

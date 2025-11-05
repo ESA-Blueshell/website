@@ -87,6 +87,7 @@ public class SecurityConfig {
                                 "/users",
                                 "/users/guest"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/events/**",
                                 "/v3/api-docs**/**",

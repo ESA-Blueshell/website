@@ -72,7 +72,7 @@
             :disabled="isReadonly"
             label="E-mail*"
             name="email"
-            rules="required|email|noStudentEmail"
+            :rules="isReadOnly ? '' : 'required|email|noStudentEmail'"
           />
         </v-col>
         <v-col cols="6">

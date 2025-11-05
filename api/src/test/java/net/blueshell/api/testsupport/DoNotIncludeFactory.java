@@ -4,11 +4,11 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.core.importer.Location;
 
 /**
- * ArchUnit import option excluding test-support utilities from the application scan.
+ * ArchUnit import option excluding factories from the application scan.
  */
-public class DoNotIncludeTestSupport implements ImportOption {
+public class DoNotIncludeFactory implements ImportOption {
     @Override
     public boolean includes(Location location) {
-        return !location.contains("testsupport");
+        return !location.contains("factory");
     }
 }

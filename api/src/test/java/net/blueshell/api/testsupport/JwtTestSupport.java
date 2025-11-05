@@ -15,31 +15,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Super-class for tests that need an authenticated Bearer token.
- * Call {@link #adminToken()} once — the token is cached for the whole JVM
- * (fastest when you run many tests in the same Maven fork).
- * Typical usage :
- * <pre>{@code
- * class BlogControllerIT extends JwtTestSupport {
- *     @Test void securedCall() throws Exception {
- *         mockMvc.perform(get("/blogs").with(bearer()))
- *                .andExpect(status().isOk());
- *     }
- * }
- * }</pre>
+ * Base for tests that require an authenticated Bearer token.
+ * The admin token is lazily fetched and cached per-JVM to speed up suites.
  */
 @Component
 public abstract class JwtTestSupport {
 
-    /* lazily initialised, then reused */
     private static String cachedAdminToken;
+
     @Autowired
     protected MockMvc mvc;
+
     @Autowired
     protected ObjectMapper mapper;
 
     /**
-     * Obtain (and cache) a JWT for the seeded <i>admin/admin</i> account.
+     * Obtain (and cache) a JWT for the seeded admin/admin account.
      */
     protected String adminToken() throws Exception {
         if (cachedAdminToken != null) {
@@ -48,23 +39,21 @@ public abstract class JwtTestSupport {
 
         JwtRequest requestBody = new JwtRequest("admin", "admin");
 
-        MvcResult result =
-                mvc.perform(post("/auth")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsBytes(requestBody)))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.token").isNotEmpty())
-                        .andReturn();
+        MvcResult result = mvc.perform(post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andReturn();
 
         AuthenticationDTO response =
-                mapper.readValue(result.getResponse().getContentAsByteArray(),
-                        AuthenticationDTO.class);
+                mapper.readValue(result.getResponse().getContentAsByteArray(), AuthenticationDTO.class);
 
         return cachedAdminToken = response.getToken();
     }
 
     /**
-     * Convenience wrapper so you can write <code>.with(bearer())</code>.
+     * Convenience wrapper to apply Authorization: Bearer <token>.
      */
     protected RequestPostProcessor bearer() throws Exception {
         String token = adminToken();

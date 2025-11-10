@@ -62,6 +62,7 @@ const onCreateSubmitted = (ok: boolean) => {
   if (ok && createDraft.value) {
     emit("update:user", createDraft.value)
     expanded.value = 0
+    createDraft.value = undefined
   }
 }
 </script>

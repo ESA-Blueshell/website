@@ -73,10 +73,8 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
 
         if (hasAuthority(Role.BOARD)) {
             user.setPassword(passwordEncoder.encode(generateRandomString()));
-            user.setUsername("NOT_SET_" + generateRandomString()); // TODO remove once all accounts have been made
         } else {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
-            applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
         }
 
         applyRestrictedFields(dto, user);
@@ -97,5 +95,6 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
         applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
         applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
         applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
+        applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
     }
 }

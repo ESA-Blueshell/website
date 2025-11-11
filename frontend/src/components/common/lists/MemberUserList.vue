@@ -127,7 +127,6 @@ const onCreateSubmitted = (ok: boolean) => {
                   v-model="createDraft"
                   class="mt-4"
                   show-submit
-                  :show-username="false"
                   @submitted="onCreateSubmitted"
                   @update:expanded="toggleExpanded"
                 />

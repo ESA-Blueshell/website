@@ -493,17 +493,6 @@ const cardStyle = computed(() => {
   padding: 16px;
 }
 
-.top-right-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 4px;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 6px;
-  padding: 3px 4px;
-}
-
 .top-right-actions {
   display: flex;
   flex-direction: column;
@@ -511,8 +500,33 @@ const cardStyle = computed(() => {
   gap: 4px;
 }
 
+.top-right-header {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: stretch;
+  gap: 2px;
+
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 8px;
+  padding: 6px;
+  margin-right: 2px !important;
+
+  background-color: rgba(var(--v-theme-surface), 0.5);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border-color: rgba(var(--v-theme-accent), 0.6);
+}
+
 .committee-name {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  white-space: nowrap;
+  padding: 4px 2px;
   opacity: var(--v-medium-emphasis-opacity);
-  padding-inline-start: 10px;
 }
 </style>

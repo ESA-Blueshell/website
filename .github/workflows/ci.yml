@@ -279,7 +279,10 @@ jobs:
   deploy:
     name: Deploy
     needs: [ check-changes, api-build-push, fe-build-push ]
-    if: github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (needs.api-build-push.result == 'success' || needs.api-build-push.result == 'skipped') &&
+      (needs.fe-build-push.result == 'success' || needs.fe-build-push.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:

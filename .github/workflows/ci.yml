@@ -231,7 +231,7 @@ jobs:
         uses: ./.github/actions/setup-node-yarn
         with:
           node-version: '24'
-          yarn-version: '4.9.4'
+          yarn-version: '4.10.3'
       - run: yarn typecheck
       - run: yarn lint
 
@@ -279,10 +279,12 @@ jobs:
   deploy:
     name: Deploy
     needs: [ check-changes, api-build-push, fe-build-push ]
-    if: |
-      github.ref == 'refs/heads/main' &&
-      (needs.api-build-push.result == 'success' || needs.api-build-push.result == 'skipped') &&
-      (needs.fe-build-push.result == 'success' || needs.fe-build-push.result == 'skipped')
+    if: ${{
+      always()
+      && github.ref == 'refs/heads/main'
+      && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
+      && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:

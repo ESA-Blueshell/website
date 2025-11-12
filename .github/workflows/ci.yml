@@ -301,10 +301,14 @@ jobs:
 
       - name: Add known hosts
         run: |
-          ssh-keyscan "${{ secrets.IP_ADDRESS }}" >> ~/.ssh/known_hosts
+          install -m 700 -d ~/.ssh
+          ssh-keyscan -T 20 -p "${{ secrets.PORT }}" -H "${{ secrets.IP_ADDRESS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Run deploy over SSH
         shell: bash
         run: |
           set -euo pipefail
-          ssh -p "${{ secrets.PORT }}" "${{ secrets.DEPLOY_USER }}"@"${{ secrets.IP_ADDRESS }}" "website pull"
+          ssh -o StrictHostKeyChecking=yes -p "${{ secrets.PORT }}" \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.IP_ADDRESS }}" \
+            "bash -lc 'website pull'"

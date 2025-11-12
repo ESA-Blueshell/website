@@ -292,31 +292,21 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - name: Write SSH key
-        shell: bash
+      - name: Add SSH key
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          set -euo pipefail
-          umask 077
-          printf "%s" "${SSH_KEY}" > key
-
-      - name: Trust server host key
-        shell: bash
-        env:
-          IP: ${{ secrets.IP_ADDRESS }}
-          PORT: ${{ secrets.PORT }}
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "${PORT}" "${IP}" >> ~/.ssh/known_hosts
+          mkdir -p /home/runner/.ssh
+          ssh-keyscan "${{ secrets.IP_ADDRESS }}" >> /home/runner/.ssh/known_hosts
+          echo "${{ secrets.SSH_KEY }}" > /home/runner/.ssh/github_actions
+          chmod 600 /home/runner/.ssh/github_actions
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add /home/runner/.ssh/github_actions
 
       - name: Run deploy over SSH
-        shell: bash
         env:
-          IP: ${{ secrets.IP_ADDRESS }}
-          PORT: ${{ secrets.PORT }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        shell: bash
         run: |
           set -euo pipefail
-          ssh -i key -p "${PORT}" "${DEPLOY_USER}@${IP}" "website pull"
+          ssh -p "${{ secrets.PORT }}" "${{ secrets.DEPLOY_USER }}"@"${{ secrets.IP_ADDRESS }}" "website pull"

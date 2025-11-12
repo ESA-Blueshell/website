@@ -294,20 +294,16 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - name: Add SSH key
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Add known hosts
         run: |
-          mkdir -p /home/runner/.ssh
-          ssh-keyscan "${{ secrets.IP_ADDRESS }}" >> /home/runner/.ssh/known_hosts
-          printf '%s\n' "${{ secrets.SSH_KEY }}" > /home/runner/.ssh/github_actions
-          chmod 600 /home/runner/.ssh/github_actions
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add /home/runner/.ssh/github_actions 
+          ssh-keyscan "${{ secrets.IP_ADDRESS }}" >> ~/.ssh/known_hosts
 
       - name: Run deploy over SSH
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         shell: bash
         run: |
           set -euo pipefail

@@ -431,13 +431,13 @@ const cardStyle = computed(() => {
         <v-expand-transition :key="event.id">
           <div
             v-if="expanded"
-            class="form-border mx-auto rounded-b w-100"
+            class="mx-auto w-100"
           >
             <event-sign-up-form
               :event="event"
               :initial-sign-up="signUp"
               :show-guest-form="!isLoggedIn"
-              class="form mx-auto"
+              class="sign-up-form mx-auto"
               @update:sign-up="updateSignUp"
             />
           </div>
@@ -482,15 +482,15 @@ const cardStyle = computed(() => {
   white-space: nowrap;
 }
 
-.form-border {
+.sign-up-form {
+  border-radius: 10px;
   border-width: 1px;
-  border-color: rgb(var(--v-theme-accent));
+  border-color: rgba(var(--v-theme-accent), 0.6);
   border-style: solid;
-  border-radius: 5px;
-}
-
-.form {
   padding: 16px;
+  background-color: rgba(var(--v-theme-surface), 0.5);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
 }
 
 .top-right-actions {

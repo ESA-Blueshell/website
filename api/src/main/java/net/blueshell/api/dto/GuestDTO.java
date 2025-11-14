@@ -12,7 +12,6 @@ import java.time.Instant;
 @Schema(name = "Guest")
 public class GuestDTO extends PersonalInfoDTO {
     private Long id;
-    private Instant createdAt;
     @NotNull
     private String name;
     private String accessToken;

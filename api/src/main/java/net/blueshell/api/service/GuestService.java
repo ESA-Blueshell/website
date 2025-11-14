@@ -5,10 +5,10 @@ import net.blueshell.api.model.event.Guest;
 import net.blueshell.api.repository.GuestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class GuestService extends BaseModelService<Guest, GuestRepository> {
@@ -19,7 +19,8 @@ public class GuestService extends BaseModelService<Guest, GuestRepository> {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Guest> findByAccessToken(String accessToken) {
-        return repository.findByAccessToken(accessToken);
+    public Guest findByAccessToken(String accessToken) {
+        return repository.findByAccessToken(accessToken)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Guest not found"));
     }
 }

@@ -36,7 +36,7 @@ const emit = defineEmits<{
   (e: "delete:signUp", signUpId: number): void
 }>()
 
-const event = toRef(props, "event")
+const event = toRef<Event>(props, "event")
 const signUp = computed<EventSignUp | undefined>(() =>
   props.signUps.find((s) => s.eventId === event.value.id),
 )
@@ -223,8 +223,8 @@ const cardStyle = computed(() => {
 
 const isSignedUp = computed<boolean>(() => signUp.value?.id !== undefined)
 
-const signUpMainIcon = computed(() =>
-  isSignedUp.value ? "mdi-account-check" : "mdi-account-plus",
+const signUpIcon = computed(() =>
+  isSignedUp.value ? "mdi-account-multiple" : "mdi-account-multiple-plus",
 )
 
 const signUpStatusIcon = computed(() =>
@@ -357,6 +357,7 @@ const signUpStatusColor = computed(() =>
               </v-sheet>
             </div>
 
+
             <v-tooltip
               location="left"
               text="Find location"
@@ -401,7 +402,7 @@ const signUpStatusColor = computed(() =>
 
             <template v-if="event.signUp">
               <v-tooltip
-                v-if="isLoggedIn && signUp?.id !== undefined"
+                v-if="signUp?.id !== undefined"
                 location="left"
                 text="Cancel sign-up"
               >
@@ -409,7 +410,7 @@ const signUpStatusColor = computed(() =>
                   <v-btn
                     :disabled="actionsDisabled"
                     :loading="submitting"
-                    icon="mdi-close"
+                    icon="mdi-account-multiple-remove"
                     v-bind="p"
                     variant="plain"
                     @click="removeSignUp()"
@@ -426,37 +427,52 @@ const signUpStatusColor = computed(() =>
                 location="left"
               >
                 <template #activator="{ props: p }">
-                  <v-badge
-                    :content="event.signUpCount"
-                    color="blue"
-                    location="middle middle"
-                    offset-x="4"
-                    offset-y="4"
-                    floating
+                  <span
+                    class="action-btn-wrap"
+                    v-bind="p"
                   >
                     <v-badge
-                      :icon="signUpStatusIcon"
-                      :color="signUpStatusColor"
-                      location="middle bottom"
-                      offset-x="4"
-                      offset-y="4"
+                      color="primary"
+                      :content="event.signUpCount"
                       floating
+                      offset-x="15"
+                      offset-y="15"
                     >
-                      <v-btn
-                        :disabled="actionsDisabled"
-                        :loading="submitting"
-                        :icon="signUpMainIcon"
-                        v-bind="p"
-                        variant="plain"
-                        :aria-label="
-                          isSignedUp
-                            ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
-                            : (expanded ? 'Cancel signing up' : 'Sign up')
-                        "
-                        @click="toggleExpanded()"
-                      />
+                      <v-badge
+                        floating
+                        offset-x="21"
+                        offset-y="40"
+                        color="transparent"
+                      >
+                        <template #badge>
+                          <v-avatar
+                            :size="18"
+                            color="transparent"
+                            class="pa-0"
+                          >
+                            <v-icon
+                              :icon="signUpStatusIcon"
+                              :size="18"
+                              :color="signUpStatusColor"
+                            />
+                          </v-avatar>
+                        </template>
+
+                        <v-btn
+                          :disabled="actionsDisabled"
+                          :loading="submitting"
+                          :icon="signUpIcon"
+                          variant="plain"
+                          :aria-label="
+                            isSignedUp
+                              ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
+                              : (expanded ? 'Cancel signing up' : 'Sign up')
+                          "
+                          @click="toggleExpanded()"
+                        />
+                      </v-badge>
                     </v-badge>
-                  </v-badge>
+                  </span>
                 </template>
               </v-tooltip>
             </template>
@@ -536,6 +552,7 @@ const signUpStatusColor = computed(() =>
 }
 
 .top-right-header {
+  --xpad: 0px;
   display: grid;
   grid-template-columns: auto auto;
   align-items: stretch;
@@ -553,6 +570,12 @@ const signUpStatusColor = computed(() =>
   border-color: rgba(var(--v-theme-accent), 0.6);
 }
 
+.top-right-header :deep(.v-btn),
+.top-right-header .committee-name {
+  padding: var(--xpad) !important;
+}
+
+
 .committee-name {
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -560,8 +583,6 @@ const signUpStatusColor = computed(() =>
   align-items: center;
   justify-content: center;
 
-  white-space: nowrap;
-  padding: 4px 2px;
   opacity: var(--v-medium-emphasis-opacity);
 }
 </style>

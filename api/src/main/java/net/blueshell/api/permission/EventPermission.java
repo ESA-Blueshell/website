@@ -28,10 +28,7 @@ public class EventPermission extends BasePermissionEvaluator<Event, EventService
         return switch (permission) {
             case "read" -> event.isApproved() || event.getCommittee().hasMember(principal);
             case "write" -> event.getCommittee().hasMember(principal);
-            case "signUp" -> event.isApproved()
-                    && (
-                    (!event.isMembersOnly() && principal != null)
-                            || hasAuthority(Role.MEMBER));
+            case "signUp" -> event.isApproved() && (!event.isMembersOnly() || hasAuthority(Role.MEMBER));
             default -> false;
         };
     }

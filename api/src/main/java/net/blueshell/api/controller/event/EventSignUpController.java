@@ -13,6 +13,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,16 +30,18 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     @GetMapping(value = "/events/signups")
     @PreAuthorize("""
             hasAuthority('BOARD')
-            || (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read'))
-            || (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))
+            or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read'))
+            or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))
             """)
+    @Transactional(readOnly = true)
     public List<EventSignUpDTO> findEventSignUps(@ParameterObject EventSignUpFilter filter) {
         var eventSignUps = service.findByFilter(filter);
         return mapper.toDTOs(eventSignUps.stream()).toList();
     }
 
     @GetMapping(value = "/events/signups/byAccessToken/{accessToken}")
-    @PreAuthorize("hasPermission(#accessToken, 'Guest', 'read')")
+    @PreAuthorize("#accessToken != null")
+    @Transactional(readOnly = true)
     public List<EventSignUpDTO> findEventSignUpsByAccessToken(@PathVariable("accessToken") String accessToken) {
         var signUps = service.findByGuestAccessToken(accessToken);
         return mapper.toDTOs(signUps);
@@ -46,6 +49,7 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
 
     @GetMapping(value = "/events/{eventId}/signups")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
+    @Transactional(readOnly = true)
     public List<EventSignUpDTO> findEventSignUpsByEventId(@PathVariable("eventId") Long eventId) {
         var eventSignUps = service.findByEventId(eventId);
         return mapper.toDTOs(eventSignUps);
@@ -53,17 +57,14 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
 
 
     @PostMapping(value = "/events/{eventId}/signups")
-    @PreAuthorize("#eventId == #dto.eventId && (hasAuthority('BOARD') or hasPermission(#eventId, 'Event', 'signUp'))")
+    @PreAuthorize("hasAuthority('BOARD') or hasPermission(#dto.eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
-    public EventSignUpDTO createEventSignup(@PathVariable("eventId") Long eventId, @Valid @RequestBody EventSignUpDTO dto) {
-        log.info("Get principal: {}", getPrincipal());
+    @Transactional
+    public EventSignUpDTO createEventSignup(@Valid @RequestBody EventSignUpDTO dto) {
         if (getPrincipal() != null) {
             dto.setUserId(getPrincipal().getId());
         }
         var eventSignUp = mapper.fromDTO(dto);
-        log.info("Creating event signup for event {}", eventSignUp);
-        log.info("from dto {}", dto);
-        log.info("guest dto {}", dto.getGuest());
         eventSignUp = service.create(eventSignUp);
         return mapper.toDTO(eventSignUp);
     }
@@ -77,7 +78,8 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     public EventSignUpDTO updateEventSignUp(
             @PathVariable("eventId") Long eventId,
             @Valid @RequestBody EventSignUpDTO dto,
-            @RequestParam(value = "accessToken", required = false) String accessToken) {
+            @RequestParam(value = "accessToken", required = false) String accessToken
+    ) {
         EventSignUp signUp = (accessToken == null)
                 ? service.findByUserIdAndEventId(getPrincipal().getId(), eventId)
                 : service.findByGuestAccessTokenAndEventId(accessToken, eventId);
@@ -91,11 +93,14 @@ public class EventSignUpController extends BaseController<EventSignUpService, Ev
     @PreAuthorize("""
             hasAuthority('BOARD')
             or hasPermission(#eventSignupId, 'EventSignUp', 'delete')
-            or hasPermission(#accessToken, 'Guest', 'delete')
+            or hasPermission(#accessToken, 'Guest', 'write')
             """)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteEventSignup(@PathVariable("eventSignupId") Long eventSignupId,
-                                  @RequestParam(value = "accessToken", required = false) String accessToken) {
+    @Transactional
+    public void deleteEventSignup(
+            @PathVariable("eventSignupId") Long eventSignupId,
+            @RequestParam(value = "accessToken", required = false) String accessToken
+    ) {
         service.deleteById(eventSignupId);
     }
 }

@@ -216,6 +216,20 @@ const cardStyle = computed(() => {
   }
   return base
 })
+
+const isSignedUp = computed<boolean>(() => signUp.value?.id !== undefined)
+
+const signUpMainIcon = computed(() =>
+  isSignedUp.value ? "mdi-account-check" : "mdi-account-plus",
+)
+
+const signUpStatusIcon = computed(() =>
+  isSignedUp.value ? "mdi-checkbox-marked-circle" : "mdi-close-circle",
+)
+
+const signUpStatusColor = computed(() =>
+  isSignedUp.value ? "success" : "orange",
+)
 </script>
 
 <template v-if="event.id">
@@ -225,9 +239,8 @@ const cardStyle = computed(() => {
       :style="cardStyle"
       rounded="sm"
     >
-      <v-container class="pa-4">
+      <v-container class="pa-1">
         <div class="content--row">
-          <!-- main content -->
           <div
             ref="eventElement"
             class="main"
@@ -265,7 +278,10 @@ const cardStyle = computed(() => {
               <v-card-subtitle>
                 {{ event.location }} <br>
                 {{ formatEventTime() }} <br>
-                {{ event.membersOnly ? "Members only" : "" }}
+                <span
+                  v-if="event.membersOnly"
+                  style="color: red"
+                >Members only</span>
               </v-card-subtitle>
             </v-card-item>
 
@@ -337,53 +353,6 @@ const cardStyle = computed(() => {
               </v-sheet>
             </div>
 
-            <template v-if="event.signUp && (isLoggedIn || !event.membersOnly)">
-              <v-tooltip
-                v-if="isLoggedIn && signUp?.id !== undefined"
-                location="left"
-                text="Cancel sign-up"
-              >
-                <template #activator="{ props: p }">
-                  <v-btn
-                    :disabled="actionsDisabled"
-                    :loading="submitting"
-                    icon="mdi-close"
-                    v-bind="p"
-                    variant="plain"
-                    @click="removeSignUp()"
-                  />
-                </template>
-              </v-tooltip>
-
-              <v-tooltip
-                :text="
-                  signUp?.id
-                    ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
-                    : (expanded ? 'Cancel signing up' : 'Sign up')
-                "
-                location="left"
-              >
-                <template #activator="{ props: p }">
-                  <v-badge
-                    :content="event.signUpCount"
-                    color="blue"
-                    offset-x="8"
-                    offset-y="8"
-                  >
-                    <v-btn
-                      :color="signUp?.id ? 'green' : 'orange'"
-                      :disabled="actionsDisabled"
-                      :loading="submitting"
-                      icon="mdi-list-status"
-                      v-bind="p"
-                      variant="plain"
-                      @click="toggleExpanded()"
-                    />
-                  </v-badge>
-                </template>
-              </v-tooltip>
-            </template>
-
             <v-tooltip
               location="left"
               text="Find location"
@@ -425,13 +394,75 @@ const cardStyle = computed(() => {
                 />
               </template>
             </v-tooltip>
+
+            <template v-if="event.signUp">
+              <v-tooltip
+                v-if="isLoggedIn && signUp?.id !== undefined"
+                location="left"
+                text="Cancel sign-up"
+              >
+                <template #activator="{ props: p }">
+                  <v-btn
+                    :disabled="actionsDisabled"
+                    :loading="submitting"
+                    icon="mdi-close"
+                    v-bind="p"
+                    variant="plain"
+                    @click="removeSignUp()"
+                  />
+                </template>
+              </v-tooltip>
+
+              <v-tooltip
+                :text="
+                  signUp?.id
+                    ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
+                    : (expanded ? 'Cancel signing up' : 'Sign up')
+                "
+                location="left"
+              >
+                <template #activator="{ props: p }">
+                  <v-badge
+                    :content="event.signUpCount"
+                    color="blue"
+                    location="middle middle"
+                    offset-x="4"
+                    offset-y="4"
+                    floating
+                  >
+                    <v-badge
+                      :icon="signUpStatusIcon"
+                      :color="signUpStatusColor"
+                      location="middle bottom"
+                      offset-x="4"
+                      offset-y="4"
+                      floating
+                    >
+                      <v-btn
+                        :disabled="actionsDisabled"
+                        :loading="submitting"
+                        :icon="signUpMainIcon"
+                        v-bind="p"
+                        variant="plain"
+                        :aria-label="
+                          isSignedUp
+                            ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
+                            : (expanded ? 'Cancel signing up' : 'Sign up')
+                        "
+                        @click="toggleExpanded()"
+                      />
+                    </v-badge>
+                  </v-badge>
+                </template>
+              </v-tooltip>
+            </template>
           </v-card-actions>
         </div>
 
         <v-expand-transition :key="event.id">
           <div
             v-if="expanded"
-            class="mx-auto w-100"
+            class="mx-auto w-100 pa-2"
           >
             <event-sign-up-form
               :event="event"

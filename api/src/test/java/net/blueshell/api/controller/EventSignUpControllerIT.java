@@ -237,6 +237,7 @@ class EventSignUpControllerIT extends UserTestSupport {
                 g.setName("Guesty McGuestface");
                 g.setDiscord("Discord");
                 g.setPhoneNumber("0611111111");
+                g.setAccessToken(null);
             }));
             es.setUser(null);
             es.setUserId(null);
@@ -391,6 +392,7 @@ class EventSignUpControllerIT extends UserTestSupport {
                     g.setName("Guesty McGuestface");
                     g.setDiscord("Discord");
                     g.setPhoneNumber("0611111111");
+                    g.setAccessToken(null);
                 }));
                 es.setUser(null);
                 es.setUserId(null);
@@ -426,6 +428,7 @@ class EventSignUpControllerIT extends UserTestSupport {
                     g.setName("Guesty");
                     g.setDiscord("Discord");
                     g.setPhoneNumber("0611111111");
+                    g.setAccessToken(null);
                 }));
                 es.setUser(null);
                 es.setUserId(null);
@@ -464,6 +467,7 @@ class EventSignUpControllerIT extends UserTestSupport {
                     g.setName("Guesty McGuestface");
                     g.setDiscord("Discord");
                     g.setPhoneNumber("0611111111");
+                    g.setAccessToken(null);
                 }));
             });
 
@@ -471,7 +475,7 @@ class EventSignUpControllerIT extends UserTestSupport {
                             .queryParam("accessToken", "NOT_A_REAL_TOKEN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsBytes(eventSignUpDTO)))
-                    .andExpect(status().isUnauthorized());
+                    .andExpect(status().isNotFound());
         }
     }
 

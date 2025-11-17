@@ -36,7 +36,7 @@ const emit = defineEmits<{
   (e: "delete:signUp", signUpId: number): void
 }>()
 
-const event = toRef<Event>(props, "event")
+const event = toRef(props, "event")
 const signUp = computed<EventSignUp | undefined>(() =>
   props.signUps.find((s) => s.eventId === event.value.id),
 )

@@ -4,9 +4,9 @@ FROM maven:3.9.11-eclipse-temurin-24-alpine AS build
 
 WORKDIR /app
 
-COPY . .
+COPY openapi openapi
+COPY api api
 
-WORKDIR /app/api
 WORKDIR /app/api
 
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests dependency:go-offline

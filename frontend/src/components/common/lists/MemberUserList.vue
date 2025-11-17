@@ -9,15 +9,15 @@ defineOptions({name: "MemberUserList"})
 
 const props = withDefaults(defineProps<{
   title: string
-  memberships?: Membership[]
-  contributions?: Contribution[]
+  membershipsByUserId?: Record<number, Membership>,
+  contributionsByUserId?: Record<number, Contribution>,
   users: AdvancedUser[]
   allowCreate?: boolean
   enableDelete?: boolean
   startOpen?: boolean
 }>(), {
-  memberships: () => [],
-  contributions: () => [],
+  membershipsByUserId: () => ({}),
+  contributionsByUserId: () => ({}),
   allowCreate: false,
   enableDelete: false,
   startOpen: false,
@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<{
 
 const expanded = defineModel<number>("expanded", {default: 0})
 
-const {title, users, memberships, contributions, allowCreate, enableDelete, startOpen} = toRefs(props)
+const {title, users, membershipsByUserId, contributionsByUserId, allowCreate, enableDelete, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
   (e: "delete:user", user: AdvancedUser): void
@@ -141,9 +141,9 @@ const onCreateSubmitted = (ok: boolean) => {
           >
             <member-user-row
               v-model:expanded="expanded"
-              :contributions="contributions"
               :enable-delete="enableDelete"
-              :memberships="memberships"
+              :membership="membershipsByUserId[user.id]"
+              :contribution="contributionsByUserId[user.id]"
               :user="user"
               @update:membership="membershipChanged"
               @update:user="updateUser"

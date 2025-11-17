@@ -85,7 +85,6 @@ import {apply} from "@/plugins/validation.ts"
 
 interface Props {
   modelValue: boolean;
-  memberships: Array<Membership>;
   userId: number;
 }
 

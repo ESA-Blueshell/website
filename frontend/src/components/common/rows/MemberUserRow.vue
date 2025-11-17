@@ -9,15 +9,13 @@ import {type AdvancedUser, type Contribution, deleteUserById, type Membership, u
 defineOptions({name: "MemberUserRow"})
 
 const user = defineModel<AdvancedUser>("user", {required: true})
+const membership = defineModel<Membership>("membership", {required: false, default: undefined})
+const contribution = defineModel<Contribution>("contribution", {required: false, default: undefined})
 const expanded = defineModel<number>("expanded", {default: 0})
 
-const props = withDefaults(defineProps<{
-  memberships?: Array<Membership>
-  contributions?: Array<Contribution>
+withDefaults(defineProps<{
   enableDelete?: boolean
 }>(), {
-  memberships: () => [],
-  contributions: () => [],
   enableDelete: () => false,
 })
 
@@ -29,12 +27,6 @@ const emit = defineEmits<{
 const deleteDialog = ref(false)
 const showStartModal = ref(false)
 
-const membership = computed<Membership | undefined>(() =>
-  props.memberships.find((m) => m.userId === user.value.id),
-)
-const contribution = computed<Contribution | undefined>(() =>
-  props.contributions.find((c) => c.userId === user.value.id),
-)
 const hasContribution = computed(() => !!contribution.value)
 
 const toggleExpanded = () => {
@@ -48,12 +40,9 @@ const startMembership = () => {
 const endMembership = async () => {
   try {
     if (!membership.value) return
-    const membershipData: Membership = {
-      ...membership.value,
-      userId: user.value.id as number,
-      endDate: DateTime.now().toISODate(),
-    }
-    const response = await updateMembership({path: {id: membershipData.id as number}, body: membershipData})
+    membership.value.userId = user.value.id as number
+    membership.value.endDate = DateTime.now().toISODate()
+    const response = await updateMembership({path: {id: membership.value.id as number}, body: membership.value})
     if (response.data) emit("update:membership", response.data)
   } catch (error) {
     console.error("Failed to end membership:", error)
@@ -196,7 +185,7 @@ const confirmDeleteUser = async () => {
 
   <start-membership-dialog
     v-model="showStartModal"
-    :memberships="memberships"
+    :membership="membership"
     :user-id="user.id"
     @update:membership="membershipChanged"
   />

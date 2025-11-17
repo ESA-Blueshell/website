@@ -69,9 +69,24 @@ const membershipChanged = async (updatedMembership: Membership) => {
     ...memberships.value.slice(index + 1),
   ]
 
+  // Adding a membership will change the roles of the user, so it must be re-fetched
   const resp = await findUserById({path: {userId: updatedMembership.userId!}})
   if (resp.data) updateUser(resp.data)
 }
+
+
+const membershipsByUserId = computed<Record<number, Membership>>(() => {
+  const map: Record<number, Membership> = {}
+  memberships.value?.forEach((m) => map[m.userId] = m)
+  return map
+})
+
+const contributionsByUserId = computed<Record<number, Contribution>>(() => {
+  const map: Record<number, Contribution> = {}
+  contributions.value?.forEach((c) => map[c.userId] = c)
+  return map
+})
+
 
 const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
   if (!newPeriod) return
@@ -107,8 +122,8 @@ onMounted(async () => {
 
         <member-user-list
           v-model:expanded="expanded"
-          :contributions="contributions"
-          :memberships="memberships"
+          :memberships-by-user-id="membershipsByUserId"
+          :contributions-by-user-id="contributionsByUserId"
           :users="nonMembers"
           allow-create
           enable-delete
@@ -121,8 +136,8 @@ onMounted(async () => {
 
         <member-user-list
           v-model:expanded="expanded"
-          :contributions="contributions"
-          :memberships="memberships"
+          :memberships-by-user-id="membershipsByUserId"
+          :contributions-by-user-id="contributionsByUserId"
           :users="members"
           class="mt-3"
           title="Members"

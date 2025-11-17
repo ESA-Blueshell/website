@@ -284,9 +284,14 @@ const signUpStatusColor = computed(() =>
                 {{ formatEventTime() }} <br>
                 <span
                   v-if="event.membersOnly"
-                  :style="!isMember ? 'color: red' : ''"
-                  class="v-card-subtitle"
-                >Members only</span>
+                  :class="['v-card-subtitle', {
+                    'text-red': !isMember,
+                    'font-weight-bold': !isMember,
+                    'text-decoration-underline': !isMember,
+                  }]"
+                >
+                  Members only
+                </span>
               </v-card-subtitle>
             </v-card-item>
 

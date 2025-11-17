@@ -34,7 +34,6 @@ const guestAccessToken = computed<string | null>(() => guest.value?.accessToken 
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
 
-/** Events don't depend on login/guest. */
 async function loadEvents() {
   try {
     const resp = await findEvents({
@@ -46,45 +45,38 @@ async function loadEvents() {
   }
 }
 
-/** Sign-ups depend on login or guest token; gate with a request id to avoid races. */
-let signupsReqId = 0
-
 async function loadSignUps() {
-  const req = ++signupsReqId
   try {
     if (isLoggedIn.value && login.value?.userId != null) {
       const resp = await findEventSignUps({
         query: {from: startOfTodayIso, userId: login.value.userId},
+        throwOnError: true,
       })
-      if (req === signupsReqId) eventSignUps.value = resp.data ?? []
+      eventSignUps.value = resp.data ?? []
     } else if (guestAccessToken.value) {
       const resp = await findEventSignUpsByAccessToken({
         path: {accessToken: guestAccessToken.value},
         throwOnError: true,
       })
-      if (req === signupsReqId) eventSignUps.value = resp.data ?? []
+      eventSignUps.value = resp.data ?? []
     } else {
-      if (req === signupsReqId) eventSignUps.value = []
+      eventSignUps.value = []
     }
   } catch (e) {
-    if (req === signupsReqId) $handleNetworkError(e)
+    $handleNetworkError(e)
   }
 }
 
-/** Committees only for logged-in users. */
-let committeesReqId = 0
-
 async function loadCommittees() {
-  const req = ++committeesReqId
   try {
     if (isLoggedIn.value) {
-      const resp = await findCommitteesForCurrentUser()
-      if (req === committeesReqId) committees.value = (resp.data as AdvancedCommittee[]) ?? []
+      const resp = await findCommitteesForCurrentUser({throwOnError: true})
+      committees.value = (resp.data as AdvancedCommittee[]) ?? []
     } else {
-      if (req === committeesReqId) committees.value = []
+      committees.value = []
     }
   } catch (e) {
-    if (req === committeesReqId) $handleNetworkError(e)
+    $handleNetworkError(e)
   }
 }
 
@@ -94,12 +86,10 @@ watch([isLoggedIn, login, guestAccessToken], () => {
   void loadCommittees()
 }, {immediate: true})
 
-/** Events can load immediately. */
 onMounted(() => {
   void loadEvents()
 })
 
-/* ---------- unchanged helpers ---------- */
 type WithOptionalId = { id?: number }
 type RefLike<T> = { value: T }
 

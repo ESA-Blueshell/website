@@ -22,7 +22,7 @@ public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService
 
         Guest guest = (Guest) targetDomainObject;
         return switch (permission) {
-            case "read", "write" -> guest != null;
+            case "read", "write" -> targetDomainObject != null;
             default -> false;
         };
     }
@@ -33,6 +33,6 @@ public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService
             return false;
         }
         var guest = service.findByAccessToken((String) accessToken);
-        return guest.isPresent() && hasPermission(authentication, guest.get(), permission);
+        return hasPermission(authentication, guest, permission);
     }
 }

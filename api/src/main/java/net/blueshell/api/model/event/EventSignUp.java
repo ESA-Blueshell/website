@@ -23,10 +23,6 @@ import java.util.Set;
                         name = "uk_event_signups_event_guest_deleted_at",
                         columnNames = {"event_id", "guest_id", "deleted_at"}
                 ),
-                @UniqueConstraint(
-                        name = "uk_event_signups_guest_deleted_at",
-                        columnNames = {"guest_id", "deleted_at"}
-                )
         },
         indexes = {
                 @Index(name = "idx_event_signups_deleted_at", columnList = "deleted_at"),
@@ -70,7 +66,7 @@ public class EventSignUp extends BaseModel {
     @ToString.Include
     private Long userId;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.LAZY)
     @JoinColumn(name = "guest_id")
     private Guest guest;
 

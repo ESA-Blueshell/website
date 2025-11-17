@@ -3,7 +3,7 @@
     v-if="!isLoggedIn"
     ref="formRef"
     as="div"
-    class="mb-4"
+    class="mb-2"
   >
     <v-alert
       class="mb-4"
@@ -12,7 +12,7 @@
       variant="outlined"
     />
 
-    <v-row class="tight-row">
+    <v-row>
       <v-col
         cols="12"
         md="6"
@@ -37,7 +37,7 @@
       </v-col>
     </v-row>
 
-    <v-row class="tight-row">
+    <v-row>
       <v-col
         cols="12"
         md="6"

@@ -96,6 +96,7 @@ public class SecurityConfig {
                                 "/committees/**",
                                 "/contributionPeriods/current",
                                 "/health").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();

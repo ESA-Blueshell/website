@@ -1,3 +1,48 @@
+<script lang="ts" setup>
+import {Field} from "vee-validate"
+import {watch} from "vue"
+import {type Answer, type Question, QuestionType} from "@/services/api"
+
+const props = withDefaults(defineProps<{
+  question: Question
+}>(), {})
+
+const answer = defineModel<Answer>({
+  default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
+})
+
+const requireText = (val: string | undefined | null) =>
+  (typeof val === "string" && val.trim().length > 0) || "This field is required"
+
+const requireOptionSelection = (selections: boolean[] | undefined | null) => {
+  const arr = Array.isArray(selections) ? selections : []
+  return arr.some(Boolean) || "Select at least one option"
+}
+
+watch(
+  () => props.question,
+  (q) => {
+    if (!answer.value.questionId) {
+      if (q.type === QuestionType.OPEN) {
+        answer.value = {
+          questionId: q.id,
+          textResponse: "",
+        } as Answer
+      } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
+        answer.value = {
+          questionId: q.id,
+          optionSelections: new Array(q.choiceLabels!.length).fill(false),
+        } as Answer
+      } else {
+        answer.value = {
+          questionId: q.id,
+        } as Answer
+      }
+    }
+  },
+  {immediate: true},
+)
+</script>
 <template v-if="answer">
   <template v-if="question.type === QuestionType.OPEN">
     <Field
@@ -63,7 +108,6 @@
                 ? [...value]
                 : new Array(question.choiceLabels!.length).fill(false)
               arr[j] = checked
-              // user action -> validate
               handleChange(arr)
             }"
           />
@@ -78,52 +122,6 @@
     </Field>
   </template>
 </template>
-
-<script lang="ts" setup>
-import {Field} from "vee-validate"
-import {watch} from "vue"
-import {type Answer, type Question, QuestionType} from "@/services/api"
-
-const props = withDefaults(defineProps<{
-  question: Question
-}>(), {})
-
-const answer = defineModel<Answer>({
-  default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
-})
-
-const requireText = (val: string | undefined | null) =>
-  (typeof val === "string" && val.trim().length > 0) || "This field is required"
-
-const requireOptionSelection = (selections: boolean[] | undefined | null) => {
-  const arr = Array.isArray(selections) ? selections : []
-  return arr.some(Boolean) || "Select at least one option"
-}
-
-watch(
-  () => props.question,
-  (q) => {
-    if (!answer.value.questionId) {
-      if (q.type === QuestionType.OPEN) {
-        answer.value = {
-          questionId: q.id,
-          textResponse: "",
-        } as Answer
-      } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
-        answer.value = {
-          questionId: q.id,
-          optionSelections: new Array(q.choiceLabels!.length).fill(false),
-        } as Answer
-      } else {
-        answer.value = {
-          questionId: q.id,
-        } as Answer
-      }
-    }
-  },
-  {immediate: true},
-)
-</script>
 
 <style lang="scss" scoped>
 .v-checkbox .v-selection-control {

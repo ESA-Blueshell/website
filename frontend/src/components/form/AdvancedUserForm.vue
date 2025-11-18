@@ -330,7 +330,7 @@ defineExpose({validate, save})
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 span {
   font-weight: bold;
 }

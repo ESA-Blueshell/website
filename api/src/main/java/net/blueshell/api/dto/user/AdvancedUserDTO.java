@@ -35,7 +35,6 @@ public class AdvancedUserDTO extends SimpleUserDTO {
     private Instant createdAt;
     private String gender;
     private String studentNumber;
-    private Long addressId;
 
     @JsonProperty("roles")
     public List<Role> getRolesSorted() {

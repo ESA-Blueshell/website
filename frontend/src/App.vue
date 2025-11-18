@@ -195,7 +195,7 @@
           Log In
         </v-btn>
         <v-menu
-          v-else
+          v-if="isBoard"
           :offset="3"
         >
           <template #activator="{ props }">
@@ -204,38 +204,42 @@
               v-bind="props"
               variant="text"
             >
-              <v-icon size="x-large">
-                mdi-account
-              </v-icon>
+              <multi-edit-icon />
+              <v-badge
+                location="bottom end"
+                class="small-badge"
+                offset-x="8"
+                offset-y="4"
+                color="transparent"
+              >
+                <template #badge>
+                  <v-avatar
+                    size="14"
+                    class="pencil-avatar"
+                  >
+                    <v-icon
+                      size="12"
+                      class="pencil-icon"
+                    >
+                      mdi-pencil
+                    </v-icon>
+                  </v-avatar>
+                </template>
+                <v-icon
+                  size="x-large"
+                >
+                  mdi-account-multiple
+                </v-icon>
+              </v-badge>
             </v-btn>
           </template>
+
           <v-list>
-            <v-list-item to="/account">
-              Account
-            </v-list-item>
             <v-list-item
               v-if="isBoard"
-              to="/members/manage"
+              to="/addresses/manage"
             >
-              Manage members
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard"
-              to="/contributions/manage"
-            >
-              Manage contributions
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard"
-              to="/committees/manage"
-            >
-              Manage committees
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard || isActive"
-              to="/events/manage"
-            >
-              Manage events
+              Manage addresses
             </v-list-item>
             <v-list-item
               v-if="isBoard"
@@ -245,9 +249,44 @@
             </v-list-item>
             <v-list-item
               v-if="isBoard"
-              to="/addresses/manage"
+              to="/committees/manage"
             >
-              Manage addresses
+              Manage committees
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/contributions/manage"
+            >
+              Manage contributions
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/members/manage"
+            >
+              Manage members
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <v-menu
+          v-if="isLoggedIn"
+          :offset="3"
+        >
+          <template #activator="{ props }">
+            <v-btn
+              class="bar-button ma-0 mr-2"
+              v-bind="props"
+              variant="text"
+            >
+              <v-icon
+                size="x-large"
+              >
+                mdi-account
+              </v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item to="/account">
+              Account
             </v-list-item>
             <v-list-item @click="logOut">
               Log Out
@@ -303,12 +342,6 @@
           </template>
           <v-list-item to="/events">
             Events
-          </v-list-item>
-          <v-list-item
-            v-if="isLoggedIn && isActive"
-            to="/events/manage"
-          >
-            Manage events
           </v-list-item>
           <v-list-item
             to="/events/circuitShowdown"
@@ -488,6 +521,7 @@ import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import DOMPurify from "dompurify"
 import {type AdvancedUser, findUserById, type Login} from "@/services/api"
+import MultiEditIcon from "@/components/common/icons/MultiEditIcon.vue"
 
 // Reactive state
 const drawer = ref<boolean>(false)
@@ -593,6 +627,7 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/styles/colors' as colors;
 
 .v-btn.bar-button {
   margin: 0 2px;
@@ -634,5 +669,13 @@ onMounted(async () => {
   100% {
     transform: rotate(0);
   }
+}
+
+.pencil-avatar {
+  background: rgb(var(--v-theme-surface));
+}
+
+.pencil-icon {
+  color: white;
 }
 </style>

@@ -49,4 +49,6 @@ public class SimpleUserDTO extends PersonalInfoDTO {
             groups = {Creation.class}
     )
     private String password;
+
+    private Long addressId;
 }

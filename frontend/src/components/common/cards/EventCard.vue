@@ -243,7 +243,7 @@ const signUpStatusColor = computed(() =>
       :style="cardStyle"
       rounded="sm"
     >
-      <v-container class="pa-1">
+      <v-container class="py-1 px-2">
         <div class="content--row">
           <div
             ref="eventElement"

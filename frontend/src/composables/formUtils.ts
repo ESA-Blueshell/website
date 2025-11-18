@@ -62,3 +62,26 @@ export function usePasswordToggle(defaultVisible = false) {
   }))
   return {isPasswordVisible, passwordFieldProps}
 }
+
+export type SubmitState = "idle" | "success" | "error"
+
+export function useSubmitFeedback(timeoutMs = 1200) {
+  const submitState = ref<SubmitState>("idle")
+  const showSubmitStatus = ref(false)
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  function setSubmitResult(ok: boolean) {
+    if (timer) clearTimeout(timer)
+
+    submitState.value = ok ? "success" : "error"
+    showSubmitStatus.value = true
+
+    timer = setTimeout(() => {
+      showSubmitStatus.value = false
+      submitState.value = "idle"
+    }, timeoutMs)
+  }
+
+  return {submitState, showSubmitStatus, setSubmitResult}
+}

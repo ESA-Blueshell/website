@@ -8,12 +8,14 @@ import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
+import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
   handleSubmitError,
   useCountry,
   usePasswordToggle,
   useReadonly,
   useSaving,
+  useSubmitFeedback,
   useVeeForm,
 } from "@/composables/formUtils"
 
@@ -60,6 +62,7 @@ const isCreating = computed<boolean>(() => !user.value?.id)
 const {country, onCountryUpdate} = useCountry("NL")
 const {isSaving, withSaving} = useSaving()
 const {formRef, validate} = useVeeForm()
+const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
 const confirmPassword = ref<string>("")
 const {passwordFieldProps} = usePasswordToggle()
@@ -67,6 +70,7 @@ const {passwordFieldProps} = usePasswordToggle()
 const save = async (): Promise<AdvancedUser | null> => {
   if (!(await validate())) {
     emit("submitted", false)
+    setSubmitResult(false)
     return null
   }
   try {
@@ -82,10 +86,12 @@ const save = async (): Promise<AdvancedUser | null> => {
     })
     user.value = resp.data!
     emit("submitted", true)
+    setSubmitResult(true)
     return user.value
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)
     emit("submitted", false)
+    setSubmitResult(false)
     return null
   }
 }
@@ -309,16 +315,15 @@ defineExpose({validate, save})
           v-if="showSubmit"
           cols="auto"
         >
-          <v-btn
+          <submit-button
             :disabled="isSaving"
             :loading="isSaving"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            size="large"
-            type="button"
+            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+            :text="submitText"
+            :submit-state="submitState"
+            :show-submit-status="showSubmitStatus"
             @click="save"
-          >
-            {{ submitText }}
-          </v-btn>
+          />
         </v-col>
       </v-row>
     </Form>

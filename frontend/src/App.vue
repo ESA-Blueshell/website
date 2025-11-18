@@ -204,33 +204,9 @@
               v-bind="props"
               variant="text"
             >
-              <multi-edit-icon />
-              <v-badge
-                location="bottom end"
-                class="small-badge"
-                offset-x="8"
-                offset-y="4"
-                color="transparent"
-              >
-                <template #badge>
-                  <v-avatar
-                    size="14"
-                    class="pencil-avatar"
-                  >
-                    <v-icon
-                      size="12"
-                      class="pencil-icon"
-                    >
-                      mdi-pencil
-                    </v-icon>
-                  </v-avatar>
-                </template>
-                <v-icon
-                  size="x-large"
-                >
-                  mdi-account-multiple
-                </v-icon>
-              </v-badge>
+              <v-icon size="x-large">
+                custom:account-multiple-edit
+              </v-icon>
             </v-btn>
           </template>
 
@@ -521,7 +497,6 @@ import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import DOMPurify from "dompurify"
 import {type AdvancedUser, findUserById, type Login} from "@/services/api"
-import MultiEditIcon from "@/components/common/icons/MultiEditIcon.vue"
 
 // Reactive state
 const drawer = ref<boolean>(false)

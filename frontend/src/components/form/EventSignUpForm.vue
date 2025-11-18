@@ -8,6 +8,7 @@ import {
   type EventSignUp,
   type Question,
   updateEventSignUp,
+  deleteEventSignup,
 } from "@/services/api"
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
@@ -15,7 +16,11 @@ import SubmitButton from "@/components/form/SubmitButton.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useSaving, useSubmitFeedback} from "@/composables/formUtils"
 
-const emit = defineEmits<{ (e: "update:signUp", value: EventSignUp): void }>()
+const emit = defineEmits<{
+  (e: "update:signUp", value: EventSignUp): void
+  (e: "delete:signUp", id: number): void // ⬅️ new emit
+}>()
+
 const props = defineProps<{ event: Event; buttonLoading?: boolean; initialSignUp?: EventSignUp }>()
 
 const store = useStore()
@@ -102,6 +107,26 @@ async function save() {
   }
 }
 
+async function removeSignUp() {
+  if (!signUp.value.id) return
+
+  try {
+    await withSaving(async () => {
+      await deleteEventSignup({
+        path: {eventSignupId: signUp.value.id as number},
+        query: {accessToken: signUp.value.guest?.accessToken},
+        throwOnError: true,
+      })
+    })
+
+    emit("delete:signUp", signUp.value.id as number)
+    setSubmitResult(true)
+  } catch (e) {
+    setSubmitResult(false)
+    $handleNetworkError(e)
+  }
+}
+
 defineExpose({save, validate})
 </script>
 
@@ -123,7 +148,7 @@ defineExpose({save, validate})
       class="mb-4"
     />
 
-    <v-expand-transition class="mb-3">
+    <v-expand-transition>
       <v-alert
         prominent
         type="warning"
@@ -134,16 +159,40 @@ defineExpose({save, validate})
       </v-alert>
     </v-expand-transition>
 
-    <submit-button
-      :block="true"
-      :loading="isSaving || buttonLoading"
-      :disabled="isSaving || buttonLoading"
-      :icon="signUp.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
-      :text="`${signUp.id ? 'Update' : 'Save'} sign-up form`"
-      :submit-state="submitState"
-      :show-submit-status="showSubmitStatus"
-      @click="save"
-    />
+    <v-row
+      class="mt-3 mb-0 ms-auto"
+      justify="end"
+    >
+      <v-col
+        v-if="signUp.id"
+        cols="auto"
+      >
+        <submit-button
+          :block="true"
+          variant="plain"
+          color="error"
+          :loading="isSaving || buttonLoading"
+          :disabled="isSaving || buttonLoading"
+          icon="mdi-account-multiple-remove"
+          text="Delete sign-up"
+          :submit-state="submitState"
+          :show-submit-status="showSubmitStatus"
+          @click="removeSignUp"
+        />
+      </v-col>
+      <v-col cols="auto">
+        <submit-button
+          :block="true"
+          :loading="isSaving || buttonLoading"
+          :disabled="isSaving || buttonLoading"
+          :icon="signUp.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
+          :text="`${signUp.id ? 'Update' : 'Save'} sign-up`"
+          :submit-state="submitState"
+          :show-submit-status="showSubmitStatus"
+          @click="save"
+        />
+      </v-col>
+    </v-row>
   </div>
 </template>
 

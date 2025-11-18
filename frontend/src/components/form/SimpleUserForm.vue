@@ -218,24 +218,20 @@ defineExpose({validate, save})
       </v-row>
 
       <v-row
+        v-if="showSubmit"
         align="end"
         justify="end"
         class="mb-5 tight-row"
       >
-        <v-col
-          v-if="showSubmit"
-          cols="auto"
-        >
-          <submit-button
-            :disabled="isSaving"
-            :loading="isSaving"
-            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :text="submitText"
-            :submit-state="submitState"
-            :show-submit-status="showSubmitStatus"
-            @click="save"
-          />
-        </v-col>
+        <submit-button
+          :disabled="isSaving"
+          :loading="isSaving"
+          :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+          :text="submitText"
+          :submit-state="submitState"
+          :show-submit-status="showSubmitStatus"
+          @click="save"
+        />
       </v-row>
     </Form>
   </div>

@@ -80,6 +80,7 @@ const save = async (): Promise<SimpleUser | null> => {
 
 defineExpose({validate, save})
 </script>
+
 <template>
   <div>
     <Form
@@ -154,7 +155,7 @@ defineExpose({validate, save})
             :disabled="isReadonly"
             label="E-mail*"
             name="email"
-            :rules="isReadOnly ? '' : 'required|email|noStudentEmail'"
+            :rules="isReadonly ? '' : 'required|email|noStudentEmail'"
           />
         </v-col>
         <v-col cols="6">
@@ -225,7 +226,7 @@ defineExpose({validate, save})
           v-if="showSubmit"
           cols="auto"
         >
-          <SubmitButton
+          <submit-button
             :disabled="isSaving"
             :loading="isSaving"
             :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"

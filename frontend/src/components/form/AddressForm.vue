@@ -1,3 +1,65 @@
+<script lang="ts" setup>
+import {computed} from "vue"
+import {Form} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
+import CountrySelect from "@/components/form/fields/CountrySelect.vue"
+import SubmitButton from "@/components/form/SubmitButton.vue"
+import {type Address, createAddress, updateAddress} from "@/services/api"
+import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+
+const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
+  showSubmit?: boolean
+  submitText?: string
+  userId?: number
+}>()
+
+const emit = defineEmits<{
+  (e: "submitted", ok: boolean): void
+}>()
+
+const address = defineModel<Address>({
+  default: () => ({
+    country: "NL",
+    city: "",
+    street: "",
+    houseNumber: "",
+    zipCode: "",
+  }),
+})
+
+const isCreating = computed<boolean>(() => !address.value?.id)
+const {formRef, validate} = useVeeForm()
+const {isSaving, withSaving} = useSaving()
+const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
+
+const save = async (): Promise<Address | null> => {
+  if (!(await validate())) {
+    emit("submitted", false)
+    setSubmitResult(false)
+    return null
+  }
+  try {
+    const resp = await withSaving(async () => {
+      const hasId = Boolean(address.value?.id)
+      return hasId
+        ? await updateAddress({path: {id: address.value!.id!}, body: address.value!, throwOnError: true})
+        : await createAddress({path: {userId}, body: address.value!, throwOnError: true})
+    })
+    address.value = resp.data!
+    emit("submitted", true)
+    setSubmitResult(true)
+    return address.value
+  } catch (error: unknown) {
+    handleSubmitError(formRef.value, error)
+    emit("submitted", false)
+    setSubmitResult(false)
+    return null
+  }
+}
+
+defineExpose({validate, save})
+</script>
+
 <template>
   <Form
     ref="formRef"
@@ -64,75 +126,17 @@
         class="mt-2 tight-row"
       >
         <v-col cols="auto">
-          <v-btn
+          <submit-button
             :disabled="isSaving"
             :loading="isSaving"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            size="large"
-            type="button"
+            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+            :text="submitText"
+            :submit-state="submitState"
+            :show-submit-status="showSubmitStatus"
             @click="save"
-          >
-            {{ submitText }}
-          </v-btn>
+          />
         </v-col>
       </v-row>
     </v-sheet>
   </Form>
 </template>
-
-<script lang="ts" setup>
-import {computed} from "vue"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
-import CountrySelect from "@/components/form/fields/CountrySelect.vue"
-import {type Address, createAddress, updateAddress} from "@/services/api"
-import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
-
-const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
-  showSubmit?: boolean
-  submitText?: string
-  userId?: number
-}>()
-
-const emit = defineEmits<{
-  (e: "submitted", ok: boolean): void
-}>()
-
-const address = defineModel<Address>({
-  default: () => ({
-    country: "NL",
-    city: "",
-    street: "",
-    houseNumber: "",
-    zipCode: "",
-  }),
-})
-
-const isCreating = computed<boolean>(() => !address.value?.id)
-const {formRef, validate} = useVeeForm()
-const {isSaving, withSaving} = useSaving()
-
-const save = async (): Promise<Address | null> => {
-  if (!(await validate())) {
-    emit("submitted", false)
-    return null
-  }
-  try {
-    const resp = await withSaving(async () => {
-      const hasId = Boolean(address.value?.id)
-      return hasId
-        ? await updateAddress({path: {id: address.value!.id!}, body: address.value!, throwOnError: true})
-        : await createAddress({path: {userId}, body: address.value!, throwOnError: true})
-    })
-    address.value = resp.data!
-    emit("submitted", true)
-    return address.value
-  } catch (error: unknown) {
-    handleSubmitError(formRef.value, error)
-    emit("submitted", false)
-    return null
-  }
-}
-
-defineExpose({validate, save})
-</script>

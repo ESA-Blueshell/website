@@ -204,7 +204,7 @@ defineExpose({validate, save})
             :component-props="passwordFieldProps"
             label="Password*"
             name="password"
-            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+            rules="required|minChars:8|maxChars:100|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
           />
         </v-col>
         <v-col cols="6">

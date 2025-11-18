@@ -1,4 +1,3 @@
-
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
@@ -112,7 +111,6 @@ async function loadBanner() {
     })
     bannerDirty.value = false
   } catch {
-    /* optional */
   }
 }
 
@@ -179,6 +177,7 @@ const save = async () => {
 
 defineExpose({validate, save})
 </script>
+
 <template>
   <Form
     ref="formRef"
@@ -434,7 +433,7 @@ defineExpose({validate, save})
 
     <v-row>
       <v-col cols="12">
-        <SubmitButton
+        <submit-button
           :block="true"
           class="mt-8 mx-auto"
           color="primary"

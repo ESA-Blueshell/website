@@ -8,26 +8,29 @@ defineOptions({inheritAttrs: false})
 
 type Rules = string | Record<string, unknown> | undefined
 
-withDefaults(defineProps<{
-  name: string
-  label?: string
-  rules?: Rules
-  component?: DefineComponent | string
-  componentProps?: Record<string, unknown>
-  disabled?: boolean
-  display?: DisplayFn<T>
-  update?: UpdateFn<T>
-}>(), {
-  label: "",
-  rules: "",
-  component: () => VTextField as unknown as DefineComponent,
-  componentProps: () => ({}),
-  disabled: false,
-  display: (v: T) => v,
-  update: (incoming: T, handleChange: HandleChange<T>) => {
-    handleChange(incoming)
+withDefaults(
+  defineProps<{
+    name: string
+    label?: string
+    rules?: Rules
+    component?: DefineComponent | string
+    componentProps?: Record<string, unknown>
+    disabled?: boolean
+    display?: DisplayFn<T>
+    update?: UpdateFn<T>
+  }>(),
+  {
+    label: "",
+    rules: "",
+    component: () => VTextField as unknown as DefineComponent,
+    componentProps: () => ({}),
+    disabled: false,
+    display: (v: T) => v,
+    update: (incoming: T, handleChange: HandleChange<T>) => {
+      handleChange(incoming)
+    },
   },
-})
+)
 
 const model = defineModel<T>()
 </script>

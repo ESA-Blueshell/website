@@ -178,7 +178,6 @@ onBeforeUnmount(() => {
   border-radius: inherit;
   pointer-events: none;
   z-index: 2;
-
   opacity: 1;
 }
 

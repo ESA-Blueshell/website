@@ -3,9 +3,12 @@ import {Field} from "vee-validate"
 import {watch} from "vue"
 import {type Answer, type Question, QuestionType} from "@/services/api"
 
-const props = withDefaults(defineProps<{
-  question: Question
-}>(), {})
+const props = withDefaults(
+  defineProps<{
+    question: Question
+  }>(),
+  {},
+)
 
 const answer = defineModel<Answer>({
   default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
@@ -43,6 +46,7 @@ watch(
   {immediate: true},
 )
 </script>
+
 <template v-if="answer">
   <template v-if="question.type === QuestionType.OPEN">
     <Field

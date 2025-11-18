@@ -1,3 +1,54 @@
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import DocumentTable from "@/components/base/DocumentTable.vue"
+import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
+import {defineRule, Form} from "vee-validate"
+import {createMembership, type Membership, updateMembership} from "@/services/api"
+import VvField from "@/components/form/fields/VvField.vue"
+import {VCheckbox} from "vuetify/components"
+import SubmitButton from "@/components/form/SubmitButton.vue"
+import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+
+defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
+
+const {showSubmit = false, submitText = "Submit"} = defineProps<{ showSubmit?: boolean; submitText?: string }>()
+const emit = defineEmits<{ (e: "submitted", ok: boolean): void }>()
+
+const membership = defineModel<Membership>({default: () => ({}) as Membership})
+
+const {formRef, validate} = useVeeForm()
+const {isSaving, withSaving} = useSaving()
+const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
+const consented = ref(false)
+const isCreating = computed<boolean>(() => !membership.value?.id)
+
+const save = async (): Promise<Membership | null> => {
+  if (!(await validate())) {
+    emit("submitted", false)
+    setSubmitResult(false)
+    return null
+  }
+  try {
+    const resp = await withSaving(async () => {
+      return membership.value?.id
+        ? await updateMembership({path: {id: membership.value.id}, body: membership.value!, throwOnError: true})
+        : await createMembership({throwOnError: true})
+    })
+    membership.value = resp.data!
+    emit("submitted", true)
+    setSubmitResult(true)
+    return membership.value
+  } catch (err: unknown) {
+    handleSubmitError(formRef.value, err)
+    emit("submitted", false)
+    setSubmitResult(false)
+    return null
+  }
+}
+
+defineExpose({validate, save})
+</script>
+
 <template>
   <Form
     ref="formRef"
@@ -49,63 +100,17 @@
           v-if="showSubmit"
           cols="auto"
         >
-          <v-btn
+          <submit-button
             :disabled="isSaving || !meta.valid"
             :loading="isSaving"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            size="large"
-            type="button"
+            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+            :text="submitText"
+            :submit-state="submitState"
+            :show-submit-status="showSubmitStatus"
             @click="save"
-          >
-            {{ submitText }}
-          </v-btn>
+          />
         </v-col>
       </v-row>
     </v-sheet>
   </Form>
 </template>
-
-<script lang="ts" setup>
-import {computed, ref} from "vue"
-import DocumentTable from "@/components/base/DocumentTable.vue"
-import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
-import {defineRule, Form} from "vee-validate"
-import {createMembership, type Membership, updateMembership} from "@/services/api"
-import VvField from "@/components/form/fields/VvField.vue"
-import {VCheckbox} from "vuetify/components"
-import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
-
-defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
-
-const {showSubmit = false, submitText = "Submit"} = defineProps<{ showSubmit?: boolean; submitText?: string }>()
-const emit = defineEmits<{ (e: "submitted", ok: boolean): void;}>()
-const membership = defineModel<Membership>({default: () => ({}) as Membership})
-
-const {formRef, validate} = useVeeForm()
-const {isSaving, withSaving} = useSaving()
-const consented = ref(false)
-const isCreating = computed<boolean>(() => !membership.value?.id)
-
-const save = async (): Promise<Membership | null> => {
-  if (!(await validate())) {
-    emit("submitted", false)
-    return null
-  }
-  try {
-    const resp = await withSaving(async () => {
-      return membership.value?.id
-        ? await updateMembership({path: {id: membership.value.id}, body: membership.value!, throwOnError: true})
-        : await createMembership({throwOnError: true})
-    })
-    membership.value = resp.data!
-    emit("submitted", true)
-    return membership.value
-  } catch (err: unknown) {
-    handleSubmitError(formRef.value, err)
-    emit("submitted", false)
-    return null
-  }
-}
-
-defineExpose({validate, save})
-</script>

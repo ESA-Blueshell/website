@@ -1,3 +1,32 @@
+<script lang="ts" setup>
+import {computed} from "vue"
+import {useStore} from "vuex"
+import {Form} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
+import "flag-icons/css/flag-icons.min.css"
+import "v-phone-input/dist/v-phone-input.css"
+import {VPhoneInput} from "v-phone-input"
+import type {Guest} from "@/services/api"
+import {useCountry, useVeeForm} from "@/composables/formUtils"
+
+const guest = defineModel<Guest>({
+  default: () => ({
+    name: "",
+    discord: "",
+    email: "",
+    phoneNumber: "",
+  }),
+})
+
+const store = useStore()
+const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+
+const {country, onCountryUpdate} = useCountry("NL")
+const {formRef, validate} = useVeeForm()
+
+defineExpose({validate})
+</script>
+
 <template>
   <Form
     v-if="!isLoggedIn"
@@ -73,35 +102,6 @@
     </v-row>
   </Form>
 </template>
-
-<script lang="ts" setup>
-import {computed} from "vue"
-import {useStore} from "vuex"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
-import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/dist/v-phone-input.css"
-import {VPhoneInput} from "v-phone-input"
-import type {Guest} from "@/services/api"
-import {useCountry, useVeeForm} from "@/composables/formUtils"
-
-const guest = defineModel<Guest>({
-  default: () => ({
-    name: "",
-    discord: "",
-    email: "",
-    phoneNumber: "",
-  }),
-})
-
-const store = useStore()
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-
-const {country, onCountryUpdate} = useCountry("NL")
-const {formRef, validate} = useVeeForm()
-
-defineExpose({validate})
-</script>
 
 <style lang="scss" scoped>
 .v-checkbox .v-selection-control {

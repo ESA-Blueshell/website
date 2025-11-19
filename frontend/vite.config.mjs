@@ -17,6 +17,7 @@ export default defineConfig({
           @use "@/styles/settings" as *;
           @use "@/styles/housestyle" as *;
           @use "@/styles/colors" as *;
+          @use "@/styles/forms" as *;
         `,
                 sassOptions: {
                     api: 'modern'

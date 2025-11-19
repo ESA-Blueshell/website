@@ -150,9 +150,16 @@ const deleteSignUp = (id: number) => {
         class="mx-auto mt-5"
         style="max-width: 800px"
       >
-        <p class="mt-8 mx-3 mb-4 text-h3 text-center">
+        <p class="mt-4 mx-3 mb-4 text-h3 text-center">
           Upcoming Events
         </p>
+        <v-btn
+          :disabled="!committees.length"
+          block
+          to="events/create"
+        >
+          Create new event
+        </v-btn>
         <event-list
           :committees="committees"
           :event-sign-ups="eventSignUps"

@@ -17,7 +17,6 @@ import Partners from "@/pages/partners/Partners.vue"
 import NotFound from "@/pages/NotFound.vue"
 import Login from "@/pages/login/Login.vue"
 import Account from "@/pages/account/Account.vue"
-import EventManager from "@/pages/events/EventManager.vue"
 import EditEvent from "@/pages/events/EditEvent.vue"
 import EventSignUps from "@/pages/events/EventSignUps.vue"
 import CommitteeManager from "@/pages/management/CommitteeManager.vue"
@@ -219,12 +218,6 @@ const routes: RouteRecordRaw[] = [
     path: "/events/edit/:id",
     name: "editEvent",
     component: EditEvent,
-    meta: {requiresAuth: true},
-  },
-  {
-    path: "/events/manage",
-    name: "eventManager",
-    component: EventManager,
     meta: {requiresAuth: true},
   },
   {

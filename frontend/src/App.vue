@@ -68,40 +68,12 @@
         </v-menu>
 
 
-        <v-menu
-          :offset="3"
-          :open-on-hover="true"
-          open-delay="0"
+        <v-btn
+          class="bar-button"
+          to="/events"
         >
-          <template #activator="{ props }">
-            <v-btn
-              class="bar-button"
-              to="/events"
-              v-bind="props"
-            >
-              events
-              <v-icon>mdi-chevron-down</v-icon>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item to="/events">
-              Events
-            </v-list-item>
-            <v-list-item
-              v-if="isLoggedIn && isActive"
-              to="/events/manage"
-            >
-              Manage events
-            </v-list-item>
-            <v-list-item
-              to="/events/circuitShowdown"
-            >
-              Circuit Showdown
-            </v-list-item>
-          </v-list>
-        </v-menu>
-
-
+          Events
+        </v-btn>
         <v-menu
           :offset="3"
           :open-on-hover="true"

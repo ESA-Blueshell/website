@@ -19,11 +19,11 @@
         />
 
         <address-user-list
-          class="mt-3"
           :addresses="addresses"
           :expanded="expanded"
           :users="usersWithoutAddress"
           allow-create
+          class="mt-3"
           enable-delete
           title="Users without address"
           @update:address="addressChanged"

@@ -57,8 +57,8 @@ watch(
       :validate-on-mount="false"
     >
       <v-text-field
-        :label="question.label || 'Answer'"
         :error-messages="meta.touched ? errors : []"
+        :label="question.label || 'Answer'"
         :model-value="value"
         required
         @blur="handleBlur"

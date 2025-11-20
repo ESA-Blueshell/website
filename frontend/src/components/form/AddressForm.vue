@@ -69,7 +69,7 @@ defineExpose({validate, save})
       class="pa-4"
       style="border-radius: 10px"
     >
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="8">
           <VvField
             v-model="address.street"
@@ -88,7 +88,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="address.zipCode"
@@ -107,7 +107,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="12">
           <VvField
             v-model="address.country"
@@ -122,17 +122,17 @@ defineExpose({validate, save})
       <v-row
         v-if="showSubmit"
         align="end"
-        justify="end"
         class="mt-2 tight-row"
+        justify="end"
       >
         <v-col cols="auto">
           <submit-button
             :disabled="isSaving"
-            :loading="isSaving"
             :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :text="submitText"
-            :submit-state="submitState"
+            :loading="isSaving"
             :show-submit-status="showSubmitStatus"
+            :submit-state="submitState"
+            :text="submitText"
             @click="save"
           />
         </v-col>

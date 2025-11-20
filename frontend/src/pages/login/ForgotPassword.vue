@@ -30,10 +30,10 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  type="submit"
                   :disabled="!meta.valid || loading"
                   :loading="loading"
                   color="primary"
+                  type="submit"
                 >
                   Send reset mail
                 </v-btn>

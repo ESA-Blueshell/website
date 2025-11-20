@@ -110,7 +110,9 @@ async function loadBanner() {
       lastModified: Date.now(),
     })
     bannerDirty.value = false
-  } catch {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e: unknown) {
+    // Ignore error
   }
 }
 
@@ -184,15 +186,15 @@ defineExpose({validate, save})
     as="div"
   >
     <v-container style="padding: 0;">
-      <v-row class="tight-row">
+      <v-row>
         <v-col
           cols="12"
           lg="8"
         >
           <VvField
             v-model="event.title"
-            name="title"
             label="Event name"
+            name="title"
             rules="required"
           />
         </v-col>
@@ -202,8 +204,8 @@ defineExpose({validate, save})
         >
           <VvField
             v-model="event.location"
-            name="location"
             label="Location"
+            name="location"
             rules="required"
           />
         </v-col>
@@ -214,51 +216,51 @@ defineExpose({validate, save})
           <VvField
             v-model="event.description"
             :component="MarkdownField"
-            name="description"
             label="Description"
+            name="description"
             rules="required"
           />
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="event.memberPrice"
-            name="memberPrice"
-            label="Price for members"
-            rules="minValue:0"
             :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
+            label="Price for members"
+            name="memberPrice"
+            rules="minValue:0"
           />
         </v-col>
         <v-col>
           <VvField
             v-model="event.publicPrice"
-            name="publicPrice"
-            label="Price for non-members"
-            rules="minValue:0"
             :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
+            label="Price for non-members"
+            name="publicPrice"
+            rules="minValue:0"
           />
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="sameEndDate"
             :component="VCheckbox"
-            name="sameEndDate"
             :component-props="{ label: 'Same start and end date' }"
+            name="sameEndDate"
           />
         </v-col>
         <v-col>
           <VvField
             v-model="event.membersOnly"
             :component="VCheckbox"
-            name="membersOnly"
             :component-props="{ label: 'Members only' }"
+            name="membersOnly"
           />
         </v-col>
         <v-col>
@@ -266,73 +268,70 @@ defineExpose({validate, save})
             v-if="isBoard"
             v-model="event.approved"
             :component="VCheckbox"
-            name="approved"
             :component-props="{ label: 'Approved' }"
+            name="approved"
           />
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="event.startTime"
-            name="startDate"
-            label="Start date"
-            rules="required"
             :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
             :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
             :update="(date: string, handle: HandleChange<string>) => {
               handle(toISO({ date, dateTime: event.startTime }))
               setEndDate(date)
             }"
+            label="Start date"
+            name="startDate"
+            rules="required"
           />
         </v-col>
         <v-col>
           <VvField
             v-model="event.startTime"
-            name="startTime"
-            label="Start time"
-            :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
             :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
             :display="(v: DisplayFn<string>) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+            :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
             :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.startTime }))"
+            label="Start time"
+            name="startTime"
           />
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="event.endTime"
-            name="endDate"
-            label="End date"
-            rules="required|dateTimeAfter:@startDate"
-            :disabled="sameEndDate"
             :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
+            :disabled="sameEndDate"
             :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
             :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date: String(date), dateTime: event.endTime }))"
+            label="End date"
+            name="endDate"
+            rules="required|dateTimeAfter:@startDate"
           />
         </v-col>
         <v-col>
           <VvField
             v-model="event.endTime"
-            name="endTime"
-            label="End time"
-            rules="required|dateTimeAfter:@startTime"
             :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
             :display="(v: string) => safeFormatISO(String(v ?? ''), 'HH:mm')"
             :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.endTime }))"
+            label="End time"
+            name="endTime"
+            rules="required|dateTimeAfter:@startTime"
           />
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="event.committeeId"
-            name="committeeId"
-            label="Representative committee"
-            rules="required"
             :component="VSelect"
             :component-props="{
               items: committees,
@@ -341,15 +340,15 @@ defineExpose({validate, save})
               'prepend-icon': 'mdi-account-group',
               disabled: !committees.length
             }"
+            label="Representative committee"
+            name="committeeId"
+            rules="required"
           />
         </v-col>
 
         <v-col>
           <VvField
             v-model="bannerFile"
-            name="banner"
-            label="Promo image (Max 2MB)"
-            rules="fileSize"
             :component="VFileInput"
             :component-props="{
               accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif',
@@ -357,32 +356,34 @@ defineExpose({validate, save})
               'show-size': true
             }"
             :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
+            label="Promo image (Max 2MB)"
+            name="banner"
+            rules="fileSize"
           />
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="event.signUp"
             :component="VCheckbox"
-            name="signUp"
             :component-props="{ label: 'Enable sign-up', 'hide-details': true }"
+            name="signUp"
           />
         </v-col>
         <v-col>
           <VvField
             v-model="enableSignUpForm"
             :component="VCheckbox"
-            name="enableSignUpForm"
             :component-props="{ label: 'Enable sign-up form', 'hide-details': true }"
+            name="enableSignUpForm"
           />
         </v-col>
       </v-row>
 
       <v-row
         v-if="enableSignUpForm"
-        class="tight-row"
       >
         <v-col>
           <VvField
@@ -435,14 +436,14 @@ defineExpose({validate, save})
       <v-col cols="12">
         <submit-button
           :block="true"
-          class="mt-8 mx-auto"
-          color="primary"
-          :loading="isSaving"
           :disabled="hasStarted || isSaving"
           :icon="event.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
-          text="Submit event"
-          :submit-state="submitState"
+          :loading="isSaving"
           :show-submit-status="showSubmitStatus"
+          :submit-state="submitState"
+          class="mt-8 mx-auto"
+          color="primary"
+          text="Submit event"
           @click="save"
         />
       </v-col>

@@ -14,8 +14,8 @@
           :contributions="contributions"
           :disabled="!selectedPeriodId"
           :users="membersPaid"
-          title="Contribution paid"
           class="mt-3"
+          title="Contribution paid"
           @update:contribution="contributionAddedOrUpdated"
           @delete:contribution="contributionDeleted"
         />

@@ -29,25 +29,25 @@
               :key="member.name"
             >
               <board-member-row
-                class="my-10"
                 :member="member"
                 :reverse="i % 2 === 1"
+                class="my-10"
               />
             </template>
           </template>
 
           <template v-else>
             <v-card
-              role="button"
               :aria-expanded="String(expandedBoards[boardIndex])"
-              style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;"
               class="px-5"
+              role="button"
+              style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;"
               @click="toggleBoard(boardIndex)"
             >
               <h2>{{ board.name }}</h2>
               <v-icon
-                size="24"
                 color="grey-darken-1"
+                size="24"
               >
                 {{ expandedBoards[boardIndex] ? "mdi-chevron-up" : "mdi-chevron-down" }}
               </v-icon>
@@ -70,9 +70,9 @@
                   :key="member.name"
                 >
                   <board-member-row
-                    class="my-16"
                     :member="member"
                     :reverse="i % 2 === 1"
+                    class="my-16"
                   />
                 </template>
               </div>

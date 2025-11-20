@@ -122,12 +122,12 @@ onMounted(async () => {
 
         <member-user-list
           v-model:expanded="expanded"
-          :memberships-by-user-id="membershipsByUserId"
           :contributions-by-user-id="contributionsByUserId"
+          :memberships-by-user-id="membershipsByUserId"
           :users="nonMembers"
           allow-create
-          enable-delete
           class="mt-3"
+          enable-delete
           title="Non-members"
           @update:membership="membershipChanged"
           @update:user="updateUser"
@@ -136,8 +136,8 @@ onMounted(async () => {
 
         <member-user-list
           v-model:expanded="expanded"
-          :memberships-by-user-id="membershipsByUserId"
           :contributions-by-user-id="contributionsByUserId"
+          :memberships-by-user-id="membershipsByUserId"
           :users="members"
           class="mt-3"
           title="Members"

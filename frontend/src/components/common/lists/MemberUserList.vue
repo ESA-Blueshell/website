@@ -70,10 +70,10 @@ const onCreateSubmitted = (ok: boolean) => {
 <template>
   <v-card class="overflow-hidden">
     <div
+      :aria-controls="panelId"
+      :aria-expanded="String(isOpen)"
       class="px-5 py-3 d-flex align-center justify-space-between"
       role="button"
-      :aria-expanded="String(isOpen)"
-      :aria-controls="panelId"
       tabindex="0"
       @click="isOpen = !isOpen"
       @keydown.enter.prevent="isOpen = !isOpen"
@@ -88,8 +88,8 @@ const onCreateSubmitted = (ok: boolean) => {
         </h2>
       </v-badge>
       <v-icon
-        size="24"
         color="grey-darken-1"
+        size="24"
       >
         {{ isOpen ? "mdi-chevron-up" : "mdi-chevron-down" }}
       </v-icon>
@@ -103,11 +103,11 @@ const onCreateSubmitted = (ok: boolean) => {
       >
         <v-text-field
           v-model="localSearch"
-          label="Search for a user"
           clearable
           density="comfortable"
-          prepend-inner-icon="mdi-magnify"
           hide-details
+          label="Search for a user"
+          prepend-inner-icon="mdi-magnify"
         />
 
         <v-list class="mt-1">
@@ -141,9 +141,9 @@ const onCreateSubmitted = (ok: boolean) => {
           >
             <member-user-row
               v-model:expanded="expanded"
+              :contribution="contributionsByUserId[user.id]"
               :enable-delete="enableDelete"
               :membership="membershipsByUserId[user.id]"
-              :contribution="contributionsByUserId[user.id]"
               :user="user"
               @update:membership="membershipChanged"
               @update:user="updateUser"

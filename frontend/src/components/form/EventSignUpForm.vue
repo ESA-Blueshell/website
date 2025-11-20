@@ -4,11 +4,11 @@ import {useStore} from "vuex"
 import {
   type Answer,
   createEventSignup,
+  deleteEventSignup,
   type Event,
   type EventSignUp,
   type Question,
   updateEventSignUp,
-  deleteEventSignup,
 } from "@/services/api"
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
@@ -169,26 +169,26 @@ defineExpose({save, validate})
       >
         <submit-button
           :block="true"
-          variant="plain"
-          color="error"
-          :loading="isSaving || buttonLoading"
           :disabled="isSaving || buttonLoading"
+          :loading="isSaving || buttonLoading"
+          :show-submit-status="showSubmitStatus"
+          :submit-state="submitState"
+          color="error"
           icon="mdi-account-multiple-remove"
           text="Delete sign-up"
-          :submit-state="submitState"
-          :show-submit-status="showSubmitStatus"
+          variant="plain"
           @click="removeSignUp"
         />
       </v-col>
       <v-col cols="auto">
         <submit-button
           :block="true"
-          :loading="isSaving || buttonLoading"
           :disabled="isSaving || buttonLoading"
           :icon="signUp.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
-          :text="`${signUp.id ? 'Update' : 'Save'} sign-up`"
-          :submit-state="submitState"
+          :loading="isSaving || buttonLoading"
           :show-submit-status="showSubmitStatus"
+          :submit-state="submitState"
+          :text="`${signUp.id ? 'Update' : 'Save'} sign-up`"
           @click="save"
         />
       </v-col>

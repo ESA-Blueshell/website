@@ -8,8 +8,8 @@
     >
       <v-card class="pa-6">
         <Form
-          v-slot="{ meta }"
           ref="formRef"
+          v-slot="{ meta }"
           as="form"
           @submit="onSubmit"
         >
@@ -73,15 +73,15 @@
           </v-row>
 
           <v-row
-            class="mt-2"
             align="center"
+            class="mt-2"
             justify="end"
           >
             <v-btn
-              type="submit"
-              color="primary"
               :disabled="!meta.valid || loading"
               :loading="loading"
+              color="primary"
+              type="submit"
             >
               Activate Member
             </v-btn>
@@ -98,8 +98,8 @@
 
           <v-alert
             v-if="succeeded"
-            type="success"
             class="mb-2"
+            type="success"
           >
             Account activated! You will be redirected to the login page.
           </v-alert>

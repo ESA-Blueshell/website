@@ -17,10 +17,10 @@
             <v-col cols="12">
               <VvField
                 v-model="membership.startDate"
-                name="startDate"
-                label="Start Date"
-                rules="required"
                 :component-props="{ type: 'date', max: maxDate }"
+                label="Start Date"
+                name="startDate"
+                rules="required"
               />
             </v-col>
           </v-row>
@@ -30,8 +30,8 @@
               <VvField
                 v-model="membership.memberType"
                 :component="MemberTypeSelect"
-                name="memberType"
                 label="Member Type"
+                name="memberType"
                 rules="required"
               />
             </v-col>
@@ -42,8 +42,8 @@
               <VvField
                 v-model="membership.country"
                 :component="CountrySelect"
-                name="country"
                 label="Country"
+                name="country"
                 rules="required"
               />
             </v-col>

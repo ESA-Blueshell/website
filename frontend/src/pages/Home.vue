@@ -28,11 +28,11 @@
           v-for="col in columns"
           :key="col.title"
           align-self="center"
+          class="expand"
           cols="12"
           md="4"
           sm="5"
           style="max-width:450px;min-height: 250px"
-          class="expand"
         >
           <a
             style="width: 100%"

@@ -105,7 +105,7 @@ defineExpose({validate, save})
       ref="formRef"
       as="div"
     >
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="4">
           <VvField
             v-model="user.initials"
@@ -126,7 +126,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="4">
           <VvField
             v-model="user.prefix"
@@ -146,7 +146,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="user.username"
@@ -166,7 +166,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.email"
@@ -196,7 +196,6 @@ defineExpose({validate, save})
 
       <v-row
         v-if="showPassword"
-        class="tight-row"
       >
         <v-col cols="6">
           <VvField
@@ -218,7 +217,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.dateOfBirth"
@@ -239,7 +238,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.gender"
@@ -259,7 +258,6 @@ defineExpose({validate, save})
       <v-row
         align="center"
         justify="space-evenly"
-        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -293,7 +291,6 @@ defineExpose({validate, save})
       <v-row
         align="center"
         justify="space-evenly"
-        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -308,8 +305,8 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        justify="end"
         class="mb-5 tight-row"
+        justify="end"
       >
         <v-col
           v-if="showSubmit"
@@ -317,11 +314,11 @@ defineExpose({validate, save})
         >
           <submit-button
             :disabled="isSaving"
-            :loading="isSaving"
             :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :text="submitText"
-            :submit-state="submitState"
+            :loading="isSaving"
             :show-submit-status="showSubmitStatus"
+            :submit-state="submitState"
+            :text="submitText"
             @click="save"
           />
         </v-col>

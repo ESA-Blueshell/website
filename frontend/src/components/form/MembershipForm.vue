@@ -77,15 +77,14 @@ defineExpose({validate, save})
       <v-row
         align="center"
         justify="space-evenly"
-        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
             v-model="consented"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
-            name="consented"
             label="I have understood and agree to the terms and conditions for membership listed above."
+            name="consented"
             rules="accepted"
           />
         </v-col>
@@ -93,8 +92,8 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        justify="end"
         class="mb-5 mt-2 tight-row"
+        justify="end"
       >
         <v-col
           v-if="showSubmit"
@@ -102,11 +101,11 @@ defineExpose({validate, save})
         >
           <submit-button
             :disabled="isSaving || !meta.valid"
-            :loading="isSaving"
             :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :text="submitText"
-            :submit-state="submitState"
+            :loading="isSaving"
             :show-submit-status="showSubmitStatus"
+            :submit-state="submitState"
+            :text="submitText"
             @click="save"
           />
         </v-col>

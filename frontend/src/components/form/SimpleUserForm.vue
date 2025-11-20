@@ -87,7 +87,7 @@ defineExpose({validate, save})
       ref="formRef"
       as="div"
     >
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="4">
           <VvField
             v-model="user.initials"
@@ -108,7 +108,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="4">
           <VvField
             v-model="user.prefix"
@@ -128,7 +128,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.username"
@@ -148,14 +148,14 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.email"
             :disabled="isReadonly"
+            :rules="isReadonly ? '' : 'required|email|noStudentEmail'"
             label="E-mail*"
             name="email"
-            :rules="isReadonly ? '' : 'required|email|noStudentEmail'"
           />
         </v-col>
         <v-col cols="6">
@@ -178,7 +178,6 @@ defineExpose({validate, save})
 
       <v-row
         v-if="showPassword"
-        class="tight-row"
       >
         <v-col cols="6">
           <VvField
@@ -204,7 +203,6 @@ defineExpose({validate, save})
       <v-row
         align="center"
         justify="space-evenly"
-        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -220,16 +218,16 @@ defineExpose({validate, save})
       <v-row
         v-if="showSubmit"
         align="end"
-        justify="end"
         class="mb-5 tight-row"
+        justify="end"
       >
         <submit-button
           :disabled="isSaving"
-          :loading="isSaving"
           :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-          :text="submitText"
-          :submit-state="submitState"
+          :loading="isSaving"
           :show-submit-status="showSubmitStatus"
+          :submit-state="submitState"
+          :text="submitText"
           @click="save"
         />
       </v-row>

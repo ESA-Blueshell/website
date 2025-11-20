@@ -92,17 +92,17 @@ onBeforeUnmount(() => {
   <v-btn
     :block="block"
     :color="color"
-    :variant="variant"
-    :size="size"
-    :loading="loading"
     :disabled="disabled || loading"
+    :loading="loading"
+    :size="size"
     :type="type"
+    :variant="variant"
     class="submit-btn"
     @click="emit('click')"
   >
     <div
-      class="submit-btn__inner"
       :class="{'submit-btn__inner--status-active': hasStatus}"
+      class="submit-btn__inner"
     >
       <div class="submit-btn__content">
         <v-icon
@@ -119,13 +119,13 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <transition
-      name="submit-feedback-overlay"
       mode="out-in"
+      name="submit-feedback-overlay"
     >
       <div
         v-if="hasStatus"
-        class="submit-btn__status-overlay"
         :class="statusColorClass"
+        class="submit-btn__status-overlay"
       >
         <v-icon
           :icon="statusIcon"

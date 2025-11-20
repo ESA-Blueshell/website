@@ -1,4 +1,4 @@
-<script lang="ts" setup generic="T">
+<script generic="T" lang="ts" setup>
 import {Field} from "vee-validate"
 import {VTextField} from "vuetify/components"
 import type {DefineComponent} from "vue"
@@ -50,8 +50,8 @@ const model = defineModel<T>()
       :model-value="display(value as T)"
       v-bind="componentProps"
       @blur="handleBlur"
-      @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
       v-on="$attrs"
+      @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
     />
   </Field>
 </template>

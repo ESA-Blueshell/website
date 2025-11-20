@@ -42,15 +42,15 @@
           </v-row>
 
           <v-row
-            class="mt-2"
             align="center"
+            class="mt-2"
             justify="end"
           >
             <v-btn
-              type="submit"
-              color="primary"
               :disabled="!meta.valid || loading"
               :loading="loading"
+              color="primary"
+              type="submit"
             >
               Reset Password
             </v-btn>

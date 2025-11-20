@@ -140,8 +140,8 @@ const totalVisible = computed(() => {
       <v-pagination
         v-model="currentPage"
         :length="pageMeta?.totalPages ?? 1"
-        class="w-100"
         :total-visible="totalVisible"
+        class="w-100"
       />
     </div>
 
@@ -158,8 +158,8 @@ const totalVisible = computed(() => {
       <v-pagination
         v-model="currentPage"
         :length="pageMeta?.totalPages ?? 1"
-        class="w-100"
         :total-visible="totalVisible"
+        class="w-100"
       />
     </div>
 

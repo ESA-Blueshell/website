@@ -79,11 +79,9 @@
 <script lang="ts" setup>
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$goto} from "@/plugins/goto"
-import {useTheme} from "vuetify"
 import {ref} from "vue"
 
 const mapLoading = ref(true)
-const theme = useTheme()
 </script>
 
 <style lang="scss" scoped>

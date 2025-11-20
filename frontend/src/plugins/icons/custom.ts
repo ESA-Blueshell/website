@@ -15,20 +15,17 @@ export const customIconSet: IconSet = {
     const IconComponent = COMPONENTS[iconName]
 
     if (!IconComponent) {
-      if (process.env.NODE_ENV !== "production") {
+      if (import.meta.env.DEV) {
         console.warn(`[Vuetify custom icons] Unknown icon "${props.icon}"`)
       }
       return null
     }
 
-    return h(IconComponent, {
-      class: props.class,
-      style: props.style,
-    })
+    return h(IconComponent, {...props})
   },
 }
 
-export const customAliases: IconAliases = {
+export const customAliases: Partial<IconAliases> = {
   discord: "custom:discord",
   accountMultipleEdit: "custom:account-multiple-edit",
 }

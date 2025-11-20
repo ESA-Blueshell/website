@@ -224,8 +224,8 @@ const signUpIcon = computed(() =>
 <template v-if="event.id">
   <div>
     <v-card
-      class="card--row"
       :style="cardStyle"
+      class="card--row"
       rounded="sm"
     >
       <v-container class="py-1 px-2">
@@ -406,22 +406,22 @@ const signUpIcon = computed(() =>
                   v-bind="p"
                 >
                   <v-badge
-                    color="primary"
                     :content="event.signUpCount"
+                    color="primary"
                     floating
                     offset-x="15"
                     offset-y="15"
                   >
                     <v-btn
-                      :disabled="actionsDisabled"
-                      :loading="submitting"
-                      :icon="signUpIcon"
-                      variant="plain"
                       :aria-label="
                         isSignedUp
                           ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
                           : (expanded ? 'Cancel signing up' : 'Sign up')
                       "
+                      :disabled="actionsDisabled"
+                      :icon="signUpIcon"
+                      :loading="submitting"
+                      variant="plain"
                       @click="toggleExpanded()"
                     />
                   </v-badge>

@@ -488,7 +488,6 @@ const statusSnackbarMessage = computed({
 })
 
 const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
-const isActive = computed((): boolean => store.getters.isActive)
 const isBoard = computed((): boolean => store.getters.isBoard)
 const login = computed(() => store.getters.getLogin)
 

@@ -135,9 +135,9 @@ const deleteSignUp = (id: number) => {
 <template>
   <v-main>
     <top-banner
-      title="Events"
       height="200x"
       m-height="100px"
+      title="Events"
     />
     <div class="mx-3">
       <div

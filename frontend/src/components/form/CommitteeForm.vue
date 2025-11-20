@@ -120,23 +120,23 @@ defineExpose({validate, save})
           <v-col cols="12">
             <VvField
               v-model="committee.name"
-              name="name"
-              label="Committee name"
-              rules="required|minChars:3|maxChars:100"
               :disabled="isReadonly"
+              label="Committee name"
+              name="name"
+              rules="required|minChars:3|maxChars:100"
             />
           </v-col>
         </v-row>
 
-        <v-row class="tight-row">
+        <v-row>
           <v-col>
             <VvField
               v-model="committee.description"
               :component="MarkdownField"
-              name="description"
-              label="Description"
-              rules="required|minChars:10|maxChars:10000"
               :disabled="isReadonly"
+              label="Description"
+              name="description"
+              rules="required|minChars:10|maxChars:10000"
             />
           </v-col>
         </v-row>
@@ -150,11 +150,11 @@ defineExpose({validate, save})
             <v-col cols="4">
               <VvField
                 v-model="committee.members[i].role"
+                :component-props="{ 'hide-details': 'auto' }"
                 :disabled="isReadonly"
                 :name="`members[${i}].role`"
                 label="Role"
                 rules="maxChars:120"
-                :component-props="{ 'hide-details': 'auto' }"
               />
             </v-col>
 
@@ -193,8 +193,8 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        justify="end"
         class="mb-5 tight-row"
+        justify="end"
       >
         <v-col
           v-if="props.showSubmit"
@@ -202,11 +202,11 @@ defineExpose({validate, save})
         >
           <submit-button
             :disabled="isSaving"
-            :loading="isSaving"
             :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :text="props.submitText"
-            :submit-state="submitState"
+            :loading="isSaving"
             :show-submit-status="showSubmitStatus"
+            :submit-state="submitState"
+            :text="props.submitText"
             @click="save"
           />
         </v-col>

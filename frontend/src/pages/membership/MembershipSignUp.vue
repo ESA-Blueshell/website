@@ -41,9 +41,9 @@
               <v-col cols="12">
                 <div class="d-flex align-center mb-2">
                   <v-icon
-                    size="28"
-                    color="primary"
                     class="mr-2"
+                    color="primary"
+                    size="28"
                   >
                     mdi-email-fast-outline
                   </v-icon>
@@ -51,10 +51,10 @@
                 </div>
 
                 <v-alert
-                  variant="tonal"
-                  color="primary"
                   border="start"
                   class="mb-4"
+                  color="primary"
+                  variant="tonal"
                 >
                   We’ve emailed <strong>{{ infoEmail }}</strong> a link to
                   <strong>activate your account</strong>.
@@ -84,14 +84,14 @@
               <v-spacer />
 
               <v-col
-                cols="auto"
                 class="d-flex"
+                cols="auto"
               >
                 <v-btn
                   :loading="resendBusy"
-                  variant="outlined"
                   class="mr-2"
                   prepend-icon="mdi-email-arrow-right-outline"
+                  variant="outlined"
                   @click="resendActivation"
                 >
                   Resend email
@@ -212,7 +212,8 @@ import {
   findAddressById,
   findUserById,
   type Membership,
-  resendUserActivation, Role,
+  resendUserActivation,
+  Role,
 } from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"

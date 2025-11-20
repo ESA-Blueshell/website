@@ -19,48 +19,48 @@
             <v-col cols="6">
               <VvField
                 v-model="periodForm.startDate"
-                name="startDate"
-                label="Start Date"
-                rules="required|dateBefore:@endDate"
                 :component-props="{ type: 'date' }"
+                label="Start Date"
+                name="startDate"
+                rules="required|dateBefore:@endDate"
               />
             </v-col>
             <v-col cols="6">
               <VvField
                 v-model="periodForm.endDate"
-                name="endDate"
-                label="End Date"
-                rules="required|dateAfter:@startDate"
                 :component-props="{ type: 'date' }"
+                label="End Date"
+                name="endDate"
+                rules="required|dateAfter:@startDate"
               />
             </v-col>
           </v-row>
 
           <VvField
             v-model="periodForm.halfYearFee"
-            name="halfYearFee"
-            label="Half Year Fee"
-            rules="required|minValue:0"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+            label="Half Year Fee"
+            name="halfYearFee"
+            rules="required|minValue:0"
           />
 
           <VvField
             v-model="periodForm.fullYearFee"
-            name="fullYearFee"
-            label="Full Year Fee"
-            rules="required|minValue:0"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, hande: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+            label="Full Year Fee"
+            name="fullYearFee"
+            rules="required|minValue:0"
           />
 
           <VvField
             v-model="periodForm.alumniFee"
-            name="alumniFee"
-            label="Alumni Fee"
-            rules="required|minValue:0"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
             :update="(raw: string, hande: HandleChange<number>) => handle(raw === '' ? '' : Number(raw))"
+            label="Alumni Fee"
+            name="alumniFee"
+            rules="required|minValue:0"
           />
         </Form>
       </v-card-text>

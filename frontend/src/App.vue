@@ -547,6 +547,7 @@ onMounted(async () => {
 
       const userData: AdvancedUser = resp.data!
       store.commit("setRoles", userData.roles)
+      store.commit("setAddressId", userData.addressId)
     } catch (e: unknown) {
       $handleNetworkError(e)
     }

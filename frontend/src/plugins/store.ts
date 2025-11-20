@@ -19,6 +19,8 @@ export interface Mutations {
 
   setRoles(state: State, roles: string[]): void;
 
+  setAddressId(state: State, addressId: number): void;
+
   setStatusSnackbarMessage(state: State, message: string): void;
 
   saveGuestData(state: State, data: Record<string, unknown>): void;
@@ -34,6 +36,10 @@ export interface Actions {
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
 
   setRoles(context: { commit: (type: keyof Mutations, payload?: string[]) => void }, roles: string[]): Promise<void>;
+
+  setAddressId(context: {
+    commit: (type: keyof Mutations, payload?: number) => void
+  }, addressId: number): Promise<void>;
 }
 
 export interface Getters {
@@ -95,6 +101,12 @@ const store = createStore<State>({
     setRoles(state: State, roles: Role[]): void {
       if (state.login) {
         state.login = {...state.login, roles}
+        writeJsonCookie("login", state.login)
+      }
+    },
+    setAddressId(state: State, addressId: number): void {
+      if (state.login) {
+        state.login = {...state.login, addressId}
         writeJsonCookie("login", state.login)
       }
     },

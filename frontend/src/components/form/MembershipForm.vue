@@ -92,7 +92,7 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        class="mb-5 mt-2 tight-row"
+        class="mb-5 mt-2"
         justify="end"
       >
         <v-col

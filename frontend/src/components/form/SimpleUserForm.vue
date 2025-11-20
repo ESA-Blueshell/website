@@ -218,7 +218,7 @@ defineExpose({validate, save})
       <v-row
         v-if="showSubmit"
         align="end"
-        class="mb-5 tight-row"
+        class="mb-5"
         justify="end"
       >
         <submit-button

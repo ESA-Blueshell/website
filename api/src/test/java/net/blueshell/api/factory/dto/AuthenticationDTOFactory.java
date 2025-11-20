@@ -26,6 +26,6 @@ public class AuthenticationDTOFactory extends BaseDtoFactory<AuthenticationDTO> 
         long userId = nextId();
         String username = unique("user");
         long exp = System.currentTimeMillis() + 3600_000;
-        return new AuthenticationDTO(token, userId, username, exp, Set.of(Role.MEMBER));
+        return new AuthenticationDTO(token, userId, username, exp, Set.of(Role.MEMBER), null);
     }
 }

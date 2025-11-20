@@ -371,6 +371,7 @@ export type Login = {
     username: string;
     expiration: number;
     roles: Array<Role>;
+    addressId?: number;
 };
 
 export type PageMetadata = {
@@ -465,6 +466,16 @@ export type FieldValidationError = {
     code?: string;
 };
 
+export type SimpleCommittee = {
+    deletedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    version?: number;
+    id?: number;
+    name?: string;
+    description?: string;
+};
+
 export type PersonalInfo = {
     id?: number;
     deletedAt?: string;
@@ -474,16 +485,6 @@ export type PersonalInfo = {
     discord: string;
     email: string;
     phoneNumber: string;
-};
-
-export type SimpleCommittee = {
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    id?: number;
-    name?: string;
-    description?: string;
 };
 
 export type FindMembershipByIdData = {

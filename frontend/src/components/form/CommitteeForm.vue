@@ -116,7 +116,7 @@ defineExpose({validate, save})
       as="div"
     >
       <v-container>
-        <v-row class="mt-1 tight-row">
+        <v-row class="mt-1">
           <v-col cols="12">
             <VvField
               v-model="committee.name"
@@ -145,7 +145,7 @@ defineExpose({validate, save})
           <v-row
             v-for="(member, i) in committee.members"
             :key="member.userId || `new-${i}`"
-            class="tight-row my-3"
+            class="my-3"
           >
             <v-col cols="4">
               <VvField
@@ -193,7 +193,7 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        class="mb-5 tight-row"
+        class="mb-5"
         justify="end"
       >
         <v-col

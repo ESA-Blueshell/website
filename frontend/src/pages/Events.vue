@@ -154,7 +154,7 @@ const deleteSignUp = (id: number) => {
           Upcoming Events
         </p>
         <v-btn
-          :disabled="!committees.length"
+          v-if="committees.length"
           block
           to="events/create"
         >

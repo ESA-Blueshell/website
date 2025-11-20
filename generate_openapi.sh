@@ -27,9 +27,9 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    print_error "docker-compose is not installed or not in PATH"
+# Check if docker compose is available
+if ! docker compose version >/dev/null 2>&1; then
+    print_error "Docker Compose is not available"
     exit 1
 fi
 

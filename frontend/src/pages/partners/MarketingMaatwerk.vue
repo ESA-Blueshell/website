@@ -9,31 +9,31 @@
           no-gutters
         >
           <v-col
+            class="d-flex justify-center expand"
             cols="12"
             md="auto"
-            class="d-flex justify-center expand"
           >
             <a
-              href="https://marketingmaatwerk.nl/"
-              target="_blank"
-              rel="noopener"
               aria-label="Visit Marketing Maatwerk"
               class="d-inline-flex"
+              href="https://marketingmaatwerk.nl/"
+              rel="noopener"
+              target="_blank"
             >
               <v-img
                 :src="logoUrl"
                 alt="Marketing Maatwerk logo"
                 class="rounded-lg mb-6 mb-md-0 mr-10"
-                width="420"
                 cover
+                width="420"
               />
             </a>
           </v-col>
 
           <v-col
+            class="d-flex flex-column justify-center"
             cols="12"
             md="auto"
-            class="d-flex flex-column justify-center"
           >
             <h2 class="text-h5 text-md-h4 font-weight-light mb-3">
               Contact
@@ -42,23 +42,23 @@
             <ul class="pa-0 ma-0 list-unstyled">
               <li class="d-flex align-center my-1">
                 <v-icon
-                  size="18"
-                  icon="mdi-earth"
                   class="mr-2"
+                  icon="mdi-earth"
+                  size="18"
                 />
                 <a
                   :href="contact.website"
-                  target="_blank"
-                  rel="noopener"
                   class="text-decoration-none"
+                  rel="noopener"
+                  target="_blank"
                 >{{ contact.website }}</a>
               </li>
 
               <li class="d-flex align-center my-1">
                 <v-icon
-                  size="18"
-                  icon="mdi-email-outline"
                   class="mr-2"
+                  icon="mdi-email-outline"
+                  size="18"
                 />
                 <a
                   :href="`mailto:${contact.email}`"
@@ -70,9 +70,9 @@
 
               <li class="d-flex align-center my-1">
                 <v-icon
-                  size="18"
-                  icon="mdi-phone"
                   class="mr-2"
+                  icon="mdi-phone"
+                  size="18"
                 />
                 <a
                   :href="phoneHref"
@@ -84,15 +84,15 @@
 
               <li class="d-flex align-center my-1">
                 <v-icon
-                  size="18"
-                  icon="mdi-form-textbox"
                   class="mr-2"
+                  icon="mdi-form-textbox"
+                  size="18"
                 />
                 <a
                   :href="contact.form"
-                  target="_blank"
-                  rel="noopener"
                   class="text-decoration-none"
+                  rel="noopener"
+                  target="_blank"
                 >Contact form</a>
               </li>
             </ul>
@@ -100,23 +100,23 @@
             <div class="mt-4">
               <v-btn
                 :href="contact.website"
-                target="_blank"
-                rel="noopener"
                 class="mr-3"
-                variant="elevated"
                 elevation="2"
+                rel="noopener"
                 rounded="pill"
+                target="_blank"
+                variant="elevated"
               >
                 Visit website
               </v-btn>
 
               <v-btn
                 :href="contact.form"
-                target="_blank"
-                rel="noopener"
-                variant="elevated"
                 elevation="2"
+                rel="noopener"
                 rounded="pill"
+                target="_blank"
+                variant="elevated"
               >
                 Go to contact form
               </v-btn>
@@ -147,8 +147,8 @@
         </p>
 
         <v-row
-          dense
           class="mt-2"
+          dense
         >
           <v-col
             v-for="pillar in pillars"
@@ -157,15 +157,15 @@
             md="4"
           >
             <v-card
-              class="h-100 rounded-lg elevation-3 expand"
               :href="pillar.href"
+              class="h-100 rounded-lg elevation-3 expand"
             >
               <v-card-item>
                 <div class="d-flex align-center">
                   <v-icon
                     :icon="pillar.icon"
-                    size="28"
                     class="mr-3"
+                    size="28"
                   />
                   <h4 class="text-subtitle-1 font-weight-semibold mb-0">
                     {{ pillar.title }}
@@ -202,7 +202,7 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {computed} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import logoUrl from "@/assets/marketing_maatwerk_logo_big.png"

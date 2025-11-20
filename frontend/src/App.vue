@@ -68,40 +68,12 @@
         </v-menu>
 
 
-        <v-menu
-          :offset="3"
-          :open-on-hover="true"
-          open-delay="0"
+        <v-btn
+          class="bar-button"
+          to="/events"
         >
-          <template #activator="{ props }">
-            <v-btn
-              class="bar-button"
-              to="/events"
-              v-bind="props"
-            >
-              events
-              <v-icon>mdi-chevron-down</v-icon>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item to="/events">
-              Events
-            </v-list-item>
-            <v-list-item
-              v-if="isLoggedIn && isActive"
-              to="/events/manage"
-            >
-              Manage events
-            </v-list-item>
-            <v-list-item
-              to="/events/circuitShowdown"
-            >
-              Circuit Showdown
-            </v-list-item>
-          </v-list>
-        </v-menu>
-
-
+          Events
+        </v-btn>
         <v-menu
           :offset="3"
           :open-on-hover="true"
@@ -195,7 +167,7 @@
           Log In
         </v-btn>
         <v-menu
-          v-else
+          v-if="isBoard"
           :offset="3"
         >
           <template #activator="{ props }">
@@ -205,37 +177,17 @@
               variant="text"
             >
               <v-icon size="x-large">
-                mdi-account
+                custom:account-multiple-edit
               </v-icon>
             </v-btn>
           </template>
+
           <v-list>
-            <v-list-item to="/account">
-              Account
-            </v-list-item>
             <v-list-item
               v-if="isBoard"
-              to="/members/manage"
+              to="/addresses/manage"
             >
-              Manage members
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard"
-              to="/contributions/manage"
-            >
-              Manage contributions
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard"
-              to="/committees/manage"
-            >
-              Manage committees
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard || isActive"
-              to="/events/manage"
-            >
-              Manage events
+              Manage addresses
             </v-list-item>
             <v-list-item
               v-if="isBoard"
@@ -245,9 +197,44 @@
             </v-list-item>
             <v-list-item
               v-if="isBoard"
-              to="/addresses/manage"
+              to="/committees/manage"
             >
-              Manage addresses
+              Manage committees
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/contributions/manage"
+            >
+              Manage contributions
+            </v-list-item>
+            <v-list-item
+              v-if="isBoard"
+              to="/members/manage"
+            >
+              Manage members
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <v-menu
+          v-if="isLoggedIn"
+          :offset="3"
+        >
+          <template #activator="{ props }">
+            <v-btn
+              class="bar-button ma-0 mr-2"
+              v-bind="props"
+              variant="text"
+            >
+              <v-icon
+                size="x-large"
+              >
+                mdi-account
+              </v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item to="/account">
+              Account
             </v-list-item>
             <v-list-item @click="logOut">
               Log Out
@@ -303,12 +290,6 @@
           </template>
           <v-list-item to="/events">
             Events
-          </v-list-item>
-          <v-list-item
-            v-if="isLoggedIn && isActive"
-            to="/events/manage"
-          >
-            Manage events
           </v-list-item>
           <v-list-item
             to="/events/circuitShowdown"
@@ -507,7 +488,6 @@ const statusSnackbarMessage = computed({
 })
 
 const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
-const isActive = computed((): boolean => store.getters.isActive)
 const isBoard = computed((): boolean => store.getters.isBoard)
 const login = computed(() => store.getters.getLogin)
 
@@ -593,6 +573,7 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+@use '@/styles/colors' as colors;
 
 .v-btn.bar-button {
   margin: 0 2px;
@@ -634,5 +615,13 @@ onMounted(async () => {
   100% {
     transform: rotate(0);
   }
+}
+
+.pencil-avatar {
+  background: rgb(var(--v-theme-surface));
+}
+
+.pencil-icon {
+  color: white;
 }
 </style>

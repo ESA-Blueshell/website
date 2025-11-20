@@ -1,10 +1,10 @@
 <template>
   <v-card class="overflow-hidden">
     <div
+      :aria-controls="panelId"
+      :aria-expanded="String(isOpen)"
       class="px-5 py-3 d-flex align-center justify-space-between"
       role="button"
-      :aria-expanded="String(isOpen)"
-      :aria-controls="panelId"
       tabindex="0"
       @click="isOpen = !isOpen"
       @keydown.enter.prevent="isOpen = !isOpen"
@@ -29,8 +29,8 @@
         </div>
       </div>
       <v-icon
-        size="24"
         color="grey-darken-1"
+        size="24"
       >
         {{ isOpen ? "mdi-chevron-up" : "mdi-chevron-down" }}
       </v-icon>
@@ -44,11 +44,11 @@
       >
         <v-text-field
           v-model="localSearch"
-          label="Search for a user"
           clearable
           density="comfortable"
-          prepend-inner-icon="mdi-magnify"
           hide-details
+          label="Search for a user"
+          prepend-inner-icon="mdi-magnify"
         />
 
         <v-list>
@@ -58,10 +58,10 @@
           >
             <address-user-row
               :addresses="addresses"
-              :expanded="expanded"
-              :user="user"
               :allow-create="allowCreate"
               :enable-delete="enableDelete"
+              :expanded="expanded"
+              :user="user"
               @update:expanded="updateExpanded"
               @update:address="updateAddress"
               @delete:address="deleteAddress"

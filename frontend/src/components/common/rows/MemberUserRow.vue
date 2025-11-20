@@ -92,8 +92,8 @@ const confirmDeleteUser = async () => {
     <v-list-item>
       <div
         class="d-flex justify-space-between align-center"
-        style="width: 100%;"
         role="button"
+        style="width: 100%;"
         @click="toggleExpanded"
       >
         <div class="flex-grow-1">

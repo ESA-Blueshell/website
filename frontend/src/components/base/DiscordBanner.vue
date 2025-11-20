@@ -25,11 +25,9 @@
             href="https://discord.gg/23YMFQy"
             target="_blank"
           >
-            <img
-              src="@/assets/discord.svg"
-              alt="discord icon"
-              style="width: 35px"
-            >
+            <v-icon size="xx-large">
+              custom:discord
+            </v-icon>
           </v-btn>
         </v-col>
       </v-row>

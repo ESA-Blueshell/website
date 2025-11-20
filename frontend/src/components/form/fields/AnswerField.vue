@@ -3,9 +3,12 @@ import {Field} from "vee-validate"
 import {watch} from "vue"
 import {type Answer, type Question, QuestionType} from "@/services/api"
 
-const props = withDefaults(defineProps<{
-  question: Question
-}>(), {})
+const props = withDefaults(
+  defineProps<{
+    question: Question
+  }>(),
+  {},
+)
 
 const answer = defineModel<Answer>({
   default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
@@ -43,6 +46,7 @@ watch(
   {immediate: true},
 )
 </script>
+
 <template v-if="answer">
   <template v-if="question.type === QuestionType.OPEN">
     <Field
@@ -53,8 +57,8 @@ watch(
       :validate-on-mount="false"
     >
       <v-text-field
-        :label="question.label || 'Answer'"
         :error-messages="meta.touched ? errors : []"
+        :label="question.label || 'Answer'"
         :model-value="value"
         required
         @blur="handleBlur"

@@ -79,8 +79,8 @@
             <v-img
               :src="game.bg"
               cover
-              transition="fade-transition"
               style="position: absolute;top: 0;height: 100%;width: 100%;z-index: 1;filter: blur(3px);-webkit-filter: blur(3px);"
+              transition="fade-transition"
             >
               <!-- lightweight placeholder while loading -->
               <template #placeholder>

@@ -1,8 +1,10 @@
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
-import { defineConfig } from 'vite'
-import { fileURLToPath } from 'node:url'
+import {defineConfig} from 'vite'
+import {fileURLToPath} from 'node:url'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import svgLoader from 'vite-svg-loader'
+
 export default defineConfig({
     build: {
         target: "esnext"
@@ -15,6 +17,7 @@ export default defineConfig({
           @use "@/styles/settings" as *;
           @use "@/styles/housestyle" as *;
           @use "@/styles/colors" as *;
+          @use "@/styles/forms" as *;
         `,
                 sassOptions: {
                     api: 'modern'
@@ -31,6 +34,7 @@ export default defineConfig({
                 configFile: 'src/styles/settings.scss',
             }
         }),
+        svgLoader(),
     ],
     optimizeDeps: {
         exclude: [

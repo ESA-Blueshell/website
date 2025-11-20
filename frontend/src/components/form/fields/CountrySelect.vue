@@ -1,16 +1,3 @@
-<template>
-  <v-autocomplete
-    v-model="selectedCountry"
-    v-model:search="searchText"
-    :custom-filter="customFilter"
-    :item-title="displayName"
-    :items="countryItems"
-    :label="label ?? 'Country'"
-    clearable
-    item-value="cca2"
-  />
-</template>
-
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import type {Country} from "world-countries"
@@ -57,11 +44,28 @@ watch(selectedCountry, (newVal) => {
   emit("update:modelValue", newVal ?? null)
   if (!newVal) searchText.value = ""
 })
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== selectedCountry.value) normalizeIncomingValue(newVal ?? null)
-}, {immediate: true})
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal !== selectedCountry.value) normalizeIncomingValue(newVal ?? null)
+  },
+  {immediate: true},
+)
 
 onMounted(() => {
   normalizeIncomingValue(props.modelValue ?? null)
 })
 </script>
+
+<template>
+  <v-autocomplete
+    v-model="selectedCountry"
+    v-model:search="searchText"
+    :custom-filter="customFilter"
+    :item-title="displayName"
+    :items="countryItems"
+    :label="label ?? 'Country'"
+    clearable
+    item-value="cca2"
+  />
+</template>

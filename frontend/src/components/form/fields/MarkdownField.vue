@@ -1,3 +1,31 @@
+<script lang="ts" setup>
+import {computed, ref} from "vue"
+import $markdownToHtml from "@/plugins/markdownToHtml.ts"
+
+defineOptions({inheritAttrs: false})
+
+const props = defineProps({
+  modelValue: {type: String, default: ""},
+  label: {type: String, default: "Description (Markdown)"},
+  placeholder: {type: String, default: "Write using **Markdown**. Use :sparkles: for emoji."},
+  errorMessages: {type: [Array, String], default: () => []},
+  rows: {type: Number, default: 6},
+  autoGrow: {type: Boolean, default: true},
+  variant: {type: String, default: "outlined"},
+  density: {type: String, default: undefined},
+  hideDetails: {type: [Boolean, String], default: "auto"},
+  disabled: {type: Boolean, default: false},
+  readonly: {type: Boolean, default: false},
+  initialTab: {type: String as () => "write" | "preview", default: "write"},
+  previewAriaLive: {type: String, default: "polite"},
+})
+
+const emit = defineEmits<{ (e: "update:modelValue", v: string): void; (e: "blur"): void; (e: "focus"): void }>()
+const value = computed({get: () => props.modelValue, set: (v: string) => emit("update:modelValue", v)})
+const tab = ref<"write" | "preview">(props.initialTab as "write" | "preview")
+const previewHtml = computed(() => (props.modelValue?.trim() ? $markdownToHtml(props.modelValue) : ""))
+</script>
+
 <template>
   <div class="md-editor">
     <div class="md-field">
@@ -87,42 +115,17 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import {computed, ref} from "vue"
-import $markdownToHtml from "@/plugins/markdownToHtml.ts"
-
-defineOptions({inheritAttrs: false})
-
-const props = defineProps({
-  modelValue: {type: String, default: ""},
-  label: {type: String, default: "Description (Markdown)"},
-  placeholder: {type: String, default: "Write using **Markdown**. Use :sparkles: for emoji."},
-  errorMessages: {type: [Array, String], default: () => []},
-  rows: {type: Number, default: 6},
-  autoGrow: {type: Boolean, default: true},
-  variant: {type: String, default: "outlined"},
-  density: {type: String, default: undefined},
-  hideDetails: {type: [Boolean, String], default: "auto"},
-  disabled: {type: Boolean, default: false},
-  readonly: {type: Boolean, default: false},
-  initialTab: {type: String as () => "write" | "preview", default: "write"},
-  previewAriaLive: {type: String, default: "polite"},
-})
-
-const emit = defineEmits<{ (e: "update:modelValue", v: string): void; (e: "blur"): void; (e: "focus"): void }>()
-const value = computed({get: () => props.modelValue, set: (v: string) => emit("update:modelValue", v)})
-const tab = ref<"write" | "preview">(props.initialTab as "write" | "preview")
-const previewHtml = computed(() => (props.modelValue?.trim() ? $markdownToHtml(props.modelValue) : ""))
-</script>
-
 <style lang="scss" scoped>
 .md-editor {
   .md-field {
     position: relative;
   }
 
-  .md-textarea, .md-preview {
-    :deep(.v-field), :deep(.v-input), :deep(.v-textarea) {
+  .md-textarea,
+  .md-preview {
+    :deep(.v-field),
+    :deep(.v-input),
+    :deep(.v-textarea) {
       border-radius: 8px;
     }
   }

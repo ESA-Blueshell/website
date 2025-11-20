@@ -29,8 +29,8 @@
               :value="period.id"
             >
               <div
-                @mouseover="hoveredPeriodId = period.id ?? null"
                 @mouseleave="hoveredPeriodId = null"
+                @mouseover="hoveredPeriodId = period.id ?? null"
               >
                 <v-btn
                   :class="[
@@ -39,8 +39,8 @@
                     isSelected && selectedClass,
                     'ma-2'
                   ]"
-                  :variant="isSelected ? 'flat' : 'elevated'"
                   :elevation="isSelected ? 0 : 4"
+                  :variant="isSelected ? 'flat' : 'elevated'"
                   @click="toggle"
                 >
                   {{ formatPeriod(period) }}
@@ -59,8 +59,8 @@
         </v-col>
 
         <v-col
-          cols="auto"
           class="pl-2"
+          cols="auto"
         >
           <v-btn
             icon
@@ -74,8 +74,8 @@
       <contribution-period-dialog
         v-model:show-dialog="showAddPeriodDialog"
         :contribution-period="selectedPeriod"
-        @delete="deleteContributionPeriod"
         @changed="onPeriodChanged"
+        @delete="deleteContributionPeriod"
       />
 
       <delete-confirmation-dialog

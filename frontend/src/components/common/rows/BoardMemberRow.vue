@@ -1,33 +1,33 @@
 <template>
   <div
     v-if="member.image"
-    class="mx-auto overflow-hidden"
     :style="{ minHeight: 'clamp(240px, 38vw, 440px)' }"
+    class="mx-auto overflow-hidden"
   >
     <v-row
-      no-gutters
       align="center"
+      no-gutters
     >
       <v-col
         v-if="!reverse"
+        class="d-flex order-1 order-md-1"
         cols="12"
         md="5"
-        class="d-flex order-1 order-md-1"
       >
         <div :class="['w-100', 'fade-edge', 'img-box', 'round-start']">
           <v-img
             :src="member.image"
-            cover
             class="w-100"
+            cover
             eager
           />
         </div>
       </v-col>
 
       <v-col
+        :class="['order-2', reverse ? 'order-md-1' : 'order-md-2']"
         cols="12"
         md="7"
-        :class="['order-2', reverse ? 'order-md-1' : 'order-md-2']"
       >
         <div :class="['pa-2', 'pa-md-2', reverse ? 'text-md-end' : 'text-md-start']">
           <p class="text-h2">
@@ -44,15 +44,15 @@
 
       <v-col
         v-if="reverse"
+        class="d-flex order-1 order-md-2"
         cols="12"
         md="5"
-        class="d-flex order-1 order-md-2"
       >
         <div :class="['w-100', 'fade-edge', 'reverse', 'img-box', 'round-end']">
           <v-img
             :src="member.image"
-            cover
             class="w-100"
+            cover
             eager
           />
         </div>
@@ -78,7 +78,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 interface Member {
   name: string
   title: string
@@ -92,7 +92,7 @@ defineProps<{
 }>()
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .fade-edge {
   position: relative;
   overflow: hidden;

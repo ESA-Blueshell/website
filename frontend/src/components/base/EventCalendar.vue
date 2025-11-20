@@ -1,7 +1,7 @@
 <template>
   <v-toolbar
-    color="transparent"
     class="px-0"
+    color="transparent"
   >
     <v-toolbar-title class="text-h5 ml-2 toolbar-title">
       {{ monthTitle }}
@@ -32,13 +32,13 @@
       </v-btn>
       <v-btn
         v-if="!display.xs.value"
-        class="ml-2"
-        size="small"
-        variant="outlined"
         :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
-        target="_blank"
-        rel="noopener"
         aria-label="Add the Blueshell events to my Google Calendar"
+        class="ml-2"
+        rel="noopener"
+        size="small"
+        target="_blank"
+        variant="outlined"
       >
         Subscribe to calendar
         <v-icon end>

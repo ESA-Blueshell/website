@@ -8,12 +8,14 @@ import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
+import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
   handleSubmitError,
   useCountry,
   usePasswordToggle,
   useReadonly,
   useSaving,
+  useSubmitFeedback,
   useVeeForm,
 } from "@/composables/formUtils"
 
@@ -60,6 +62,7 @@ const isCreating = computed<boolean>(() => !user.value?.id)
 const {country, onCountryUpdate} = useCountry("NL")
 const {isSaving, withSaving} = useSaving()
 const {formRef, validate} = useVeeForm()
+const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
 const confirmPassword = ref<string>("")
 const {passwordFieldProps} = usePasswordToggle()
@@ -67,6 +70,7 @@ const {passwordFieldProps} = usePasswordToggle()
 const save = async (): Promise<AdvancedUser | null> => {
   if (!(await validate())) {
     emit("submitted", false)
+    setSubmitResult(false)
     return null
   }
   try {
@@ -82,10 +86,12 @@ const save = async (): Promise<AdvancedUser | null> => {
     })
     user.value = resp.data!
     emit("submitted", true)
+    setSubmitResult(true)
     return user.value
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)
     emit("submitted", false)
+    setSubmitResult(false)
     return null
   }
 }
@@ -99,7 +105,7 @@ defineExpose({validate, save})
       ref="formRef"
       as="div"
     >
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="4">
           <VvField
             v-model="user.initials"
@@ -120,7 +126,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="4">
           <VvField
             v-model="user.prefix"
@@ -140,7 +146,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col>
           <VvField
             v-model="user.username"
@@ -160,7 +166,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.email"
@@ -190,7 +196,6 @@ defineExpose({validate, save})
 
       <v-row
         v-if="showPassword"
-        class="tight-row"
       >
         <v-col cols="6">
           <VvField
@@ -198,7 +203,7 @@ defineExpose({validate, save})
             :component-props="passwordFieldProps"
             label="Password*"
             name="password"
-            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+            rules="required|minChars:8|maxChars:100|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
           />
         </v-col>
         <v-col cols="6">
@@ -212,7 +217,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.dateOfBirth"
@@ -233,7 +238,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="tight-row">
+      <v-row>
         <v-col cols="6">
           <VvField
             v-model="user.gender"
@@ -253,7 +258,6 @@ defineExpose({validate, save})
       <v-row
         align="center"
         justify="space-evenly"
-        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -287,7 +291,6 @@ defineExpose({validate, save})
       <v-row
         align="center"
         justify="space-evenly"
-        class="tight-row"
       >
         <v-col cols="auto">
           <VvField
@@ -302,30 +305,29 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        justify="end"
         class="mb-5 tight-row"
+        justify="end"
       >
         <v-col
           v-if="showSubmit"
           cols="auto"
         >
-          <v-btn
+          <submit-button
             :disabled="isSaving"
+            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
             :loading="isSaving"
-            :prepend-icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            size="large"
-            type="button"
+            :show-submit-status="showSubmitStatus"
+            :submit-state="submitState"
+            :text="submitText"
             @click="save"
-          >
-            {{ submitText }}
-          </v-btn>
+          />
         </v-col>
       </v-row>
     </Form>
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 span {
   font-weight: bold;
 }

@@ -25,9 +25,9 @@
           </v-chip>
 
           <v-btn
-            class="btn-tight"
-            :loading="loading"
             :disabled="loading"
+            :loading="loading"
+            class="btn-tight"
             variant="text"
             @click.stop="handleResend"
           >

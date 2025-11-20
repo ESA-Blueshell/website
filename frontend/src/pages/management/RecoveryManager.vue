@@ -9,15 +9,15 @@
       >
         <recovery-user-list
           :users="inactiveUsers"
-          title="Inactive accounts"
           action-type="activation"
+          title="Inactive accounts"
         />
 
         <recovery-user-list
-          class="mt-3"
           :users="activeUsers"
-          title="Active accounts"
           action-type="password"
+          class="mt-3"
+          title="Active accounts"
         />
       </div>
     </div>

@@ -56,6 +56,7 @@ export type AdvancedUser = {
     username: string;
     newsletter: boolean;
     password?: string;
+    addressId?: number;
     roles?: Array<Role>;
     dateOfBirth: string;
     nationality: string;
@@ -65,7 +66,6 @@ export type AdvancedUser = {
     enabled?: boolean;
     gender?: string;
     studentNumber?: string;
-    addressId?: number;
 };
 
 export type SimpleUser = {
@@ -85,6 +85,7 @@ export type SimpleUser = {
     username: string;
     newsletter: boolean;
     password?: string;
+    addressId?: number;
 };
 
 export type Sponsor = {
@@ -1007,9 +1008,7 @@ export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdRespons
 
 export type CreateEventSignupData = {
     body: EventSignUp;
-    path: {
-        eventId: number;
-    };
+    path?: never;
     query?: never;
     url: '/events/{eventId}/signups';
 };
@@ -1820,9 +1819,9 @@ export type UserActivateError = UserActivateErrors[keyof UserActivateErrors];
 
 export type UserActivateResponses = {
     /**
-     * No Content
+     * OK
      */
-    204: RedirectResponse;
+    200: RedirectResponse;
 };
 
 export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
@@ -1988,9 +1987,9 @@ export type MemberActivateError = MemberActivateErrors[keyof MemberActivateError
 
 export type MemberActivateResponses = {
     /**
-     * No Content
+     * OK
      */
-    204: RedirectResponse;
+    200: RedirectResponse;
 };
 
 export type MemberActivateResponse = MemberActivateResponses[keyof MemberActivateResponses];

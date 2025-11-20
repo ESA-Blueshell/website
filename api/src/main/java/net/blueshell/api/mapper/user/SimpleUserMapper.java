@@ -29,6 +29,7 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "version")
+    @Mapping(target = "addressId")
     @BeanMapping(ignoreByDefault = true)
     public abstract SimpleUserDTO toDTO(User user);
 

@@ -54,9 +54,9 @@
           <!-- Writable v-model proxy pushes updates upward via emit -->
           <address-form
             v-model="addressModel"
+            :user-id="user.id"
             class="mt-6"
             show-submit
-            :user-id="user.id"
             submit-text="Save Address"
             @submitted="onSubmitted"
           />

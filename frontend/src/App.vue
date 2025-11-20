@@ -236,6 +236,9 @@
             <v-list-item to="/account">
               Account
             </v-list-item>
+            <v-list-item :to="{ name: 'editAddress', params: { id: login.addressId } }">
+              Address
+            </v-list-item>
             <v-list-item @click="logOut">
               Log Out
             </v-list-item>

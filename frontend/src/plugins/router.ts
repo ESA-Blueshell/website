@@ -16,11 +16,12 @@ import MarketingMaatwerk from "@/pages/partners/MarketingMaatwerk.vue"
 import Partners from "@/pages/partners/Partners.vue"
 import NotFound from "@/pages/NotFound.vue"
 import Login from "@/pages/login/Login.vue"
-import Account from "@/pages/account/Account.vue"
+import Account from "@/pages/login/Account.vue"
+import Address from "@/pages/login/Address.vue"
 import EditEvent from "@/pages/events/EditEvent.vue"
 import EventSignUps from "@/pages/events/EventSignUps.vue"
 import CommitteeManager from "@/pages/management/CommitteeManager.vue"
-import CreateAccount from "@/pages/account/CreateAccount.vue"
+import CreateAccount from "@/pages/login/CreateAccount.vue"
 import MemberManager from "@/pages/management/MemberManager.vue"
 import ContributionManager from "@/pages/management/ContributionManager.vue"
 import RocketLeague from "@/pages/esports/RocketLeague.vue"
@@ -198,6 +199,12 @@ const routes: RouteRecordRaw[] = [
         token: String(to.params.token ?? ""),
       },
     }),
+  },
+  {
+    path: "/account/addresses/:id?",
+    name: "editAddress",
+    component: Address,
+    meta: { requiresAuth: true },
   },
   {
     path: "/events",

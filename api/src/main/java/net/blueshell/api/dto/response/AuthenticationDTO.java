@@ -38,12 +38,18 @@ public class AuthenticationDTO extends BaseDTO {
     @NotEmpty
     private final Set<Role> roles;
 
-    public AuthenticationDTO(String token, long userId, String username, long expiration, Set<Role> roles) {
+    private final Long addressId;
+
+    public AuthenticationDTO(
+            String token, long userId, String username, long expiration, Set<Role> roles,
+            Long addressId
+    ) {
         this.token = token;
         this.userId = userId;
         this.username = username;
         this.expiration = expiration;
         this.roles = roles;
+        this.addressId = addressId;
     }
 
     @JsonProperty("roles")

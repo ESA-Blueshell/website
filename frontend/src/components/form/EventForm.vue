@@ -211,7 +211,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row class="mb-8 tight-row">
+      <v-row class="mb-8">
         <v-col>
           <VvField
             v-model="event.description"

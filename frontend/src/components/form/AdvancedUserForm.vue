@@ -305,7 +305,7 @@ defineExpose({validate, save})
 
       <v-row
         align="end"
-        class="mb-5 tight-row"
+        class="mb-5"
         justify="end"
       >
         <v-col

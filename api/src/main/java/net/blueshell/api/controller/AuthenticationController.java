@@ -43,11 +43,13 @@ public class AuthenticationController extends JWTAuthBase {
         String token = jwtTokenUtil.generateToken(user);
         long expirationTime = System.currentTimeMillis() + expiration;
 
-        return new AuthenticationDTO(token,
+        return new AuthenticationDTO(
+                token,
                 user.getId(),
                 user.getUsername(),
                 expirationTime,
-                user.getInheritedRoles()
+                user.getInheritedRoles(),
+                user.getAddressId()
         );
     }
 

@@ -65,79 +65,74 @@ defineExpose({validate, save})
     ref="formRef"
     as="div"
   >
-    <v-sheet
-      class="pa-4"
-      style="border-radius: 10px"
+    <v-row>
+      <v-col cols="8">
+        <VvField
+          v-model="address.street"
+          label="Street"
+          name="street"
+          rules="required|minChars:2"
+        />
+      </v-col>
+      <v-col cols="4">
+        <VvField
+          v-model="address.houseNumber"
+          label="House Number"
+          name="houseNumber"
+          rules="required"
+        />
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col cols="6">
+        <VvField
+          v-model="address.zipCode"
+          label="Zipcode"
+          name="zipCode"
+          rules="required|minChars:2"
+        />
+      </v-col>
+      <v-col cols="6">
+        <VvField
+          v-model="address.city"
+          label="City"
+          name="city"
+          rules="required|minChars:2"
+        />
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col cols="12">
+        <VvField
+          v-model="address.country"
+          :component="CountrySelect"
+          label="Country"
+          name="country"
+          rules="required"
+        />
+      </v-col>
+    </v-row>
+
+    <v-row
+      v-if="showSubmit"
+      align="end"
+      class="mt-2"
+      justify="end"
     >
-      <v-row>
-        <v-col cols="8">
-          <VvField
-            v-model="address.street"
-            label="Street"
-            name="street"
-            rules="required|minChars:2"
-          />
-        </v-col>
-        <v-col cols="4">
-          <VvField
-            v-model="address.houseNumber"
-            label="House Number"
-            name="houseNumber"
-            rules="required"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="6">
-          <VvField
-            v-model="address.zipCode"
-            label="Zipcode"
-            name="zipCode"
-            rules="required|minChars:2"
-          />
-        </v-col>
-        <v-col cols="6">
-          <VvField
-            v-model="address.city"
-            label="City"
-            name="city"
-            rules="required|minChars:2"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <VvField
-            v-model="address.country"
-            :component="CountrySelect"
-            label="Country"
-            name="country"
-            rules="required"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row
-        v-if="showSubmit"
-        align="end"
-        class="mt-2 tight-row"
-        justify="end"
-      >
-        <v-col cols="auto">
-          <submit-button
-            :disabled="isSaving"
-            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :loading="isSaving"
-            :show-submit-status="showSubmitStatus"
-            :submit-state="submitState"
-            :text="submitText"
-            @click="save"
-          />
-        </v-col>
-      </v-row>
-    </v-sheet>
+      <v-col cols="auto">
+        <submit-button
+          :disabled="isSaving"
+          :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+          :loading="isSaving"
+          :show-submit-status="showSubmitStatus"
+          :submit-state="submitState"
+          :text="submitText"
+          @click="save"
+        />
+      </v-col>
+    </v-row>
   </Form>
 </template>
 <style lang="scss" scoped>

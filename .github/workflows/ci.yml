@@ -22,9 +22,9 @@ on:
       - 'env/**'
       - '.github/actions/**'
       - '.github/workflows/**'
+      - 'openapi/**'
   workflow_dispatch:
 
-# one-at-a-time per ref; cancel older runs for the same ref
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -37,18 +37,21 @@ permissions:
   contents: read
 
 jobs:
-  # ---------- Change detection ----------
   check-changes:
-    name: Detect changes
+    name: Detect affected components
     runs-on: ubuntu-latest
     outputs:
       api: ${{ steps.filter.outputs.api }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      openapi: ${{ steps.filter.outputs.openapi }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - id: filter
+
+      - name: Detect changed paths
+        id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
@@ -58,10 +61,11 @@ jobs:
               - 'env/**'
             frontend:
               - 'frontend/**'
+            openapi:
+              - 'openapi/**'
 
-  # ---------- API ----------
   api-tests:
-    name: API tests
+    name: Run API integration tests
     needs: check-changes
     if: needs.check-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
@@ -85,7 +89,6 @@ jobs:
           --health-start-period=30s
 
     env:
-      # MySQL
       MYSQL_ROOT_PASSWORD: blueshell
       MYSQL_DATABASE: blueshell-test
       MYSQL_PORT: '3306'
@@ -93,27 +96,21 @@ jobs:
       MYSQL_PASSWORD: blueshell
       MYSQL_HOST: 127.0.0.1
 
-      # App URLs
       APP_URL: https://localhost/api
       FRONTEND_URL: https://localhost
 
-      # JWT (test-only placeholder)
       JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
 
-      # SMTP (test-only placeholders)
       SMTP_HOST: mail.blueshell.utwente.nl
       SMTP_PORT: '465'
       SMTP_USERNAME: your_smtp_username
       SMTP_PASSWORD: your_smtp_password
 
-      # Storage
       STORAGE_LOCATION: ./storage
 
-      # Brevo (test-only placeholders)
       BREVO_API_KEY: something
       BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
 
-      # Google Calendar (test-only placeholders)
       GOOGLE_CALENDAR_ID: something
       GOOGLE_CALENDAR_CLIENT_ID: something
       GOOGLE_CALENDAR_CLIENT_EMAIL: something
@@ -137,10 +134,10 @@ jobs:
       GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for database to be ready
+      - name: Wait for database service
         run: |
           sudo apt-get update && sudo apt-get install -y default-mysql-client
           for i in {1..30}; do
@@ -152,20 +149,20 @@ jobs:
             sleep 2
           done
 
-      - name: Prepare db
+      - name: Prepare test database schema
         run: |
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
 
-      - name: Set up JDK
+      - name: Set up Java Development Kit
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 24
           cache: maven
 
-      - name: Run tests with Maven
+      - name: Run API Maven verify
         run: |
           mvn -B \
             -Dsurefire.printSummary=true \
@@ -176,7 +173,7 @@ jobs:
           MAVEN_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
   api-build-push:
-    name: API build
+    name: Build and publish API Docker image
     needs: [ check-changes, api-tests ]
     if: needs.check-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
@@ -184,12 +181,13 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         if: github.ref == 'refs/heads/main'
         with:
@@ -197,7 +195,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker metadata
+      - name: Prepare Docker image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -207,7 +205,7 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build & push
+      - name: Build and optionally push API image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -216,9 +214,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # ---------- Frontend ----------
   fe-verify:
-    name: Frontend verify (typecheck+lint)
+    name: Run frontend static checks
     needs: check-changes
     if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -226,17 +223,23 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node & Yarn
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
         with:
           node-version: '24'
           yarn-version: '4.10.3'
-      - run: yarn typecheck
-      - run: yarn lint
+
+      - name: Run TypeScript type checks
+        run: yarn typecheck
+
+      - name: Run ESLint
+        run: yarn lint
 
   fe-build-push:
-    name: Frontend build
+    name: Build and publish frontend Docker image
     needs: [ check-changes, fe-verify ]
     if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -244,12 +247,13 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         if: github.ref == 'refs/heads/main'
         with:
@@ -257,7 +261,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker metadata
+      - name: Prepare Docker image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -267,7 +271,7 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build & push
+      - name: Build and optionally push frontend image
         uses: docker/build-push-action@v6
         with:
           context: frontend
@@ -276,9 +280,65 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  openapi-sync:
+    name: Validate OpenAPI client generation
+    needs: check-changes
+    if: |
+      needs.check-changes.outputs.api == 'true' ||
+      needs.check-changes.outputs.frontend == 'true' ||
+      needs.check-changes.outputs.openapi == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare environment files
+        run: |
+          cp env/.api.env.example env/.api.env
+          cp env/.db.env.example env/.db.env
+
+      - name: Start development stack via Docker Compose
+        run: |
+          docker compose -f docker-compose.dev.yml up -d
+
+      - name: Wait for API container health check
+        run: |
+          set -euo pipefail
+          for i in {1..12}; do
+            CID="$(docker compose -f docker-compose.dev.yml ps -q api || true)"
+            if [ -z "$CID" ]; then
+              echo "api container not created yet (attempt $i/12)"
+            else
+              STATUS="$(docker inspect --format='{{.State.Health.Status}}' "$CID" 2>/dev/null || echo 'unknown')"
+              echo "api health status: $STATUS (attempt $i/12)"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "api is healthy"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo "api did not become healthy in time"
+          docker compose -f docker-compose.dev.yml ps
+          exit 1
+
+      - name: Generate OpenAPI client code
+        run: |
+          chmod +x ./generate_openapi.sh
+          ./generate_openapi.sh
+
+      - name: Assert OpenAPI spec and client are in sync
+        run: |
+          git diff --exit-code -- openapi frontend
+
+      - name: Tear down development stack
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v
+
   deploy:
-    name: Deploy
-    needs: [ check-changes, api-build-push, fe-build-push ]
+    name: Deploy to production
+    needs: [ check-changes, api-build-push, fe-build-push, openapi-sync ]
     if: ${{
       always()
       && github.ref == 'refs/heads/main'
@@ -294,18 +354,18 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - name: Setup SSH
+      - name: Configure SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Add known hosts
+      - name: Add deployment host to known hosts
         run: |
           install -m 700 -d ~/.ssh
           ssh-keyscan -T 20 -p "${{ secrets.PORT }}" -H "${{ secrets.IP_ADDRESS }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Run deploy over SSH
+      - name: Run remote deploy command
         shell: bash
         run: |
           set -euo pipefail

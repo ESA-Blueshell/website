@@ -94,7 +94,7 @@ async function save() {
           body: signUp.value,
           throwOnError: true,
         })
-        : await createEventSignup({path: {eventId}, body: signUp.value, throwOnError: true})
+        : await createEventSignup({body: signUp.value, throwOnError: true})
 
       const eventSignUp = resp.data!
       emit("update:signUp", eventSignUp)

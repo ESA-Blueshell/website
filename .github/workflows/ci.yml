@@ -43,7 +43,6 @@ jobs:
     outputs:
       api: ${{ steps.filter.outputs.api }}
       frontend: ${{ steps.filter.outputs.frontend }}
-      openapi: ${{ steps.filter.outputs.openapi }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,8 +60,6 @@ jobs:
               - 'env/**'
             frontend:
               - 'frontend/**'
-            openapi:
-              - 'openapi/**'
 
   api-tests:
     name: Run API integration tests
@@ -282,11 +279,6 @@ jobs:
 
   openapi-sync:
     name: Validate OpenAPI client generation
-    needs: check-changes
-    if: |
-      needs.check-changes.outputs.api == 'true' ||
-      needs.check-changes.outputs.frontend == 'true' ||
-      needs.check-changes.outputs.openapi == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -344,6 +336,7 @@ jobs:
       && github.ref == 'refs/heads/main'
       && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
       && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
+      && needs.openapi-sync.result == 'success'
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

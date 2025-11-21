@@ -236,7 +236,7 @@ jobs:
         run: yarn typecheck
 
       - name: Run ESLint
-        run: yarn lint
+        run: yarn lint --max-warnings=0
 
   fe-build-push:
     name: Build and publish frontend Docker image

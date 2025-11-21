@@ -11,7 +11,8 @@
     "preview": "tsc && vite preview",
     "gen:discord": "openapi-ts --file ./openapi-ts.discord.config.ts",
     "gen:blueshell": "openapi-ts --file ./openapi-ts.blueshell.config.ts",
-    "gen:all": "yarn gen:blueshell && yarn gen:discord"
+    "gen:all": "yarn gen:blueshell && yarn gen:discord",
+    "lint:gen": "eslint src/services/api --fix --no-ignore"
   },
   "dependencies": {
     "@hey-api/client-axios": "0.9.1",

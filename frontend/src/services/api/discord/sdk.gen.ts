@@ -18,1277 +18,692 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: Record<string, unknown>;
 };
 
-export const getGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<GetGuildTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildTemplateResponses, GetGuildTemplateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/templates/{code}',
-        ...options
-    });
-};
-
-export const deleteGuild = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildResponses, DeleteGuildErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}',
-        ...options
-    });
-};
-
-export const getGuild = <ThrowOnError extends boolean = false>(options: Options<GetGuildData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildResponses, GetGuildErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}',
-        ...options
-    });
-};
-
-export const updateGuild = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildResponses, UpdateGuildErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildAuditLogEntries = <ThrowOnError extends boolean = false>(options: Options<ListGuildAuditLogEntriesData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildAuditLogEntriesResponses, ListGuildAuditLogEntriesErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/audit-logs',
-        ...options
-    });
-};
-
-export const listAutoModerationRules = <ThrowOnError extends boolean = false>(options: Options<ListAutoModerationRulesData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListAutoModerationRulesResponses, ListAutoModerationRulesErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/auto-moderation/rules',
-        ...options
-    });
-};
-
-export const createAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<CreateAutoModerationRuleData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateAutoModerationRuleResponses, CreateAutoModerationRuleErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/auto-moderation/rules',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<DeleteAutoModerationRuleData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteAutoModerationRuleResponses, DeleteAutoModerationRuleErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}',
-        ...options
-    });
-};
-
-export const getAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<GetAutoModerationRuleData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetAutoModerationRuleResponses, GetAutoModerationRuleErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}',
-        ...options
-    });
-};
-
-export const updateAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<UpdateAutoModerationRuleData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateAutoModerationRuleResponses, UpdateAutoModerationRuleErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildBans = <ThrowOnError extends boolean = false>(options: Options<ListGuildBansData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildBansResponses, ListGuildBansErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/bans',
-        ...options
-    });
-};
-
-export const unbanUserFromGuild = <ThrowOnError extends boolean = false>(options: Options<UnbanUserFromGuildData, ThrowOnError>) => {
-    return (options.client ?? client).delete<UnbanUserFromGuildResponses, UnbanUserFromGuildErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/bans/{user_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getGuildBan = <ThrowOnError extends boolean = false>(options: Options<GetGuildBanData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildBanResponses, GetGuildBanErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/bans/{user_id}',
-        ...options
-    });
-};
-
-export const banUserFromGuild = <ThrowOnError extends boolean = false>(options: Options<BanUserFromGuildData, ThrowOnError>) => {
-    return (options.client ?? client).put<BanUserFromGuildResponses, BanUserFromGuildErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/bans/{user_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const bulkBanUsersFromGuild = <ThrowOnError extends boolean = false>(options: Options<BulkBanUsersFromGuildData, ThrowOnError>) => {
-    return (options.client ?? client).post<BulkBanUsersFromGuildResponses, BulkBanUsersFromGuildErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/bulk-ban',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildChannels = <ThrowOnError extends boolean = false>(options: Options<ListGuildChannelsData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildChannelsResponses, ListGuildChannelsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            },
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/guilds/{guild_id}/channels',
-        ...options
-    });
-};
-
-export const bulkUpdateGuildChannels = <ThrowOnError extends boolean = false>(options: Options<BulkUpdateGuildChannelsData, ThrowOnError>) => {
-    return (options.client ?? client).patch<BulkUpdateGuildChannelsResponses, BulkUpdateGuildChannelsErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/channels',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const createGuildChannel = <ThrowOnError extends boolean = false>(options: Options<CreateGuildChannelData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildChannelResponses, CreateGuildChannelErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/channels',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildEmojis = <ThrowOnError extends boolean = false>(options: Options<ListGuildEmojisData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildEmojisResponses, ListGuildEmojisErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/emojis',
-        ...options
-    });
-};
-
-export const createGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<CreateGuildEmojiData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildEmojiResponses, CreateGuildEmojiErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/emojis',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildEmojiData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildEmojiResponses, DeleteGuildEmojiErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/emojis/{emoji_id}',
-        ...options
-    });
-};
-
-export const getGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<GetGuildEmojiData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildEmojiResponses, GetGuildEmojiErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/emojis/{emoji_id}',
-        ...options
-    });
-};
-
-export const updateGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildEmojiData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildEmojiResponses, UpdateGuildEmojiErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/emojis/{emoji_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildIntegrations = <ThrowOnError extends boolean = false>(options: Options<ListGuildIntegrationsData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildIntegrationsResponses, ListGuildIntegrationsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/integrations',
-        ...options
-    });
-};
-
-export const deleteGuildIntegration = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildIntegrationData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildIntegrationResponses, DeleteGuildIntegrationErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/integrations/{integration_id}',
-        ...options
-    });
-};
-
-export const listGuildInvites = <ThrowOnError extends boolean = false>(options: Options<ListGuildInvitesData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildInvitesResponses, ListGuildInvitesErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/invites',
-        ...options
-    });
-};
-
-export const listGuildMembers = <ThrowOnError extends boolean = false>(options: Options<ListGuildMembersData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildMembersResponses, ListGuildMembersErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members',
-        ...options
-    });
-};
-
-export const updateMyGuildMember = <ThrowOnError extends boolean = false>(options: Options<UpdateMyGuildMemberData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateMyGuildMemberResponses, UpdateMyGuildMemberErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/@me',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const searchGuildMembers = <ThrowOnError extends boolean = false>(options: Options<SearchGuildMembersData, ThrowOnError>) => {
-    return (options.client ?? client).get<SearchGuildMembersResponses, SearchGuildMembersErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/search',
-        ...options
-    });
-};
-
-export const deleteGuildMember = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildMemberData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildMemberResponses, DeleteGuildMemberErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/{user_id}',
-        ...options
-    });
-};
-
-export const getGuildMember = <ThrowOnError extends boolean = false>(options: Options<GetGuildMemberData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildMemberResponses, GetGuildMemberErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/{user_id}',
-        ...options
-    });
-};
-
-export const updateGuildMember = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildMemberData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildMemberResponses, UpdateGuildMemberErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/{user_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const addGuildMember = <ThrowOnError extends boolean = false>(options: Options<AddGuildMemberData, ThrowOnError>) => {
-    return (options.client ?? client).put<AddGuildMemberResponses, AddGuildMemberErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/{user_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildMemberRole = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildMemberRoleData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildMemberRoleResponses, DeleteGuildMemberRoleErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/{user_id}/roles/{role_id}',
-        ...options
-    });
-};
-
-export const addGuildMemberRole = <ThrowOnError extends boolean = false>(options: Options<AddGuildMemberRoleData, ThrowOnError>) => {
-    return (options.client ?? client).put<AddGuildMemberRoleResponses, AddGuildMemberRoleErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/members/{user_id}/roles/{role_id}',
-        ...options
-    });
-};
-
-export const setGuildMfaLevel = <ThrowOnError extends boolean = false>(options: Options<SetGuildMfaLevelData, ThrowOnError>) => {
-    return (options.client ?? client).post<SetGuildMfaLevelResponses, SetGuildMfaLevelErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/mfa',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getGuildNewMemberWelcome = <ThrowOnError extends boolean = false>(options: Options<GetGuildNewMemberWelcomeData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildNewMemberWelcomeResponses, GetGuildNewMemberWelcomeErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/new-member-welcome',
-        ...options
-    });
-};
-
-export const getGuildsOnboarding = <ThrowOnError extends boolean = false>(options: Options<GetGuildsOnboardingData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildsOnboardingResponses, GetGuildsOnboardingErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/onboarding',
-        ...options
-    });
-};
-
-export const putGuildsOnboarding = <ThrowOnError extends boolean = false>(options: Options<PutGuildsOnboardingData, ThrowOnError>) => {
-    return (options.client ?? client).put<PutGuildsOnboardingResponses, PutGuildsOnboardingErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/onboarding',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getGuildPreview = <ThrowOnError extends boolean = false>(options: Options<GetGuildPreviewData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildPreviewResponses, GetGuildPreviewErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/preview',
-        ...options
-    });
-};
-
-export const previewPruneGuild = <ThrowOnError extends boolean = false>(options: Options<PreviewPruneGuildData, ThrowOnError>) => {
-    return (options.client ?? client).get<PreviewPruneGuildResponses, PreviewPruneGuildErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/prune',
-        ...options
-    });
-};
-
-export const pruneGuild = <ThrowOnError extends boolean = false>(options: Options<PruneGuildData, ThrowOnError>) => {
-    return (options.client ?? client).post<PruneGuildResponses, PruneGuildErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/prune',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildVoiceRegions = <ThrowOnError extends boolean = false>(options: Options<ListGuildVoiceRegionsData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildVoiceRegionsResponses, ListGuildVoiceRegionsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/regions',
-        ...options
-    });
-};
-
-export const listGuildRoles = <ThrowOnError extends boolean = false>(options: Options<ListGuildRolesData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildRolesResponses, ListGuildRolesErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/roles',
-        ...options
-    });
-};
-
-export const bulkUpdateGuildRoles = <ThrowOnError extends boolean = false>(options: Options<BulkUpdateGuildRolesData, ThrowOnError>) => {
-    return (options.client ?? client).patch<BulkUpdateGuildRolesResponses, BulkUpdateGuildRolesErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/roles',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const createGuildRole = <ThrowOnError extends boolean = false>(options: Options<CreateGuildRoleData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildRoleResponses, CreateGuildRoleErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/roles',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildRole = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildRoleData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildRoleResponses, DeleteGuildRoleErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/roles/{role_id}',
-        ...options
-    });
-};
-
-export const getGuildRole = <ThrowOnError extends boolean = false>(options: Options<GetGuildRoleData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildRoleResponses, GetGuildRoleErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/roles/{role_id}',
-        ...options
-    });
-};
-
-export const updateGuildRole = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildRoleData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildRoleResponses, UpdateGuildRoleErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/roles/{role_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildScheduledEvents = <ThrowOnError extends boolean = false>(options: Options<ListGuildScheduledEventsData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildScheduledEventsResponses, ListGuildScheduledEventsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/scheduled-events',
-        ...options
-    });
-};
-
-export const createGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<CreateGuildScheduledEventData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildScheduledEventResponses, CreateGuildScheduledEventErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/scheduled-events',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildScheduledEventData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildScheduledEventResponses, DeleteGuildScheduledEventErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}',
-        ...options
-    });
-};
-
-export const getGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<GetGuildScheduledEventData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildScheduledEventResponses, GetGuildScheduledEventErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}',
-        ...options
-    });
-};
-
-export const updateGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildScheduledEventData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildScheduledEventResponses, UpdateGuildScheduledEventErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildScheduledEventUsers = <ThrowOnError extends boolean = false>(options: Options<ListGuildScheduledEventUsersData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildScheduledEventUsersResponses, ListGuildScheduledEventUsersErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users',
-        ...options
-    });
-};
-
-export const listGuildSoundboardSounds = <ThrowOnError extends boolean = false>(options: Options<ListGuildSoundboardSoundsData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildSoundboardSoundsResponses, ListGuildSoundboardSoundsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/soundboard-sounds',
-        ...options
-    });
-};
-
-export const createGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<CreateGuildSoundboardSoundData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildSoundboardSoundResponses, CreateGuildSoundboardSoundErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/soundboard-sounds',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildSoundboardSoundData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildSoundboardSoundResponses, DeleteGuildSoundboardSoundErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}',
-        ...options
-    });
-};
-
-export const getGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<GetGuildSoundboardSoundData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildSoundboardSoundResponses, GetGuildSoundboardSoundErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}',
-        ...options
-    });
-};
-
-export const updateGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildSoundboardSoundData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildSoundboardSoundResponses, UpdateGuildSoundboardSoundErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildStickers = <ThrowOnError extends boolean = false>(options: Options<ListGuildStickersData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildStickersResponses, ListGuildStickersErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/stickers',
-        ...options
-    });
-};
-
-export const createGuildSticker = <ThrowOnError extends boolean = false>(options: Options<CreateGuildStickerData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildStickerResponses, CreateGuildStickerErrors, ThrowOnError>({
-        ...formDataBodySerializer,
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/stickers',
-        ...options,
-        headers: {
-            'Content-Type': null,
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildSticker = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildStickerData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildStickerResponses, DeleteGuildStickerErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/stickers/{sticker_id}',
-        ...options
-    });
-};
-
-export const getGuildSticker = <ThrowOnError extends boolean = false>(options: Options<GetGuildStickerData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildStickerResponses, GetGuildStickerErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/stickers/{sticker_id}',
-        ...options
-    });
-};
-
-export const updateGuildSticker = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildStickerData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildStickerResponses, UpdateGuildStickerErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/stickers/{sticker_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const listGuildTemplates = <ThrowOnError extends boolean = false>(options: Options<ListGuildTemplatesData, ThrowOnError>) => {
-    return (options.client ?? client).get<ListGuildTemplatesResponses, ListGuildTemplatesErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/templates',
-        ...options
-    });
-};
-
-export const createGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<CreateGuildTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuildTemplateResponses, CreateGuildTemplateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/templates',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteGuildTemplateResponses, DeleteGuildTemplateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/templates/{code}',
-        ...options
-    });
-};
-
-export const updateGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildTemplateResponses, UpdateGuildTemplateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/templates/{code}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const syncGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<SyncGuildTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).put<SyncGuildTemplateResponses, SyncGuildTemplateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/templates/{code}',
-        ...options
-    });
-};
-
-export const getActiveGuildThreads = <ThrowOnError extends boolean = false>(options: Options<GetActiveGuildThreadsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetActiveGuildThreadsResponses, GetActiveGuildThreadsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/threads/active',
-        ...options
-    });
-};
-
-export const getGuildVanityUrl = <ThrowOnError extends boolean = false>(options: Options<GetGuildVanityUrlData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildVanityUrlResponses, GetGuildVanityUrlErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/vanity-url',
-        ...options
-    });
-};
-
-export const getSelfVoiceState = <ThrowOnError extends boolean = false>(options: Options<GetSelfVoiceStateData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetSelfVoiceStateResponses, GetSelfVoiceStateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/voice-states/@me',
-        ...options
-    });
-};
-
-export const updateSelfVoiceState = <ThrowOnError extends boolean = false>(options: Options<UpdateSelfVoiceStateData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateSelfVoiceStateResponses, UpdateSelfVoiceStateErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/voice-states/@me',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getVoiceState = <ThrowOnError extends boolean = false>(options: Options<GetVoiceStateData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetVoiceStateResponses, GetVoiceStateErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/voice-states/{user_id}',
-        ...options
-    });
-};
-
-export const updateVoiceState = <ThrowOnError extends boolean = false>(options: Options<UpdateVoiceStateData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateVoiceStateResponses, UpdateVoiceStateErrors, ThrowOnError>({
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/voice-states/{user_id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getGuildWebhooks = <ThrowOnError extends boolean = false>(options: Options<GetGuildWebhooksData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildWebhooksResponses, GetGuildWebhooksErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/webhooks',
-        ...options
-    });
-};
-
-export const getGuildWelcomeScreen = <ThrowOnError extends boolean = false>(options: Options<GetGuildWelcomeScreenData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildWelcomeScreenResponses, GetGuildWelcomeScreenErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/welcome-screen',
-        ...options
-    });
-};
-
-export const updateGuildWelcomeScreen = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildWelcomeScreenData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildWelcomeScreenResponses, UpdateGuildWelcomeScreenErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/welcome-screen',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getGuildWidgetSettings = <ThrowOnError extends boolean = false>(options: Options<GetGuildWidgetSettingsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildWidgetSettingsResponses, GetGuildWidgetSettingsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/widget',
-        ...options
-    });
-};
-
-export const updateGuildWidgetSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildWidgetSettingsData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateGuildWidgetSettingsResponses, UpdateGuildWidgetSettingsErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/widget',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getGuildWidget = <ThrowOnError extends boolean = false>(options: Options<GetGuildWidgetData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildWidgetResponses, GetGuildWidgetErrors, ThrowOnError>({
-        responseType: 'json',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/widget.json',
-        ...options
-    });
-};
-
-export const getGuildWidgetPng = <ThrowOnError extends boolean = false>(options: Options<GetGuildWidgetPngData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetGuildWidgetPngResponses, GetGuildWidgetPngErrors, ThrowOnError>({
-        responseType: 'blob',
-        security: [
-            {
-                name: 'Authorization',
-                type: 'apiKey'
-            }
-        ],
-        url: '/guilds/{guild_id}/widget.png',
-        ...options
-    });
-};
+export const getGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<GetGuildTemplateData, ThrowOnError>) => (options.client ?? client).get<GetGuildTemplateResponses, GetGuildTemplateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/templates/{code}',
+    ...options
+});
+
+export const deleteGuild = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildResponses, DeleteGuildErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}',
+    ...options
+});
+
+export const getGuild = <ThrowOnError extends boolean = false>(options: Options<GetGuildData, ThrowOnError>) => (options.client ?? client).get<GetGuildResponses, GetGuildErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}',
+    ...options
+});
+
+export const updateGuild = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildResponses, UpdateGuildErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildAuditLogEntries = <ThrowOnError extends boolean = false>(options: Options<ListGuildAuditLogEntriesData, ThrowOnError>) => (options.client ?? client).get<ListGuildAuditLogEntriesResponses, ListGuildAuditLogEntriesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/audit-logs',
+    ...options
+});
+
+export const listAutoModerationRules = <ThrowOnError extends boolean = false>(options: Options<ListAutoModerationRulesData, ThrowOnError>) => (options.client ?? client).get<ListAutoModerationRulesResponses, ListAutoModerationRulesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/auto-moderation/rules',
+    ...options
+});
+
+export const createAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<CreateAutoModerationRuleData, ThrowOnError>) => (options.client ?? client).post<CreateAutoModerationRuleResponses, CreateAutoModerationRuleErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/auto-moderation/rules',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<DeleteAutoModerationRuleData, ThrowOnError>) => (options.client ?? client).delete<DeleteAutoModerationRuleResponses, DeleteAutoModerationRuleErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}',
+    ...options
+});
+
+export const getAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<GetAutoModerationRuleData, ThrowOnError>) => (options.client ?? client).get<GetAutoModerationRuleResponses, GetAutoModerationRuleErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}',
+    ...options
+});
+
+export const updateAutoModerationRule = <ThrowOnError extends boolean = false>(options: Options<UpdateAutoModerationRuleData, ThrowOnError>) => (options.client ?? client).patch<UpdateAutoModerationRuleResponses, UpdateAutoModerationRuleErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/auto-moderation/rules/{rule_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildBans = <ThrowOnError extends boolean = false>(options: Options<ListGuildBansData, ThrowOnError>) => (options.client ?? client).get<ListGuildBansResponses, ListGuildBansErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/bans',
+    ...options
+});
+
+export const unbanUserFromGuild = <ThrowOnError extends boolean = false>(options: Options<UnbanUserFromGuildData, ThrowOnError>) => (options.client ?? client).delete<UnbanUserFromGuildResponses, UnbanUserFromGuildErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/bans/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getGuildBan = <ThrowOnError extends boolean = false>(options: Options<GetGuildBanData, ThrowOnError>) => (options.client ?? client).get<GetGuildBanResponses, GetGuildBanErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/bans/{user_id}',
+    ...options
+});
+
+export const banUserFromGuild = <ThrowOnError extends boolean = false>(options: Options<BanUserFromGuildData, ThrowOnError>) => (options.client ?? client).put<BanUserFromGuildResponses, BanUserFromGuildErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/bans/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const bulkBanUsersFromGuild = <ThrowOnError extends boolean = false>(options: Options<BulkBanUsersFromGuildData, ThrowOnError>) => (options.client ?? client).post<BulkBanUsersFromGuildResponses, BulkBanUsersFromGuildErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/bulk-ban',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildChannels = <ThrowOnError extends boolean = false>(options: Options<ListGuildChannelsData, ThrowOnError>) => (options.client ?? client).get<ListGuildChannelsResponses, ListGuildChannelsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }, { scheme: 'bearer', type: 'http' }],
+    url: '/guilds/{guild_id}/channels',
+    ...options
+});
+
+export const bulkUpdateGuildChannels = <ThrowOnError extends boolean = false>(options: Options<BulkUpdateGuildChannelsData, ThrowOnError>) => (options.client ?? client).patch<BulkUpdateGuildChannelsResponses, BulkUpdateGuildChannelsErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/channels',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createGuildChannel = <ThrowOnError extends boolean = false>(options: Options<CreateGuildChannelData, ThrowOnError>) => (options.client ?? client).post<CreateGuildChannelResponses, CreateGuildChannelErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/channels',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildEmojis = <ThrowOnError extends boolean = false>(options: Options<ListGuildEmojisData, ThrowOnError>) => (options.client ?? client).get<ListGuildEmojisResponses, ListGuildEmojisErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/emojis',
+    ...options
+});
+
+export const createGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<CreateGuildEmojiData, ThrowOnError>) => (options.client ?? client).post<CreateGuildEmojiResponses, CreateGuildEmojiErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/emojis',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildEmojiData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildEmojiResponses, DeleteGuildEmojiErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/emojis/{emoji_id}',
+    ...options
+});
+
+export const getGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<GetGuildEmojiData, ThrowOnError>) => (options.client ?? client).get<GetGuildEmojiResponses, GetGuildEmojiErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/emojis/{emoji_id}',
+    ...options
+});
+
+export const updateGuildEmoji = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildEmojiData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildEmojiResponses, UpdateGuildEmojiErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/emojis/{emoji_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildIntegrations = <ThrowOnError extends boolean = false>(options: Options<ListGuildIntegrationsData, ThrowOnError>) => (options.client ?? client).get<ListGuildIntegrationsResponses, ListGuildIntegrationsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/integrations',
+    ...options
+});
+
+export const deleteGuildIntegration = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildIntegrationData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildIntegrationResponses, DeleteGuildIntegrationErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/integrations/{integration_id}',
+    ...options
+});
+
+export const listGuildInvites = <ThrowOnError extends boolean = false>(options: Options<ListGuildInvitesData, ThrowOnError>) => (options.client ?? client).get<ListGuildInvitesResponses, ListGuildInvitesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/invites',
+    ...options
+});
+
+export const listGuildMembers = <ThrowOnError extends boolean = false>(options: Options<ListGuildMembersData, ThrowOnError>) => (options.client ?? client).get<ListGuildMembersResponses, ListGuildMembersErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members',
+    ...options
+});
+
+export const updateMyGuildMember = <ThrowOnError extends boolean = false>(options: Options<UpdateMyGuildMemberData, ThrowOnError>) => (options.client ?? client).patch<UpdateMyGuildMemberResponses, UpdateMyGuildMemberErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/@me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const searchGuildMembers = <ThrowOnError extends boolean = false>(options: Options<SearchGuildMembersData, ThrowOnError>) => (options.client ?? client).get<SearchGuildMembersResponses, SearchGuildMembersErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/search',
+    ...options
+});
+
+export const deleteGuildMember = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildMemberData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildMemberResponses, DeleteGuildMemberErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/{user_id}',
+    ...options
+});
+
+export const getGuildMember = <ThrowOnError extends boolean = false>(options: Options<GetGuildMemberData, ThrowOnError>) => (options.client ?? client).get<GetGuildMemberResponses, GetGuildMemberErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/{user_id}',
+    ...options
+});
+
+export const updateGuildMember = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildMemberData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildMemberResponses, UpdateGuildMemberErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const addGuildMember = <ThrowOnError extends boolean = false>(options: Options<AddGuildMemberData, ThrowOnError>) => (options.client ?? client).put<AddGuildMemberResponses, AddGuildMemberErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteGuildMemberRole = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildMemberRoleData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildMemberRoleResponses, DeleteGuildMemberRoleErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/{user_id}/roles/{role_id}',
+    ...options
+});
+
+export const addGuildMemberRole = <ThrowOnError extends boolean = false>(options: Options<AddGuildMemberRoleData, ThrowOnError>) => (options.client ?? client).put<AddGuildMemberRoleResponses, AddGuildMemberRoleErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/members/{user_id}/roles/{role_id}',
+    ...options
+});
+
+export const setGuildMfaLevel = <ThrowOnError extends boolean = false>(options: Options<SetGuildMfaLevelData, ThrowOnError>) => (options.client ?? client).post<SetGuildMfaLevelResponses, SetGuildMfaLevelErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/mfa',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getGuildNewMemberWelcome = <ThrowOnError extends boolean = false>(options: Options<GetGuildNewMemberWelcomeData, ThrowOnError>) => (options.client ?? client).get<GetGuildNewMemberWelcomeResponses, GetGuildNewMemberWelcomeErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/new-member-welcome',
+    ...options
+});
+
+export const getGuildsOnboarding = <ThrowOnError extends boolean = false>(options: Options<GetGuildsOnboardingData, ThrowOnError>) => (options.client ?? client).get<GetGuildsOnboardingResponses, GetGuildsOnboardingErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/onboarding',
+    ...options
+});
+
+export const putGuildsOnboarding = <ThrowOnError extends boolean = false>(options: Options<PutGuildsOnboardingData, ThrowOnError>) => (options.client ?? client).put<PutGuildsOnboardingResponses, PutGuildsOnboardingErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/onboarding',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getGuildPreview = <ThrowOnError extends boolean = false>(options: Options<GetGuildPreviewData, ThrowOnError>) => (options.client ?? client).get<GetGuildPreviewResponses, GetGuildPreviewErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/preview',
+    ...options
+});
+
+export const previewPruneGuild = <ThrowOnError extends boolean = false>(options: Options<PreviewPruneGuildData, ThrowOnError>) => (options.client ?? client).get<PreviewPruneGuildResponses, PreviewPruneGuildErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/prune',
+    ...options
+});
+
+export const pruneGuild = <ThrowOnError extends boolean = false>(options: Options<PruneGuildData, ThrowOnError>) => (options.client ?? client).post<PruneGuildResponses, PruneGuildErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/prune',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildVoiceRegions = <ThrowOnError extends boolean = false>(options: Options<ListGuildVoiceRegionsData, ThrowOnError>) => (options.client ?? client).get<ListGuildVoiceRegionsResponses, ListGuildVoiceRegionsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/regions',
+    ...options
+});
+
+export const listGuildRoles = <ThrowOnError extends boolean = false>(options: Options<ListGuildRolesData, ThrowOnError>) => (options.client ?? client).get<ListGuildRolesResponses, ListGuildRolesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/roles',
+    ...options
+});
+
+export const bulkUpdateGuildRoles = <ThrowOnError extends boolean = false>(options: Options<BulkUpdateGuildRolesData, ThrowOnError>) => (options.client ?? client).patch<BulkUpdateGuildRolesResponses, BulkUpdateGuildRolesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createGuildRole = <ThrowOnError extends boolean = false>(options: Options<CreateGuildRoleData, ThrowOnError>) => (options.client ?? client).post<CreateGuildRoleResponses, CreateGuildRoleErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteGuildRole = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildRoleData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildRoleResponses, DeleteGuildRoleErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/roles/{role_id}',
+    ...options
+});
+
+export const getGuildRole = <ThrowOnError extends boolean = false>(options: Options<GetGuildRoleData, ThrowOnError>) => (options.client ?? client).get<GetGuildRoleResponses, GetGuildRoleErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/roles/{role_id}',
+    ...options
+});
+
+export const updateGuildRole = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildRoleData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildRoleResponses, UpdateGuildRoleErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/roles/{role_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildScheduledEvents = <ThrowOnError extends boolean = false>(options: Options<ListGuildScheduledEventsData, ThrowOnError>) => (options.client ?? client).get<ListGuildScheduledEventsResponses, ListGuildScheduledEventsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events',
+    ...options
+});
+
+export const createGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<CreateGuildScheduledEventData, ThrowOnError>) => (options.client ?? client).post<CreateGuildScheduledEventResponses, CreateGuildScheduledEventErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildScheduledEventData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildScheduledEventResponses, DeleteGuildScheduledEventErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}',
+    ...options
+});
+
+export const getGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<GetGuildScheduledEventData, ThrowOnError>) => (options.client ?? client).get<GetGuildScheduledEventResponses, GetGuildScheduledEventErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}',
+    ...options
+});
+
+export const updateGuildScheduledEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildScheduledEventData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildScheduledEventResponses, UpdateGuildScheduledEventErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildScheduledEventUsers = <ThrowOnError extends boolean = false>(options: Options<ListGuildScheduledEventUsersData, ThrowOnError>) => (options.client ?? client).get<ListGuildScheduledEventUsersResponses, ListGuildScheduledEventUsersErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users',
+    ...options
+});
+
+export const listGuildSoundboardSounds = <ThrowOnError extends boolean = false>(options: Options<ListGuildSoundboardSoundsData, ThrowOnError>) => (options.client ?? client).get<ListGuildSoundboardSoundsResponses, ListGuildSoundboardSoundsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/soundboard-sounds',
+    ...options
+});
+
+export const createGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<CreateGuildSoundboardSoundData, ThrowOnError>) => (options.client ?? client).post<CreateGuildSoundboardSoundResponses, CreateGuildSoundboardSoundErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/soundboard-sounds',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildSoundboardSoundData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildSoundboardSoundResponses, DeleteGuildSoundboardSoundErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}',
+    ...options
+});
+
+export const getGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<GetGuildSoundboardSoundData, ThrowOnError>) => (options.client ?? client).get<GetGuildSoundboardSoundResponses, GetGuildSoundboardSoundErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}',
+    ...options
+});
+
+export const updateGuildSoundboardSound = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildSoundboardSoundData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildSoundboardSoundResponses, UpdateGuildSoundboardSoundErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/soundboard-sounds/{sound_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildStickers = <ThrowOnError extends boolean = false>(options: Options<ListGuildStickersData, ThrowOnError>) => (options.client ?? client).get<ListGuildStickersResponses, ListGuildStickersErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/stickers',
+    ...options
+});
+
+export const createGuildSticker = <ThrowOnError extends boolean = false>(options: Options<CreateGuildStickerData, ThrowOnError>) => (options.client ?? client).post<CreateGuildStickerResponses, CreateGuildStickerErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/stickers',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+export const deleteGuildSticker = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildStickerData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildStickerResponses, DeleteGuildStickerErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/stickers/{sticker_id}',
+    ...options
+});
+
+export const getGuildSticker = <ThrowOnError extends boolean = false>(options: Options<GetGuildStickerData, ThrowOnError>) => (options.client ?? client).get<GetGuildStickerResponses, GetGuildStickerErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/stickers/{sticker_id}',
+    ...options
+});
+
+export const updateGuildSticker = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildStickerData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildStickerResponses, UpdateGuildStickerErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/stickers/{sticker_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listGuildTemplates = <ThrowOnError extends boolean = false>(options: Options<ListGuildTemplatesData, ThrowOnError>) => (options.client ?? client).get<ListGuildTemplatesResponses, ListGuildTemplatesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/templates',
+    ...options
+});
+
+export const createGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<CreateGuildTemplateData, ThrowOnError>) => (options.client ?? client).post<CreateGuildTemplateResponses, CreateGuildTemplateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/templates',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildTemplateData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildTemplateResponses, DeleteGuildTemplateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/templates/{code}',
+    ...options
+});
+
+export const updateGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildTemplateData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildTemplateResponses, UpdateGuildTemplateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/templates/{code}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const syncGuildTemplate = <ThrowOnError extends boolean = false>(options: Options<SyncGuildTemplateData, ThrowOnError>) => (options.client ?? client).put<SyncGuildTemplateResponses, SyncGuildTemplateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/templates/{code}',
+    ...options
+});
+
+export const getActiveGuildThreads = <ThrowOnError extends boolean = false>(options: Options<GetActiveGuildThreadsData, ThrowOnError>) => (options.client ?? client).get<GetActiveGuildThreadsResponses, GetActiveGuildThreadsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/threads/active',
+    ...options
+});
+
+export const getGuildVanityUrl = <ThrowOnError extends boolean = false>(options: Options<GetGuildVanityUrlData, ThrowOnError>) => (options.client ?? client).get<GetGuildVanityUrlResponses, GetGuildVanityUrlErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/vanity-url',
+    ...options
+});
+
+export const getSelfVoiceState = <ThrowOnError extends boolean = false>(options: Options<GetSelfVoiceStateData, ThrowOnError>) => (options.client ?? client).get<GetSelfVoiceStateResponses, GetSelfVoiceStateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/voice-states/@me',
+    ...options
+});
+
+export const updateSelfVoiceState = <ThrowOnError extends boolean = false>(options: Options<UpdateSelfVoiceStateData, ThrowOnError>) => (options.client ?? client).patch<UpdateSelfVoiceStateResponses, UpdateSelfVoiceStateErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/voice-states/@me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getVoiceState = <ThrowOnError extends boolean = false>(options: Options<GetVoiceStateData, ThrowOnError>) => (options.client ?? client).get<GetVoiceStateResponses, GetVoiceStateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/voice-states/{user_id}',
+    ...options
+});
+
+export const updateVoiceState = <ThrowOnError extends boolean = false>(options: Options<UpdateVoiceStateData, ThrowOnError>) => (options.client ?? client).patch<UpdateVoiceStateResponses, UpdateVoiceStateErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/voice-states/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getGuildWebhooks = <ThrowOnError extends boolean = false>(options: Options<GetGuildWebhooksData, ThrowOnError>) => (options.client ?? client).get<GetGuildWebhooksResponses, GetGuildWebhooksErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/webhooks',
+    ...options
+});
+
+export const getGuildWelcomeScreen = <ThrowOnError extends boolean = false>(options: Options<GetGuildWelcomeScreenData, ThrowOnError>) => (options.client ?? client).get<GetGuildWelcomeScreenResponses, GetGuildWelcomeScreenErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/welcome-screen',
+    ...options
+});
+
+export const updateGuildWelcomeScreen = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildWelcomeScreenData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildWelcomeScreenResponses, UpdateGuildWelcomeScreenErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/welcome-screen',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getGuildWidgetSettings = <ThrowOnError extends boolean = false>(options: Options<GetGuildWidgetSettingsData, ThrowOnError>) => (options.client ?? client).get<GetGuildWidgetSettingsResponses, GetGuildWidgetSettingsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/widget',
+    ...options
+});
+
+export const updateGuildWidgetSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildWidgetSettingsData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildWidgetSettingsResponses, UpdateGuildWidgetSettingsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/widget',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getGuildWidget = <ThrowOnError extends boolean = false>(options: Options<GetGuildWidgetData, ThrowOnError>) => (options.client ?? client).get<GetGuildWidgetResponses, GetGuildWidgetErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/widget.json',
+    ...options
+});
+
+export const getGuildWidgetPng = <ThrowOnError extends boolean = false>(options: Options<GetGuildWidgetPngData, ThrowOnError>) => (options.client ?? client).get<GetGuildWidgetPngResponses, GetGuildWidgetPngErrors, ThrowOnError>({
+    responseType: 'blob',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/widget.png',
+    ...options
+});

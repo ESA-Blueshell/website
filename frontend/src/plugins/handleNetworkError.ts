@@ -1,13 +1,27 @@
-// @ts-ignore
 import router from "./router"
 import store from "@/plugins/store"
 import type {RouteLocationRaw} from "vue-router"
+import type {AxiosError} from "axios"
+
+
+function isAxiosError(e: unknown): e is AxiosError {
+  return !!(e && typeof e === "object" && (e as AxiosError).response?.status)
+}
 
 /**
  * Handles network errors from axios requests and shows appropriate user feedback
- * @param error The axios error object
+ * @param err The axios error object
  */
-export function $handleNetworkError(error: any): void {
+export function $handleNetworkError(err: unknown): void {
+  if (!isAxiosError(err)) {
+    const errorMessage = "An unknown error occurred. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+    store.commit("setStatusSnackbarMessage", errorMessage)
+    console.log(err)
+    return
+  }
+
+  let error = err as AxiosError
+
   let errorMessage: string
   const currentRoute = router.currentRoute.value
 

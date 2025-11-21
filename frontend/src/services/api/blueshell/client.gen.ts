@@ -14,6 +14,4 @@ import { createClientConfig } from '../blueshell.runtime.ts';
  */
 export type CreateClientConfig<T extends ClientOptions = ClientOptions2> = (override?: Config<ClientOptions & T>) => Config<Required<ClientOptions> & T>;
 
-export const client = createClient(createClientConfig(createConfig<ClientOptions2>({
-    baseURL: 'http://localhost:8080'
-})));
+export const client = createClient(createClientConfig(createConfig<ClientOptions2>({ baseURL: 'http://localhost:8080' })));

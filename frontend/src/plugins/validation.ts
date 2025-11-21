@@ -1,6 +1,6 @@
 // vee-validate v4
 import {configure, defineRule, type FormContext, type GenericObject} from "vee-validate"
-import {parsePhoneNumber} from "libphonenumber-js/max"
+import {type CountryCode, parsePhoneNumber} from "libphonenumber-js/max"
 import {DateTime} from "luxon"
 import type {AxiosError} from "axios"
 import type {ApiError, FieldValidationError} from "@/services/api"
@@ -161,7 +161,7 @@ defineRule("dateRequired", (v: string) => !!v || "Date is required")
 defineRule("phoneMobile", (v: string, [country = "NL"]: string[]) => {
   if (isEmpty(v)) return true // let "required" handle empties
   try {
-    const pn = parsePhoneNumber(v, country as any)
+    const pn = parsePhoneNumber(v, country as CountryCode)
     if (!pn?.isValid()) return "Enter a valid phone number"
     const t = pn.getType?.()
     // Some regions return "FIXED_LINE_OR_MOBILE"; accept that as mobile-friendly.
@@ -211,15 +211,15 @@ export type ParsedValidation = {
 
 
 function isHeyApiError(e: unknown): e is HeyApiException {
-  return !!(e && typeof e === "object" && (e as any).response?.status)
+  return !!(e && typeof e === "object" && (e as HeyApiException).response?.status)
 }
 
 export function parseApiValidation(err: unknown): ParsedValidation | null {
   if (!isHeyApiError(err)) return null
-  const data = err.response?.data as ApiError | undefined
+  const data = err.response?.data as ApiError
   if (!data) return null
 
-  const list = (data as any).errors as FieldValidationError[] | undefined
+  const list = (data.errors || []) as FieldValidationError[]
   if (!list?.length) {
     if (err.response?.status !== 400) return null
     return null
@@ -228,9 +228,9 @@ export function parseApiValidation(err: unknown): ParsedValidation | null {
   const out: ParsedValidation = {
     objectName: list[0]?.objectName ?? null,
     fieldErrors: {},
-    detail: (data as any).detail ?? null,
-    status: (data as any).status,
-    traceId: (data as any).traceId ?? null,
+    detail: data.detail ?? null,
+    status: data.status,
+    traceId: data.traceId ?? null,
   }
 
   for (const fe of list) {

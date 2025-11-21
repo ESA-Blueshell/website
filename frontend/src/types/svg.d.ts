@@ -1,5 +1,4 @@
 declare module "*.svg?component" {
   import type {DefineComponent} from "vue"
-  const component: DefineComponent<{}, {}, any>
-  export default component
+  const component: DefineComponent<object, object, never>
 }

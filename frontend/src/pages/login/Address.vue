@@ -28,10 +28,9 @@ import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {type Address, type AdvancedUser, findAddressById, type Login, type SimpleUser} from "@/services/api"
+import {type Address, findAddressById, type Login} from "@/services/api"
 import AddressForm from "@/components/form/AddressForm.vue"
 
-const user = ref<SimpleUser | AdvancedUser>()
 const address = ref<Address>()
 const store = useStore()
 const route = useRoute()

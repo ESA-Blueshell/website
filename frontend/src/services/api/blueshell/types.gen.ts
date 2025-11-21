@@ -4,6 +4,316 @@ export type ClientOptions = {
     baseURL: 'http://localhost:8080' | (string & {});
 };
 
+export type Address = {
+    city: string;
+    country: string;
+    createdAt?: string;
+    deletedAt?: string;
+    houseNumber: string;
+    id?: number;
+    street: string;
+    updatedAt?: string;
+    version?: number;
+    zipCode: string;
+};
+
+export type AdvancedCommittee = {
+    createdAt?: string;
+    deletedAt?: string;
+    description: string;
+    id?: number;
+    members: Array<CommitteeMember>;
+    name: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type AdvancedUser = {
+    addressId?: number;
+    bhv: boolean;
+    createdAt?: string;
+    dateOfBirth: string;
+    deletedAt?: string;
+    discord: string;
+    ehbo: boolean;
+    email: string;
+    enabled?: boolean;
+    firstName: string;
+    fullName?: string;
+    gender?: string;
+    id?: number;
+    initials: string;
+    lastName: string;
+    nationality: string;
+    newsletter: boolean;
+    password?: string;
+    phoneNumber: string;
+    photoConsent: boolean;
+    prefix?: string;
+    roles?: Array<Role>;
+    studentNumber?: string;
+    updatedAt?: string;
+    username: string;
+    version?: number;
+};
+
+export type Answer = {
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    optionSelections?: Array<boolean>;
+    questionId: number;
+    textResponse?: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+/**
+ * Problem Details for HTTP APIs including validation errors.
+ */
+export type ApiError = {
+    createdAt?: string;
+    deletedAt?: string;
+    /**
+     * Human-readable explanation specific to this occurrence.
+     */
+    detail?: string;
+    /**
+     * List of field/object validation errors (present when binding/validation fails).
+     */
+    errors?: Array<FieldValidationError>;
+    id?: number;
+    /**
+     * A URI reference that identifies the specific occurrence.
+     */
+    instance?: string;
+    /**
+     * HTTP status code.
+     */
+    status?: number;
+    /**
+     * Short, human-readable summary of the problem.
+     */
+    title?: string;
+    /**
+     * Trace or correlation id if available (Spring may add this via problem detail handlers).
+     */
+    traceId?: string;
+    /**
+     * Problem type URI (RFC 7807).
+     */
+    type?: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type BaseDto = {
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type Blog = {
+    createdAt?: string;
+    deletedAt?: string;
+    html: string;
+    id?: number;
+    publishedAt?: string;
+    title: string;
+    updatedAt?: string;
+    url?: string;
+    version?: number;
+};
+
+export type CommitteeMember = {
+    committeeId?: number;
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    role: string;
+    updatedAt?: string;
+    userId: number;
+    version?: number;
+};
+
+export type Contribution = {
+    contributionPeriodId: number;
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    remindedAt?: string;
+    updatedAt?: string;
+    userId: number;
+    version?: number;
+};
+
+export type ContributionPeriod = {
+    alumniFee: number;
+    createdAt?: string;
+    deletedAt?: string;
+    endDate: string;
+    fullYearFee: number;
+    halfYearFee: number;
+    id?: number;
+    listId?: number;
+    startDate: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type ContributionReminder = {
+    contributionPeriodId: number;
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    remindedAt?: string;
+    updatedAt?: string;
+    userId: number;
+    version?: number;
+};
+
+export type Event = {
+    approved?: boolean;
+    banner?: EventBanner;
+    committeeId: number;
+    createdAt?: string;
+    deletedAt?: string;
+    description: string;
+    endTime: string;
+    id?: number;
+    location?: string;
+    memberPrice?: number;
+    membersOnly?: boolean;
+    publicPrice?: number;
+    signUp?: boolean;
+    signUpCount?: number;
+    signUpForm?: Survey;
+    startTime: string;
+    title: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type EventBanner = {
+    createdAt?: string;
+    deletedAt?: string;
+    file: File;
+    id?: number;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type EventSignUp = {
+    answers?: Array<Answer>;
+    createdAt?: string;
+    deletedAt?: string;
+    eventId?: number;
+    guest?: Guest;
+    id?: number;
+    updatedAt?: string;
+    user?: SimpleUser;
+    userId?: number;
+    version?: number;
+};
+
+/**
+ * Details about a single field/object validation error.
+ */
+export type FieldValidationError = {
+    /**
+     * Validation code / constraint key.
+     */
+    code?: string;
+    /**
+     * Field that failed validation (null for global errors).
+     */
+    field?: string;
+    /**
+     * Human-readable validation message.
+     */
+    message?: string;
+    /**
+     * Object (target) name that failed validation.
+     */
+    objectName?: string;
+    /**
+     * Rejected value (may be omitted for security).
+     */
+    rejectedValue?: {
+        [key: string]: unknown;
+    };
+};
+
+export type File = {
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    mediaType?: string;
+    name?: string;
+    size?: number;
+    type?: FileType;
+    updatedAt?: string;
+    version?: number;
+};
+
+export enum FileType {
+    DOCUMENT = 'DOCUMENT',
+    PROFILE_PICTURE = 'PROFILE_PICTURE',
+    EVENT_BANNER = 'EVENT_BANNER',
+    EVENT_PICTURE = 'EVENT_PICTURE',
+    SPONSOR_PICTURE = 'SPONSOR_PICTURE'
+}
+
+export type Guest = {
+    accessToken?: string;
+    createdAt?: string;
+    deletedAt?: string;
+    discord: string;
+    email: string;
+    id?: number;
+    name: string;
+    phoneNumber: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type JwtRequest = {
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    password?: string;
+    updatedAt?: string;
+    username?: string;
+    version?: number;
+};
+
+export type Login = {
+    addressId?: number;
+    createdAt?: string;
+    deletedAt?: string;
+    expiration: number;
+    id?: number;
+    roles: Array<Role>;
+    token: string;
+    updatedAt?: string;
+    userId: number;
+    username: string;
+    version?: number;
+};
+
+export type MemberActivationRequest = {
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    password?: string;
+    token: string;
+    updatedAt?: string;
+    username: string;
+    version?: number;
+};
+
 export enum MemberType {
     ALUMNI = 'ALUMNI',
     HONORARY = 'HONORARY',
@@ -12,18 +322,87 @@ export enum MemberType {
 }
 
 export type Membership = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    userId: number;
-    memberType?: MemberType;
     city?: string;
     country?: string;
-    startDate?: string;
+    createdAt?: string;
+    deletedAt?: string;
     endDate?: string;
+    id?: number;
     incasso: boolean;
+    memberType?: MemberType;
+    startDate?: string;
+    updatedAt?: string;
+    userId: number;
+    version?: number;
+};
+
+export type PageMetadata = {
+    number?: number;
+    size?: number;
+    totalElements?: number;
+    totalPages?: number;
+};
+
+export type PagedModelAdvancedUser = {
+    content?: Array<AdvancedUser>;
+    page?: PageMetadata;
+};
+
+export type PagedModelEvent = {
+    content?: Array<Event>;
+    page?: PageMetadata;
+};
+
+export type PasswordResetRequest = {
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    password: string;
+    token: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export type PersonalInfo = {
+    createdAt?: string;
+    deletedAt?: string;
+    discord: string;
+    email: string;
+    id?: number;
+    phoneNumber: string;
+    updatedAt?: string;
+    version?: number;
+};
+
+export enum PlatformType {
+    FACEBOOK = 'FACEBOOK',
+    LINKEDIN = 'LINKEDIN',
+    TWITTER = 'TWITTER',
+    INSTAGRAM = 'INSTAGRAM'
+}
+
+export type Question = {
+    choiceLabels?: Array<string>;
+    createdAt?: string;
+    deletedAt?: string;
+    id?: number;
+    idx: number;
+    label: string;
+    surveyId?: number;
+    type: QuestionType;
+    updatedAt?: string;
+    version?: number;
+};
+
+export enum QuestionType {
+    OPEN = 'OPEN',
+    RADIO = 'RADIO',
+    CHECKBOX = 'CHECKBOX',
+    DESCRIPTION = 'DESCRIPTION'
+}
+
+export type RedirectResponse = {
+    path: string;
 };
 
 export enum Role {
@@ -39,982 +418,83 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
-export type AdvancedUser = {
-    id?: number;
-    deletedAt?: string;
+export type SimpleCommittee = {
     createdAt?: string;
+    deletedAt?: string;
+    description?: string;
+    id?: number;
+    name?: string;
     updatedAt?: string;
     version?: number;
-    discord: string;
-    email: string;
-    phoneNumber: string;
-    fullName?: string;
-    initials: string;
-    firstName: string;
-    prefix?: string;
-    lastName: string;
-    username: string;
-    newsletter: boolean;
-    password?: string;
-    addressId?: number;
-    roles?: Array<Role>;
-    dateOfBirth: string;
-    nationality: string;
-    photoConsent: boolean;
-    ehbo: boolean;
-    bhv: boolean;
-    enabled?: boolean;
-    gender?: string;
-    studentNumber?: string;
 };
 
 export type SimpleUser = {
-    id?: number;
-    deletedAt?: string;
+    addressId?: number;
     createdAt?: string;
-    updatedAt?: string;
-    version?: number;
+    deletedAt?: string;
     discord: string;
     email: string;
-    phoneNumber: string;
-    fullName?: string;
-    initials: string;
     firstName: string;
-    prefix?: string;
+    fullName?: string;
+    id?: number;
+    initials: string;
     lastName: string;
-    username: string;
     newsletter: boolean;
     password?: string;
-    addressId?: number;
+    phoneNumber: string;
+    prefix?: string;
+    updatedAt?: string;
+    username: string;
+    version?: number;
 };
 
 export type Sponsor = {
-    id?: number;
-    deletedAt?: string;
     createdAt?: string;
-    updatedAt?: string;
-    version?: number;
+    deletedAt?: string;
+    description: string;
+    id?: number;
     name: string;
-    description: string;
-};
-
-export type Event = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
     updatedAt?: string;
     version?: number;
-    committeeId: number;
-    title: string;
-    description: string;
-    startTime: string;
-    endTime: string;
-    memberPrice?: number;
-    publicPrice?: number;
-    approved?: boolean;
-    membersOnly?: boolean;
-    signUp?: boolean;
-    banner?: EventBanner;
-    signUpCount?: number;
-    signUpForm?: Survey;
-    location?: string;
 };
-
-export type EventBanner = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    file: File;
-};
-
-export type File = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    name?: string;
-    mediaType?: string;
-    size?: number;
-    type?: FileType;
-};
-
-export enum FileType {
-    DOCUMENT = 'DOCUMENT',
-    PROFILE_PICTURE = 'PROFILE_PICTURE',
-    EVENT_BANNER = 'EVENT_BANNER',
-    EVENT_PICTURE = 'EVENT_PICTURE',
-    SPONSOR_PICTURE = 'SPONSOR_PICTURE'
-}
-
-export type Question = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    idx: number;
-    surveyId?: number;
-    type: QuestionType;
-    label: string;
-    choiceLabels?: Array<string>;
-};
-
-export enum QuestionType {
-    OPEN = 'OPEN',
-    RADIO = 'RADIO',
-    CHECKBOX = 'CHECKBOX',
-    DESCRIPTION = 'DESCRIPTION'
-}
 
 export type Survey = {
-    id?: number;
-    deletedAt?: string;
     createdAt?: string;
-    updatedAt?: string;
-    version?: number;
+    deletedAt?: string;
+    id?: number;
     questions: Array<Question>;
     responseCount?: number;
-};
-
-export type Answer = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
     updatedAt?: string;
     version?: number;
-    questionId: number;
-    optionSelections?: Array<boolean>;
-    textResponse?: string;
 };
-
-export type EventSignUp = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    eventId?: number;
-    answers?: Array<Answer>;
-    guest?: Guest;
-    user?: SimpleUser;
-    userId?: number;
-};
-
-export type Guest = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    discord: string;
-    email: string;
-    phoneNumber: string;
-    name: string;
-    accessToken?: string;
-};
-
-export type ContributionPeriod = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    startDate: string;
-    endDate: string;
-    halfYearFee: number;
-    fullYearFee: number;
-    alumniFee: number;
-    listId?: number;
-};
-
-export type AdvancedCommittee = {
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    description: string;
-    id?: number;
-    name: string;
-    members: Array<CommitteeMember>;
-};
-
-export type CommitteeMember = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    userId: number;
-    committeeId?: number;
-    role: string;
-};
-
-export type Address = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    country: string;
-    city: string;
-    street: string;
-    houseNumber: string;
-    zipCode: string;
-};
-
-export enum PlatformType {
-    FACEBOOK = 'FACEBOOK',
-    LINKEDIN = 'LINKEDIN',
-    TWITTER = 'TWITTER',
-    INSTAGRAM = 'INSTAGRAM'
-}
 
 export type Telemetry = {
-    id?: number;
-    deletedAt?: string;
     createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    url?: string;
+    deletedAt?: string;
+    id?: number;
     platform?: PlatformType;
+    updatedAt?: string;
+    url?: string;
+    version?: number;
 };
 
 export type UserActivationRequest = {
-    id?: number;
-    deletedAt?: string;
     createdAt?: string;
-    updatedAt?: string;
-    version?: number;
+    deletedAt?: string;
+    id?: number;
     token: string;
-};
-
-export type RedirectResponse = {
-    path: string;
-};
-
-export type PasswordResetRequest = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    token: string;
-    password: string;
-};
-
-export type MemberActivationRequest = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    token: string;
-    username: string;
-    password?: string;
-};
-
-export type Contribution = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    userId: number;
-    contributionPeriodId: number;
-    remindedAt?: string;
-};
-
-export type ContributionReminder = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    userId: number;
-    contributionPeriodId: number;
-    remindedAt?: string;
-};
-
-export type Blog = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    url?: string;
-    title: string;
-    html: string;
-    publishedAt?: string;
-};
-
-export type JwtRequest = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    username?: string;
-    password?: string;
-};
-
-export type Login = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    token: string;
-    userId: number;
-    username: string;
-    expiration: number;
-    roles: Array<Role>;
-    addressId?: number;
-};
-
-export type PageMetadata = {
-    size?: number;
-    number?: number;
-    totalElements?: number;
-    totalPages?: number;
-};
-
-export type PagedModelAdvancedUser = {
-    content?: Array<AdvancedUser>;
-    page?: PageMetadata;
-};
-
-export type PagedModelEvent = {
-    content?: Array<Event>;
-    page?: PageMetadata;
-};
-
-export type BaseDto = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
     updatedAt?: string;
     version?: number;
 };
 
-/**
- * Problem Details for HTTP APIs including validation errors.
- */
-export type ApiError = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    /**
-     * Problem type URI (RFC 7807).
-     */
-    type?: string;
-    /**
-     * Short, human-readable summary of the problem.
-     */
-    title?: string;
-    /**
-     * HTTP status code.
-     */
-    status?: number;
-    /**
-     * Human-readable explanation specific to this occurrence.
-     */
-    detail?: string;
-    /**
-     * A URI reference that identifies the specific occurrence.
-     */
-    instance?: string;
-    /**
-     * List of field/object validation errors (present when binding/validation fails).
-     */
-    errors?: Array<FieldValidationError>;
-    /**
-     * Trace or correlation id if available (Spring may add this via problem detail handlers).
-     */
-    traceId?: string;
-};
-
-/**
- * Details about a single field/object validation error.
- */
-export type FieldValidationError = {
-    /**
-     * Object (target) name that failed validation.
-     */
-    objectName?: string;
-    /**
-     * Field that failed validation (null for global errors).
-     */
-    field?: string;
-    /**
-     * Rejected value (may be omitted for security).
-     */
-    rejectedValue?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Human-readable validation message.
-     */
-    message?: string;
-    /**
-     * Validation code / constraint key.
-     */
-    code?: string;
-};
-
-export type SimpleCommittee = {
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    id?: number;
-    name?: string;
-    description?: string;
-};
-
-export type PersonalInfo = {
-    id?: number;
-    deletedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version?: number;
-    discord: string;
-    email: string;
-    phoneNumber: string;
-};
-
-export type FindMembershipByIdData = {
+export type FindAllAddressesData = {
     body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/{id}';
-};
-
-export type FindMembershipByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindMembershipByIdError = FindMembershipByIdErrors[keyof FindMembershipByIdErrors];
-
-export type FindMembershipByIdResponses = {
-    /**
-     * OK
-     */
-    200: Membership;
-};
-
-export type FindMembershipByIdResponse = FindMembershipByIdResponses[keyof FindMembershipByIdResponses];
-
-export type UpdateMembershipData = {
-    body: Membership;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/{id}';
-};
-
-export type UpdateMembershipErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
-
-export type UpdateMembershipResponses = {
-    /**
-     * OK
-     */
-    200: Membership;
-};
-
-export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
-
-export type ToggleUserRoleData = {
-    body?: never;
-    path: {
-        userId: number;
-    };
-    query: {
-        role: Role;
-    };
-    url: '/users/{userId}/roles';
-};
-
-export type ToggleUserRoleErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ToggleUserRoleError = ToggleUserRoleErrors[keyof ToggleUserRoleErrors];
-
-export type ToggleUserRoleResponses = {
-    /**
-     * OK
-     */
-    200: AdvancedUser;
-};
-
-export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
-
-export type UpdateUserData = {
-    body: AdvancedUser;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/users/{id}';
-};
-
-export type UpdateUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
-
-export type UpdateUserResponses = {
-    /**
-     * OK
-     */
-    200: AdvancedUser;
-};
-
-export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
-
-export type UpdateGuestUserData = {
-    body: SimpleUser;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/users/guest/{id}';
-};
-
-export type UpdateGuestUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateGuestUserError = UpdateGuestUserErrors[keyof UpdateGuestUserErrors];
-
-export type UpdateGuestUserResponses = {
-    /**
-     * OK
-     */
-    200: SimpleUser;
-};
-
-export type UpdateGuestUserResponse = UpdateGuestUserResponses[keyof UpdateGuestUserResponses];
-
-export type DeleteSponsorByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/sponsors/{id}';
-};
-
-export type DeleteSponsorByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteSponsorByIdError = DeleteSponsorByIdErrors[keyof DeleteSponsorByIdErrors];
-
-export type DeleteSponsorByIdResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteSponsorByIdResponse = DeleteSponsorByIdResponses[keyof DeleteSponsorByIdResponses];
-
-export type FindSponsorByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/sponsors/{id}';
-};
-
-export type FindSponsorByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindSponsorByIdError = FindSponsorByIdErrors[keyof FindSponsorByIdErrors];
-
-export type FindSponsorByIdResponses = {
-    /**
-     * OK
-     */
-    200: Sponsor;
-};
-
-export type FindSponsorByIdResponse = FindSponsorByIdResponses[keyof FindSponsorByIdResponses];
-
-export type UpdateSponsorData = {
-    body: Sponsor;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/sponsors/{id}';
-};
-
-export type UpdateSponsorErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateSponsorError = UpdateSponsorErrors[keyof UpdateSponsorErrors];
-
-export type UpdateSponsorResponses = {
-    /**
-     * OK
-     */
-    200: Sponsor;
-};
-
-export type UpdateSponsorResponse = UpdateSponsorResponses[keyof UpdateSponsorResponses];
-
-export type FindEventByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/events/{id}';
-};
-
-export type FindEventByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindEventByIdError = FindEventByIdErrors[keyof FindEventByIdErrors];
-
-export type FindEventByIdResponses = {
-    /**
-     * OK
-     */
-    200: Event;
-};
-
-export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
-
-export type UpdateEventData = {
-    body: Event;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/events/{id}';
-};
-
-export type UpdateEventErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateEventError = UpdateEventErrors[keyof UpdateEventErrors];
-
-export type UpdateEventResponses = {
-    /**
-     * OK
-     */
-    200: Event;
-};
-
-export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
-
-export type ApproveEventData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query: {
-        approved: boolean;
-    };
-    url: '/events/{id}/approve';
-};
-
-export type ApproveEventErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ApproveEventError = ApproveEventErrors[keyof ApproveEventErrors];
-
-export type ApproveEventResponses = {
-    /**
-     * OK
-     */
-    200: Event;
-};
-
-export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
-
-export type FindEventSignUpsByEventIdData = {
-    body?: never;
-    path: {
-        eventId: number;
-    };
-    query?: never;
-    url: '/events/{eventId}/signups';
-};
-
-export type FindEventSignUpsByEventIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindEventSignUpsByEventIdError = FindEventSignUpsByEventIdErrors[keyof FindEventSignUpsByEventIdErrors];
-
-export type FindEventSignUpsByEventIdResponses = {
-    /**
-     * OK
-     */
-    200: Array<EventSignUp>;
-};
-
-export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdResponses[keyof FindEventSignUpsByEventIdResponses];
-
-export type CreateEventSignupData = {
-    body: EventSignUp;
     path?: never;
     query?: never;
-    url: '/events/{eventId}/signups';
+    url: '/addresses';
 };
 
-export type CreateEventSignupErrors = {
+export type FindAllAddressesErrors = {
     /**
      * Validation error
      */
@@ -1037,233 +517,16 @@ export type CreateEventSignupErrors = {
     500: ApiError;
 };
 
-export type CreateEventSignupError = CreateEventSignupErrors[keyof CreateEventSignupErrors];
+export type FindAllAddressesError = FindAllAddressesErrors[keyof FindAllAddressesErrors];
 
-export type CreateEventSignupResponses = {
-    /**
-     * Created
-     */
-    201: EventSignUp;
-};
-
-export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
-
-export type UpdateEventSignUpData = {
-    body: EventSignUp;
-    path: {
-        eventId: number;
-    };
-    query?: {
-        accessToken?: string;
-    };
-    url: '/events/{eventId}/signups';
-};
-
-export type UpdateEventSignUpErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateEventSignUpError = UpdateEventSignUpErrors[keyof UpdateEventSignUpErrors];
-
-export type UpdateEventSignUpResponses = {
+export type FindAllAddressesResponses = {
     /**
      * OK
      */
-    200: EventSignUp;
+    200: Array<Address>;
 };
 
-export type UpdateEventSignUpResponse = UpdateEventSignUpResponses[keyof UpdateEventSignUpResponses];
-
-export type DeleteContributionPeriodByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/contributionPeriods/{id}';
-};
-
-export type DeleteContributionPeriodByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteContributionPeriodByIdError = DeleteContributionPeriodByIdErrors[keyof DeleteContributionPeriodByIdErrors];
-
-export type DeleteContributionPeriodByIdResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteContributionPeriodByIdResponse = DeleteContributionPeriodByIdResponses[keyof DeleteContributionPeriodByIdResponses];
-
-export type UpdateContributionPeriodData = {
-    body: ContributionPeriod;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/contributionPeriods/{id}';
-};
-
-export type UpdateContributionPeriodErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateContributionPeriodError = UpdateContributionPeriodErrors[keyof UpdateContributionPeriodErrors];
-
-export type UpdateContributionPeriodResponses = {
-    /**
-     * OK
-     */
-    200: ContributionPeriod;
-};
-
-export type UpdateContributionPeriodResponse = UpdateContributionPeriodResponses[keyof UpdateContributionPeriodResponses];
-
-export type DeleteCommitteeByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/committees/{id}';
-};
-
-export type DeleteCommitteeByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteCommitteeByIdError = DeleteCommitteeByIdErrors[keyof DeleteCommitteeByIdErrors];
-
-export type DeleteCommitteeByIdResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteCommitteeByIdResponse = DeleteCommitteeByIdResponses[keyof DeleteCommitteeByIdResponses];
-
-export type UpdateCommitteeData = {
-    body: AdvancedCommittee;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/committees/{id}';
-};
-
-export type UpdateCommitteeErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateCommitteeError = UpdateCommitteeErrors[keyof UpdateCommitteeErrors];
-
-export type UpdateCommitteeResponses = {
-    /**
-     * OK
-     */
-    200: AdvancedCommittee;
-};
-
-export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
+export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
 
 export type DeleteAddressByIdData = {
     body?: never;
@@ -1394,28 +657,14 @@ export type UpdateAddressResponses = {
 
 export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressResponses];
 
-export type FindUsersData = {
-    body?: never;
+export type AuthenticateData = {
+    body: JwtRequest;
     path?: never;
-    query?: {
-        isMember?: boolean;
-        /**
-         * Zero-based page index (0..N)
-         */
-        page?: number;
-        /**
-         * The size of the page to be returned
-         */
-        size?: number;
-        /**
-         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
-         */
-        sort?: Array<string>;
-    };
-    url: '/users';
+    query?: never;
+    url: '/auth';
 };
 
-export type FindUsersErrors = {
+export type AuthenticateErrors = {
     /**
      * Validation error
      */
@@ -1438,1204 +687,16 @@ export type FindUsersErrors = {
     500: ApiError;
 };
 
-export type FindUsersError = FindUsersErrors[keyof FindUsersErrors];
+export type AuthenticateError = AuthenticateErrors[keyof AuthenticateErrors];
 
-export type FindUsersResponses = {
+export type AuthenticateResponses = {
     /**
      * OK
      */
-    200: PagedModelAdvancedUser;
+    200: Login;
 };
 
-export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
-
-export type CreateUserData = {
-    body: AdvancedUser;
-    path?: never;
-    query?: never;
-    url: '/users';
-};
-
-export type CreateUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateUserError = CreateUserErrors[keyof CreateUserErrors];
-
-export type CreateUserResponses = {
-    /**
-     * Created
-     */
-    201: AdvancedUser;
-};
-
-export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
-
-export type DeleteUserAddressData = {
-    body?: never;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}/addresses';
-};
-
-export type DeleteUserAddressErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteUserAddressError = DeleteUserAddressErrors[keyof DeleteUserAddressErrors];
-
-export type DeleteUserAddressResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteUserAddressResponse = DeleteUserAddressResponses[keyof DeleteUserAddressResponses];
-
-export type CreateAddressData = {
-    body: Address;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}/addresses';
-};
-
-export type CreateAddressErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateAddressError = CreateAddressErrors[keyof CreateAddressErrors];
-
-export type CreateAddressResponses = {
-    /**
-     * Created
-     */
-    201: Address;
-};
-
-export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
-
-export type CreateGuestUserData = {
-    body: SimpleUser;
-    path?: never;
-    query?: never;
-    url: '/users/guest';
-};
-
-export type CreateGuestUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateGuestUserError = CreateGuestUserErrors[keyof CreateGuestUserErrors];
-
-export type CreateGuestUserResponses = {
-    /**
-     * Created
-     */
-    201: SimpleUser;
-};
-
-export type CreateGuestUserResponse = CreateGuestUserResponses[keyof CreateGuestUserResponses];
-
-export type CreateTelemetryData = {
-    body?: never;
-    path?: never;
-    query: {
-        platform: PlatformType;
-        url: string;
-    };
-    url: '/telemetry';
-};
-
-export type CreateTelemetryErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateTelemetryError = CreateTelemetryErrors[keyof CreateTelemetryErrors];
-
-export type CreateTelemetryResponses = {
-    /**
-     * Created
-     */
-    201: Telemetry;
-};
-
-export type CreateTelemetryResponse = CreateTelemetryResponses[keyof CreateTelemetryResponses];
-
-export type FindSponsorsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/sponsors';
-};
-
-export type FindSponsorsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindSponsorsError = FindSponsorsErrors[keyof FindSponsorsErrors];
-
-export type FindSponsorsResponses = {
-    /**
-     * OK
-     */
-    200: Array<Sponsor>;
-};
-
-export type FindSponsorsResponse = FindSponsorsResponses[keyof FindSponsorsResponses];
-
-export type CreateSponsorData = {
-    body: Sponsor;
-    path?: never;
-    query?: never;
-    url: '/sponsors';
-};
-
-export type CreateSponsorErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateSponsorError = CreateSponsorErrors[keyof CreateSponsorErrors];
-
-export type CreateSponsorResponses = {
-    /**
-     * Created
-     */
-    201: Sponsor;
-};
-
-export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
-
-export type ResendMemberActivationEmailData = {
-    body?: never;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/recovery/users/{userId}/resend/recovery';
-};
-
-export type ResendMemberActivationEmailErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ResendMemberActivationEmailError = ResendMemberActivationEmailErrors[keyof ResendMemberActivationEmailErrors];
-
-export type ResendMemberActivationEmailResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
-
-export type UserActivateData = {
-    body: UserActivationRequest;
-    path?: never;
-    query?: never;
-    url: '/recovery/user/activate';
-};
-
-export type UserActivateErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UserActivateError = UserActivateErrors[keyof UserActivateErrors];
-
-export type UserActivateResponses = {
-    /**
-     * OK
-     */
-    200: RedirectResponse;
-};
-
-export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
-
-export type ResendUserActivationData = {
-    body?: never;
-    path: {
-        username: string;
-    };
-    query?: never;
-    url: '/recovery/user/activate/resend/{username}';
-};
-
-export type ResendUserActivationErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ResendUserActivationError = ResendUserActivationErrors[keyof ResendUserActivationErrors];
-
-export type ResendUserActivationResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type ResendUserActivationResponse = ResendUserActivationResponses[keyof ResendUserActivationResponses];
-
-export type SetPasswordData = {
-    body: PasswordResetRequest;
-    path?: never;
-    query?: never;
-    url: '/recovery/password';
-};
-
-export type SetPasswordErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
-
-export type SetPasswordResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
-
-export type ResetPasswordData = {
-    body?: never;
-    path: {
-        username: string;
-    };
-    query?: never;
-    url: '/recovery/password/reset/{username}';
-};
-
-export type ResetPasswordErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
-
-export type ResetPasswordResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
-
-export type MemberActivateData = {
-    body: MemberActivationRequest;
-    path?: never;
-    query?: never;
-    url: '/recovery/member/activate';
-};
-
-export type MemberActivateErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type MemberActivateError = MemberActivateErrors[keyof MemberActivateErrors];
-
-export type MemberActivateResponses = {
-    /**
-     * OK
-     */
-    200: RedirectResponse;
-};
-
-export type MemberActivateResponse = MemberActivateResponses[keyof MemberActivateResponses];
-
-export type FindMembershipsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        from?: string;
-        to?: string;
-    };
-    url: '/memberships';
-};
-
-export type FindMembershipsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindMembershipsError = FindMembershipsErrors[keyof FindMembershipsErrors];
-
-export type FindMembershipsResponses = {
-    /**
-     * OK
-     */
-    200: Array<Membership>;
-};
-
-export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
-
-export type CreateMembershipData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/memberships';
-};
-
-export type CreateMembershipErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateMembershipError = CreateMembershipErrors[keyof CreateMembershipErrors];
-
-export type CreateMembershipResponses = {
-    /**
-     * Created
-     */
-    201: Membership;
-};
-
-export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
-
-export type BoardCreateMembershipData = {
-    body: Membership;
-    path?: never;
-    query?: never;
-    url: '/memberships/member';
-};
-
-export type BoardCreateMembershipErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type BoardCreateMembershipError = BoardCreateMembershipErrors[keyof BoardCreateMembershipErrors];
-
-export type BoardCreateMembershipResponses = {
-    /**
-     * Created
-     */
-    201: Membership;
-};
-
-export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
-
-export type FindEventsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Zero-based page index (0..N)
-         */
-        page?: number;
-        /**
-         * The size of the page to be returned
-         */
-        size?: number;
-        /**
-         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
-         */
-        sort?: Array<string>;
-        from?: string;
-        to?: string;
-        approved?: boolean;
-        committeeId?: number;
-        titleContains?: string;
-    };
-    url: '/events';
-};
-
-export type FindEventsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindEventsError = FindEventsErrors[keyof FindEventsErrors];
-
-export type FindEventsResponses = {
-    /**
-     * OK
-     */
-    200: PagedModelEvent;
-};
-
-export type FindEventsResponse = FindEventsResponses[keyof FindEventsResponses];
-
-export type CreateEventData = {
-    body: Event;
-    path?: never;
-    query?: never;
-    url: '/events';
-};
-
-export type CreateEventErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateEventError = CreateEventErrors[keyof CreateEventErrors];
-
-export type CreateEventResponses = {
-    /**
-     * Created
-     */
-    201: Event;
-};
-
-export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
-
-export type UploadEventBannerData = {
-    body: {
-        file: Blob | File;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/banners';
-};
-
-export type UploadEventBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UploadEventBannerError = UploadEventBannerErrors[keyof UploadEventBannerErrors];
-
-export type UploadEventBannerResponses = {
-    /**
-     * Created
-     */
-    201: File;
-};
-
-export type UploadEventBannerResponse = UploadEventBannerResponses[keyof UploadEventBannerResponses];
-
-export type FindContributionsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        contributionPeriodId?: number;
-    };
-    url: '/contributions';
-};
-
-export type FindContributionsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindContributionsError = FindContributionsErrors[keyof FindContributionsErrors];
-
-export type FindContributionsResponses = {
-    /**
-     * OK
-     */
-    200: Array<Contribution>;
-};
-
-export type FindContributionsResponse = FindContributionsResponses[keyof FindContributionsResponses];
-
-export type CreateContributionData = {
-    body: Contribution;
-    path?: never;
-    query?: never;
-    url: '/contributions';
-};
-
-export type CreateContributionErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateContributionError = CreateContributionErrors[keyof CreateContributionErrors];
-
-export type CreateContributionResponses = {
-    /**
-     * Created
-     */
-    201: Contribution;
-};
-
-export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
-
-export type FindContributionRemindersData = {
-    body?: never;
-    path?: never;
-    query?: {
-        contributionPeriodId?: number;
-    };
-    url: '/contributionReminders';
-};
-
-export type FindContributionRemindersErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindContributionRemindersError = FindContributionRemindersErrors[keyof FindContributionRemindersErrors];
-
-export type FindContributionRemindersResponses = {
-    /**
-     * OK
-     */
-    200: Array<ContributionReminder>;
-};
-
-export type FindContributionRemindersResponse = FindContributionRemindersResponses[keyof FindContributionRemindersResponses];
-
-export type SendContributionReminderData = {
-    body: ContributionReminder;
-    path?: never;
-    query?: never;
-    url: '/contributionReminders';
-};
-
-export type SendContributionReminderErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SendContributionReminderError = SendContributionReminderErrors[keyof SendContributionReminderErrors];
-
-export type SendContributionReminderResponses = {
-    /**
-     * Created
-     */
-    201: ContributionReminder;
-};
-
-export type SendContributionReminderResponse = SendContributionReminderResponses[keyof SendContributionReminderResponses];
-
-export type SendContributionReminderBatchData = {
-    body: Array<ContributionReminder>;
-    path?: never;
-    query?: never;
-    url: '/contributionReminders/batch';
-};
-
-export type SendContributionReminderBatchErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SendContributionReminderBatchError = SendContributionReminderBatchErrors[keyof SendContributionReminderBatchErrors];
-
-export type SendContributionReminderBatchResponses = {
-    /**
-     * Created
-     */
-    201: Array<ContributionReminder>;
-};
-
-export type SendContributionReminderBatchResponse = SendContributionReminderBatchResponses[keyof SendContributionReminderBatchResponses];
-
-export type FindContributionPeriodsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/contributionPeriods';
-};
-
-export type FindContributionPeriodsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindContributionPeriodsError = FindContributionPeriodsErrors[keyof FindContributionPeriodsErrors];
-
-export type FindContributionPeriodsResponses = {
-    /**
-     * OK
-     */
-    200: Array<ContributionPeriod>;
-};
-
-export type FindContributionPeriodsResponse = FindContributionPeriodsResponses[keyof FindContributionPeriodsResponses];
-
-export type CreateContributionPeriodData = {
-    body: ContributionPeriod;
-    path?: never;
-    query?: never;
-    url: '/contributionPeriods';
-};
-
-export type CreateContributionPeriodErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateContributionPeriodError = CreateContributionPeriodErrors[keyof CreateContributionPeriodErrors];
-
-export type CreateContributionPeriodResponses = {
-    /**
-     * Created
-     */
-    201: ContributionPeriod;
-};
-
-export type CreateContributionPeriodResponse = CreateContributionPeriodResponses[keyof CreateContributionPeriodResponses];
-
-export type FindCommitteesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/committees';
-};
-
-export type FindCommitteesErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindCommitteesError = FindCommitteesErrors[keyof FindCommitteesErrors];
-
-export type FindCommitteesResponses = {
-    /**
-     * OK
-     */
-    200: Array<BaseDto>;
-};
-
-export type FindCommitteesResponse = FindCommitteesResponses[keyof FindCommitteesResponses];
-
-export type CreateCommitteeData = {
-    body: AdvancedCommittee;
-    path?: never;
-    query?: never;
-    url: '/committees';
-};
-
-export type CreateCommitteeErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateCommitteeError = CreateCommitteeErrors[keyof CreateCommitteeErrors];
-
-export type CreateCommitteeResponses = {
-    /**
-     * Created
-     */
-    201: AdvancedCommittee;
-};
-
-export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
+export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
 
 export type FindBlogsData = {
     body?: never;
@@ -2848,14 +909,14 @@ export type UpdateBlogResponses = {
 
 export type UpdateBlogResponse = UpdateBlogResponses[keyof UpdateBlogResponses];
 
-export type AuthenticateData = {
-    body: JwtRequest;
+export type FindCommitteesForCurrentUserData = {
+    body?: never;
     path?: never;
     query?: never;
-    url: '/auth';
+    url: '/committeeMembers/committees';
 };
 
-export type AuthenticateErrors = {
+export type FindCommitteesForCurrentUserErrors = {
     /**
      * Validation error
      */
@@ -2878,27 +939,25 @@ export type AuthenticateErrors = {
     500: ApiError;
 };
 
-export type AuthenticateError = AuthenticateErrors[keyof AuthenticateErrors];
+export type FindCommitteesForCurrentUserError = FindCommitteesForCurrentUserErrors[keyof FindCommitteesForCurrentUserErrors];
 
-export type AuthenticateResponses = {
+export type FindCommitteesForCurrentUserResponses = {
     /**
      * OK
      */
-    200: Login;
+    200: Array<BaseDto>;
 };
 
-export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
+export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
 
-export type DeleteUserByIdData = {
+export type FindCommitteesData = {
     body?: never;
-    path: {
-        userId: number;
-    };
+    path?: never;
     query?: never;
-    url: '/users/{userId}';
+    url: '/committees';
 };
 
-export type DeleteUserByIdErrors = {
+export type FindCommitteesErrors = {
     /**
      * Validation error
      */
@@ -2921,27 +980,154 @@ export type DeleteUserByIdErrors = {
     500: ApiError;
 };
 
-export type DeleteUserByIdError = DeleteUserByIdErrors[keyof DeleteUserByIdErrors];
+export type FindCommitteesError = FindCommitteesErrors[keyof FindCommitteesErrors];
 
-export type DeleteUserByIdResponses = {
+export type FindCommitteesResponses = {
+    /**
+     * OK
+     */
+    200: Array<BaseDto>;
+};
+
+export type FindCommitteesResponse = FindCommitteesResponses[keyof FindCommitteesResponses];
+
+export type CreateCommitteeData = {
+    body: AdvancedCommittee;
+    path?: never;
+    query?: never;
+    url: '/committees';
+};
+
+export type CreateCommitteeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateCommitteeError = CreateCommitteeErrors[keyof CreateCommitteeErrors];
+
+export type CreateCommitteeResponses = {
+    /**
+     * Created
+     */
+    201: AdvancedCommittee;
+};
+
+export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
+
+export type FindCommitteeByIdData = {
+    body?: never;
+    path: {
+        committeeId: number;
+    };
+    query?: never;
+    url: '/committees/{committeeId}';
+};
+
+export type FindCommitteeByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteeByIdError = FindCommitteeByIdErrors[keyof FindCommitteeByIdErrors];
+
+export type FindCommitteeByIdResponses = {
+    /**
+     * OK
+     */
+    200: BaseDto;
+};
+
+export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
+
+export type DeleteCommitteeByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}';
+};
+
+export type DeleteCommitteeByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteCommitteeByIdError = DeleteCommitteeByIdErrors[keyof DeleteCommitteeByIdErrors];
+
+export type DeleteCommitteeByIdResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteUserByIdResponse = DeleteUserByIdResponses[keyof DeleteUserByIdResponses];
+export type DeleteCommitteeByIdResponse = DeleteCommitteeByIdResponses[keyof DeleteCommitteeByIdResponses];
 
-export type FindUserByIdData = {
-    body?: never;
+export type UpdateCommitteeData = {
+    body: AdvancedCommittee;
     path: {
-        userId: number;
+        id: number;
     };
     query?: never;
-    url: '/users/{userId}';
+    url: '/committees/{id}';
 };
 
-export type FindUserByIdErrors = {
+export type UpdateCommitteeErrors = {
     /**
      * Validation error
      */
@@ -2964,27 +1150,150 @@ export type FindUserByIdErrors = {
     500: ApiError;
 };
 
-export type FindUserByIdError = FindUserByIdErrors[keyof FindUserByIdErrors];
+export type UpdateCommitteeError = UpdateCommitteeErrors[keyof UpdateCommitteeErrors];
 
-export type FindUserByIdResponses = {
+export type UpdateCommitteeResponses = {
     /**
      * OK
      */
-    200: AdvancedUser;
+    200: AdvancedCommittee;
 };
 
-export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
+export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
 
-export type FindTelemetryByIdData = {
+export type FindContributionPeriodsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributionPeriods';
+};
+
+export type FindContributionPeriodsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindContributionPeriodsError = FindContributionPeriodsErrors[keyof FindContributionPeriodsErrors];
+
+export type FindContributionPeriodsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ContributionPeriod>;
+};
+
+export type FindContributionPeriodsResponse = FindContributionPeriodsResponses[keyof FindContributionPeriodsResponses];
+
+export type CreateContributionPeriodData = {
+    body: ContributionPeriod;
+    path?: never;
+    query?: never;
+    url: '/contributionPeriods';
+};
+
+export type CreateContributionPeriodErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateContributionPeriodError = CreateContributionPeriodErrors[keyof CreateContributionPeriodErrors];
+
+export type CreateContributionPeriodResponses = {
+    /**
+     * Created
+     */
+    201: ContributionPeriod;
+};
+
+export type CreateContributionPeriodResponse = CreateContributionPeriodResponses[keyof CreateContributionPeriodResponses];
+
+export type FindCurrentContributionPeriodData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributionPeriods/current';
+};
+
+export type FindCurrentContributionPeriodErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCurrentContributionPeriodError = FindCurrentContributionPeriodErrors[keyof FindCurrentContributionPeriodErrors];
+
+export type FindCurrentContributionPeriodResponses = {
+    /**
+     * OK
+     */
+    200: ContributionPeriod;
+};
+
+export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
+
+export type DeleteContributionPeriodByIdData = {
     body?: never;
     path: {
         id: number;
     };
     query?: never;
-    url: '/telemetry/{id}';
+    url: '/contributionPeriods/{id}';
 };
 
-export type FindTelemetryByIdErrors = {
+export type DeleteContributionPeriodByIdErrors = {
     /**
      * Validation error
      */
@@ -3007,25 +1316,113 @@ export type FindTelemetryByIdErrors = {
     500: ApiError;
 };
 
-export type FindTelemetryByIdError = FindTelemetryByIdErrors[keyof FindTelemetryByIdErrors];
+export type DeleteContributionPeriodByIdError = DeleteContributionPeriodByIdErrors[keyof DeleteContributionPeriodByIdErrors];
 
-export type FindTelemetryByIdResponses = {
+export type DeleteContributionPeriodByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteContributionPeriodByIdResponse = DeleteContributionPeriodByIdResponses[keyof DeleteContributionPeriodByIdResponses];
+
+export type UpdateContributionPeriodData = {
+    body: ContributionPeriod;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{id}';
+};
+
+export type UpdateContributionPeriodErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateContributionPeriodError = UpdateContributionPeriodErrors[keyof UpdateContributionPeriodErrors];
+
+export type UpdateContributionPeriodResponses = {
     /**
      * OK
      */
-    200: Telemetry;
+    200: ContributionPeriod;
 };
 
-export type FindTelemetryByIdResponse = FindTelemetryByIdResponses[keyof FindTelemetryByIdResponses];
+export type UpdateContributionPeriodResponse = UpdateContributionPeriodResponses[keyof UpdateContributionPeriodResponses];
 
-export type HealthCheckData = {
+export type FindContributionsByPeriodIdData = {
+    body?: never;
+    path: {
+        periodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{periodId}/contributions';
+};
+
+export type FindContributionsByPeriodIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindContributionsByPeriodIdError = FindContributionsByPeriodIdErrors[keyof FindContributionsByPeriodIdErrors];
+
+export type FindContributionsByPeriodIdResponses = {
+    /**
+     * OK
+     */
+    200: Array<Contribution>;
+};
+
+export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
+
+export type FindContributionRemindersData = {
     body?: never;
     path?: never;
-    query?: never;
-    url: '/health';
+    query?: {
+        contributionPeriodId?: number;
+    };
+    url: '/contributionReminders';
 };
 
-export type HealthCheckErrors = {
+export type FindContributionRemindersErrors = {
     /**
      * Validation error
      */
@@ -3048,16 +1445,411 @@ export type HealthCheckErrors = {
     500: ApiError;
 };
 
-export type HealthCheckError = HealthCheckErrors[keyof HealthCheckErrors];
+export type FindContributionRemindersError = FindContributionRemindersErrors[keyof FindContributionRemindersErrors];
 
-export type HealthCheckResponses = {
+export type FindContributionRemindersResponses = {
     /**
      * OK
      */
-    200: boolean;
+    200: Array<ContributionReminder>;
 };
 
-export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+export type FindContributionRemindersResponse = FindContributionRemindersResponses[keyof FindContributionRemindersResponses];
+
+export type SendContributionReminderData = {
+    body: ContributionReminder;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders';
+};
+
+export type SendContributionReminderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendContributionReminderError = SendContributionReminderErrors[keyof SendContributionReminderErrors];
+
+export type SendContributionReminderResponses = {
+    /**
+     * Created
+     */
+    201: ContributionReminder;
+};
+
+export type SendContributionReminderResponse = SendContributionReminderResponses[keyof SendContributionReminderResponses];
+
+export type SendContributionReminderBatchData = {
+    body: Array<ContributionReminder>;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders/batch';
+};
+
+export type SendContributionReminderBatchErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendContributionReminderBatchError = SendContributionReminderBatchErrors[keyof SendContributionReminderBatchErrors];
+
+export type SendContributionReminderBatchResponses = {
+    /**
+     * Created
+     */
+    201: Array<ContributionReminder>;
+};
+
+export type SendContributionReminderBatchResponse = SendContributionReminderBatchResponses[keyof SendContributionReminderBatchResponses];
+
+export type FindContributionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        contributionPeriodId?: number;
+    };
+    url: '/contributions';
+};
+
+export type FindContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindContributionsError = FindContributionsErrors[keyof FindContributionsErrors];
+
+export type FindContributionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Contribution>;
+};
+
+export type FindContributionsResponse = FindContributionsResponses[keyof FindContributionsResponses];
+
+export type CreateContributionData = {
+    body: Contribution;
+    path?: never;
+    query?: never;
+    url: '/contributions';
+};
+
+export type CreateContributionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateContributionError = CreateContributionErrors[keyof CreateContributionErrors];
+
+export type CreateContributionResponses = {
+    /**
+     * Created
+     */
+    201: Contribution;
+};
+
+export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
+
+export type DeleteContributionData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/contributions/{id}';
+};
+
+export type DeleteContributionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteContributionError = DeleteContributionErrors[keyof DeleteContributionErrors];
+
+export type DeleteContributionResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteContributionResponse = DeleteContributionResponses[keyof DeleteContributionResponses];
+
+export type FindEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+        from?: string;
+        to?: string;
+        approved?: boolean;
+        committeeId?: number;
+        titleContains?: string;
+    };
+    url: '/events';
+};
+
+export type FindEventsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindEventsError = FindEventsErrors[keyof FindEventsErrors];
+
+export type FindEventsResponses = {
+    /**
+     * OK
+     */
+    200: PagedModelEvent;
+};
+
+export type FindEventsResponse = FindEventsResponses[keyof FindEventsResponses];
+
+export type CreateEventData = {
+    body: Event;
+    path?: never;
+    query?: never;
+    url: '/events';
+};
+
+export type CreateEventErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateEventError = CreateEventErrors[keyof CreateEventErrors];
+
+export type CreateEventResponses = {
+    /**
+     * Created
+     */
+    201: Event;
+};
+
+export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
+
+export type UploadEventBannerData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/events/banners';
+};
+
+export type UploadEventBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadEventBannerError = UploadEventBannerErrors[keyof UploadEventBannerErrors];
+
+export type UploadEventBannerResponses = {
+    /**
+     * Created
+     */
+    201: File;
+};
+
+export type UploadEventBannerResponse = UploadEventBannerResponses[keyof UploadEventBannerResponses];
+
+export type DownloadEventBannerData = {
+    body?: never;
+    path: {
+        bannerId: number;
+    };
+    query?: never;
+    url: '/events/banners/{bannerId}';
+};
+
+export type DownloadEventBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
+
+export type DownloadEventBannerResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
 
 export type FindEventSignUpsData = {
     body?: never;
@@ -3150,301 +1942,6 @@ export type FindEventSignUpsByAccessTokenResponses = {
 
 export type FindEventSignUpsByAccessTokenResponse = FindEventSignUpsByAccessTokenResponses[keyof FindEventSignUpsByAccessTokenResponses];
 
-export type DownloadEventBannerData = {
-    body?: never;
-    path: {
-        bannerId: number;
-    };
-    query?: never;
-    url: '/events/banners/{bannerId}';
-};
-
-export type DownloadEventBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
-
-export type DownloadEventBannerResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
-
-export type FindContributionsByPeriodIdData = {
-    body?: never;
-    path: {
-        periodId: number;
-    };
-    query?: never;
-    url: '/contributionPeriods/{periodId}/contributions';
-};
-
-export type FindContributionsByPeriodIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindContributionsByPeriodIdError = FindContributionsByPeriodIdErrors[keyof FindContributionsByPeriodIdErrors];
-
-export type FindContributionsByPeriodIdResponses = {
-    /**
-     * OK
-     */
-    200: Array<Contribution>;
-};
-
-export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
-
-export type FindCurrentContributionPeriodData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/contributionPeriods/current';
-};
-
-export type FindCurrentContributionPeriodErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindCurrentContributionPeriodError = FindCurrentContributionPeriodErrors[keyof FindCurrentContributionPeriodErrors];
-
-export type FindCurrentContributionPeriodResponses = {
-    /**
-     * OK
-     */
-    200: ContributionPeriod;
-};
-
-export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
-
-export type FindCommitteeByIdData = {
-    body?: never;
-    path: {
-        committeeId: number;
-    };
-    query?: never;
-    url: '/committees/{committeeId}';
-};
-
-export type FindCommitteeByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindCommitteeByIdError = FindCommitteeByIdErrors[keyof FindCommitteeByIdErrors];
-
-export type FindCommitteeByIdResponses = {
-    /**
-     * OK
-     */
-    200: BaseDto;
-};
-
-export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
-
-export type FindCommitteesForCurrentUserData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/committeeMembers/committees';
-};
-
-export type FindCommitteesForCurrentUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindCommitteesForCurrentUserError = FindCommitteesForCurrentUserErrors[keyof FindCommitteesForCurrentUserErrors];
-
-export type FindCommitteesForCurrentUserResponses = {
-    /**
-     * OK
-     */
-    200: Array<BaseDto>;
-};
-
-export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
-
-export type FindAllAddressesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/addresses';
-};
-
-export type FindAllAddressesErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindAllAddressesError = FindAllAddressesErrors[keyof FindAllAddressesErrors];
-
-export type FindAllAddressesResponses = {
-    /**
-     * OK
-     */
-    200: Array<Address>;
-};
-
-export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
-
-export type DeleteEventByIdData = {
-    body?: never;
-    path: {
-        eventId: number;
-    };
-    query?: never;
-    url: '/events/{eventId}';
-};
-
-export type DeleteEventByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteEventByIdError = DeleteEventByIdErrors[keyof DeleteEventByIdErrors];
-
-export type DeleteEventByIdResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteEventByIdResponse = DeleteEventByIdResponses[keyof DeleteEventByIdResponses];
-
 export type DeleteEventSignupData = {
     body?: never;
     path: {
@@ -3490,16 +1987,16 @@ export type DeleteEventSignupResponses = {
 
 export type DeleteEventSignupResponse = DeleteEventSignupResponses[keyof DeleteEventSignupResponses];
 
-export type DeleteContributionData = {
+export type DeleteEventByIdData = {
     body?: never;
     path: {
-        id: number;
+        eventId: number;
     };
     query?: never;
-    url: '/contributions/{id}';
+    url: '/events/{eventId}';
 };
 
-export type DeleteContributionErrors = {
+export type DeleteEventByIdErrors = {
     /**
      * Validation error
      */
@@ -3522,13 +2019,1516 @@ export type DeleteContributionErrors = {
     500: ApiError;
 };
 
-export type DeleteContributionError = DeleteContributionErrors[keyof DeleteContributionErrors];
+export type DeleteEventByIdError = DeleteEventByIdErrors[keyof DeleteEventByIdErrors];
 
-export type DeleteContributionResponses = {
+export type DeleteEventByIdResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type DeleteContributionResponse = DeleteContributionResponses[keyof DeleteContributionResponses];
+export type DeleteEventByIdResponse = DeleteEventByIdResponses[keyof DeleteEventByIdResponses];
+
+export type FindEventSignUpsByEventIdData = {
+    body?: never;
+    path: {
+        eventId: number;
+    };
+    query?: never;
+    url: '/events/{eventId}/signups';
+};
+
+export type FindEventSignUpsByEventIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindEventSignUpsByEventIdError = FindEventSignUpsByEventIdErrors[keyof FindEventSignUpsByEventIdErrors];
+
+export type FindEventSignUpsByEventIdResponses = {
+    /**
+     * OK
+     */
+    200: Array<EventSignUp>;
+};
+
+export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdResponses[keyof FindEventSignUpsByEventIdResponses];
+
+export type CreateEventSignupData = {
+    body: EventSignUp;
+    path?: never;
+    query?: never;
+    url: '/events/{eventId}/signups';
+};
+
+export type CreateEventSignupErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateEventSignupError = CreateEventSignupErrors[keyof CreateEventSignupErrors];
+
+export type CreateEventSignupResponses = {
+    /**
+     * Created
+     */
+    201: EventSignUp;
+};
+
+export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
+
+export type UpdateEventSignUpData = {
+    body: EventSignUp;
+    path: {
+        eventId: number;
+    };
+    query?: {
+        accessToken?: string;
+    };
+    url: '/events/{eventId}/signups';
+};
+
+export type UpdateEventSignUpErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateEventSignUpError = UpdateEventSignUpErrors[keyof UpdateEventSignUpErrors];
+
+export type UpdateEventSignUpResponses = {
+    /**
+     * OK
+     */
+    200: EventSignUp;
+};
+
+export type UpdateEventSignUpResponse = UpdateEventSignUpResponses[keyof UpdateEventSignUpResponses];
+
+export type FindEventByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/events/{id}';
+};
+
+export type FindEventByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindEventByIdError = FindEventByIdErrors[keyof FindEventByIdErrors];
+
+export type FindEventByIdResponses = {
+    /**
+     * OK
+     */
+    200: Event;
+};
+
+export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
+
+export type UpdateEventData = {
+    body: Event;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/events/{id}';
+};
+
+export type UpdateEventErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateEventError = UpdateEventErrors[keyof UpdateEventErrors];
+
+export type UpdateEventResponses = {
+    /**
+     * OK
+     */
+    200: Event;
+};
+
+export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
+
+export type ApproveEventData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query: {
+        approved: boolean;
+    };
+    url: '/events/{id}/approve';
+};
+
+export type ApproveEventErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApproveEventError = ApproveEventErrors[keyof ApproveEventErrors];
+
+export type ApproveEventResponses = {
+    /**
+     * OK
+     */
+    200: Event;
+};
+
+export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
+
+export type HealthCheckData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/health';
+};
+
+export type HealthCheckErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type HealthCheckError = HealthCheckErrors[keyof HealthCheckErrors];
+
+export type HealthCheckResponses = {
+    /**
+     * OK
+     */
+    200: boolean;
+};
+
+export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type FindMembershipsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        from?: string;
+        to?: string;
+    };
+    url: '/memberships';
+};
+
+export type FindMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindMembershipsError = FindMembershipsErrors[keyof FindMembershipsErrors];
+
+export type FindMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Membership>;
+};
+
+export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
+
+export type CreateMembershipData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/memberships';
+};
+
+export type CreateMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateMembershipError = CreateMembershipErrors[keyof CreateMembershipErrors];
+
+export type CreateMembershipResponses = {
+    /**
+     * Created
+     */
+    201: Membership;
+};
+
+export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
+
+export type BoardCreateMembershipData = {
+    body: Membership;
+    path?: never;
+    query?: never;
+    url: '/memberships/member';
+};
+
+export type BoardCreateMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type BoardCreateMembershipError = BoardCreateMembershipErrors[keyof BoardCreateMembershipErrors];
+
+export type BoardCreateMembershipResponses = {
+    /**
+     * Created
+     */
+    201: Membership;
+};
+
+export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
+
+export type MemberActivateData = {
+    body: MemberActivationRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/member/activate';
+};
+
+export type MemberActivateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MemberActivateError = MemberActivateErrors[keyof MemberActivateErrors];
+
+export type MemberActivateResponses = {
+    /**
+     * OK
+     */
+    200: RedirectResponse;
+};
+
+export type MemberActivateResponse = MemberActivateResponses[keyof MemberActivateResponses];
+
+export type SetPasswordData = {
+    body: PasswordResetRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/password';
+};
+
+export type SetPasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
+
+export type SetPasswordResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
+
+export type ResetPasswordData = {
+    body?: never;
+    path: {
+        username: string;
+    };
+    query?: never;
+    url: '/recovery/password/reset/{username}';
+};
+
+export type ResetPasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
+
+export type ResetPasswordResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
+
+export type UserActivateData = {
+    body: UserActivationRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/user/activate';
+};
+
+export type UserActivateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UserActivateError = UserActivateErrors[keyof UserActivateErrors];
+
+export type UserActivateResponses = {
+    /**
+     * OK
+     */
+    200: RedirectResponse;
+};
+
+export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
+
+export type ResendUserActivationData = {
+    body?: never;
+    path: {
+        username: string;
+    };
+    query?: never;
+    url: '/recovery/user/activate/resend/{username}';
+};
+
+export type ResendUserActivationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendUserActivationError = ResendUserActivationErrors[keyof ResendUserActivationErrors];
+
+export type ResendUserActivationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResendUserActivationResponse = ResendUserActivationResponses[keyof ResendUserActivationResponses];
+
+export type ResendMemberActivationEmailData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/recovery/users/{userId}/resend/recovery';
+};
+
+export type ResendMemberActivationEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendMemberActivationEmailError = ResendMemberActivationEmailErrors[keyof ResendMemberActivationEmailErrors];
+
+export type ResendMemberActivationEmailResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
+
+export type FindSponsorsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sponsors';
+};
+
+export type FindSponsorsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindSponsorsError = FindSponsorsErrors[keyof FindSponsorsErrors];
+
+export type FindSponsorsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Sponsor>;
+};
+
+export type FindSponsorsResponse = FindSponsorsResponses[keyof FindSponsorsResponses];
+
+export type CreateSponsorData = {
+    body: Sponsor;
+    path?: never;
+    query?: never;
+    url: '/sponsors';
+};
+
+export type CreateSponsorErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateSponsorError = CreateSponsorErrors[keyof CreateSponsorErrors];
+
+export type CreateSponsorResponses = {
+    /**
+     * Created
+     */
+    201: Sponsor;
+};
+
+export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
+
+export type DeleteSponsorByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/sponsors/{id}';
+};
+
+export type DeleteSponsorByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteSponsorByIdError = DeleteSponsorByIdErrors[keyof DeleteSponsorByIdErrors];
+
+export type DeleteSponsorByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteSponsorByIdResponse = DeleteSponsorByIdResponses[keyof DeleteSponsorByIdResponses];
+
+export type FindSponsorByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/sponsors/{id}';
+};
+
+export type FindSponsorByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindSponsorByIdError = FindSponsorByIdErrors[keyof FindSponsorByIdErrors];
+
+export type FindSponsorByIdResponses = {
+    /**
+     * OK
+     */
+    200: Sponsor;
+};
+
+export type FindSponsorByIdResponse = FindSponsorByIdResponses[keyof FindSponsorByIdResponses];
+
+export type UpdateSponsorData = {
+    body: Sponsor;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/sponsors/{id}';
+};
+
+export type UpdateSponsorErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateSponsorError = UpdateSponsorErrors[keyof UpdateSponsorErrors];
+
+export type UpdateSponsorResponses = {
+    /**
+     * OK
+     */
+    200: Sponsor;
+};
+
+export type UpdateSponsorResponse = UpdateSponsorResponses[keyof UpdateSponsorResponses];
+
+export type CreateTelemetryData = {
+    body?: never;
+    path?: never;
+    query: {
+        platform: PlatformType;
+        url: string;
+    };
+    url: '/telemetry';
+};
+
+export type CreateTelemetryErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateTelemetryError = CreateTelemetryErrors[keyof CreateTelemetryErrors];
+
+export type CreateTelemetryResponses = {
+    /**
+     * Created
+     */
+    201: Telemetry;
+};
+
+export type CreateTelemetryResponse = CreateTelemetryResponses[keyof CreateTelemetryResponses];
+
+export type FindTelemetryByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/telemetry/{id}';
+};
+
+export type FindTelemetryByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTelemetryByIdError = FindTelemetryByIdErrors[keyof FindTelemetryByIdErrors];
+
+export type FindTelemetryByIdResponses = {
+    /**
+     * OK
+     */
+    200: Telemetry;
+};
+
+export type FindTelemetryByIdResponse = FindTelemetryByIdResponses[keyof FindTelemetryByIdResponses];
+
+export type FindUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        isMember?: boolean;
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+    };
+    url: '/users';
+};
+
+export type FindUsersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindUsersError = FindUsersErrors[keyof FindUsersErrors];
+
+export type FindUsersResponses = {
+    /**
+     * OK
+     */
+    200: PagedModelAdvancedUser;
+};
+
+export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
+
+export type CreateUserData = {
+    body: AdvancedUser;
+    path?: never;
+    query?: never;
+    url: '/users';
+};
+
+export type CreateUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateUserError = CreateUserErrors[keyof CreateUserErrors];
+
+export type CreateUserResponses = {
+    /**
+     * Created
+     */
+    201: AdvancedUser;
+};
+
+export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
+
+export type CreateGuestUserData = {
+    body: SimpleUser;
+    path?: never;
+    query?: never;
+    url: '/users/guest';
+};
+
+export type CreateGuestUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateGuestUserError = CreateGuestUserErrors[keyof CreateGuestUserErrors];
+
+export type CreateGuestUserResponses = {
+    /**
+     * Created
+     */
+    201: SimpleUser;
+};
+
+export type CreateGuestUserResponse = CreateGuestUserResponses[keyof CreateGuestUserResponses];
+
+export type UpdateGuestUserData = {
+    body: SimpleUser;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/guest/{id}';
+};
+
+export type UpdateGuestUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateGuestUserError = UpdateGuestUserErrors[keyof UpdateGuestUserErrors];
+
+export type UpdateGuestUserResponses = {
+    /**
+     * OK
+     */
+    200: SimpleUser;
+};
+
+export type UpdateGuestUserResponse = UpdateGuestUserResponses[keyof UpdateGuestUserResponses];
+
+export type UpdateUserData = {
+    body: AdvancedUser;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/{id}';
+};
+
+export type UpdateUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+
+export type UpdateUserResponses = {
+    /**
+     * OK
+     */
+    200: AdvancedUser;
+};
+
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
+
+export type DeleteUserByIdData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}';
+};
+
+export type DeleteUserByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteUserByIdError = DeleteUserByIdErrors[keyof DeleteUserByIdErrors];
+
+export type DeleteUserByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteUserByIdResponse = DeleteUserByIdResponses[keyof DeleteUserByIdResponses];
+
+export type FindUserByIdData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}';
+};
+
+export type FindUserByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindUserByIdError = FindUserByIdErrors[keyof FindUserByIdErrors];
+
+export type FindUserByIdResponses = {
+    /**
+     * OK
+     */
+    200: AdvancedUser;
+};
+
+export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
+
+export type DeleteUserAddressData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/addresses';
+};
+
+export type DeleteUserAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteUserAddressError = DeleteUserAddressErrors[keyof DeleteUserAddressErrors];
+
+export type DeleteUserAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteUserAddressResponse = DeleteUserAddressResponses[keyof DeleteUserAddressResponses];
+
+export type CreateAddressData = {
+    body: Address;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/addresses';
+};
+
+export type CreateAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateAddressError = CreateAddressErrors[keyof CreateAddressErrors];
+
+export type CreateAddressResponses = {
+    /**
+     * Created
+     */
+    201: Address;
+};
+
+export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
+
+export type ToggleUserRoleData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query: {
+        role: Role;
+    };
+    url: '/users/{userId}/roles';
+};
+
+export type ToggleUserRoleErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ToggleUserRoleError = ToggleUserRoleErrors[keyof ToggleUserRoleErrors];
+
+export type ToggleUserRoleResponses = {
+    /**
+     * OK
+     */
+    200: AdvancedUser;
+};
+
+export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
+
+export type FindMembershipByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/{id}';
+};
+
+export type FindMembershipByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindMembershipByIdError = FindMembershipByIdErrors[keyof FindMembershipByIdErrors];
+
+export type FindMembershipByIdResponses = {
+    /**
+     * OK
+     */
+    200: Membership;
+};
+
+export type FindMembershipByIdResponse = FindMembershipByIdResponses[keyof FindMembershipByIdResponses];
+
+export type UpdateMembershipData = {
+    body: Membership;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/{id}';
+};
+
+export type UpdateMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
+
+export type UpdateMembershipResponses = {
+    /**
+     * OK
+     */
+    200: Membership;
+};
+
+export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];

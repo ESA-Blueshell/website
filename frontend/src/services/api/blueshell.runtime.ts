@@ -36,10 +36,10 @@ export function createClientConfig(defaultConfig: Config): Config {
 
     if (token) {
       if (headers instanceof AxiosHeaders) headers.set("Authorization", `Bearer ${token}`)
-      else (headers as any)["Authorization"] = `Bearer ${token}`
+      else (headers as AxiosHeaders)["Authorization"] = `Bearer ${token}`
     } else {
       if (headers instanceof AxiosHeaders) headers.delete("Authorization")
-      else delete (headers as any)["Authorization"]
+      else delete (headers as AxiosHeaders)["Authorization"]
     }
 
     cfg.headers = headers
@@ -52,15 +52,16 @@ export function createClientConfig(defaultConfig: Config): Config {
     (error: AxiosError<ApiErrorSchema>) => {
       const data = error?.response?.data
       if (isValidationError(data)) {
-        const errs = (data as any).errors
+        const errs = (data as ApiErrorSchema).errors
         if (errs && !Array.isArray(errs)) {
-          error.response!.data = {...(data as any), errors: [errs]} as any
+          error.response!.data = {...(data as ApiErrorSchema), errors: [errs]} as ApiErrorSchema
         }
       }
       return Promise.reject(error)
     },
   )
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const {baseURL, ...config} = defaultConfig
 
   // Return config to the generated client

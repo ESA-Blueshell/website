@@ -18,669 +18,488 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: Record<string, unknown>;
 };
 
-export const findMembershipById = <ThrowOnError extends boolean = false>(options: Options<FindMembershipByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindMembershipByIdResponses, FindMembershipByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/{id}',
-        ...options
-    });
-};
-
-export const updateMembership = <ThrowOnError extends boolean = false>(options: Options<UpdateMembershipData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const toggleUserRole = <ThrowOnError extends boolean = false>(options: Options<ToggleUserRoleData, ThrowOnError>) => {
-    return (options.client ?? client).put<ToggleUserRoleResponses, ToggleUserRoleErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users/{userId}/roles',
-        ...options
-    });
-};
-
-export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const updateGuestUser = <ThrowOnError extends boolean = false>(options: Options<UpdateGuestUserData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateGuestUserResponses, UpdateGuestUserErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users/guest/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteSponsorById = <ThrowOnError extends boolean = false>(options: Options<DeleteSponsorByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteSponsorByIdResponses, DeleteSponsorByIdErrors, ThrowOnError>({
-        url: '/sponsors/{id}',
-        ...options
-    });
-};
-
-export const findSponsorById = <ThrowOnError extends boolean = false>(options: Options<FindSponsorByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindSponsorByIdResponses, FindSponsorByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/sponsors/{id}',
-        ...options
-    });
-};
-
-export const updateSponsor = <ThrowOnError extends boolean = false>(options: Options<UpdateSponsorData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateSponsorResponses, UpdateSponsorErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/sponsors/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findEventById = <ThrowOnError extends boolean = false>(options: Options<FindEventByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindEventByIdResponses, FindEventByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/{id}',
-        ...options
-    });
-};
-
-export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateEventResponses, UpdateEventErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const approveEvent = <ThrowOnError extends boolean = false>(options: Options<ApproveEventData, ThrowOnError>) => {
-    return (options.client ?? client).put<ApproveEventResponses, ApproveEventErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/{id}/approve',
-        ...options
-    });
-};
-
-export const findEventSignUpsByEventId = <ThrowOnError extends boolean = false>(options: Options<FindEventSignUpsByEventIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindEventSignUpsByEventIdResponses, FindEventSignUpsByEventIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/{eventId}/signups',
-        ...options
-    });
-};
-
-export const createEventSignup = <ThrowOnError extends boolean = false>(options: Options<CreateEventSignupData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateEventSignupResponses, CreateEventSignupErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/{eventId}/signups',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const updateEventSignUp = <ThrowOnError extends boolean = false>(options: Options<UpdateEventSignUpData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateEventSignUpResponses, UpdateEventSignUpErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/{eventId}/signups',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteContributionPeriodById = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionPeriodByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteContributionPeriodByIdResponses, DeleteContributionPeriodByIdErrors, ThrowOnError>({
-        url: '/contributionPeriods/{id}',
-        ...options
-    });
-};
-
-export const updateContributionPeriod = <ThrowOnError extends boolean = false>(options: Options<UpdateContributionPeriodData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateContributionPeriodResponses, UpdateContributionPeriodErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionPeriods/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteCommitteeById = <ThrowOnError extends boolean = false>(options: Options<DeleteCommitteeByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteCommitteeByIdResponses, DeleteCommitteeByIdErrors, ThrowOnError>({
-        url: '/committees/{id}',
-        ...options
-    });
-};
-
-export const updateCommittee = <ThrowOnError extends boolean = false>(options: Options<UpdateCommitteeData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateCommitteeResponses, UpdateCommitteeErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/committees/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteAddressById = <ThrowOnError extends boolean = false>(options: Options<DeleteAddressByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteAddressByIdResponses, DeleteAddressByIdErrors, ThrowOnError>({
-        url: '/addresses/{id}',
-        ...options
-    });
-};
-
-export const findAddressById = <ThrowOnError extends boolean = false>(options: Options<FindAddressByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindAddressByIdResponses, FindAddressByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/addresses/{id}',
-        ...options
-    });
-};
-
-export const updateAddress = <ThrowOnError extends boolean = false>(options: Options<UpdateAddressData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateAddressResponses, UpdateAddressErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/addresses/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findUsers = <ThrowOnError extends boolean = false>(options?: Options<FindUsersData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindUsersResponses, FindUsersErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users',
-        ...options
-    });
-};
-
-export const createUser = <ThrowOnError extends boolean = false>(options: Options<CreateUserData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateUserResponses, CreateUserErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteUserAddress = <ThrowOnError extends boolean = false>(options: Options<DeleteUserAddressData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteUserAddressResponses, DeleteUserAddressErrors, ThrowOnError>({
-        url: '/users/{userId}/addresses',
-        ...options
-    });
-};
-
-export const createAddress = <ThrowOnError extends boolean = false>(options: Options<CreateAddressData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateAddressResponses, CreateAddressErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users/{userId}/addresses',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const createGuestUser = <ThrowOnError extends boolean = false>(options: Options<CreateGuestUserData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateGuestUserResponses, CreateGuestUserErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users/guest',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const createTelemetry = <ThrowOnError extends boolean = false>(options: Options<CreateTelemetryData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateTelemetryResponses, CreateTelemetryErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/telemetry',
-        ...options
-    });
-};
-
-export const findSponsors = <ThrowOnError extends boolean = false>(options?: Options<FindSponsorsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindSponsorsResponses, FindSponsorsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/sponsors',
-        ...options
-    });
-};
-
-export const createSponsor = <ThrowOnError extends boolean = false>(options: Options<CreateSponsorData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateSponsorResponses, CreateSponsorErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/sponsors',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const resendMemberActivationEmail = <ThrowOnError extends boolean = false>(options: Options<ResendMemberActivationEmailData, ThrowOnError>) => {
-    return (options.client ?? client).post<ResendMemberActivationEmailResponses, ResendMemberActivationEmailErrors, ThrowOnError>({
-        url: '/recovery/users/{userId}/resend/recovery',
-        ...options
-    });
-};
-
-export const userActivate = <ThrowOnError extends boolean = false>(options: Options<UserActivateData, ThrowOnError>) => {
-    return (options.client ?? client).post<UserActivateResponses, UserActivateErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/recovery/user/activate',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const resendUserActivation = <ThrowOnError extends boolean = false>(options: Options<ResendUserActivationData, ThrowOnError>) => {
-    return (options.client ?? client).post<ResendUserActivationResponses, ResendUserActivationErrors, ThrowOnError>({
-        url: '/recovery/user/activate/resend/{username}',
-        ...options
-    });
-};
-
-export const setPassword = <ThrowOnError extends boolean = false>(options: Options<SetPasswordData, ThrowOnError>) => {
-    return (options.client ?? client).post<SetPasswordResponses, SetPasswordErrors, ThrowOnError>({
-        url: '/recovery/password',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const resetPassword = <ThrowOnError extends boolean = false>(options: Options<ResetPasswordData, ThrowOnError>) => {
-    return (options.client ?? client).post<ResetPasswordResponses, ResetPasswordErrors, ThrowOnError>({
-        url: '/recovery/password/reset/{username}',
-        ...options
-    });
-};
-
-export const memberActivate = <ThrowOnError extends boolean = false>(options: Options<MemberActivateData, ThrowOnError>) => {
-    return (options.client ?? client).post<MemberActivateResponses, MemberActivateErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/recovery/member/activate',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findMemberships = <ThrowOnError extends boolean = false>(options?: Options<FindMembershipsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindMembershipsResponses, FindMembershipsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/memberships',
-        ...options
-    });
-};
-
-export const createMembership = <ThrowOnError extends boolean = false>(options?: Options<CreateMembershipData, ThrowOnError>) => {
-    return (options?.client ?? client).post<CreateMembershipResponses, CreateMembershipErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/memberships',
-        ...options
-    });
-};
-
-export const boardCreateMembership = <ThrowOnError extends boolean = false>(options: Options<BoardCreateMembershipData, ThrowOnError>) => {
-    return (options.client ?? client).post<BoardCreateMembershipResponses, BoardCreateMembershipErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/memberships/member',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findEvents = <ThrowOnError extends boolean = false>(options?: Options<FindEventsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindEventsResponses, FindEventsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events',
-        ...options
-    });
-};
-
-export const createEvent = <ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateEventResponses, CreateEventErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const uploadEventBanner = <ThrowOnError extends boolean = false>(options: Options<UploadEventBannerData, ThrowOnError>) => {
-    return (options.client ?? client).post<UploadEventBannerResponses, UploadEventBannerErrors, ThrowOnError>({
-        ...formDataBodySerializer,
-        responseType: 'json',
-        url: '/events/banners',
-        ...options,
-        headers: {
-            'Content-Type': null,
-            ...options.headers
-        }
-    });
-};
-
-export const findContributions = <ThrowOnError extends boolean = false>(options?: Options<FindContributionsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindContributionsResponses, FindContributionsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributions',
-        ...options
-    });
-};
-
-export const createContribution = <ThrowOnError extends boolean = false>(options: Options<CreateContributionData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateContributionResponses, CreateContributionErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributions',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findContributionReminders = <ThrowOnError extends boolean = false>(options?: Options<FindContributionRemindersData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindContributionRemindersResponses, FindContributionRemindersErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionReminders',
-        ...options
-    });
-};
-
-export const sendContributionReminder = <ThrowOnError extends boolean = false>(options: Options<SendContributionReminderData, ThrowOnError>) => {
-    return (options.client ?? client).post<SendContributionReminderResponses, SendContributionReminderErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionReminders',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const sendContributionReminderBatch = <ThrowOnError extends boolean = false>(options: Options<SendContributionReminderBatchData, ThrowOnError>) => {
-    return (options.client ?? client).post<SendContributionReminderBatchResponses, SendContributionReminderBatchErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionReminders/batch',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findContributionPeriods = <ThrowOnError extends boolean = false>(options?: Options<FindContributionPeriodsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindContributionPeriodsResponses, FindContributionPeriodsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionPeriods',
-        ...options
-    });
-};
-
-export const createContributionPeriod = <ThrowOnError extends boolean = false>(options: Options<CreateContributionPeriodData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateContributionPeriodResponses, CreateContributionPeriodErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionPeriods',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findCommittees = <ThrowOnError extends boolean = false>(options?: Options<FindCommitteesData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindCommitteesResponses, FindCommitteesErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/committees',
-        ...options
-    });
-};
-
-export const createCommittee = <ThrowOnError extends boolean = false>(options: Options<CreateCommitteeData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateCommitteeResponses, CreateCommitteeErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/committees',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const findBlogs = <ThrowOnError extends boolean = false>(options?: Options<FindBlogsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindBlogsResponses, FindBlogsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/blogs',
-        ...options
-    });
-};
-
-export const createBlog = <ThrowOnError extends boolean = false>(options: Options<CreateBlogData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateBlogResponses, CreateBlogErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/blogs',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteById = <ThrowOnError extends boolean = false>(options: Options<DeleteByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteByIdResponses, DeleteByIdErrors, ThrowOnError>({
-        url: '/blogs/{id}',
-        ...options
-    });
-};
-
-export const findBlogById = <ThrowOnError extends boolean = false>(options: Options<FindBlogByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindBlogByIdResponses, FindBlogByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/blogs/{id}',
-        ...options
-    });
-};
-
-export const updateBlog = <ThrowOnError extends boolean = false>(options: Options<UpdateBlogData, ThrowOnError>) => {
-    return (options.client ?? client).post<UpdateBlogResponses, UpdateBlogErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/blogs/{id}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const authenticate = <ThrowOnError extends boolean = false>(options: Options<AuthenticateData, ThrowOnError>) => {
-    return (options.client ?? client).post<AuthenticateResponses, AuthenticateErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/auth',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const deleteUserById = <ThrowOnError extends boolean = false>(options: Options<DeleteUserByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteUserByIdResponses, DeleteUserByIdErrors, ThrowOnError>({
-        url: '/users/{userId}',
-        ...options
-    });
-};
-
-export const findUserById = <ThrowOnError extends boolean = false>(options: Options<FindUserByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindUserByIdResponses, FindUserByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/users/{userId}',
-        ...options
-    });
-};
-
-export const findTelemetryById = <ThrowOnError extends boolean = false>(options: Options<FindTelemetryByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindTelemetryByIdResponses, FindTelemetryByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/telemetry/{id}',
-        ...options
-    });
-};
-
-export const healthCheck = <ThrowOnError extends boolean = false>(options?: Options<HealthCheckData, ThrowOnError>) => {
-    return (options?.client ?? client).get<HealthCheckResponses, HealthCheckErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/health',
-        ...options
-    });
-};
-
-export const findEventSignUps = <ThrowOnError extends boolean = false>(options?: Options<FindEventSignUpsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindEventSignUpsResponses, FindEventSignUpsErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/signups',
-        ...options
-    });
-};
-
-export const findEventSignUpsByAccessToken = <ThrowOnError extends boolean = false>(options: Options<FindEventSignUpsByAccessTokenData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByAccessTokenErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/signups/byAccessToken/{accessToken}',
-        ...options
-    });
-};
-
-export const downloadEventBanner = <ThrowOnError extends boolean = false>(options: Options<DownloadEventBannerData, ThrowOnError>) => {
-    return (options.client ?? client).get<DownloadEventBannerResponses, DownloadEventBannerErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/events/banners/{bannerId}',
-        ...options
-    });
-};
-
-export const findContributionsByPeriodId = <ThrowOnError extends boolean = false>(options: Options<FindContributionsByPeriodIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindContributionsByPeriodIdResponses, FindContributionsByPeriodIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionPeriods/{periodId}/contributions',
-        ...options
-    });
-};
-
-export const findCurrentContributionPeriod = <ThrowOnError extends boolean = false>(options?: Options<FindCurrentContributionPeriodData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindCurrentContributionPeriodResponses, FindCurrentContributionPeriodErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/contributionPeriods/current',
-        ...options
-    });
-};
-
-export const findCommitteeById = <ThrowOnError extends boolean = false>(options: Options<FindCommitteeByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindCommitteeByIdResponses, FindCommitteeByIdErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/committees/{committeeId}',
-        ...options
-    });
-};
-
-export const findCommitteesForCurrentUser = <ThrowOnError extends boolean = false>(options?: Options<FindCommitteesForCurrentUserData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindCommitteesForCurrentUserResponses, FindCommitteesForCurrentUserErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/committeeMembers/committees',
-        ...options
-    });
-};
-
-export const findAllAddresses = <ThrowOnError extends boolean = false>(options?: Options<FindAllAddressesData, ThrowOnError>) => {
-    return (options?.client ?? client).get<FindAllAddressesResponses, FindAllAddressesErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/addresses',
-        ...options
-    });
-};
-
-export const deleteEventById = <ThrowOnError extends boolean = false>(options: Options<DeleteEventByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteEventByIdResponses, DeleteEventByIdErrors, ThrowOnError>({
-        url: '/events/{eventId}',
-        ...options
-    });
-};
-
-export const deleteEventSignup = <ThrowOnError extends boolean = false>(options: Options<DeleteEventSignupData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteEventSignupResponses, DeleteEventSignupErrors, ThrowOnError>({
-        url: '/events/signups/{eventSignupId}',
-        ...options
-    });
-};
-
-export const deleteContribution = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteContributionResponses, DeleteContributionErrors, ThrowOnError>({
-        url: '/contributions/{id}',
-        ...options
-    });
-};
+export const findAllAddresses = <ThrowOnError extends boolean = false>(options?: Options<FindAllAddressesData, ThrowOnError>) => (options?.client ?? client).get<FindAllAddressesResponses, FindAllAddressesErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/addresses',
+    ...options
+});
+
+export const deleteAddressById = <ThrowOnError extends boolean = false>(options: Options<DeleteAddressByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteAddressByIdResponses, DeleteAddressByIdErrors, ThrowOnError>({ url: '/addresses/{id}', ...options });
+
+export const findAddressById = <ThrowOnError extends boolean = false>(options: Options<FindAddressByIdData, ThrowOnError>) => (options.client ?? client).get<FindAddressByIdResponses, FindAddressByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/addresses/{id}',
+    ...options
+});
+
+export const updateAddress = <ThrowOnError extends boolean = false>(options: Options<UpdateAddressData, ThrowOnError>) => (options.client ?? client).put<UpdateAddressResponses, UpdateAddressErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/addresses/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const authenticate = <ThrowOnError extends boolean = false>(options: Options<AuthenticateData, ThrowOnError>) => (options.client ?? client).post<AuthenticateResponses, AuthenticateErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/auth',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findBlogs = <ThrowOnError extends boolean = false>(options?: Options<FindBlogsData, ThrowOnError>) => (options?.client ?? client).get<FindBlogsResponses, FindBlogsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/blogs',
+    ...options
+});
+
+export const createBlog = <ThrowOnError extends boolean = false>(options: Options<CreateBlogData, ThrowOnError>) => (options.client ?? client).post<CreateBlogResponses, CreateBlogErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/blogs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteById = <ThrowOnError extends boolean = false>(options: Options<DeleteByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteByIdResponses, DeleteByIdErrors, ThrowOnError>({ url: '/blogs/{id}', ...options });
+
+export const findBlogById = <ThrowOnError extends boolean = false>(options: Options<FindBlogByIdData, ThrowOnError>) => (options.client ?? client).get<FindBlogByIdResponses, FindBlogByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/blogs/{id}',
+    ...options
+});
+
+export const updateBlog = <ThrowOnError extends boolean = false>(options: Options<UpdateBlogData, ThrowOnError>) => (options.client ?? client).post<UpdateBlogResponses, UpdateBlogErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/blogs/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findCommitteesForCurrentUser = <ThrowOnError extends boolean = false>(options?: Options<FindCommitteesForCurrentUserData, ThrowOnError>) => (options?.client ?? client).get<FindCommitteesForCurrentUserResponses, FindCommitteesForCurrentUserErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/committeeMembers/committees',
+    ...options
+});
+
+export const findCommittees = <ThrowOnError extends boolean = false>(options?: Options<FindCommitteesData, ThrowOnError>) => (options?.client ?? client).get<FindCommitteesResponses, FindCommitteesErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/committees',
+    ...options
+});
+
+export const createCommittee = <ThrowOnError extends boolean = false>(options: Options<CreateCommitteeData, ThrowOnError>) => (options.client ?? client).post<CreateCommitteeResponses, CreateCommitteeErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/committees',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findCommitteeById = <ThrowOnError extends boolean = false>(options: Options<FindCommitteeByIdData, ThrowOnError>) => (options.client ?? client).get<FindCommitteeByIdResponses, FindCommitteeByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/committees/{committeeId}',
+    ...options
+});
+
+export const deleteCommitteeById = <ThrowOnError extends boolean = false>(options: Options<DeleteCommitteeByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteCommitteeByIdResponses, DeleteCommitteeByIdErrors, ThrowOnError>({ url: '/committees/{id}', ...options });
+
+export const updateCommittee = <ThrowOnError extends boolean = false>(options: Options<UpdateCommitteeData, ThrowOnError>) => (options.client ?? client).put<UpdateCommitteeResponses, UpdateCommitteeErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/committees/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findContributionPeriods = <ThrowOnError extends boolean = false>(options?: Options<FindContributionPeriodsData, ThrowOnError>) => (options?.client ?? client).get<FindContributionPeriodsResponses, FindContributionPeriodsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionPeriods',
+    ...options
+});
+
+export const createContributionPeriod = <ThrowOnError extends boolean = false>(options: Options<CreateContributionPeriodData, ThrowOnError>) => (options.client ?? client).post<CreateContributionPeriodResponses, CreateContributionPeriodErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionPeriods',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findCurrentContributionPeriod = <ThrowOnError extends boolean = false>(options?: Options<FindCurrentContributionPeriodData, ThrowOnError>) => (options?.client ?? client).get<FindCurrentContributionPeriodResponses, FindCurrentContributionPeriodErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionPeriods/current',
+    ...options
+});
+
+export const deleteContributionPeriodById = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionPeriodByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteContributionPeriodByIdResponses, DeleteContributionPeriodByIdErrors, ThrowOnError>({ url: '/contributionPeriods/{id}', ...options });
+
+export const updateContributionPeriod = <ThrowOnError extends boolean = false>(options: Options<UpdateContributionPeriodData, ThrowOnError>) => (options.client ?? client).put<UpdateContributionPeriodResponses, UpdateContributionPeriodErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionPeriods/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findContributionsByPeriodId = <ThrowOnError extends boolean = false>(options: Options<FindContributionsByPeriodIdData, ThrowOnError>) => (options.client ?? client).get<FindContributionsByPeriodIdResponses, FindContributionsByPeriodIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionPeriods/{periodId}/contributions',
+    ...options
+});
+
+export const findContributionReminders = <ThrowOnError extends boolean = false>(options?: Options<FindContributionRemindersData, ThrowOnError>) => (options?.client ?? client).get<FindContributionRemindersResponses, FindContributionRemindersErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionReminders',
+    ...options
+});
+
+export const sendContributionReminder = <ThrowOnError extends boolean = false>(options: Options<SendContributionReminderData, ThrowOnError>) => (options.client ?? client).post<SendContributionReminderResponses, SendContributionReminderErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionReminders',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const sendContributionReminderBatch = <ThrowOnError extends boolean = false>(options: Options<SendContributionReminderBatchData, ThrowOnError>) => (options.client ?? client).post<SendContributionReminderBatchResponses, SendContributionReminderBatchErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributionReminders/batch',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findContributions = <ThrowOnError extends boolean = false>(options?: Options<FindContributionsData, ThrowOnError>) => (options?.client ?? client).get<FindContributionsResponses, FindContributionsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributions',
+    ...options
+});
+
+export const createContribution = <ThrowOnError extends boolean = false>(options: Options<CreateContributionData, ThrowOnError>) => (options.client ?? client).post<CreateContributionResponses, CreateContributionErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/contributions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteContribution = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionData, ThrowOnError>) => (options.client ?? client).delete<DeleteContributionResponses, DeleteContributionErrors, ThrowOnError>({ url: '/contributions/{id}', ...options });
+
+export const findEvents = <ThrowOnError extends boolean = false>(options?: Options<FindEventsData, ThrowOnError>) => (options?.client ?? client).get<FindEventsResponses, FindEventsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events',
+    ...options
+});
+
+export const createEvent = <ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>) => (options.client ?? client).post<CreateEventResponses, CreateEventErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const uploadEventBanner = <ThrowOnError extends boolean = false>(options: Options<UploadEventBannerData, ThrowOnError>) => (options.client ?? client).post<UploadEventBannerResponses, UploadEventBannerErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/events/banners',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+export const downloadEventBanner = <ThrowOnError extends boolean = false>(options: Options<DownloadEventBannerData, ThrowOnError>) => (options.client ?? client).get<DownloadEventBannerResponses, DownloadEventBannerErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/banners/{bannerId}',
+    ...options
+});
+
+export const findEventSignUps = <ThrowOnError extends boolean = false>(options?: Options<FindEventSignUpsData, ThrowOnError>) => (options?.client ?? client).get<FindEventSignUpsResponses, FindEventSignUpsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/signups',
+    ...options
+});
+
+export const findEventSignUpsByAccessToken = <ThrowOnError extends boolean = false>(options: Options<FindEventSignUpsByAccessTokenData, ThrowOnError>) => (options.client ?? client).get<FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByAccessTokenErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/signups/byAccessToken/{accessToken}',
+    ...options
+});
+
+export const deleteEventSignup = <ThrowOnError extends boolean = false>(options: Options<DeleteEventSignupData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventSignupResponses, DeleteEventSignupErrors, ThrowOnError>({ url: '/events/signups/{eventSignupId}', ...options });
+
+export const deleteEventById = <ThrowOnError extends boolean = false>(options: Options<DeleteEventByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventByIdResponses, DeleteEventByIdErrors, ThrowOnError>({ url: '/events/{eventId}', ...options });
+
+export const findEventSignUpsByEventId = <ThrowOnError extends boolean = false>(options: Options<FindEventSignUpsByEventIdData, ThrowOnError>) => (options.client ?? client).get<FindEventSignUpsByEventIdResponses, FindEventSignUpsByEventIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{eventId}/signups',
+    ...options
+});
+
+export const createEventSignup = <ThrowOnError extends boolean = false>(options: Options<CreateEventSignupData, ThrowOnError>) => (options.client ?? client).post<CreateEventSignupResponses, CreateEventSignupErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{eventId}/signups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const updateEventSignUp = <ThrowOnError extends boolean = false>(options: Options<UpdateEventSignUpData, ThrowOnError>) => (options.client ?? client).put<UpdateEventSignUpResponses, UpdateEventSignUpErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{eventId}/signups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findEventById = <ThrowOnError extends boolean = false>(options: Options<FindEventByIdData, ThrowOnError>) => (options.client ?? client).get<FindEventByIdResponses, FindEventByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{id}',
+    ...options
+});
+
+export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>) => (options.client ?? client).put<UpdateEventResponses, UpdateEventErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const approveEvent = <ThrowOnError extends boolean = false>(options: Options<ApproveEventData, ThrowOnError>) => (options.client ?? client).put<ApproveEventResponses, ApproveEventErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{id}/approve',
+    ...options
+});
+
+export const healthCheck = <ThrowOnError extends boolean = false>(options?: Options<HealthCheckData, ThrowOnError>) => (options?.client ?? client).get<HealthCheckResponses, HealthCheckErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/health',
+    ...options
+});
+
+export const findMemberships = <ThrowOnError extends boolean = false>(options?: Options<FindMembershipsData, ThrowOnError>) => (options?.client ?? client).get<FindMembershipsResponses, FindMembershipsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/memberships',
+    ...options
+});
+
+export const createMembership = <ThrowOnError extends boolean = false>(options?: Options<CreateMembershipData, ThrowOnError>) => (options?.client ?? client).post<CreateMembershipResponses, CreateMembershipErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/memberships',
+    ...options
+});
+
+export const boardCreateMembership = <ThrowOnError extends boolean = false>(options: Options<BoardCreateMembershipData, ThrowOnError>) => (options.client ?? client).post<BoardCreateMembershipResponses, BoardCreateMembershipErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/memberships/member',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const memberActivate = <ThrowOnError extends boolean = false>(options: Options<MemberActivateData, ThrowOnError>) => (options.client ?? client).post<MemberActivateResponses, MemberActivateErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/recovery/member/activate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const setPassword = <ThrowOnError extends boolean = false>(options: Options<SetPasswordData, ThrowOnError>) => (options.client ?? client).post<SetPasswordResponses, SetPasswordErrors, ThrowOnError>({
+    url: '/recovery/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const resetPassword = <ThrowOnError extends boolean = false>(options: Options<ResetPasswordData, ThrowOnError>) => (options.client ?? client).post<ResetPasswordResponses, ResetPasswordErrors, ThrowOnError>({ url: '/recovery/password/reset/{username}', ...options });
+
+export const userActivate = <ThrowOnError extends boolean = false>(options: Options<UserActivateData, ThrowOnError>) => (options.client ?? client).post<UserActivateResponses, UserActivateErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/recovery/user/activate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const resendUserActivation = <ThrowOnError extends boolean = false>(options: Options<ResendUserActivationData, ThrowOnError>) => (options.client ?? client).post<ResendUserActivationResponses, ResendUserActivationErrors, ThrowOnError>({ url: '/recovery/user/activate/resend/{username}', ...options });
+
+export const resendMemberActivationEmail = <ThrowOnError extends boolean = false>(options: Options<ResendMemberActivationEmailData, ThrowOnError>) => (options.client ?? client).post<ResendMemberActivationEmailResponses, ResendMemberActivationEmailErrors, ThrowOnError>({ url: '/recovery/users/{userId}/resend/recovery', ...options });
+
+export const findSponsors = <ThrowOnError extends boolean = false>(options?: Options<FindSponsorsData, ThrowOnError>) => (options?.client ?? client).get<FindSponsorsResponses, FindSponsorsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/sponsors',
+    ...options
+});
+
+export const createSponsor = <ThrowOnError extends boolean = false>(options: Options<CreateSponsorData, ThrowOnError>) => (options.client ?? client).post<CreateSponsorResponses, CreateSponsorErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/sponsors',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteSponsorById = <ThrowOnError extends boolean = false>(options: Options<DeleteSponsorByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteSponsorByIdResponses, DeleteSponsorByIdErrors, ThrowOnError>({ url: '/sponsors/{id}', ...options });
+
+export const findSponsorById = <ThrowOnError extends boolean = false>(options: Options<FindSponsorByIdData, ThrowOnError>) => (options.client ?? client).get<FindSponsorByIdResponses, FindSponsorByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/sponsors/{id}',
+    ...options
+});
+
+export const updateSponsor = <ThrowOnError extends boolean = false>(options: Options<UpdateSponsorData, ThrowOnError>) => (options.client ?? client).put<UpdateSponsorResponses, UpdateSponsorErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/sponsors/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createTelemetry = <ThrowOnError extends boolean = false>(options: Options<CreateTelemetryData, ThrowOnError>) => (options.client ?? client).post<CreateTelemetryResponses, CreateTelemetryErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/telemetry',
+    ...options
+});
+
+export const findTelemetryById = <ThrowOnError extends boolean = false>(options: Options<FindTelemetryByIdData, ThrowOnError>) => (options.client ?? client).get<FindTelemetryByIdResponses, FindTelemetryByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/telemetry/{id}',
+    ...options
+});
+
+export const findUsers = <ThrowOnError extends boolean = false>(options?: Options<FindUsersData, ThrowOnError>) => (options?.client ?? client).get<FindUsersResponses, FindUsersErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users',
+    ...options
+});
+
+export const createUser = <ThrowOnError extends boolean = false>(options: Options<CreateUserData, ThrowOnError>) => (options.client ?? client).post<CreateUserResponses, CreateUserErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createGuestUser = <ThrowOnError extends boolean = false>(options: Options<CreateGuestUserData, ThrowOnError>) => (options.client ?? client).post<CreateGuestUserResponses, CreateGuestUserErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/guest',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const updateGuestUser = <ThrowOnError extends boolean = false>(options: Options<UpdateGuestUserData, ThrowOnError>) => (options.client ?? client).put<UpdateGuestUserResponses, UpdateGuestUserErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/guest/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>) => (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteUserById = <ThrowOnError extends boolean = false>(options: Options<DeleteUserByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteUserByIdResponses, DeleteUserByIdErrors, ThrowOnError>({ url: '/users/{userId}', ...options });
+
+export const findUserById = <ThrowOnError extends boolean = false>(options: Options<FindUserByIdData, ThrowOnError>) => (options.client ?? client).get<FindUserByIdResponses, FindUserByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}',
+    ...options
+});
+
+export const deleteUserAddress = <ThrowOnError extends boolean = false>(options: Options<DeleteUserAddressData, ThrowOnError>) => (options.client ?? client).delete<DeleteUserAddressResponses, DeleteUserAddressErrors, ThrowOnError>({ url: '/users/{userId}/addresses', ...options });
+
+export const createAddress = <ThrowOnError extends boolean = false>(options: Options<CreateAddressData, ThrowOnError>) => (options.client ?? client).post<CreateAddressResponses, CreateAddressErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}/addresses',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const toggleUserRole = <ThrowOnError extends boolean = false>(options: Options<ToggleUserRoleData, ThrowOnError>) => (options.client ?? client).put<ToggleUserRoleResponses, ToggleUserRoleErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}/roles',
+    ...options
+});
+
+export const findMembershipById = <ThrowOnError extends boolean = false>(options: Options<FindMembershipByIdData, ThrowOnError>) => (options.client ?? client).get<FindMembershipByIdResponses, FindMembershipByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/{id}',
+    ...options
+});
+
+export const updateMembership = <ThrowOnError extends boolean = false>(options: Options<UpdateMembershipData, ThrowOnError>) => (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

@@ -13,15 +13,19 @@ export default [
             '.pnp*',
             'node_modules/**',
             'src/assets/**',
-            'src/services/api/**',
+            'src/services/api/blueshell/**',
+            'src/services/api/discord/**'
         ]
+    },
+    {
+        files: ['**/*.{js,cjs,mjs,ts,cts,mts,jsx,tsx,vue}'],
     },
     js.configs.recommended,
     ...pluginVue.configs['flat/recommended'],
     {
         plugins: {
             '@typescript-eslint': configTypeScript,
-            'vuetify': pluginVuetify,
+            vuetify: pluginVuetify,
         },
 
         languageOptions: {
@@ -32,7 +36,6 @@ export default [
             },
             globals: {
                 ...globals.browser,
-                // Vue 3 globals
                 defineProps: 'readonly',
                 defineEmits: 'readonly',
                 defineExpose: 'readonly',

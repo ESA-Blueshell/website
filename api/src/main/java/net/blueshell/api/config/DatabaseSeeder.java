@@ -30,7 +30,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.time.Instant;
@@ -66,6 +65,14 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final Map<String, User> createdUsers = new LinkedHashMap<>();
     private final Random rnd = new Random(42);
 
+    // Track committee sizes & memberships to enforce max 6 members
+    private final Map<Long, Integer> committeeMemberCounts = new HashMap<>();
+    private final Set<String> committeeMemberships = new HashSet<>();
+
+    // Track contributions per period to enforce contribution ratios
+    // key: contributionPeriodId -> set of userIds who have a contribution in that period
+    private final Map<Long, Set<Long>> contributionsByPeriod = new HashMap<>();
+
     @Override
     public void run(String... args) {
         if (userService.existsByUsername("board.user")) {
@@ -84,8 +91,18 @@ public class DatabaseSeeder implements CommandLineRunner {
                 today.withMonth(8).withDayOfMonth(2)
         );
 
+        // Track which users are members per period so we can enforce ratios later
+        var previousPeriodMembers = new ArrayList<User>();
+        var currentPeriodMembers = new ArrayList<User>();
+
         // ---- Committees ----
         var testCommittee = createCommittee("Test Committee", "Committee for seeded events and testing.");
+        var activitiesCommittee = createCommittee("Activities Committee", "Organises general activities for members.");
+        var sportsCommittee = createCommittee("Sports Committee", "Handles sports-related events and tournaments.");
+        var itCommittee = createCommittee("IT Committee", "Maintains systems, website and IT tooling.");
+        var socialCommittee = createCommittee("Social Committee", "Organises social gatherings and borrels.");
+
+        var allCommittees = List.of(testCommittee, activitiesCommittee, sportsCommittee, itCommittee, socialCommittee);
 
         // ---- Reference users (mirrors AuthenticationController / UserController permissions expectations) ----
         var boardUser = createUserWithRole(
@@ -140,11 +157,19 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // Give core reference users a real membership footprint
         createMembership(previousPeriod, boardUser);
+        previousPeriodMembers.add(boardUser);
         createMembership(currentPeriod, boardUser);
+        currentPeriodMembers.add(boardUser);
+
         createMembership(previousPeriod, committeeUser);
+        previousPeriodMembers.add(committeeUser);
         createMembership(currentPeriod, committeeUser);
+        currentPeriodMembers.add(committeeUser);
+
         createMembership(previousPeriod, memberUser);
+        previousPeriodMembers.add(memberUser);
         createMembership(currentPeriod, memberUser);
+        currentPeriodMembers.add(memberUser);
 
         createContribution(boardUser, currentPeriod);
         createContribution(committeeUser, currentPeriod);
@@ -162,9 +187,11 @@ public class DatabaseSeeder implements CommandLineRunner {
 
             // Give them previous+current memberships
             createMembership(previousPeriod, u);
+            previousPeriodMembers.add(u);
             createMembership(currentPeriod, u);
+            currentPeriodMembers.add(u);
 
-            // Roughly 70% paid
+            // Roughly 70% paid (we'll fix aggregate ratios later)
             if (rnd.nextDouble() < 0.7) {
                 createContribution(u, currentPeriod);
             }
@@ -178,6 +205,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             var u = createRandomUser(Role.GUEST, true);
             createdUsers.put(u.getUsername(), u);
             createMembership(previousPeriod, u);
+            previousPeriodMembers.add(u);
             // No current membership
             // Keep them out of memberPool to reflect "former".
         }
@@ -188,6 +216,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             var u = createRandomUser(Role.GUEST, true);
             createdUsers.put(u.getUsername(), u);
             createMembership(currentPeriod, u);
+            currentPeriodMembers.add(u);
             memberPool.add(u);
         }
 
@@ -198,6 +227,12 @@ public class DatabaseSeeder implements CommandLineRunner {
             createdUsers.put(u.getUsername(), u);
             guestPool.add(u);
         }
+
+        // Ensure at least 75% of past members and 60% of current members paid their contribution
+        ensureContributionRatios(previousPeriod, currentPeriod, previousPeriodMembers, currentPeriodMembers);
+
+        // Seed additional committee members from randomly generated members, max 6 per committee
+        seedCommitteeMembers(allCommittees, memberPool);
 
         // Consume recovery tokens for enabled users (mirrors RecoveryController flows)
         createdUsers.values().forEach(u -> {
@@ -228,9 +263,19 @@ public class DatabaseSeeder implements CommandLineRunner {
         );
 
         var events = new ArrayList<Event>();
+        int committeeIndex = 0;
         for (var ec : eventsConfig) {
+            // Distribute events across committees so they all host events
+            Committee hostingCommittee;
+            if (committeeIndex < allCommittees.size()) {
+                hostingCommittee = allCommittees.get(committeeIndex);
+            } else {
+                hostingCommittee = allCommittees.get(rnd.nextInt(allCommittees.size()));
+            }
+            committeeIndex++;
+
             var e = createEvent(
-                    testCommittee,
+                    hostingCommittee,
                     (String) ec.get("title"),
                     (Boolean) ec.get("approved"),
                     (Boolean) ec.get("membersOnly"),
@@ -285,6 +330,19 @@ public class DatabaseSeeder implements CommandLineRunner {
         previouslyApproved = eventService.findById(previouslyApproved.getId());
         previouslyApproved.setApproved(false);
         eventService.update(previouslyApproved);
+
+        // Make some random users inactive (not one of the original few reference users)
+        deactivateRandomUsers(
+                10,
+                createdUsers.values(),
+                Set.of(
+                        boardUser.getUsername(),
+                        committeeUser.getUsername(),
+                        memberUser.getUsername(),
+                        normalUser.getUsername(),
+                        guestInactive.getUsername()
+                )
+        );
 
         log.info("Database seeding completed.");
         log.info("Created users ({}): {}", createdUsers.size(), String.join(", ", createdUsers.keySet()));
@@ -430,11 +488,33 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private CommitteeMember createCommitteeMember(User user, Committee committee, String role) {
+        if (committee == null || user == null) return null;
+
+        String key = committee.getId() + ":" + user.getId();
+        if (committeeMemberships.contains(key)) {
+            // Already in this committee; avoid duplicates
+            return null;
+        }
+
+        int currentCount = committeeMemberCounts.getOrDefault(committee.getId(), 0);
+        if (currentCount >= 6) {
+            log.debug(
+                    "Committee '{}' already has max members (6), skipping {}",
+                    committee.getName(),
+                    user.getUsername()
+            );
+            return null;
+        }
+
         var member = new CommitteeMember();
         member.setUserId(user.getId());
         member.setCommittee(committee);
         member.setRole(role);
-        return committeeMemberService.create(member);
+
+        CommitteeMember created = committeeMemberService.create(member);
+        committeeMemberCounts.put(committee.getId(), currentCount + 1);
+        committeeMemberships.add(key);
+        return created;
     }
 
     private ContributionPeriod createContributionPeriod(LocalDate start, LocalDate end) {
@@ -451,7 +531,13 @@ public class DatabaseSeeder implements CommandLineRunner {
         var c = new Contribution();
         c.setUserId(user.getId());
         c.setContributionPeriodId(period.getId());
-        return contributionService.create(c);
+        var created = contributionService.create(c);
+
+        contributionsByPeriod
+                .computeIfAbsent(period.getId(), id -> new HashSet<>())
+                .add(user.getId());
+
+        return created;
     }
 
     private Event createEvent(
@@ -471,7 +557,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             // survey = surveyService.create(survey);
         }
         var event = new Event();
-        event.setCommitteeId(committee.getId());
+        event.setCommitteeId(committee != null ? committee.getId() : null);
         event.setTitle(title);
         event.setDescription("Description for " + title);
         event.setLocation("Test Location");
@@ -652,6 +738,129 @@ public class DatabaseSeeder implements CommandLineRunner {
         for (int i = 0; i < guestCount; i++) {
             var guest = buildRandomGuest();
             createGuestEventSignUpWithAnswers(guest, event);
+        }
+    }
+
+    // ---- New helper logic for contribution ratios, committees & inactive users ----
+    private void ensureContributionRatios(
+            ContributionPeriod previousPeriod,
+            ContributionPeriod currentPeriod,
+            List<User> previousMembers,
+            List<User> currentMembers
+    ) {
+        enforceContributionRatioForPeriod(previousPeriod, previousMembers, 0.75); // 75% past members
+        enforceContributionRatioForPeriod(currentPeriod, currentMembers, 0.60);  // 60% current members
+    }
+
+    private void enforceContributionRatioForPeriod(
+            ContributionPeriod period,
+            List<User> members,
+            double ratio
+    ) {
+        if (members.isEmpty()) return;
+
+        // Deduplicate by user id
+        List<User> distinctMembers = members.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(User::getId, u -> u, (u1, u2) -> u1),
+                        m -> new ArrayList<>(m.values())
+                ));
+
+        int total = distinctMembers.size();
+        if (total == 0) return;
+
+        int desiredPaid = (int) Math.round(total * ratio);
+        Set<Long> paidUserIds = contributionsByPeriod
+                .getOrDefault(period.getId(), Collections.emptySet());
+
+        int currentPaid = paidUserIds.size();
+        if (currentPaid >= desiredPaid) {
+            // Already at or above the desired ratio
+            return;
+        }
+
+        List<User> unpaid = distinctMembers.stream()
+                .filter(u -> !paidUserIds.contains(u.getId()))
+                .collect(Collectors.toList());
+
+        Collections.shuffle(unpaid, rnd);
+        int needed = Math.min(desiredPaid - currentPaid, unpaid.size());
+        for (int i = 0; i < needed; i++) {
+            createContribution(unpaid.get(i), period);
+        }
+    }
+
+    private void seedCommitteeMembers(List<Committee> committees, List<User> memberPool) {
+        if (committees == null || committees.isEmpty()) return;
+
+        // Use randomly generated members, but avoid spamming the original reference users
+        Set<String> coreUsernames = Set.of(
+                "board.user",
+                "committee.user",
+                "member.user",
+                "normal.user",
+                "guest.inactive"
+        );
+
+        List<User> candidates = memberPool.stream()
+                .filter(u -> u != null && !coreUsernames.contains(u.getUsername()))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(User::getId, u -> u, (u1, u2) -> u1),
+                        m -> new ArrayList<>(m.values())
+                ));
+
+        Collections.shuffle(candidates, rnd);
+        Iterator<User> iterator = candidates.iterator();
+
+        for (Committee committee : committees) {
+            int currentCount = committeeMemberCounts.getOrDefault(committee.getId(), 0);
+            int remainingSlots = 6 - currentCount;
+            if (remainingSlots <= 0) continue;
+
+            // Aim for between 3 and 6 members total per committee
+            int desiredTotal = rnd.nextInt(3, 7);
+            int targetAdditionalMembers = Math.max(0, desiredTotal - currentCount);
+            targetAdditionalMembers = Math.min(targetAdditionalMembers, remainingSlots);
+
+            for (int i = 0; i < targetAdditionalMembers && iterator.hasNext(); i++) {
+                User candidate = iterator.next();
+                String role = pickRoleForPosition(currentCount + i);
+                createCommitteeMember(candidate, committee, role);
+            }
+        }
+    }
+
+    private String pickRoleForPosition(int position) {
+        // Some sensible role distribution: Chair, Secretary, Treasurer, Event Manager, PR, Member
+        return switch (position) {
+            case 0 -> "Chair";
+            case 1 -> "Secretary";
+            case 2 -> "Treasurer";
+            case 3 -> "Event Manager";
+            case 4 -> "PR Officer";
+            default -> "Member";
+        };
+    }
+
+    private void deactivateRandomUsers(int count, Collection<User> allUsers, Set<String> excludedUsernames) {
+        List<User> candidates = allUsers.stream()
+                .filter(Objects::nonNull)
+                .filter(User::isEnabled)
+                .filter(u -> !excludedUsernames.contains(u.getUsername()))
+                .collect(Collectors.toList());
+
+        if (candidates.isEmpty()) return;
+
+        Collections.shuffle(candidates, rnd);
+        int limit = Math.min(count, candidates.size());
+
+        for (int i = 0; i < limit; i++) {
+            var u = userService.findById(candidates.get(i).getId());
+
+            u.setEnabled(false);
+            var updated = userService.update(u);
+            createdUsers.put(updated.getUsername(), updated);
         }
     }
 }

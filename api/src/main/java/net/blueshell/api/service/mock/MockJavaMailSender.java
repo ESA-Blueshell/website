@@ -1,4 +1,4 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.mock;
 
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.MailSendException;
@@ -28,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Slf4j
 @Component
 @Primary
+@Profile("test | dev")
 public class MockJavaMailSender implements JavaMailSender {
 
     private final Session session = Session.getInstance(new Properties());
@@ -72,7 +74,11 @@ public class MockJavaMailSender implements JavaMailSender {
     @Override
     public void send(@NotNull MimeMessage mimeMessage) throws MailException {
         outbox.add(cloneMessage(mimeMessage));
-        log.info("[mail-mock] captured email: subject='{}' to={}", safeSubject(mimeMessage), safeRecipients(mimeMessage));
+        log.info(
+                "[mail-mock] captured email: subject='{}' to={}",
+                safeSubject(mimeMessage),
+                safeRecipients(mimeMessage)
+        );
     }
 
     @Override
@@ -96,7 +102,9 @@ public class MockJavaMailSender implements JavaMailSender {
         for (MimeMessagePreparator p : mimeMessagePreparators) send(p);
     }
 
-    /** Clear outbox between tests. */
+    /**
+     * Clear outbox between tests.
+     */
     public void clear() {
         outbox.clear();
     }
@@ -116,9 +124,11 @@ public class MockJavaMailSender implements JavaMailSender {
     @Override
     public void send(@NotNull SimpleMailMessage simpleMessage) throws MailException {
         simpleOutbox.add(new SimpleMailMessage(simpleMessage));
-        log.info("[mail-mock] captured simple email: subject='{}' to={}",
+        log.info(
+                "[mail-mock] captured simple email: subject='{}' to={}",
                 simpleMessage.getSubject(),
-                Arrays.toString(simpleMessage.getTo()));
+                Arrays.toString(simpleMessage.getTo())
+        );
     }
 
     @Override

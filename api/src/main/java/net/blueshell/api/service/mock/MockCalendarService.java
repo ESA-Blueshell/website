@@ -1,10 +1,12 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service.mock;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.blueshell.api.model.event.Event;
+import net.blueshell.api.service.CalendarService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 @Primary
+@Profile("test | dev")
 public class MockCalendarService extends CalendarService {
 
     private final AtomicLong seq = new AtomicLong(1_000_000L);

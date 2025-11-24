@@ -48,7 +48,7 @@
           <VvField
             v-model="periodForm.fullYearFee"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, hande: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
             label="Full Year Fee"
             name="fullYearFee"
             rules="required|minValue:0"
@@ -57,7 +57,7 @@
           <VvField
             v-model="periodForm.alumniFee"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, hande: HandleChange<number>) => handle(raw === '' ? '' : Number(raw))"
+            :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
             label="Alumni Fee"
             name="alumniFee"
             rules="required|minValue:0"

@@ -118,7 +118,8 @@ const formatPeriod = (period?: ContributionPeriod | null) => {
 
 const getContributionPeriods = async () => {
   const response = await findContributionPeriods()
-  contributionPeriods.value = response.data ?? []
+  contributionPeriods.value = (response.data ?? [])
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
   if (contributionPeriods.value.length > 0) {
     selectedPeriodId.value = contributionPeriods.value.at(-1)!.id
     selectedPeriodIdChanged(selectedPeriodId.value)

@@ -75,7 +75,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional
     open fun createAll(entities: MutableList<T>): MutableList<T> {
-        return entities.stream().map { this.create(it) }.toList()
+        return entities.map { this.create(it) }.toMutableList()
     }
 
 
@@ -107,7 +107,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional
     open fun updateAll(entities: MutableList<T>): MutableList<T> {
-        return entities.stream().map { this.update(it) }.toList()
+        return entities.map { this.update(it) }.toMutableList()
     }
 
     /* -----------------------------------------------------------------
@@ -140,7 +140,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional(readOnly = true)
     open fun findAll(pageable: Pageable): Page<T> {
-        return repository.findAll(pageable)
+        return repository.findAll(pageable).map { it!! }
     }
 
     /**
@@ -151,7 +151,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional(readOnly = true)
     open fun findAllById(ids: MutableList<Long>): MutableList<T> {
-        return repository.findAllById(ids)
+        return repository.findAllById(ids).filterNotNull().toMutableList()
     }
 
     /**
@@ -160,10 +160,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional(readOnly = true)
     fun findAll(spec: Specification<T>, pageable: Pageable): Page<T> {
-        if (repository !is JpaSpecificationExecutor<*>) {
-            throw UnsupportedOperationException("Repository does not support Specifications")
-        }
-        val result = (repository as JpaSpecificationExecutor<T>).findAll(spec, pageable)
+        val result = repository.findAll(spec, pageable)
         return result
     }
 

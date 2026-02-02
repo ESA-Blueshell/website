@@ -62,10 +62,12 @@ services:
       - ./storage:/home/storage
     ports:
       - "8080:8080"
+      - "5005:5005"
     networks:
       - global_network
     env_file:
       - ./env/.api.env
+      - ./env/.db.env
     environment:
       - TZ=Europe/Amsterdam
       - APP_URL=http://localhost:8080

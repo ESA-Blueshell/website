@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record SyncEventToCalendarEvent(Long eventId) {
-}
+@JvmRecord
+data class SyncEventToCalendarEvent(val eventId: Long?) 

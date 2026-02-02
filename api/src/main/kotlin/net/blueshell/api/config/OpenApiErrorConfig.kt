@@ -1,117 +1,125 @@
-package net.blueshell.api.config;
+package net.blueshell.api.config
 
-import io.swagger.v3.core.converter.ModelConverters;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.responses.ApiResponse;
-import io.swagger.v3.oas.models.responses.ApiResponses;
-import net.blueshell.api.dto.error.ApiErrorDTO;
-import net.blueshell.api.dto.error.FieldValidationErrorDTO;
-import org.springdoc.core.customizers.OpenApiCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.Map;
+import io.swagger.v3.core.converter.ModelConverters
+import io.swagger.v3.oas.models.Components
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.PathItem
+import io.swagger.v3.oas.models.media.Content
+import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.responses.ApiResponse
+import net.blueshell.api.dto.error.ApiErrorDTO
+import net.blueshell.api.dto.error.FieldValidationErrorDTO
+import org.springdoc.core.customizers.OpenApiCustomizer
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.MediaType
+import java.util.function.Consumer
 
 @Configuration
-public class OpenApiErrorConfig {
-
+class OpenApiErrorConfig {
     @Bean
-    public OpenApiCustomizer globalErrorResponsesCustomizer() {
-        return openApi -> {
-            ensureSchemas(openApi);
+    fun globalErrorResponsesCustomizer(): OpenApiCustomizer {
+        return OpenApiCustomizer { openApi: OpenAPI? ->
+            ensureSchemas(openApi!!)
+            val unauthorized = ApiResponse()
+                .description("Unauthorized")
+                .content(
+                    Content().addMediaType(
+                        MediaType.APPLICATION_JSON_VALUE,
+                        io.swagger.v3.oas.models.media.MediaType()
+                            .schema(refSchema("ApiError"))
+                            .example(unauthorizedExample())
+                    )
+                )
 
-            ApiResponse unauthorized = new ApiResponse()
-                    .description("Unauthorized")
-                    .content(new Content().addMediaType(
-                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                            new MediaType()
-                                    .schema(refSchema("ApiError"))
-                                    .example(unauthorizedExample())
-                    ));
+            val forbidden = ApiResponse()
+                .description("Forbidden (access denied)")
+                .content(
+                    Content().addMediaType(
+                        MediaType.APPLICATION_JSON_VALUE,
+                        io.swagger.v3.oas.models.media.MediaType()
+                            .schema(refSchema("ApiError"))
+                            .example(forbiddenExample())
+                    )
+                )
 
-            ApiResponse forbidden = new ApiResponse()
-                    .description("Forbidden (access denied)")
-                    .content(new Content().addMediaType(
-                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                            new MediaType()
-                                    .schema(refSchema("ApiError"))
-                                    .example(forbiddenExample())
-                    ));
+            val validationError = ApiResponse()
+                .description("Validation error")
+                .content(
+                    Content().addMediaType(
+                        MediaType.APPLICATION_JSON_VALUE,
+                        io.swagger.v3.oas.models.media.MediaType()
+                            .schema(refSchema("ApiError"))
+                            .example(validationExample())
+                    )
+                )
 
-            ApiResponse validationError = new ApiResponse()
-                    .description("Validation error")
-                    .content(new Content().addMediaType(
-                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                            new MediaType()
-                                    .schema(refSchema("ApiError"))
-                                    .example(validationExample())
-                    ));
+            val notFoundError = ApiResponse()
+                .description("Not Found")
+                .content(
+                    Content().addMediaType(
+                        MediaType.APPLICATION_JSON_VALUE,
+                        io.swagger.v3.oas.models.media.MediaType()
+                            .schema(refSchema("ApiError"))
+                            .example(notFoundExample())
+                    )
+                )
 
-            ApiResponse notFoundError = new ApiResponse()
-                    .description("Not Found")
-                    .content(new Content().addMediaType(
-                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                            new MediaType()
-                                    .schema(refSchema("ApiError"))
-                                    .example(notFoundExample())
-                    ));
-
-            ApiResponse serverError = new ApiResponse()
-                    .description("Server error")
-                    .content(new Content().addMediaType(
-                            org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                            new MediaType()
-                                    .schema(refSchema("ApiError"))
-                                    .example(serverErrorExample())
-                    ));
-
-            openApi.getPaths().values().forEach(pathItem ->
-                    pathItem.readOperations().forEach(operation -> {
-                        ApiResponses responses = operation.getResponses();
+            val serverError = ApiResponse()
+                .description("Server error")
+                .content(
+                    Content().addMediaType(
+                        MediaType.APPLICATION_JSON_VALUE,
+                        io.swagger.v3.oas.models.media.MediaType()
+                            .schema(refSchema("ApiError"))
+                            .example(serverErrorExample())
+                    )
+                )
+            openApi.paths.values.forEach(Consumer { pathItem: PathItem? ->
+                pathItem!!.readOperations().forEach(
+                    Consumer { operation: Operation? ->
+                        val responses = operation!!.responses
                         // Security failures from @PreAuthorize / Spring Security
                         if (!responses.containsKey("401")) {
-                            responses.addApiResponse("401", unauthorized);
+                            responses.addApiResponse("401", unauthorized)
                         }
                         if (!responses.containsKey("403")) {
-                            responses.addApiResponse("403", forbidden);
+                            responses.addApiResponse("403", forbidden)
                         }
                         // Your existing global errors
                         if (!responses.containsKey("400")) {
-                            responses.addApiResponse("400", validationError);
+                            responses.addApiResponse("400", validationError)
                         }
                         if (!responses.containsKey("404")) {
-                            responses.addApiResponse("404", notFoundError);
+                            responses.addApiResponse("404", notFoundError)
                         }
                         if (!responses.containsKey("500")) {
-                            responses.addApiResponse("500", serverError);
+                            responses.addApiResponse("500", serverError)
                         }
                     })
-            );
-        };
-    }
-
-    private void ensureSchemas(OpenAPI openApi) {
-        if (openApi.getComponents() == null) {
-            openApi.setComponents(new Components());
+            }
+            )
         }
-        Map<String, Schema> apiErrorSchemas = ModelConverters.getInstance().read(ApiErrorDTO.class);
-        Map<String, Schema> fieldErrorSchemas = ModelConverters.getInstance().read(FieldValidationErrorDTO.class);
-
-        openApi.getComponents().getSchemas().putAll(apiErrorSchemas);
-        openApi.getComponents().getSchemas().putAll(fieldErrorSchemas);
     }
 
-    private Schema<?> refSchema(String name) {
-        return new Schema<>().$ref("#/components/schemas/" + name);
+    private fun ensureSchemas(openApi: OpenAPI) {
+        if (openApi.components == null) {
+            openApi.components = Components()
+        }
+        val apiErrorSchemas = ModelConverters.getInstance().read(ApiErrorDTO::class.java)
+        val fieldErrorSchemas = ModelConverters.getInstance().read(FieldValidationErrorDTO::class.java)
+
+        openApi.components.schemas.putAll(apiErrorSchemas)
+        openApi.components.schemas.putAll(fieldErrorSchemas)
+    }
+
+    private fun refSchema(name: String?): Schema<*>? {
+        return Schema<Any?>().`$ref`("#/components/schemas/" + name)
     }
 
     // ───────────────────── Examples ─────────────────────
-
-    private Object unauthorizedExample() {
+    private fun unauthorizedExample(): Any {
         // Typical when not authenticated and hitting a @PreAuthorize-protected endpoint.
         return """
                 {
@@ -122,10 +130,11 @@ public class OpenApiErrorConfig {
                   "instance": "/api/users",
                   "traceId": "401401401401"
                 }
-                """;
+                
+                """.trimIndent()
     }
 
-    private Object forbiddenExample() {
+    private fun forbiddenExample(): Any {
         // Typical when authenticated but fails @PreAuthorize expression (AccessDeniedException).
         return """
                 {
@@ -136,10 +145,11 @@ public class OpenApiErrorConfig {
                   "instance": "/api/users",
                   "traceId": "403403403403"
                 }
-                """;
+                
+                """.trimIndent()
     }
 
-    private Object validationExample() {
+    private fun validationExample(): Any {
         return """
                 {
                   "type": "about:blank",
@@ -165,10 +175,11 @@ public class OpenApiErrorConfig {
                   ],
                   "traceId": "a8c0c4e5f1c24a7e"
                 }
-                """;
+                
+                """.trimIndent()
     }
 
-    private Object notFoundExample() {
+    private fun notFoundExample(): Any {
         return """
                 {
                   "type": "about:blank",
@@ -178,10 +189,11 @@ public class OpenApiErrorConfig {
                   "instance": "/api/users/42",
                   "traceId": "cdef1234abcd5678"
                 }
-                """;
+                
+                """.trimIndent()
     }
 
-    private Object serverErrorExample() {
+    private fun serverErrorExample(): Any {
         return """
                 {
                   "type": "about:blank",
@@ -191,6 +203,7 @@ public class OpenApiErrorConfig {
                   "instance": "/api/users",
                   "traceId": "ab12cd34ef56"
                 }
-                """;
+                
+                """.trimIndent()
     }
 }

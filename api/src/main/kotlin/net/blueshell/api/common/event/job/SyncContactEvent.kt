@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record SyncContactEvent(Long userId) {
-}
+@JvmRecord
+data class SyncContactEvent(val userId: Long?) 

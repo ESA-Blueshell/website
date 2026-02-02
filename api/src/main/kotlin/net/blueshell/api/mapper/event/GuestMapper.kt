@@ -1,14 +1,13 @@
-package net.blueshell.api.mapper.event;
+package net.blueshell.api.mapper.event
 
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.GuestDTO;
-import net.blueshell.api.model.event.Guest;
-import org.mapstruct.*;
-
-import static net.blueshell.api.common.util.Util.getRandomCapitalString;
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.common.util.Util
+import net.blueshell.api.dto.GuestDTO
+import net.blueshell.api.model.event.Guest
+import org.mapstruct.*
 
 @Mapper(componentModel = "spring")
-public abstract class GuestMapper extends BaseMapper<Guest, GuestDTO> {
+abstract class GuestMapper : BaseMapper<Guest?, GuestDTO?>() {
     @Mapping(target = "name")
     @Mapping(target = "discord")
     @Mapping(target = "email")
@@ -16,12 +15,12 @@ public abstract class GuestMapper extends BaseMapper<Guest, GuestDTO> {
     @Mapping(target = "accessToken", ignore = true)
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract void fromDTO(GuestDTO dto, @MappingTarget Guest guest);
+    abstract fun fromDTO(dto: GuestDTO?, @MappingTarget guest: Guest?)
 
     @AfterMapping
-    protected void afterFromDTO(GuestDTO dto, @MappingTarget Guest guest) {
+    protected fun afterFromDTO(dto: GuestDTO?, @MappingTarget guest: Guest) {
         if (guest.getAccessToken() == null) {
-            guest.setAccessToken(getRandomCapitalString(30));
+            guest.setAccessToken(Util.getRandomCapitalString(30))
         }
     }
 
@@ -32,5 +31,5 @@ public abstract class GuestMapper extends BaseMapper<Guest, GuestDTO> {
     @Mapping(target = "accessToken")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract GuestDTO toDTO(Guest guest);
+    abstract override fun toDTO(guest: Guest?): GuestDTO?
 }

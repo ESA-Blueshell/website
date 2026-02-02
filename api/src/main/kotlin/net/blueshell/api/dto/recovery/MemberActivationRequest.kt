@@ -1,31 +1,38 @@
-package net.blueshell.api.dto.recovery;
+package net.blueshell.api.dto.recovery
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.validation.user.UniqueUsername;
+import com.fasterxml.jackson.annotation.JsonProperty
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.validation.user.UniqueUsername
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Data
 @Schema(name = "MemberActivationRequest")
-public class MemberActivationRequest extends BaseDTO {
+class MemberActivationRequest : BaseDTO() {
     @NotBlank
-    private String token;
+    private val token: @NotBlank String? = null
 
     @NotBlank
     @UniqueUsername
-    private String username;
+    private val username: @NotBlank String? = null
 
     @JsonProperty
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
     @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-            message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
+        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
     )
-    private String password;
+    private val password: @Size(
+        min = 8,
+        max = 100,
+        message = "Password must be at least 8 characters"
+    ) @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
+        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
+    ) String? = null
 }

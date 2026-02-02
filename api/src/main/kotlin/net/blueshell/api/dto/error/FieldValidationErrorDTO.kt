@@ -1,25 +1,29 @@
-package net.blueshell.api.dto.error;
+package net.blueshell.api.dto.error
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema
 
 /**
  * One entry for each field/object error when validation fails.
  */
 @Schema(name = "FieldValidationError", description = "Details about a single field/object validation error.")
-public class FieldValidationErrorDTO {
-
+class FieldValidationErrorDTO {
+    @JvmField
     @Schema(description = "Object (target) name that failed validation.", example = "createUserRequest")
-    public String objectName;
+    var objectName: String? = null
 
+    @JvmField
     @Schema(description = "Field that failed validation (null for global errors).", example = "email")
-    public String field;
+    var field: String? = null
 
+    @JvmField
     @Schema(description = "Rejected value (may be omitted for security).", example = "not-an-email")
-    public Object rejectedValue;
+    var rejectedValue: Any? = null
 
+    @JvmField
     @Schema(description = "Human-readable validation message.", example = "must be a well-formed email address")
-    public String message;
+    var message: String? = null
 
+    @JvmField
     @Schema(description = "Validation code / constraint key.", example = "Email")
-    public String code;
+    var code: String? = null
 }

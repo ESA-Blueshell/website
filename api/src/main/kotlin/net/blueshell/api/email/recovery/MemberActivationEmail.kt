@@ -1,27 +1,21 @@
-package net.blueshell.api.email.recovery;
+package net.blueshell.api.email.recovery
 
-import net.blueshell.api.model.User;
+import net.blueshell.api.model.User
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
-public class MemberActivationEmail extends RecoveryEmail {
-
-    public MemberActivationEmail(User recipient, String token, String frontendUrl, String appUrl) {
-        super(recipient, token, frontendUrl, appUrl);
+class MemberActivationEmail(recipient: User?, token: String?, frontendUrl: String?, appUrl: String?) :
+    RecoveryEmail(recipient, token, frontendUrl, appUrl) {
+    override fun getSubject(): String {
+        return "Activate your Account"
     }
 
-    @Override
-    public String getSubject() {
-        return "Activate your Account";
-    }
+    override fun getMarkdownContent(): String {
+        val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
+        val activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token)
 
-    @Override
-    public String getMarkdownContent() {
-        String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
-        String activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token);
-
-        return String.format("""
+        return String.format(
+            """
                         Dear %s,
                         
                         A member of the board of Blueshell has created an account on the website for you. This was done
@@ -33,14 +27,14 @@ public class MemberActivationEmail extends RecoveryEmail {
                         
                         Kind regards,
                         Board of ESA Blueshell
-                        """,
-                recipient.getFullName(),
-                activationLink
-        );
+                        
+                        """.trimIndent(),
+            recipient.getFullName(),
+            activationLink
+        )
     }
 
-    @Override
-    public String getReplyTo() {
-        return "board@blueshell.utwente.nl";
+    override fun getReplyTo(): String {
+        return "board@blueshell.utwente.nl"
     }
 }

@@ -1,38 +1,36 @@
-package net.blueshell.api.permission;
+package net.blueshell.api.permission
 
-import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.model.event.Guest;
-import net.blueshell.api.service.GuestService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
+import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.model.event.Guest
+import net.blueshell.api.service.GuestService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.Authentication
+import org.springframework.stereotype.Component
 
 @Component
-public class GuestPermission extends BasePermissionEvaluator<Guest, GuestService> {
-    @Autowired
-    public GuestPermission(GuestService service) {
-        super(service);
-    }
-
-    @Override
-    public boolean hasPermission(Authentication authentication, Object targetDomainObject, String permission) {
+class GuestPermission @Autowired constructor(service: GuestService?) :
+    BasePermissionEvaluator<Guest?, GuestService?>(service) {
+    override fun hasPermission(
+        authentication: Authentication?,
+        targetDomainObject: Any?,
+        permission: String?
+    ): Boolean {
         if (authentication == null || targetDomainObject == null || permission == null) {
-            return false;
+            return false
         }
 
-        Guest guest = (Guest) targetDomainObject;
-        return switch (permission) {
-            case "read", "write" -> targetDomainObject != null;
-            default -> false;
-        };
+        targetDomainObject as Guest
+        return when (permission) {
+            "read", "write" -> targetDomainObject != null
+            else -> false
+        }
     }
 
-    @Override
-    public boolean hasPermissionId(Authentication authentication, Object accessToken, String permission) {
+    override fun hasPermissionId(authentication: Authentication?, accessToken: Any?, permission: String?): Boolean {
         if (authentication == null || accessToken == null || permission == null) {
-            return false;
+            return false
         }
-        var guest = service.findByAccessToken((String) accessToken);
-        return hasPermission(authentication, guest, permission);
+        val guest = service!!.findByAccessToken(accessToken as String)
+        return hasPermission(authentication, guest, permission)
     }
 }

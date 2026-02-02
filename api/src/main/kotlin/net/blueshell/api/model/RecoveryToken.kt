@@ -1,22 +1,27 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model
 
-import jakarta.persistence.*;
-import lombok.*;
-import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.common.enums.ResetType;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
-
-import java.time.Instant;
+import jakarta.persistence.*
+import lombok.Data
+import lombok.EqualsAndHashCode
+import lombok.NoArgsConstructor
+import lombok.ToString
+import net.blueshell.api.base.BaseModel
+import net.blueshell.api.common.enums.ResetType
+import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.SQLRestriction
+import java.time.Instant
 
 @Entity
 @Table(
-        name = "recovery_tokens",
-        uniqueConstraints = @UniqueConstraint(name = "uk_recovery_selector_deleted_at", columnNames = {"selector", "deleted_at"}),
-        indexes = {
-                @Index(name = "idx_recovery_tokens_user_id_type_deleted_at", columnList = "user_id,type,deleted_at"),
-                @Index(name = "idx_recovery_tokens_expires", columnList = "expires_at")
-        }
+    name = "recovery_tokens",
+    uniqueConstraints = [UniqueConstraint(
+        name = "uk_recovery_selector_deleted_at",
+        columnNames = ["selector", "deleted_at"]
+    )],
+    indexes = [Index(
+        name = "idx_recovery_tokens_user_id_type_deleted_at",
+        columnList = "user_id,type,deleted_at"
+    ), Index(name = "idx_recovery_tokens_expires", columnList = "expires_at")]
 )
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
@@ -24,37 +29,35 @@ import java.time.Instant;
 @SQLDelete(sql = "UPDATE recovery_tokens SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class RecoveryToken extends BaseModel {
+class RecoveryToken : BaseModel() {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private val user: User? = null
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
     @ToString.Include
-    private ResetType type;
+    private var type: ResetType? = null
 
     @Column(name = "selector", nullable = false, length = 64)
     @ToString.Include
-    private String selector;
+    private var selector: String? = null
 
     @Column(name = "verifier_hash", nullable = false, length = 255)
     @ToString.Include
-    private String verifierHash;
+    private var verifierHash: String? = null
 
     @Column(name = "expires_at", nullable = false)
     @ToString.Include
-    private Instant expiresAt;
+    private var expiresAt: Instant? = null
 
     @Column(name = "consumed_at")
     @ToString.Include
-    private Instant consumedAt;
+    private var consumedAt: Instant? = null
 
-    public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt);
-    }
+    val isExpired: Boolean
+        get() = Instant.now().isAfter(expiresAt)
 
-    public boolean isConsumed() {
-        return consumedAt != null;
-    }
+    val isConsumed: Boolean
+        get() = consumedAt != null
 }

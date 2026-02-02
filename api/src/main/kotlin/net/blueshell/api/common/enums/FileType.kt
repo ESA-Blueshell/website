@@ -1,20 +1,20 @@
-package net.blueshell.api.common.enums;
+package net.blueshell.api.common.enums
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import io.swagger.v3.oas.annotations.media.Schema
+import lombok.Getter
 
 @Schema(enumAsRef = true)
 @Getter
-public enum FileType {
+enum class FileType(directory: String) {
     DOCUMENT("documents"),
     PROFILE_PICTURE("profile-pictures"),
     EVENT_BANNER("event-banners"),
     EVENT_PICTURE("event-pictures"),
     SPONSOR_PICTURE("sponsor-pictures");
 
-    private final String directory;
+    private val directory: String?
 
-    FileType(String directory) {
-        this.directory = directory;
+    init {
+        this.directory = directory
     }
 }

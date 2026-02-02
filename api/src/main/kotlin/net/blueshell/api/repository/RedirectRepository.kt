@@ -1,29 +1,22 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import jakarta.validation.constraints.NotNull;
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.Redirect;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-
-import java.time.OffsetDateTime;
-import java.util.List;
+import jakarta.validation.constraints.NotNull
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.Redirect
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Query
+import org.springframework.stereotype.Repository
+import java.time.OffsetDateTime
 
 @Repository
-public interface RedirectRepository extends BaseRepository<Redirect> {
-
-    @org.jetbrains.annotations.NotNull
+interface RedirectRepository : BaseRepository<Redirect?> {
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
-    @Override
-    Page<Redirect> findAll(@org.jetbrains.annotations.NotNull @NotNull Pageable pageable);
+    override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Redirect?>
 
-    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
-    @Override
-    List<Redirect> findAll();
+    override fun findAll(): MutableList<Redirect?>
 
     @Query("SELECT e FROM Redirect e WHERE e.createdAt >= :from AND e.createdAt <= :to ORDER BY e.createdAt DESC")
-    List<Redirect> findCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+    fun findCreatedAtBetween(from: OffsetDateTime?, to: OffsetDateTime?): MutableList<Redirect?>?
 }

@@ -1,13 +1,11 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.event.Guest;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.event.Guest
+import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
-public interface GuestRepository extends BaseRepository<Guest> {
-
-    Optional<Guest> findByAccessToken(String accessToken);
+interface GuestRepository : BaseRepository<Guest?> {
+    fun findByAccessToken(accessToken: String?): Optional<Guest?>?
 }

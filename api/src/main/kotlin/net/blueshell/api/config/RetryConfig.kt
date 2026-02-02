@@ -1,10 +1,9 @@
-package net.blueshell.api.config;
+package net.blueshell.api.config
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.context.annotation.Configuration
+import org.springframework.retry.annotation.EnableRetry
 
 @Configuration
 @EnableRetry
-public class RetryConfig {
-}
+class RetryConfig 
 

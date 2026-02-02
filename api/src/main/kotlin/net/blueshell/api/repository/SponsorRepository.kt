@@ -1,13 +1,12 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.File;
-import net.blueshell.api.model.Sponsor;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.File
+import net.blueshell.api.model.Sponsor
+import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
-public interface SponsorRepository extends BaseRepository<Sponsor> {
-    Optional<Sponsor> findByPicture(File picture);
+interface SponsorRepository : BaseRepository<Sponsor?> {
+    fun findByPicture(picture: File?): Optional<Sponsor?>?
 }

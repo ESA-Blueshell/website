@@ -1,33 +1,26 @@
-package net.blueshell.api.email.recovery;
+package net.blueshell.api.email.recovery
 
-import net.blueshell.api.model.User;
+import net.blueshell.api.model.User
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
-public class UserActivationEmail extends RecoveryEmail {
-
-    public UserActivationEmail(User recipient, String token, String frontendUrl, String appUrl) {
-        super(recipient, token, frontendUrl, appUrl);
+class UserActivationEmail(recipient: User?, token: String?, frontendUrl: String?, appUrl: String?) :
+    RecoveryEmail(recipient, token, frontendUrl, appUrl) {
+    override fun getSubject(): String {
+        return "Activate your Account"
     }
 
-    @Override
-    public String getSubject() {
-        return "Activate your Account";
-    }
+    override fun getMarkdownContent(): String {
+        val username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8)
+        val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
+        val redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8)
 
-    @Override
-    public String getMarkdownContent() {
-        String username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8);
-        String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
-        String redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8);
-
-        String activationLink = String.format(
-                "%s/account/activate/user?username=%s&token=%s&redirect=%s",
-                frontendUrl, username, token, redirectEnc
-        );
+        val activationLink = String.format(
+            "%s/account/activate/user?username=%s&token=%s&redirect=%s",
+            frontendUrl, username, token, redirectEnc
+        )
         return String.format(
-                """
+            """
                         Dear %s,
                         
                         Thank you for signing up to the Blueshell website!
@@ -40,10 +33,11 @@ public class UserActivationEmail extends RecoveryEmail {
                         
                         Kind regards, <br/>
                         Blueshell Esports
-                        """,
-                recipient.getFullName(),
-                activationLink,
-                appUrl
-        );
+                        
+                        """.trimIndent(),
+            recipient.getFullName(),
+            activationLink,
+            appUrl
+        )
     }
 }

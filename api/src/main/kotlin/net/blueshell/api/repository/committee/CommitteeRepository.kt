@@ -1,12 +1,10 @@
-package net.blueshell.api.repository.committee;
+package net.blueshell.api.repository.committee
 
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.committee.Committee;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.committee.Committee
+import org.springframework.stereotype.Repository
 
 @Repository
-public interface CommitteeRepository extends BaseRepository<Committee> {
-    List<Committee> findALlByMembersUserIdEquals(Long userId);
+interface CommitteeRepository : BaseRepository<Committee?> {
+    fun findALlByMembersUserIdEquals(userId: Long?): MutableList<Committee?>?
 }

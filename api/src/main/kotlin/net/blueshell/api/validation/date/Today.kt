@@ -1,21 +1,15 @@
-package net.blueshell.api.validation.date;
+package net.blueshell.api.validation.date
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target({ElementType.FIELD})
-@Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = TodayValidator.class)
-public @interface Today {
-    String message() default "Date must be today";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-}
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+@Constraint(validatedBy = [TodayValidator::class])
+annotation class Today(
+    val message: String = "Date must be today",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = []
+)
 

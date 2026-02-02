@@ -1,32 +1,22 @@
-package net.blueshell.api.email;
+package net.blueshell.api.email
 
-import net.blueshell.api.base.BaseEmail;
-import net.blueshell.api.model.User;
-import net.blueshell.api.model.contribution.ContributionPeriod;
+import net.blueshell.api.base.BaseEmail
+import net.blueshell.api.model.User
+import net.blueshell.api.model.contribution.ContributionPeriod
 
-public class ContributionReminderEmail extends BaseEmail {
-
-    private final ContributionPeriod contributionPeriod;
-
-    public ContributionReminderEmail(
-            User recipient,
-            String frontendUrl,
-            String appUrl,
-            ContributionPeriod contributionPeriod
-    ) {
-        super(recipient, frontendUrl, appUrl);
-        this.contributionPeriod = contributionPeriod;
+class ContributionReminderEmail(
+    recipient: User?,
+    frontendUrl: String?,
+    appUrl: String?,
+    private val contributionPeriod: ContributionPeriod
+) : BaseEmail(recipient, frontendUrl, appUrl) {
+    override fun getSubject(): String {
+        return "Contribution Payment Reminder - Blueshell Esports"
     }
 
-    @Override
-    public String getSubject() {
-        return "Contribution Payment Reminder - Blueshell Esports";
-    }
-
-    @Override
-    public String getMarkdownContent() {
+    override fun getMarkdownContent(): String {
         return String.format(
-                """
+            """
                         Dear %s,
                         
                         This is a friendly reminder that your contribution payment for the period %s to %s is due.
@@ -42,24 +32,23 @@ public class ContributionReminderEmail extends BaseEmail {
                         
                         Kind regards,
                         Treasurer of Blueshell Esports
-                        """,
-                recipient.getFullName(),
-                contributionPeriod.getStartDate(),
-                contributionPeriod.getEndDate(),
-                contributionPeriod.getHalfYearFee(),
-                contributionPeriod.getFullYearFee(),
-                contributionPeriod.getAlumniFee(),
-                appUrl
-        );
+                        
+                        """.trimIndent(),
+            recipient.getFullName(),
+            contributionPeriod.getStartDate(),
+            contributionPeriod.getEndDate(),
+            contributionPeriod.getHalfYearFee(),
+            contributionPeriod.getFullYearFee(),
+            contributionPeriod.getAlumniFee(),
+            appUrl
+        )
     }
 
-    @Override
-    public String getSenderName() {
-        return "Treasurer of Blueshell";
+    override fun getSenderName(): String {
+        return "Treasurer of Blueshell"
     }
 
-    @Override
-    public String getReplyTo() {
-        return "board@blueshell.utwente.nl";
+    override fun getReplyTo(): String {
+        return "board@blueshell.utwente.nl"
     }
 }

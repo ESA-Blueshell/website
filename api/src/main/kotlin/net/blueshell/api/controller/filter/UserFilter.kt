@@ -1,8 +1,8 @@
-package net.blueshell.api.controller.filter;
+package net.blueshell.api.controller.filter
 
-import lombok.Data;
+import lombok.Data
 
 @Data
-public class UserFilter {
-    private Boolean isMember;
+class UserFilter {
+    private val isMember: Boolean? = null
 }

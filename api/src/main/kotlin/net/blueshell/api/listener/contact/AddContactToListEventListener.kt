@@ -1,24 +1,23 @@
-package net.blueshell.api.listener.contact;
+package net.blueshell.api.listener.contact
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.common.event.job.AddContactToListEvent;
-import net.blueshell.api.job.contact.AddContactToListJob;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.common.event.job.AddContactToListEvent
+import net.blueshell.api.job.contact.AddContactToListJob
+import org.springframework.context.event.EventListener
+import org.springframework.stereotype.Component
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AddContactToListEventListener {
-
-    private final AddContactToListJob job;
+class AddContactToListEventListener {
+    private val job: AddContactToListJob? = null
 
     @EventListener
-    public void onAdd(AddContactToListEvent evt) {
-        Long userId = evt.userId();
-        Long periodId = evt.periodId();
-        if (userId == null || periodId == null) return;
-        job.addToList(userId, periodId);
+    fun onAdd(evt: AddContactToListEvent) {
+        val userId = evt.userId
+        val periodId = evt.periodId
+        if (userId == null || periodId == null) return
+        job!!.addToList(userId, periodId)
     }
 }

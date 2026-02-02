@@ -1,30 +1,33 @@
-package net.blueshell.api.config;
+package net.blueshell.api.config
 
-import io.swagger.v3.core.converter.ModelConverters;
-import net.blueshell.api.dto.PersonalInfoDTO;
-import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
-import org.springdoc.core.customizers.OpenApiCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.Set;
+import io.swagger.v3.core.converter.ModelConverters
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.Schema
+import net.blueshell.api.dto.PersonalInfoDTO
+import net.blueshell.api.dto.committee.SimpleCommitteeDTO
+import org.springdoc.core.customizers.OpenApiCustomizer
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import java.util.Set
 
 @Configuration
-public class OpenApiSchemasCustomizer {
-
-    private static final Set<Class<?>> EXPLICIT_CLASSES = Set.of(
-            PersonalInfoDTO.class,
-            SimpleCommitteeDTO.class
-    );
-
-
+class OpenApiSchemasCustomizer {
     @Bean
-    public OpenApiCustomizer registerAdditionalSchemas() {
-        return openApi -> {
-            for (var clazz : EXPLICIT_CLASSES) {
-                var read = ModelConverters.getInstance().readAll(clazz);
-                read.forEach((name, schema) -> openApi.getComponents().addSchemas(name, schema));
+    fun registerAdditionalSchemas(): OpenApiCustomizer {
+        return OpenApiCustomizer { openApi: OpenAPI? ->
+            for (clazz in EXPLICIT_CLASSES) {
+                val read = ModelConverters.getInstance().readAll(clazz)
+                read.forEach { (name: String?, schema: Schema<*>?) ->
+                    openApi!!.components.addSchemas(name, schema)
+                }
             }
-        };
+        }
+    }
+
+    companion object {
+        private val EXPLICIT_CLASSES: MutableSet<Class<*>?> = Set.of<Class<*>?>(
+            PersonalInfoDTO::class.java,
+            SimpleCommitteeDTO::class.java
+        )
     }
 }

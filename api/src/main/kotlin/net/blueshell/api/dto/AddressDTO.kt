@@ -1,34 +1,31 @@
-package net.blueshell.api.dto;
+package net.blueshell.api.dto
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.validation.address.ValidCountryCode;
-
-import java.time.Instant;
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotEmpty
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.validation.address.ValidCountryCode
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Data
 @Schema(name = "Address")
-public class AddressDTO extends BaseDTO {
-    private Long id;
+class AddressDTO : BaseDTO() {
+    private val id: Long? = null
 
     @NotEmpty
     @ValidCountryCode
-    private String country;
+    private val country: @NotEmpty String? = null
 
     @NotEmpty
-    private String city;
+    private val city: @NotEmpty String? = null
 
     @NotEmpty
-    private String street;
+    private val street: @NotEmpty String? = null
 
     @NotEmpty
-    private String houseNumber;
+    private val houseNumber: @NotEmpty String? = null
 
     @NotEmpty
-    private String zipCode;
+    private val zipCode: @NotEmpty String? = null
 }

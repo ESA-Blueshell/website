@@ -1,33 +1,28 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import org.springframework.core.GenericTypeResolver;
-import org.springframework.security.core.Authentication;
+import org.springframework.core.GenericTypeResolver
+import org.springframework.security.core.Authentication
 
-public abstract class BasePermissionEvaluator<T extends BaseModel, S extends BaseModelService<T, ?>> extends IdentityProvider {
+abstract class BasePermissionEvaluator<T : BaseModel?, S : BaseModelService<T?, *>?>(protected val service: S?) :
+    IdentityProvider() {
+    val domainType: Class<T?>
 
-    public final Class<T> domainType;
-    protected final S service;
-
-    public BasePermissionEvaluator(S service) {
-        this.service = service;
-        this.domainType = determineDomainType();
+    init {
+        this.domainType = determineDomainType()
     }
 
-    private Class<T> determineDomainType() {
-        var resolvedTypes = GenericTypeResolver.resolveTypeArguments(getClass(), BasePermissionEvaluator.class);
-        if (resolvedTypes == null || resolvedTypes.length < 1) {
-            throw new IllegalStateException("Unable to determine domain type for " + getClass().getName());
-        }
-        @SuppressWarnings("unchecked")
-        var castedType = (Class<T>) resolvedTypes[0];
-        return castedType;
+    private fun determineDomainType(): Class<T?> {
+        val resolvedTypes = GenericTypeResolver.resolveTypeArguments(javaClass, BasePermissionEvaluator::class.java)
+        check(!(resolvedTypes == null || resolvedTypes.size < 1)) { "Unable to determine domain type for " + javaClass.getName() }
+        val castedType = resolvedTypes[0] as Class<T?>
+        return castedType
     }
 
-    public boolean supports(Class<?> domainClass) {
-        return domainType.isAssignableFrom(domainClass);
+    fun supports(domainClass: Class<*>): Boolean {
+        return domainType.isAssignableFrom(domainClass)
     }
 
-    public abstract boolean hasPermission(Authentication authentication, Object targetDomainObject, String string);
+    abstract fun hasPermission(authentication: Authentication?, targetDomainObject: Any?, string: String?): Boolean
 
-    public abstract boolean hasPermissionId(Authentication authentication, Object targetId, String string);
+    abstract fun hasPermissionId(authentication: Authentication?, targetId: Any?, string: String?): Boolean
 }

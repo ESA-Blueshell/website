@@ -1,9 +1,9 @@
-package net.blueshell.api.common.enums;
+package net.blueshell.api.common.enums
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(enumAsRef = true)
-public enum MemberType {
+enum class MemberType {
     ALUMNI,
     HONORARY,
     REGULAR,

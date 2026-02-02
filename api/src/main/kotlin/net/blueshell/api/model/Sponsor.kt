@@ -1,44 +1,46 @@
-package net.blueshell.api.model;
+package net.blueshell.api.model
 
-import jakarta.persistence.*;
-import lombok.*;
-import net.blueshell.api.base.BaseModel;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
+import jakarta.persistence.*
+import lombok.Data
+import lombok.EqualsAndHashCode
+import lombok.NoArgsConstructor
+import lombok.ToString
+import net.blueshell.api.base.BaseModel
+import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.SQLRestriction
 
 @Entity
 @Table(
-        name = "sponsors",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_sponsors_name_deleted_at", columnNames = {"name", "deleted_at"}),
-                @UniqueConstraint(name = "uk_sponsors_logo_deleted_at", columnNames = {"logo_id", "deleted_at"})
-        },
-        indexes = {
-                @Index(name = "idx_sponsors_deleted_at", columnList = "deleted_at"),
-                @Index(name = "idx_sponsors_logo_id", columnList = "logo_id")
-        }
+    name = "sponsors",
+    uniqueConstraints = [UniqueConstraint(
+        name = "uk_sponsors_name_deleted_at",
+        columnNames = ["name", "deleted_at"]
+    ), UniqueConstraint(name = "uk_sponsors_logo_deleted_at", columnNames = ["logo_id", "deleted_at"])],
+    indexes = [Index(name = "idx_sponsors_deleted_at", columnList = "deleted_at"), Index(
+        name = "idx_sponsors_logo_id",
+        columnList = "logo_id"
+    )]
 )
-
 @SQLDelete(sql = "UPDATE sponsors SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class Sponsor extends BaseModel {
+class Sponsor : BaseModel() {
     @Column(nullable = false)
     @ToString.Include
-    private String name;
+    private var name: String? = null
 
     @Column(nullable = false, length = 4095)
     @ToString.Include
-    private String description;
+    private var description: String? = null
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn(name = "logo_id", nullable = false, insertable = false, updatable = false)
-    private File picture;
+    private val picture: File? = null
 
     @Column(name = "logo_id")
     @ToString.Include
-    private Long pictureId;
+    private var pictureId: Long? = null
 }

@@ -1,29 +1,26 @@
-package net.blueshell.api.service.event;
+package net.blueshell.api.service.event
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.controller.filter.EventFilter;
-import net.blueshell.api.model.event.Event;
-import net.blueshell.api.repository.event.EventRepository;
-import net.blueshell.api.repository.spec.EventSpecifications;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.controller.filter.EventFilter
+import net.blueshell.api.model.event.Event
+import net.blueshell.api.repository.event.EventRepository
+import net.blueshell.api.repository.spec.EventSpecifications
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.stereotype.Service
 
 @Service
 @Slf4j
-public class EventService extends BaseModelService<Event, EventRepository> {
-
-    @Autowired
-    public EventService(EventRepository repository) {
-        super(repository);
-    }
-
-    public Page<Event> findByFilter(Pageable pageable, EventFilter filter) {
-        if (filter == null) filter = new EventFilter();
-        if (pageable == null) pageable = Pageable.unpaged();
-        var spec = EventSpecifications.fromFilter(filter, getPrincipal());
-        return repository.findAll(spec, pageable);
+class EventService @Autowired constructor(repository: EventRepository) :
+    BaseModelService<Event?, EventRepository?>(repository) {
+    fun findByFilter(pageable: Pageable?, filter: EventFilter?): Page<Event?> {
+        var pageable = pageable
+        var filter = filter
+        if (filter == null) filter = EventFilter()
+        if (pageable == null) pageable = Pageable.unpaged()
+        val spec = EventSpecifications.fromFilter(filter, getPrincipal())
+        return repository!!.findAll(spec, pageable)
     }
 }

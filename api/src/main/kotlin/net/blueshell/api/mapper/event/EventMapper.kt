@@ -1,16 +1,16 @@
-package net.blueshell.api.mapper.event;
+package net.blueshell.api.mapper.event
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.event.EventDTO;
-import net.blueshell.api.mapper.survey.SurveyMapper;
-import net.blueshell.api.model.event.Event;
-import org.mapstruct.*;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.dto.event.EventDTO
+import net.blueshell.api.mapper.survey.SurveyMapper
+import net.blueshell.api.model.event.Event
+import org.mapstruct.*
 
 @Slf4j
-@Mapper(componentModel = "spring", uses = {EventBannerMapper.class, SurveyMapper.class})
-public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
+@Mapper(componentModel = "spring", uses = [EventBannerMapper::class, SurveyMapper::class])
+abstract class EventMapper : BaseMapper<Event?, EventDTO?>() {
     @Mapping(target = "id")
     @Mapping(target = "committeeId")
     @Mapping(target = "title")
@@ -27,17 +27,17 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "signUpCount")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract Event fromDTO(EventDTO dto, @MappingTarget Event event);
+    abstract fun fromDTO(dto: EventDTO?, @MappingTarget event: Event?): Event?
 
     @AfterMapping
-    protected void afterFromDTO(EventDTO dto, @MappingTarget Event event) {
+    protected fun afterFromDTO(dto: EventDTO, @MappingTarget event: Event) {
         if (event.getBanner() != null) {
-            event.getBanner().setEvent(event);
+            event.getBanner().setEvent(event)
         }
         if (hasAuthority(Role.BOARD)) {
-            event.setApproved(dto.isApproved());
+            event.setApproved(dto.isApproved())
         } else {
-            event.setApproved(false);
+            event.setApproved(false)
         }
     }
 
@@ -58,5 +58,5 @@ public abstract class EventMapper extends BaseMapper<Event, EventDTO> {
     @Mapping(target = "signUpCount")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract EventDTO toDTO(Event event);
+    abstract override fun toDTO(event: Event?): EventDTO?
 }

@@ -1,25 +1,18 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import jakarta.validation.constraints.NotNull;
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.Blog;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import jakarta.validation.constraints.NotNull
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.Blog
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Query
+import org.springframework.stereotype.Repository
 
 @Repository
-public interface BlogRepository extends BaseRepository<Blog> {
-
-    @org.jetbrains.annotations.NotNull
+interface BlogRepository : BaseRepository<Blog?> {
     @Query("SELECT n FROM Blog n ORDER BY n.publishedAt DESC")
-    @Override
-    Page<Blog> findAll(@org.jetbrains.annotations.NotNull @NotNull Pageable pageable);
+    override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Blog?>
 
-    @org.jetbrains.annotations.NotNull
     @Query("SELECT n FROM Blog n ORDER BY n.publishedAt DESC")
-    @Override
-    List<Blog> findAll();
+    override fun findAll(): MutableList<Blog?>
 }

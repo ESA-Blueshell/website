@@ -1,24 +1,24 @@
-package net.blueshell.api.mapper.survey;
+package net.blueshell.api.mapper.survey
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.survey.AnswerDTO;
-import net.blueshell.api.model.survey.Answer;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.dto.survey.AnswerDTO
+import net.blueshell.api.model.survey.Answer
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.MappingTarget
 
 @Slf4j
 @Mapper(componentModel = "spring")
-public abstract class AnswerMapper extends BaseMapper<Answer, AnswerDTO> {
+abstract class AnswerMapper : BaseMapper<Answer?, AnswerDTO?>() {
     @Mapping(target = "id")
     @Mapping(target = "questionId")
     @Mapping(target = "optionSelections")
     @Mapping(target = "textResponse")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract Answer fromDTO(AnswerDTO dto, @MappingTarget Answer answer);
+    abstract fun fromDTO(dto: AnswerDTO?, @MappingTarget answer: Answer?): Answer?
 
     @Mapping(target = "id")
     @Mapping(target = "questionId")
@@ -26,5 +26,5 @@ public abstract class AnswerMapper extends BaseMapper<Answer, AnswerDTO> {
     @Mapping(target = "textResponse")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract AnswerDTO toDTO(Answer answer);
+    abstract override fun toDTO(answer: Answer?): AnswerDTO?
 }

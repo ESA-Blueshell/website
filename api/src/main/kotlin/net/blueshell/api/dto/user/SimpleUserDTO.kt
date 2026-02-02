@@ -1,54 +1,60 @@
-package net.blueshell.api.dto.user;
+package net.blueshell.api.dto.user
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.dto.PersonalInfoDTO;
-import net.blueshell.api.validation.group.Administration;
-import net.blueshell.api.validation.group.Creation;
-import net.blueshell.api.validation.group.Update;
-import net.blueshell.api.validation.user.UniqueUser;
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.dto.PersonalInfoDTO
+import net.blueshell.api.validation.group.Administration
+import net.blueshell.api.validation.group.Creation
+import net.blueshell.api.validation.group.Update
+import net.blueshell.api.validation.user.UniqueUser
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "SimpleUser")
-@UniqueUser(groups = {Update.class, Creation.class, Administration.class})
-public class SimpleUserDTO extends PersonalInfoDTO {
+@UniqueUser(groups = [Update::class, Creation::class, Administration::class])
+open class SimpleUserDTO : PersonalInfoDTO() {
+    private val id: Long? = null
 
-    private Long id;
-
-    private String fullName;
-
-    @NotBlank
-    private String initials;
+    private val fullName: String? = null
 
     @NotBlank
-    private String firstName;
-
-    private String prefix;
+    private val initials: @NotBlank String? = null
 
     @NotBlank
-    private String lastName;
+    private val firstName: @NotBlank String? = null
+
+    private val prefix: String? = null
 
     @NotBlank
-    private String username;
+    private val lastName: @NotBlank String? = null
+
+    @NotBlank
+    private val username: @NotBlank String? = null
 
     @NotNull
-    private boolean newsletter;
+    private val newsletter: @NotNull Boolean = false
 
-    @NotBlank(groups = {Creation.class})
-    @Size(min = 8, max = 100, groups = {Creation.class})
+    @NotBlank(groups = [Creation::class])
+    @Size(min = 8, max = 100, groups = [Creation::class])
     @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-            message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
-            groups = {Creation.class}
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
+        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
+        groups = [Creation::class]
     )
-    private String password;
+    private val password: @NotBlank(groups = [Creation::class]) @Size(
+        min = 8,
+        max = 100,
+        groups = [Creation::class]
+    ) @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
+        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
+        groups = [Creation::class]
+    ) String? = null
 
-    private Long addressId;
+    private val addressId: Long? = null
 }

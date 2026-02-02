@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record AddContactToListEvent(Long userId, Long periodId) {
-}
+@JvmRecord
+data class AddContactToListEvent(val userId: Long?, val periodId: Long?) 

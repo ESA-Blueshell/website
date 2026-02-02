@@ -1,26 +1,18 @@
-package net.blueshell.api.validation.user;
+package net.blueshell.api.validation.user
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
 /**
  * Custom annotation to ensure the uniqueness of the username.
  */
-@Documented
-@Constraint(validatedBy = UniqueUsernameValidator.class)
-@Target({FIELD})
-@Retention(RUNTIME)
-public @interface UniqueUsername {
-    String message() default "Username is already taken.";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-}
+@MustBeDocumented
+@Constraint(validatedBy = [UniqueUsernameValidator::class])
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class UniqueUsername(
+    val message: String = "Username is already taken.",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = []
+)

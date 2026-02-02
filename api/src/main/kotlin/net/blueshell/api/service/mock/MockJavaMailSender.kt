@@ -1,27 +1,24 @@
-package net.blueshell.api.service.mock;
+package net.blueshell.api.service.mock
 
-import jakarta.mail.Session;
-import jakarta.mail.internet.MimeMessage;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
-import org.springframework.mail.MailException;
-import org.springframework.mail.MailPreparationException;
-import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessagePreparator;
-import org.springframework.stereotype.Component;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.concurrent.CopyOnWriteArrayList;
+import jakarta.mail.Address
+import jakarta.mail.Session
+import jakarta.mail.internet.MimeMessage
+import lombok.Getter
+import lombok.extern.slf4j.Slf4j
+import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
+import org.springframework.mail.MailException
+import org.springframework.mail.MailPreparationException
+import org.springframework.mail.MailSendException
+import org.springframework.mail.SimpleMailMessage
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessagePreparator
+import org.springframework.stereotype.Component
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Test double for JavaMailSender capturing outbox for assertions.
@@ -30,111 +27,118 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component
 @Primary
 @Profile("test | dev")
-public class MockJavaMailSender implements JavaMailSender {
-
-    private final Session session = Session.getInstance(new Properties());
-
-    @Getter
-    private final List<MimeMessage> outbox = new CopyOnWriteArrayList<>();
+class MockJavaMailSender : JavaMailSender {
+    private val session: Session = Session.getInstance(Properties())
 
     @Getter
-    private final List<SimpleMailMessage> simpleOutbox = new CopyOnWriteArrayList<>();
+    private val outbox: MutableList<MimeMessage?> = CopyOnWriteArrayList<MimeMessage?>()
 
-    private static String safeSubject(MimeMessage m) {
+    @Getter
+    private val simpleOutbox: MutableList<SimpleMailMessage?> = CopyOnWriteArrayList<SimpleMailMessage?>()
+
+    override fun createMimeMessage(): MimeMessage {
+        return MimeMessage(session)
+    }
+
+    @Throws(MailException::class)
+    override fun createMimeMessage(contentStream: InputStream): MimeMessage {
         try {
-            return m.getSubject();
-        } catch (Exception ignored) {
-            return "<n/a>";
+            return MimeMessage(session, contentStream)
+        } catch (e: Exception) {
+            throw MailSendException("Failed to create MimeMessage from stream", e)
         }
     }
 
-    private static List<String> safeRecipients(MimeMessage m) {
+    @Throws(MailException::class)
+    override fun send(mimeMessage: MimeMessage) {
+        outbox.add(cloneMessage(mimeMessage))
+        MockJavaMailSender.log.info(
+            "[mail-mock] captured email: subject='{}' to={}",
+            safeSubject(mimeMessage),
+            safeRecipients(mimeMessage)
+        )
+    }
+
+    @Throws(MailException::class)
+    override fun send(vararg mimeMessages: MimeMessage) {
+        for (m in mimeMessages) send(m)
+    }
+
+    @Throws(MailException::class)
+    override fun send(mimeMessagePreparator: MimeMessagePreparator) {
+        val m = createMimeMessage()
         try {
-            return Arrays.stream(Objects.requireNonNullElse(m.getAllRecipients(), new jakarta.mail.Address[0]))
-                    .map(Object::toString).toList();
-        } catch (Exception ignored) {
-            return List.of();
+            mimeMessagePreparator.prepare(m)
+        } catch (e: Exception) {
+            throw MailPreparationException(e)
         }
+        send(m)
     }
 
-    @Override
-    public @NotNull MimeMessage createMimeMessage() {
-        return new MimeMessage(session);
-    }
-
-    @Override
-    public @NotNull MimeMessage createMimeMessage(java.io.@NotNull InputStream contentStream) throws MailException {
-        try {
-            return new MimeMessage(session, contentStream);
-        } catch (Exception e) {
-            throw new MailSendException("Failed to create MimeMessage from stream", e);
-        }
-    }
-
-    @Override
-    public void send(@NotNull MimeMessage mimeMessage) throws MailException {
-        outbox.add(cloneMessage(mimeMessage));
-        log.info(
-                "[mail-mock] captured email: subject='{}' to={}",
-                safeSubject(mimeMessage),
-                safeRecipients(mimeMessage)
-        );
-    }
-
-    @Override
-    public void send(MimeMessage... mimeMessages) throws MailException {
-        for (MimeMessage m : mimeMessages) send(m);
-    }
-
-    @Override
-    public void send(@NotNull MimeMessagePreparator mimeMessagePreparator) throws MailException {
-        MimeMessage m = createMimeMessage();
-        try {
-            mimeMessagePreparator.prepare(m);
-        } catch (Exception e) {
-            throw new MailPreparationException(e);
-        }
-        send(m);
-    }
-
-    @Override
-    public void send(MimeMessagePreparator... mimeMessagePreparators) throws MailException {
-        for (MimeMessagePreparator p : mimeMessagePreparators) send(p);
+    @Throws(MailException::class)
+    override fun send(vararg mimeMessagePreparators: MimeMessagePreparator) {
+        for (p in mimeMessagePreparators) send(p)
     }
 
     /**
      * Clear outbox between tests.
      */
-    public void clear() {
-        outbox.clear();
+    fun clear() {
+        outbox.clear()
     }
 
-    private MimeMessage cloneMessage(MimeMessage original) {
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            original.saveChanges();
-            original.writeTo(bos);
-            try (ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray())) {
-                return new MimeMessage(session, bis);
+    private fun cloneMessage(original: MimeMessage): MimeMessage {
+        try {
+            ByteArrayOutputStream().use { bos ->
+                original.saveChanges()
+                original.writeTo(bos)
+                ByteArrayInputStream(bos.toByteArray()).use { bis ->
+                    return MimeMessage(session, bis)
+                }
             }
-        } catch (Exception e) {
-            throw new MailSendException("Failed to clone MimeMessage", e);
+        } catch (e: Exception) {
+            throw MailSendException("Failed to clone MimeMessage", e)
         }
     }
 
-    @Override
-    public void send(@NotNull SimpleMailMessage simpleMessage) throws MailException {
-        simpleOutbox.add(new SimpleMailMessage(simpleMessage));
-        log.info(
-                "[mail-mock] captured simple email: subject='{}' to={}",
-                simpleMessage.getSubject(),
-                Arrays.toString(simpleMessage.getTo())
-        );
+    @Throws(MailException::class)
+    override fun send(simpleMessage: SimpleMailMessage) {
+        simpleOutbox.add(SimpleMailMessage(simpleMessage))
+        MockJavaMailSender.log.info(
+            "[mail-mock] captured simple email: subject='{}' to={}",
+            simpleMessage.subject,
+            simpleMessage.to.contentToString()
+        )
     }
 
-    @Override
-    public void send(SimpleMailMessage @NotNull ... simpleMessages) throws MailException {
-        for (SimpleMailMessage sm : simpleMessages) {
-            send(sm);
+    @Throws(MailException::class)
+    override fun send(vararg simpleMessages: SimpleMailMessage) {
+        for (sm in simpleMessages) {
+            send(sm)
+        }
+    }
+
+    companion object {
+        private fun safeSubject(m: MimeMessage): String? {
+            try {
+                return m.subject
+            } catch (ignored: Exception) {
+                return "<n/a>"
+            }
+        }
+
+        private fun safeRecipients(m: MimeMessage): MutableList<String?> {
+            try {
+                return Arrays.stream<Address?>(
+                    Objects.requireNonNullElse<Array<Address?>?>(
+                        m.allRecipients,
+                        arrayOfNulls<Address>(0)
+                    )
+                )
+                    .map<String?> { obj: Address? -> obj.toString() }.toList()
+            } catch (ignored: Exception) {
+                return mutableListOf<String?>()
+            }
         }
     }
 }

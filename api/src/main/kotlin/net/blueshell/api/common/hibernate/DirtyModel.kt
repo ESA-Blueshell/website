@@ -1,8 +1,6 @@
-package net.blueshell.api.common.hibernate;
+package net.blueshell.api.common.hibernate
 
-import java.lang.annotation.*;
-
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface DirtyModel {}
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class DirtyModel 

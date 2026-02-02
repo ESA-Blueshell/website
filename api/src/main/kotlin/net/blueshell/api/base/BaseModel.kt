@@ -1,73 +1,69 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
-import net.blueshell.api.model.User;
-import org.hibernate.Hibernate;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.LastModifiedBy;
-
-import java.time.Instant;
-import java.util.Objects;
+import jakarta.persistence.*
+import lombok.Data
+import lombok.ToString
+import net.blueshell.api.model.User
+import org.hibernate.Hibernate
+import org.hibernate.annotations.ColumnDefault
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
+import org.springframework.data.annotation.CreatedBy
+import org.springframework.data.annotation.LastModifiedBy
+import java.time.Instant
 
 @MappedSuperclass
 @Data
 @ToString(onlyExplicitlyIncluded = true)
-public abstract class BaseModel {
+abstract class BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ToString.Include
-    private Long id;
+    val id: Long? = null
 
     @Column(name = "deleted_at", insertable = false, updatable = false, nullable = false)
     @ColumnDefault("'9999-12-31 23:59:59'")
     @ToString.Include
-    private Instant deletedAt;
+    private var deletedAt: Instant? = null
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     @ToString.Include
-    private Instant createdAt;
+    private var createdAt: Instant? = null
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
-    private User createdBy;
+    private val createdBy: User? = null
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     @ToString.Include
-    private Instant updatedAt;
+    private var updatedAt: Instant? = null
 
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by_id")
-    private User updatedBy;
+    private val updatedBy: User? = null
 
     @Version
     @Column(name = "version", nullable = false)
     @ColumnDefault("0")
     @ToString.Include
-    private Long version;
+    private var version: Long? = null
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        BaseModel that = (BaseModel) o;
-        if (this.id == null || that.id == null) return false;
-        return Objects.equals(this.id, that.id);
+    override fun equals(o: Any?): Boolean {
+        if (this === o) return true
+        if (o == null) return false
+        if (Hibernate.getClass<BaseModel?>(this) != Hibernate.getClass<Any?>(o)) return false
+        val that = o as BaseModel
+        if (this.id == null || that.id == null) return false
+        return this.id == that.id
     }
 
-    @Override
-    public int hashCode() {
-        return (id != null) ? id.hashCode() : Hibernate.getClass(this).hashCode();
+    override fun hashCode(): Int {
+        return if (id != null) id.hashCode() else Hibernate.getClass<BaseModel?>(this).hashCode()
     }
 }

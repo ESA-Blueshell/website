@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record EventSignupEmailEvent(Long eventSignUpId) {
-}
+@JvmRecord
+data class EventSignupEmailEvent(val eventSignUpId: Long?) 

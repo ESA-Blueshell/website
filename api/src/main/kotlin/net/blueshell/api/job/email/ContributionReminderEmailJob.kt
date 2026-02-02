@@ -1,50 +1,58 @@
-package net.blueshell.api.job.email;
+package net.blueshell.api.job.email
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.service.email.EmailService;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.retry.annotation.Retryable;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.service.email.EmailService
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Recover
+import org.springframework.retry.annotation.Retryable
+import org.springframework.scheduling.annotation.Async
+import org.springframework.stereotype.Service
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ContributionReminderEmailJob {
-
-    private static final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
-    private final EmailService emails;
+class ContributionReminderEmailJob {
+    private val emails: EmailService? = null
 
     @Async
-    @Retryable(retryFor = {Exception.class}, maxAttempts = 3,
-            backoff = @Backoff(delay = 2000, multiplier = 2))
-    public CompletableFuture<Void> send(Long reminderId) {
-        String key = jobKey("contribution_reminder", reminderId);
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
+    fun send(reminderId: Long?): CompletableFuture<Void?> {
+        val key = jobKey("contribution_reminder", reminderId)
         if (processing.putIfAbsent(key, true) != null) {
-            log.info("Contribution reminder already processing for reminderId={}", reminderId);
-            return CompletableFuture.completedFuture(null);
+            ContributionReminderEmailJob.log.info(
+                "Contribution reminder already processing for reminderId={}",
+                reminderId
+            )
+            return CompletableFuture.completedFuture<Void?>(null)
         }
         try {
-            emails.sendContributionReminderEmail(reminderId);
-            return CompletableFuture.completedFuture(null);
+            emails!!.sendContributionReminderEmail(reminderId)
+            return CompletableFuture.completedFuture<Void?>(null)
         } finally {
-            processing.remove(key);
+            processing.remove(key)
         }
     }
 
     @Recover
-    public CompletableFuture<Void> recover(Exception ex, Long reminderId) {
-        processing.remove(jobKey("contribution_reminder", reminderId));
-        log.error("Giving up contribution reminder for reminderId={}: {}", reminderId, ex.getMessage(), ex);
-        return CompletableFuture.completedFuture(null);
+    fun recover(ex: Exception, reminderId: Long?): CompletableFuture<Void?> {
+        processing.remove(jobKey("contribution_reminder", reminderId))
+        ContributionReminderEmailJob.log.error(
+            "Giving up contribution reminder for reminderId={}: {}",
+            reminderId,
+            ex.message,
+            ex
+        )
+        return CompletableFuture.completedFuture<Void?>(null)
     }
 
-    private String jobKey(String type, Long id) {
-        return "%s_%d_%d".formatted(type, id, System.currentTimeMillis() / 10000);
+    private fun jobKey(type: String?, id: Long?): String {
+        return "%s_%d_%d".formatted(type, id, System.currentTimeMillis() / 10000)
+    }
+
+    companion object {
+        private val processing = ConcurrentHashMap<String?, Boolean?>()
     }
 }

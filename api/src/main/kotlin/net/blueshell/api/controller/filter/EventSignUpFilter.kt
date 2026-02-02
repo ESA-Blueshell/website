@@ -1,18 +1,18 @@
-package net.blueshell.api.controller.filter;
+package net.blueshell.api.controller.filter
 
-import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.time.LocalDateTime;
+import lombok.Data
+import org.springframework.format.annotation.DateTimeFormat
+import java.time.LocalDateTime
 
 @Data
-public class EventSignUpFilter {
+class EventSignUpFilter {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    private LocalDateTime from;
+    private val from: LocalDateTime? = null
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    private LocalDateTime to;
-    private Long userId;
-    private Long committeeId;
-    private Boolean approved;
-    private Long eventId;
+    private val to: LocalDateTime? = null
+    private val userId: Long? = null
+    private val committeeId: Long? = null
+    private val approved: Boolean? = null
+    private val eventId: Long? = null
 }

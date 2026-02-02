@@ -1,29 +1,27 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.User;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.User
+import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
-public interface UserRepository extends BaseRepository<User> {
+interface UserRepository : BaseRepository<User?> {
+    fun findByUsername(username: String?): Optional<User?>?
 
-    Optional<User> findByUsername(String username);
+    fun existsByUsername(username: String?): Boolean
 
-    boolean existsByUsername(String username);
+    fun existsByUsernameAndIdNot(username: String?, id: Long?): Boolean
 
-    boolean existsByUsernameAndIdNot(String username, Long id);
+    fun existsByEmail(email: String?): Boolean
 
-    boolean existsByEmail(String email);
+    fun existsByDiscord(discord: String?): Boolean
 
-    boolean existsByDiscord(String discord);
+    fun existsByDiscordAndIdNot(discord: String?, id: Long?): Boolean
 
-    boolean existsByDiscordAndIdNot(String discord, Long id);
+    fun existsByEmailAndIdNot(email: String?, id: Long?): Boolean
 
-    boolean existsByEmailAndIdNot(String email, Long id);
+    fun existsByPhoneNumber(phoneNumber: String?): Boolean
 
-    boolean existsByPhoneNumber(String phoneNumber);
-
-    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
+    fun existsByPhoneNumberAndIdNot(phoneNumber: String?, id: Long?): Boolean
 }

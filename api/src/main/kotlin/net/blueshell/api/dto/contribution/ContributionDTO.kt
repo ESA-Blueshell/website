@@ -1,24 +1,23 @@
-package net.blueshell.api.dto.contribution;
+package net.blueshell.api.dto.contribution
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
-
-import java.sql.Timestamp;
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotNull
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.base.BaseDTO
+import java.sql.Timestamp
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "Contribution")
-public class ContributionDTO extends BaseDTO {
-    private Long id;
+class ContributionDTO : BaseDTO() {
+    private val id: Long? = null
 
     @NotNull
-    private Long userId;
+    private val userId: @NotNull Long? = null
 
     @NotNull
-    private Long contributionPeriodId;
+    private val contributionPeriodId: @NotNull Long? = null
 
-    private Timestamp remindedAt;
+    private val remindedAt: Timestamp? = null
 }

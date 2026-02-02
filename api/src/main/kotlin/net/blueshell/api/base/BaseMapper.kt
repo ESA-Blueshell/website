@@ -1,52 +1,51 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Page
+import java.util.function.Function
+import java.util.stream.Collectors
+import java.util.stream.Stream
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+abstract class BaseMapper<T, DTO> : IdentityProvider() {
+    abstract fun toDTO(t: T?): DTO?
 
-public abstract class BaseMapper<T, DTO> extends IdentityProvider {
-    public abstract DTO toDTO(T t);
+    abstract fun fromDTO(dto: DTO?): T?
 
-    public abstract T fromDTO(DTO dto);
-
-    public Stream<DTO> toDTOs(Stream<T> stream) {
+    fun toDTOs(stream: Stream<T?>?): Stream<DTO?>? {
         if (stream == null) {
-            return null;
+            return null
         }
-        return stream.map(this::toDTO);
+        return stream.map<DTO?> { t: T? -> this.toDTO(t) }
     }
 
-    public List<DTO> toDTOs(List<T> list) {
+    fun toDTOs(list: MutableList<T?>?): MutableList<DTO?>? {
         if (list == null) {
-            return null;
+            return null
         }
-        return list.stream().map(this::toDTO).toList();
+        return list.stream().map<DTO?> { t: T? -> this.toDTO(t) }.toList()
     }
 
-    public Stream<T> fromDTOs(Stream<DTO> dtos) {
+    fun fromDTOs(dtos: Stream<DTO?>?): Stream<T?>? {
         if (dtos == null) {
-            return null;
+            return null
         }
-        return dtos.map(this::fromDTO);
+        return dtos.map<T?> { dto: DTO? -> this.fromDTO(dto) }
     }
 
-    public List<T> fromDTOs(List<DTO> dtos) {
-        return dtos.stream().map(this::fromDTO).collect(Collectors.toList());
+    fun fromDTOs(dtos: MutableList<DTO?>): MutableList<T?> {
+        return dtos.stream().map<T?> { dto: DTO? -> this.fromDTO(dto) }.collect(Collectors.toList())
     }
 
-    public Page<DTO> toDTOs(Page<T> list) {
+    fun toDTOs(list: Page<T?>?): Page<DTO?>? {
         if (list == null) {
-            return null;
+            return null
         }
-        return list.map(this::toDTO);
+        return list.map<DTO?>(Function { t: T? -> this.toDTO(t) })
     }
 
-    public Page<T> fromDTOs(Page<DTO> dtos) {
+    fun fromDTOs(dtos: Page<DTO?>?): Page<T?>? {
         if (dtos == null) {
-            return null;
+            return null
         }
-        return dtos.map(this::fromDTO);
+        return dtos.map<T?>(Function { dto: DTO? -> this.fromDTO(dto) })
     }
 }

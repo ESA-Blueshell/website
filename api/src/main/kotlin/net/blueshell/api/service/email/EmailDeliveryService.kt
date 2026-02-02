@@ -1,53 +1,60 @@
-package net.blueshell.api.service.email;
+package net.blueshell.api.service.email
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
-
-import java.io.UnsupportedEncodingException;
+import jakarta.mail.MessagingException
+import lombok.extern.slf4j.Slf4j
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.io.ClassPathResource
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessageHelper
+import org.springframework.stereotype.Service
+import java.io.UnsupportedEncodingException
 
 @Service
 @Slf4j
-public class EmailDeliveryService {
-
-    private final JavaMailSender mailSender;
-
-    @Autowired
-    public EmailDeliveryService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
+class EmailDeliveryService @Autowired constructor(private val mailSender: JavaMailSender) {
     /**
      * Sends an HTML email (synchronous). Jobs wrap retries/async.
      */
-    public void sendHtmlEmail(String toEmail,
-                              String subject,
-                              String htmlContent,
-                              String senderName,
-                              String senderAddress) {
+    fun sendHtmlEmail(
+        toEmail: String,
+        subject: String,
+        htmlContent: String,
+        senderName: String,
+        senderAddress: String
+    ) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            val message = mailSender.createMimeMessage()
+            val helper = MimeMessageHelper(message, true, "UTF-8")
 
-            helper.setFrom(senderAddress, senderName);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
+            helper.setFrom(senderAddress, senderName)
+            helper.setTo(toEmail)
+            helper.setSubject(subject)
+            helper.setText(htmlContent, true)
 
             // keep your inline assets
-            helper.addInline("logo", new ClassPathResource("templates/assets/BSLOGO.png"), "image/png");
-            helper.addInline("bg", new ClassPathResource("templates/assets/BackdropBlack.png"), "image/png");
+            helper.addInline("logo", ClassPathResource("templates/assets/BSLOGO.png"), "image/png")
+            helper.addInline("bg", ClassPathResource("templates/assets/BackdropBlack.png"), "image/png")
 
-            mailSender.send(message);
-            log.info("Sent email to {} from {} with subject {}", toEmail, senderAddress, subject);
-        } catch (MessagingException | UnsupportedEncodingException e) {
-            log.error("Failed to send email to {} with subject {}: {}", toEmail, subject, e.getMessage(), e);
-            throw new RuntimeException("Failed to send email", e);
+            mailSender.send(message)
+            EmailDeliveryService.log.info("Sent email to {} from {} with subject {}", toEmail, senderAddress, subject)
+        } catch (e: MessagingException) {
+            EmailDeliveryService.log.error(
+                "Failed to send email to {} with subject {}: {}",
+                toEmail,
+                subject,
+                e.message,
+                e
+            )
+            throw RuntimeException("Failed to send email", e)
+        } catch (e: UnsupportedEncodingException) {
+            EmailDeliveryService.log.error(
+                "Failed to send email to {} with subject {}: {}",
+                toEmail,
+                subject,
+                e.message,
+                e
+            )
+            throw RuntimeException("Failed to send email", e)
         }
     }
 }

@@ -1,6 +1,6 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-import net.blueshell.api.common.enums.ResetType;
+import net.blueshell.api.common.enums.ResetType
 
-public record RecoveryEmailEvent(Long userId, String token, ResetType resetType) {
-}
+@JvmRecord
+data class RecoveryEmailEvent(val userId: Long?, val token: String?, val resetType: ResetType?)

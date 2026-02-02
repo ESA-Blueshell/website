@@ -1,17 +1,14 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.common.enums.ResetType;
-import net.blueshell.api.model.RecoveryToken;
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.common.enums.ResetType
+import net.blueshell.api.model.RecoveryToken
+import java.util.*
 
-import java.util.List;
-import java.util.Optional;
+interface RecoveryTokenRepository : BaseRepository<RecoveryToken?> {
+    fun findBySelector(selector: String?): Optional<RecoveryToken?>?
 
-public interface RecoveryTokenRepository extends BaseRepository<RecoveryToken> {
+    fun findAllByUser_IdAndTypeAndConsumedAtIsNull(userId: Long?, type: ResetType?): MutableList<RecoveryToken?>?
 
-    Optional<RecoveryToken> findBySelector(String selector);
-
-    List<RecoveryToken> findAllByUser_IdAndTypeAndConsumedAtIsNull(Long userId, ResetType type);
-
-    List<RecoveryToken> findAllByUser_IdAndConsumedAtIsNull(Long userId);
+    fun findAllByUser_IdAndConsumedAtIsNull(userId: Long?): MutableList<RecoveryToken?>?
 }

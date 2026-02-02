@@ -1,41 +1,37 @@
-package net.blueshell.api.permission;
+package net.blueshell.api.permission
 
-import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.model.event.EventBanner;
-import net.blueshell.api.service.event.EventBannerService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
+import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.model.event.EventBanner
+import net.blueshell.api.service.event.EventBannerService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.Authentication
+import org.springframework.stereotype.Component
 
 @Component
-public class EventBannerPermission extends BasePermissionEvaluator<EventBanner, EventBannerService> {
-
-    private final EventPermission eventPermission;
-
-    @Autowired
-    public EventBannerPermission(EventBannerService service, EventPermission eventPermission) {
-        super(service);
-        this.eventPermission = eventPermission;
-    }
-
-    @Override
-    public boolean hasPermission(Authentication authentication, Object targetDomainObject, String permission) {
+class EventBannerPermission @Autowired constructor(
+    service: EventBannerService?,
+    private val eventPermission: EventPermission
+) : BasePermissionEvaluator<EventBanner?, EventBannerService?>(service) {
+    override fun hasPermission(
+        authentication: Authentication?,
+        targetDomainObject: Any?,
+        permission: String?
+    ): Boolean {
         if (authentication == null || targetDomainObject == null || permission == null) {
-            return false;
+            return false
         }
-        var target = (EventBanner) targetDomainObject;
-        return switch (permission) {
-            case "read" -> eventPermission.hasPermission(authentication, target.getEvent(), "read");
-            default -> false;
-        };
+        val target = targetDomainObject as EventBanner
+        return when (permission) {
+            "read" -> eventPermission.hasPermission(authentication, target.getEvent(), "read")
+            else -> false
+        }
     }
 
-    @Override
-    public boolean hasPermissionId(Authentication authentication, Object targetId, String permission) {
+    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
         if (authentication == null || targetId == null || permission == null) {
-            return false;
+            return false
         }
-        var target = service.findById((Long) targetId);
-        return target != null && hasPermission(authentication, target, permission);
+        val target = service!!.findById(targetId as Long)
+        return target != null && hasPermission(authentication, target, permission)
     }
 }

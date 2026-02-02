@@ -1,40 +1,33 @@
-package net.blueshell.api.permission;
+package net.blueshell.api.permission
 
-import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.model.contribution.Contribution;
-import net.blueshell.api.service.contribution.ContributionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
-
-import java.util.Objects;
+import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.model.contribution.Contribution
+import net.blueshell.api.service.contribution.ContributionService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.Authentication
+import org.springframework.stereotype.Component
 
 @Component
-public class ContributionPermission extends BasePermissionEvaluator<Contribution, ContributionService> {
-
-    @Autowired
-    public ContributionPermission(ContributionService service) {
-        super(service);
-    }
-
-    public boolean hasPermission(Authentication authentication, Object object, String permission) {
-        if (authentication == null || object == null || permission == null) {
-            return false;
+class ContributionPermission @Autowired constructor(service: ContributionService?) :
+    BasePermissionEvaluator<Contribution?, ContributionService?>(service) {
+    override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
+        if (authentication == null || `object` == null || permission == null) {
+            return false
         }
-        Contribution contribution = (Contribution) object;
-        var principal = getPrincipal();
-        return switch (permission) {
-            case "read" -> Objects.equals(principal.getId(), contribution.getUserId());
-            default -> false;
-        };
+        val contribution = `object` as Contribution
+        val principal = getPrincipal()
+        return when (permission) {
+            "read" -> (principal.getId() == contribution.getUserId())
+            else -> false
+        }
     }
 
-    public boolean hasPermissionId(Authentication authentication, Object targetId, String permission) {
+    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
         if (authentication == null || targetId == null || permission == null) {
-            return false;
+            return false
         }
 
-        Contribution targetContribution = service.findById((Long) targetId);
-        return targetContribution != null && hasPermission(authentication, targetContribution, permission);
+        val targetContribution = service!!.findById(targetId as Long)
+        return targetContribution != null && hasPermission(authentication, targetContribution, permission)
     }
 }

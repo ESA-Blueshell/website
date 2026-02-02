@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record RemoveEventFromCalendarEvent(Long eventId) {
-}
+@JvmRecord
+data class RemoveEventFromCalendarEvent(val eventId: Long?) 

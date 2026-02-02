@@ -1,35 +1,32 @@
-package net.blueshell.api.dto.contribution;
+package net.blueshell.api.dto.contribution
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
-
-import java.time.LocalDate;
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotNull
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.base.BaseDTO
+import java.time.LocalDate
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "ContributionPeriod")
-public class ContributionPeriodDTO extends BaseDTO {
-    @Nullable
-    private Long id;
+class ContributionPeriodDTO : BaseDTO() {
+    private val id: Long? = null
 
     @NotNull
-    private LocalDate startDate;
+    private val startDate: @NotNull LocalDate? = null
 
     @NotNull
-    private LocalDate endDate;
+    private val endDate: @NotNull LocalDate? = null
 
     @NotNull
-    private double halfYearFee;
+    private val halfYearFee: @NotNull Double = 0.0
 
     @NotNull
-    private double fullYearFee;
+    private val fullYearFee: @NotNull Double = 0.0
 
     @NotNull
-    private double alumniFee;
+    private val alumniFee: @NotNull Double = 0.0
 
-    private Long listId;
+    private val listId: Long? = null
 }

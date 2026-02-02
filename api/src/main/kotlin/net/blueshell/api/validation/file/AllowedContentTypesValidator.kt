@@ -1,42 +1,37 @@
-package net.blueshell.api.validation.file;
+package net.blueshell.api.validation.file
 
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.http.MediaType;
-import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
+import org.springframework.http.MediaType
+import org.springframework.web.multipart.MultipartFile
+import java.util.*
+import java.util.stream.Collectors
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+class AllowedContentTypesValidator : ConstraintValidator<AllowedContentTypes?, MultipartFile?> {
+    private var allowed: MutableList<MediaType?>? = null
 
-public class AllowedContentTypesValidator implements ConstraintValidator<AllowedContentTypes, MultipartFile> {
-
-    private List<MediaType> allowed;
-
-    @Override
-    public void initialize(AllowedContentTypes constraintAnnotation) {
-        this.allowed = Arrays.stream(constraintAnnotation.value())
-                .map(MediaType::parseMediaType)
-                .collect(Collectors.toList());
+    override fun initialize(constraintAnnotation: AllowedContentTypes) {
+        this.allowed = Arrays.stream<String?>(constraintAnnotation.value)
+            .map<MediaType?> { mediaType: String? -> MediaType.parseMediaType(mediaType) }
+            .collect(Collectors.toList())
     }
 
-    @Override
-    public boolean isValid(MultipartFile file, ConstraintValidatorContext context) {
+    override fun isValid(file: MultipartFile?, context: ConstraintValidatorContext?): Boolean {
         // Let @NotNull/@NotEmpty handle requiredness
-        if (file == null || file.isEmpty()) {
-            return true;
+        if (file == null || file.isEmpty) {
+            return true
         }
 
-        String ct = file.getContentType();
+        val ct = file.contentType
         if (ct == null || ct.isBlank()) {
-            return false;
+            return false
         }
 
         try {
-            MediaType actual = MediaType.parseMediaType(ct);
-            return allowed.stream().anyMatch(a -> a.includes(actual));
-        } catch (IllegalArgumentException e) {
-            return false; // Invalid media type format
+            val actual = MediaType.parseMediaType(ct)
+            return allowed!!.stream().anyMatch { a: MediaType? -> a!!.includes(actual) }
+        } catch (e: IllegalArgumentException) {
+            return false // Invalid media type format
         }
     }
 }

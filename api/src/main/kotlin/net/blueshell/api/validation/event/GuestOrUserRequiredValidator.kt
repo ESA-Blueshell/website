@@ -1,24 +1,22 @@
-package net.blueshell.api.validation.event;
+package net.blueshell.api.validation.event
 
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-import net.blueshell.api.dto.event.EventSignUpDTO;
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
+import net.blueshell.api.dto.event.EventSignUpDTO
 
-public class GuestOrUserRequiredValidator implements ConstraintValidator<GuestOrUserRequired, EventSignUpDTO> {
+class GuestOrUserRequiredValidator : ConstraintValidator<GuestOrUserRequired?, EventSignUpDTO?> {
+    override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
+        if (dto == null) return true
 
-    @Override
-    public boolean isValid(EventSignUpDTO dto, ConstraintValidatorContext ctx) {
-        if (dto == null) return true;
+        val hasGuest = dto.getGuest() != null
+        val hasUser = dto.getUser() != null || dto.getUserId() != null
 
-        final boolean hasGuest = dto.getGuest() != null;
-        final boolean hasUser = dto.getUser() != null || dto.getUserId() != null;
+        if (hasGuest || hasUser) return true
 
-        if (hasGuest || hasUser) return true;
-
-        ctx.disableDefaultConstraintViolation();
+        ctx.disableDefaultConstraintViolation()
         ctx.buildConstraintViolationWithTemplate("Either guest or user (or userId) must be provided.")
-                .addPropertyNode("guest")
-                .addConstraintViolation();
-        return false;
+            .addPropertyNode("guest")
+            .addConstraintViolation()
+        return false
     }
 }

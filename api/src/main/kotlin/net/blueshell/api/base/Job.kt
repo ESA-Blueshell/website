@@ -1,12 +1,13 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
 /**
  * Marker interface for all jobs.
  * Job classes should implement this interface and be annotated with @Component.
  */
-public interface Job {
+interface Job {
     /**
      * Execute the job
      */
-    void execute() throws Exception;
+    @Throws(Exception::class)
+    fun execute()
 }

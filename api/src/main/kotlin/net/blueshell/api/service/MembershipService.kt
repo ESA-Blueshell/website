@@ -1,31 +1,25 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service
 
-import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.controller.filter.MembershipFilter;
-import net.blueshell.api.model.Membership;
-import net.blueshell.api.repository.MemberRepository;
-import net.blueshell.api.repository.spec.MembershipSpecifications;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
+import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.controller.filter.MembershipFilter
+import net.blueshell.api.model.Membership
+import net.blueshell.api.repository.MemberRepository
+import net.blueshell.api.repository.spec.MembershipSpecifications
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.stereotype.Service
 
 @Service
-public class MembershipService extends BaseModelService<Membership, MemberRepository> {
-
-    @Autowired
-    public MembershipService(MemberRepository repository, ApplicationEventPublisher events) {
-        super(repository);
+class MembershipService @Autowired constructor(repository: MemberRepository, events: ApplicationEventPublisher?) :
+    BaseModelService<Membership?, MemberRepository?>(repository) {
+    fun existsByUserId(userId: Long?): Boolean {
+        return repository!!.existsByUserId(userId)
     }
 
-    public boolean existsByUserId(Long userId) {
-        return repository.existsByUserId(userId);
-    }
-
-    public List<Membership> findByFilter(MembershipFilter filter) {
-        if (filter == null) filter = new MembershipFilter();
-        var spec = MembershipSpecifications.fromFilter(filter, getPrincipal());
-        return repository.findAll(spec);
+    fun findByFilter(filter: MembershipFilter?): MutableList<Membership?> {
+        var filter = filter
+        if (filter == null) filter = MembershipFilter()
+        val spec = MembershipSpecifications.fromFilter(filter, getPrincipal())
+        return repository!!.findAll(spec)
     }
 }

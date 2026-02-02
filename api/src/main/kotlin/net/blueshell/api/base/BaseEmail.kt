@@ -1,60 +1,49 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import lombok.Getter;
-import net.blueshell.api.model.User;
+import lombok.Getter
+import net.blueshell.api.model.User
 
-public abstract class BaseEmail {
-
-    @Getter
-    protected final User recipient;
-    protected final String frontendUrl;
-    protected final String appUrl;
-
-    public BaseEmail(User recipient, String frontendUrl, String appUrl) {
-        this.recipient = recipient;
-        this.frontendUrl = frontendUrl;
-        this.appUrl = appUrl;
-    }
-
+abstract class BaseEmail(
+    @field:Getter protected val recipient: User?,
+    protected val frontendUrl: String?,
+    protected val appUrl: String?
+) {
     /**
      * Get the email subject line
      */
-    public abstract String getSubject();
+    abstract val subject: String?
 
     /**
      * Generate the markdown content for the email
      */
-    public abstract String getMarkdownContent();
+    abstract val markdownContent: String?
 
-    /**
-     * Get the sender name for this email type
-     */
-    public String getSenderName() {
-        return "Blueshell";
-    }
+    open val senderName: String?
+        /**
+         * Get the sender name for this email type
+         */
+        get() = "Blueshell"
 
-    /**
-     * Get the sender email address
-     */
-    public String getSenderAddress() {
-        return "sitecie@blueshell.utwente.nl";
-    }
+    val senderAddress: String
+        /**
+         * Get the sender email address
+         */
+        get() = "sitecie@blueshell.utwente.nl"
 
-    public String getReplyTo() {
-        return "sitecie@blueshell.utwente.nl";
-    }
+    open val replyTo: String?
+        get() = "sitecie@blueshell.utwente.nl"
 
     /**
      * Template method for building the complete email content
      */
-    public final EmailContent buildEmailContent() {
-        return new EmailContent(
-                recipient,
-                getSubject(),
-                getMarkdownContent(),
-                getSenderName(),
-                getSenderAddress(),
-                getReplyTo()
-        );
+    fun buildEmailContent(): EmailContent {
+        return EmailContent(
+            recipient,
+            this.subject,
+            this.markdownContent,
+            this.senderName,
+            this.senderAddress,
+            this.replyTo
+        )
     }
 }

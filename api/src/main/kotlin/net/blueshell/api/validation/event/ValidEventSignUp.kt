@@ -1,21 +1,15 @@
-package net.blueshell.api.validation.event;
+package net.blueshell.api.validation.event
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-@Target(TYPE)
-@Retention(RUNTIME)
-@Documented
-@Constraint(validatedBy = ValidEventSignUpValidator.class)
-public @interface ValidEventSignUp {
-    String message() default "Invalid event sign-up payload";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-}
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+@Constraint(validatedBy = [ValidEventSignUpValidator::class])
+annotation class ValidEventSignUp(
+    val message: String = "Invalid event sign-up payload",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = []
+)

@@ -1,22 +1,21 @@
-package net.blueshell.api.dto.committee;
+package net.blueshell.api.dto.committee
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
+import com.fasterxml.jackson.annotation.JsonProperty
+import io.swagger.v3.oas.annotations.media.Schema
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.base.BaseDTO
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "SimpleCommittee")
-public class SimpleCommitteeDTO extends BaseDTO {
-
+class SimpleCommitteeDTO : BaseDTO() {
     @JsonProperty("id")
-    private Long id;
+    private val id: Long? = null
 
     @JsonProperty("name")
-    private String name;
+    private val name: String? = null
 
     @JsonProperty("description")
-    private String description;
+    private val description: String? = null
 }

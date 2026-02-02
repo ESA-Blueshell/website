@@ -1,17 +1,21 @@
-package net.blueshell.api.mapper;
+package net.blueshell.api.mapper
 
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.PastOrPresent
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.common.enums.MemberType
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.common.util.MappingUtil
+import net.blueshell.api.dto.MembershipDTO
+import net.blueshell.api.model.Membership
+import net.blueshell.api.validation.group.Administration
+import org.mapstruct.*
+import java.time.LocalDate
+import java.util.function.BiConsumer
 
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.MembershipDTO;
-import net.blueshell.api.model.Membership;
-import org.mapstruct.*;
-
-import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
 
 @Mapper(componentModel = "spring")
-public abstract class MembershipMapper extends BaseMapper<Membership, MembershipDTO> {
-
+abstract class MembershipMapper : BaseMapper<Membership?, MembershipDTO?>() {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "userId")
@@ -20,21 +24,30 @@ public abstract class MembershipMapper extends BaseMapper<Membership, Membership
     @Mapping(target = "endDate")
     @Mapping(target = "incasso")
     @Mapping(target = "version")
-    public abstract MembershipDTO toDTO(Membership membership);
+    abstract override fun toDTO(membership: Membership?): MembershipDTO?
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract Membership fromDTO(MembershipDTO dto, @MappingTarget Membership membership);
+    abstract fun fromDTO(dto: MembershipDTO?, @MappingTarget membership: Membership?): Membership?
 
     @AfterMapping
-    protected void afterFromDTO(MembershipDTO dto, @MappingTarget Membership membership) {
+    protected fun afterFromDTO(dto: MembershipDTO, @MappingTarget membership: Membership) {
         if (hasAuthority(Role.BOARD)) {
-            applyIfFieldIsNotNull(membership, dto.getStartDate(), Membership::setStartDate);
-            membership.setEndDate(dto.getEndDate()); // Must be applied, in order to be able to resume memberships
-            applyIfFieldIsNotNull(membership, dto.getMemberType(), Membership::setMemberType);
-            applyIfFieldIsNotNull(membership, dto.isIncasso(), Membership::setIncasso);
+            MappingUtil.applyIfFieldIsNotNull<Membership?, @PastOrPresent(groups = [Administration::class]) LocalDate?>(
+                membership,
+                dto.getStartDate(),
+                BiConsumer { obj: Membership?, startDate: LocalDate? -> obj!!.setStartDate(startDate) })
+            membership.setEndDate(dto.getEndDate()) // Must be applied, in order to be able to resume memberships
+            MappingUtil.applyIfFieldIsNotNull<Membership?, @NotNull(groups = [Administration::class]) MemberType?>(
+                membership,
+                dto.getMemberType(),
+                BiConsumer { obj: Membership?, memberType: MemberType? -> obj!!.setMemberType(memberType) })
+            MappingUtil.applyIfFieldIsNotNull<Membership?, Boolean?>(
+                membership,
+                dto.isIncasso(),
+                BiConsumer { obj: Membership?, incasso: Boolean? -> obj!!.setIncasso(incasso!!) })
         }
     }
 }

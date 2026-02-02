@@ -1,35 +1,34 @@
-package net.blueshell.api.listener.jpa;
+package net.blueshell.api.listener.jpa
 
-import lombok.RequiredArgsConstructor;
-import net.blueshell.api.common.event.job.AddEventToCalendarEvent;
-import net.blueshell.api.common.event.job.RemoveEventFromCalendarEvent;
-import net.blueshell.api.common.event.job.SyncEventToCalendarEvent;
-import net.blueshell.api.common.event.jpa.PostRemoveEvent;
-import net.blueshell.api.common.event.jpa.PostUpdateEvent;
-import net.blueshell.api.common.event.jpa.PrePersistEvent;
-import net.blueshell.api.model.event.Event;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
+import lombok.RequiredArgsConstructor
+import net.blueshell.api.common.event.job.AddEventToCalendarEvent
+import net.blueshell.api.common.event.job.RemoveEventFromCalendarEvent
+import net.blueshell.api.common.event.job.SyncEventToCalendarEvent
+import net.blueshell.api.common.event.jpa.PostRemoveEvent
+import net.blueshell.api.common.event.jpa.PostUpdateEvent
+import net.blueshell.api.common.event.jpa.PrePersistEvent
+import net.blueshell.api.model.event.Event
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
 @RequiredArgsConstructor
-public class EventEventListener {
-
-    private final ApplicationEventPublisher eventPublisher;
+class EventEventListener {
+    private val eventPublisher: ApplicationEventPublisher? = null
 
     /**
      * After commit, enqueue add if approved
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onPersist(PrePersistEvent<Event> evt) {
-        Event e = evt.getSource();
+    fun onPersist(evt: PrePersistEvent<Event>) {
+        val e = evt.getSource()
         if (e.isApproved()) {
-            eventPublisher.publishEvent(new AddEventToCalendarEvent(e.getId()));
+            eventPublisher!!.publishEvent(AddEventToCalendarEvent(e.getId()))
         }
     }
 
@@ -38,12 +37,12 @@ public class EventEventListener {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onUpdate(PostUpdateEvent<Event> evt) {
-        Event e = evt.getSource();
+    fun onUpdate(evt: PostUpdateEvent<Event>) {
+        val e = evt.getSource()
         if (e.isApproved()) {
-            eventPublisher.publishEvent(new SyncEventToCalendarEvent(e.getId()));
+            eventPublisher!!.publishEvent(SyncEventToCalendarEvent(e.getId()))
         } else {
-            eventPublisher.publishEvent(new RemoveEventFromCalendarEvent(e.getId()));
+            eventPublisher!!.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
         }
     }
 
@@ -52,8 +51,8 @@ public class EventEventListener {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onDelete(PostRemoveEvent<Event> evt) {
-        Event e = evt.getSource();
-        eventPublisher.publishEvent(new RemoveEventFromCalendarEvent(e.getId()));
+    fun onDelete(evt: PostRemoveEvent<Event>) {
+        val e = evt.getSource()
+        eventPublisher!!.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
     }
 }

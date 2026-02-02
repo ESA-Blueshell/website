@@ -1,14 +1,7 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-public abstract class AdvancedController<S, AM, SM> extends IdentityProvider {
-
-    protected final S service;
-    protected final AM advancedMapper;
-    protected final SM simpleMapper;
-
-    protected AdvancedController(S service, AM advancedMapper, SM simpleMapper) {
-        this.service = service;
-        this.advancedMapper = advancedMapper;
-        this.simpleMapper = simpleMapper;
-    }
-}
+abstract class AdvancedController<S, AM, SM> protected constructor(
+    protected val service: S,
+    protected val advancedMapper: AM,
+    protected val simpleMapper: SM
+) : IdentityProvider()

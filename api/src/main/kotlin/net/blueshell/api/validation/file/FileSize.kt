@@ -1,35 +1,28 @@
-package net.blueshell.api.validation.file;
+package net.blueshell.api.validation.file
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
-import java.lang.annotation.*;
-
-@Documented
-@Target({ElementType.FIELD, ElementType.PARAMETER})
-@Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {FileSizeValidator.class})
-public @interface FileSize {
-
-    String message() default "File size must be between {min} and {max} bytes";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-
+@MustBeDocumented
+@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@Constraint(validatedBy = [FileSizeValidator::class])
+annotation class FileSize(
+    val message: String = "File size must be between {min} and {max} bytes",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = [],
     /**
      * Inclusive min (bytes)
      */
-    long min() default 0L;
-
+    val min: Long = 0L,
     /**
      * Inclusive max (bytes)
      */
-    long max();
-
+    val max: Long,
     /**
      * Whether an empty upload (isEmpty) is allowed
      */
-    boolean allowEmpty() default false;
-}
+    val allowEmpty: Boolean = false
+)
 

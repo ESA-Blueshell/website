@@ -1,23 +1,20 @@
-package net.blueshell.api.service.mock;
+package net.blueshell.api.service.mock
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.mapper.BrevoContactMapper;
-import net.blueshell.api.model.User;
-import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.api.service.UserService;
-import net.blueshell.api.service.ContactService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientResponseException;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.mapper.BrevoContactMapper
+import net.blueshell.api.model.User
+import net.blueshell.api.model.contribution.ContributionPeriod
+import net.blueshell.api.service.ContactService
+import net.blueshell.api.service.UserService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
+import org.springframework.stereotype.Service
+import org.springframework.web.client.RestClientResponseException
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Test double for ContactService; models an in-memory contact store and list membership.
@@ -26,87 +23,90 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @Primary
 @Profile("test | dev")
-public class MockContactService extends ContactService {
+class MockContactService(mapper: BrevoContactMapper?, users: UserService?) : ContactService(mapper, users) {
+    private val contactSeq = AtomicLong(100000L)
+    private val listSeq = AtomicLong(10000L)
 
-    private final AtomicLong contactSeq = new AtomicLong(100_000L);
-    private final AtomicLong listSeq = new AtomicLong(10_000L);
-
-    private final ConcurrentMap<String, Long> emailToContactId = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, Set<Long>> listMembers = new ConcurrentHashMap<>();
+    private val emailToContactId: ConcurrentMap<String?, Long?> = ConcurrentHashMap<String?, Long?>()
+    private val listMembers: ConcurrentMap<Long?, MutableSet<Long?>?> = ConcurrentHashMap<Long?, MutableSet<Long?>?>()
 
     @Autowired
-    private UserService users;
+    private val users: UserService? = null
 
-    public MockContactService(BrevoContactMapper mapper, UserService users) {
-        super(mapper, users);
-    }
-
-    @Override
-    public void getUpdate(User user) {
-        if (user.getContactId() != null) return;
-        Long id = emailToContactId.get(user.getEmail());
+    override fun getUpdate(user: User) {
+        if (user.getContactId() != null) return
+        val id = emailToContactId.get(user.getEmail())
         if (id != null) {
-            user.setContactId(id);
-            log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.getEmail());
+            user.setContactId(id)
+            MockContactService.log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.getEmail())
         } else {
-            log.debug("[brevo-mock] no contact yet for email={}", user.getEmail());
+            MockContactService.log.debug("[brevo-mock] no contact yet for email={}", user.getEmail())
         }
     }
 
-    @Override
-    public void sync(User user) {
-        getUpdate(user);
+    override fun sync(user: User) {
+        getUpdate(user)
         if (user.getContactId() == null) {
-            long id = emailToContactId.computeIfAbsent(user.getEmail(), k -> contactSeq.getAndIncrement());
-            user.setContactId(id);
-            users.updateContactId(user.getId(), id);
-            log.info("[brevo-mock] created contact email={} -> id={}", user.getEmail(), id);
+            val id =
+                emailToContactId.computeIfAbsent(user.getEmail()) { k: String? -> contactSeq.getAndIncrement() }!!
+            user.setContactId(id)
+            users!!.updateContactId(user.getId(), id)
+            MockContactService.log.info("[brevo-mock] created contact email={} -> id={}", user.getEmail(), id)
         } else {
-            log.info("[brevo-mock] updated contact email={} id={}", user.getEmail(), user.getContactId());
+            MockContactService.log.info(
+                "[brevo-mock] updated contact email={} id={}",
+                user.getEmail(),
+                user.getContactId()
+            )
         }
     }
 
-    @Override
-    public Long createList(ContributionPeriod contributionPeriod) throws RestClientResponseException {
-        Long listId = contributionPeriod.getListId();
+    @Throws(RestClientResponseException::class)
+    override fun createList(contributionPeriod: ContributionPeriod): Long {
+        var listId = contributionPeriod.getListId()
         if (listId == null) {
-            listId = listSeq.getAndIncrement();
-            log.info("[brevo-mock] created listId={} for contributionPeriod id={}", listId, contributionPeriod.getId());
+            listId = listSeq.getAndIncrement()
+            MockContactService.log.info(
+                "[brevo-mock] created listId={} for contributionPeriod id={}",
+                listId,
+                contributionPeriod.getId()
+            )
         }
-        listMembers.putIfAbsent(listId, ConcurrentHashMap.newKeySet());
-        return listId;
+        listMembers.putIfAbsent(listId, ConcurrentHashMap.newKeySet<Long?>())
+        return listId
     }
 
-    @Override
-    public void addToList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
+    @Throws(RestClientResponseException::class)
+    override fun addToList(contributionPeriod: ContributionPeriod, user: User) {
         if (user.getContactId() == null) {
-            sync(user);
-            users.update(user);
+            sync(user)
+            users!!.update(user)
         }
-        Long listId = contributionPeriod.getListId();
+        var listId = contributionPeriod.getListId()
         if (listId == null) {
-            listId = createList(contributionPeriod);
+            listId = createList(contributionPeriod)
         }
-        listMembers.computeIfAbsent(listId, k -> ConcurrentHashMap.newKeySet()).add(user.getContactId());
-        log.info("[brevo-mock] added contactId={} to listId={}", user.getContactId(), listId);
+        listMembers.computeIfAbsent(listId) { k: Long? -> ConcurrentHashMap.newKeySet<Long?>() }!!
+            .add(user.getContactId())
+        MockContactService.log.info("[brevo-mock] added contactId={} to listId={}", user.getContactId(), listId)
     }
 
-    @Override
-    public void removeFromList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
-        Long listId = contributionPeriod.getListId();
-        if (listId == null) return;
-        listMembers.computeIfPresent(listId, (id, set) -> {
-            set.remove(user.getContactId());
-            return set;
-        });
-        log.info("[brevo-mock] removed contactId={} from listId={}", user.getContactId(), listId);
+    @Throws(RestClientResponseException::class)
+    override fun removeFromList(contributionPeriod: ContributionPeriod, user: User) {
+        val listId = contributionPeriod.getListId()
+        if (listId == null) return
+        listMembers.computeIfPresent(listId) { id: Long?, set: MutableSet<Long?>? ->
+            set!!.remove(user.getContactId())
+            set
+        }
+        MockContactService.log.info("[brevo-mock] removed contactId={} from listId={}", user.getContactId(), listId)
     }
 
-    public Map<String, Long> getEmailToContactId() {
-        return Collections.unmodifiableMap(emailToContactId);
+    fun getEmailToContactId(): MutableMap<String?, Long?> {
+        return Collections.unmodifiableMap<String?, Long?>(emailToContactId)
     }
 
-    public Map<Long, Set<Long>> getListMembers() {
-        return Collections.unmodifiableMap(listMembers);
+    fun getListMembers(): MutableMap<Long?, MutableSet<Long?>?> {
+        return Collections.unmodifiableMap<Long?, MutableSet<Long?>?>(listMembers)
     }
 }

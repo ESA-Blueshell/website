@@ -1,41 +1,37 @@
-package net.blueshell.api.mapper;
+package net.blueshell.api.mapper
 
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.model.User;
-import net.blueshell.clients.brevo.model.CreateContact;
-import net.blueshell.clients.brevo.model.UpdateContact;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-
-import java.util.HashMap;
-import java.util.Map;
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.model.User
+import net.blueshell.clients.brevo.model.CreateContact
+import net.blueshell.clients.brevo.model.UpdateContact
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.Named
 
 @Mapper(componentModel = "spring")
-public interface BrevoContactMapper {
-
+interface BrevoContactMapper {
     @Mapping(target = "email", source = "email")
     @Mapping(target = "extId", source = "id")
-    @Mapping(target = "attributes", source = ".", qualifiedByName = "toAttributes")
+    @Mapping(target = "attributes", source = ".", qualifiedByName = ["toAttributes"])
     @BeanMapping(ignoreByDefault = true)
-    CreateContact toCreate(User user);
+    fun toCreate(user: User?): CreateContact?
 
     @Mapping(target = "extId", source = "id")
-    @Mapping(target = "attributes", source = ".", qualifiedByName = "toAttributes")
+    @Mapping(target = "attributes", source = ".", qualifiedByName = ["toAttributes"])
     @BeanMapping(ignoreByDefault = true)
-    UpdateContact toUpdate(User user);
+    fun toUpdate(user: User?): UpdateContact?
 
     @Named("toAttributes")
-    default Map<String, Object> toAttributes(User user) {
-        Map<String, Object> attrs = new HashMap<>();
-        attrs.put("NEWSLETTER", user.isNewsletter());
-        attrs.put("IS_MEMBER", user.hasRole(Role.MEMBER));
-        attrs.put("FIRSTNAME", user.getFirstName());
-        attrs.put("LASTNAME", user.getLastName());
-        attrs.put("SURNAME", user.getLastName());
-        attrs.put("SMS", user.getPhoneNumber());
-        attrs.put("WHATSAPP", user.getPhoneNumber());
-        return attrs;
+    fun toAttributes(user: User): MutableMap<String?, Any?> {
+        val attrs: MutableMap<String?, Any?> = HashMap<String?, Any?>()
+        attrs.put("NEWSLETTER", user.isNewsletter())
+        attrs.put("IS_MEMBER", user.hasRole(Role.MEMBER))
+        attrs.put("FIRSTNAME", user.getFirstName())
+        attrs.put("LASTNAME", user.getLastName())
+        attrs.put("SURNAME", user.getLastName())
+        attrs.put("SMS", user.getPhoneNumber())
+        attrs.put("WHATSAPP", user.getPhoneNumber())
+        return attrs
     }
 }

@@ -1,88 +1,91 @@
-package net.blueshell.api.controller;
+package net.blueshell.api.controller
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.security.PermitAll;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.AdvancedController;
-import net.blueshell.api.base.BaseDTO;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.committee.AdvancedCommitteeDTO;
-import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper;
-import net.blueshell.api.mapper.committee.SimpleCommitteeMapper;
-import net.blueshell.api.model.committee.Committee;
-import net.blueshell.api.service.CommitteeService;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.annotation.security.PermitAll
+import jakarta.validation.Valid
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.AdvancedController
+import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.dto.committee.AdvancedCommitteeDTO
+import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper
+import net.blueshell.api.mapper.committee.SimpleCommitteeMapper
+import net.blueshell.api.service.CommitteeService
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.*
 
 @Slf4j
 @RestController
 @Tag(name = "Committees")
-public class CommitteeController extends AdvancedController<CommitteeService, AdvancedCommitteeMapper, SimpleCommitteeMapper> {
-
-    public CommitteeController(CommitteeService service, AdvancedCommitteeMapper advancedCommitteeMapper, SimpleCommitteeMapper simpleCommitteeMapper) {
-        super(service, advancedCommitteeMapper, simpleCommitteeMapper);
-    }
-
+class CommitteeController(
+    service: CommitteeService?,
+    advancedCommitteeMapper: AdvancedCommitteeMapper?,
+    simpleCommitteeMapper: SimpleCommitteeMapper?
+) : AdvancedController<CommitteeService?, AdvancedCommitteeMapper?, SimpleCommitteeMapper?>(
+    service,
+    advancedCommitteeMapper,
+    simpleCommitteeMapper
+) {
     @GetMapping("/committeeMembers/committees")
     @PermitAll
-    public List<? extends BaseDTO> findCommitteesForCurrentUser() {
+    fun findCommitteesForCurrentUser(): MutableList<out BaseDTO?>? {
         if (hasAuthority(Role.BOARD)) {
-            return advancedMapper.toDTOs(service.findAll());
+            return advancedMapper!!.toDTOs(service!!.findAll())
         }
 
-        List<Committee> committees = service.findAllByUserId(getPrincipal().getId());
-        return advancedMapper.toDTOs(committees);
+        val committees = service!!.findAllByUserId(getPrincipal().getId())
+        return advancedMapper!!.toDTOs(committees)
     }
 
     @GetMapping("/committees")
     @PermitAll
-    public List<? extends BaseDTO> findCommittees() {
+    fun findCommittees(): MutableList<out BaseDTO?>? {
         if (hasAuthority(Role.BOARD)) {
-            return advancedMapper.toDTOs(service.findAll());
+            return advancedMapper!!.toDTOs(service!!.findAll())
         }
 
-        return simpleMapper.toDTOs(service.findAll());
+        return simpleMapper!!.toDTOs(service!!.findAll())
     }
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
-    public BaseDTO findCommitteeById(
-            @PathVariable("committeeId") Long committeeId
-    ) {
-        var committee = service.findById(committeeId);
+    fun findCommitteeById(
+        @PathVariable("committeeId") committeeId: Long?
+    ): BaseDTO? {
+        val committee = service!!.findById(committeeId)
         if (hasAuthority(Role.BOARD) || committee.hasMember(getPrincipal())) {
-            return advancedMapper.toDTO(committee);
+            return advancedMapper!!.toDTO(committee)
         }
 
-        return simpleMapper.toDTO(committee);
+        return simpleMapper!!.toDTO(committee)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
-    public AdvancedCommitteeDTO createCommittee(@Valid @RequestBody AdvancedCommitteeDTO advancedCommitteeDTO) {
-        var committee = advancedMapper.fromDTO(advancedCommitteeDTO);
-        committee = service.create(committee);
-        return advancedMapper.toDTO(committee);
+    fun createCommittee(@Valid @RequestBody advancedCommitteeDTO: @Valid AdvancedCommitteeDTO?): AdvancedCommitteeDTO? {
+        var committee = advancedMapper!!.fromDTO(advancedCommitteeDTO)
+        committee = service!!.create(committee)
+        return advancedMapper.toDTO(committee)
     }
 
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Committee', 'write'))")
-    @PutMapping(value = "/committees/{id}")
-    public AdvancedCommitteeDTO updateCommittee(@PathVariable("id") Long id, @Valid @RequestBody AdvancedCommitteeDTO dto) {
-        var committee = service.findById(id);
-        advancedMapper.fromDTO(dto, committee);
-        committee = service.update(committee);
-        return advancedMapper.toDTO(committee);
+    @PutMapping(value = ["/committees/{id}"])
+    fun updateCommittee(
+        @PathVariable("id") id: Long?,
+        @Valid @RequestBody dto: @Valid AdvancedCommitteeDTO?
+    ): AdvancedCommitteeDTO? {
+        var committee = service!!.findById(id)
+        advancedMapper!!.fromDTO(dto, committee)
+        committee = service.update(committee)
+        return advancedMapper.toDTO(committee)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @DeleteMapping(value = "/committees/{id}")
+    @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCommitteeById(@PathVariable("id") Long id) {
-        service.deleteById(id);
+    fun deleteCommitteeById(@PathVariable("id") id: Long?) {
+        service!!.deleteById(id)
     }
 }

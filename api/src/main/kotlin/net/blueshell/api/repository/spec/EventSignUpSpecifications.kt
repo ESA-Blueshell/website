@@ -1,90 +1,117 @@
-package net.blueshell.api.repository.spec;
+package net.blueshell.api.repository.spec
 
-import jakarta.persistence.criteria.JoinType;
-import lombok.NoArgsConstructor;
-import net.blueshell.api.base.IdentityProvider;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.controller.filter.EventSignUpFilter;
-import net.blueshell.api.model.User;
-import net.blueshell.api.model.event.EventSignUp;
-import org.springframework.data.jpa.domain.Specification;
-
-import java.time.LocalDateTime;
+import jakarta.persistence.criteria.CriteriaBuilder
+import jakarta.persistence.criteria.CriteriaQuery
+import jakarta.persistence.criteria.JoinType
+import jakarta.persistence.criteria.Root
+import lombok.NoArgsConstructor
+import net.blueshell.api.base.IdentityProvider
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.controller.filter.EventSignUpFilter
+import net.blueshell.api.model.User
+import net.blueshell.api.model.event.EventSignUp
+import org.springframework.data.jpa.domain.Specification
+import java.time.LocalDateTime
 
 @NoArgsConstructor
-public final class EventSignUpSpecifications extends IdentityProvider {
-
-    private static Specification<EventSignUp> distinct() {
-        return (root, query, cb) -> {
-            query.distinct(true);
-            return cb.conjunction();
-        };
+object EventSignUpSpecifications : IdentityProvider() {
+    private fun distinct(): Specification<EventSignUp?> {
+        return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            query!!.distinct(true)
+            cb!!.conjunction()
+        }
     }
 
-    public static Specification<EventSignUp> approved() {
-        return approved(true);
+    @JvmOverloads
+    fun approved(value: Boolean? = true): Specification<EventSignUp?> {
+        if (value == null) return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+        return Specification { root: Root<EventSignUp?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            if (value)
+                cb!!.isTrue(root!!.join<Any?, Any?>("event", JoinType.INNER).get<Boolean?>("approved"))
+            else
+                cb!!.isFalse(root!!.join<Any?, Any?>("event", JoinType.INNER).get<Boolean?>("approved"))
+        }
     }
 
-    public static Specification<EventSignUp> approved(Boolean value) {
-        if (value == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) -> value
-                ? cb.isTrue(root.join("event", JoinType.INNER).get("approved"))
-                : cb.isFalse(root.join("event", JoinType.INNER).get("approved"));
+    fun startTimeFrom(from: LocalDateTime?): Specification<EventSignUp?> {
+        if (from == null) return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+        return Specification { root: Root<EventSignUp?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            cb!!.greaterThanOrEqualTo<LocalDateTime?>(
+                root!!.join<Any?, Any?>("event", JoinType.INNER).get<LocalDateTime?>("startTime"),
+                from
+            )
+        }
     }
 
-    public static Specification<EventSignUp> startTimeFrom(LocalDateTime from) {
-        if (from == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) ->
-                cb.greaterThanOrEqualTo(root.join("event", JoinType.INNER).get("startTime"), from);
+    fun startTimeTo(to: LocalDateTime?): Specification<EventSignUp?> {
+        if (to == null) return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+        return Specification { root: Root<EventSignUp?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            cb!!.lessThanOrEqualTo<LocalDateTime?>(
+                root!!.join<Any?, Any?>("event", JoinType.INNER).get<LocalDateTime?>("startTime"),
+                to
+            )
+        }
     }
 
-    public static Specification<EventSignUp> startTimeTo(LocalDateTime to) {
-        if (to == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) ->
-                cb.lessThanOrEqualTo(root.join("event", JoinType.INNER).get("startTime"), to);
+    fun timeBetween(from: LocalDateTime?, to: LocalDateTime?): Specification<EventSignUp?> {
+        return startTimeFrom(from).and(startTimeTo(to))
     }
 
-    public static Specification<EventSignUp> timeBetween(LocalDateTime from, LocalDateTime to) {
-        return startTimeFrom(from).and(startTimeTo(to));
+    fun committeeId(committeeId: Long?): Specification<EventSignUp?> {
+        if (committeeId == null) return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+        return Specification { root: Root<EventSignUp?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            cb!!.equal(
+                root!!.join<Any?, Any?>(
+                    "event",
+                    JoinType.INNER
+                ).get<Any?>("committeeId"), committeeId
+            )
+        }
     }
 
-    public static Specification<EventSignUp> committeeId(Long committeeId) {
-        if (committeeId == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) ->
-                cb.equal(root.join("event", JoinType.INNER).get("committeeId"), committeeId);
+    fun userId(userId: Long?): Specification<EventSignUp?> {
+        if (userId == null) return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+        return Specification { root: Root<EventSignUp?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            cb!!.equal(
+                root!!.get<Any?>(
+                    "userId"
+                ), userId
+            )
+        }
     }
 
-    public static Specification<EventSignUp> userId(Long userId) {
-        if (userId == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) -> cb.equal(root.get("userId"), userId);
+    fun eventId(eventId: Long?): Specification<EventSignUp?> {
+        if (eventId == null) return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+        return Specification { root: Root<EventSignUp?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            cb!!.equal(
+                root!!.get<Any?>(
+                    "eventId"
+                ), eventId
+            )
+        }
     }
 
-    public static Specification<EventSignUp> eventId(Long eventId) {
-        if (eventId == null) return (root, query, cb) -> cb.conjunction();
-        return (root, q, cb) -> cb.equal(root.get("eventId"), eventId);
-    }
+    fun fromFilter(f: EventSignUpFilter?, user: User): Specification<EventSignUp?> {
+        var spec = distinct() // avoid duplicates due to joins
 
-    public static Specification<EventSignUp> fromFilter(EventSignUpFilter f, User user) {
-        Specification<EventSignUp> spec = distinct(); // avoid duplicates due to joins
-
-        if (f == null) return spec;
+        if (f == null) return spec
 
         if (f.getFrom() != null || f.getTo() != null) {
-            spec = spec.and(timeBetween(f.getFrom(), f.getTo()));
+            spec = spec.and(timeBetween(f.getFrom(), f.getTo()))
         }
         if (f.getUserId() != null) {
-            spec = spec.and(userId(f.getUserId()));
+            spec = spec.and(userId(f.getUserId()))
         }
         if (f.getCommitteeId() != null) {
-            spec = spec.and(committeeId(f.getCommitteeId()));
+            spec = spec.and(committeeId(f.getCommitteeId()))
         }
         if (!user.hasAuthority(Role.BOARD) && !user.getCommitteeIds().contains(f.getCommitteeId())) {
-            spec = spec.and(approved(true));
+            spec = spec.and(approved(true))
         }
         if (f.getEventId() != null) {
-            spec = spec.and(eventId(f.getEventId()));
+            spec = spec.and(eventId(f.getEventId()))
         }
 
-        return spec;
+        return spec
     }
 }

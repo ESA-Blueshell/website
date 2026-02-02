@@ -1,14 +1,9 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service
 
-import net.blueshell.api.base.BaseModelService;
-import net.blueshell.api.model.Address;
-import net.blueshell.api.repository.AddressRepository;
-import org.springframework.stereotype.Service;
+import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.model.Address
+import net.blueshell.api.repository.AddressRepository
+import org.springframework.stereotype.Service
 
 @Service
-public class AddressService extends BaseModelService<Address, AddressRepository> {
-
-    public AddressService(AddressRepository repository) {
-        super(repository);
-    }
-}
+class AddressService(repository: AddressRepository) : BaseModelService<Address?, AddressRepository?>(repository)

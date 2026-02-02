@@ -1,22 +1,21 @@
-package net.blueshell.api.mapper.user;
+package net.blueshell.api.mapper.user
 
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.dto.user.AdvancedUserDTO;
-import net.blueshell.api.model.User;
-import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import static net.blueshell.api.common.util.MappingUtil.applyIfFieldIsNotNull;
-import static net.blueshell.api.common.util.MappingUtil.generateRandomString;
-import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+import jakarta.validation.constraints.Email
+import jakarta.validation.constraints.NotBlank
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.common.util.MappingUtil
+import net.blueshell.api.dto.user.AdvancedUserDTO
+import net.blueshell.api.model.User
+import org.mapstruct.*
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
+import java.util.function.BiConsumer
 
 @Mapper(componentModel = "spring")
-public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDTO> {
-
+abstract class AdvancedUserMapper : BaseMapper<User?, AdvancedUserDTO?>() {
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private val passwordEncoder: PasswordEncoder? = null
 
     @Mapping(target = "id")
     @Mapping(target = "initials")
@@ -43,7 +42,7 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract AdvancedUserDTO toDTO(User user);
+    abstract override fun toDTO(user: User?): AdvancedUserDTO?
 
     @Mapping(target = "initials", ignore = true)
     @Mapping(target = "firstName", ignore = true)
@@ -64,37 +63,55 @@ public abstract class AdvancedUserMapper extends BaseMapper<User, AdvancedUserDT
     @Mapping(target = "studentNumber")
     @Mapping(target = "addressId")
     @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
-    public abstract User fromDTO(AdvancedUserDTO dto, @MappingTarget User user);
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    abstract fun fromDTO(dto: AdvancedUserDTO?, @MappingTarget user: User?): User?
 
     @AfterMapping
-    protected void onCreation(AdvancedUserDTO dto, @MappingTarget User user) {
-        if (user.getId() != null) return;
+    protected fun onCreation(dto: AdvancedUserDTO, @MappingTarget user: User) {
+        if (user.getId() != null) return
 
         if (hasAuthority(Role.BOARD)) {
-            user.setPassword(passwordEncoder.encode(generateRandomString()));
+            user.setPassword(passwordEncoder!!.encode(MappingUtil.generateRandomString()))
         } else {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            user.setPassword(passwordEncoder!!.encode(dto.getPassword()))
         }
 
-        applyRestrictedFields(dto, user);
+        applyRestrictedFields(dto, user)
     }
 
     @AfterMapping
-    protected void onUpdate(AdvancedUserDTO dto, @MappingTarget User user) {
-        if (user.getId() == null) return;
+    protected fun onUpdate(dto: AdvancedUserDTO, @MappingTarget user: User) {
+        if (user.getId() == null) return
 
         if (hasAuthority(Role.BOARD)) {
-            applyRestrictedFields(dto, user);
+            applyRestrictedFields(dto, user)
         }
     }
 
-    private void applyRestrictedFields(AdvancedUserDTO dto, @MappingTarget User user) {
-        applyIfFieldIsNotNull(user, dto.getInitials(), User::setInitials);
-        applyIfFieldIsNotNull(user, dto.getFirstName(), User::setFirstName);
-        applyIfFieldIsNotNull(user, dto.getPrefix(), User::setPrefix);
-        applyIfFieldIsNotNull(user, dto.getLastName(), User::setLastName);
-        applyIfFieldIsNotNull(user, dto.getEmail(), User::setEmail);
-        applyIfFieldIsNotNull(user, dto.getUsername(), User::setUsername);
+    private fun applyRestrictedFields(dto: AdvancedUserDTO, @MappingTarget user: User?) {
+        MappingUtil.applyIfFieldIsNotNull<User?, @NotBlank String?>(
+            user,
+            dto.getInitials(),
+            BiConsumer { obj: User?, initials: String? -> obj!!.setInitials(initials) })
+        MappingUtil.applyIfFieldIsNotNull<User?, @NotBlank String?>(
+            user,
+            dto.getFirstName(),
+            BiConsumer { obj: User?, firstName: String? -> obj!!.setFirstName(firstName) })
+        MappingUtil.applyIfFieldIsNotNull<User?, String?>(
+            user,
+            dto.getPrefix(),
+            BiConsumer { obj: User?, prefix: String? -> obj!!.setPrefix(prefix) })
+        MappingUtil.applyIfFieldIsNotNull<User?, @NotBlank String?>(
+            user,
+            dto.getLastName(),
+            BiConsumer { obj: User?, lastName: String? -> obj!!.setLastName(lastName) })
+        MappingUtil.applyIfFieldIsNotNull<User?, @NotBlank @Email String?>(
+            user,
+            dto.getEmail(),
+            BiConsumer { obj: User?, email: String? -> obj!!.setEmail(email) })
+        MappingUtil.applyIfFieldIsNotNull<User?, @NotBlank String?>(
+            user,
+            dto.getUsername(),
+            BiConsumer { obj: User?, username: String? -> obj!!.setUsername(username) })
     }
 }

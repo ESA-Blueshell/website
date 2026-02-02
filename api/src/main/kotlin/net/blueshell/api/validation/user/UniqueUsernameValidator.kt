@@ -1,31 +1,23 @@
-package net.blueshell.api.validation.user;
+package net.blueshell.api.validation.user
 
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-import net.blueshell.api.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
+import net.blueshell.api.service.UserService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
+import org.springframework.util.StringUtils
 
 /**
  * Validator to check if the username is unique.
  */
 @Component
-public class UniqueUsernameValidator implements ConstraintValidator<UniqueUsername, String> {
-
-    private final UserService userService;
-
-    @Autowired
-    public UniqueUsernameValidator(UserService userService) {
-        this.userService = userService;
-    }
-
-    @Override
-    public boolean isValid(String username, ConstraintValidatorContext context) {
+class UniqueUsernameValidator @Autowired constructor(private val userService: UserService) :
+    ConstraintValidator<UniqueUsername?, String?> {
+    override fun isValid(username: String?, context: ConstraintValidatorContext?): Boolean {
         if (!StringUtils.hasText(username)) {
             // Let @NotBlank handle this
-            return true;
+            return true
         }
-        return !userService.existsByUsername(username);
+        return !userService.existsByUsername(username)
     }
 }

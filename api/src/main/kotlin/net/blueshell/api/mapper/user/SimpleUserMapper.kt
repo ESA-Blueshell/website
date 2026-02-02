@@ -1,20 +1,18 @@
-package net.blueshell.api.mapper.user;
+package net.blueshell.api.mapper.user
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.user.SimpleUserDTO;
-import net.blueshell.api.model.User;
-import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.dto.user.SimpleUserDTO
+import net.blueshell.api.model.User
+import org.mapstruct.*
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
 
 @Slf4j
 @Mapper(componentModel = "spring")
-public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
+abstract class SimpleUserMapper : BaseMapper<User?, SimpleUserDTO?>() {
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private val passwordEncoder: PasswordEncoder? = null
 
     @Mapping(target = "id")
     @Mapping(target = "initials")
@@ -31,7 +29,7 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "version")
     @Mapping(target = "addressId")
     @BeanMapping(ignoreByDefault = true)
-    public abstract SimpleUserDTO toDTO(User user);
+    abstract override fun toDTO(user: User?): SimpleUserDTO?
 
     @Mapping(target = "initials", conditionExpression = "java(user.getId() == null)")
     @Mapping(target = "firstName", conditionExpression = "java(user.getId() == null)")
@@ -44,13 +42,13 @@ public abstract class SimpleUserMapper extends BaseMapper<User, SimpleUserDTO> {
     @Mapping(target = "newsletter")
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = IGNORE)
-    public abstract User fromDTO(SimpleUserDTO dto, @MappingTarget User user);
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    abstract fun fromDTO(dto: SimpleUserDTO?, @MappingTarget user: User?): User?
 
     @AfterMapping
-    protected void afterFromDTO(SimpleUserDTO dto, @MappingTarget User user) {
-        if (user.getId() != null) return;
+    protected fun afterFromDTO(dto: SimpleUserDTO, @MappingTarget user: User) {
+        if (user.getId() != null) return
 
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setPassword(passwordEncoder!!.encode(dto.getPassword()))
     }
 }

@@ -1,191 +1,198 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ResolvableType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.Set;
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
+import lombok.extern.slf4j.Slf4j
+import org.springframework.core.ResolvableType
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.http.HttpStatus
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
+import java.util.function.Supplier
 
 /**
  * <h2>Generic CRUD service</h2>
- *
- * <p>A reusable base class that wraps a JPA repository and exposes
- * common CRUD operations. Subclasses supply:</p>
- * <ul>
- *   <li>{@code T}  – the entity type (extends {@link BaseModel})</li>
- *   <li>{@code ID} – the entity’s primary-key type</li>
- *   <li>{@code R}  – a Spring-Data repository for {@code T}</li>
- * </ul>
- *
- * <p>The internal repository is <b>private</b>, so concrete services cannot call it
- * directly – all persistence goes through the methods defined here.</p>
- *
- * <p>Every data-changing operation calls the corresponding
- * {@code pre…} / {@code post…} hook. Override these in a subclass when you need
- * extra logic (validation, auditing, events, etc.).</p>
+ * 
+ * 
+ * A reusable base class that wraps a JPA repository and exposes
+ * common CRUD operations. Subclasses supply:
+ * 
+ *  * `T`  – the entity type (extends [BaseModel])
+ *  * `ID` – the entity’s primary-key type
+ *  * `R`  – a Spring-Data repository for `T`
+ * 
+ * 
+ * 
+ * The internal repository is **private**, so concrete services cannot call it
+ * directly – all persistence goes through the methods defined here.
+ * 
+ * 
+ * Every data-changing operation calls the corresponding
+ * `pre…` / `post…` hook. Override these in a subclass when you need
+ * extra logic (validation, auditing, events, etc.).
  */
 @Slf4j
-public abstract class BaseModelService<T extends BaseModel, R extends BaseRepository<T>> extends IdentityProvider {
-
-    protected final R repository;
-
-    private final String entityLabel;
+abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected constructor(protected val repository: R) :
+    IdentityProvider() {
+    private val entityLabel: String
 
     @PersistenceContext
-    private EntityManager em;
+    private lateinit var em: EntityManager
 
-    protected BaseModelService(R repository) {
-        this.repository = repository;
+    init {
         // Try to resolve T from the repository generic type for a nice label like "User"
-        Class<?> resolved = ResolvableType.forClass(repository.getClass()).as(BaseRepository.class).getGeneric(0).resolve();
-        this.entityLabel = resolved != null ? resolved.getSimpleName() : "Resource";
+        val resolved =
+            ResolvableType.forClass(repository.javaClass).`as`(BaseRepository::class.java).getGeneric(0).resolve()
+        this.entityLabel = if (resolved != null) resolved.getSimpleName() else "Resource"
     }
 
     /* -----------------------------------------------------------------
      * CREATE
      * ----------------------------------------------------------------- */
-
     /**
      * Save a new entity.
-     * <p>Sequence:&nbsp;
-     * {@code preCreate → save&flush → refresh → postCreate}</p>
+     * 
+     * Sequence:&nbsp;
+     * `preCreate → save&flush → refresh → postCreate`
      */
     @Transactional
-    public T create(T entity) {
-        entity = repository.saveAndFlush(entity);
-        em.refresh(entity);
-        return entity;
+    open fun create(entity: T): T {
+        var entity = entity
+        entity = repository.saveAndFlush<T>(entity)
+        em.refresh(entity)
+        return entity
     }
 
 
     /**
      * Create a collection of entities.
-     * <p>Each element is processed individually, so every item still triggers
-     * the pre/post hooks and id-existence check.</p>
+     *
+     * Each element is processed individually, so every item still triggers
+     * the pre/post hooks and id-existence check.
      */
     @Transactional
-    public List<T> createAll(List<T> entities) {
-        return entities.stream().map(this::create).toList();
+    open fun createAll(entities: MutableList<T>): MutableList<T> {
+        return entities.stream().map { this.create(it) }.toList()
     }
 
 
     /* -----------------------------------------------------------------
      * UPDATE (single + batch)
      * ----------------------------------------------------------------- */
-
     /**
      * Update an existing entity.
-     * <p>Throws {@link ResponseStatusException} if the id is unknown.</p>
+     *
+     * Throws [ResponseStatusException] if the id is unknown.
      */
     @Transactional
-    public T update(T entity) {
-        var id = entity.getId();
+    open fun update(entity: T): T {
+        var entity = entity
+        val id = entity.id
         if (id == null || !repository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "%s not found with id: %s".formatted(entityLabel, id));
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id")
         }
-        entity = repository.saveAndFlush(entity);
-        em.refresh(entity);
-        return entity;
+        entity = repository.saveAndFlush<T>(entity)
+        em.refresh(entity)
+        return entity
     }
 
     /**
      * Update a collection of entities.
-     * <p>Each element is processed individually, so every item still triggers
-     * the pre/post hooks and id-existence check.</p>
+     *
+     * Each element is processed individually, so every item still triggers
+     * the pre/post hooks and id-existence check.
      */
     @Transactional
-    public List<T> updateAll(List<T> entities) {
-        return entities.stream().map(this::update).toList();
+    open fun updateAll(entities: MutableList<T>): MutableList<T> {
+        return entities.stream().map { this.update(it) }.toList()
     }
 
     /* -----------------------------------------------------------------
      * READ
      * ----------------------------------------------------------------- */
-
     /**
      * Find one by its primary key.
      *
      * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)
-    public T findById(Long id) {
-        return repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "%s not found with id: %s".formatted(entityLabel, id)));
+    open fun findById(id: Long): T? {
+        return repository.findById(id).orElseThrow<ResponseStatusException>(Supplier {
+            ResponseStatusException(
+                HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id"
+            )
+        })
     }
 
     /**
-     * Return <em>all</em> records.
+     * Return *all* records.
      */
     @Transactional(readOnly = true)
-    public List<T> findAll() {
-        return repository.findAll();
+    open fun findAll(): MutableList<T> {
+        return repository.findAll()
     }
 
     /**
      * Return a paged slice, preserving any sort supplied in the pageable.
      */
     @Transactional(readOnly = true)
-    public Page<T> findAll(Pageable pageable) {
-        return repository.findAll(pageable);
+    open fun findAll(pageable: Pageable): Page<T> {
+        return repository.findAll(pageable)
     }
 
     /**
-     * Fetch the entities whose ids are in {@code ids}.
-     * <p>The order of the returned list is the repository’s default (usually
-     * primary-key order).</p>
+     * Fetch the entities whose ids are in `ids`.
+     *
+     * The order of the returned list is the repository’s default (usually
+     * primary-key order).
      */
     @Transactional(readOnly = true)
-    public List<T> findAllById(List<Long> ids) {
-        return repository.findAllById(ids);
+    open fun findAllById(ids: MutableList<Long>): MutableList<T> {
+        return repository.findAllById(ids)
     }
 
     /**
      * Find by specification &amp; paging.
-     * The repository must implement {@code JpaSpecificationExecutor}.
+     * The repository must implement `JpaSpecificationExecutor`.
      */
     @Transactional(readOnly = true)
-    public Page<T> findAll(Specification<T> spec, Pageable pageable) {
-        if (!(repository instanceof org.springframework.data.jpa.repository.JpaSpecificationExecutor<?> specRepo)) {
-            throw new UnsupportedOperationException("Repository does not support Specifications");
+    fun findAll(spec: Specification<T>, pageable: Pageable): Page<T> {
+        if (repository !is JpaSpecificationExecutor<*>) {
+            throw UnsupportedOperationException("Repository does not support Specifications")
         }
-        @SuppressWarnings("unchecked") var result = ((org.springframework.data.jpa.repository.JpaSpecificationExecutor<T>) specRepo).findAll(spec, pageable);
-        return result;
+        val result = (repository as JpaSpecificationExecutor<T>).findAll(spec, pageable)
+        return result
     }
 
     /* -----------------------------------------------------------------
      * DELETE
      * ----------------------------------------------------------------- */
-
     /**
      * Delete the entity with the given primary key
      */
     @Transactional
-    public void deleteById(Long id) {
-        repository.deleteById(id);
+    open fun deleteById(id: Long) {
+        repository.deleteById(id)
     }
 
     @Transactional
-    public void deleteAllById(Set<Long> ids) {
-        repository.deleteAllByIdInBatch(ids);
+    open fun deleteAllById(ids: MutableSet<Long>) {
+        repository.deleteAllByIdInBatch(ids)
     }
 
     /**
      * Delete the given entity instance
      */
     @Transactional
-    public void delete(T entity) {
-        repository.delete(entity);
+    open fun delete(entity: T) {
+        repository.delete(entity)
     }
 
     @Transactional
-    public void deleteAll(Set<T> entities) {
-        repository.deleteAllInBatch(entities);
+    open fun deleteAll(entities: MutableSet<T>) {
+        repository.deleteAllInBatch(entities)
     }
 }

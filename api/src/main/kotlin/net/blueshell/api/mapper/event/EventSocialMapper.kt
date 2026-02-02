@@ -1,20 +1,19 @@
-package net.blueshell.api.mapper.event;
+package net.blueshell.api.mapper.event
 
-import net.blueshell.api.common.enums.PlatformType;
-import net.blueshell.api.dto.SocialDTO;
-import net.blueshell.api.dto.event.EventDTO;
-import org.mapstruct.*;
+import net.blueshell.api.common.enums.PlatformType
+import net.blueshell.api.dto.SocialDTO
+import net.blueshell.api.dto.event.EventDTO
+import org.mapstruct.*
 
 @Mapper(componentModel = "spring")
-public abstract class EventSocialMapper {
-
+abstract class EventSocialMapper {
     @Mapping(source = "description", target = "text")
     @BeanMapping(ignoreByDefault = true)
-    public abstract SocialDTO toSocialDto(EventDTO dto);
+    abstract fun toSocialDto(dto: EventDTO?): SocialDTO?
 
     @AfterMapping
-    public void afterToSocialDTO(EventDTO dto, @MappingTarget SocialDTO socialDTO) {
-        PlatformType[] platforms = {PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM};
-        socialDTO.setPlatforms(platforms);
+    fun afterToSocialDTO(dto: EventDTO?, @MappingTarget socialDTO: SocialDTO) {
+        val platforms = arrayOf<PlatformType?>(PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM)
+        socialDTO.setPlatforms(platforms)
     }
 }

@@ -1,15 +1,14 @@
-package net.blueshell.api.controller.filter;
+package net.blueshell.api.controller.filter
 
-import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.time.LocalDate;
+import lombok.Data
+import org.springframework.format.annotation.DateTimeFormat
+import java.time.LocalDate
 
 @Data
-public class MembershipFilter {
+class MembershipFilter {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    private LocalDate from;
+    private val from: LocalDate? = null
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    private LocalDate to;
+    private val to: LocalDate? = null
 }

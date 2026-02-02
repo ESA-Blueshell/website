@@ -1,16 +1,15 @@
-package net.blueshell.api.repository;
+package net.blueshell.api.repository
 
-import net.blueshell.api.base.BaseRepository;
-import net.blueshell.api.model.File;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.model.File
+import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
-public interface FileRepository extends BaseRepository<File> {
-    Optional<File> findByName(String name);
+interface FileRepository : BaseRepository<File?> {
+    fun findByName(name: String?): Optional<File?>?
 
-    Optional<File> findByEventBanners_Id(Long bannerId);
+    fun findByEventBanners_Id(bannerId: Long?): Optional<File?>?
 
-    Optional<File> findByPath(String path);
+    fun findByPath(path: String?): Optional<File?>?
 }

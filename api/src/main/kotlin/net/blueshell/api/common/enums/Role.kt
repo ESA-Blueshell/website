@@ -1,12 +1,12 @@
-package net.blueshell.api.common.enums;
+package net.blueshell.api.common.enums
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-
-import java.util.*;
+import io.swagger.v3.oas.annotations.media.Schema
+import lombok.Getter
+import java.util.*
+import java.util.List
 
 @Schema(enumAsRef = true)
-public enum Role {
+enum class Role(@field:Getter private val reprString: String?, vararg inheritedRoles: Role?) {
     ANONYMOUS("ANONYMOUS"),
     VEGAN("VEGAN"),
     GUEST("GUEST", ANONYMOUS),
@@ -19,49 +19,54 @@ public enum Role {
     SYSTEM("SYSTEM", ADMIN),
     ;
 
-    @Getter
-    private final String reprString;
-    private final Role[] inheritedRoles;
+    private val inheritedRoles: Array<Role?>
 
-    Role(String reprString, Role... inheritedRoles) {
-        this.reprString = reprString;
-        this.inheritedRoles = inheritedRoles;
+    init {
+        this.inheritedRoles = inheritedRoles
     }
 
-    public static Set<Role> allThatInherit(Role base) {
-        EnumSet<Role> res = EnumSet.noneOf(Role.class);
-        for (Role r : Role.values()) {
-            if (r.matchesRole(base)) {
-                res.add(r);
+    fun matchesRole(role: Role?): Boolean {
+        return role == this || Arrays.stream<Role?>(inheritedRoles).anyMatch { r: Role? -> r!!.matchesRole(role) }
+    }
+
+    val allInheritedRoles: MutableSet<Role?>
+        /**
+         * Search for all inherited roles of this Role.
+         */
+        get() {
+            val res: MutableSet<Role?> =
+                HashSet<Role?>()
+            res.add(this)
+            val unexplored =
+                ArrayDeque<Role>(
+                    List.of<Role?>(*inheritedRoles)
+                )
+            while (!unexplored.isEmpty()) {
+                val currentRole = unexplored.remove()
+                res.add(currentRole)
+                unexplored.addAll(
+                    Arrays.stream<Role?>(currentRole.inheritedRoles)
+                        .filter { role: Role? -> !res.contains(role) }.toList()
+                )
             }
+            return res
         }
-        return res;
-    }
 
-    public boolean matchesRole(Role role) {
-        return role == this || Arrays.stream(inheritedRoles).anyMatch(r -> r.matchesRole(role));
-    }
+    val authorities: MutableCollection<Any?>
+        get() = mutableSetOf<Any?>(this.allInheritedRoles)
 
-    /**
-     * Search for all inherited roles of this Role.
-     */
-    public Set<Role> getAllInheritedRoles() {
-        Set<Role> res = new HashSet<>();
-        res.add(this);
-        ArrayDeque<Role> unexplored = new ArrayDeque<>(List.of(inheritedRoles));
-        while (!unexplored.isEmpty()) {
-            Role currentRole = unexplored.remove();
-            res.add(currentRole);
-            unexplored.addAll(Arrays.stream(currentRole.inheritedRoles).filter(role -> !res.contains(role)).toList());
+    val name: Any?
+        get() = this.reprString
+
+    companion object {
+        fun allThatInherit(base: Role?): MutableSet<Role?> {
+            val res = EnumSet.noneOf<Role?>(Role::class.java)
+            for (r in entries) {
+                if (r.matchesRole(base)) {
+                    res.add(r)
+                }
+            }
+            return res
         }
-        return res;
-    }
-
-    public Collection<Object> getAuthorities() {
-        return Collections.singleton(getAllInheritedRoles());
-    }
-
-    public Object getName() {
-        return this.reprString;
     }
 }

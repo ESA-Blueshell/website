@@ -1,28 +1,29 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.model.User;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.model.User
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 
 @Slf4j
-public abstract class IdentityProvider {
-    protected User getPrincipal() {
-        Object obj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+abstract class IdentityProvider {
+    protected val principal: User?
+        get() {
+            val obj = SecurityContextHolder.getContext().authentication.principal
 
-        if (obj instanceof User) {
-            return (User) obj;
+            if (obj is User) {
+                return obj
+            }
+            return null
         }
-        return null;
-    }
 
-    protected boolean hasAuthority(Role role) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    protected fun hasAuthority(role: Role): Boolean {
+        val authentication = SecurityContextHolder.getContext().authentication
         if (authentication == null) {
-            return false;
+            return false
         }
-        return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(role.toString()));
+        return authentication.authorities.stream()
+            .anyMatch { a: GrantedAuthority? -> a!!.authority == role.toString() }
     }
 }

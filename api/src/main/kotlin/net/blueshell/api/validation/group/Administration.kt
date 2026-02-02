@@ -1,4 +1,3 @@
-package net.blueshell.api.validation.group;
+package net.blueshell.api.validation.group
 
-public interface Administration {
-}
+interface Administration 

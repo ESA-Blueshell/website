@@ -1,28 +1,26 @@
-package net.blueshell.api.model.committee;
+package net.blueshell.api.model.committee
 
-import jakarta.persistence.*;
-import lombok.*;
-import net.blueshell.api.base.BaseModel;
-import net.blueshell.api.model.User;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
-
-import java.util.HashSet;
-import java.util.Set;
+import jakarta.persistence.*
+import lombok.Data
+import lombok.EqualsAndHashCode
+import lombok.NoArgsConstructor
+import lombok.ToString
+import net.blueshell.api.base.BaseModel
+import net.blueshell.api.model.User
+import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.SQLRestriction
 
 @Entity
 @Table(
-        name = "committees",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_committees_name_deleted_at",
-                        columnNames = {"name", "deleted_at"}
-                )
-        },
-        indexes = {
-                @Index(name = "idx_committees_deleted_at", columnList = "deleted_at"),
-                @Index(name = "idx_committees_name", columnList = "name")
-        }
+    name = "committees",
+    uniqueConstraints = [UniqueConstraint(
+        name = "uk_committees_name_deleted_at",
+        columnNames = ["name", "deleted_at"]
+    )],
+    indexes = [Index(name = "idx_committees_deleted_at", columnList = "deleted_at"), Index(
+        name = "idx_committees_name",
+        columnList = "name"
+    )]
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -30,23 +28,19 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @NoArgsConstructor
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class Committee extends BaseModel {
+class Committee : BaseModel() {
     @Column(name = "name", nullable = false)
     @ToString.Include
-    private String name;
+    private var name: String? = null
 
     @Column(name = "description", nullable = false, length = 4095)
     @ToString.Include
-    private String description;
+    private var description: String? = null
 
-    @OneToMany(
-            mappedBy = "committee",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY)
-    private Set<CommitteeMember> members = new HashSet<>();
+    @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    private val members: MutableSet<CommitteeMember?> = HashSet<CommitteeMember?>()
 
-    public boolean hasMember(User user) {
-        return getMembers().stream().anyMatch(cm -> cm.getUser().getId().equals(user.getId()));
+    fun hasMember(user: User): Boolean {
+        return getMembers().stream().anyMatch { cm: CommitteeMember? -> cm!!.getUser().getId() == user.getId() }
     }
 }

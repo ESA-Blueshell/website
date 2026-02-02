@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record CreateContributionPeriodListEvent(Long periodId) {
-}
+@JvmRecord
+data class CreateContributionPeriodListEvent(val periodId: Long?) 

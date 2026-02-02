@@ -1,39 +1,27 @@
-package net.blueshell.api.email;
+package net.blueshell.api.email
 
-import net.blueshell.api.base.BaseEmail;
-import net.blueshell.api.model.User;
-import net.blueshell.api.model.event.Event;
-import net.blueshell.api.model.event.EventSignUp;
+import net.blueshell.api.base.BaseEmail
+import net.blueshell.api.model.User
+import net.blueshell.api.model.event.Event
+import net.blueshell.api.model.event.EventSignUp
 
-public class EventSignupEmail extends BaseEmail {
-
-    private final EventSignUp eventSignUp;
-
-    public EventSignupEmail(EventSignUp eventSignUp, String frontendUrl, String appUrl) {
-        super(createRecipientFromSignUp(eventSignUp), frontendUrl, appUrl);
-        this.eventSignUp = eventSignUp;
+class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String?, appUrl: String?) : BaseEmail(
+    createRecipientFromSignUp(
+        eventSignUp
+    ), frontendUrl, appUrl
+) {
+    override fun getSubject(): String {
+        return String.format("Event Registration Confirmed - %s", eventSignUp.getEvent().getTitle())
     }
 
-    private static User createRecipientFromSignUp(EventSignUp signUp) {
-        User guestUser = new User();
-        guestUser.setEmail(signUp.getGuest().getEmail());
-        guestUser.setFirstName(signUp.getGuest().getName());
-        return guestUser;
-    }
+    override fun getMarkdownContent(): String {
+        val event = eventSignUp.getEvent()
+        val editLink = String.format(frontendUrl + "/events/signups/edit/%s", eventSignUp.getGuest().getAccessToken())
 
-    @Override
-    public String getSubject() {
-        return String.format("Event Registration Confirmed - %s", eventSignUp.getEvent().getTitle());
-    }
+        val eventDetailsLink = String.format(frontendUrl + "/events#%d", event.getId())
 
-    @Override
-    public String getMarkdownContent() {
-        Event event = eventSignUp.getEvent();
-        String editLink = String.format(frontendUrl + "/events/signups/edit/%s", eventSignUp.getGuest().getAccessToken());
-
-        String eventDetailsLink = String.format(frontendUrl + "/events#%d", event.getId());
-
-        return String.format("""
+        return String.format(
+            """
                         Dear %s,
                         
                         Thank you for registering for **%s**!
@@ -62,36 +50,45 @@ public class EventSignupEmail extends BaseEmail {
                         
                         Kind regards,
                         Blueshell Events Team
-                        """,
-                eventSignUp.getGuest().getName(),
-                event.getTitle(),
-                event.getTitle(),
-                formatEventDate(event), formatEventLocation(event),
-                eventDetailsLink,
-                editLink,
-                appUrl
-        );
+                        
+                        """.trimIndent(),
+            eventSignUp.getGuest().getName(),
+            event.getTitle(),
+            event.getTitle(),
+            formatEventDate(event), formatEventLocation(event),
+            eventDetailsLink,
+            editLink,
+            appUrl
+        )
     }
 
-    @Override
-    public String getSenderName() {
-        return "Blueshell Events";
+    override fun getSenderName(): String {
+        return "Blueshell Events"
     }
 
-    private String formatEventDate(Event event) {
+    private fun formatEventDate(event: Event): String {
         if (event.getStartTime() != null) {
-            if (event.getEndTime() != null && !event.getStartTime().equals(event.getEndTime())) {
-                return String.format("%s - %s", event.getStartTime(), event.getEndTime());
+            if (event.getEndTime() != null && event.getStartTime() != event.getEndTime()) {
+                return String.format("%s - %s", event.getStartTime(), event.getEndTime())
             }
-            return event.getStartTime().toString();
+            return event.getStartTime().toString()
         }
-        return "TBA";
+        return "TBA"
     }
 
-    private String formatEventLocation(Event event) {
-        if (event.getLocation() != null && !event.getLocation().trim().isEmpty()) {
-            return event.getLocation();
+    private fun formatEventLocation(event: Event): String {
+        if (event.getLocation() != null && !event.getLocation().trim { it <= ' ' }.isEmpty()) {
+            return event.getLocation()
         }
-        return "Location details will be provided closer to the event date";
+        return "Location details will be provided closer to the event date"
+    }
+
+    companion object {
+        private fun createRecipientFromSignUp(signUp: EventSignUp): User {
+            val guestUser = User()
+            guestUser.setEmail(signUp.getGuest().getEmail())
+            guestUser.setFirstName(signUp.getGuest().getName())
+            return guestUser
+        }
     }
 }

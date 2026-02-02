@@ -1,18 +1,15 @@
-package net.blueshell.api.validation.user;
+package net.blueshell.api.validation.user
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
-import java.lang.annotation.*;
-
-@Documented
-@Constraint(validatedBy = UniqueUserValidator.class)
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface UniqueUser {
-    String message() default "User has duplicate fields.";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-}
+@MustBeDocumented
+@Constraint(validatedBy = [UniqueUserValidator::class])
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class UniqueUser(
+    val message: String = "User has duplicate fields.",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = []
+)

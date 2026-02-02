@@ -1,21 +1,18 @@
-package net.blueshell.api.mapper.committee;
+package net.blueshell.api.mapper.committee
+
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.dto.committee.SimpleCommitteeDTO
+import net.blueshell.api.model.committee.Committee
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
 
 
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.committee.SimpleCommitteeDTO;
-import net.blueshell.api.model.committee.Committee;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-
-@Mapper(
-        componentModel = "spring",
-        uses = {CommitteeMemberMapper.class}
-)
-public abstract class SimpleCommitteeMapper extends BaseMapper<Committee, SimpleCommitteeDTO> {
+@Mapper(componentModel = "spring", uses = [CommitteeMemberMapper::class])
+abstract class SimpleCommitteeMapper : BaseMapper<Committee?, SimpleCommitteeDTO?>() {
     @Mapping(target = "name")
     @Mapping(target = "description")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    public abstract SimpleCommitteeDTO toDTO(Committee committee);
+    abstract override fun toDTO(committee: Committee?): SimpleCommitteeDTO?
 }

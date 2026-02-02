@@ -1,31 +1,31 @@
-package net.blueshell.api.common.util;
+package net.blueshell.api.common.util
 
-import java.security.SecureRandom;
-import java.util.Random;
+import java.security.SecureRandom
+import java.util.*
 
-public class Util {
+object Util {
+    const val ACTIVATION_KEY_LENGTH: Int = 30
+    val ACTIVATION_VALID_SECONDS: Long = (3600 * 24 * 3 // 3 days
+            ).toLong()
+    private val random: Random = SecureRandom()
 
-    public static final int ACTIVATION_KEY_LENGTH = 30;
-    public static final long ACTIVATION_VALID_SECONDS = 3600 * 24 * 3; // 3 days
-    private static final Random random = new SecureRandom();
+    fun getRandomCapitalString(length: Int): String {
+        val randKey = StringBuilder()
 
-    public static String getRandomCapitalString(int length) {
-        StringBuilder randKey = new StringBuilder();
+        var options = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-        String options = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-        for (int i = 1; i <= length; i++) {
-            options = options.toUpperCase();
-            randKey.append(options.charAt(Util.getRandom(options.length() - 1)));
+        for (i in 1..length) {
+            options = options.uppercase(Locale.getDefault())
+            randKey.append(options.get(getRandom(options.length - 1)))
         }
 
-        return randKey.toString();
+        return randKey.toString()
     }
 
-    public static int getRandom(int inclBound) {
+    fun getRandom(inclBound: Int): Int {
         if (inclBound <= 0) {
-            return 0;
+            return 0
         }
-        return random.nextInt(inclBound + 1);
+        return random.nextInt(inclBound + 1)
     }
 }

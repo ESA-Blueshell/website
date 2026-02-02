@@ -1,23 +1,23 @@
-package net.blueshell.api.config;
+package net.blueshell.api.config
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.web.client.RestTemplate
 
 @Configuration
-public class RestClientConfig {
-
+class RestClientConfig {
     /**
      * Central RestTemplate bean.
-     * <p>
-     * - Uses Spring’s {@link RestTemplateBuilder} so any
+     * 
+     * 
+     * - Uses Spring’s [RestTemplateBuilder] so any
      * auto-registered customisers (Jackson, timeouts, interceptors, etc.)
      * are applied automatically.
      */
     @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.build();
+    fun restTemplate(builder: RestTemplateBuilder): RestTemplate? {
+        return builder.build()
     }
 }
 

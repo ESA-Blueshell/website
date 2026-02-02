@@ -1,53 +1,52 @@
-package net.blueshell.api.job.email;
+package net.blueshell.api.job.email
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.common.enums.ResetType;
-import net.blueshell.api.service.email.EmailService;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.retry.annotation.Retryable;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.common.enums.ResetType
+import net.blueshell.api.service.email.EmailService
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Recover
+import org.springframework.retry.annotation.Retryable
+import org.springframework.scheduling.annotation.Async
+import org.springframework.stereotype.Service
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class RecoveryEmailJob {
-
-    private static final ConcurrentHashMap<String, Boolean> processing = new ConcurrentHashMap<>();
-
-    private final EmailService emails;
+class RecoveryEmailJob {
+    private val emails: EmailService? = null
 
     @Async
-    @Retryable(retryFor = {Exception.class}, maxAttempts = 3,
-            backoff = @Backoff(delay = 2000, multiplier = 2))
-    public CompletableFuture<Void> send(Long userId, String token, ResetType resetType) {
-        String key = jobKey(resetType.toString(), userId);
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
+    fun send(userId: Long?, token: String?, resetType: ResetType): CompletableFuture<Void?> {
+        val key = jobKey(resetType.toString(), userId)
         if (processing.putIfAbsent(key, true) != null) {
-            log.info("Reset email already processing for userId={}", userId);
-            return CompletableFuture.completedFuture(null);
+            RecoveryEmailJob.log.info("Reset email already processing for userId={}", userId)
+            return CompletableFuture.completedFuture<Void?>(null)
         }
 
         try {
-            emails.sendUserResetEmail(userId, token, resetType);
-            return CompletableFuture.completedFuture(null);
+            emails!!.sendUserResetEmail(userId, token, resetType)
+            return CompletableFuture.completedFuture<Void?>(null)
         } finally {
-            processing.remove(key);
+            processing.remove(key)
         }
     }
 
     @Recover
-    public CompletableFuture<Void> recover(Exception ex, Long userId) {
-        processing.remove(jobKey("reset", userId));
-        log.error("Giving up reset email for userId={}: {}", userId, ex.getMessage(), ex);
-        return CompletableFuture.completedFuture(null);
+    fun recover(ex: Exception, userId: Long?): CompletableFuture<Void?> {
+        processing.remove(jobKey("reset", userId))
+        RecoveryEmailJob.log.error("Giving up reset email for userId={}: {}", userId, ex.message, ex)
+        return CompletableFuture.completedFuture<Void?>(null)
     }
 
-    private String jobKey(String type, Long id) {
-        return "%s_%d_%d".formatted(type, id, System.currentTimeMillis() / 10000);
+    private fun jobKey(type: String?, id: Long?): String {
+        return "%s_%d_%d".formatted(type, id, System.currentTimeMillis() / 10000)
+    }
+
+    companion object {
+        private val processing = ConcurrentHashMap<String?, Boolean?>()
     }
 }

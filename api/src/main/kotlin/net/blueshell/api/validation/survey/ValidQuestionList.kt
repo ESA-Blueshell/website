@@ -1,21 +1,15 @@
-package net.blueshell.api.validation.survey;
+package net.blueshell.api.validation.survey
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target({ElementType.FIELD})
-@Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidQuestionListValidator.class)
-public @interface ValidQuestionList {
-    String message() default "Invalid list of questions";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-}
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+@Constraint(validatedBy = [ValidQuestionListValidator::class])
+annotation class ValidQuestionList(
+    val message: String = "Invalid list of questions",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = []
+)
 

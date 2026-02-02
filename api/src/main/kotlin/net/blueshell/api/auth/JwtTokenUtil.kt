@@ -1,85 +1,82 @@
-package net.blueshell.api.auth;
+package net.blueshell.api.auth
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.io.Decoders
+import io.jsonwebtoken.security.Keys
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.stereotype.Component
+import java.util.*
+import java.util.function.Function
+import javax.crypto.SecretKey
 
 @Component("commonJwtTokenUtil")
-public class JwtTokenUtil {
+class JwtTokenUtil {
+    @Value("\${app.jwt.expiration}")
+    private val expiration: Long? = null
 
-    @Value("${app.jwt.expiration}")
-    private Long expiration;
+    @Value("\${app.jwt.secret}")
+    private val secret: String? = null
 
-    @Value("${app.jwt.secret}")
-    private String secret;
-
-    public String getUsernameFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+    fun getUsernameFromToken(token: String?): String {
+        return getClaimFromToken(token) { obj: Claims? -> obj?.subject }!!
     }
 
-    public Date getExpirationDateFromToken(String token) {
-        return getClaimFromToken(token, Claims::getExpiration);
+    fun getExpirationDateFromToken(token: String?): Date {
+        return getClaimFromToken(token) { obj: Claims? -> obj?.expiration }!!
     }
 
-    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = getAllClaimsFromToken(token);
-        return claimsResolver.apply(claims);
+    fun <T> getClaimFromToken(token: String?, claimsResolver: Function<Claims?, T?>): T? {
+        val claims = getAllClaimsFromToken(token)
+        return claimsResolver.apply(claims)
     }
 
-    private Claims getAllClaimsFromToken(String token) {
+    private fun getAllClaimsFromToken(token: String?): Claims? {
         return Jwts.parser()
-                .verifyWith(getSigningKey())            // new: verifyWith(SecretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+            .verifyWith(this.signingKey) // new: verifyWith(SecretKey)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
     }
 
-    public boolean isTokenExpired(String token) {
-        final Date tokenExpiration = getExpirationDateFromToken(token);
-        return tokenExpiration.before(new Date());
+    fun isTokenExpired(token: String?): Boolean {
+        val tokenExpiration = getExpirationDateFromToken(token)
+        return tokenExpiration.before(Date())
     }
 
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, userDetails.getUsername());
+    fun generateToken(userDetails: UserDetails): String? {
+        val claims: MutableMap<String?, Any?> = HashMap<String?, Any?>()
+        return doGenerateToken(claims, userDetails.username)
     }
 
-    private String doGenerateToken(Map<String, Object> claims, String subject) {
+    private fun doGenerateToken(claims: MutableMap<String?, Any?>?, subject: String?): String? {
         return Jwts.builder()
-                .claims(claims)
-                .subject(subject)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), Jwts.SIG.HS512)
-                .compact();
+            .claims(claims)
+            .subject(subject)
+            .issuedAt(Date())
+            .expiration(Date(System.currentTimeMillis() + expiration!!))
+            .signWith(this.signingKey, Jwts.SIG.HS512)
+            .compact()
     }
 
-    public boolean isTokenValid(String token) {
+    fun isTokenValid(token: String?): Boolean {
         try {
-            getAllClaimsFromToken(token);
-            return true;
-        } catch (Exception e) {
-            return false;
+            getAllClaimsFromToken(token)
+            return true
+        } catch (e: Exception) {
+            return false
         }
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = getUsernameFromToken(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    fun validateToken(token: String?, userDetails: UserDetails): Boolean {
+        val username = getUsernameFromToken(token)
+        return username == userDetails.username && !isTokenExpired(token)
     }
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
+    private val signingKey: SecretKey
+        get() {
+            val keyBytes = Decoders.BASE64.decode(secret)
+            return Keys.hmacShaKeyFor(keyBytes)
+        }
 }

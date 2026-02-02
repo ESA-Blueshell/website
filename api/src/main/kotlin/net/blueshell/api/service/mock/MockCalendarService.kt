@@ -1,20 +1,22 @@
-package net.blueshell.api.service.mock;
+package net.blueshell.api.service.mock
 
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.model.event.Event;
-import net.blueshell.api.service.CalendarService;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import lombok.Getter
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.model.event.Event
+import net.blueshell.api.service.CalendarService
+import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
+import org.springframework.stereotype.Service
+import java.io.IOException
+import java.time.Instant
+import java.util.*
+import java.util.Map
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
+import java.util.function.Function
+import java.util.stream.Collectors
+import kotlin.collections.MutableMap
+import kotlin.collections.remove
 
 /**
  * Test double for CalendarService: in-memory store with stable IDs.
@@ -23,85 +25,86 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @Primary
 @Profile("test | dev")
-public class MockCalendarService extends CalendarService {
-
-    private final AtomicLong seq = new AtomicLong(1_000_000L);
-    private final Map<String, Event> eventsById = new ConcurrentHashMap<>();
+class MockCalendarService : CalendarService() {
+    private val seq = AtomicLong(1000000L)
+    private val eventsById: MutableMap<String?, Event?> = ConcurrentHashMap<String?, Event?>()
 
     @Getter
-    private final Map<String, Event> readOnlyEvents =
-            Collections.unmodifiableMap(eventsById);
+    private val readOnlyEvents: MutableMap<String?, Event?> = Collections.unmodifiableMap<String?, Event?>(eventsById)
 
-    private static Event copyOf(Event src) {
-        Event e = new Event();
-        e.setId(src.getId());
-        e.setTitle(src.getTitle());
-        e.setLocation(src.getLocation());
-        e.setDescription(src.getDescription());
-        e.setStartTime(src.getStartTime());
-        e.setEndTime(src.getEndTime());
-        e.setGoogleId(src.getGoogleId());
-        return e;
-    }
-
-    @Override
-    public void add(@NotNull Event event) throws IOException {
+    @Throws(IOException::class)
+    override fun add(event: Event) {
         if (event.getGoogleId() != null) {
-            update(event);
-            return;
+            update(event)
+            return
         }
-        String id = "mock-" + seq.getAndIncrement();
-        Event stored = copyOf(event);
-        stored.setGoogleId(id);
-        eventsById.put(id, stored);
-        event.setGoogleId(id);
-        log.info("[calendar-mock] added event id={} title='{}' start={} end={}",
-                id, event.getTitle(), event.getStartTime(), event.getEndTime());
+        val id = "mock-" + seq.getAndIncrement()
+        val stored: Event = copyOf(event)
+        stored.setGoogleId(id)
+        eventsById.put(id, stored)
+        event.setGoogleId(id)
+        MockCalendarService.log.info(
+            "[calendar-mock] added event id={} title='{}' start={} end={}",
+            id, event.getTitle(), event.getStartTime(), event.getEndTime()
+        )
     }
 
-    @Override
-    public void update(@NotNull Event event) throws IOException {
+    @Throws(IOException::class)
+    override fun update(event: Event) {
         if (event.getGoogleId() == null) {
-            add(event);
-            return;
+            add(event)
+            return
         }
-        String id = event.getGoogleId();
-        eventsById.put(id, copyOf(event));
-        log.info("[calendar-mock] updated event id={} title='{}'", id, event.getTitle());
+        val id = event.getGoogleId()
+        eventsById.put(id, copyOf(event))
+        MockCalendarService.log.info("[calendar-mock] updated event id={} title='{}'", id, event.getTitle())
     }
 
-    @Override
-    public void remove(@NotNull Event event) throws IOException {
-        String id = event.getGoogleId();
-        if (id == null) return;
-        eventsById.remove(id);
-        event.setGoogleId(null);
-        log.info("[calendar-mock] removed event id={}", id);
+    @Throws(IOException::class)
+    override fun remove(event: Event) {
+        val id = event.getGoogleId()
+        if (id == null) return
+        eventsById.remove(id)
+        event.setGoogleId(null)
+        MockCalendarService.log.info("[calendar-mock] removed event id={}", id)
     }
 
-    @Override
-    public void sync(@NotNull Event event) throws IOException {
-        if (event.getGoogleId() == null) add(event);
-        else update(event);
+    @Throws(IOException::class)
+    override fun sync(event: Event) {
+        if (event.getGoogleId() == null) add(event)
+        else update(event)
     }
 
-    public void clear() {
-        eventsById.clear();
+    fun clear() {
+        eventsById.clear()
     }
 
-    public Event findByGoogleId(String googleId) {
-        Event e = eventsById.get(googleId);
-        return e == null ? null : copyOf(e);
+    fun findByGoogleId(googleId: String?): Event? {
+        val e = eventsById.get(googleId)
+        return if (e == null) null else copyOf(e)
     }
 
-    public Map<String, Event> findBetween(Instant startInclusive, Instant endExclusive) {
-        return eventsById.entrySet().stream()
-                .filter(en -> {
-                    Instant s = en.getValue().getStartTime();
-                    Instant e = en.getValue().getEndTime();
-                    return s != null && e != null &&
-                            !s.isBefore(startInclusive) && e.isBefore(endExclusive);
-                })
-                .collect(java.util.stream.Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    fun findBetween(startInclusive: Instant, endExclusive: Instant): MutableMap<String?, Event?> {
+        return eventsById.entries.stream()
+            .filter { en: MutableMap.MutableEntry<String?, Event?>? ->
+                val s = en!!.value!!.getStartTime()
+                val e = en.value!!.getEndTime()
+                s != null && e != null && !s.isBefore(startInclusive) && e.isBefore(endExclusive)
+            }
+            .collect(Collectors.toUnmodifiableMap(Function { Map.Entry.key }, Function { Map.Entry.value }))
+    }
+
+    companion object {
+        private fun copyOf(src: Event): Event {
+            val e = Event()
+            e.setId(src.getId())
+            e.setTitle(src.getTitle())
+            e.setLocation(src.getLocation())
+            e.setDescription(src.getDescription())
+            e.setStartTime(src.getStartTime())
+            e.setEndTime(src.getEndTime())
+            e.setGoogleId(src.getGoogleId())
+            return e
+        }
     }
 }

@@ -1,10 +1,6 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
-public abstract class BaseController<S, M> extends IdentityProvider {
-
-    protected final S service;
-    protected final M mapper;
-}
+abstract class BaseController<S, M>(
+    protected val service: S,
+    protected val mapper: M
+) : IdentityProvider()

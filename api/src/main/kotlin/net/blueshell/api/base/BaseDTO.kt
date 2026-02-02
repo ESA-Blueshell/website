@@ -1,15 +1,14 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import lombok.Data;
-
-import java.io.Serializable;
-import java.time.Instant;
+import lombok.Data
+import java.io.Serializable
+import java.time.Instant
 
 @Data
-public abstract class BaseDTO implements Serializable {
-    private Long id;
-    private Instant deletedAt;
-    private Instant createdAt;
-    private Instant updatedAt;
-    private Long version;
+abstract class BaseDTO : Serializable {
+    private val id: Long? = null
+    private val deletedAt: Instant? = null
+    private val createdAt: Instant? = null
+    private val updatedAt: Instant? = null
+    private val version: Long? = null
 }

@@ -1,54 +1,55 @@
-package net.blueshell.api.base;
+package net.blueshell.api.base
 
-import jakarta.persistence.*;
-import lombok.Setter;
-import net.blueshell.api.common.event.jpa.*;
-import org.springframework.context.ApplicationEventPublisher;
+import jakarta.persistence.*
+import lombok.Setter
+import net.blueshell.api.common.event.jpa.*
+import org.springframework.context.ApplicationEventPublisher
 
-public class JpaListener {
-
-    @Setter
-    private static ApplicationEventPublisher publisher;
-
+class JpaListener {
     @PrePersist
-    public void prePersist(Object entity) {
-        if (publisher == null) return;
+    fun prePersist(entity: Any?) {
+        if (publisher == null) return
 
-        publisher.publishEvent(new PrePersistEvent<>(entity));
+        publisher.publishEvent(PrePersistEvent<Any?>(entity))
     }
 
     @PostPersist
-    public void postPersist(Object entity) {
-        if (publisher == null) return;
+    fun postPersist(entity: Any?) {
+        if (publisher == null) return
 
-        publisher.publishEvent(new PostPersistEvent<>(entity));
+        publisher.publishEvent(PostPersistEvent<Any?>(entity))
     }
 
     @PreUpdate
-    public void preUpdate(Object entity) {
-        if (publisher == null) return;
+    fun preUpdate(entity: Any?) {
+        if (publisher == null) return
 
-        publisher.publishEvent(new PreUpdateEvent<>(entity));
+        publisher.publishEvent(PreUpdateEvent<Any?>(entity))
     }
 
     @PostUpdate
-    public void postUpdate(Object entity) {
-        if (publisher == null) return;
+    fun postUpdate(entity: Any?) {
+        if (publisher == null) return
 
-        publisher.publishEvent(new PostUpdateEvent<>(entity));
+        publisher.publishEvent(PostUpdateEvent<Any?>(entity))
     }
 
     @PreRemove
-    public void preRemove(Object entity) {
-        if (publisher == null) return;
+    fun preRemove(entity: Any?) {
+        if (publisher == null) return
 
-        publisher.publishEvent(new PreRemoveEvent<>(entity));
+        publisher.publishEvent(PreRemoveEvent<Any?>(entity))
     }
 
     @PostRemove
-    public void postRemove(Object entity) {
-        if (publisher == null) return;
+    fun postRemove(entity: Any?) {
+        if (publisher == null) return
 
-        publisher.publishEvent(new PostRemoveEvent<>(entity));
+        publisher.publishEvent(PostRemoveEvent<Any?>(entity))
+    }
+
+    companion object {
+        @Setter
+        private val publisher: ApplicationEventPublisher? = null
     }
 }

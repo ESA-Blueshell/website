@@ -1,58 +1,55 @@
-package net.blueshell.api.repository.spec;
+package net.blueshell.api.repository.spec
 
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
-import lombok.NoArgsConstructor;
-import net.blueshell.api.controller.filter.MembershipFilter;
-import net.blueshell.api.model.Membership;
-import net.blueshell.api.model.User;
-import org.springframework.data.jpa.domain.Specification;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.criteria.CriteriaBuilder
+import jakarta.persistence.criteria.CriteriaQuery
+import jakarta.persistence.criteria.Predicate
+import jakarta.persistence.criteria.Root
+import lombok.NoArgsConstructor
+import net.blueshell.api.controller.filter.MembershipFilter
+import net.blueshell.api.model.Membership
+import net.blueshell.api.model.User
+import org.springframework.data.jpa.domain.Specification
+import java.time.LocalDate
 
 @NoArgsConstructor
-public final class MembershipSpecifications {
-
-    public static Specification<Membership> timeOverlap(LocalDate from, LocalDate to) {
-        return (root, q, cb) -> {
+object MembershipSpecifications {
+    fun timeOverlap(from: LocalDate?, to: LocalDate?): Specification<Membership?> {
+        return Specification { root: Root<Membership?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
             if (from == null && to == null) {
-                return cb.conjunction();
+                return@Specification cb!!.conjunction()
             }
-
-            LocalDate f = from;
-            LocalDate t = to;
+            var f = from
+            var t = to
             if (f != null && t != null && t.isBefore(f)) {
-                LocalDate tmp = f;
-                f = t;
-                t = tmp;
+                val tmp: LocalDate = f
+                f = t
+                t = tmp
             }
 
-            Path<LocalDate> start = root.get("startDate");
-            Path<LocalDate> end = root.get("endDate");
+            val start = root!!.get<LocalDate?>("startDate")
+            val end = root.get<LocalDate?>("endDate")
 
-            List<Predicate> ands = new ArrayList<>(2);
+            val ands: MutableList<Predicate?> = ArrayList<Predicate?>(2)
 
             if (t != null) {
-                ands.add(cb.lessThanOrEqualTo(start, t));
+                ands.add(cb!!.lessThanOrEqualTo<LocalDate?>(start, t))
             }
 
             if (f != null) {
-                ands.add(cb.or(cb.isNull(end), cb.greaterThanOrEqualTo(end, f)));
+                ands.add(cb!!.or(cb.isNull(end), cb.greaterThanOrEqualTo<LocalDate?>(end, f)))
             }
-
-            return cb.and(ands.toArray(new Predicate[0]));
-        };
+            cb!!.and(*ands.toTypedArray<Predicate?>())
+        }
     }
 
-    public static Specification<Membership> fromFilter(MembershipFilter f, User user) {
-        Specification<Membership> spec = (root, query, cb) -> cb.conjunction();
+    fun fromFilter(f: MembershipFilter, user: User?): Specification<Membership?> {
+        var spec =
+            Specification { root: Root<Membership?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
 
         if (f.getFrom() != null || f.getTo() != null) {
-            spec = spec.and(timeOverlap(f.getFrom(), f.getTo()));
+            spec = spec.and(timeOverlap(f.getFrom(), f.getTo()))
         }
 
-        return spec;
+        return spec
     }
 }

@@ -1,4 +1,4 @@
-package net.blueshell.api.common.event.job;
+package net.blueshell.api.common.event.job
 
-public record ContributionReminderEmailEvent(Long reminderId) {
-}
+@JvmRecord
+data class ContributionReminderEmailEvent(val reminderId: Long?) 

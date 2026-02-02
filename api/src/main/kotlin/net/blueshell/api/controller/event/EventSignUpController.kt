@@ -1,106 +1,109 @@
-package net.blueshell.api.controller.event;
+package net.blueshell.api.controller.event
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BaseController;
-import net.blueshell.api.controller.filter.EventSignUpFilter;
-import net.blueshell.api.dto.event.EventSignUpDTO;
-import net.blueshell.api.mapper.event.EventSignUpMapper;
-import net.blueshell.api.model.event.EventSignUp;
-import net.blueshell.api.service.event.EventSignUpService;
-import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BaseController
+import net.blueshell.api.controller.filter.EventSignUpFilter
+import net.blueshell.api.dto.event.EventSignUpDTO
+import net.blueshell.api.mapper.event.EventSignUpMapper
+import net.blueshell.api.service.event.EventSignUpService
+import org.springdoc.core.annotations.ParameterObject
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.*
 
 @Slf4j
 @RestController
 @Tag(name = "EventSignUps")
-public class EventSignUpController extends BaseController<EventSignUpService, EventSignUpMapper> {
-    @Autowired
-    public EventSignUpController(EventSignUpService service, EventSignUpMapper mapper) {
-        super(service, mapper);
-    }
-
-    @GetMapping(value = "/events/signups")
-    @PreAuthorize("""
+class EventSignUpController @Autowired constructor(service: EventSignUpService?, mapper: EventSignUpMapper?) :
+    BaseController<EventSignUpService?, EventSignUpMapper?>(service, mapper) {
+    @GetMapping(value = ["/events/signups"])
+    @PreAuthorize(
+        """
             hasAuthority('BOARD')
             or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read'))
             or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))
-            """)
+            
+            """.trimIndent()
+    )
     @Transactional(readOnly = true)
-    public List<EventSignUpDTO> findEventSignUps(@ParameterObject EventSignUpFilter filter) {
-        var eventSignUps = service.findByFilter(filter);
-        return mapper.toDTOs(eventSignUps.stream()).toList();
+    fun findEventSignUps(@ParameterObject filter: EventSignUpFilter?): MutableList<EventSignUpDTO?> {
+        val eventSignUps = service!!.findByFilter(filter)
+        return mapper!!.toDTOs(eventSignUps.stream()).toList()
     }
 
-    @GetMapping(value = "/events/signups/byAccessToken/{accessToken}")
+    @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
     @Transactional(readOnly = true)
-    public List<EventSignUpDTO> findEventSignUpsByAccessToken(@PathVariable("accessToken") String accessToken) {
-        var signUps = service.findByGuestAccessToken(accessToken);
-        return mapper.toDTOs(signUps);
+    fun findEventSignUpsByAccessToken(@PathVariable("accessToken") accessToken: String?): MutableList<EventSignUpDTO?>? {
+        val signUps = service!!.findByGuestAccessToken(accessToken)
+        return mapper!!.toDTOs(signUps)
     }
 
-    @GetMapping(value = "/events/{eventId}/signups")
+    @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
     @Transactional(readOnly = true)
-    public List<EventSignUpDTO> findEventSignUpsByEventId(@PathVariable("eventId") Long eventId) {
-        var eventSignUps = service.findByEventId(eventId);
-        return mapper.toDTOs(eventSignUps);
+    fun findEventSignUpsByEventId(@PathVariable("eventId") eventId: Long?): MutableList<EventSignUpDTO?>? {
+        val eventSignUps = service!!.findByEventId(eventId)
+        return mapper!!.toDTOs(eventSignUps)
     }
 
 
-    @PostMapping(value = "/events/{eventId}/signups")
+    @PostMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') or hasPermission(#dto.eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
-    public EventSignUpDTO createEventSignup(@Valid @RequestBody EventSignUpDTO dto) {
+    fun createEventSignup(@Valid @RequestBody dto: @Valid EventSignUpDTO): EventSignUpDTO? {
         if (getPrincipal() != null) {
-            dto.setUserId(getPrincipal().getId());
+            dto.setUserId(getPrincipal().getId())
         }
-        var eventSignUp = mapper.fromDTO(dto);
-        eventSignUp = service.create(eventSignUp);
-        return mapper.toDTO(eventSignUp);
+        var eventSignUp = mapper!!.fromDTO(dto)
+        eventSignUp = service!!.create(eventSignUp)
+        return mapper.toDTO(eventSignUp)
     }
 
     @PutMapping("/events/{eventId}/signups")
-    @PreAuthorize("""
+    @PreAuthorize(
+        """
             hasAuthority('BOARD')
             or hasPermission(#eventId, 'Event', 'signUp')
             or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))
-            """)
-    public EventSignUpDTO updateEventSignUp(
-            @PathVariable("eventId") Long eventId,
-            @Valid @RequestBody EventSignUpDTO dto,
-            @RequestParam(value = "accessToken", required = false) String accessToken
-    ) {
-        EventSignUp signUp = (accessToken == null)
-                ? service.findByUserIdAndEventId(getPrincipal().getId(), eventId)
-                : service.findByGuestAccessTokenAndEventId(accessToken, eventId);
-        mapper.fromDTO(dto, signUp);
-        signUp = service.update(signUp);
-        return mapper.toDTO(signUp);
+            
+            """.trimIndent()
+    )
+    fun updateEventSignUp(
+        @PathVariable("eventId") eventId: Long?,
+        @Valid @RequestBody dto: @Valid EventSignUpDTO?,
+        @RequestParam(value = "accessToken", required = false) accessToken: String?
+    ): EventSignUpDTO? {
+        var signUp = if (accessToken == null)
+            service!!.findByUserIdAndEventId(getPrincipal().getId(), eventId)
+        else
+            service!!.findByGuestAccessTokenAndEventId(accessToken, eventId)
+        mapper!!.fromDTO(dto, signUp)
+        signUp = service.update(signUp)
+        return mapper.toDTO(signUp)
     }
 
 
-    @DeleteMapping(value = "/events/signups/{eventSignupId}")
-    @PreAuthorize("""
+    @DeleteMapping(value = ["/events/signups/{eventSignupId}"])
+    @PreAuthorize(
+        """
             hasAuthority('BOARD')
             or hasPermission(#eventSignupId, 'EventSignUp', 'delete')
             or hasPermission(#accessToken, 'Guest', 'write')
-            """)
+            
+            """.trimIndent()
+    )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
-    public void deleteEventSignup(
-            @PathVariable("eventSignupId") Long eventSignupId,
-            @RequestParam(value = "accessToken", required = false) String accessToken
+    fun deleteEventSignup(
+        @PathVariable("eventSignupId") eventSignupId: Long?,
+        @RequestParam(value = "accessToken", required = false) accessToken: String?
     ) {
-        service.deleteById(eventSignupId);
+        service!!.deleteById(eventSignupId)
     }
 }

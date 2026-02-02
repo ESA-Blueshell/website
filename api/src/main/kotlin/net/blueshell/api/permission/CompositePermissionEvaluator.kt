@@ -1,51 +1,58 @@
-package net.blueshell.api.permission;
+package net.blueshell.api.permission
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.base.IdentityProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.PermissionEvaluator;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
-import org.springframework.util.ClassUtils;
-
-import java.io.Serializable;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.base.IdentityProvider
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.access.PermissionEvaluator
+import org.springframework.security.core.Authentication
+import org.springframework.stereotype.Component
+import org.springframework.util.ClassUtils
+import java.io.Serializable
+import java.util.function.Function
 
 @Slf4j
 @Component
-public class CompositePermissionEvaluator extends IdentityProvider implements PermissionEvaluator {
-
-    private final List<BasePermissionEvaluator<?, ?>> evaluators;
-
-    @Autowired
-    public CompositePermissionEvaluator(List<BasePermissionEvaluator<?, ?>> evaluators) {
-        this.evaluators = evaluators;
+class CompositePermissionEvaluator @Autowired constructor(private val evaluators: MutableList<BasePermissionEvaluator<*, *>?>) :
+    IdentityProvider(), PermissionEvaluator {
+    override fun hasPermission(auth: Authentication?, target: Any?, perm: Any?): Boolean {
+        if (target == null || perm == null) return false
+        val domainClass = ClassUtils.getUserClass(target.javaClass)
+        return evaluators.stream()
+            .filter { e: BasePermissionEvaluator<*, *>? -> e!!.supports(domainClass) }
+            .findFirst()
+            .map<Boolean?>(Function { e: BasePermissionEvaluator<*, *>? ->
+                e!!.hasPermission(
+                    auth,
+                    target,
+                    perm.toString()
+                )
+            })
+            .orElse(false)
     }
 
-    @Override
-    public boolean hasPermission(Authentication auth, Object target, Object perm) {
-        if (target == null || perm == null) return false;
-        Class<?> domainClass = ClassUtils.getUserClass(target.getClass());
-        return evaluators.stream()
-                .filter(e -> e.supports(domainClass))
-                .findFirst()
-                .map(e -> e.hasPermission(auth, target, perm.toString()))
-                .orElse(false);
-    }
-
-    @Override
-    public boolean hasPermission(Authentication auth, Serializable targetId, String targetType, Object perm) {
-        if (targetId == null || targetType == null || perm == null) return false;
+    override fun hasPermission(
+        auth: Authentication?,
+        targetId: Serializable?,
+        targetType: String?,
+        perm: Any?
+    ): Boolean {
+        if (targetId == null || targetType == null || perm == null) return false
 
         return evaluators.stream()
-                .filter(e -> {
-                    Class<?> dt = e.domainType;
-                    return dt.getSimpleName().equals(targetType)
-                            || dt.getName().equals(targetType);
-                })
-                .findFirst()
-                .map(e -> e.hasPermissionId(auth, targetId, perm.toString()))
-                .orElse(false);
+            .filter { e: BasePermissionEvaluator<*, *>? ->
+                val dt: Class<*> = e!!.domainType
+                dt.getSimpleName() == targetType
+                        || dt.getName() == targetType
+            }
+            .findFirst()
+            .map<Boolean?>(Function { e: BasePermissionEvaluator<*, *>? ->
+                e!!.hasPermissionId(
+                    auth,
+                    targetId,
+                    perm.toString()
+                )
+            })
+            .orElse(false)
     }
 }

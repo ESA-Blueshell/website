@@ -1,31 +1,28 @@
-package net.blueshell.api.validation.file;
+package net.blueshell.api.validation.file
 
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
+import org.springframework.web.multipart.MultipartFile
 
-public class FileSizeValidator implements ConstraintValidator<FileSize, MultipartFile> {
+class FileSizeValidator : ConstraintValidator<FileSize?, MultipartFile?> {
+    private var min: Long = 0
+    private var max: Long = 0
+    private var allowEmpty = false
 
-    private long min;
-    private long max;
-    private boolean allowEmpty;
-
-    @Override
-    public void initialize(FileSize constraintAnnotation) {
-        this.min = constraintAnnotation.min();
-        this.max = constraintAnnotation.max();
-        this.allowEmpty = constraintAnnotation.allowEmpty();
+    override fun initialize(constraintAnnotation: FileSize) {
+        this.min = constraintAnnotation.min
+        this.max = constraintAnnotation.max
+        this.allowEmpty = constraintAnnotation.allowEmpty
     }
 
-    @Override
-    public boolean isValid(MultipartFile file, ConstraintValidatorContext ctx) {
-        if (file == null) return true;
+    override fun isValid(file: MultipartFile?, ctx: ConstraintValidatorContext?): Boolean {
+        if (file == null) return true
 
-        if (file.isEmpty()) {
-            return allowEmpty;
+        if (file.isEmpty) {
+            return allowEmpty
         }
 
-        long size = file.getSize();
-        return size >= min && size <= max;
+        val size = file.size
+        return size >= min && size <= max
     }
 }

@@ -1,137 +1,133 @@
-package net.blueshell.api.service;
+package net.blueshell.api.service
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.mapper.BrevoContactMapper;
-import net.blueshell.api.model.User;
-import net.blueshell.api.model.contribution.ContributionPeriod;
-import net.blueshell.clients.brevo.api.ContactsApi;
-import net.blueshell.clients.brevo.invoker.ApiClient;
-import net.blueshell.clients.brevo.model.*;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientResponseException;
-
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.mapper.BrevoContactMapper
+import net.blueshell.api.model.User
+import net.blueshell.api.model.contribution.ContributionPeriod
+import net.blueshell.clients.brevo.api.ContactsApi
+import net.blueshell.clients.brevo.invoker.ApiClient
+import net.blueshell.clients.brevo.model.AddContactToListRequest
+import net.blueshell.clients.brevo.model.CreateList
+import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.RestClientResponseException
 
 @Slf4j
 @Service
-public class ContactService {
+class ContactService(private val mapper: BrevoContactMapper, private val users: UserService) {
+    @Value("\${brevo.apiKey}")
+    private val apiKey: String? = null
 
-    private final BrevoContactMapper mapper;
-    private final UserService users;
+    @Value("\${brevo.folders.contributionPeriodsId}")
+    private val contributionPeriodsFolder: Long? = null
 
-    @Value("${brevo.apiKey}")
-    private String apiKey;
-    @Value("${brevo.folders.contributionPeriodsId}")
-    private Long contributionPeriodsFolder;
+    private val contacts: ContactsApi? = null
 
-    private ContactsApi contacts;
-
-    public ContactService(BrevoContactMapper mapper, UserService users) {
-        this.mapper = mapper;
-        this.users = users;
-    }
-
-    private ContactsApi getContactsApi() {
-        DateFormat dateFormat = ApiClient.createDefaultDateFormat();
-        ObjectMapper objectMapper = ApiClient.createDefaultObjectMapper(dateFormat)
-                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                .setDefaultPropertyInclusion(
+    private val contactsApi: ContactsApi
+        get() {
+            val dateFormat = ApiClient.createDefaultDateFormat()
+            val objectMapper =
+                ApiClient.createDefaultObjectMapper(dateFormat)
+                    .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+                    .setDefaultPropertyInclusion(
                         JsonInclude.Value.construct(
-                                JsonInclude.Include.NON_EMPTY,
-                                JsonInclude.Include.NON_EMPTY
+                            JsonInclude.Include.NON_EMPTY,
+                            JsonInclude.Include.NON_EMPTY
                         )
-                );
+                    )
 
-        ApiClient apiClient = new ApiClient(objectMapper, dateFormat);
-        apiClient.setApiKey(this.apiKey);
-        return new ContactsApi(apiClient);
-    }
+            val apiClient = ApiClient(objectMapper, dateFormat)
+            apiClient.setApiKey(this.apiKey)
+            return ContactsApi(apiClient)
+        }
 
-    public void getUpdate(User user) {
-        if (user.getContactId() != null) return;
-        log.info("Getting update for user: {}", user.getEmail());
+    fun getUpdate(user: User) {
+        if (user.getContactId() != null) return
+        ContactService.log.info("Getting update for user: {}", user.getEmail())
 
         try {
-            ContactsApi api = getContactsApi();
-            GetExtendedContactDetails details =
-                    api.getContactInfo(user.getEmail(), "email_id", null, null);
-            user.setContactId(details.getId());
-        } catch (HttpClientErrorException e) {
-            log.info("Failed to get contact details for user: {}", user.getEmail());
+            val api = this.contactsApi
+            val details =
+                api.getContactInfo(user.getEmail(), "email_id", null, null)
+            user.setContactId(details.id)
+        } catch (e: HttpClientErrorException) {
+            ContactService.log.info("Failed to get contact details for user: {}", user.getEmail())
         }
     }
 
-    public void sync(User user) {
-        getUpdate(user);
+    fun sync(user: User) {
+        getUpdate(user)
         if (user.getContactId() != null) {
-            sendUpdate(user);
+            sendUpdate(user)
         } else {
-            createContact(user);
+            createContact(user)
         }
     }
 
-    private void createContact(User user) throws RestClientResponseException {
-        log.info("Creating contact for user: {}", user.getEmail());
-        ContactsApi api = getContactsApi();
-        CreateContact createContact = mapper.toCreate(user);
-        CreateUpdateContactModel response = api.createContact(createContact);
-        users.updateContactId(user.getId(), response.getId());
+    @Throws(RestClientResponseException::class)
+    private fun createContact(user: User) {
+        ContactService.log.info("Creating contact for user: {}", user.getEmail())
+        val api = this.contactsApi
+        val createContact = mapper.toCreate(user)
+        val response = api.createContact(createContact)
+        users.updateContactId(user.getId(), response.id)
     }
 
-    private void sendUpdate(User user) throws RestClientResponseException {
-        log.info("Sending update for user: {}", user.getEmail());
-        var api = getContactsApi();
-        var contact = mapper.toUpdate(user);
+    @Throws(RestClientResponseException::class)
+    private fun sendUpdate(user: User) {
+        ContactService.log.info("Sending update for user: {}", user.getEmail())
+        val api = this.contactsApi
+        val contact = mapper.toUpdate(user)
         api.updateContact(
-                user.getEmail(),
-                contact,
-                "email_id"
-        );
+            user.getEmail(),
+            contact,
+            "email_id"
+        )
     }
 
-    public Long createList(ContributionPeriod contributionPeriod) throws RestClientResponseException {
+    @Throws(RestClientResponseException::class)
+    fun createList(contributionPeriod: ContributionPeriod): Long? {
         if (contributionPeriod.getListId() != null) {
-            return contributionPeriod.getListId();
+            return contributionPeriod.getListId()
         }
 
-        ContactsApi api = getContactsApi();
-        CreateList createList = new CreateList();
-        String periodName = String.format(
-                "Contribution Paid %d - %d",
-                contributionPeriod.getStartDate().getYear(),
-                contributionPeriod.getEndDate().getYear()
-        );
-        createList.name(periodName);
-        createList.setFolderId(contributionPeriodsFolder);
-        CreateModel createModel = api.createList(createList);
-        return createModel.getId();
+        val api = this.contactsApi
+        val createList = CreateList()
+        val periodName = String.format(
+            "Contribution Paid %d - %d",
+            contributionPeriod.getStartDate().getYear(),
+            contributionPeriod.getEndDate().getYear()
+        )
+        createList.name(periodName)
+        createList.folderId = contributionPeriodsFolder
+        val createModel = api.createList(createList)
+        return createModel.id
     }
 
-    public void addToList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
+    @Throws(RestClientResponseException::class)
+    fun addToList(contributionPeriod: ContributionPeriod, user: User) {
         if (user.getContactId() == null) {
-            sync(user);
+            sync(user)
         }
 
-        ContactsApi api = getContactsApi();
-        List<Long> ids = new ArrayList<>();
-        ids.add(user.getContactId());
-        AddContactToListRequest payload = new AddContactToListRequest();
-        payload.setIds(ids);
-        api.addContactToList(contributionPeriod.getListId(), payload);
+        val api = this.contactsApi
+        val ids: MutableList<Long?> = ArrayList<Long?>()
+        ids.add(user.getContactId())
+        val payload = AddContactToListRequest()
+        payload.ids = ids
+        api.addContactToList(contributionPeriod.getListId(), payload)
     }
 
-    public void removeFromList(ContributionPeriod contributionPeriod, User user) throws RestClientResponseException {
-        ContactsApi api = getContactsApi();
-        List<Long> ids = new ArrayList<>();
-        ids.add(user.getContactId());
-        RemoveContactFromListRequest payload = new RemoveContactFromListRequest();
-        payload.setIds(ids);
-        api.removeContactFromList(contributionPeriod.getListId(), payload);
+    @Throws(RestClientResponseException::class)
+    fun removeFromList(contributionPeriod: ContributionPeriod, user: User) {
+        val api = this.contactsApi
+        val ids: MutableList<Long?> = ArrayList<Long?>()
+        ids.add(user.getContactId())
+        val payload = RemoveContactFromListRequest()
+        payload.ids = ids
+        api.removeContactFromList(contributionPeriod.getListId(), payload)
     }
 }

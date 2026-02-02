@@ -1,41 +1,35 @@
-package net.blueshell.api.permission;
+package net.blueshell.api.permission
 
-import lombok.extern.slf4j.Slf4j;
-import net.blueshell.api.base.BasePermissionEvaluator;
-import net.blueshell.api.model.User;
-import net.blueshell.api.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j
+import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.model.User
+import net.blueshell.api.service.UserService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.Authentication
+import org.springframework.stereotype.Component
 
 @Slf4j
 @Component
-public class UserPermission extends BasePermissionEvaluator<User, UserService> {
-
-    @Autowired
-    public UserPermission(UserService service) {
-        super(service);
-    }
-
-    public boolean hasPermission(Authentication authentication, Object object, String permission) {
-        if (authentication == null || object == null || permission == null) {
-            return false;
+class UserPermission @Autowired constructor(service: UserService?) :
+    BasePermissionEvaluator<User?, UserService?>(service) {
+    override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
+        if (authentication == null || `object` == null || permission == null) {
+            return false
         }
-        User user = (User) object;
-        var principal = getPrincipal();
-        return switch (permission) {
-            case "read", "write" -> principal.getId().equals(user.getId());
-            default -> false;
-        };
+        val user = `object` as User
+        val principal = getPrincipal()
+        return when (permission) {
+            "read", "write" -> (principal.getId() == user.getId())
+            else -> false
+        }
     }
 
-    public boolean hasPermissionId(Authentication authentication, Object targetId, String permission) {
+    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
         if (authentication == null || targetId == null || permission == null) {
-            return false;
+            return false
         }
 
-        User targetUser = service.findById((Long) targetId);
-        return targetUser != null && hasPermission(authentication, targetUser, permission);
+        val targetUser = service!!.findById(targetId as Long)
+        return targetUser != null && hasPermission(authentication, targetUser, permission)
     }
-
 }

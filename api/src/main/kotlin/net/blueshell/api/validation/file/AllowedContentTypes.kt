@@ -1,21 +1,17 @@
-package net.blueshell.api.validation.file;
+package net.blueshell.api.validation.file
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
 
-import java.lang.annotation.*;
-
-@Documented
-@Constraint(validatedBy = AllowedContentTypesValidator.class)
-@Target({ElementType.PARAMETER, ElementType.FIELD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AllowedContentTypes {
-    String[] value();
-
-    String message() default "Unsupported media type. Allowed: {value}";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-}
+@MustBeDocumented
+@Constraint(validatedBy = [AllowedContentTypesValidator::class])
+@Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class AllowedContentTypes(
+    vararg val value: String,
+    val message: String = "Unsupported media type. Allowed: {value}",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload?>> = []
+)
 

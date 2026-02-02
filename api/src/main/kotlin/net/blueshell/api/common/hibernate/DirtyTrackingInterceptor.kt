@@ -1,98 +1,107 @@
-package net.blueshell.api.common.hibernate;
+package net.blueshell.api.common.hibernate
 
-import net.blueshell.api.base.DirtyAwareModel;
-import org.hibernate.CallbackException;
-import org.hibernate.Interceptor;
-import org.hibernate.type.Type;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import net.blueshell.api.base.DirtyAwareModel
+import org.hibernate.CallbackException
+import org.hibernate.Interceptor
+import org.hibernate.type.Type
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Hibernate 6 compatible interceptor:
  * - implements Interceptor (EmptyInterceptor is deprecated)
  * - overrides onFlushDirty(Object id, ...)
- * <p>
+ * 
+ * 
  * Runs only for entities that extend DirtyAwareModel AND are annotated with @DirtyModel.
  */
-public class DirtyTrackingInterceptor implements Interceptor {
-
-    private static final ConcurrentHashMap<Class<?>, Boolean> DIRTY_MODEL_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Class<?>, Set<String>> DIRTY_FIELD_NAMES_CACHE = new ConcurrentHashMap<>();
-
-    @Override
-    public boolean onFlushDirty(
-            Object entity,
-            Object id,
-            Object[] currentState,
-            Object[] previousState,
-            String[] propertyNames,
-            Type[] types
-    ) throws CallbackException {
+class DirtyTrackingInterceptor : Interceptor {
+    @Throws(CallbackException::class)
+    override fun onFlushDirty(
+        entity: Any?,
+        id: Any?,
+        currentState: Array<Any?>?,
+        previousState: Array<Any?>?,
+        propertyNames: Array<String?>?,
+        types: Array<Type?>?
+    ): Boolean {
         // ultra-fast bail-outs
-        if (!(entity instanceof DirtyAwareModel)) return false;
+        if (entity !is DirtyAwareModel) return false
 
-        Class<?> entityClass = entity.getClass();
-        if (!isDirtyModel(entityClass)) return false;
-        if (previousState == null || currentState == null || propertyNames == null || propertyNames.length == 0) {
-            return false;
+        val entityClass: Class<*> = entity.javaClass
+        if (!isDirtyModel(entityClass)) return false
+        if (previousState == null || currentState == null || propertyNames == null || propertyNames.size == 0) {
+            return false
         }
 
-        Set<String> trackable = getDirtyFieldNames(entityClass);
-        if (trackable.isEmpty()) return false;
+        val trackable: MutableSet<String?> = getDirtyFieldNames(entityClass)
+        if (trackable.isEmpty()) return false
 
-        Set<String> changed = null;
-        for (int i = 0; i < propertyNames.length; i++) {
-            String prop = propertyNames[i];
-            if (!trackable.contains(prop)) continue;
+        var changed: MutableSet<String?>? = null
+        for (i in propertyNames.indices) {
+            val prop = propertyNames[i]
+            if (!trackable.contains(prop)) continue
 
-            Object prev = previousState[i];
-            Object curr = currentState[i];
+            val prev = previousState[i]
+            val curr = currentState[i]
 
-            if (!Objects.equals(prev, curr)) {
-                if (changed == null) changed = new LinkedHashSet<>();
-                changed.add(prop);
+            if (prev != curr) {
+                if (changed == null) changed = LinkedHashSet<String?>()
+                changed.add(prop)
             }
         }
 
-        ((DirtyAwareModel) entity).__applyDirtyFields(changed == null ? Collections.emptySet() : changed);
-        return false;
+        entity.__applyDirtyFields(if (changed == null) mutableSetOf<String?>() else changed)
+        return false
     }
 
-    private static boolean isDirtyModel(Class<?> cls) {
-        return DIRTY_MODEL_CACHE.computeIfAbsent(cls, c -> c.isAnnotationPresent(DirtyModel.class));
-    }
+    companion object {
+        private val DIRTY_MODEL_CACHE = ConcurrentHashMap<Class<*>?, Boolean?>()
+        private val DIRTY_FIELD_NAMES_CACHE = ConcurrentHashMap<Class<*>?, MutableSet<String?>>()
 
-    private static Set<String> getDirtyFieldNames(Class<?> cls) {
-        return DIRTY_FIELD_NAMES_CACHE.computeIfAbsent(cls, DirtyTrackingInterceptor::scanDirtyFieldNames);
-    }
-
-    private static Set<String> scanDirtyFieldNames(Class<?> cls) {
-        Set<String> names = new HashSet<>();
-
-        // Field-level annotations
-        for (Class<?> c = cls; c != null && c != Object.class; c = c.getSuperclass()) {
-            for (Field f : c.getDeclaredFields()) {
-                if (f.isAnnotationPresent(DirtyField.class)) names.add(f.getName());
-            }
+        private fun isDirtyModel(cls: Class<*>?): Boolean {
+            return DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: Class<*>? ->
+                c.isAnnotationPresent(
+                    DirtyModel::class.java
+                )
+            }!!
         }
 
-        for (Class<?> c = cls; c != null && c != Object.class; c = c.getSuperclass()) {
-            for (Method m : c.getDeclaredMethods()) {
-                if (!m.isAnnotationPresent(DirtyField.class)) continue;
-                String n = m.getName();
-                if (n.startsWith("get") && n.length() > 3) names.add(decapitalize(n.substring(3)));
-                else if (n.startsWith("is") && n.length() > 2) names.add(decapitalize(n.substring(2)));
-            }
+        private fun getDirtyFieldNames(cls: Class<*>?): MutableSet<String?> {
+            return DIRTY_FIELD_NAMES_CACHE.computeIfAbsent(cls) { cls: Class<*>? -> scanDirtyFieldNames(cls) }
         }
 
-        return Collections.unmodifiableSet(names);
-    }
+        private fun scanDirtyFieldNames(cls: Class<*>?): MutableSet<String?> {
+            val names: MutableSet<String?> = HashSet<String?>()
 
-    private static String decapitalize(String s) {
-        if (s == null || s.isEmpty()) return s;
-        return Character.toLowerCase(s.charAt(0)) + s.substring(1);
+            // Field-level annotations
+            run {
+                var c = cls
+                while (c != null && c != Any::class.java) {
+                    for (f in c.declaredFields) {
+                        if (f.isAnnotationPresent(DirtyField::class.java)) names.add(f.name)
+                    }
+                    c = c.getSuperclass()
+                }
+            }
+
+            var c = cls
+            while (c != null && c != Any::class.java) {
+                for (m in c.declaredMethods) {
+                    if (!m.isAnnotationPresent(DirtyField::class.java)) continue
+                    val n = m.name
+                    if (n.startsWith("get") && n.length > 3) names.add(decapitalize(n.substring(3)))
+                    else if (n.startsWith("is") && n.length > 2) names.add(decapitalize(n.substring(2)))
+                }
+                c = c.getSuperclass()
+            }
+
+            return Collections.unmodifiableSet<String?>(names)
+        }
+
+        private fun decapitalize(s: String?): String? {
+            if (s == null || s.isEmpty()) return s
+            return s.get(0).lowercaseChar().toString() + s.substring(1)
+        }
     }
 }

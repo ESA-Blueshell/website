@@ -1,19 +1,21 @@
-package net.blueshell.api.dto.committee;
+package net.blueshell.api.dto.committee
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import net.blueshell.api.base.BaseDTO;
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
+import lombok.Data
+import lombok.EqualsAndHashCode
+import net.blueshell.api.base.BaseDTO
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(name = "CommitteeMember")
-public class CommitteeMemberDTO extends BaseDTO {
-    private Long id;
+class CommitteeMemberDTO : BaseDTO() {
+    private val id: Long? = null
+
     @NotBlank
-    private Long userId;
-    private Long committeeId;
+    private val userId: @NotBlank Long? = null
+    private val committeeId: Long? = null
+
     @NotBlank
-    private String role;
+    private val role: @NotBlank String? = null
 }

@@ -1,28 +1,22 @@
-package net.blueshell.api.email.recovery;
+package net.blueshell.api.email.recovery
 
-import net.blueshell.api.model.User;
+import net.blueshell.api.model.User
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
-public class PasswordResetEmail extends RecoveryEmail {
-
-    public PasswordResetEmail(User recipient, String token, String frontendUrl, String appUrl) {
-        super(recipient, token, frontendUrl, appUrl);
+class PasswordResetEmail(recipient: User?, token: String?, frontendUrl: String?, appUrl: String?) :
+    RecoveryEmail(recipient, token, frontendUrl, appUrl) {
+    override fun getSubject(): String {
+        return "Reset Your Blueshell Account Password"
     }
 
-    @Override
-    public String getSubject() {
-        return "Reset Your Blueshell Account Password";
-    }
+    override fun getMarkdownContent(): String {
+        val username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8)
+        val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
+        val resetLink = String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token)
 
-    @Override
-    public String getMarkdownContent() {
-        String username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8);
-        String token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8);
-        String resetLink = String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token);
-
-        return String.format("""
+        return String.format(
+            """
                         Dear %s,
                         
                         We received a request to reset your account's password.
@@ -41,10 +35,11 @@ public class PasswordResetEmail extends RecoveryEmail {
                         
                         Kind regards,
                         Blueshell Esports Security Team
-                        """,
-                recipient.getFullName(),
-                resetLink,
-                appUrl
-        );
+                        
+                        """.trimIndent(),
+            recipient.getFullName(),
+            resetLink,
+            appUrl
+        )
     }
 }

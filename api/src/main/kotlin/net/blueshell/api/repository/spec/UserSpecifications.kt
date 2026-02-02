@@ -1,65 +1,68 @@
-package net.blueshell.api.repository.spec;
+package net.blueshell.api.repository.spec
 
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import net.blueshell.api.common.enums.Role;
-import net.blueshell.api.controller.filter.UserFilter;
-import net.blueshell.api.model.User;
-import net.blueshell.api.model.event.Event;
-import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.CriteriaBuilder
+import jakarta.persistence.criteria.CriteriaQuery
+import jakarta.persistence.criteria.JoinType
+import jakarta.persistence.criteria.Root
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.controller.filter.UserFilter
+import net.blueshell.api.model.User
+import net.blueshell.api.model.event.Event
+import org.springframework.data.jpa.domain.Specification
+import java.util.*
 
-import java.util.EnumSet;
-import java.util.Set;
-
-public class UserSpecifications {
-
-    public static Specification<Event> approved() {
-        return (root, q, cb) -> cb.isTrue(root.get("approved"));
+object UserSpecifications {
+    fun approved(): Specification<Event?> {
+        return Specification { root: Root<Event?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            cb!!.isTrue(
+                root!!.get<Boolean?>(
+                    "approved"
+                )
+            )
+        }
     }
 
-    public static Specification<User> hasMemberAuthority() {
-        return hasAuthorityAtLeast(Role.MEMBER);
+    fun hasMemberAuthority(): Specification<User?> {
+        return hasAuthorityAtLeast(Role.MEMBER)
     }
 
     /**
      * Generic version: users that have `base` or any role that inherits `base`.
      */
-    public static Specification<User> hasAuthorityAtLeast(Role base) {
-        Set<Role> allowed = Role.allThatInherit(base);
+    fun hasAuthorityAtLeast(base: Role?): Specification<User?> {
+        val allowed: MutableSet<Role?> = Role.allThatInherit(base)
 
-        return (root, query, cb) -> {
+        return Specification { root: Root<User?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
             // Avoid duplicates when joining element collections
-            query.distinct(true);
+            query!!.distinct(true)
 
             // Join the ElementCollection<ROLE>
-            Join<User, Role> rolesJoin = root.join("roles", JoinType.INNER);
-
-            // role IN (:allowed)
-            return rolesJoin.in(allowed);
-        };
+            val rolesJoin = root!!.join<User?, Role?>("roles", JoinType.INNER)
+            rolesJoin.`in`(allowed)
+        }
     }
 
-    public static Specification<User> hasMemberRole(boolean hasMemberRole) {
-        return (root, q, cb) -> {
-            q.distinct(true);
-            var rolesJoin = root.join("roles", JoinType.INNER);
+    fun hasMemberRole(hasMemberRole: Boolean): Specification<User?> {
+        return Specification { root: Root<User?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+            q!!.distinct(true)
+            val rolesJoin = root!!.join<Any?, Any?>("roles", JoinType.INNER)
             if (hasMemberRole) {
-                return rolesJoin.in(EnumSet.of(Role.MEMBER));
+                return@Specification rolesJoin.`in`(EnumSet.of<Role?>(Role.MEMBER))
             } else {
-                return cb.not(rolesJoin.in(EnumSet.of(Role.MEMBER)));
-
+                return@Specification cb!!.not(rolesJoin.`in`(EnumSet.of<Role?>(Role.MEMBER)))
             }
-        };
+        }
     }
 
 
-    public static Specification<User> fromFilter(UserFilter f, User user) {
-        Specification<User> spec = (root, query, cb) -> cb.conjunction();
+    fun fromFilter(f: UserFilter, user: User?): Specification<User?> {
+        var spec =
+            Specification { root: Root<User?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
 
         if (f.getIsMember() != null) {
-            spec = spec.and(hasMemberRole(f.getIsMember()));
+            spec = spec.and(hasMemberRole(f.getIsMember()))
         }
 
-        return spec;
+        return spec
     }
 }

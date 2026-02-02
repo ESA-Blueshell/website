@@ -1,39 +1,34 @@
-package net.blueshell.api.mapper;
+package net.blueshell.api.mapper
 
-import net.blueshell.api.base.BaseMapper;
-import net.blueshell.api.dto.BlogDTO;
-import net.blueshell.api.dto.FileDTO;
-import net.blueshell.api.model.Blog;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Value;
-
-import java.util.ArrayList;
-import java.util.List;
+import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.dto.BlogDTO
+import net.blueshell.api.dto.FileDTO
+import net.blueshell.api.model.Blog
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.mapstruct.*
+import org.springframework.beans.factory.annotation.Value
 
 @Mapper(componentModel = "spring")
-public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
-
-    @Value("${frontend.url}")
-    private String frontendUrl;
+abstract class BlogMapper : BaseMapper<Blog?, BlogDTO?>() {
+    @Value("\${frontend.url}")
+    private val frontendUrl: String? = null
 
 
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "title")
     @Mapping(target = "publishedAt")
     @Mapping(target = "version")
-    public abstract Blog fromDTO(BlogDTO dto, @MappingTarget Blog blog);
+    abstract fun fromDTO(dto: BlogDTO?, @MappingTarget blog: Blog?): Blog?
 
     @AfterMapping
-    protected void afterFromDTO(BlogDTO dto, @MappingTarget Blog blog) {
-        String content = dto.getHtml();
-        if (content != null && !content.trim().isEmpty()) {
-            Document doc = Jsoup.parse(content);
-            doc.select("div:has(a:contains(Unsubscribe))").remove();
-            String minifiedHtml = doc.html().replaceAll(">\\s+<", "><").trim();
-            blog.setHtml(minifiedHtml);
+    protected fun afterFromDTO(dto: BlogDTO, @MappingTarget blog: Blog) {
+        val content = dto.getHtml()
+        if (content != null && !content.trim { it <= ' ' }.isEmpty()) {
+            val doc = Jsoup.parse(content)
+            doc.select("div:has(a:contains(Unsubscribe))").remove()
+            val minifiedHtml = doc.html().replace(">\\s+<".toRegex(), "><").trim { it <= ' ' }
+            blog.setHtml(minifiedHtml)
         }
     }
 
@@ -43,32 +38,32 @@ public abstract class BlogMapper extends BaseMapper<Blog, BlogDTO> {
     @Mapping(target = "html")
     @Mapping(target = "publishedAt")
     @Mapping(target = "version")
-    public abstract BlogDTO toDTO(Blog blog);
+    abstract override fun toDTO(blog: Blog?): BlogDTO?
 
     @AfterMapping
-    protected void afterToDTO(BlogDTO dto, @MappingTarget Blog blog) {
-        dto.setUrl("%s/blogs/%s".formatted(frontendUrl, blog.getId()));
+    protected fun afterToDTO(dto: BlogDTO, @MappingTarget blog: Blog) {
+        dto.setUrl("%s/blogs/%s".formatted(frontendUrl, blog.getId()))
     }
 
     /**
      * Extracts the title using the "h1.default-heading1" selector.
      * Uses the parsed Document to avoid re-parsing.
      */
-    private String extractTitle(Document doc) {
-        Element titleElement = doc.selectFirst("h1.default-heading1");
-        return titleElement != null ? titleElement.text().trim() : "";
+    private fun extractTitle(doc: Document): String {
+        val titleElement = doc.selectFirst("h1.default-heading1")
+        return if (titleElement != null) titleElement.text().trim { it <= ' ' } else ""
     }
 
-    private List<FileDTO> extractImages(Document doc) {
-        List<FileDTO> files = new ArrayList<>();
-        for (Element img : doc.select("img")) {
-            String src = img.attr("src");
+    private fun extractImages(doc: Document): MutableList<FileDTO?> {
+        val files: MutableList<FileDTO?> = ArrayList<FileDTO?>()
+        for (img in doc.select("img")) {
+            val src = img.attr("src")
             if (src.isEmpty()) {
-                continue;
+                continue
             }
-            FileDTO fileDTO = new FileDTO();
-            files.add(fileDTO);
+            val fileDTO = FileDTO()
+            files.add(fileDTO)
         }
-        return files;
+        return files
     }
 }

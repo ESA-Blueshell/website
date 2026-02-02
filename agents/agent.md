@@ -20,12 +20,12 @@ This document defines how AI agents should work in this repository.
 - System tests are to be generated using Playwright MCP directly on the host machine (no Docker Compose required).
 
 ## Testing
-- All tests are run with Maven.
+- All tests are run with Gradle.
 - Unit and integration tests use JUnit.
 - Architecture tests use ArchUnit.
 - System tests use Playwright MCP and should generate Java system tests that validate current API state.
 - Keep tests up to date with production behavior at all times.
-- If tests are not run, state why and suggest the exact Maven or Compose command to run them.
+- If tests are not run, state why and suggest the exact Gradle or Compose command to run them.
 
 ## Refactoring Guidelines
 - Refactoring must preserve behavior.

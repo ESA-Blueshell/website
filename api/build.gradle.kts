@@ -1,4 +1,5 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
@@ -123,14 +124,13 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    systemProperty("spring.profiles.active", "test")
 }
 
-tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun>().configureEach {
+tasks.withType<BootRun>().configureEach {
     jvmArgs("-Dspring.devtools.restart.enabled=true")
 }
 
-val brevoOutputDir = layout.buildDirectory.dir("generated/sources/openapi/brevo")
+val brevoOutputDir: Provider<Directory> = layout.buildDirectory.dir("generated/sources/openapi/brevo")
 
 sourceSets["main"].java.srcDir(brevoOutputDir.map { it.dir("src/main/java") })
 

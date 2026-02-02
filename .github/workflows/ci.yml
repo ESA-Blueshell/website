@@ -160,9 +160,22 @@ jobs:
           cache: gradle
 
       - name: Run API Gradle tests
-        run: ./gradlew --no-daemon :api:test
+        shell: bash
+        run:
+          set -euo pipefail
+          ./gradlew --no-daemon :api:test
         env:
           GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-reports
+          path: |
+            api/build/reports
+            build/reports
+          if-no-files-found: warn
 
   api-build-push:
     name: Build and publish API Docker image

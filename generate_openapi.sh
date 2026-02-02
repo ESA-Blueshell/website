@@ -54,10 +54,9 @@ fi
 
 print_status "Generating OpenAPI documentation from Spring Boot API..."
 
-# Generate OpenAPI documentation using Maven in the API container
-docker compose -f docker-compose.dev.yml exec api sh -c "
-    cd /app && \
-    mvn springdoc-openapi:generate
+# Generate OpenAPI documentation using the running API container
+docker compose -f docker-compose.dev.yml exec api sh -c "\
+    curl -sS http://localhost:8080/v3/api-docs -o /app/openapi/blueshell.json\
 "
 
 if [ $? -ne 0 ]; then

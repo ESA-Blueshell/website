@@ -1,5 +1,5 @@
 /target/
-!.mvn/wrapper/maven-wrapper.jar
+.gradle/
 
 ### STS ###
 .apt_generated
@@ -36,8 +36,6 @@
 credentials.json
 .vscode/settings.json
 src/main/resources/hibernate.cfg.xml
-.mvn/
-
 Dockerfile*
 *-deployment.yaml
 *-service.yaml

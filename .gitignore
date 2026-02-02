@@ -1,8 +1,8 @@
 target/
-!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.m2/
+.gradle/
+build/
 
 ### IntelliJ IDEA ###
 .idea
@@ -32,7 +32,6 @@ target/
 
 ### Mac OS ###
 .DS_Store
-.m2
 /data
 files/
 
@@ -56,3 +55,8 @@ data
 /env/.api.env.prod
 /env/.db.env.prod
 /env/1_dump.sql
+private
+**/.yarn
+.playwright
+.playwright-mcp
+backups

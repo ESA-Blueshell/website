@@ -157,17 +157,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 24
-          cache: maven
+          cache: gradle
 
-      - name: Run API Maven verify
-        run: |
-          mvn -B \
-            -Dsurefire.printSummary=true \
-            -Dfailsafe.printSummary=true \
-            verify
-        working-directory: api
+      - name: Run API Gradle tests
+        run: ./gradlew :api:test
         env:
-          MAVEN_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+          GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
   api-build-push:
     name: Build and publish API Docker image

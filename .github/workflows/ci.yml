@@ -163,6 +163,7 @@ jobs:
         shell: bash
         run:
           set -euo pipefail
+
           ./gradlew --no-daemon :api:test
         env:
           GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m

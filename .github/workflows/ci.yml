@@ -160,7 +160,7 @@ jobs:
           cache: gradle
 
       - name: Run API Gradle tests
-        run: ./gradlew :api:test
+        run: ./gradlew --no-daemon :api:test
         env:
           GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 

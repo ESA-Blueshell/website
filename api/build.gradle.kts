@@ -24,6 +24,17 @@ configurations {
     }
 }
 
+configurations.configureEach {
+    attributes.attribute(
+        TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+        objects.named(TargetJvmEnvironment.STANDARD_JVM)
+    )
+}
+
+configurations.configureEach {
+    exclude(group = "org.yaml", module = "snakeyaml")
+}
+
 repositories {
     mavenCentral()
 }
@@ -96,6 +107,7 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.21.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
+    implementation(files("libs/snakeyaml-2.5.jar"))
 }
 
 springBoot {

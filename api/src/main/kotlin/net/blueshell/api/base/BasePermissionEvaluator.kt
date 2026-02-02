@@ -3,26 +3,25 @@ package net.blueshell.api.base
 import org.springframework.core.GenericTypeResolver
 import org.springframework.security.core.Authentication
 
-abstract class BasePermissionEvaluator<T : BaseModel?, S : BaseModelService<T?, *>?>(protected val service: S?) :
+abstract class BasePermissionEvaluator<T : BaseModel, S : BaseModelService<T, *>>(protected val service: S) :
     IdentityProvider() {
-    val domainType: Class<T?>
+    val domainType: Class<T>
 
     init {
         this.domainType = determineDomainType()
     }
 
-    private fun determineDomainType(): Class<T?> {
+    private fun determineDomainType(): Class<T> {
         val resolvedTypes = GenericTypeResolver.resolveTypeArguments(javaClass, BasePermissionEvaluator::class.java)
         check(!(resolvedTypes == null || resolvedTypes.size < 1)) { "Unable to determine domain type for " + javaClass.getName() }
-        val castedType = resolvedTypes[0] as Class<T?>
-        return castedType
+        return resolvedTypes[0] as Class<T>
     }
 
     fun supports(domainClass: Class<*>): Boolean {
         return domainType.isAssignableFrom(domainClass)
     }
 
-    abstract fun hasPermission(authentication: Authentication?, targetDomainObject: Any?, string: String?): Boolean
+    abstract fun hasPermission(authentication: Authentication, targetDomainObject: Any, string: String): Boolean
 
-    abstract fun hasPermissionId(authentication: Authentication?, targetId: Any?, string: String?): Boolean
+    abstract fun hasPermissionId(authentication: Authentication, targetId: Any, string: String): Boolean
 }

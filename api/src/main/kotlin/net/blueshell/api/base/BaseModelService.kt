@@ -120,7 +120,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional(readOnly = true)
     open fun findById(id: Long): T? {
-        return repository.findById(id).orElseThrow<ResponseStatusException>(Supplier {
+        return repository.findById(id).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id"
             )
@@ -160,8 +160,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      */
     @Transactional(readOnly = true)
     fun findAll(spec: Specification<T>, pageable: Pageable): Page<T> {
-        val result = repository.findAll(spec, pageable)
-        return result
+        return repository.findAll(spec, pageable)
     }
 
     /* -----------------------------------------------------------------

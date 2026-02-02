@@ -176,6 +176,7 @@ tasks.register<GenerateTask>("generateBrevoClient") {
         mapOf(
             "apis" to "TransactionalEmails,Contacts",
             "models" to "",
+            "supportingFiles" to "",
         )
     )
 }

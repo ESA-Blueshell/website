@@ -60,8 +60,8 @@ services:
       - ./:/app
       - gradle-cache:/root/.gradle
       - ./storage:/home/storage
-#    ports:
-#      - "8080:8080"
+    ports:
+      - "8080:8080"
     networks:
       - global_network
     env_file:

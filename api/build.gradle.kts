@@ -81,7 +81,7 @@ dependencies {
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14")
 
-    testImplementation("com.github.javafaker:javafaker:1.0.2")
+    implementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:mariadb")
     testImplementation("io.rest-assured:spring-mock-mvc:5.5.6")
@@ -163,6 +163,7 @@ tasks.register<GenerateTask>("generateBrevoClient") {
     globalProperties.set(
         mapOf(
             "apis" to "TransactionalEmails,Contacts",
+            "models" to "",
         )
     )
 }

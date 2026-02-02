@@ -25,7 +25,7 @@ The application follows a microservices architecture with the following componen
 - **Security**: Spring Security with JWT authentication
 - **API Documentation**: SpringDoc OpenAPI 3 (Swagger UI)
 - **Email**: Spring Mail with SMTP integration
-- **Build Tool**: Maven 3.x
+- **Build Tool**: Gradle 9.x
 - **Additional Libraries**:
     - Lombok (code generation)
     - Google Calendar API (event synchronization)
@@ -246,8 +246,7 @@ This script:
 #### Backend (API)
 
 ```shell script
-cd api
-./mvnw spring-boot:run
+./gradlew :api:bootRun
 ```
 
 #### Frontend
@@ -279,11 +278,12 @@ docker compose exec db mysql -u <username> -p<password> blueshell
 
 ```
 website/
+├── build.gradle.kts       # Gradle configuration
+├── settings.gradle.kts    # Gradle settings
 ├── api/                    # Spring Boot backend
 │   ├── src/               # Java source code
 │   ├── Dockerfile         # Production build
 │   ├── Dockerfile-dev     # Development build
-│   └── pom.xml           # Maven configuration
 ├── frontend/              # Vue.js frontend
 │   ├── src/              # TypeScript/Vue source
 │   ├── public/           # Static assets

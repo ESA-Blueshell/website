@@ -1,15 +1,20 @@
 # syntax=docker/dockerfile:1.7
 
-FROM maven:3.9.11-eclipse-temurin-24-alpine
-
-COPY --from=root openapi /openapi
+FROM eclipse-temurin:24-jdk-alpine
 
 WORKDIR /app
 
-COPY . .
+RUN apk add --no-cache curl
 
-RUN mvn install -am -DskipTests
+COPY gradlew gradlew
+COPY gradle gradle
+COPY settings.gradle.kts build.gradle.kts ./
+COPY api api
+COPY openapi openapi
+
+RUN chmod +x gradlew
+RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon :api:assemble -x test
 
 EXPOSE ${PORT} 5005
 
-CMD ["sh", "-c", "mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]
+CMD ["sh", "-c", "./gradlew --no-daemon :api:bootRun -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]

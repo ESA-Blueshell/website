@@ -54,21 +54,20 @@ services:
     image: api:dev
     pull_policy: never
     build:
-      context: api
-      dockerfile: Dockerfile-dev
-      additional_contexts:
-        root: .
+      context: .
+      dockerfile: api/Dockerfile-dev
     volumes:
-      - ./api:/app
-      - maven-repo:/root/.m2
-      - ./openapi:/openapi
+      - ./:/app
+      - gradle-cache:/root/.gradle
       - ./storage:/home/storage
     ports:
       - "8080:8080"
+      - "5005:5005"
     networks:
       - global_network
     env_file:
       - ./env/.api.env
+      - ./env/.db.env
     environment:
       - TZ=Europe/Amsterdam
       - APP_URL=http://localhost:8080
@@ -88,6 +87,6 @@ networks:
 
 volumes:
   data:
-  maven-repo:
+  gradle-cache:
   nginx_certs:
     driver: local

@@ -348,12 +348,19 @@ export type UpdateSelfVoiceStateRequestPartial = {
 
 export type UpdateRoleRequestPartial = {
     color?: number | null;
+    colors?: null | RoleColors;
     hoist?: boolean | null;
     icon?: string | null;
     mentionable?: boolean | null;
     name?: string | null;
     permissions?: number | null;
     unicode_emoji?: string | null;
+};
+
+export type RoleColors = {
+    primary_color?: number | null;
+    secondary_color?: number | null;
+    tertiary_color?: number | null;
 };
 
 export type UpdateRolePositionsRequest = {
@@ -1073,7 +1080,7 @@ export type MessageComponentInteractionMetadataResponse = {
     user?: UserResponse;
 };
 
-export type InteractionTypes = 1 | 2 | 3 | 4 | 5;
+export type InteractionTypes = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type ApplicationCommandInteractionMetadataResponse = {
     authorizing_integration_owners: {
@@ -1748,6 +1755,7 @@ export type GuildWithCountsResponse = {
     owner_id: SnowflakeType;
     preferred_locale: AvailableLocalesEnum;
     premium_progress_bar_enabled: boolean;
+    premium_progress_bar_enabled_user_updated_at?: string | null;
     premium_subscription_count: number;
     premium_tier: PremiumGuildTiers;
     public_updates_channel_id?: null | SnowflakeType;
@@ -1896,6 +1904,7 @@ export type GuildResponse = {
     owner_id: SnowflakeType;
     preferred_locale: AvailableLocalesEnum;
     premium_progress_bar_enabled: boolean;
+    premium_progress_bar_enabled_user_updated_at?: string | null;
     premium_subscription_count: number;
     premium_tier: PremiumGuildTiers;
     public_updates_channel_id?: null | SnowflakeType;
@@ -1979,6 +1988,7 @@ export type GuildInviteResponse = {
     is_nickname_changeable?: boolean;
     max_age?: number;
     max_uses?: number;
+    roles?: Array<GuildRoleResponse> | null;
     target_application?: InviteApplicationResponse;
     target_type?: InviteTargetTypes;
     target_user?: UserResponse;
@@ -2473,6 +2483,7 @@ export type DefaultKeywordListUpsertRequest = {
 
 export type CreateRoleRequest = {
     color?: number | null;
+    colors?: null | RoleColors;
     hoist?: boolean | null;
     icon?: string | null;
     mentionable?: boolean | null;
@@ -3380,6 +3391,9 @@ export type ListGuildMembersResponse = ListGuildMembersResponses[keyof ListGuild
 
 export type UpdateMyGuildMemberData = {
     body: {
+        avatar?: string | null;
+        banner?: string | null;
+        bio?: string | null;
         nick?: string | null;
     };
     path: {
@@ -3971,6 +3985,39 @@ export type CreateGuildRoleResponses = {
 };
 
 export type CreateGuildRoleResponse = CreateGuildRoleResponses[keyof CreateGuildRoleResponses];
+
+export type GuildRoleMemberCountsData = {
+    body?: never;
+    path: {
+        guild_id: SnowflakeType;
+    };
+    query?: never;
+    url: '/guilds/{guild_id}/roles/member-counts';
+};
+
+export type GuildRoleMemberCountsErrors = {
+    /**
+     * Client ratelimited response
+     */
+    429: RatelimitedResponse;
+    /**
+     * Client error response
+     */
+    '4XX': ErrorResponse;
+};
+
+export type GuildRoleMemberCountsError = GuildRoleMemberCountsErrors[keyof GuildRoleMemberCountsErrors];
+
+export type GuildRoleMemberCountsResponses = {
+    /**
+     * 200 response for guild_role_member_counts
+     */
+    200: {
+        [key: string]: number;
+    };
+};
+
+export type GuildRoleMemberCountsResponse = GuildRoleMemberCountsResponses[keyof GuildRoleMemberCountsResponses];
 
 export type DeleteGuildRoleData = {
     body?: never;

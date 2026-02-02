@@ -47,7 +47,7 @@ of concerns:
 - **ORM**: Hibernate with Flyway migrations
 - **Authentication**: JWT (JSON Web Tokens)
 - **API Documentation**: SpringDoc OpenAPI 3
-- **Build Tool**: Maven
+- **Build Tool**: Gradle 9.x
 
 ---
 

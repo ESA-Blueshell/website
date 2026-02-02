@@ -157,17 +157,26 @@ jobs:
         with:
           distribution: temurin
           java-version: 24
-          cache: maven
+          cache: gradle
 
-      - name: Run API Maven verify
-        run: |
-          mvn -B \
-            -Dsurefire.printSummary=true \
-            -Dfailsafe.printSummary=true \
-            verify
-        working-directory: api
+      - name: Run API Gradle tests
+        shell: bash
+        run:
+          set -euo pipefail
+
+          ./gradlew --no-daemon :api:test
         env:
-          MAVEN_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+          GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-reports
+          path: |
+            api/build/reports
+            build/reports
+          if-no-files-found: warn
 
   api-build-push:
     name: Build and publish API Docker image
@@ -301,13 +310,13 @@ jobs:
       - name: Wait for API container health check
         run: |
           set -euo pipefail
-          for i in {1..12}; do
+          for i in {1..24}; do
             CID="$(docker compose -f docker-compose.dev.yml ps -q api || true)"
             if [ -z "$CID" ]; then
-              echo "api container not created yet (attempt $i/12)"
+              echo "api container not created yet (attempt $i/24)"
             else
               STATUS="$(docker inspect --format='{{.State.Health.Status}}' "$CID" 2>/dev/null || echo 'unknown')"
-              echo "api health status: $STATUS (attempt $i/12)"
+              echo "api health status: $STATUS (attempt $i/24)"
               if [ "$STATUS" = "healthy" ]; then
                 echo "api is healthy"
                 exit 0

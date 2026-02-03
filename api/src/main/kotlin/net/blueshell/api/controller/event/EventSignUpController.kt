@@ -52,8 +52,8 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
     fun createEventSignup(@Valid @RequestBody dto: @Valid EventSignUpDTO): EventSignUpDTO? {
-        if (getPrincipal() != null) {
-            dto.userId = getPrincipal().id
+        if (principal != null) {
+            dto.userId = principal.id
         }
         var eventSignUp = mapper.fromDTO(dto)
         eventSignUp = service.create(eventSignUp)
@@ -72,7 +72,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ): EventSignUpDTO? {
         var signUp = if (accessToken == null)
-            service.findByUserIdAndEventId(getPrincipal().id, eventId)
+            service.findByUserIdAndEventId(principal.id, eventId)
         else
             service.findByGuestAccessTokenAndEventId(accessToken, eventId)
         mapper.fromDTO(dto, signUp)

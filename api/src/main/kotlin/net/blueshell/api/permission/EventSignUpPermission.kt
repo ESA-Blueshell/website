@@ -23,12 +23,12 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
 
         val signUp = targetDomainObject as EventSignUp
         val event = events.findById(signUp.eventId)
-        val user = getPrincipal()
+        val user = principal
 
         return when (permission) {
-            "read" -> signUp.user == user || signUp.event.committee.hasMember(getPrincipal())
+            "read" -> signUp.user == user || signUp.event.committee.hasMember(principal)
             "write" -> event.approved && (!event.membersOnly || hasAuthority(Role.MEMBER))
-            "delete" -> (user != null && signUp.user == getPrincipal())
+            "delete" -> (user != null && signUp.user == principal)
             else -> false
         }
     }

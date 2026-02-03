@@ -4,7 +4,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import org.springframework.web.multipart.MultipartFile
 
-class FileSizeValidator : ConstraintValidator<FileSize?, MultipartFile?> {
+class FileSizeValidator : ConstraintValidator<FileSize, MultipartFile> {
     private var min: Long = 0
     private var max: Long = 0
     private var allowEmpty = false
@@ -23,6 +23,6 @@ class FileSizeValidator : ConstraintValidator<FileSize?, MultipartFile?> {
         }
 
         val size = file.size
-        return size >= min && size <= max
+        return size in min..max
     }
 }

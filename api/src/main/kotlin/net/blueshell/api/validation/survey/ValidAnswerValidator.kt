@@ -11,15 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired
 
 data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository) :
     ConstraintValidator<ValidAnswer, AnswerDTO> {
-    override fun isValid(dto: AnswerDTO, context: ConstraintValidatorContext?): Boolean {
+    override fun isValid(dto: AnswerDTO?, context: ConstraintValidatorContext?): Boolean {
         if (dto == null || dto.questionId == null) {
             return true // Let @NotNull handle this
         }
 
-        val question = questions.findById(dto.questionId).orElse(null)
-        if (question == null) {
-            return false
-        }
+        val question = questions.findById(dto.questionId).orElse(null) ?: return false
 
         return when (question.type) {
             QuestionType.OPEN -> dto.textResponse != null && !dto.textResponse!!.trim { it <= ' ' }.isEmpty()
@@ -34,7 +31,7 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
         val selections = dto.optionSelections
         val choiceLabels = question.choiceLabels
 
-        if (selections == null || choiceLabels == null) {
+        if (selections == null) {
             return false
         }
 
@@ -45,11 +42,11 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
         val selections = dto.optionSelections
         val choiceLabels = question.choiceLabels
 
-        if (selections == null || choiceLabels == null || selections.size != choiceLabels.size) {
+        if (selections == null || selections.size != choiceLabels.size) {
             return false
         }
 
-        val trueCount = selections.stream().filter { obj: Boolean? -> obj.booleanValue() }.count()
+        val trueCount = selections.stream().filter { it == true }.count()
         return trueCount == 1L
     }
 }

@@ -49,7 +49,7 @@ class FileService @Autowired constructor(
     fun findByName(name: String): File {
         return repository!!.findByName(name).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
-                HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(name)
+                HttpStatus.NOT_FOUND, "File not found with name: $name"
             )
         })
     }
@@ -132,12 +132,12 @@ class FileService @Autowired constructor(
             if (resource.exists() || resource.isReadable) return resource
             throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
-                "File not found with name: %s".formatted(file.name)
+                "File not found with name: ${file.name}"
             )
         } catch (e: MalformedURLException) {
             throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
-                "File not found with name: %s".formatted(file.name)
+                "File not found with name: ${file.name}"
             )
         }
     }
@@ -147,9 +147,9 @@ class FileService @Autowired constructor(
             val filePath = assetsLocation.resolve(filename)
             val resource: Resource = UrlResource(filePath.toUri())
             if (resource.exists() || resource.isReadable) return resource
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(filename))
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: $filename")
         } catch (e: MalformedURLException) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(filename))
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: $filename")
         }
     }
 
@@ -179,7 +179,7 @@ class FileService @Autowired constructor(
     fun findByEventBannerId(bannerId: Long): File {
         return repository!!.findByEventBanners_Id(bannerId).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Event banner not found with id: %s".formatted(bannerId)
+                HttpStatus.NOT_FOUND, "Event banner not found with id: $bannerId"
             )
         })
     }

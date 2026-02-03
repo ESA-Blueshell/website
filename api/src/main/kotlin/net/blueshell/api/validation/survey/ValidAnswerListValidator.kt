@@ -6,7 +6,7 @@ import net.blueshell.api.dto.survey.AnswerDTO
 import net.blueshell.api.service.survey.SurveyService
 import org.springframework.beans.factory.annotation.Autowired
 
-class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList?, MutableList<AnswerDTO?>?> {
+class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, MutableList<AnswerDTO>> {
     @Autowired
     private val surveys: SurveyService? = null
 

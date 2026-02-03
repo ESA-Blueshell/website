@@ -116,7 +116,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>>(protected 
      * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)
-    open fun findById(id: Long): T {
+    open fun findById(id: Long?): T {
         return repository.findById(id).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id"

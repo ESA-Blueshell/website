@@ -55,7 +55,7 @@ class CommitteeController(
         @PathVariable("committeeId") committeeId: Long
     ): BaseDTO {
         val committee = service.findById(committeeId)
-        if (hasAuthority(Role.BOARD) || committee.hasMember(getPrincipal())) {
+        if (hasAuthority(Role.BOARD) || committee.hasMember(principal)) {
             return advancedMapper.toDTO(committee)
         }
 

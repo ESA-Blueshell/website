@@ -21,7 +21,7 @@ class EventSignUpService @Autowired constructor(repository: EventSignUpRepositor
             .orElseThrow<ResponseStatusException>(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "EventSignUp not found for user: %d and event: %d".formatted(userId, eventId)
+                    "EventSignUp not found for user: $userId and event: $eventId"
                 )
             })
     }
@@ -38,7 +38,7 @@ class EventSignUpService @Autowired constructor(repository: EventSignUpRepositor
     fun findByFilter(filter: EventSignUpFilter): MutableList<EventSignUp> {
         var filter = filter
         if (filter == null) filter = EventSignUpFilter()
-        val spec = EventSignUpSpecifications.fromFilter(filter, getPrincipal())
+        val spec = EventSignUpSpecifications.fromFilter(filter, principal)
         return repository!!.findAll(spec)
     }
 
@@ -51,7 +51,7 @@ class EventSignUpService @Autowired constructor(repository: EventSignUpRepositor
             .orElseThrow<ResponseStatusException>(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "EventSignUp not found for accessToken: %s and event: %d".formatted(accessToken, eventId)
+                    "EventSignUp not found for accessToken: $accessToken and event: $eventId"
                 )
             })
     }

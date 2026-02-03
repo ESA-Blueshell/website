@@ -60,7 +60,7 @@ class CalendarService {
 
             service = Calendar.Builder(
                 httpTransport,
-                GsonFactory.defaultInstance,
+                GsonFactory.getDefaultInstance(),
                 HttpCredentialsAdapter(credentials)
             )
                 .applicationName = APPLICATION_NAME
@@ -76,12 +76,12 @@ class CalendarService {
             htmlParser = Parser.builder(options).build()
             htmlRenderer = HtmlRenderer.builder(options).build()
 
-            CalendarService.log.info("Initialized Google Calendar client for calendarId={}", calendarId)
+            log.info("Initialized Google Calendar client for calendarId={}", calendarId)
         } catch (e: GeneralSecurityException) {
-            CalendarService.log.error("Failed to initialize GoogleCalendarService", e)
+            log.error("Failed to initialize GoogleCalendarService", e)
             throw IllegalStateException("GoogleCalendarService initialization failed", e)
         } catch (e: IOException) {
-            CalendarService.log.error("Failed to initialize GoogleCalendarService", e)
+            log.error("Failed to initialize GoogleCalendarService", e)
             throw IllegalStateException("GoogleCalendarService initialization failed", e)
         }
     }
@@ -94,9 +94,9 @@ class CalendarService {
                 .insert(calendarId, googleEvent)
                 .execute()
             event.googleId = googleEvent.id
-            CalendarService.log.info("Added a new event to the calendar at: {}", googleEvent.htmlLink)
+            log.info("Added a new event to the calendar at: {}", googleEvent.htmlLink)
         } catch (e: GoogleJsonResponseException) {
-            CalendarService.log.error("Google Calendar API returned HTTP code {} during insert", e.statusCode, e)
+            log.error("Google Calendar API returned HTTP code {} during insert", e.statusCode, e)
             throw e
         }
     }
@@ -108,9 +108,9 @@ class CalendarService {
             service!!.events()
                 .update(calendarId, event.googleId, googleEvent)
                 .execute()
-            CalendarService.log.info("Updated event {} in calendar {}", event.googleId, calendarId)
+            log.info("Updated event {} in calendar {}", event.googleId, calendarId)
         } catch (e: GoogleJsonResponseException) {
-            CalendarService.log.error("Google Calendar API returned HTTP code {} during update", e.statusCode, e)
+            log.error("Google Calendar API returned HTTP code {} during update", e.statusCode, e)
             throw e
         }
     }
@@ -120,10 +120,10 @@ class CalendarService {
         if (event.googleId == null) return
         try {
             service!!.events().delete(calendarId, event.googleId).execute()
-            CalendarService.log.info("Removed event {} from calendar {}", event.googleId, calendarId)
+            log.info("Removed event {} from calendar {}", event.googleId, calendarId)
             event.googleId = null
         } catch (e: GoogleJsonResponseException) {
-            CalendarService.log.error("Google Calendar API returned HTTP code {} during removal", e.statusCode, e)
+            log.error("Google Calendar API returned HTTP code {} during removal", e.statusCode, e)
             throw e
         }
     }
@@ -146,8 +146,8 @@ class CalendarService {
         val startDateTime = DateTime(event.startTime.atZone(ZONE).toEpochSecond() * 1000L)
         val endDateTime = DateTime(event.endTime.atZone(ZONE).toEpochSecond() * 1000L)
 
-        val start = EventDateTime().dateTime = startDateTime.timeZone = TZ_ID
-        val end = EventDateTime().dateTime = endDateTime.timeZone = TZ_ID
+        val start = EventDateTime().setDateTime(endDateTime).setTimeZone(TZ_ID)
+        val end = EventDateTime().setDateTime(startDateTime).setTimeZone(TZ_ID)
 
         googleEvent.start = start
         googleEvent.end = end

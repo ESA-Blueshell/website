@@ -29,7 +29,7 @@ class UserService @Autowired constructor(repository: UserRepository, private val
     fun findByUsername(username: String): User {
         return repository!!.findByUsername(username).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with username: %s".formatted(username)
+                HttpStatus.NOT_FOUND, "User not found with username: $username"
             )
         })
     }
@@ -83,7 +83,7 @@ class UserService @Autowired constructor(repository: UserRepository, private val
         var pageable = pageable
         if (filter == null) filter = UserFilter()
         if (pageable == null) pageable = Pageable.unpaged()
-        val spec = UserSpecifications.fromFilter(filter, getPrincipal())
+        val spec = UserSpecifications.fromFilter(filter, principal)
         return repository!!.findAll(spec, pageable)
     }
 

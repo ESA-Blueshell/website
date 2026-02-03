@@ -36,9 +36,9 @@ class MockContactService(
         val id = emailToContactId.get(user.email)
         if (id != null) {
             user.contactId = id
-            MockContactService.log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.email)
+            log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.email)
         } else {
-            MockContactService.log.debug("[brevo-mock] no contact yet for email={}", user.email)
+            log.debug("[brevo-mock] no contact yet for email={}", user.email)
         }
     }
 
@@ -49,9 +49,9 @@ class MockContactService(
                 emailToContactId.computeIfAbsent(user.email) { k: String -> contactSeq.andIncrement }!!
             user.contactId = id
             users.updateContactId(user.id, id)
-            MockContactService.log.info("[brevo-mock] created contact email={} -> id={}", user.email, id)
+            log.info("[brevo-mock] created contact email={} -> id={}", user.email, id)
         } else {
-            MockContactService.log.info(
+            log.info(
                 "[brevo-mock] updated contact email={} id={}",
                 user.email,
                 user.contactId
@@ -64,7 +64,7 @@ class MockContactService(
         var listId = contributionPeriod.listId
         if (listId == null) {
             listId = listSeq.andIncrement
-            MockContactService.log.info(
+            log.info(
                 "[brevo-mock] created listId={} for contributionPeriod id={}",
                 listId,
                 contributionPeriod.id
@@ -86,7 +86,7 @@ class MockContactService(
         }
         listMembers.computeIfAbsent(listId) { k: Long -> ConcurrentHashMap.newKeySet<Long>() }!!
             .add(user.contactId)
-        MockContactService.log.info("[brevo-mock] added contactId={} to listId={}", user.contactId, listId)
+        log.info("[brevo-mock] added contactId={} to listId={}", user.contactId, listId)
     }
 
     @Throws(RestClientResponseException::class)
@@ -97,7 +97,7 @@ class MockContactService(
             set!!.remove(user.contactId)
             set
         }
-        MockContactService.log.info("[brevo-mock] removed contactId={} from listId={}", user.contactId, listId)
+        log.info("[brevo-mock] removed contactId={} from listId={}", user.contactId, listId)
     }
 
     fun getEmailToContactId(): MutableMap<String, Long> {

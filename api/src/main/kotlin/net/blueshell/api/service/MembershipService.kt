@@ -19,7 +19,7 @@ class MembershipService @Autowired constructor(repository: MemberRepository, eve
     fun findByFilter(filter: MembershipFilter): MutableList<Membership> {
         var filter = filter
         if (filter == null) filter = MembershipFilter()
-        val spec = MembershipSpecifications.fromFilter(filter, getPrincipal())
+        val spec = MembershipSpecifications.fromFilter(filter, principal)
         return repository!!.findAll(spec)
     }
 }

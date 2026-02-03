@@ -49,7 +49,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
     ) {
         file.name = name
         file.mediaType = mediaType
-        file.uploaderId = getPrincipal().id
+        file.uploaderId = principal.id
         try {
             file.size = Files.size(fullPath)
         } catch (e: IOException) {

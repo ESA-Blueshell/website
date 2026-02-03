@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 annotation class FileSize(
     val message: String = "File size must be between {min} and {max} bytes",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = [],
+    val payload: Array<KClass<out Payload>> = [],
     /**
      * Inclusive min (bytes)
      */

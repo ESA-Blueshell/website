@@ -14,5 +14,5 @@ import kotlin.reflect.KClass
 annotation class UniquePhoneNumber(
     val message: String = "Phone number is already in use.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

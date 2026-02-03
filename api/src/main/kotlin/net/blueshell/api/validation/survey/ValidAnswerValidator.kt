@@ -8,21 +8,21 @@ import net.blueshell.api.model.survey.Question
 import net.blueshell.api.repository.survey.QuestionRepository
 import org.springframework.beans.factory.annotation.Autowired
 
-@JvmRecord
-data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository?) :
+
+data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository) :
     ConstraintValidator<ValidAnswer, AnswerDTO> {
     override fun isValid(dto: AnswerDTO, context: ConstraintValidatorContext?): Boolean {
-        if (dto == null || dto.getQuestionId() == null) {
+        if (dto == null || dto.questionId == null) {
             return true // Let @NotNull handle this
         }
 
-        val question = questions!!.findById(dto.getQuestionId()).orElse(null)
+        val question = questions.findById(dto.questionId).orElse(null)
         if (question == null) {
             return false
         }
 
-        return when (question.getType()) {
-            QuestionType.OPEN -> dto.getTextResponse() != null && !dto.getTextResponse().trim { it <= ' ' }.isEmpty()
+        return when (question.type) {
+            QuestionType.OPEN -> dto.textResponse != null && !dto.textResponse!!.trim { it <= ' ' }.isEmpty()
             QuestionType.CHECKBOX -> isValidCheckboxAnswer(dto, question)
             QuestionType.RADIO -> isValidRadioAnswer(dto, question)
             QuestionType.DESCRIPTION -> true
@@ -31,8 +31,8 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
     }
 
     private fun isValidCheckboxAnswer(dto: AnswerDTO, question: Question): Boolean {
-        val selections = dto.getOptionSelections()
-        val choiceLabels = question.getChoiceLabels()
+        val selections = dto.optionSelections
+        val choiceLabels = question.choiceLabels
 
         if (selections == null || choiceLabels == null) {
             return false
@@ -42,14 +42,14 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
     }
 
     private fun isValidRadioAnswer(dto: AnswerDTO, question: Question): Boolean {
-        val selections = dto.getOptionSelections()
-        val choiceLabels = question.getChoiceLabels()
+        val selections = dto.optionSelections
+        val choiceLabels = question.choiceLabels
 
         if (selections == null || choiceLabels == null || selections.size != choiceLabels.size) {
             return false
         }
 
-        val trueCount = selections.stream().filter { obj: Boolean? -> obj.booleanValue() }.count()
+        val trueCount = selections.stream().filter { obj: Boolean? -> obj.booleanValue }.count()
         return trueCount == 1L
     }
 }

@@ -14,5 +14,5 @@ import kotlin.reflect.KClass
 annotation class UniqueUsername(
     val message: String = "Username is already taken.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

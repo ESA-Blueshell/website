@@ -14,5 +14,5 @@ import kotlin.reflect.KClass
 annotation class UniqueEmail(
     val message: String = "Email is already taken.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

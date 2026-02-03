@@ -14,5 +14,5 @@ import kotlin.reflect.KClass
 annotation class ValidMobilePhoneNumber(
     val message: String = "Invalid mobile phone number.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

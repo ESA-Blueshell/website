@@ -11,5 +11,5 @@ import kotlin.reflect.KClass
 annotation class ValidEventSignUp(
     val message: String = "Invalid event sign-up payload",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

@@ -12,6 +12,6 @@ annotation class AllowedContentTypes(
     vararg val value: String,
     val message: String = "Unsupported media type. Allowed: {value}",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )
 

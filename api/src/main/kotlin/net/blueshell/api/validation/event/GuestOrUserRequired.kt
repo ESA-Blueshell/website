@@ -11,5 +11,5 @@ import kotlin.reflect.KClass
 annotation class GuestOrUserRequired(
     val message: String = "Either guest or user must be provided.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

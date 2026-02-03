@@ -14,5 +14,5 @@ import kotlin.reflect.KClass
 annotation class ExistingUsername(
     val message: String = "Username is not known.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

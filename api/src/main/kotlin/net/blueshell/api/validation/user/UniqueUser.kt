@@ -11,5 +11,5 @@ import kotlin.reflect.KClass
 annotation class UniqueUser(
     val message: String = "User has duplicate fields.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

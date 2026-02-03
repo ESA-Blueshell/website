@@ -11,5 +11,5 @@ import kotlin.reflect.KClass
 annotation class ValidCountryCode(
     val message: String = "Country must be a valid ISO 3166-1 alpha-2 code",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

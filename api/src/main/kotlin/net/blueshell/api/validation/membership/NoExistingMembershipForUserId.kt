@@ -14,5 +14,5 @@ import kotlin.reflect.KClass
 annotation class NoExistingMembershipForUserId(
     val message: String = "User is already a member.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

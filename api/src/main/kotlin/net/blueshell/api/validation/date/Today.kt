@@ -10,6 +10,6 @@ import kotlin.reflect.KClass
 annotation class Today(
     val message: String = "Date must be today",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )
 

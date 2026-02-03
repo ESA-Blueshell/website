@@ -10,6 +10,6 @@ import kotlin.reflect.KClass
 annotation class ValidAnswerList(
     val message: String = "Invalid list of answers",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )
 

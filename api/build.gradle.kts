@@ -1,5 +1,6 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
+import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
@@ -9,6 +10,8 @@ plugins {
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.spring") version "2.3.0"
     kotlin("plugin.jpa") version "2.3.0"
+    kotlin("kapt") version "2.3.0"
+    kotlin("plugin.lombok") version "2.3.0"
 
     java
 }
@@ -63,13 +66,17 @@ dependencies {
 
     implementation("org.mapstruct:mapstruct:1.6.3")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
+    kapt("org.mapstruct:mapstruct-processor:1.6.3")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
+    kapt("org.projectlombok:lombok:1.18.42")
     testCompileOnly("org.projectlombok:lombok:1.18.42")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
+    kaptTest("org.projectlombok:lombok:1.18.42")
     compileOnly("org.projectlombok:lombok-mapstruct-binding:0.2.0")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+    kapt("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     implementation("org.flywaydb:flyway-core")
 
@@ -138,17 +145,17 @@ tasks.withType<BootRun>().configureEach {
 
 val brevoOutputDir: Provider<Directory> = layout.buildDirectory.dir("generated/sources/openapi/brevo")
 
-sourceSets["main"].java.srcDir(brevoOutputDir.map { it.dir("src/main/java") })
+sourceSets["main"].kotlin.srcDir(brevoOutputDir.map { it.dir("src/main/kotlin") })
 
 tasks.register<GenerateTask>("generateBrevoClient") {
     validateSpec.set(false)
-    generatorName.set("java")
-    library.set("restclient")
+    generatorName.set("kotlin")
+    library.set("jvm-spring-restclient")
     inputSpec.set(layout.projectDirectory.file("../openapi/brevo.yml").asFile.absolutePath)
     outputDir.set(brevoOutputDir.get().asFile.absolutePath)
     apiPackage.set("net.blueshell.clients.brevo.api")
     modelPackage.set("net.blueshell.clients.brevo.model")
-    invokerPackage.set("net.blueshell.clients.brevo.invoker")
+    packageName.set("net.blueshell.clients.brevo.invoker")
     generateModelTests.set(false)
     generateApiTests.set(false)
     generateApiDocumentation.set(false)
@@ -164,6 +171,7 @@ tasks.register<GenerateTask>("generateBrevoClient") {
             "withXml" to "false",
             "jackson" to "true",
             "serializationLibrary" to "jackson",
+            "useSpringBoot3" to "true",
         )
     )
     inlineSchemaOptions.set(
@@ -189,6 +197,6 @@ tasks.register<GenerateTask>("generateBrevoClient") {
     )
 }
 
-tasks.named("compileJava") {
+tasks.withType<KaptGenerateStubsTask>().configureEach {
     dependsOn("generateBrevoClient")
 }

@@ -25,31 +25,33 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class BoardMember : BaseModel() {
-    @JoinColumn(name = "board_id", nullable = false, insertable = false, updatable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
-    lateinit var board: Board
-        get() = field
+    @field:JoinColumn(name = "board_id", nullable = false, insertable = false, updatable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    private var _board: Board? = null
+    var board: Board
+        get() = requireNotNull(_board) { "Board is required" }
         set(value) {
-            field = value
+            _board = value
             boardId = value.id ?: boardId
         }
 
     @Column(name = "board_id", nullable = false)
-    var boardId: Long by kotlin.properties.Delegates.notNull()
+    var boardId: Long = 0
 
-    @JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
-    lateinit var user: User
-        get() = field
+    @field:JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    private var _user: User? = null
+    var user: User
+        get() = requireNotNull(_user) { "User is required" }
         set(value) {
-            field = value
+            _user = value
             userId = value.id ?: userId
         }
 
     @Column(name = "user_id", nullable = false)
-    var userId: Long by kotlin.properties.Delegates.notNull()
+    var userId: Long = 0
 
     @JoinColumn(name = "picture_id")
     @OneToOne(fetch = FetchType.LAZY)
-    val picture: File? = null
+    var picture: File? = null
 }

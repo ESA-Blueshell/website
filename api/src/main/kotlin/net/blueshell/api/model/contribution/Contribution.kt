@@ -35,12 +35,12 @@ class Contribution : BaseModel() {
     lateinit var user: User
 
     @Column(name = "user_id", nullable = false)
-    var userId: Long by Delegates.notNull()
+    var userId: Long = 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     lateinit var contributionPeriod: ContributionPeriod
 
     @Column(name = "contribution_period_id", nullable = false)
-    var contributionPeriodId: Long by Delegates.notNull()
+    var contributionPeriodId: Long = 0
 }

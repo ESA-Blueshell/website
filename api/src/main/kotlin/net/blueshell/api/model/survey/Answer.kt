@@ -22,7 +22,7 @@ import kotlin.properties.Delegates
 @EntityListeners(JpaListener::class)
 class Answer : BaseModel() {
     @Column(name = "question_id", nullable = false)
-    var questionId: Long by Delegates.notNull()
+    var questionId: Long = 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", insertable = false, updatable = false)

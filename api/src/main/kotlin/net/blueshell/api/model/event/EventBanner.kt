@@ -6,7 +6,6 @@ import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.File
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -25,32 +24,34 @@ import kotlin.properties.Delegates
 @EntityListeners(JpaListener::class)
 class EventBanner : BaseModel() {
     @Column(name = "event_id", nullable = false)
-    var eventId: Long by Delegates.notNull()
+    var eventId: Long = 0
 
     @Column(name = "file_id", nullable = false)
-    var fileId: Long by Delegates.notNull()
+    var fileId: Long = 0
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id", nullable = false, insertable = false, updatable = false)
-    lateinit var event: Event
-        get() = field
+    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "event_id", nullable = false, insertable = false, updatable = false)
+    private var _event: Event? = null
+    var event: Event
+        get() = requireNotNull(_event) { "Event is required" }
         set(value) {
-            field = value
+            _event = value
             eventId = value.id ?: eventId
         }
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(
         name = "file_id",
         nullable = false,
         foreignKey = ForeignKey(name = "fk_event_banners_file"),
         insertable = false,
         updatable = false
     )
-    lateinit var file: File
-        get() = field
+    private var _file: File? = null
+    var file: File
+        get() = requireNotNull(_file) { "File is required" }
         set(value) {
-            field = value
+            _file = value
             fileId = value.id ?: fileId
         }
 }

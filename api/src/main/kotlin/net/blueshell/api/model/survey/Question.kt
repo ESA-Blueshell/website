@@ -33,10 +33,10 @@ import kotlin.properties.Delegates
 @DirtyModel
 class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
-    var idx: Long by Delegates.notNull()
+    var idx: Long = 0
 
     @Column(name = "survey_id", insertable = false, updatable = false, nullable = false)
-    var surveyId: Long by Delegates.notNull()
+    var surveyId: Long = 0
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "survey_id")

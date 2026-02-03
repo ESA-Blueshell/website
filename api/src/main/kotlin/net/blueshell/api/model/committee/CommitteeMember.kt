@@ -6,7 +6,6 @@ import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -35,19 +34,20 @@ class CommitteeMember : BaseModel() {
     lateinit var user: User
 
     @Column(name = "user_id", nullable = false)
-    var userId: Long by Delegates.notNull()
+    var userId: Long = 0
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "committee_id", nullable = false, insertable = false, updatable = false)
-    lateinit var committee: Committee
-        get() = field
+    @field:ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "committee_id", nullable = false, insertable = false, updatable = false)
+    private var _committee: Committee? = null
+    var committee: Committee
+        get() = requireNotNull(_committee) { "Committee is required" }
         set(value) {
-            field = value
+            _committee = value
             committeeId = value.id ?: committeeId
         }
 
     @Column(name = "committee_id", nullable = false)
-    var committeeId: Long by Delegates.notNull()
+    var committeeId: Long = 0
 
     @Column(name = "role", length = 255)
     var role: String? = null

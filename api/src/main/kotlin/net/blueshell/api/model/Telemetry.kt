@@ -24,7 +24,7 @@ import kotlin.collections.linkedSetOf
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Telemetry : BaseModel() {
+class Telemetry() : BaseModel() {
     @field:Column(nullable = false)
     @field:Enumerated(EnumType.STRING)
     lateinit var platform: PlatformType

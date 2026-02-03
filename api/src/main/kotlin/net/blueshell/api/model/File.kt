@@ -39,7 +39,7 @@ class File : BaseModel() {
     lateinit var uploader: User
 
     @Column(name = "uploader_id", nullable = false)
-    var uploaderId: Long by Delegates.notNull()
+    var uploaderId: Long = 0
 
     @Column(name = "media_type", nullable = false)
     lateinit var mediaType: String

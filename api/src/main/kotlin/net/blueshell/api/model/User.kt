@@ -78,7 +78,10 @@ class User : BaseModel(), UserDetails {
     var phoneNumber: String? = null
 
     @Column(nullable = false)
-    lateinit var email: String
+    var email: String = ""
+        set(value) {
+            field = value.lowercase(Locale.ROOT)
+        }
 
     @Column(name = "student_number")
     var studentNumber: String? = null
@@ -133,7 +136,7 @@ class User : BaseModel(), UserDetails {
         EnumType.STRING
     )
     @Column(name = "authority")
-    var roles: MutableSet<Role?> = EnumSet.of<Role?>(Role.GUEST)
+    var roles: MutableSet<Role> = EnumSet.of(Role.GUEST)
 
     @Column(name = "ehbo")
     var ehbo = false
@@ -165,36 +168,36 @@ class User : BaseModel(), UserDetails {
     @Column(name = "start_study_year")
     var startStudyYear: Long? = null
 
-    val committeeIds: MutableSet<Long?>
+    val committeeIds: MutableSet<Long>
         get() {
-            val set: MutableSet<Long?> = HashSet<Long?>()
-            committeeMembers.forEach { cm -> set.add(cm.committee.id) }
+            val set: MutableSet<Long> = HashSet()
+            committeeMembers.forEach { cm -> cm.committee.id?.let { set.add(it) } }
             return set
         }
 
-    val inheritedRoles: MutableSet<Role?>
-        get() = HashSet<Role?>(
+    val inheritedRoles: MutableSet<Role>
+        get() = HashSet(
             roles
                 .stream()
-                .flatMap<Role?> { role: Role? ->
-                    role!!.allInheritedRoles.stream()
+                .flatMap { role: Role ->
+                    role.allInheritedRoles.stream()
                 }.toList()
         )
 
-    fun hasRole(role: Role?): Boolean {
-        return roles.stream().anyMatch { r: Role? -> r == role }
+    fun hasRole(role: Role): Boolean {
+        return roles.stream().anyMatch { r: Role -> r == role }
     }
 
-    fun hasAuthority(role: Role?): Boolean {
-        return this.inheritedRoles.stream().anyMatch { r: Role? -> r!!.matchesRole(role) }
+    fun hasAuthority(role: Role): Boolean {
+        return this.inheritedRoles.stream().anyMatch { r: Role -> r.matchesRole(role) }
     }
 
-    override fun getAuthorities(): MutableCollection<out GrantedAuthority?> {
-        val auths = HashSet<GrantedAuthority?>()
+    override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
+        val auths = HashSet<GrantedAuthority>()
         roles.stream()
-            .flatMap<Role?> { role: Role? -> role!!.allInheritedRoles.stream() }
-            .map<SimpleGrantedAuthority?> { authority: Role? -> SimpleGrantedAuthority(authority!!.reprString) }
-            .forEach { e: SimpleGrantedAuthority? -> auths.add(e) }
+            .flatMap { role: Role -> role.allInheritedRoles.stream() }
+            .map { authority: Role -> SimpleGrantedAuthority(authority.reprString) }
+            .forEach { e: SimpleGrantedAuthority -> auths.add(e) }
 
         return auths
     }
@@ -203,16 +206,12 @@ class User : BaseModel(), UserDetails {
     override fun getUsername(): String = username
     override fun isEnabled(): Boolean = enabled
 
-    fun addRole(role: Role?) {
+    fun addRole(role: Role) {
         roles.add(role)
     }
 
-    fun removeRole(role: Role?) {
+    fun removeRole(role: Role) {
         roles.remove(role)
-    }
-
-    fun setEmail(email: String) {
-        this.email = email.lowercase()
     }
 
     val fullName: String

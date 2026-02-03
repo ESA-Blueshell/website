@@ -32,5 +32,5 @@ class Sponsor : BaseModel() {
     lateinit var picture: File
 
     @Column(name = "logo_id", nullable = false)
-    var pictureId: Long by kotlin.properties.Delegates.notNull()
+    var pictureId: Long = 0
 }

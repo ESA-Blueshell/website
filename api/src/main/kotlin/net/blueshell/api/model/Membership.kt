@@ -30,7 +30,7 @@ class Membership : BaseModel() {
     val user: User? = null
 
     @Column(name = "user_id", nullable = false)
-    var userId: Long by Delegates.notNull()
+    var userId: Long = 0
 
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate = LocalDate.now()

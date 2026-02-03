@@ -42,7 +42,7 @@ class EventSignUp : BaseModel() {
     lateinit var event: Event
 
     @Column(name = "event_id", nullable = false)
-    var eventId: Long by Delegates.notNull()
+    var eventId: Long = 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)

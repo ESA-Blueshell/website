@@ -37,12 +37,17 @@ class CommitteeMember : BaseModel() {
     @Column(name = "user_id", nullable = false)
     var userId: Long by Delegates.notNull()
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "committee_id", nullable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "committee_id", nullable = false, insertable = false, updatable = false)
     lateinit var committee: Committee
+        get() = field
+        set(value) {
+            field = value
+            committeeId = value.id ?: committeeId
+        }
 
-    @Column(name = "committee_id", insertable = false, updatable = false)
-    var committeeId: Long? = null
+    @Column(name = "committee_id", nullable = false)
+    var committeeId: Long by Delegates.notNull()
 
     @Column(name = "role", length = 255)
     var role: String? = null

@@ -6,6 +6,7 @@ import net.blueshell.api.base.JpaListener
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
+import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -29,8 +30,10 @@ import java.time.LocalDate
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class ContributionPeriod : BaseModel() {
-    @OneToMany(mappedBy = "contributionPeriod", cascade = [CascadeType.ALL])
-    val contributions: MutableSet<Contribution?>? = null
+    @OneToMany(mappedBy = "contributionPeriod", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    private val _contributions: MutableSet<Contribution> = linkedSetOf()
+    val contributions: Set<Contribution>
+        get() = _contributions
 
     @Column(name = "start_date", nullable = false)
     lateinit var startDate: LocalDate

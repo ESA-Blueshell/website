@@ -5,6 +5,7 @@ import net.blueshell.api.base.BaseModel
 import net.blueshell.api.common.enums.PlatformType
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -32,7 +33,9 @@ class Telemetry : BaseModel() {
     lateinit var url: String
 
     @OneToMany(mappedBy = "telemetry", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val redirects: MutableSet<Redirect?>? = null
+    private val _redirects: MutableSet<Redirect> = linkedSetOf()
+    val redirects: Set<Redirect>
+        get() = _redirects
 
     constructor(platform: PlatformType, url: String) : this() {
         this.platform = platform

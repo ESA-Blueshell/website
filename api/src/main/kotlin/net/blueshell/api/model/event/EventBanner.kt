@@ -24,17 +24,33 @@ import kotlin.properties.Delegates
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class EventBanner : BaseModel() {
-    @Column(name = "event_id", nullable = false, insertable = false, updatable = false)
+    @Column(name = "event_id", nullable = false)
     var eventId: Long by Delegates.notNull()
 
-    @Column(name = "file_id", nullable = false, insertable = false, updatable = false)
+    @Column(name = "file_id", nullable = false)
     var fileId: Long by Delegates.notNull()
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id", nullable = false)
+    @JoinColumn(name = "event_id", nullable = false, insertable = false, updatable = false)
     lateinit var event: Event
+        get() = field
+        set(value) {
+            field = value
+            eventId = value.id ?: eventId
+        }
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "file_id", nullable = false, foreignKey = ForeignKey(name = "fk_event_banners_file"))
+    @JoinColumn(
+        name = "file_id",
+        nullable = false,
+        foreignKey = ForeignKey(name = "fk_event_banners_file"),
+        insertable = false,
+        updatable = false
+    )
     lateinit var file: File
+        get() = field
+        set(value) {
+            field = value
+            fileId = value.id ?: fileId
+        }
 }

@@ -6,6 +6,7 @@ import net.blueshell.api.model.File
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -25,21 +26,31 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class BoardMember : BaseModel() {
-    @JoinColumn(name = "board_id", nullable = false)
-    @ManyToOne
+    @JoinColumn(name = "board_id", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     lateinit var board: Board
+        get() = field
+        set(value) {
+            field = value
+            boardId = value.id ?: boardId
+        }
 
-    @Column(name = "board_id", updatable = false, insertable = false)
-    var boardId: Long? = null
+    @Column(name = "board_id", nullable = false)
+    var boardId: Long by kotlin.properties.Delegates.notNull()
 
-    @JoinColumn(name = "user_id", nullable = false)
-    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     lateinit var user: User
+        get() = field
+        set(value) {
+            field = value
+            userId = value.id ?: userId
+        }
 
-    @Column(name = "user_id", updatable = false, insertable = false)
-    var userId: Long? = null
+    @Column(name = "user_id", nullable = false)
+    var userId: Long by kotlin.properties.Delegates.notNull()
 
     @JoinColumn(name = "picture_id")
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     val picture: File? = null
 }

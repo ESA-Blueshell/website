@@ -38,10 +38,14 @@ import kotlin.properties.Delegates
             value = "banner",
             subgraph = "bannerSub"
         ), NamedAttributeNode(value = "signUpForm", subgraph = "formSub")],
-        subgraphs = [NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("file")]), NamedSubgraph(
-            name = "formSub",
-            attributeNodes = [NamedAttributeNode("questions")]
-        )]
+        subgraphs = [
+            NamedSubgraph(
+                name = "bannerSub", attributeNodes = [
+                    NamedAttributeNode("file")]
+            ), NamedSubgraph(
+                name = "formSub",
+                attributeNodes = [NamedAttributeNode("questions")]
+            )]
     )
 )
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -70,8 +74,8 @@ class Event : BaseModel() {
     @Column(name = "end_time", nullable = false)
     lateinit var endTime: Instant
 
-    @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val banner: EventBanner? = null
+    @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    var banner: EventBanner? = null
 
     @Column(name = "price_member")
     var memberPrice: Double? = null
@@ -80,13 +84,18 @@ class Event : BaseModel() {
     var publicPrice: Double? = null
 
     @OneToMany(cascade = [CascadeType.ALL], mappedBy = "event", fetch = FetchType.LAZY)
-    val feedbacks: MutableSet<EventFeedback?>? = null
+    private val _feedbacks: MutableSet<EventFeedback> = linkedSetOf()
+    val feedbacks: Set<EventFeedback>
+        get() = _feedbacks
 
     @OneToMany(mappedBy = "event", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val pictures: MutableSet<EventPicture?>? = null
+    private val _pictures: MutableSet<EventPicture> = linkedSetOf()
+    val pictures: Set<EventPicture>
+        get() = _pictures
 
     @Column(name = "google_id")
     var googleId: String? = null
+
     @Column(name = "approved", nullable = false)
     var approved = false
 
@@ -98,11 +107,11 @@ class Event : BaseModel() {
 
     @JoinColumn(name = "survey_id")
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val signUpForm: Survey? = null
+    var signUpForm: Survey? = null
 
     @Column(name = "survey_id", updatable = false, insertable = false)
     var signUpFormId: Long? = null
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
-    var signUpCount: Long by Delegates.notNull()
+    var signUpCount: Long = 0
 }

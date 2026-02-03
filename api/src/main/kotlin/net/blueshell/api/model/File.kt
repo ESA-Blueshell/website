@@ -10,6 +10,7 @@ import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import kotlin.properties.Delegates
+import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -50,7 +51,9 @@ class File : BaseModel() {
     @Column(name = "type", nullable = false)
     lateinit var type: FileType
 
-    @OneToMany(mappedBy = "file")
+    @OneToMany(mappedBy = "file", fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    val eventBanners: MutableSet<EventBanner?>? = null
+    private val _eventBanners: MutableSet<EventBanner> = linkedSetOf()
+    val eventBanners: Set<EventBanner>
+        get() = _eventBanners
 }

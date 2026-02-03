@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import net.blueshell.api.base.BaseModel
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -26,10 +27,10 @@ class Sponsor : BaseModel() {
     @Column(nullable = false, length = 4095)
     lateinit var description: String
 
-    @OneToOne(cascade = [CascadeType.ALL])
+    @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     @JoinColumn(name = "logo_id", nullable = false, insertable = false, updatable = false)
     lateinit var picture: File
 
-    @Column(name = "logo_id")
-    var pictureId: Long? = null
+    @Column(name = "logo_id", nullable = false)
+    var pictureId: Long by kotlin.properties.Delegates.notNull()
 }

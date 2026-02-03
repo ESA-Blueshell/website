@@ -33,14 +33,14 @@ import kotlin.properties.Delegates
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class ContributionReminder : BaseModel() {
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
     lateinit var user: User
 
     @Column(name = "user_id", nullable = false)
     var userId: Long by Delegates.notNull()
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
     lateinit var contributionPeriod: ContributionPeriod
 

@@ -19,7 +19,7 @@ class EventFeedback : BaseModel() {
     @Column(name = "feedback", nullable = false)
     lateinit var feedback: String
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     lateinit var event: Event
 }

@@ -14,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import java.sql.Date
 import java.util.*
+import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -98,8 +99,10 @@ class User : BaseModel(), UserDetails {
     @Column(nullable = false)
     var enabled = false
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val recoveryTokens: MutableSet<RecoveryToken?>? = null
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()
+    val recoveryTokens: Set<RecoveryToken>
+        get() = _recoveryTokens
 
     @Column(name = "consent_privacy")
     var consentPrivacy = false
@@ -121,7 +124,9 @@ class User : BaseModel(), UserDetails {
     val profilePicture: File? = null
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    val committeeMembers: MutableSet<CommitteeMember> = HashSet<CommitteeMember>()
+    private val _committeeMembers: MutableSet<CommitteeMember> = linkedSetOf()
+    val committeeMembers: Set<CommitteeMember>
+        get() = _committeeMembers
 
     @ElementCollection(targetClass = Role::class, fetch = FetchType.LAZY)
     @CollectionTable(name = "authorities", joinColumns = [JoinColumn(name = "user_id")])
@@ -141,13 +146,19 @@ class User : BaseModel(), UserDetails {
     var bhv = false
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val contributions: MutableSet<Contribution?>? = null
-
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL])
-    val memberships: MutableSet<Membership?>? = null
+    private val _contributions: MutableSet<Contribution> = linkedSetOf()
+    val contributions: Set<Contribution>
+        get() = _contributions
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val eventSignUps: MutableSet<EventSignUp?>? = null
+    private val _memberships: MutableSet<Membership> = linkedSetOf()
+    val memberships: Set<Membership>
+        get() = _memberships
+
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    private val _eventSignUps: MutableSet<EventSignUp> = linkedSetOf()
+    val eventSignUps: Set<EventSignUp>
+        get() = _eventSignUps
 
     @Column(name = "study")
     var study: String? = null
@@ -158,12 +169,7 @@ class User : BaseModel(), UserDetails {
     val committeeIds: MutableSet<Long?>
         get() {
             val set: MutableSet<Long?> = HashSet<Long?>()
-            if (getCommitteeMembers() == null) {
-                return set
-            }
-            for (cm in getCommitteeMembers()) {
-                set.add(cm.getCommittee().getId())
-            }
+            committeeMembers.forEach { cm -> set.add(cm.committee.id) }
             return set
         }
 
@@ -186,10 +192,6 @@ class User : BaseModel(), UserDetails {
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority?> {
         val auths = HashSet<GrantedAuthority?>()
-        if (getRoles() == null) {
-            return auths
-        }
-
         getRoles().stream()
             .flatMap<Role?> { role: Role? -> role!!.getAllInheritedRoles().stream() }
             .map<SimpleGrantedAuthority?> { authority: Role? -> SimpleGrantedAuthority(authority!!.getReprString()) }

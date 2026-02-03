@@ -1,6 +1,7 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
+import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -21,7 +22,7 @@ import org.hibernate.annotations.SQLRestriction
 class Redirect : BaseModel() {
     @field:ToString.Include
     @field:JoinColumn(name = "telemetry_id", nullable = false)
-    @field:ManyToOne
+    @field:ManyToOne(fetch = FetchType.LAZY)
     lateinit var telemetry: Telemetry
 
     constructor(telemetry: Telemetry) : this() {

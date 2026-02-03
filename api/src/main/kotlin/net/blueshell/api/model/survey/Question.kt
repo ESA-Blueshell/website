@@ -9,6 +9,7 @@ import net.blueshell.api.common.hibernate.DirtyModel
 import net.blueshell.api.model.converter.StringListConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.collections.linkedSetOf
 import kotlin.properties.Delegates
 
 @Entity
@@ -42,7 +43,9 @@ class Question : DirtyAwareModel() {
     lateinit var survey: Survey
 
     @OneToMany(mappedBy = "question", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val answers: MutableSet<Answer?>? = null
+    private val _answers: MutableSet<Answer> = linkedSetOf()
+    val answers: Set<Answer>
+        get() = _answers
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)

@@ -7,6 +7,7 @@ import net.blueshell.api.model.User
 import net.blueshell.api.model.survey.Answer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.collections.linkedSetOf
 import kotlin.properties.Delegates
 
 @Entity
@@ -43,7 +44,7 @@ class EventSignUp : BaseModel() {
     @Column(name = "event_id", nullable = false)
     var eventId: Long by Delegates.notNull()
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     val user: User? = null
 
@@ -60,5 +61,7 @@ class EventSignUp : BaseModel() {
         joinColumns = [JoinColumn(name = "event_sign_up_id")],
         inverseJoinColumns = [JoinColumn(name = "answer_id")]
     )
-    val answers: MutableSet<Answer?>? = null
+    private val _answers: MutableSet<Answer> = linkedSetOf()
+    val answers: Set<Answer>
+        get() = _answers
 }

@@ -25,13 +25,13 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE board_documents SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class BoardDocument : BaseModel() {
     @JoinColumn(name = "board_id", nullable = false)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     lateinit var board: Board
 
     @Column(name = "name", nullable = false)
     lateinit var name: String
 
     @JoinColumn(name = "file_id", nullable = false)
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     lateinit var file: File
 }

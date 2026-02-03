@@ -35,6 +35,6 @@ class Answer : BaseModel() {
     @Column(name = "text_response")
     var textResponse: String? = null
 
-    @OneToOne(mappedBy = "answer", cascade = [CascadeType.ALL])
+    @OneToOne(mappedBy = "answer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val eventSignUpAnswer: EventSignUpAnswer? = null
 }

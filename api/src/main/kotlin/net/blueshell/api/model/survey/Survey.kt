@@ -5,6 +5,7 @@ import net.blueshell.api.base.BaseModel
 import net.blueshell.api.base.JpaListener
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -19,8 +20,10 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE surveys SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener::class)
 class Survey : BaseModel() {
-    @OneToMany(mappedBy = "survey", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val questions: MutableSet<Question?>? = null
+    @OneToMany(mappedBy = "survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    private val _questions: MutableSet<Question> = linkedSetOf()
+    val questions: Set<Question>
+        get() = _questions
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)
     var responseCount: Long = 0

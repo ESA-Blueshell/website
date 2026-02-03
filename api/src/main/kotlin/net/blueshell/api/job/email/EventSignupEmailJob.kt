@@ -43,7 +43,7 @@ class EventSignupEmailJob(
     }
 
     private fun jobKey(type: String?, id: Long?): String {
-        return "%s_%d_%d".formatted(type, id, System.currentTimeMillis() / 10000)
+        return "${type}_${id}_${System.currentTimeMillis() / 1000}"
     }
 
     companion object {

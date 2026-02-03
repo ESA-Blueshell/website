@@ -11,7 +11,7 @@ class CountryCodeValidator : ConstraintValidator<ValidCountryCode?, String?> {
         }
 
         // Check if the value is a valid ISO 3166-1 alpha-2 country code
-        val isoCountries = Locale.getISOCountries()
+        val isoCountries = Locale.ISOCountries
         for (country in isoCountries) {
             if (country == value) {
                 return true

@@ -26,8 +26,8 @@ class EmailDeliveryService @Autowired constructor(private val mailSender: JavaMa
             val helper = MimeMessageHelper(message, true, "UTF-8")
 
             helper.setFrom(senderAddress, senderName)
-            helper.setTo(toEmail)
-            helper.setSubject(subject)
+            helper.to = toEmail
+            helper.subject = subject
             helper.setText(htmlContent, true)
 
             // keep your inline assets

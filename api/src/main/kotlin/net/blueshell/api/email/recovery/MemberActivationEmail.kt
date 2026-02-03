@@ -29,7 +29,7 @@ class MemberActivationEmail(recipient: User?, token: String?, frontendUrl: Strin
                         Board of ESA Blueshell
                         
                         """.trimIndent(),
-            recipient.getFullName(),
+            recipient.fullName,
             activationLink
         )
     }

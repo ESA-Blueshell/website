@@ -23,9 +23,9 @@ class AddressController(service: AddressService, mapper: AddressMapper, private 
     fun createAddress(@PathVariable("userId") userId: Long?, @Valid @RequestBody dto: @Valid AddressDTO?): AddressDTO? {
         var user = users.findById(userId)
         val address = mapper.fromDTO(dto)
-        user.setAddress(address)
+        user.address = address
         user = users.update(user)
-        return mapper.toDTO(user.getAddress())
+        return mapper.toDTO(user.address)
     }
 
     @PutMapping("/addresses/{id}")
@@ -56,7 +56,7 @@ class AddressController(service: AddressService, mapper: AddressMapper, private 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserAddress(@PathVariable("userId") userId: Long?) {
         val user = users.findById(userId)
-        user.setAddress(null)
+        user.address = null
         users.update(user)
     }
 

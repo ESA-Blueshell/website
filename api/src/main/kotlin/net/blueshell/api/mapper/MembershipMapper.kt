@@ -37,17 +37,17 @@ abstract class MembershipMapper : BaseMapper<Membership, MembershipDTO>() {
         if (hasAuthority(Role.BOARD)) {
             MappingUtil.applyIfFieldIsNotNull<Membership, @PastOrPresent(groups = [Administration::class]) LocalDate>(
                 membership,
-                dto.getStartDate(),
-                BiConsumer { obj: Membership, startDate: LocalDate -> obj!!.setStartDate(startDate) })
-            membership.setEndDate(dto.getEndDate()) // Must be applied, in order to be able to resume memberships
+                dto.startDate,
+                BiConsumer { obj: Membership, startDate: LocalDate -> obj!!.startDate = startDate })
+            membership.endDate = dto.endDate // Must be applied, in order to be able to resume memberships
             MappingUtil.applyIfFieldIsNotNull<Membership, @NotNull(groups = [Administration::class]) MemberType>(
                 membership,
-                dto.getMemberType(),
-                BiConsumer { obj: Membership, memberType: MemberType -> obj!!.setMemberType(memberType) })
+                dto.memberType,
+                BiConsumer { obj: Membership, memberType: MemberType -> obj!!.memberType = memberType })
             MappingUtil.applyIfFieldIsNotNull<Membership, Boolean>(
                 membership,
                 dto.incasso,
-                BiConsumer { obj: Membership, incasso: Boolean -> obj!!.setIncasso(incasso!!) })
+                BiConsumer { obj: Membership, incasso: Boolean -> obj!!.incasso = incasso!! })
         }
     }
 }

@@ -32,23 +32,23 @@ import kotlin.collections.MutableList
 @Service
 class CalendarService {
     @Value("\${google.calendar.id}")
-    private val calendarId: String? = null
+    private val calendarId: String = null
 
     @Value("\${google.calendar.clientId}")
-    private val clientId: String? = null
+    private val clientId: String = null
 
     @Value("\${google.calendar.clientEmail}")
-    private val clientEmail: String? = null
+    private val clientEmail: String = null
 
     @Value("\${google.calendar.privateKeyPkcs8}")
-    private val privateKeyPkcs8: String? = null
+    private val privateKeyPkcs8: String = null
 
     @Value("\${google.calendar.privateKeyId}")
-    private val privateKeyId: String? = null
+    private val privateKeyId: String = null
 
-    private var service: Calendar? = null
-    private var htmlRenderer: HtmlRenderer? = null
-    private var htmlParser: Parser? = null
+    private var service: Calendar = null
+    private var htmlRenderer: HtmlRenderer = null
+    private var htmlParser: Parser = null
 
     @PostConstruct
     fun init() {
@@ -60,15 +60,15 @@ class CalendarService {
 
             service = Calendar.Builder(
                 httpTransport,
-                GsonFactory.getDefaultInstance(),
+                GsonFactory.defaultInstance,
                 HttpCredentialsAdapter(credentials)
             )
-                .setApplicationName(APPLICATION_NAME)
+                .applicationName = APPLICATION_NAME
                 .build()
 
             val options = MutableDataSet()
-            options.set<MutableCollection<Extension?>?>(
-                Parser.EXTENSIONS, Arrays.asList<Extension?>(
+            options.set<MutableCollection<Extension>>(
+                Parser.EXTENSIONS, Arrays.asList<Extension>(
                     TablesExtension.create(),
                     StrikethroughExtension.create()
                 )
@@ -93,7 +93,7 @@ class CalendarService {
             googleEvent = service!!.events()
                 .insert(calendarId, googleEvent)
                 .execute()
-            event.setGoogleId(googleEvent.id)
+            event.googleId = googleEvent.id
             CalendarService.log.info("Added a new event to the calendar at: {}", googleEvent.htmlLink)
         } catch (e: GoogleJsonResponseException) {
             CalendarService.log.error("Google Calendar API returned HTTP code {} during insert", e.statusCode, e)
@@ -106,9 +106,9 @@ class CalendarService {
         try {
             val googleEvent = toGoogleEvent(event)
             service!!.events()
-                .update(calendarId, event.getGoogleId(), googleEvent)
+                .update(calendarId, event.googleId, googleEvent)
                 .execute()
-            CalendarService.log.info("Updated event {} in calendar {}", event.getGoogleId(), calendarId)
+            CalendarService.log.info("Updated event {} in calendar {}", event.googleId, calendarId)
         } catch (e: GoogleJsonResponseException) {
             CalendarService.log.error("Google Calendar API returned HTTP code {} during update", e.statusCode, e)
             throw e
@@ -117,11 +117,11 @@ class CalendarService {
 
     @Throws(IOException::class)
     fun remove(event: Event) {
-        if (event.getGoogleId() == null) return
+        if (event.googleId == null) return
         try {
-            service!!.events().delete(calendarId, event.getGoogleId()).execute()
-            CalendarService.log.info("Removed event {} from calendar {}", event.getGoogleId(), calendarId)
-            event.setGoogleId(null)
+            service!!.events().delete(calendarId, event.googleId).execute()
+            CalendarService.log.info("Removed event {} from calendar {}", event.googleId, calendarId)
+            event.googleId = null
         } catch (e: GoogleJsonResponseException) {
             CalendarService.log.error("Google Calendar API returned HTTP code {} during removal", e.statusCode, e)
             throw e
@@ -130,24 +130,24 @@ class CalendarService {
 
     @Throws(IOException::class)
     fun sync(event: Event) {
-        if (event.getGoogleId() != null) update(event)
+        if (event.googleId != null) update(event)
         else add(event)
     }
 
     private fun toGoogleEvent(event: Event): com.google.api.services.calendar.model.Event {
         val googleEvent = com.google.api.services.calendar.model.Event()
-            .setSummary(event.getTitle())
-            .setLocation(event.getLocation())
+            .summary = event.title
+            .location = event.location
 
-        var preProcessedHtml = htmlRenderer!!.render(htmlParser!!.parse(event.getDescription()))
+        var preProcessedHtml = htmlRenderer!!.render(htmlParser!!.parse(event.description))
         preProcessedHtml = preProcessedHtml.replace("<p>", "").replace("</p>", "")
         googleEvent.description = preProcessedHtml
 
-        val startDateTime = DateTime(event.getStartTime().atZone(ZONE).toEpochSecond() * 1000L)
-        val endDateTime = DateTime(event.getEndTime().atZone(ZONE).toEpochSecond() * 1000L)
+        val startDateTime = DateTime(event.startTime.atZone(ZONE).toEpochSecond() * 1000L)
+        val endDateTime = DateTime(event.endTime.atZone(ZONE).toEpochSecond() * 1000L)
 
-        val start = EventDateTime().setDateTime(startDateTime).setTimeZone(TZ_ID)
-        val end = EventDateTime().setDateTime(endDateTime).setTimeZone(TZ_ID)
+        val start = EventDateTime().dateTime = startDateTime.timeZone = TZ_ID
+        val end = EventDateTime().dateTime = endDateTime.timeZone = TZ_ID
 
         googleEvent.start = start
         googleEvent.end = end
@@ -157,7 +157,7 @@ class CalendarService {
     companion object {
         private val log = LoggerFactory.getLogger(CalendarService::class.java)
         private const val APPLICATION_NAME = "Blueshell Google Calendar API"
-        private val SCOPES: MutableList<String?> = List.of<String?>(CalendarScopes.CALENDAR_EVENTS)
+        private val SCOPES: MutableList<String> = List.of<String>(CalendarScopes.CALENDAR_EVENTS)
         private const val TZ_ID = "Europe/Amsterdam"
         private val ZONE: ZoneId = ZoneId.of(TZ_ID)
     }

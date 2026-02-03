@@ -22,28 +22,28 @@ class QuestionEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: PostPersistEvent<Question>) {
-        val q = evt.getSource()
+        val q = evt.source
 
-        log.info("On persist question {}", q.getId())
+        log.info("On persist question {}", q.id)
 
         // If a new description is added, there is no need to clear the survey.
         // If a new question is added, then we do need to wipe the answers and signups.
         // This is because the surveys will need to be filled in again.
-        if (q.getType() != QuestionType.DESCRIPTION && q.getSurveyId() != null) {
-            signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()))
+        if (q.type != QuestionType.DESCRIPTION && q.surveyId != null) {
+            signUps.deleteAll(signUps.findBySurveyId(q.surveyId))
         }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<Question>) {
-        val q = evt.getSource()
+        val q = evt.source
 
         // When a question is updated, the survey will need to be re-filled.
         // Therefore, all answers for the survey need to be wiped.
-        log.info("Question update dirty fields: {}", q.getDirtyFields())
-        if (q.getAnswers() != null && !q.getAnswers().isEmpty() && q.isDirty()) {
-            signUps.deleteAll(signUps.findBySurveyId(q.getSurveyId()))
+        log.info("Question update dirty fields: {}", q.dirtyFields)
+        if (q.answers != null && !q.answers.isEmpty() && q.isDirty()) {
+            signUps.deleteAll(signUps.findBySurveyId(q.surveyId))
         }
     }
 
@@ -51,14 +51,14 @@ class QuestionEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<Question>) {
-        val q = evt.getSource()
+        val q = evt.source
 
         // If a question is just removed, without anything else being changed
         // There is no need to wipe all existing answers for the survey.
         // All existing answers only need to be wiped if a new question is added to a survey
         // Or if a existing question is modified and thus all questions need to be re-answered
-        if (q.getAnswers() != null && !q.getAnswers().isEmpty()) {
-            answers.deleteAll(q.getAnswers())
+        if (q.answers != null && !q.answers.isEmpty()) {
+            answers.deleteAll(q.answers)
         }
     }
 

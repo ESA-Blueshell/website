@@ -28,17 +28,17 @@ class CreateContributionPeriodListJob(
 
         try {
             val period = contributionPeriods.findById(periodId)
-            if (period.getListId() != null) {
+            if (period.listId != null) {
                 log.info(
                     "List already exists (id={}) for periodId={}",
-                    period.getListId(),
+                    period.listId,
                     periodId
                 )
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
             val listId = contacts.createList(period)
-            period.setListId(listId)
+            period.listId = listId
             contributionPeriods.update(period)
             log.info("Created list {} for periodId={}", listId, periodId)
 

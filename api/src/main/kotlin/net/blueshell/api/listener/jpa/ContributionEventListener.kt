@@ -20,21 +20,21 @@ class ContributionEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: PostPersistEvent<Contribution>) {
-        val c = evt.getSource()
-        eventPublisher.publishEvent(AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()))
+        val c = evt.source
+        eventPublisher.publishEvent(AddContactToListEvent(c.userId, c.contributionPeriodId))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<Contribution>) {
-        val c = evt.getSource()
-        eventPublisher.publishEvent(AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()))
+        val c = evt.source
+        eventPublisher.publishEvent(AddContactToListEvent(c.userId, c.contributionPeriodId))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<Contribution>) {
-        val c = evt.getSource()
-        eventPublisher.publishEvent(RemoveContactFromListEvent(c.getUserId(), c.getContributionPeriodId()))
+        val c = evt.source
+        eventPublisher.publishEvent(RemoveContactFromListEvent(c.userId, c.contributionPeriodId))
     }
 }

@@ -44,7 +44,7 @@ class AddEventToCalendarJob(
 
             calendarService.add(e)
             eventService.update(e)
-            log.info("Added eventId {} to Google Calendar as {}", eventId, e.getGoogleId())
+            log.info("Added eventId {} to Google Calendar as {}", eventId, e.googleId)
             return CompletableFuture.completedFuture<Void?>(null)
         } catch (ex: IOException) {
             throw UncheckedIOException(ex)

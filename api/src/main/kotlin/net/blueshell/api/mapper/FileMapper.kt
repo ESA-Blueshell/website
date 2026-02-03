@@ -21,7 +21,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
      */
     fun buildHashedFilename(sha256: String, originalName: String): String {
         val ext = getExtensionSafe(originalName)
-        return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.getDefault()))
+        return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.default))
     }
 
     /**
@@ -47,15 +47,15 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
         path: String,
         mediaType: String
     ) {
-        file.setName(name)
-        file.setMediaType(mediaType)
-        file.setUploaderId(getPrincipal().getId())
+        file.name = name
+        file.mediaType = mediaType
+        file.uploaderId = getPrincipal().id
         try {
-            file.setSize(Files.size(fullPath))
+            file.size = Files.size(fullPath)
         } catch (e: IOException) {
             throw RuntimeException("Could not read file size for: " + path, e)
         }
-        file.setPath(path.toString())
+        file.path = path.toString()
     }
 
     /**
@@ -107,7 +107,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
     private fun getExtensionFromName(filename: String): String {
         val i = filename.lastIndexOf('.')
         if (i < 0 || i == filename.length - 1) return ""
-        return filename.substring(i + 1).lowercase(Locale.getDefault())
+        return filename.substring(i + 1).lowercase(Locale.default)
     }
 
     private fun extToMime(ext: String): String {

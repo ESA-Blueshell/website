@@ -8,5 +8,5 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 
 @Service
-class BlogService @Autowired constructor(blogRepository: BlogRepository, events: ApplicationEventPublisher?) :
-    BaseModelService<Blog?, BlogRepository?>(blogRepository)
+class BlogService @Autowired constructor(blogRepository: BlogRepository, events: ApplicationEventPublisher) :
+    BaseModelService<Blog, BlogRepository>(blogRepository)

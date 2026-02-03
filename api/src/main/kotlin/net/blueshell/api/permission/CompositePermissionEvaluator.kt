@@ -39,8 +39,8 @@ class CompositePermissionEvaluator @Autowired constructor(private val evaluators
         return evaluators.stream()
             .filter { e: BasePermissionEvaluator<*, *>? ->
                 val dt: Class<*> = e!!.domainType
-                dt.getSimpleName() == targetType
-                        || dt.getName() == targetType
+                dt.simpleName == targetType
+                        || dt.name == targetType
             }
             .findFirst()
             .map(Function { e: BasePermissionEvaluator<*, *>? ->

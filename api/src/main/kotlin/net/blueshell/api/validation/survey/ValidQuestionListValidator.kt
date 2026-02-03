@@ -13,10 +13,10 @@ class ValidQuestionListValidator : ConstraintValidator<ValidQuestionList?, Mutab
 
         val seenIdx: MutableSet<Long?> = HashSet<Long?>()
         for (q in questions) {
-            if (q.getIdx() == null) return false
-            if (!seenIdx.add(q.getIdx())) {
+            if (q.idx == null) return false
+            if (!seenIdx.add(q.idx)) {
                 context.disableDefaultConstraintViolation()
-                context.buildConstraintViolationWithTemplate("Duplicate question index: " + q.getIdx())
+                context.buildConstraintViolationWithTemplate("Duplicate question index: " + q.idx)
                     .addConstraintViolation()
                 return false
             }

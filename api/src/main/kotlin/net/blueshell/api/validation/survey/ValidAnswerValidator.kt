@@ -49,7 +49,7 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
             return false
         }
 
-        val trueCount = selections.stream().filter { obj: Boolean? -> obj.booleanValue }.count()
+        val trueCount = selections.stream().filter { obj: Boolean? -> obj.booleanValue() }.count()
         return trueCount == 1L
     }
 }

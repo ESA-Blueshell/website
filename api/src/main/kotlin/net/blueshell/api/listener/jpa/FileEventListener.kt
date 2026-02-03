@@ -16,7 +16,7 @@ class FileEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<File>) {
-        val f = evt.getSource()
+        val f = evt.source
         files.deleteFromStorage(f)
     }
 }

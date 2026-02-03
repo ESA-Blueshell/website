@@ -19,8 +19,8 @@ abstract class GuestMapper : BaseMapper<Guest, GuestDTO>() {
 
     @AfterMapping
     protected fun afterFromDTO(dto: GuestDTO, @MappingTarget guest: Guest) {
-        if (guest.getAccessToken() == null) {
-            guest.setAccessToken(Util.getRandomCapitalString(30))
+        if (guest.accessToken == null) {
+            guest.accessToken = Util.getRandomCapitalString(30)
         }
     }
 

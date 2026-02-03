@@ -178,7 +178,7 @@ class User : BaseModel(), UserDetails {
             getRoles()
                 .stream()
                 .flatMap<Role?> { role: Role? ->
-                    role!!.getAllInheritedRoles().stream()
+                    role!!.allInheritedRoles.stream()
                 }.toList()
         )
 
@@ -193,8 +193,8 @@ class User : BaseModel(), UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority?> {
         val auths = HashSet<GrantedAuthority?>()
         getRoles().stream()
-            .flatMap<Role?> { role: Role? -> role!!.getAllInheritedRoles().stream() }
-            .map<SimpleGrantedAuthority?> { authority: Role? -> SimpleGrantedAuthority(authority!!.getReprString()) }
+            .flatMap<Role?> { role: Role? -> role!!.allInheritedRoles.stream() }
+            .map<SimpleGrantedAuthority?> { authority: Role? -> SimpleGrantedAuthority(authority!!.reprString) }
             .forEach { e: SimpleGrantedAuthority? -> auths.add(e) }
 
         return auths
@@ -211,7 +211,7 @@ class User : BaseModel(), UserDetails {
     }
 
     fun setEmail(email: String) {
-        this.email = email.lowercase(Locale.getDefault())
+        this.email = email.lowercase(Locale.default)
     }
 
     val fullName: String

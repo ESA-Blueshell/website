@@ -20,26 +20,26 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
 
         ctx.disableDefaultConstraintViolation()
 
-        val event = findEvent(dto.getEventId())
+        val event = findEvent(dto.eventId)
         if (event == null) {
             return violation(ctx, "eventId", "Unknown event.")
         }
 
-        val form = event.getSignUpForm() // survey = sign-up form
-        if (form == null || CollectionUtils.isEmpty(form.getQuestions())) {
+        val form = event.signUpForm // survey = sign-up form
+        if (form == null || CollectionUtils.isEmpty(form.questions)) {
             return true // no questions -> nothing to validate
         }
 
-        val answers = dto.getAnswers()
+        val answers = dto.answers
         if (answers == null) {
             return violation(ctx, "answers", "Answers are required for this event’s sign-up form.")
         }
 
         // Collect all question IDs on the form (keep insertion order for stable error messages)
-        val formQuestionIds: MutableSet<Long?> = form.getQuestions()
+        val formQuestionIds: MutableSet<Long?> = form.questions
             .stream()
-            .filter { q: Question? -> q!!.getType() != QuestionType.DESCRIPTION }
-            .map<Long?> { obj: Question? -> obj!!.getId() }
+            .filter { q: Question? -> q!!.type != QuestionType.DESCRIPTION }
+            .map<Long?> { obj: Question? -> obj!!.id }
             .filter { obj: Long? -> Objects.nonNull(obj) }
             .collect(Collectors.toCollection(Supplier { LinkedHashSet() }))
 
@@ -59,7 +59,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
                 continue
             }
 
-            val qid = a.getQuestionId()
+            val qid = a.questionId
             if (qid == null) {
                 violationAtQuestionId(ctx, i, "questionId is required.")
                 valid = false

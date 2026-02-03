@@ -14,11 +14,11 @@ import java.util.function.Supplier
 
 @Service
 class EventSignUpService @Autowired constructor(repository: EventSignUpRepository) :
-    BaseModelService<EventSignUp?, EventSignUpRepository?>(repository) {
+    BaseModelService<EventSignUp, EventSignUpRepository>(repository) {
     @Transactional(readOnly = true)
-    fun findByUserIdAndEventId(userId: Long?, eventId: Long?): EventSignUp? {
+    fun findByUserIdAndEventId(userId: Long, eventId: Long): EventSignUp {
         return repository!!.findByUserIdAndEventId(userId, eventId)
-            .orElseThrow<ResponseStatusException?>(Supplier {
+            .orElseThrow<ResponseStatusException>(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "EventSignUp not found for user: %d and event: %d".formatted(userId, eventId)
@@ -27,28 +27,28 @@ class EventSignUpService @Autowired constructor(repository: EventSignUpRepositor
     }
 
     @Transactional(readOnly = true)
-    fun findByGuestAccessToken(accessToken: String?): MutableList<EventSignUp?>? {
+    fun findByGuestAccessToken(accessToken: String): MutableList<EventSignUp> {
         return repository!!.findByGuestAccessToken(accessToken)
     }
 
-    fun findByEventId(eventId: Long?): MutableList<EventSignUp?>? {
+    fun findByEventId(eventId: Long): MutableList<EventSignUp> {
         return repository!!.findByEventId(eventId)
     }
 
-    fun findByFilter(filter: EventSignUpFilter?): MutableList<EventSignUp?> {
+    fun findByFilter(filter: EventSignUpFilter): MutableList<EventSignUp> {
         var filter = filter
         if (filter == null) filter = EventSignUpFilter()
         val spec = EventSignUpSpecifications.fromFilter(filter, getPrincipal())
         return repository!!.findAll(spec)
     }
 
-    fun findBySurveyId(surveyId: Long?): MutableSet<EventSignUp?>? {
+    fun findBySurveyId(surveyId: Long): MutableSet<EventSignUp> {
         return repository!!.findAllByEventSignUpFormId(surveyId)
     }
 
-    fun findByGuestAccessTokenAndEventId(accessToken: String?, eventId: Long?): EventSignUp? {
+    fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): EventSignUp {
         return repository!!.findByGuestAccessTokenAndEventId(accessToken, eventId)
-            .orElseThrow<ResponseStatusException?>(Supplier {
+            .orElseThrow<ResponseStatusException>(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "EventSignUp not found for accessToken: %s and event: %d".formatted(accessToken, eventId)

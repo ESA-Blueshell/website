@@ -30,8 +30,8 @@ class OptimisticLockingProblemDetailsAdvice {
         }
 
         // Optional: include a minimal hint about the entity if available (safe to expose)
-        ex.getMostSpecificCause()
-        if (ex.getMostSpecificCause().message != null) {
+        ex.mostSpecificCause
+        if (ex.mostSpecificCause.message != null) {
             // Avoid leaking internals; keep it generic
             pd.setProperty("reason", "Optimistic locking conflict")
         }

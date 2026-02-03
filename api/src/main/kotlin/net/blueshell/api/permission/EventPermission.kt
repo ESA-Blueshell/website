@@ -22,8 +22,8 @@ class EventPermission @Autowired constructor(service: EventService) :
         val event = targetDomainObject as Event
         val principal = getPrincipal()
         return when (permission) {
-            "read" -> event.approved || event.getCommittee().hasMember(principal)
-            "write" -> event.getCommittee().hasMember(principal)
+            "read" -> event.approved || event.committee.hasMember(principal)
+            "write" -> event.committee.hasMember(principal)
             "signUp" -> event.approved && (!event.membersOnly || hasAuthority(Role.MEMBER))
             else -> false
         }

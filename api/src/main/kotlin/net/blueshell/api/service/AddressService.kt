@@ -6,4 +6,4 @@ import net.blueshell.api.repository.AddressRepository
 import org.springframework.stereotype.Service
 
 @Service
-class AddressService(repository: AddressRepository) : BaseModelService<Address?, AddressRepository?>(repository)
+class AddressService(repository: AddressRepository) : BaseModelService<Address, AddressRepository>(repository)

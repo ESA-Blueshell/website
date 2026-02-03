@@ -27,11 +27,11 @@ interface BrevoContactMapper {
         val attrs: MutableMap<String, Any> = HashMap<String, Any>()
         attrs.put("NEWSLETTER", user.newsletter)
         attrs.put("IS_MEMBER", user.hasRole(Role.MEMBER))
-        attrs.put("FIRSTNAME", user.getFirstName())
-        attrs.put("LASTNAME", user.getLastName())
-        attrs.put("SURNAME", user.getLastName())
-        attrs.put("SMS", user.getPhoneNumber())
-        attrs.put("WHATSAPP", user.getPhoneNumber())
+        attrs.put("FIRSTNAME", user.firstName)
+        attrs.put("LASTNAME", user.lastName)
+        attrs.put("SURNAME", user.lastName)
+        attrs.put("SMS", user.phoneNumber)
+        attrs.put("WHATSAPP", user.phoneNumber)
         return attrs
     }
 }

@@ -19,15 +19,15 @@ abstract class SocialMapper {
 
     @AfterMapping
     protected fun afterToSocialDTO(blog: Blog, @MappingTarget dto: SocialDTO) {
-        dto.setUrl(frontendUrl + "/blogs" + blog.getId())
-        dto.setTitle(blog.getTitle())
-        dto.setText(dto.getText())
+        dto.url = frontendUrl + "/blogs" + blog.id
+        dto.title = blog.title
+        dto.text = dto.text
         val platforms = arrayOf<PlatformType>(
             PlatformType.FACEBOOK,
             PlatformType.TWITTER,
             PlatformType.INSTAGRAM,
             PlatformType.LINKEDIN
         )
-        dto.setPlatforms(platforms)
+        dto.platforms = platforms
     }
 }

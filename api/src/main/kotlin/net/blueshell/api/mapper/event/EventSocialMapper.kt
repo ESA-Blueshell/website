@@ -14,6 +14,6 @@ abstract class EventSocialMapper {
     @AfterMapping
     fun afterToSocialDTO(dto: EventDTO, @MappingTarget socialDTO: SocialDTO) {
         val platforms = arrayOf<PlatformType>(PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM)
-        socialDTO.setPlatforms(platforms)
+        socialDTO.platforms = platforms
     }
 }

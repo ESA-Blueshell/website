@@ -11,7 +11,7 @@ class PasswordResetEmail(recipient: User?, token: String?, frontendUrl: String?,
     }
 
     override fun getMarkdownContent(): String {
-        val username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8)
+        val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
         val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
         val resetLink = String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token)
 
@@ -37,7 +37,7 @@ class PasswordResetEmail(recipient: User?, token: String?, frontendUrl: String?,
                         Blueshell Esports Security Team
                         
                         """.trimIndent(),
-            recipient.getFullName(),
+            recipient.fullName,
             resetLink,
             appUrl
         )

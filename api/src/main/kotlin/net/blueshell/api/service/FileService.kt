@@ -33,8 +33,8 @@ import java.util.function.Supplier
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
     private val fileMapper: FileMapper,
-    private val events: EventService?,
-    private val banners: EventBannerService?,
+    private val events: EventService,
+    private val banners: EventBannerService,
     @Value("\${storage.location}") storageLocation: String
 ) : BaseModelService<File, FileRepository>(fileRepository) {
     private val rootLocation: Path
@@ -46,8 +46,8 @@ class FileService @Autowired constructor(
     }
 
     @Transactional(readOnly = true)
-    fun findByName(name: String?): File? {
-        return repository!!.findByName(name).orElseThrow<ResponseStatusException?>(Supplier {
+    fun findByName(name: String): File {
+        return repository!!.findByName(name).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "File not found with name: %s".formatted(name)
             )
@@ -67,13 +67,13 @@ class FileService @Autowired constructor(
      * Store multipart file using content-hash path. Returns persisted File entity.
      */
     @Transactional
-    fun storeMultipart(multipart: MultipartFile, type: FileType): File? {
+    fun storeMultipart(multipart: MultipartFile, type: FileType): File {
         if (multipart == null || multipart.isEmpty) {
             throw BadRequestException("Empty file")
         }
 
         try {
-            Files.createDirectories(rootLocation.resolve(type.getDirectory()))
+            Files.createDirectories(rootLocation.resolve(type.directory))
 
             val tmp = Files.createTempFile(rootLocation, "upload-", ".tmp")
             val md = MessageDigest.getInstance("SHA-256")
@@ -89,7 +89,7 @@ class FileService @Autowired constructor(
             val sha256 = HexFormat.of().formatHex(md.digest())
 
             val hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.originalFilename)
-            val path = type.getDirectory() + "/" + hashedFilename
+            val path = type.directory + "/" + hashedFilename
             val fullPath = rootLocation.resolve(path).normalize()
 
             FileService.log.info("Storing {} at {}", multipart.originalFilename, fullPath)
@@ -111,9 +111,9 @@ class FileService @Autowired constructor(
 
             val mediaType = fileMapper.resolveMediaType(hashedFilename, fullPath, multipart.contentType)
             fileMapper.populateAfterStore(entity, multipart.originalFilename, fullPath, path, mediaType)
-            entity.setType(type)
+            entity.type = type
 
-            if (entity.getId() != null) {
+            if (entity.id != null) {
                 return update(entity)
             } else {
                 return create(entity)
@@ -127,17 +127,17 @@ class FileService @Autowired constructor(
 
     private fun loadAsResource(file: File): Resource {
         try {
-            val filePath = rootLocation.resolve(file.getPath())
+            val filePath = rootLocation.resolve(file.path)
             val resource: Resource = UrlResource(filePath.toUri())
             if (resource.exists() || resource.isReadable) return resource
             throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
-                "File not found with name: %s".formatted(file.getName())
+                "File not found with name: %s".formatted(file.name)
             )
         } catch (e: MalformedURLException) {
             throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
-                "File not found with name: %s".formatted(file.getName())
+                "File not found with name: %s".formatted(file.name)
             )
         }
     }
@@ -154,18 +154,18 @@ class FileService @Autowired constructor(
     }
 
     @Transactional(readOnly = true)
-    fun prepareFileResponse(file: File): ResponseEntity<Resource?> {
+    fun prepareFileResponse(file: File): ResponseEntity<Resource> {
         val resource = loadAsResource(file)
         val headers = HttpHeaders()
-        headers.contentType = MediaType.valueOf(file.getMediaType())
-        headers.contentDisposition = ContentDisposition.attachment().filename(file.getName()).build()
+        headers.contentType = MediaType.valueOf(file.mediaType)
+        headers.contentDisposition = ContentDisposition.attachment().filename(file.name).build()
         return ResponseEntity.ok()
             .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
             .headers(headers)
-            .body<Resource?>(resource)
+            .body<Resource>(resource)
     }
 
-    fun prepareAssetResponse(filename: String): ResponseEntity<Resource?> {
+    fun prepareAssetResponse(filename: String): ResponseEntity<Resource> {
         val resource = loadAssetAsResource(filename)
         val headers = HttpHeaders()
         headers.contentType = MediaType.valueOf(fileMapper.detectContentTypeForAsset(filename, resource))
@@ -173,11 +173,11 @@ class FileService @Autowired constructor(
         return ResponseEntity.ok()
             .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
             .headers(headers)
-            .body<Resource?>(resource)
+            .body<Resource>(resource)
     }
 
-    fun findByEventBannerId(bannerId: Long?): File? {
-        return repository!!.findByEventBanners_Id(bannerId).orElseThrow<ResponseStatusException?>(Supplier {
+    fun findByEventBannerId(bannerId: Long): File {
+        return repository!!.findByEventBanners_Id(bannerId).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Event banner not found with id: %s".formatted(bannerId)
             )
@@ -185,7 +185,7 @@ class FileService @Autowired constructor(
     }
 
     fun deleteFromStorage(file: File) {
-        val fullPath = rootLocation.resolve(file.getPath()).normalize()
+        val fullPath = rootLocation.resolve(file.path).normalize()
 
         try {
             if (Files.exists(fullPath)) {

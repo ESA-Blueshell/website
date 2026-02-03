@@ -39,9 +39,9 @@ class UpdateEventInCalendarJob(
             }
             if (!e.approved) {
                 // reflect visibility change: remove if present
-                if (e.getGoogleId() != null) {
+                if (e.googleId != null) {
                     calendarService.remove(e)
-                    e.setGoogleId(null)
+                    e.googleId = null
                     eventService.update(e)
                     log.info("EventId {} not approved anymore -> removed from Google", eventId)
                 } else {
@@ -50,21 +50,21 @@ class UpdateEventInCalendarJob(
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
-            if (e.getGoogleId() == null) {
+            if (e.googleId == null) {
                 // Not on Google yet: treat as add
                 calendarService.add(e)
                 eventService.update(e)
                 log.info(
                     "EventId {} was missing on Google; added as {}",
                     eventId,
-                    e.getGoogleId()
+                    e.googleId
                 )
             } else {
                 calendarService.update(e)
                 log.info(
                     "Updated eventId {} on Google (googleId={})",
                     eventId,
-                    e.getGoogleId()
+                    e.googleId
                 )
             }
             return CompletableFuture.completedFuture<Void?>(null)

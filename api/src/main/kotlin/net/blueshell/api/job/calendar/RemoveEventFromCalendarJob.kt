@@ -41,13 +41,13 @@ class RemoveEventFromCalendarJob(
                 )
                 return CompletableFuture.completedFuture<Void?>(null)
             }
-            if (e.getGoogleId() == null) {
+            if (e.googleId == null) {
                 log.info("Remove skipped: eventId {} not present on Google", eventId)
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
             calendarService.remove(e)
-            e.setGoogleId(null)
+            e.googleId = null
             eventService.update(e) // persist null googleId
             log.info("Removed eventId {} from Google Calendar", eventId)
             return CompletableFuture.completedFuture<Void?>(null)

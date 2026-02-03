@@ -17,10 +17,10 @@ class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList?, MutableLi
 
         val seenQuestionIds: MutableSet<Long?> = HashSet<Long?>()
         for (a in answers) {
-            if (a.getQuestionId() == null) return false
-            if (!seenQuestionIds.add(a.getQuestionId())) {
+            if (a.questionId == null) return false
+            if (!seenQuestionIds.add(a.questionId)) {
                 context.disableDefaultConstraintViolation()
-                context.buildConstraintViolationWithTemplate("Duplicate answers for question ID: " + a.getQuestionId())
+                context.buildConstraintViolationWithTemplate("Duplicate answers for question ID: " + a.questionId)
                     .addConstraintViolation()
                 return false
             }

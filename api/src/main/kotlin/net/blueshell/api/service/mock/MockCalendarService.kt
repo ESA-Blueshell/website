@@ -25,50 +25,50 @@ import kotlin.collections.remove
 @Profile("test | dev")
 class MockCalendarService : CalendarService() {
     private val seq = AtomicLong(1000000L)
-    private val eventsById: MutableMap<String?, Event?> = ConcurrentHashMap<String?, Event?>()
+    private val eventsById: MutableMap<String, Event> = ConcurrentHashMap<String, Event>()
 
-    val readOnlyEvents: MutableMap<String?, Event?> = Collections.unmodifiableMap<String?, Event?>(eventsById)
+    val readOnlyEvents: MutableMap<String, Event> = Collections.unmodifiableMap<String, Event>(eventsById)
 
     @Throws(IOException::class)
     override fun add(event: Event) {
-        if (event.getGoogleId() != null) {
+        if (event.googleId != null) {
             update(event)
             return
         }
-        val id = "mock-" + seq.getAndIncrement()
+        val id = "mock-" + seq.andIncrement
         val stored: Event = copyOf(event)
-        stored.setGoogleId(id)
+        stored.googleId = id
         eventsById.put(id, stored)
-        event.setGoogleId(id)
+        event.googleId = id
         MockCalendarService.log.info(
             "[calendar-mock] added event id={} title='{}' start={} end={}",
-            id, event.getTitle(), event.getStartTime(), event.getEndTime()
+            id, event.title, event.startTime, event.endTime
         )
     }
 
     @Throws(IOException::class)
     override fun update(event: Event) {
-        if (event.getGoogleId() == null) {
+        if (event.googleId == null) {
             add(event)
             return
         }
-        val id = event.getGoogleId()
+        val id = event.googleId
         eventsById.put(id, copyOf(event))
-        MockCalendarService.log.info("[calendar-mock] updated event id={} title='{}'", id, event.getTitle())
+        MockCalendarService.log.info("[calendar-mock] updated event id={} title='{}'", id, event.title)
     }
 
     @Throws(IOException::class)
     override fun remove(event: Event) {
-        val id = event.getGoogleId()
+        val id = event.googleId
         if (id == null) return
         eventsById.remove(id)
-        event.setGoogleId(null)
+        event.googleId = null
         MockCalendarService.log.info("[calendar-mock] removed event id={}", id)
     }
 
     @Throws(IOException::class)
     override fun sync(event: Event) {
-        if (event.getGoogleId() == null) add(event)
+        if (event.googleId == null) add(event)
         else update(event)
     }
 
@@ -76,16 +76,16 @@ class MockCalendarService : CalendarService() {
         eventsById.clear()
     }
 
-    fun findByGoogleId(googleId: String?): Event? {
+    fun findByGoogleId(googleId: String): Event {
         val e = eventsById.get(googleId)
         return if (e == null) null else copyOf(e)
     }
 
-    fun findBetween(startInclusive: Instant, endExclusive: Instant): MutableMap<String?, Event?> {
+    fun findBetween(startInclusive: Instant, endExclusive: Instant): MutableMap<String, Event> {
         return eventsById.entries.stream()
-            .filter { en: MutableMap.MutableEntry<String?, Event?>? ->
-                val s = en!!.value!!.getStartTime()
-                val e = en.value!!.getEndTime()
+            .filter { en: MutableMap.MutableEntry<String, Event> ->
+                val s = en!!.value!!.startTime
+                val e = en.value!!.endTime
                 s != null && e != null && !s.isBefore(startInclusive) && e.isBefore(endExclusive)
             }
             .collect(Collectors.toUnmodifiableMap(Function { Map.Entry.key }, Function { Map.Entry.value }))
@@ -96,13 +96,13 @@ class MockCalendarService : CalendarService() {
 
         private fun copyOf(src: Event): Event {
             val e = Event()
-            e.setId(src.getId())
-            e.setTitle(src.getTitle())
-            e.setLocation(src.getLocation())
-            e.setDescription(src.getDescription())
-            e.setStartTime(src.getStartTime())
-            e.setEndTime(src.getEndTime())
-            e.setGoogleId(src.getGoogleId())
+            e.id = src.id
+            e.title = src.title
+            e.location = src.location
+            e.description = src.description
+            e.startTime = src.startTime
+            e.endTime = src.endTime
+            e.googleId = src.googleId
             return e
         }
     }

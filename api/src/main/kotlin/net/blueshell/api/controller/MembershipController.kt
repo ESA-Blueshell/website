@@ -33,12 +33,12 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
     fun createMembership(): MembershipDTO? {
         if (hasAuthority(Role.MEMBER)) {
             throw AccessDeniedException("User is already a member")
-        } else if (getPrincipal().getAddressId() == null) {
+        } else if (getPrincipal().addressId == null) {
             throw AccessDeniedException("User must have an address")
         }
 
         val membership = Membership()
-        membership.setUserId(getPrincipal().getId())
+        membership.userId = getPrincipal().id
         service.create(membership)
         return mapper.toDTO(membership)
     }

@@ -37,8 +37,8 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
     @Mapping(target = "studentNumber")
     @Mapping(target = "addressId")
     @Mapping(target = "newsletter")
-    @Mapping(target = "fullName", expression = "java(user.getFullName())")
-    @Mapping(target = "roles", expression = "java(user.getInheritedRoles())")
+    @Mapping(target = "fullName", expression = "java(user.fullName)")
+    @Mapping(target = "roles", expression = "java(user.inheritedRoles)")
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
@@ -68,12 +68,12 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
 
     @AfterMapping
     protected fun onCreation(dto: AdvancedUserDTO, @MappingTarget user: User) {
-        if (user.getId() != null) return
+        if (user.id != null) return
 
         if (hasAuthority(Role.BOARD)) {
-            user.setPassword(passwordEncoder.encode(MappingUtil.generateRandomString()))
+            user.password = passwordEncoder.encode(MappingUtil.generateRandomString())
         } else {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()))
+            user.password = passwordEncoder.encode(dto.password)
         }
 
         applyRestrictedFields(dto, user)
@@ -81,7 +81,7 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
 
     @AfterMapping
     protected fun onUpdate(dto: AdvancedUserDTO, @MappingTarget user: User) {
-        if (user.getId() == null) return
+        if (user.id == null) return
 
         if (hasAuthority(Role.BOARD)) {
             applyRestrictedFields(dto, user)
@@ -91,27 +91,27 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
     private fun applyRestrictedFields(dto: AdvancedUserDTO, @MappingTarget user: User) {
         MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
             user,
-            dto.getInitials(),
-            BiConsumer { obj: User, initials: String -> obj!!.setInitials(initials) })
+            dto.initials,
+            BiConsumer { obj: User, initials: String -> obj!!.initials = initials })
         MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
             user,
-            dto.getFirstName(),
-            BiConsumer { obj: User, firstName: String -> obj!!.setFirstName(firstName) })
+            dto.firstName,
+            BiConsumer { obj: User, firstName: String -> obj!!.firstName = firstName })
         MappingUtil.applyIfFieldIsNotNull<User, String>(
             user,
-            dto.getPrefix(),
-            BiConsumer { obj: User, prefix: String -> obj!!.setPrefix(prefix) })
+            dto.prefix,
+            BiConsumer { obj: User, prefix: String -> obj!!.prefix = prefix })
         MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
             user,
-            dto.getLastName(),
-            BiConsumer { obj: User, lastName: String -> obj!!.setLastName(lastName) })
+            dto.lastName,
+            BiConsumer { obj: User, lastName: String -> obj!!.lastName = lastName })
         MappingUtil.applyIfFieldIsNotNull<User, @NotBlank @Email String>(
             user,
-            dto.getEmail(),
-            BiConsumer { obj: User, email: String -> obj!!.setEmail(email) })
+            dto.email,
+            BiConsumer { obj: User, email: String -> obj!!.email = email })
         MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
             user,
-            dto.getUsername(),
-            BiConsumer { obj: User, username: String -> obj!!.setUsername(username) })
+            dto.username,
+            BiConsumer { obj: User, username: String -> obj!!.username = username })
     }
 }

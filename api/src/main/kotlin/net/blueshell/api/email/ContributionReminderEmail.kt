@@ -34,12 +34,12 @@ class ContributionReminderEmail(
                         Treasurer of Blueshell Esports
                         
                         """.trimIndent(),
-            recipient.getFullName(),
-            contributionPeriod.getStartDate(),
-            contributionPeriod.getEndDate(),
-            contributionPeriod.getHalfYearFee(),
-            contributionPeriod.getFullYearFee(),
-            contributionPeriod.getAlumniFee(),
+            recipient.fullName,
+            contributionPeriod.startDate,
+            contributionPeriod.endDate,
+            contributionPeriod.halfYearFee,
+            contributionPeriod.fullYearFee,
+            contributionPeriod.alumniFee,
             appUrl
         )
     }

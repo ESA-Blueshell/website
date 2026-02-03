@@ -46,7 +46,7 @@ class EventController @Autowired constructor(service: EventService, mapper: Even
     @PutMapping("/events/{id}/approve")
     fun approveEvent(@PathVariable("id") id: Long?, @QueryParam(value = "approved") approved: Boolean): EventDTO? {
         var event = service.findById(id)
-        event.setApproved(approved)
+        event.approved = approved
         event = service.update(event)
         return mapper.toDTO(event)
     }

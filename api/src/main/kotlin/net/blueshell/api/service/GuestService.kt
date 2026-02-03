@@ -12,12 +12,12 @@ import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
 @Service
-class GuestService @Autowired constructor(repository: GuestRepository, events: ApplicationEventPublisher?) :
-    BaseModelService<Guest?, GuestRepository?>(repository) {
+class GuestService @Autowired constructor(repository: GuestRepository, events: ApplicationEventPublisher) :
+    BaseModelService<Guest, GuestRepository>(repository) {
     @Transactional(readOnly = true)
-    fun findByAccessToken(accessToken: String?): Guest? {
+    fun findByAccessToken(accessToken: String): Guest {
         return repository!!.findByAccessToken(accessToken)
-            .orElseThrow<ResponseStatusException?>(Supplier {
+            .orElseThrow<ResponseStatusException>(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Guest not found"

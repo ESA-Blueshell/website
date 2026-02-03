@@ -37,7 +37,7 @@ class AddContactToListJob(
             val period = contributionPeriods.findById(periodId)
 
             // Ensure list exists (period listener also creates it; this is a safety net).
-            if (period.getListId() == null) {
+            if (period.listId == null) {
                 val listId = contacts.createList(period)
                 contributionPeriods.updateListId(periodId, listId)
                 log.info("Created list {} for periodId={}", listId, periodId)
@@ -46,7 +46,7 @@ class AddContactToListJob(
             contacts.addToList(period, user)
             log.info(
                 "Added user {} (id={}) to list {} for periodId={}",
-                user.getEmail(), userId, period.getListId(), periodId
+                user.email, userId, period.listId, periodId
             )
 
             return CompletableFuture.completedFuture<Void?>(null)

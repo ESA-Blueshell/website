@@ -24,10 +24,10 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemb
     @ObjectFactory
     fun create(dto: CommitteeMemberDTO): CommitteeMember {
         CommitteeMemberMapper.log.info("creating a new committee member for dto {}", dto)
-        if (dto.getId() == null) {
+        if (dto.id == null) {
             return CommitteeMember()
         } else {
-            return committeeMemberService.findById(dto.getId())
+            return committeeMemberService.findById(dto.id)
         }
     }
 

@@ -18,16 +18,16 @@ class ContributionPeriodEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<ContributionPeriod>) {
-        val c = evt.getSource()
-        if (c.getListId() != null) return
-        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.getId()))
+        val c = evt.source
+        if (c.listId != null) return
+        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.id))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onCreate(evt: PostPersistEvent<ContributionPeriod>) {
-        val c = evt.getSource()
-        if (c.getListId() != null) return
-        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.getId()))
+        val c = evt.source
+        if (c.listId != null) return
+        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.id))
     }
 }

@@ -23,17 +23,17 @@ class UserEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun postPersist(evt: PostPersistEvent<User>) {
-        val u = evt.getSource()
-        eventPublisher.publishEvent(SyncContactEvent(u.getId()))
+        val u = evt.source
+        eventPublisher.publishEvent(SyncContactEvent(u.id))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<User>) {
-        val u = evt.getSource()
-        eventPublisher.publishEvent(SyncContactEvent(u.getId()))
+        val u = evt.source
+        eventPublisher.publishEvent(SyncContactEvent(u.id))
         if (!u.hasRole(Role.MEMBER)) {
-            u.getCommitteeMembers().forEach(Consumer { entity: CommitteeMember? -> committeeMembers.delete(entity) })
+            u.committeeMembers.forEach(Consumer { entity: CommitteeMember? -> committeeMembers.delete(entity) })
         }
     }
 }

@@ -17,7 +17,7 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
         if (dto == null) return true
 
         var isValid = true
-        val currentUserId = dto.getId()
+        val currentUserId = dto.id
 
         val addViolation = BiConsumer { property: String?, message: String? ->
             context.disableDefaultConstraintViolation()
@@ -26,44 +26,44 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
                 .addConstraintViolation()
         }
 
-        if (StringUtils.hasText(dto.getUsername())) {
+        if (StringUtils.hasText(dto.username)) {
             val taken = if (currentUserId == null)
-                users.existsByUsername(dto.getUsername())
+                users.existsByUsername(dto.username)
             else
-                users.existsByUsernameAndIdNot(dto.getUsername(), currentUserId)
+                users.existsByUsernameAndIdNot(dto.username, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("username", "Username is taken.")
             }
         }
 
-        if (StringUtils.hasText(dto.getEmail())) {
+        if (StringUtils.hasText(dto.email)) {
             val taken = if (currentUserId == null)
-                users.existsByEmail(dto.getEmail())
+                users.existsByEmail(dto.email)
             else
-                users.existsByEmailAndIdNot(dto.getEmail(), currentUserId)
+                users.existsByEmailAndIdNot(dto.email, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("email", "Email is taken.")
             }
         }
 
-        if (StringUtils.hasText(dto.getDiscord())) {
+        if (StringUtils.hasText(dto.discord)) {
             val taken = if (currentUserId == null)
-                users.existsByDiscord(dto.getDiscord())
+                users.existsByDiscord(dto.discord)
             else
-                users.existsByDiscordAndIdNot(dto.getDiscord(), currentUserId)
+                users.existsByDiscordAndIdNot(dto.discord, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("discord", "Discord is taken.")
             }
         }
 
-        if (dto is AdvancedUserDTO && StringUtils.hasText(dto.getPhoneNumber())) {
+        if (dto is AdvancedUserDTO && StringUtils.hasText(dto.phoneNumber)) {
             val taken = if (currentUserId == null)
-                users.existsByPhoneNumber(dto.getPhoneNumber())
+                users.existsByPhoneNumber(dto.phoneNumber)
             else
-                users.existsByPhoneNumberAndIdNot(dto.getPhoneNumber(), currentUserId)
+                users.existsByPhoneNumberAndIdNot(dto.phoneNumber, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("phoneNumber", "Phone number is taken.")

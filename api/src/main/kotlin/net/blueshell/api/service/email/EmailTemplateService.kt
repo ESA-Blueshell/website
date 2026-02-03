@@ -18,18 +18,18 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
     private val templateEngine: TemplateEngine
 
     @Value("\${frontend.url}")
-    private val appUrl: String? = null
+    private val appUrl: String = null
 
     init {
-        val extensions = List.of<Extension?>(TablesExtension.create())
+        val extensions = List.of<Extension>(TablesExtension.create())
         this.parser = Parser.builder().extensions(extensions).build()
         this.renderer = HtmlRenderer.builder().extensions(extensions).build()
         this.templateEngine = templateEngine
     }
 
-    private fun processTemplate(templateName: String, variables: MutableMap<String?, Any?>?): String? {
+    private fun processTemplate(templateName: String, variables: MutableMap<String, Any>): String {
         val context = Context()
-        context.setVariables(variables)
+        context.variables = variables
         return templateEngine.process(templateName, context)
     }
 
@@ -43,19 +43,19 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
      */
     fun createEmail(
         toUser: User,
-        mainTitle: String?,
-        markdownContent: String?
-    ): String? {
+        mainTitle: String,
+        markdownContent: String
+    ): String {
         // Convert markdown to HTML
         val document = parser.parse(markdownContent)
         val htmlContent = renderer.render(document)
 
         // Prepare template variables
-        val variables: MutableMap<String?, Any?> = HashMap<String?, Any?>()
+        val variables: MutableMap<String, Any> = HashMap<String, Any>()
         variables.put("appUrl", appUrl)
         variables.put("emailContent", htmlContent)
-        variables.put("sentTo", toUser.getEmail())
-        variables.put("fullName", toUser.getFullName())
+        variables.put("sentTo", toUser.email)
+        variables.put("fullName", toUser.fullName)
         variables.put("mainTitle", mainTitle)
 
         // Process the template

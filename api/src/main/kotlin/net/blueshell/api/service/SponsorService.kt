@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service
 import java.util.function.Supplier
 
 @Service
-class SponsorService @Autowired constructor(repository: SponsorRepository, events: ApplicationEventPublisher?) :
-    BaseModelService<Sponsor?, SponsorRepository?>(repository) {
-    fun findByPicture(picture: File): Sponsor? {
+class SponsorService @Autowired constructor(repository: SponsorRepository, events: ApplicationEventPublisher) :
+    BaseModelService<Sponsor, SponsorRepository>(repository) {
+    fun findByPicture(picture: File): Sponsor {
         return repository!!.findByPicture(picture)
-            .orElseThrow<NotFoundException?>(Supplier { NotFoundException("Sponsor not found for picture: " + picture.getName()) })
+            .orElseThrow<NotFoundException>(Supplier { NotFoundException("Sponsor not found for picture: " + picture.name) })
     }
 }

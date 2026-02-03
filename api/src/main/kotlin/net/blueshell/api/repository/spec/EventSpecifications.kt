@@ -117,7 +117,7 @@ object EventSpecifications {
         }
     }
 
-    fun fromFilter(f: EventFilter, user: User): Specification<Event> {
+    fun fromFilter(f: EventFilter, user: User?): Specification<Event> {
         var spec =
             Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 

@@ -22,90 +22,90 @@ import java.util.concurrent.atomic.AtomicLong
 @Primary
 @Profile("test | dev")
 class MockContactService(
-    mapper: BrevoContactMapper?,
+    mapper: BrevoContactMapper,
     private val users: UserService
 ) : ContactService(mapper, users) {
     private val contactSeq = AtomicLong(100000L)
     private val listSeq = AtomicLong(10000L)
 
-    private val emailToContactId: ConcurrentMap<String?, Long?> = ConcurrentHashMap<String?, Long?>()
-    private val listMembers: ConcurrentMap<Long?, MutableSet<Long?>?> = ConcurrentHashMap<Long?, MutableSet<Long?>?>()
+    private val emailToContactId: ConcurrentMap<String, Long> = ConcurrentHashMap<String, Long>()
+    private val listMembers: ConcurrentMap<Long, MutableSet<Long>> = ConcurrentHashMap<Long, MutableSet<Long>>()
 
     override fun getUpdate(user: User) {
-        if (user.getContactId() != null) return
-        val id = emailToContactId.get(user.getEmail())
+        if (user.contactId != null) return
+        val id = emailToContactId.get(user.email)
         if (id != null) {
-            user.setContactId(id)
-            MockContactService.log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.getEmail())
+            user.contactId = id
+            MockContactService.log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.email)
         } else {
-            MockContactService.log.debug("[brevo-mock] no contact yet for email={}", user.getEmail())
+            MockContactService.log.debug("[brevo-mock] no contact yet for email={}", user.email)
         }
     }
 
     override fun sync(user: User) {
         getUpdate(user)
-        if (user.getContactId() == null) {
+        if (user.contactId == null) {
             val id =
-                emailToContactId.computeIfAbsent(user.getEmail()) { k: String? -> contactSeq.getAndIncrement() }!!
-            user.setContactId(id)
-            users.updateContactId(user.getId(), id)
-            MockContactService.log.info("[brevo-mock] created contact email={} -> id={}", user.getEmail(), id)
+                emailToContactId.computeIfAbsent(user.email) { k: String -> contactSeq.andIncrement }!!
+            user.contactId = id
+            users.updateContactId(user.id, id)
+            MockContactService.log.info("[brevo-mock] created contact email={} -> id={}", user.email, id)
         } else {
             MockContactService.log.info(
                 "[brevo-mock] updated contact email={} id={}",
-                user.getEmail(),
-                user.getContactId()
+                user.email,
+                user.contactId
             )
         }
     }
 
     @Throws(RestClientResponseException::class)
     override fun createList(contributionPeriod: ContributionPeriod): Long {
-        var listId = contributionPeriod.getListId()
+        var listId = contributionPeriod.listId
         if (listId == null) {
-            listId = listSeq.getAndIncrement()
+            listId = listSeq.andIncrement
             MockContactService.log.info(
                 "[brevo-mock] created listId={} for contributionPeriod id={}",
                 listId,
-                contributionPeriod.getId()
+                contributionPeriod.id
             )
         }
-        listMembers.putIfAbsent(listId, ConcurrentHashMap.newKeySet<Long?>())
+        listMembers.putIfAbsent(listId, ConcurrentHashMap.newKeySet<Long>())
         return listId
     }
 
     @Throws(RestClientResponseException::class)
     override fun addToList(contributionPeriod: ContributionPeriod, user: User) {
-        if (user.getContactId() == null) {
+        if (user.contactId == null) {
             sync(user)
             users.update(user)
         }
-        var listId = contributionPeriod.getListId()
+        var listId = contributionPeriod.listId
         if (listId == null) {
             listId = createList(contributionPeriod)
         }
-        listMembers.computeIfAbsent(listId) { k: Long? -> ConcurrentHashMap.newKeySet<Long?>() }!!
-            .add(user.getContactId())
-        MockContactService.log.info("[brevo-mock] added contactId={} to listId={}", user.getContactId(), listId)
+        listMembers.computeIfAbsent(listId) { k: Long -> ConcurrentHashMap.newKeySet<Long>() }!!
+            .add(user.contactId)
+        MockContactService.log.info("[brevo-mock] added contactId={} to listId={}", user.contactId, listId)
     }
 
     @Throws(RestClientResponseException::class)
     override fun removeFromList(contributionPeriod: ContributionPeriod, user: User) {
-        val listId = contributionPeriod.getListId()
+        val listId = contributionPeriod.listId
         if (listId == null) return
-        listMembers.computeIfPresent(listId) { id: Long?, set: MutableSet<Long?>? ->
-            set!!.remove(user.getContactId())
+        listMembers.computeIfPresent(listId) { id: Long, set: MutableSet<Long> ->
+            set!!.remove(user.contactId)
             set
         }
-        MockContactService.log.info("[brevo-mock] removed contactId={} from listId={}", user.getContactId(), listId)
+        MockContactService.log.info("[brevo-mock] removed contactId={} from listId={}", user.contactId, listId)
     }
 
-    fun getEmailToContactId(): MutableMap<String?, Long?> {
-        return Collections.unmodifiableMap<String?, Long?>(emailToContactId)
+    fun getEmailToContactId(): MutableMap<String, Long> {
+        return Collections.unmodifiableMap<String, Long>(emailToContactId)
     }
 
-    fun getListMembers(): MutableMap<Long?, MutableSet<Long?>?> {
-        return Collections.unmodifiableMap<Long?, MutableSet<Long?>?>(listMembers)
+    fun getListMembers(): MutableMap<Long, MutableSet<Long>> {
+        return Collections.unmodifiableMap<Long, MutableSet<Long>>(listMembers)
     }
 
     companion object {

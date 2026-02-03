@@ -22,7 +22,6 @@ import java.security.SecureRandom
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.function.Consumer
 import java.util.function.Predicate
 import java.util.function.Supplier
 
@@ -32,7 +31,7 @@ class RecoveryService protected constructor(
     private val encoder: PasswordEncoder,
     private val eventPublisher: ApplicationEventPublisher,
     private val users: UserService
-) : BaseModelService<RecoveryToken?, RecoveryTokenRepository?>(repository) {
+) : BaseModelService<RecoveryToken, RecoveryTokenRepository>(repository) {
     private val random = SecureRandom()
 
     /**
@@ -42,14 +41,14 @@ class RecoveryService protected constructor(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @jakarta.transaction.Transactional
     fun onUserCreated(event: PostPersistEvent<User>) {
-        val rawToken: String?
-        val user = event.getSource()
+        val rawToken: String
+        val user = event.source
         if (hasAuthority(Role.BOARD)) {
             rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
-            eventPublisher.publishEvent(RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION))
+            eventPublisher.publishEvent(RecoveryEmailEvent(user.id, rawToken, ResetType.MEMBER_ACTIVATION))
         } else {
             rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
-            eventPublisher.publishEvent(RecoveryEmailEvent(user.getId(), rawToken, ResetType.USER_ACTIVATION))
+            eventPublisher.publishEvent(RecoveryEmailEvent(user.id, rawToken, ResetType.USER_ACTIVATION))
         }
     }
 
@@ -57,61 +56,61 @@ class RecoveryService protected constructor(
      * Always 204 to avoid user enumeration.
      */
     @jakarta.transaction.Transactional
-    fun resetPassword(username: String?) {
+    fun resetPassword(username: String) {
         try {
             val user = users.findByUsername(username)
             val rawToken = issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
-            eventPublisher.publishEvent(RecoveryEmailEvent(user.getId(), rawToken, ResetType.PASSWORD_RESET))
+            eventPublisher.publishEvent(RecoveryEmailEvent(user.id, rawToken, ResetType.PASSWORD_RESET))
         } catch (notFound: ResponseStatusException) {
             // swallow 404
         }
     }
 
     @jakarta.transaction.Transactional
-    fun setPassword(rawToken: String?, newPassword: String?) {
+    fun setPassword(rawToken: String, newPassword: String) {
         val token = verify(rawToken, ResetType.PASSWORD_RESET)
-        users.updatePassword(token.getUser().getId(), newPassword)
+        users.updatePassword(token.user.id, newPassword)
         consume(token)
     }
 
     @jakarta.transaction.Transactional
-    fun activateUser(rawToken: String?): User? {
+    fun activateUser(rawToken: String): User {
         val token = verify(rawToken, ResetType.USER_ACTIVATION)
-        users.activateUser(token.getUser().getId())
+        users.activateUser(token.user.id)
         consume(token)
-        return token.getUser()
+        return token.user
     }
 
     @jakarta.transaction.Transactional
-    fun activateMember(rawToken: String?, username: String?, password: String?) {
+    fun activateMember(rawToken: String, username: String, password: String) {
         val token = verify(rawToken, ResetType.MEMBER_ACTIVATION)
-        users.setUsernameAndPassword(token.getUser().getId(), username, password)
-        users.activateUser(token.getUser().getId())
+        users.setUsernameAndPassword(token.user.id, username, password)
+        users.activateUser(token.user.id)
         consume(token)
     }
 
     @jakarta.transaction.Transactional
-    fun issue(user: User, type: ResetType?, ttl: Duration): String {
+    fun issue(user: User, type: ResetType, ttl: Duration): String {
         // Invalidate all existing active token of this type
-        repository!!.findAllByUser_IdAndTypeAndConsumedAtIsNull(user.getId(), type)
-            .forEach(Consumer { entity: RecoveryToken? -> this.delete(entity) })
+        repository.findAllByUser_IdAndTypeAndConsumedAtIsNull(user.id, type)
+            .forEach { this.delete(it) }
 
         val selector = randomUrlSafe(16) // 128-bit
         val verifier = randomUrlSafe(32) // 256-bit
 
         val token = RecoveryToken()
-        token.setUser(user)
-        token.setType(type)
-        token.setSelector(selector)
-        token.setVerifierHash(encoder.encode(verifier))
-        token.setExpiresAt(Instant.now().plus(ttl))
+        token.user = user
+        token.type = type
+        token.selector = selector
+        token.verifierHash = encoder.encode(verifier)
+        token.expiresAt = Instant.now().plus(ttl)
 
         create(token)
         return selector + "." + verifier
     }
 
     @jakarta.transaction.Transactional
-    fun verify(rawToken: String?, expectedType: ResetType?): RecoveryToken {
+    fun verify(rawToken: String, expectedType: ResetType): RecoveryToken {
         val parts: Array<String> =
             if (rawToken != null) rawToken.split("\\.".toRegex(), limit = 2).toTypedArray() else arrayOfNulls<String>(0)
         if (parts.size != 2 || parts[0].isBlank() || parts[1].isBlank()) {
@@ -121,13 +120,13 @@ class RecoveryService protected constructor(
         val verifier = parts[1]
 
         val token = repository!!.findBySelector(selector)
-            .filter(Predicate { t: RecoveryToken? -> t!!.getType() == expectedType })
-            .orElseThrow<ResponseStatusException?>(Supplier { this.notFound() })
+            .filter(Predicate { t: RecoveryToken -> t!!.type == expectedType })
+            .orElseThrow<ResponseStatusException>(Supplier { this.notFound() })
 
         if (token.isConsumed() || token.isExpired()) {
             throw notFound()
         }
-        if (!encoder.matches(verifier, token.getVerifierHash())) {
+        if (!encoder.matches(verifier, token.verifierHash)) {
             throw notFound()
         }
         return token
@@ -135,7 +134,7 @@ class RecoveryService protected constructor(
 
     @jakarta.transaction.Transactional
     fun consume(token: RecoveryToken) {
-        token.setConsumedAt(Instant.now())
+        token.consumedAt = Instant.now()
         update(token)
     }
 
@@ -143,20 +142,20 @@ class RecoveryService protected constructor(
         return ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired recovery token")
     }
 
-    private fun randomUrlSafe(numBytes: Int): String? {
+    private fun randomUrlSafe(numBytes: Int): String {
         val bytes = ByteArray(numBytes)
         random.nextBytes(bytes)
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        return Base64.urlEncoder.withoutPadding().encodeToString(bytes)
     }
 
     // in RecoveryService
     @jakarta.transaction.Transactional
-    fun resendActivation(username: String?) {
+    fun resendActivation(username: String) {
         try {
             val user = users.findByUsername(username)
             if (user.enabled) return
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
-            eventPublisher.publishEvent(RecoveryEmailEvent(user.getId(), rawToken, ResetType.USER_ACTIVATION))
+            eventPublisher.publishEvent(RecoveryEmailEvent(user.id, rawToken, ResetType.USER_ACTIVATION))
         } catch (ignored: ResponseStatusException) {
             // swallow 404 to avoid enumeration
         }
@@ -164,21 +163,21 @@ class RecoveryService protected constructor(
 
     @PreAuthorize("hasAuthority('BOARD')")
     @jakarta.transaction.Transactional
-    fun resendActivationEmail(userId: Long?) {
+    fun resendActivationEmail(userId: Long) {
         val user = users.findById(userId)
         if (user.enabled) return
 
         val recoveryTokens = repository!!.findAllByUser_IdAndConsumedAtIsNull(userId)
-        if (recoveryTokens.stream().anyMatch { r: RecoveryToken? -> r!!.getType() == ResetType.MEMBER_ACTIVATION }) {
+        if (recoveryTokens.stream().anyMatch { r: RecoveryToken -> r!!.type == ResetType.MEMBER_ACTIVATION }) {
             val rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
             eventPublisher.publishEvent(
-                RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION)
+                RecoveryEmailEvent(user.id, rawToken, ResetType.MEMBER_ACTIVATION)
             )
         } else if (recoveryTokens.stream()
-                .anyMatch { r: RecoveryToken? -> r!!.getType() == ResetType.USER_ACTIVATION }
+                .anyMatch { r: RecoveryToken -> r!!.type == ResetType.USER_ACTIVATION }
         ) {
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
-            eventPublisher.publishEvent(RecoveryEmailEvent(user.getId(), rawToken, ResetType.MEMBER_ACTIVATION))
+            eventPublisher.publishEvent(RecoveryEmailEvent(user.id, rawToken, ResetType.MEMBER_ACTIVATION))
         }
     }
 }

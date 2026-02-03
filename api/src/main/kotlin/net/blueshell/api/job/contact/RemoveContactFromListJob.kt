@@ -52,7 +52,7 @@ class RemoveContactFromListJob(
 
             log.info(
                 "Successfully removed contact {} (user ID: {}) from list for period ID: {}",
-                user.getEmail(), userId, periodId
+                user.email, userId, periodId
             )
         } catch (e: RestClientResponseException) {
             log.error(

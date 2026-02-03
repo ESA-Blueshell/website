@@ -20,38 +20,38 @@ class MembershipEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onCreate(evt: PrePersistEvent<Membership>) {
-        val m = evt.getSource()
-        log.info("Creating membership for user {} adding role {}", m.getUserId(), Role.MEMBER)
-        users.addRole(m.getUserId(), Role.MEMBER)
+        val m = evt.source
+        log.info("Creating membership for user {} adding role {}", m.userId, Role.MEMBER)
+        users.addRole(m.userId, Role.MEMBER)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<Membership>) {
-        val m = evt.getSource()
-        if (m.getEndDate() == null) {
+        val m = evt.source
+        if (m.endDate == null) {
             log.info(
                 "Updating membership for user {} adding role {}",
-                m.getUserId(),
+                m.userId,
                 Role.MEMBER
             )
-            users.addRole(m.getUserId(), Role.MEMBER)
+            users.addRole(m.userId, Role.MEMBER)
         } else {
             log.info(
                 "Updating membership for user {} removing role {}",
-                m.getUserId(),
+                m.userId,
                 Role.MEMBER
             )
-            users.removeRole(m.getUserId(), Role.MEMBER)
+            users.removeRole(m.userId, Role.MEMBER)
         }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<Membership>) {
-        val m = evt.getSource()
-        log.info("Deleting membership for user {} removing role {}", m.getUserId(), Role.MEMBER)
-        users.removeRole(m.getUserId(), Role.MEMBER)
+        val m = evt.source
+        log.info("Deleting membership for user {} removing role {}", m.userId, Role.MEMBER)
+        users.removeRole(m.userId, Role.MEMBER)
     }
 
     companion object {

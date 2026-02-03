@@ -12,12 +12,12 @@ import java.util.stream.Collectors
 class V16__Migrate_Signatures : BaseJavaMigration() {
     @Throws(Exception::class)
     override fun migrate(context: Context) {
-        val connection = context.getConnection()
+        val connection = context.connection
         val storageLocation = "uploads"
         val rootLocation = Paths.get(storageLocation).toAbsolutePath()
         // Disable auto-commit mode
-        val originalAutoCommit = connection.getAutoCommit()
-        connection.setAutoCommit(false)
+        val originalAutoCommit = connection.autoCommit
+        connection.autoCommit = false
 
         // List to hold the signature IDs
         val signatureIds: MutableList<Long?> = ArrayList<Long?>()
@@ -66,7 +66,7 @@ class V16__Migrate_Signatures : BaseJavaMigration() {
 
                         try {
                             // Ensure target directory exists
-                            Files.createDirectories(targetFile.getParent())
+                            Files.createDirectories(targetFile.parent)
 
                             // Move the file
                             Files.move(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
@@ -128,7 +128,7 @@ class V16__Migrate_Signatures : BaseJavaMigration() {
             throw e
         } finally {
             // Restore original auto-commit setting
-            connection.setAutoCommit(originalAutoCommit)
+            connection.autoCommit = originalAutoCommit
         }
     }
 }

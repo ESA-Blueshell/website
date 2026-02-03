@@ -37,7 +37,7 @@ class JwtTokenUtil {
             .verifyWith(this.signingKey) // new: verifyWith(SecretKey)
             .build()
             .parseSignedClaims(token)
-            .getPayload()
+            .payload
     }
 
     fun isTokenExpired(token: String?): Boolean {

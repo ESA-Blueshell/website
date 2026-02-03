@@ -28,9 +28,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 class MockJavaMailSender : JavaMailSender {
     private val session: Session = Session.getInstance(Properties())
 
-    val outbox: MutableList<MimeMessage?> = CopyOnWriteArrayList<MimeMessage?>()
+    val outbox: MutableList<MimeMessage> = CopyOnWriteArrayList<MimeMessage>()
 
-    val simpleOutbox: MutableList<SimpleMailMessage?> = CopyOnWriteArrayList<SimpleMailMessage?>()
+    val simpleOutbox: MutableList<SimpleMailMessage> = CopyOnWriteArrayList<SimpleMailMessage>()
 
     override fun createMimeMessage(): MimeMessage {
         return MimeMessage(session)
@@ -117,7 +117,7 @@ class MockJavaMailSender : JavaMailSender {
     companion object {
         private val log = LoggerFactory.getLogger(MockJavaMailSender::class.java)
 
-        private fun safeSubject(m: MimeMessage): String? {
+        private fun safeSubject(m: MimeMessage): String {
             try {
                 return m.subject
             } catch (ignored: Exception) {
@@ -125,17 +125,17 @@ class MockJavaMailSender : JavaMailSender {
             }
         }
 
-        private fun safeRecipients(m: MimeMessage): MutableList<String?> {
+        private fun safeRecipients(m: MimeMessage): MutableList<String> {
             try {
-                return Arrays.stream<Address?>(
-                    Objects.requireNonNullElse<Array<Address?>?>(
+                return Arrays.stream<Address>(
+                    Objects.requireNonNullElse<Array<Address>>(
                         m.allRecipients,
                         arrayOfNulls<Address>(0)
                     )
                 )
-                    .map<String?> { obj: Address? -> obj.toString() }.toList()
+                    .map<String> { obj: Address -> obj.toString() }.toList()
             } catch (ignored: Exception) {
-                return mutableListOf<String?>()
+                return mutableListOf<String>()
             }
         }
     }

@@ -18,48 +18,46 @@ import org.springframework.web.client.RestClientResponseException
 @Service
 class ContactService(private val mapper: BrevoContactMapper, private val users: UserService) {
     @Value("\${brevo.apiKey}")
-    private val apiKey: String? = null
+    private val apiKey: String = null
 
     @Value("\${brevo.folders.contributionPeriodsId}")
-    private val contributionPeriodsFolder: Long? = null
+    private val contributionPeriodsFolder: Long = null
 
-    private val contacts: ContactsApi? = null
+    private val contacts: ContactsApi = null
 
     private val contactsApi: ContactsApi
         get() {
             val dateFormat = ApiClient.createDefaultDateFormat()
             val objectMapper =
                 ApiClient.createDefaultObjectMapper(dateFormat)
-                    .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                    .setDefaultPropertyInclusion(
-                        JsonInclude.Value.construct(
+                    .serializationInclusion = JsonInclude.Include.NON_EMPTY
+                    .defaultPropertyInclusion = JsonInclude.Value.construct(
                             JsonInclude.Include.NON_EMPTY,
                             JsonInclude.Include.NON_EMPTY
                         )
-                    )
 
             val apiClient = ApiClient(objectMapper, dateFormat)
-            apiClient.setApiKey(this.apiKey)
+            apiClient.apiKey = this.apiKey
             return ContactsApi(apiClient)
         }
 
     fun getUpdate(user: User) {
-        if (user.getContactId() != null) return
-        ContactService.log.info("Getting update for user: {}", user.getEmail())
+        if (user.contactId != null) return
+        ContactService.log.info("Getting update for user: {}", user.email)
 
         try {
             val api = this.contactsApi
             val details =
-                api.getContactInfo(user.getEmail(), "email_id", null, null)
-            user.setContactId(details.id)
+                api.getContactInfo(user.email, "email_id", null, null)
+            user.contactId = details.id
         } catch (e: HttpClientErrorException) {
-            ContactService.log.info("Failed to get contact details for user: {}", user.getEmail())
+            ContactService.log.info("Failed to get contact details for user: {}", user.email)
         }
     }
 
     fun sync(user: User) {
         getUpdate(user)
-        if (user.getContactId() != null) {
+        if (user.contactId != null) {
             sendUpdate(user)
         } else {
             createContact(user)
@@ -68,37 +66,37 @@ class ContactService(private val mapper: BrevoContactMapper, private val users: 
 
     @Throws(RestClientResponseException::class)
     private fun createContact(user: User) {
-        ContactService.log.info("Creating contact for user: {}", user.getEmail())
+        ContactService.log.info("Creating contact for user: {}", user.email)
         val api = this.contactsApi
         val createContact = mapper.toCreate(user)
         val response = api.createContact(createContact)
-        users.updateContactId(user.getId(), response.id)
+        users.updateContactId(user.id, response.id)
     }
 
     @Throws(RestClientResponseException::class)
     private fun sendUpdate(user: User) {
-        ContactService.log.info("Sending update for user: {}", user.getEmail())
+        ContactService.log.info("Sending update for user: {}", user.email)
         val api = this.contactsApi
         val contact = mapper.toUpdate(user)
         api.updateContact(
-            user.getEmail(),
+            user.email,
             contact,
             "email_id"
         )
     }
 
     @Throws(RestClientResponseException::class)
-    fun createList(contributionPeriod: ContributionPeriod): Long? {
-        if (contributionPeriod.getListId() != null) {
-            return contributionPeriod.getListId()
+    fun createList(contributionPeriod: ContributionPeriod): Long {
+        if (contributionPeriod.listId != null) {
+            return contributionPeriod.listId
         }
 
         val api = this.contactsApi
         val createList = CreateList()
         val periodName = String.format(
             "Contribution Paid %d - %d",
-            contributionPeriod.getStartDate().getYear(),
-            contributionPeriod.getEndDate().getYear()
+            contributionPeriod.startDate.year,
+            contributionPeriod.endDate.year
         )
         createList.name(periodName)
         createList.folderId = contributionPeriodsFolder
@@ -108,26 +106,26 @@ class ContactService(private val mapper: BrevoContactMapper, private val users: 
 
     @Throws(RestClientResponseException::class)
     fun addToList(contributionPeriod: ContributionPeriod, user: User) {
-        if (user.getContactId() == null) {
+        if (user.contactId == null) {
             sync(user)
         }
 
         val api = this.contactsApi
-        val ids: MutableList<Long?> = ArrayList<Long?>()
-        ids.add(user.getContactId())
+        val ids: MutableList<Long> = ArrayList<Long>()
+        ids.add(user.contactId)
         val payload = AddContactToListRequest()
         payload.ids = ids
-        api.addContactToList(contributionPeriod.getListId(), payload)
+        api.addContactToList(contributionPeriod.listId, payload)
     }
 
     @Throws(RestClientResponseException::class)
     fun removeFromList(contributionPeriod: ContributionPeriod, user: User) {
         val api = this.contactsApi
-        val ids: MutableList<Long?> = ArrayList<Long?>()
-        ids.add(user.getContactId())
+        val ids: MutableList<Long> = ArrayList<Long>()
+        ids.add(user.contactId)
         val payload = RemoveContactFromListRequest()
         payload.ids = ids
-        api.removeContactFromList(contributionPeriod.getListId(), payload)
+        api.removeContactFromList(contributionPeriod.listId, payload)
     }
 
     companion object {

@@ -19,24 +19,24 @@ class CommitteeMemberEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun postPersist(evt: PostPersistEvent<CommitteeMember>) {
-        val c = evt.getSource()
-        users.addRole(c.getUserId(), Role.COMMITTEE)
+        val c = evt.source
+        users.addRole(c.userId, Role.COMMITTEE)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun postUpdate(evt: PostUpdateEvent<CommitteeMember>) {
-        val c = evt.getSource()
-        users.addRole(c.getUserId(), Role.COMMITTEE)
+        val c = evt.source
+        users.addRole(c.userId, Role.COMMITTEE)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun postDelete(evt: PostRemoveEvent<CommitteeMember>) {
-        val c = evt.getSource()
-        val u = users.findById(c.getUserId())
-        if (u.getCommitteeMembers().isEmpty()) {
-            users.removeRole(c.getUserId(), Role.COMMITTEE)
+        val c = evt.source
+        val u = users.findById(c.userId)
+        if (u.committeeMembers.isEmpty()) {
+            users.removeRole(c.userId, Role.COMMITTEE)
         }
     }
 }

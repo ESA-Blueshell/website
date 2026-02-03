@@ -24,8 +24,8 @@ abstract class SurveyMapper : BaseMapper<Survey, SurveyDTO>() {
 
     @AfterMapping
     protected fun linkQuestions(@MappingTarget survey: Survey) {
-        if (survey.getQuestions() != null) {
-            survey.getQuestions().forEach(Consumer { q: Question -> q!!.setSurvey(survey) })
+        if (survey.questions != null) {
+            survey.questions.forEach(Consumer { q: Question -> q!!.survey = survey })
         }
     }
 }

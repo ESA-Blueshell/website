@@ -11,7 +11,7 @@ class UserActivationEmail(recipient: User?, token: String?, frontendUrl: String?
     }
 
     override fun getMarkdownContent(): String {
-        val username = URLEncoder.encode(recipient.getUsername(), StandardCharsets.UTF_8)
+        val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
         val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
         val redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8)
 
@@ -35,7 +35,7 @@ class UserActivationEmail(recipient: User?, token: String?, frontendUrl: String?
                         Blueshell Esports
                         
                         """.trimIndent(),
-            recipient.getFullName(),
+            recipient.fullName,
             activationLink,
             appUrl
         )

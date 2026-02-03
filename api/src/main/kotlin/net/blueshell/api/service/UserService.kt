@@ -20,35 +20,35 @@ import java.util.function.Supplier
 
 @Service
 class UserService @Autowired constructor(repository: UserRepository, private val passwordEncoder: PasswordEncoder) :
-    BaseModelService<User, UserRepository?>(repository), UserDetailsService {
+    BaseModelService<User, UserRepository>(repository), UserDetailsService {
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String?): User? {
+    override fun loadUserByUsername(username: String): User {
         return findByUsername(username)
     }
 
-    fun findByUsername(username: String?): User? {
-        return repository!!.findByUsername(username).orElseThrow<ResponseStatusException?>(Supplier {
+    fun findByUsername(username: String): User {
+        return repository!!.findByUsername(username).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "User not found with username: %s".formatted(username)
             )
         })
     }
 
-    fun existsByUsername(username: String?): Boolean {
+    fun existsByUsername(username: String): Boolean {
         return repository!!.existsByUsername(username)
     }
 
-    fun existsByEmail(email: String?): Boolean {
+    fun existsByEmail(email: String): Boolean {
         return repository!!.existsByEmail(email)
     }
 
-    fun existsByPhoneNumber(phoneNumber: String?): Boolean {
+    fun existsByPhoneNumber(phoneNumber: String): Boolean {
         return repository!!.existsByPhoneNumber(phoneNumber)
     }
 
 
     @Transactional
-    fun toggleRole(id: Long?, role: Role?): User {
+    fun toggleRole(id: Long, role: Role): User {
         val user = findById(id)
 
         if (user.hasRole(role)) {
@@ -61,7 +61,7 @@ class UserService @Autowired constructor(repository: UserRepository, private val
     }
 
     @Transactional
-    fun addRole(id: Long?, role: Role?) {
+    fun addRole(id: Long, role: Role) {
         val user = findById(id)
         if (!user.hasRole(role)) {
             user.addRole(role)
@@ -70,7 +70,7 @@ class UserService @Autowired constructor(repository: UserRepository, private val
     }
 
     @Transactional
-    fun removeRole(id: Long?, role: Role?) {
+    fun removeRole(id: Long, role: Role) {
         val user = findById(id)
         if (user.hasRole(role)) {
             user.removeRole(role)
@@ -78,7 +78,7 @@ class UserService @Autowired constructor(repository: UserRepository, private val
         }
     }
 
-    fun findByFilter(filter: UserFilter?, pageable: Pageable?): Page<User?> {
+    fun findByFilter(filter: UserFilter, pageable: Pageable): Page<User> {
         var filter = filter
         var pageable = pageable
         if (filter == null) filter = UserFilter()
@@ -88,31 +88,31 @@ class UserService @Autowired constructor(repository: UserRepository, private val
     }
 
     @Transactional
-    fun updatePassword(userId: Long?, rawPassword: String?) {
+    fun updatePassword(userId: Long, rawPassword: String) {
         val user = findById(userId)
-        user.setPassword(passwordEncoder.encode(rawPassword))
+        user.password = passwordEncoder.encode(rawPassword)
         update(user)
     }
 
     @Transactional
-    fun activateUser(userId: Long?) {
+    fun activateUser(userId: Long) {
         val user = findById(userId)
-        user.setEnabled(true)
+        user.enabled = true
         update(user)
     }
 
     @Transactional
-    fun setUsernameAndPassword(userId: Long?, username: String?, rawPassword: String?) {
+    fun setUsernameAndPassword(userId: Long, username: String, rawPassword: String) {
         val user = findById(userId)
-        user.setUsername(username)
-        user.setPassword(passwordEncoder.encode(rawPassword))
+        user.username = username
+        user.password = passwordEncoder.encode(rawPassword)
         update(user)
     }
 
     @Transactional
-    fun updateContactId(userId: Long?, contactId: Long?) {
+    fun updateContactId(userId: Long, contactId: Long) {
         val user = findById(userId)
-        user.setContactId(contactId)
+        user.contactId = contactId
         update(user)
     }
 }

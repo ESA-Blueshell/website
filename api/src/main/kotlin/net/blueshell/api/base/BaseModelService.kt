@@ -43,7 +43,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>>(protected 
         // Try to resolve T from the repository generic type for a nice label like "User"
         val resolved =
             ResolvableType.forClass(repository.javaClass).`as`(BaseRepository::class.java).getGeneric(0).resolve()
-        this.entityLabel = if (resolved != null) resolved.getSimpleName() else "Resource"
+        this.entityLabel = if (resolved != null) resolved.simpleName else "Resource"
     }
 
     /* -----------------------------------------------------------------

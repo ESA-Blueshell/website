@@ -40,9 +40,9 @@ class SyncEventToCalendarJob(
 
             if (!e.approved) {
                 // remove if previously on Google
-                if (e.getGoogleId() != null) {
+                if (e.googleId != null) {
                     calendarService.remove(e)
-                    e.setGoogleId(null)
+                    e.googleId = null
                     eventService.update(e)
                     log.info("EventId {} unapproved -> removed from Google", eventId)
                 } else {
@@ -52,13 +52,13 @@ class SyncEventToCalendarJob(
             }
 
             // approved: add or update
-            if (e.getGoogleId() == null) {
+            if (e.googleId == null) {
                 calendarService.add(e)
                 eventService.update(e)
-                log.info("EventId {} synced by add; googleId={}", eventId, e.getGoogleId())
+                log.info("EventId {} synced by add; googleId={}", eventId, e.googleId)
             } else {
                 calendarService.update(e)
-                log.info("EventId {} synced by update; googleId={}", eventId, e.getGoogleId())
+                log.info("EventId {} synced by update; googleId={}", eventId, e.googleId)
             }
             return CompletableFuture.completedFuture<Void?>(null)
         } catch (ex: IOException) {

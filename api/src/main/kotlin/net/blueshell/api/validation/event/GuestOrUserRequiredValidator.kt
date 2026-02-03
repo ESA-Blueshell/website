@@ -8,8 +8,8 @@ class GuestOrUserRequiredValidator : ConstraintValidator<GuestOrUserRequired?, E
     override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
 
-        val hasGuest = dto.getGuest() != null
-        val hasUser = dto.getUser() != null || dto.getUserId() != null
+        val hasGuest = dto.guest != null
+        val hasUser = dto.user != null || dto.userId != null
 
         if (hasGuest || hasUser) return true
 

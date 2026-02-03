@@ -40,7 +40,7 @@ class SyncContactJob(
             // Perform the contact synchronization
             contacts.sync(user)
 
-            log.info("Successfully synchronized contact for user: {} (ID: {})", user.getEmail(), userId)
+            log.info("Successfully synchronized contact for user: {} (ID: {})", user.email, userId)
         } catch (e: RestClientResponseException) {
             log.error(
                 "Failed to sync contact for user ID: {} due to REST client error: {}",

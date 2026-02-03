@@ -30,21 +30,21 @@ class AuthenticationController(
     @PermitAll
     fun authenticate(@Validated @RequestBody authenticationRequest: JwtRequest): AuthenticationDTO {
         authenticate(
-            authenticationRequest.getUsername(),
-            authenticationRequest.getPassword()
+            authenticationRequest.username,
+            authenticationRequest.password
         )
 
-        val user = users.findByUsername(authenticationRequest.getUsername())
+        val user = users.findByUsername(authenticationRequest.username)
         val token = jwtTokenUtil.generateToken(user)
         val expirationTime = System.currentTimeMillis() + expiration!!
 
         return AuthenticationDTO(
             token,
-            user.getId(),
-            user.getUsername(),
+            user.id,
+            user.username,
             expirationTime,
-            user.getInheritedRoles(),
-            user.getAddressId()
+            user.inheritedRoles,
+            user.addressId
         )
     }
 

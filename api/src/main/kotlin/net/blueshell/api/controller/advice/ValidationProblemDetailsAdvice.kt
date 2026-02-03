@@ -56,11 +56,11 @@ class ValidationProblemDetailsAdvice {
         val errors = ex.constraintViolations.stream()
             .map<MutableMap<String?, Any?>?> { cv: ConstraintViolation<*>? ->
                 errorMap(
-                    cv!!.getRootBeanClass().getSimpleName(),
+                    cv!!.rootBeanClass.simpleName,
                     cv.propertyPath.toString(),
                     cv.invalidValue,
                     cv.message,
-                    cv.constraintDescriptor.getAnnotation().annotationType().getSimpleName()
+                    cv.constraintDescriptor.annotation.annotationType().simpleName
                 )
             }
             .toList()

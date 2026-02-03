@@ -7,4 +7,4 @@ import org.springframework.stereotype.Service
 
 @Service
 class CommitteeMemberService(repository: CommitteeMemberRepository) :
-    BaseModelService<CommitteeMember?, CommitteeMemberRepository?>(repository)
+    BaseModelService<CommitteeMember, CommitteeMemberRepository>(repository)

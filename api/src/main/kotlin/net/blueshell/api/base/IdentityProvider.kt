@@ -18,9 +18,6 @@ abstract class IdentityProvider {
 
     protected fun hasAuthority(role: Role): Boolean {
         val authentication = SecurityContextHolder.getContext().authentication
-        if (authentication == null) {
-            return false
-        }
         return authentication.authorities.stream()
             .anyMatch { a: GrantedAuthority? -> a!!.authority == role.toString() }
     }

@@ -8,9 +8,9 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 
 @Service
-class CommitteeService @Autowired constructor(repository: CommitteeRepository, events: ApplicationEventPublisher?) :
-    BaseModelService<Committee?, CommitteeRepository?>(repository) {
-    fun findAllByUserId(id: Long?): MutableList<Committee?>? {
+class CommitteeService @Autowired constructor(repository: CommitteeRepository, events: ApplicationEventPublisher) :
+    BaseModelService<Committee, CommitteeRepository>(repository) {
+    fun findAllByUserId(id: Long): MutableList<Committee> {
         return repository!!.findALlByMembersUserIdEquals(id)
     }
 }

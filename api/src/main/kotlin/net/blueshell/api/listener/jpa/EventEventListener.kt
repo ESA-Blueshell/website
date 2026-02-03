@@ -24,9 +24,9 @@ class EventEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: PrePersistEvent<Event>) {
-        val e = evt.getSource()
+        val e = evt.source
         if (e.approved) {
-            eventPublisher.publishEvent(AddEventToCalendarEvent(e.getId()))
+            eventPublisher.publishEvent(AddEventToCalendarEvent(e.id))
         }
     }
 
@@ -36,11 +36,11 @@ class EventEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<Event>) {
-        val e = evt.getSource()
+        val e = evt.source
         if (e.approved) {
-            eventPublisher.publishEvent(SyncEventToCalendarEvent(e.getId()))
+            eventPublisher.publishEvent(SyncEventToCalendarEvent(e.id))
         } else {
-            eventPublisher.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
+            eventPublisher.publishEvent(RemoveEventFromCalendarEvent(e.id))
         }
     }
 
@@ -50,7 +50,7 @@ class EventEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<Event>) {
-        val e = evt.getSource()
-        eventPublisher.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
+        val e = evt.source
+        eventPublisher.publishEvent(RemoveEventFromCalendarEvent(e.id))
     }
 }

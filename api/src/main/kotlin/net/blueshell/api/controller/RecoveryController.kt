@@ -30,14 +30,14 @@ class RecoveryController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
     fun setPassword(@Valid @RequestBody request: @Valid PasswordResetRequest) {
-        recoveryService.setPassword(request.getToken(), request.getPassword())
+        recoveryService.setPassword(request.token, request.password)
     }
 
     @PostMapping("/user/activate")
     @PermitAll
     fun userActivate(@Valid @RequestBody request: @Valid UserActivationRequest): RedirectResponseDTO {
-        val user = recoveryService.activateUser(request.getToken())
-        if (user.getDateOfBirth() != null) {
+        val user = recoveryService.activateUser(request.token)
+        if (user.dateOfBirth != null) {
             return RedirectResponseDTO("/membership/signUp?step=2")
         } else {
             return RedirectResponseDTO("/")
@@ -47,7 +47,7 @@ class RecoveryController(
     @PostMapping("/member/activate")
     @PermitAll
     fun memberActivate(@Valid @RequestBody request: @Valid MemberActivationRequest): RedirectResponseDTO {
-        recoveryService.activateMember(request.getToken(), request.getUsername(), request.getPassword())
+        recoveryService.activateMember(request.token, request.username, request.password)
         return RedirectResponseDTO("/")
     }
 

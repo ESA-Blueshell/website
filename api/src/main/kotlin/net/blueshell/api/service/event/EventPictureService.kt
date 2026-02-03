@@ -10,5 +10,5 @@ import org.springframework.stereotype.Service
 @Service
 class EventPictureService @Autowired constructor(
     repository: EventPictureRepository,
-    events: ApplicationEventPublisher?
-) : BaseModelService<EventPicture?, EventPictureRepository?>(repository)
+    events: ApplicationEventPublisher
+) : BaseModelService<EventPicture, EventPictureRepository>(repository)

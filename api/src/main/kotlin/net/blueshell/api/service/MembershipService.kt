@@ -10,13 +10,13 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 
 @Service
-class MembershipService @Autowired constructor(repository: MemberRepository, events: ApplicationEventPublisher?) :
-    BaseModelService<Membership?, MemberRepository?>(repository) {
-    fun existsByUserId(userId: Long?): Boolean {
+class MembershipService @Autowired constructor(repository: MemberRepository, events: ApplicationEventPublisher) :
+    BaseModelService<Membership, MemberRepository>(repository) {
+    fun existsByUserId(userId: Long): Boolean {
         return repository!!.existsByUserId(userId)
     }
 
-    fun findByFilter(filter: MembershipFilter?): MutableList<Membership?> {
+    fun findByFilter(filter: MembershipFilter): MutableList<Membership> {
         var filter = filter
         if (filter == null) filter = MembershipFilter()
         val spec = MembershipSpecifications.fromFilter(filter, getPrincipal())

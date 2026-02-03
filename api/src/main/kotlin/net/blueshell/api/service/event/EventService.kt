@@ -12,13 +12,13 @@ import org.springframework.stereotype.Service
 
 @Service
 class EventService @Autowired constructor(repository: EventRepository) :
-    BaseModelService<Event?, EventRepository?>(repository) {
-    fun findByFilter(pageable: Pageable?, filter: EventFilter?): Page<Event?> {
+    BaseModelService<Event, EventRepository>(repository) {
+    fun findByFilter(pageable: Pageable, filter: EventFilter): Page<Event> {
         var pageable = pageable
         var filter = filter
         if (filter == null) filter = EventFilter()
         if (pageable == null) pageable = Pageable.unpaged()
-        val spec = EventSpecifications.fromFilter(filter, getPrincipal())
+        val spec = EventSpecifications.fromFilter(filter, principal)
         return repository!!.findAll(spec, pageable)
     }
 }

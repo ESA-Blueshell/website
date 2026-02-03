@@ -1,3 +1,4 @@
+import org.gradle.api.GradleException
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
 import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
@@ -102,6 +103,7 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
     implementation("org.openapitools:jackson-databind-nullable:0.2.7")
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.5")
@@ -164,6 +166,8 @@ tasks.register<GenerateTask>("generateBrevoClient") {
         mapOf(
             "jackson" to "true",
             "serializationLibrary" to "jackson",
+            "modelMutable" to "true",
+            "enumPropertyNaming" to "UPPERCASE",
         )
     )
     additionalProperties.set(
@@ -181,11 +185,12 @@ tasks.register<GenerateTask>("generateBrevoClient") {
     )
     schemaMappings.set(
         mapOf(
-            "getContactInfo_identifier_parameter" to "String",
-            "updateContact_identifier_parameter" to "String",
-            "createDoiContact_attributes_value" to "Object",
-            "getContactInfo_identifierType_parameter" to "String",
-            "updateContact_identifierType_parameter" to "String",
+            "getContactInfo_identifier_parameter" to "kotlin.String",
+            "updateContact_identifier_parameter" to "kotlin.String",
+            "createDoiContact_attributes_value" to "kotlin.Any",
+            "getContactInfo_identifierType_parameter" to "kotlin.String",
+            "updateContact_identifierType_parameter" to "kotlin.String",
+            "TemplatePreviewRequestBody" to "net.blueshell.clients.brevo.model.TemplatePreviewRequestBody",
         )
     )
     globalProperties.set(
@@ -195,6 +200,13 @@ tasks.register<GenerateTask>("generateBrevoClient") {
             "supportingFiles" to "",
         )
     )
+    doLast {
+        val overridesSrc = file("openapi-overrides/net/blueshell/clients/brevo/model/TemplatePreviewRequestBody.kt")
+        val overridesDestDir = brevoOutputDir.get().dir("src/main/kotlin/net/blueshell/clients/brevo/model").asFile
+        val overridesDestFile = overridesDestDir.resolve("TemplatePreviewRequestBody.kt")
+        overridesDestDir.mkdirs()
+        overridesSrc.copyTo(overridesDestFile, overwrite = true)
+    }
 }
 
 tasks.withType<KaptGenerateStubsTask>().configureEach {

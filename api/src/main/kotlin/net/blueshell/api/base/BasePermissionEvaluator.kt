@@ -13,7 +13,7 @@ abstract class BasePermissionEvaluator<T : BaseModel, S : BaseModelService<T, *>
 
     private fun determineDomainType(): Class<T> {
         val resolvedTypes = GenericTypeResolver.resolveTypeArguments(javaClass, BasePermissionEvaluator::class.java)
-        check(!(resolvedTypes == null || resolvedTypes.size < 1)) { "Unable to determine domain type for " + javaClass.getName() }
+        check(!(resolvedTypes == null || resolvedTypes.size < 1)) { "Unable to determine domain type for " + javaClass.name }
         return resolvedTypes[0] as Class<T>
     }
 

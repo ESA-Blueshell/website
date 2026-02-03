@@ -11,14 +11,14 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
     ), frontendUrl, appUrl
 ) {
     override fun getSubject(): String {
-        return String.format("Event Registration Confirmed - %s", eventSignUp.getEvent().getTitle())
+        return String.format("Event Registration Confirmed - %s", eventSignUp.event.title)
     }
 
     override fun getMarkdownContent(): String {
-        val event = eventSignUp.getEvent()
-        val editLink = String.format(frontendUrl + "/events/signups/edit/%s", eventSignUp.getGuest().getAccessToken())
+        val event = eventSignUp.event
+        val editLink = String.format(frontendUrl + "/events/signups/edit/%s", eventSignUp.guest.accessToken)
 
-        val eventDetailsLink = String.format(frontendUrl + "/events#%d", event.getId())
+        val eventDetailsLink = String.format(frontendUrl + "/events#%d", event.id)
 
         return String.format(
             """
@@ -52,9 +52,9 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
                         Blueshell Events Team
                         
                         """.trimIndent(),
-            eventSignUp.getGuest().getName(),
-            event.getTitle(),
-            event.getTitle(),
+            eventSignUp.guest.name,
+            event.title,
+            event.title,
             formatEventDate(event), formatEventLocation(event),
             eventDetailsLink,
             editLink,
@@ -67,18 +67,18 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
     }
 
     private fun formatEventDate(event: Event): String {
-        if (event.getStartTime() != null) {
-            if (event.getEndTime() != null && event.getStartTime() != event.getEndTime()) {
-                return String.format("%s - %s", event.getStartTime(), event.getEndTime())
+        if (event.startTime != null) {
+            if (event.endTime != null && event.startTime != event.endTime) {
+                return String.format("%s - %s", event.startTime, event.endTime)
             }
-            return event.getStartTime().toString()
+            return event.startTime.toString()
         }
         return "TBA"
     }
 
     private fun formatEventLocation(event: Event): String {
-        if (event.getLocation() != null && !event.getLocation().trim { it <= ' ' }.isEmpty()) {
-            return event.getLocation()
+        if (event.location != null && !event.location.trim { it <= ' ' }.isEmpty()) {
+            return event.location
         }
         return "Location details will be provided closer to the event date"
     }
@@ -86,8 +86,8 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
     companion object {
         private fun createRecipientFromSignUp(signUp: EventSignUp): User {
             val guestUser = User()
-            guestUser.setEmail(signUp.getGuest().getEmail())
-            guestUser.setFirstName(signUp.getGuest().getName())
+            guestUser.email = signUp.guest.email
+            guestUser.firstName = signUp.guest.name
             return guestUser
         }
     }

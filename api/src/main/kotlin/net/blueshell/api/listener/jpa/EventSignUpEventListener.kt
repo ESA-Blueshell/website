@@ -20,10 +20,10 @@ class EventSignUpEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: PrePersistEvent<EventSignUp>) {
-        val e = evt.getSource()
+        val e = evt.source
 
-        if (e.getGuest() != null) {
-            eventPublisher.publishEvent(EventSignupEmailEvent(e.getId()))
+        if (e.guest != null) {
+            eventPublisher.publishEvent(EventSignupEmailEvent(e.id))
         }
     }
 }

@@ -11,17 +11,17 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ContributionPeriodService @Autowired constructor(
     repository: ContributionPeriodRepository,
-    events: ApplicationEventPublisher?
-) : BaseModelService<ContributionPeriod, ContributionPeriodRepository?>(repository) {
+    events: ApplicationEventPublisher
+) : BaseModelService<ContributionPeriod, ContributionPeriodRepository>(repository) {
     @Transactional(readOnly = true)
-    fun findLatest(): ContributionPeriod? {
+    fun findLatest(): ContributionPeriod {
         return repository!!.findCurrentOrLatestContributionPeriod()
     }
 
     @Transactional
-    fun updateListId(periodId: Long?, listId: Long?) {
+    fun updateListId(periodId: Long, listId: Long) {
         val period = findById(periodId)
-        period.setListId(listId)
+        period.listId = listId
         update(period)
     }
 }

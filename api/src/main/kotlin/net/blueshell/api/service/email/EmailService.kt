@@ -21,23 +21,23 @@ class EmailService(
     private val users: UserService,
     private val reminders: ContributionReminderService,
     private val eventSignUps: EventSignUpService,
-    @param:Value("\${frontend.url}") private val frontendUrl: String?,
-    @param:Value("\${app.url}") private val appUrl: String?
+    @param:Value("\${frontend.url}") private val frontendUrl: String,
+    @param:Value("\${app.url}") private val appUrl: String
 ) {
-    fun sendContributionReminderEmail(reminderId: Long?) {
+    fun sendContributionReminderEmail(reminderId: Long) {
         val reminder = reminders.findById(reminderId)
-        if (reminder == null || reminder.getUser() == null) return
+        if (reminder == null || reminder.user == null) return
 
         val email: BaseEmail = ContributionReminderEmail(
-            reminder.getUser(),
+            reminder.user,
             frontendUrl,
             appUrl,
-            reminder.getContributionPeriod()
+            reminder.contributionPeriod
         )
         deliver(email)
     }
 
-    fun sendEventSignupEmail(eventSignUpId: Long?) {
+    fun sendEventSignupEmail(eventSignUpId: Long) {
         val eventSignUp = eventSignUps.findById(eventSignUpId)
         if (eventSignUp == null) return
 
@@ -58,7 +58,7 @@ class EmailService(
         )
 
         mailDelivery.sendHtmlEmail(
-            content.recipient.getEmail(),
+            content.recipient.email,
             content.subject,
             htmlContent,
             content.senderName,
@@ -66,7 +66,7 @@ class EmailService(
         )
     }
 
-    fun sendUserResetEmail(userId: Long?, token: String?, resetType: ResetType?) {
+    fun sendUserResetEmail(userId: Long, token: String, resetType: ResetType) {
         val user = users.findById(userId)
         if (user == null || resetType == null || token == null) {
             EmailService.log.info("Activation skipped: user={} or resetType missing", userId)
@@ -75,7 +75,7 @@ class EmailService(
             EmailService.log.info("Sending {} email for user={}", resetType, userId)
         }
 
-        val email: BaseEmail? = when (resetType) {
+        val email: BaseEmail = when (resetType) {
             ResetType.MEMBER_ACTIVATION -> MemberActivationEmail(user, token, frontendUrl, appUrl)
             ResetType.USER_ACTIVATION -> UserActivationEmail(user, token, frontendUrl, appUrl)
             ResetType.PASSWORD_RESET -> PasswordResetEmail(user, token, frontendUrl, appUrl)

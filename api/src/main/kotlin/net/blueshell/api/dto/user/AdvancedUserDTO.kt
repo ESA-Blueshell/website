@@ -6,37 +6,41 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.common.enums.Role
 import java.sql.Date
-import java.time.Instant
+import java.util.Comparator
 import java.util.function.ToIntFunction
+
 @Schema(name = "AdvancedUser")
-class AdvancedUserDTO : SimpleUserDTO() {
-    val roles: MutableSet<Role?>? = null
+class AdvancedUserDTO(
+    var roles: MutableSet<Role?>? = null,
 
-    @NotNull
-    val dateOfBirth: @NotNull Date? = null
+    @field:NotNull
+    var dateOfBirth: Date? = null,
 
-    @NotBlank
-    val nationality: @NotBlank String? = null
+    @field:NotBlank
+    var nationality: String? = null,
 
-    @NotNull
-    val photoConsent: @NotNull Boolean = false
+    @field:NotNull
+    var photoConsent: Boolean = false,
 
-    @NotNull
-    val ehbo: @NotNull Boolean = false
+    @field:NotNull
+    var ehbo: Boolean = false,
 
-    @NotNull
-    val bhv: @NotNull Boolean = false
-    val enabled = false
-    val gender: String? = null
-    val studentNumber: String? = null
+    @field:NotNull
+    var bhv: Boolean = false,
 
+    var enabled: Boolean = false,
+    var gender: String? = null,
+    var studentNumber: String? = null
+) : SimpleUserDTO() {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role?>
         get() {
-            if (roles == null || roles.isEmpty()) return ArrayList<Role?>()
+            if (roles == null || roles!!.isEmpty()) return mutableListOf()
 
-            return roles.stream()
-                .sorted(Comparator.comparingInt<Role?>(ToIntFunction { obj: Role? -> obj!!.ordinal }))
+            return roles!!.stream()
+                .sorted(
+                    Comparator.comparingInt<Role?>(ToIntFunction { obj: Role? -> obj!!.ordinal })
+                )
                 .toList()
         }
 }

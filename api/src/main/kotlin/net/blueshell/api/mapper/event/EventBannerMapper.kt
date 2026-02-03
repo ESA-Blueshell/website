@@ -10,16 +10,16 @@ import org.mapstruct.Mapping
 import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring", uses = [FileMapper::class])
-abstract class EventBannerMapper : BaseMapper<EventBanner?, EventBannerDTO?>() {
+abstract class EventBannerMapper : BaseMapper<EventBanner, EventBannerDTO>() {
     @Mapping(target = "id")
     @Mapping(target = "file")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: EventBannerDTO?, @MappingTarget banner: EventBanner?): EventBanner?
+    abstract fun fromDTO(dto: EventBannerDTO, @MappingTarget banner: EventBanner): EventBanner
 
     @Mapping(target = "id")
     @Mapping(target = "file")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(banner: EventBanner?): EventBannerDTO?
+    abstract override fun toDTO(banner: EventBanner): EventBannerDTO
 }

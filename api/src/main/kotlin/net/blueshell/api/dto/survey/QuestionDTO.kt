@@ -7,21 +7,19 @@ import jakarta.validation.constraints.Size
 import net.blueshell.api.base.BaseDTO
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.validation.survey.ValidQuestion
+
 @Schema(name = "Question")
 @ValidQuestion
-class QuestionDTO : BaseDTO() {
-    @NotNull
-    val idx: @NotNull Long? = null
-    val surveyId: Long? = null
+data class QuestionDTO(
+    @field:NotNull
+    var idx: Long? = null,
+    var surveyId: Long? = null,
 
-    @NotNull
-    val type: @NotNull QuestionType? = null
+    @field:NotNull
+    var type: QuestionType? = null,
 
-    @NotBlank(message = "Label cannot be empty.")
-    @Size(max = 2055, message = "Label cannot exceed 2055 characters.")
-    val label: @NotBlank(message = "Label cannot be empty.") @Size(
-        max = 2055,
-        message = "Label cannot exceed 2055 characters."
-    ) String? = null
-    val choiceLabels: MutableList<String?>? = null
-}
+    @field:NotBlank(message = "Label cannot be empty.")
+    @field:Size(max = 2055, message = "Label cannot exceed 2055 characters.")
+    var label: String? = null,
+    var choiceLabels: MutableList<String?>? = null
+) : BaseDTO()

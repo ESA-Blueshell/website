@@ -8,9 +8,9 @@ import org.mapstruct.Mapper
 import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
-abstract class TelemetryMapper : BaseMapper<Telemetry?, TelemetryDTO?>() {
+abstract class TelemetryMapper : BaseMapper<Telemetry, TelemetryDTO>() {
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: TelemetryDTO?, @MappingTarget telemetry: Telemetry?): Telemetry?
+    abstract fun fromDTO(dto: TelemetryDTO, @MappingTarget telemetry: Telemetry): Telemetry
 
-    abstract override fun toDTO(telemetry: Telemetry?): TelemetryDTO?
+    abstract override fun toDTO(telemetry: Telemetry): TelemetryDTO
 }

@@ -12,30 +12,31 @@ import net.blueshell.api.validation.group.Creation
 import net.blueshell.api.validation.membership.NoExistingMembershipForUserId
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate
+
 @Schema(name = "Membership")
-class MembershipDTO : BaseDTO() {
-    @NotNull
-    @NoExistingMembershipForUserId
-    val userId: @NotNull Long? = null
+data class MembershipDTO(
+    @field:NotNull
+    @field:NoExistingMembershipForUserId
+    var userId: Long? = null,
 
-    @NotNull(groups = [Administration::class])
-    val memberType: @NotNull(groups = [Administration::class]) MemberType? = null
+    @field:NotNull(groups = [Administration::class])
+    var memberType: MemberType? = null,
 
-    @NotNull(groups = [Creation::class])
-    val city: @NotNull(groups = [Creation::class]) String? = null
+    @field:NotNull(groups = [Creation::class])
+    var city: String? = null,
 
-    @NotNull(groups = [Creation::class])
-    val country: @NotNull(groups = [Creation::class]) String? = null
+    @field:NotNull(groups = [Creation::class])
+    var country: String? = null,
 
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @PastOrPresent(groups = [Administration::class])
-    @Today(groups = [Creation::class])
-    val startDate: @PastOrPresent(groups = [Administration::class]) LocalDate? = null
+    @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @field:PastOrPresent(groups = [Administration::class])
+    @field:Today(groups = [Creation::class])
+    var startDate: LocalDate? = null,
 
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    val endDate: LocalDate? = null
+    @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    var endDate: LocalDate? = null,
 
-    @JsonProperty
-    @NotNull
-    val incasso: @NotNull Boolean = false
-}
+    @field:JsonProperty
+    @field:NotNull
+    var incasso: Boolean = false
+) : BaseDTO()

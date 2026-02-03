@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
 
 @Mapper(componentModel = "spring")
-abstract class SimpleUserMapper : BaseMapper<User?, SimpleUserDTO?>() {
+abstract class SimpleUserMapper : BaseMapper<User, SimpleUserDTO>() {
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
 
@@ -27,7 +27,7 @@ abstract class SimpleUserMapper : BaseMapper<User?, SimpleUserDTO?>() {
     @Mapping(target = "version")
     @Mapping(target = "addressId")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(user: User?): SimpleUserDTO?
+    abstract override fun toDTO(user: User): SimpleUserDTO
 
     @Mapping(target = "initials", conditionExpression = "java(user.getId() == null)")
     @Mapping(target = "firstName", conditionExpression = "java(user.getId() == null)")
@@ -41,7 +41,7 @@ abstract class SimpleUserMapper : BaseMapper<User?, SimpleUserDTO?>() {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    abstract fun fromDTO(dto: SimpleUserDTO?, @MappingTarget user: User?): User?
+    abstract fun fromDTO(dto: SimpleUserDTO, @MappingTarget user: User): User
 
     @AfterMapping
     protected fun afterFromDTO(dto: SimpleUserDTO, @MappingTarget user: User) {

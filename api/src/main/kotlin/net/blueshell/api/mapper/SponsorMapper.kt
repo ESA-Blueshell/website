@@ -8,10 +8,10 @@ import org.mapstruct.Mapper
 import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
-abstract class SponsorMapper : BaseMapper<Sponsor?, SponsorDTO?>() {
+abstract class SponsorMapper : BaseMapper<Sponsor, SponsorDTO>() {
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: SponsorDTO?, @MappingTarget sponsor: Sponsor?): Sponsor?
+    abstract fun fromDTO(dto: SponsorDTO, @MappingTarget sponsor: Sponsor): Sponsor
 
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(sponsor: Sponsor?): SponsorDTO?
+    abstract override fun toDTO(sponsor: Sponsor): SponsorDTO
 }

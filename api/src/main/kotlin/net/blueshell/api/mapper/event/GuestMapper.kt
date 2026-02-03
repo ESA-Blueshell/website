@@ -7,7 +7,7 @@ import net.blueshell.api.model.event.Guest
 import org.mapstruct.*
 
 @Mapper(componentModel = "spring")
-abstract class GuestMapper : BaseMapper<Guest?, GuestDTO?>() {
+abstract class GuestMapper : BaseMapper<Guest, GuestDTO>() {
     @Mapping(target = "name")
     @Mapping(target = "discord")
     @Mapping(target = "email")
@@ -15,10 +15,10 @@ abstract class GuestMapper : BaseMapper<Guest?, GuestDTO?>() {
     @Mapping(target = "accessToken", ignore = true)
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: GuestDTO?, @MappingTarget guest: Guest?)
+    abstract fun fromDTO(dto: GuestDTO, @MappingTarget guest: Guest)
 
     @AfterMapping
-    protected fun afterFromDTO(dto: GuestDTO?, @MappingTarget guest: Guest) {
+    protected fun afterFromDTO(dto: GuestDTO, @MappingTarget guest: Guest) {
         if (guest.getAccessToken() == null) {
             guest.setAccessToken(Util.getRandomCapitalString(30))
         }
@@ -31,5 +31,5 @@ abstract class GuestMapper : BaseMapper<Guest?, GuestDTO?>() {
     @Mapping(target = "accessToken")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(guest: Guest?): GuestDTO?
+    abstract override fun toDTO(guest: Guest): GuestDTO
 }

@@ -8,7 +8,7 @@ import net.blueshell.api.model.event.Event
 import org.mapstruct.*
 
 @Mapper(componentModel = "spring", uses = [EventBannerMapper::class, SurveyMapper::class])
-abstract class EventMapper : BaseMapper<Event?, EventDTO?>() {
+abstract class EventMapper : BaseMapper<Event, EventDTO>() {
     @Mapping(target = "id")
     @Mapping(target = "committeeId")
     @Mapping(target = "title")
@@ -25,7 +25,7 @@ abstract class EventMapper : BaseMapper<Event?, EventDTO?>() {
     @Mapping(target = "signUpCount")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: EventDTO?, @MappingTarget event: Event?): Event?
+    abstract fun fromDTO(dto: EventDTO, @MappingTarget event: Event): Event
 
     @AfterMapping
     protected fun afterFromDTO(dto: EventDTO, @MappingTarget event: Event) {
@@ -56,5 +56,5 @@ abstract class EventMapper : BaseMapper<Event?, EventDTO?>() {
     @Mapping(target = "signUpCount")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(event: Event?): EventDTO?
+    abstract override fun toDTO(event: Event): EventDTO
 }

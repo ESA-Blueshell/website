@@ -10,10 +10,10 @@ import org.mapstruct.Mapper
 import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
-abstract class RedirectMapper : BaseMapper<Redirect?, RedirectDTO?>() {
+abstract class RedirectMapper : BaseMapper<Redirect, RedirectDTO>() {
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: TelemetryDTO?, @MappingTarget telemetry: Telemetry?): Telemetry?
+    abstract fun fromDTO(dto: TelemetryDTO, @MappingTarget telemetry: Telemetry): Telemetry
 
     @BeanMapping(ignoreByDefault = true)
-    abstract fun toDTO(telemetry: Telemetry?): TelemetryDTO?
+    abstract fun toDTO(telemetry: Telemetry): TelemetryDTO
 }

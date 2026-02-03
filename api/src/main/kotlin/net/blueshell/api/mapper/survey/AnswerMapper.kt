@@ -9,14 +9,14 @@ import org.mapstruct.Mapping
 import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
-abstract class AnswerMapper : BaseMapper<Answer?, AnswerDTO?>() {
+abstract class AnswerMapper : BaseMapper<Answer, AnswerDTO>() {
     @Mapping(target = "id")
     @Mapping(target = "questionId")
     @Mapping(target = "optionSelections")
     @Mapping(target = "textResponse")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: AnswerDTO?, @MappingTarget answer: Answer?): Answer?
+    abstract fun fromDTO(dto: AnswerDTO, @MappingTarget answer: Answer): Answer
 
     @Mapping(target = "id")
     @Mapping(target = "questionId")
@@ -24,5 +24,5 @@ abstract class AnswerMapper : BaseMapper<Answer?, AnswerDTO?>() {
     @Mapping(target = "textResponse")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(answer: Answer?): AnswerDTO?
+    abstract override fun toDTO(answer: Answer): AnswerDTO
 }

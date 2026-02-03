@@ -8,14 +8,15 @@ import jakarta.validation.constraints.NotNull
 import net.blueshell.api.base.BaseDTO
 import net.blueshell.api.validation.survey.ValidQuestionList
 import java.util.function.Function
-@Schema(name = "Survey")
-class SurveyDTO : BaseDTO() {
-    @NotEmpty
-    @ValidQuestionList
-    @Valid
-    var questions: @NotEmpty @Valid MutableList<QuestionDTO?>? = null
-    val responseCount: Long? = null
 
+@Schema(name = "Survey")
+data class SurveyDTO(
+    @field:NotEmpty
+    @field:ValidQuestionList
+    @field:Valid
+    var questions: MutableList<QuestionDTO?>? = null,
+    var responseCount: Long? = null
+) : BaseDTO() {
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionDTO?>
         get() {

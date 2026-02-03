@@ -9,41 +9,37 @@ import jakarta.validation.constraints.Size
 import net.blueshell.api.base.BaseDTO
 import net.blueshell.api.dto.survey.SurveyDTO
 import java.time.Instant
+
 @Schema(name = "Event")
-class EventDTO : BaseDTO() {
-    @NotNull
-    val committeeId: @NotNull Long? = null
+data class EventDTO(
+    @field:NotNull
+    var committeeId: Long? = null,
 
-    @NotBlank(message = "Event title cannot be empty.")
-    @Size(max = 255, message = "Event title cannot exceed 255 characters.")
-    val title: @NotBlank(message = "Event title cannot be empty.") @Size(
-        max = 255,
-        message = "Event title cannot exceed 255 characters."
-    ) String? = null
+    @field:NotBlank(message = "Event title cannot be empty.")
+    @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")
+    var title: String? = null,
 
-    @NotBlank(message = "Event description cannot be empty.")
-    @Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
-    val description: @NotBlank(message = "Event description cannot be empty.") @Size(
-        max = 4095,
-        message = "Event description cannot exceed 4095 characters."
-    ) String? = null
+    @field:NotBlank(message = "Event description cannot be empty.")
+    @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
+    var description: String? = null,
 
-    @JsonProperty("location")
-    val location: String? = null
+    @field:JsonProperty("location")
+    var location: String? = null,
 
-    @NotNull
-    val startTime: @NotNull Instant? = null
+    @field:NotNull
+    var startTime: Instant? = null,
 
-    @NotNull
-    val endTime: @NotNull Instant? = null
-    val memberPrice: Double? = null
-    val publicPrice: Double? = null
-    val approved = false
-    val membersOnly = false
-    val signUp = false
-    val banner: EventBannerDTO? = null
-    val signUpCount: Long? = null
+    @field:NotNull
+    var endTime: Instant? = null,
 
-    @Valid
-    val signUpForm: @Valid SurveyDTO? = null
-}
+    var memberPrice: Double? = null,
+    var publicPrice: Double? = null,
+    var approved: Boolean = false,
+    var membersOnly: Boolean = false,
+    var signUp: Boolean = false,
+    var banner: EventBannerDTO? = null,
+    var signUpCount: Long? = null,
+
+    @field:Valid
+    var signUpForm: SurveyDTO? = null
+) : BaseDTO()

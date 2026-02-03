@@ -9,18 +9,18 @@ import org.mapstruct.Mapping
 import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
-abstract class ContributionMapper : BaseMapper<Contribution?, ContributionDTO?>() {
+abstract class ContributionMapper : BaseMapper<Contribution, ContributionDTO>() {
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(contribution: Contribution?): ContributionDTO?
+    abstract override fun toDTO(contribution: Contribution): ContributionDTO
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: ContributionDTO?, @MappingTarget contribution: Contribution?): Contribution?
+    abstract fun fromDTO(dto: ContributionDTO, @MappingTarget contribution: Contribution): Contribution
 }

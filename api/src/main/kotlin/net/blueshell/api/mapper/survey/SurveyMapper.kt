@@ -8,24 +8,24 @@ import org.mapstruct.*
 import java.util.function.Consumer
 
 @Mapper(componentModel = "spring", uses = [QuestionMapper::class])
-abstract class SurveyMapper : BaseMapper<Survey?, SurveyDTO?>() {
+abstract class SurveyMapper : BaseMapper<Survey, SurveyDTO>() {
     @Mapping(target = "id")
     @Mapping(target = "questions")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun fromDTO(dto: SurveyDTO?): Survey?
+    abstract override fun fromDTO(dto: SurveyDTO): Survey
 
     @Mapping(target = "id")
     @Mapping(target = "questions")
     @Mapping(target = "responseCount")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(survey: Survey?): SurveyDTO?
+    abstract override fun toDTO(survey: Survey): SurveyDTO
 
     @AfterMapping
     protected fun linkQuestions(@MappingTarget survey: Survey) {
         if (survey.getQuestions() != null) {
-            survey.getQuestions().forEach(Consumer { q: Question? -> q!!.setSurvey(survey) })
+            survey.getQuestions().forEach(Consumer { q: Question -> q!!.setSurvey(survey) })
         }
     }
 }

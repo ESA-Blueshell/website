@@ -6,24 +6,18 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
 import net.blueshell.api.base.BaseDTO
+
 @Schema(name = "AdvancedCommittee")
-class AdvancedCommitteeDTO : BaseDTO() {
-    @NotBlank(message = "Committee name cannot be blank.")
-    @Size(max = 255, message = "Committee name cannot exceed 255 characters.")
-    @JsonProperty("name")
-    val name: @NotBlank(message = "Committee name cannot be blank.") @Size(
-        max = 255,
-        message = "Committee name cannot exceed 255 characters."
-    ) String? = null
+data class AdvancedCommitteeDTO(
+    @field:NotBlank(message = "Committee name cannot be blank.")
+    @field:Size(max = 255, message = "Committee name cannot exceed 255 characters.")
+    @field:JsonProperty("name")
+    var name: String? = null,
 
-    @NotBlank(message = "Committee description cannot be empty.")
-    @Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
-    val description: @NotBlank(message = "Committee description cannot be empty.") @Size(
-        max = 4095,
-        message = "Committee description cannot exceed 4095 characters."
-    ) String? = null
+    @field:NotBlank(message = "Committee description cannot be empty.")
+    @field:Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
+    var description: String? = null,
 
-    @JsonProperty("members")
-    @NotEmpty
-    val members: @NotEmpty MutableList<CommitteeMemberDTO?>? = null
-}
+    @field:NotEmpty
+    var members: MutableList<CommitteeMemberDTO?> = mutableListOf()
+) : BaseDTO()

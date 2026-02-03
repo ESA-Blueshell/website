@@ -9,11 +9,11 @@ import org.mapstruct.*
 abstract class EventSocialMapper {
     @Mapping(source = "description", target = "text")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun toSocialDto(dto: EventDTO?): SocialDTO?
+    abstract fun toSocialDto(dto: EventDTO): SocialDTO
 
     @AfterMapping
-    fun afterToSocialDTO(dto: EventDTO?, @MappingTarget socialDTO: SocialDTO) {
-        val platforms = arrayOf<PlatformType?>(PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM)
+    fun afterToSocialDTO(dto: EventDTO, @MappingTarget socialDTO: SocialDTO) {
+        val platforms = arrayOf<PlatformType>(PlatformType.FACEBOOK, PlatformType.TWITTER, PlatformType.INSTAGRAM)
         socialDTO.setPlatforms(platforms)
     }
 }

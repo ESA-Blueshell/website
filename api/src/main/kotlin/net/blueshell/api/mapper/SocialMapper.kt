@@ -12,17 +12,17 @@ import org.springframework.beans.factory.annotation.Value
 @Mapper(componentModel = "spring")
 abstract class SocialMapper {
     @Value("\${frontend.url}")
-    private val frontendUrl: String? = null
+    private val frontendUrl: String = null
 
     @BeanMapping(ignoreByDefault = true)
-    abstract fun toSocialDTO(blog: Blog?): SocialDTO?
+    abstract fun toSocialDTO(blog: Blog): SocialDTO
 
     @AfterMapping
     protected fun afterToSocialDTO(blog: Blog, @MappingTarget dto: SocialDTO) {
         dto.setUrl(frontendUrl + "/blogs" + blog.getId())
         dto.setTitle(blog.getTitle())
         dto.setText(dto.getText())
-        val platforms = arrayOf<PlatformType?>(
+        val platforms = arrayOf<PlatformType>(
             PlatformType.FACEBOOK,
             PlatformType.TWITTER,
             PlatformType.INSTAGRAM,

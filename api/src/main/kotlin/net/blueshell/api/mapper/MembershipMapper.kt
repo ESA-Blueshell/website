@@ -15,7 +15,7 @@ import java.util.function.BiConsumer
 
 
 @Mapper(componentModel = "spring")
-abstract class MembershipMapper : BaseMapper<Membership?, MembershipDTO?>() {
+abstract class MembershipMapper : BaseMapper<Membership, MembershipDTO>() {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "userId")
@@ -24,30 +24,30 @@ abstract class MembershipMapper : BaseMapper<Membership?, MembershipDTO?>() {
     @Mapping(target = "endDate")
     @Mapping(target = "incasso")
     @Mapping(target = "version")
-    abstract override fun toDTO(membership: Membership?): MembershipDTO?
+    abstract override fun toDTO(membership: Membership): MembershipDTO
 
     @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: MembershipDTO?, @MappingTarget membership: Membership?): Membership?
+    abstract fun fromDTO(dto: MembershipDTO, @MappingTarget membership: Membership): Membership
 
     @AfterMapping
     protected fun afterFromDTO(dto: MembershipDTO, @MappingTarget membership: Membership) {
         if (hasAuthority(Role.BOARD)) {
-            MappingUtil.applyIfFieldIsNotNull<Membership?, @PastOrPresent(groups = [Administration::class]) LocalDate?>(
+            MappingUtil.applyIfFieldIsNotNull<Membership, @PastOrPresent(groups = [Administration::class]) LocalDate>(
                 membership,
                 dto.getStartDate(),
-                BiConsumer { obj: Membership?, startDate: LocalDate? -> obj!!.setStartDate(startDate) })
+                BiConsumer { obj: Membership, startDate: LocalDate -> obj!!.setStartDate(startDate) })
             membership.setEndDate(dto.getEndDate()) // Must be applied, in order to be able to resume memberships
-            MappingUtil.applyIfFieldIsNotNull<Membership?, @NotNull(groups = [Administration::class]) MemberType?>(
+            MappingUtil.applyIfFieldIsNotNull<Membership, @NotNull(groups = [Administration::class]) MemberType>(
                 membership,
                 dto.getMemberType(),
-                BiConsumer { obj: Membership?, memberType: MemberType? -> obj!!.setMemberType(memberType) })
-            MappingUtil.applyIfFieldIsNotNull<Membership?, Boolean?>(
+                BiConsumer { obj: Membership, memberType: MemberType -> obj!!.setMemberType(memberType) })
+            MappingUtil.applyIfFieldIsNotNull<Membership, Boolean>(
                 membership,
                 dto.incasso,
-                BiConsumer { obj: Membership?, incasso: Boolean? -> obj!!.setIncasso(incasso!!) })
+                BiConsumer { obj: Membership, incasso: Boolean -> obj!!.setIncasso(incasso!!) })
         }
     }
 }

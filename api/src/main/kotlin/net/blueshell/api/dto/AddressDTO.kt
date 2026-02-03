@@ -4,21 +4,22 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import net.blueshell.api.base.BaseDTO
 import net.blueshell.api.validation.address.ValidCountryCode
+
 @Schema(name = "Address")
-class AddressDTO : BaseDTO() {
-    @NotEmpty
-    @ValidCountryCode
-    val country: @NotEmpty String? = null
+data class AddressDTO(
+    @field:NotEmpty
+    @field:ValidCountryCode
+    var country: String? = null,
 
-    @NotEmpty
-    val city: @NotEmpty String? = null
+    @field:NotEmpty
+    var city: String? = null,
 
-    @NotEmpty
-    val street: @NotEmpty String? = null
+    @field:NotEmpty
+    var street: String? = null,
 
-    @NotEmpty
-    val houseNumber: @NotEmpty String? = null
+    @field:NotEmpty
+    var houseNumber: String? = null,
 
-    @NotEmpty
-    val zipCode: @NotEmpty String? = null
-}
+    @field:NotEmpty
+    var zipCode: String? = null
+) : BaseDTO()

@@ -8,14 +8,25 @@ import net.blueshell.api.base.BaseDTO
 import net.blueshell.api.common.enums.Role
 import java.io.Serial
 import java.util.function.ToIntFunction
+
 @Schema(name = "Login")
-class AuthenticationDTO(
-    @field:NotBlank val token: @NotBlank String?,
-    @field:NotBlank val userId: @NotBlank Long,
-    @field:NotBlank val username: @NotBlank String?,
-    @field:NotBlank val expiration: @NotBlank Long,
-    @field:NotEmpty val roles: @NotEmpty MutableSet<Role?>?,
-    val addressId: Long?
+data class AuthenticationDTO(
+    @field:NotBlank
+    var token: String?,
+
+    @field:NotBlank
+    var userId: Long,
+
+    @field:NotBlank
+    var username: String?,
+
+    @field:NotBlank
+    var expiration: Long,
+
+    @field:NotEmpty
+    var roles: MutableSet<Role?>? = null,
+
+    var addressId: Long? = null
 ) : BaseDTO() {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role?>

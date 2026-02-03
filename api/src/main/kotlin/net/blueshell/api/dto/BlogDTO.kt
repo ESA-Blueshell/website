@@ -4,15 +4,16 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import net.blueshell.api.base.BaseDTO
 import java.time.Instant
+
 @Schema(name = "Blog")
-class BlogDTO : BaseDTO() {
-    val url: String? = null
+data class BlogDTO(
+    var url: String? = null,
 
-    @NotBlank
-    val title: @NotBlank String? = null
+    @field:NotBlank
+    var title: String? = null,
 
-    @NotBlank
-    val html: @NotBlank String? = null
-    val publishedAt: Instant? = null
-}
+    @field:NotBlank
+    var html: String? = null,
 
+    var publishedAt: Instant? = null
+) : BaseDTO()

@@ -10,25 +10,24 @@ import org.mapstruct.*
 import org.springframework.beans.factory.annotation.Value
 
 @Mapper(componentModel = "spring")
-abstract class BlogMapper : BaseMapper<Blog?, BlogDTO?>() {
+abstract class BlogMapper : BaseMapper<Blog, BlogDTO>() {
     @Value("\${frontend.url}")
-    private val frontendUrl: String? = null
-
+    private lateinit var frontendUrl: String
 
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "title")
     @Mapping(target = "publishedAt")
     @Mapping(target = "version")
-    abstract fun fromDTO(dto: BlogDTO?, @MappingTarget blog: Blog?): Blog?
+    abstract fun fromDTO(dto: BlogDTO, @MappingTarget blog: Blog): Blog
 
     @AfterMapping
     protected fun afterFromDTO(dto: BlogDTO, @MappingTarget blog: Blog) {
-        val content = dto.getHtml()
+        val content = dto.html
         if (content != null && !content.trim { it <= ' ' }.isEmpty()) {
             val doc = Jsoup.parse(content)
             doc.select("div:has(a:contains(Unsubscribe))").remove()
             val minifiedHtml = doc.html().replace(">\\s+<".toRegex(), "><").trim { it <= ' ' }
-            blog.setHtml(minifiedHtml)
+            blog.html = minifiedHtml
         }
     }
 
@@ -38,11 +37,11 @@ abstract class BlogMapper : BaseMapper<Blog?, BlogDTO?>() {
     @Mapping(target = "html")
     @Mapping(target = "publishedAt")
     @Mapping(target = "version")
-    abstract override fun toDTO(blog: Blog?): BlogDTO?
+    abstract override fun toDTO(blog: Blog): BlogDTO
 
     @AfterMapping
     protected fun afterToDTO(dto: BlogDTO, @MappingTarget blog: Blog) {
-        dto.setUrl("%s/blogs/%s".formatted(frontendUrl, blog.getId()))
+        dto.url = "$frontendUrl/blogs/${blog.id}"
     }
 
     /**
@@ -54,8 +53,8 @@ abstract class BlogMapper : BaseMapper<Blog?, BlogDTO?>() {
         return if (titleElement != null) titleElement.text().trim { it <= ' ' } else ""
     }
 
-    private fun extractImages(doc: Document): MutableList<FileDTO?> {
-        val files: MutableList<FileDTO?> = ArrayList<FileDTO?>()
+    private fun extractImages(doc: Document): MutableList<FileDTO> {
+        val files: MutableList<FileDTO> = ArrayList()
         for (img in doc.select("img")) {
             val src = img.attr("src")
             if (src.isEmpty()) {

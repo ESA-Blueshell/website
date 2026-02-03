@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 
 @Mapper(componentModel = "spring", uses = [SimpleUserMapper::class])
-abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember?, CommitteeMemberDTO?>() {
+abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemberDTO>() {
     @Autowired
     private lateinit var committeeMemberService: CommitteeMemberService
 
@@ -19,10 +19,10 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember?, CommitteeMem
     @Mapping(target = "role")
     @Mapping(target = "userId")
     @Mapping(target = "version")
-    abstract override fun toDTO(member: CommitteeMember?): CommitteeMemberDTO?
+    abstract override fun toDTO(member: CommitteeMember): CommitteeMemberDTO
 
     @ObjectFactory
-    fun create(dto: CommitteeMemberDTO): CommitteeMember? {
+    fun create(dto: CommitteeMemberDTO): CommitteeMember {
         CommitteeMemberMapper.log.info("creating a new committee member for dto {}", dto)
         if (dto.getId() == null) {
             return CommitteeMember()
@@ -36,7 +36,7 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember?, CommitteeMem
     @Mapping(target = "role")
     @Mapping(target = "userId")
     @Mapping(target = "version")
-    abstract fun fromDTO(dto: CommitteeMemberDTO?, @MappingTarget member: CommitteeMember?): CommitteeMember?
+    abstract fun fromDTO(dto: CommitteeMemberDTO, @MappingTarget member: CommitteeMember): CommitteeMember
 
     companion object {
         private val log = LoggerFactory.getLogger(CommitteeMemberMapper::class.java)

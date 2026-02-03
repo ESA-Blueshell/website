@@ -15,11 +15,11 @@ import java.nio.file.Path
 import java.util.*
 
 @Mapper(componentModel = "spring")
-abstract class FileMapper : BaseMapper<File?, FileDTO?>() {
+abstract class FileMapper : BaseMapper<File, FileDTO>() {
     /**
      * Build hashed filename from content hash + original name's extension.
      */
-    fun buildHashedFilename(sha256: String?, originalName: String?): String? {
+    fun buildHashedFilename(sha256: String, originalName: String): String {
         val ext = getExtensionSafe(originalName)
         return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.getDefault()))
     }
@@ -27,7 +27,7 @@ abstract class FileMapper : BaseMapper<File?, FileDTO?>() {
     /**
      * Resolve media type using preferred -> probed(path) -> fallback.
      */
-    fun resolveMediaType(filename: String, path: Path, preferred: String?): String {
+    fun resolveMediaType(filename: String, path: Path, preferred: String): String {
         if (preferred != null && !preferred.isBlank()) return preferred
         try {
             val probed = Files.probeContentType(path)
@@ -42,10 +42,10 @@ abstract class FileMapper : BaseMapper<File?, FileDTO?>() {
      */
     fun populateAfterStore(
         @MappingTarget file: File,
-        name: String?,
+        name: String,
         fullPath: Path,
-        path: String?,
-        mediaType: String?
+        path: String,
+        mediaType: String
     ) {
         file.setName(name)
         file.setMediaType(mediaType)
@@ -81,7 +81,7 @@ abstract class FileMapper : BaseMapper<File?, FileDTO?>() {
     @Mapping(target = "size")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(file: File?): FileDTO?
+    abstract override fun toDTO(file: File): FileDTO
 
     private fun detectContentType(filename: String, resource: Resource): String {
         try {
@@ -96,7 +96,7 @@ abstract class FileMapper : BaseMapper<File?, FileDTO?>() {
         }
     }
 
-    private fun getExtensionSafe(originalName: String?): String {
+    private fun getExtensionSafe(originalName: String): String {
         if (originalName == null) return ""
         val name = Path.of(originalName).fileName.toString()
         val i = name.lastIndexOf('.')

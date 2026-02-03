@@ -4,22 +4,23 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.base.BaseDTO
 import java.time.LocalDate
+
 @Schema(name = "ContributionPeriod")
-class ContributionPeriodDTO : BaseDTO() {
-    @NotNull
-    val startDate: @NotNull LocalDate? = null
+data class ContributionPeriodDTO(
+    @field:NotNull
+    var startDate: LocalDate? = null,
 
-    @NotNull
-    val endDate: @NotNull LocalDate? = null
+    @field:NotNull
+    var endDate: LocalDate? = null,
 
-    @NotNull
-    val halfYearFee: @NotNull Double = 0.0
+    @field:NotNull
+    var halfYearFee: Double = 0.0,
 
-    @NotNull
-    val fullYearFee: @NotNull Double = 0.0
+    @field:NotNull
+    var fullYearFee: Double = 0.0,
 
-    @NotNull
-    val alumniFee: @NotNull Double = 0.0
+    @field:NotNull
+    var alumniFee: Double = 0.0,
 
-    val listId: Long? = null
-}
+    var listId: Long? = null
+) : BaseDTO()

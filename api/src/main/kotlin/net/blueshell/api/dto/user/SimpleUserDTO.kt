@@ -10,44 +10,42 @@ import net.blueshell.api.validation.group.Administration
 import net.blueshell.api.validation.group.Creation
 import net.blueshell.api.validation.group.Update
 import net.blueshell.api.validation.user.UniqueUser
+
 @Schema(name = "SimpleUser")
 @UniqueUser(groups = [Update::class, Creation::class, Administration::class])
-open class SimpleUserDTO : PersonalInfoDTO() {
-    val fullName: String? = null
+open class SimpleUserDTO(
+    var fullName: String? = null,
 
-    @NotBlank
-    val initials: @NotBlank String? = null
+    @field:NotBlank
+    var initials: String? = null,
 
-    @NotBlank
-    val firstName: @NotBlank String? = null
+    @field:NotBlank
+    var firstName: String? = null,
 
-    val prefix: String? = null
+    var prefix: String? = null,
 
-    @NotBlank
-    val lastName: @NotBlank String? = null
+    @field:NotBlank
+    var lastName: String? = null,
 
-    @NotBlank
-    val username: @NotBlank String? = null
+    @field:NotBlank
+    var username: String? = null,
 
-    @NotNull
-    val newsletter: @NotNull Boolean = false
+    @field:NotNull
+    var newsletter: Boolean = false,
 
-    @NotBlank(groups = [Creation::class])
-    @Size(min = 8, max = 100, groups = [Creation::class])
-    @Pattern(
+    @field:NotBlank(groups = [Creation::class])
+    @field:Size(
+        min = 8,
+        max = 100,
+        message = "Password must be at least 8 characters",
+        groups = [Creation::class]
+    )
+    @field:Pattern(
         regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
         message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
         groups = [Creation::class]
     )
-    val password: @NotBlank(groups = [Creation::class]) @Size(
-        min = 8,
-        max = 100,
-        groups = [Creation::class]
-    ) @Pattern(
-        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
-        groups = [Creation::class]
-    ) String? = null
+    var password: String? = null,
 
-    val addressId: Long? = null
-}
+    var addressId: Long? = null
+) : PersonalInfoDTO()

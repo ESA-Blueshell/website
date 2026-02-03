@@ -8,15 +8,16 @@ import net.blueshell.api.dto.survey.AnswerDTO
 import net.blueshell.api.dto.user.SimpleUserDTO
 import net.blueshell.api.validation.event.GuestOrUserRequired
 import net.blueshell.api.validation.event.ValidEventSignUp
+
 @Schema(name = "EventSignUp")
 @ValidEventSignUp
 @GuestOrUserRequired
-class EventSignUpDTO : BaseDTO() {
-    val eventId: Long? = null
+data class EventSignUpDTO(
+    var eventId: Long? = null,
 
-    @Valid
-    val answers: @Valid MutableList<AnswerDTO?>? = null
-    val guest: GuestDTO? = null
-    val user: SimpleUserDTO? = null
-    val userId: Long? = null
-}
+    @field:Valid
+    var answers: MutableList<AnswerDTO?>? = null,
+    var guest: GuestDTO? = null,
+    var user: SimpleUserDTO? = null,
+    var userId: Long? = null
+) : BaseDTO()

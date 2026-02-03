@@ -15,16 +15,16 @@ interface BrevoContactMapper {
     @Mapping(target = "extId", source = "id")
     @Mapping(target = "attributes", source = ".", qualifiedByName = ["toAttributes"])
     @BeanMapping(ignoreByDefault = true)
-    fun toCreate(user: User?): CreateContact?
+    fun toCreate(user: User): CreateContact
 
     @Mapping(target = "extId", source = "id")
     @Mapping(target = "attributes", source = ".", qualifiedByName = ["toAttributes"])
     @BeanMapping(ignoreByDefault = true)
-    fun toUpdate(user: User?): UpdateContact?
+    fun toUpdate(user: User): UpdateContact
 
     @Named("toAttributes")
-    fun toAttributes(user: User): MutableMap<String?, Any?> {
-        val attrs: MutableMap<String?, Any?> = HashMap<String?, Any?>()
+    fun toAttributes(user: User): MutableMap<String, Any> {
+        val attrs: MutableMap<String, Any> = HashMap<String, Any>()
         attrs.put("NEWSLETTER", user.newsletter)
         attrs.put("IS_MEMBER", user.hasRole(Role.MEMBER))
         attrs.put("FIRSTNAME", user.getFirstName())

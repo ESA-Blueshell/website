@@ -20,7 +20,7 @@ class ContributionReminderController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminder(@Valid @RequestBody dto: @Valid ContributionReminderDTO?): ContributionReminderDTO? {
+    fun sendContributionReminder(@Valid @RequestBody dto: ContributionReminderDTO): ContributionReminderDTO {
         var reminder = mapper.fromDTO(dto)
         service.sendReminder(reminder)
         reminder = service.create(reminder)
@@ -30,7 +30,7 @@ class ContributionReminderController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminderBatch(@Valid @RequestBody dtos: @Valid MutableList<ContributionReminderDTO?>): MutableList<ContributionReminderDTO?>? {
+    fun sendContributionReminderBatch(@Valid @RequestBody dtos: MutableList<ContributionReminderDTO>): MutableList<ContributionReminderDTO> {
         var reminders = mapper.fromDTOs(dtos)
         service.sendReminders(reminders)
         reminders = service.createAll(reminders)
@@ -39,7 +39,7 @@ class ContributionReminderController @Autowired constructor(
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributionReminders")
-    fun findContributionReminders(@RequestParam(required = false) contributionPeriodId: Long?): MutableList<ContributionReminderDTO?>? {
+    fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderDTO> {
         val contributions = service.findByContributionPeriodId(contributionPeriodId)
         return mapper.toDTOs(contributions)
     }

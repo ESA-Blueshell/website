@@ -46,14 +46,14 @@ class EventSignUp : BaseModel() {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    val user: User? = null
+    var user: User? = null
 
     @Column(name = "user_id")
     var userId: Long? = null
 
     @ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
     @JoinColumn(name = "guest_id")
-    val guest: Guest? = null
+    var guest: Guest? = null
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(

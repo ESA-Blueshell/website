@@ -22,21 +22,24 @@ class RecoveryController(
     @PostMapping("/password/reset/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun resetPassword(@PathVariable("username") username: String?) {
+    fun resetPassword(@PathVariable("username") username: String) {
         recoveryService.resetPassword(username)
     }
 
     @PostMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun setPassword(@Valid @RequestBody request: @Valid PasswordResetRequest) {
-        recoveryService.setPassword(request.token, request.password)
+    fun setPassword(@Valid @RequestBody request: PasswordResetRequest) {
+        val token = requireNotNull(request.token) { "Token is required" }
+        val password = requireNotNull(request.password) { "Password is required" }
+        recoveryService.setPassword(token, password)
     }
 
     @PostMapping("/user/activate")
     @PermitAll
-    fun userActivate(@Valid @RequestBody request: @Valid UserActivationRequest): RedirectResponseDTO {
-        val user = recoveryService.activateUser(request.token)
+    fun userActivate(@Valid @RequestBody request: UserActivationRequest): RedirectResponseDTO {
+        val token = requireNotNull(request.token) { "Token is required" }
+        val user = recoveryService.activateUser(token)
         if (user.dateOfBirth != null) {
             return RedirectResponseDTO("/membership/signUp?step=2")
         } else {
@@ -46,22 +49,25 @@ class RecoveryController(
 
     @PostMapping("/member/activate")
     @PermitAll
-    fun memberActivate(@Valid @RequestBody request: @Valid MemberActivationRequest): RedirectResponseDTO {
-        recoveryService.activateMember(request.token, request.username, request.password)
+    fun memberActivate(@Valid @RequestBody request: MemberActivationRequest): RedirectResponseDTO {
+        val token = requireNotNull(request.token) { "Token is required" }
+        val username = requireNotNull(request.username) { "Username is required" }
+        val password = requireNotNull(request.password) { "Password is required" }
+        recoveryService.activateMember(token, username, password)
         return RedirectResponseDTO("/")
     }
 
     @PostMapping("/user/activate/resend/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun resendUserActivation(@PathVariable("username") username: String?) {
+    fun resendUserActivation(@PathVariable("username") username: String) {
         recoveryService.resendActivation(username)
     }
 
     @PostMapping("/users/{userId}/resend/recovery")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasPermission('BOARD')")
-    fun resendMemberActivationEmail(@PathVariable("userId") userId: Long?) {
+    fun resendMemberActivationEmail(@PathVariable("userId") userId: Long) {
         recoveryService.resendActivationEmail(userId)
     }
 }

@@ -12,29 +12,29 @@ import java.util.function.ToIntFunction
 @Schema(name = "Login")
 data class AuthenticationDTO(
     @field:NotBlank
-    var token: String?,
+    var token: String,
 
     @field:NotBlank
     var userId: Long,
 
     @field:NotBlank
-    var username: String?,
+    var username: String,
 
     @field:NotBlank
     var expiration: Long,
 
     @field:NotEmpty
-    var roles: MutableSet<Role?>? = null,
+    var roles: MutableSet<Role> = mutableSetOf(),
 
     var addressId: Long? = null
 ) : BaseDTO() {
     @get:JsonProperty("roles")
-    val rolesSorted: MutableList<Role?>
+    val rolesSorted: MutableList<Role>
         get() {
-            if (roles == null || roles.isEmpty()) return ArrayList<Role?>()
+            if (roles.isEmpty()) return ArrayList()
 
             return roles.stream()
-                .sorted(Comparator.comparingInt<Role?>(ToIntFunction { obj: Role? -> obj!!.ordinal }))
+                .sorted(Comparator.comparingInt<Role>(ToIntFunction { obj: Role -> obj.ordinal }))
                 .toList()
         }
 

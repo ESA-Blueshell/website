@@ -24,19 +24,18 @@ class AuthenticationController(
 ) : JWTAuthBase() {
 
     @Value("\${app.jwt.expiration}")
-    private val expiration: Long? = null
+    private var expiration: Long = 0
 
     @PostMapping(("/auth"))
     @PermitAll
     fun authenticate(@Validated @RequestBody authenticationRequest: JwtRequest): AuthenticationDTO {
-        authenticate(
-            authenticationRequest.username,
-            authenticationRequest.password
-        )
+        val username = requireNotNull(authenticationRequest.username) { "Username is required" }
+        val password = requireNotNull(authenticationRequest.password) { "Password is required" }
+        authenticate(username, password)
 
-        val user = users.findByUsername(authenticationRequest.username)
+        val user = users.findByUsername(username)
         val token = jwtTokenUtil.generateToken(user)
-        val expirationTime = System.currentTimeMillis() + expiration!!
+        val expirationTime = System.currentTimeMillis() + expiration
 
         return AuthenticationDTO(
             token,
@@ -48,7 +47,7 @@ class AuthenticationController(
         )
     }
 
-    private fun authenticate(username: String?, password: String?) {
+    private fun authenticate(username: String, password: String) {
         authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(username, password)
         )

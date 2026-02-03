@@ -8,10 +8,10 @@ import java.time.LocalDate
 @Schema(name = "ContributionPeriod")
 data class ContributionPeriodDTO(
     @field:NotNull
-    var startDate: LocalDate? = null,
+    var startDate: LocalDate,
 
     @field:NotNull
-    var endDate: LocalDate? = null,
+    var endDate: LocalDate,
 
     @field:NotNull
     var halfYearFee: Double = 0.0,

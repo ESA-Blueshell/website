@@ -25,7 +25,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
             "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
     @Transactional(readOnly = true)
-    fun findEventSignUps(@ParameterObject filter: EventSignUpFilter?): MutableList<EventSignUpDTO?> {
+    fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByFilter(filter)
         return mapper.toDTOs(eventSignUps.stream()).toList()
     }
@@ -33,7 +33,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
     @Transactional(readOnly = true)
-    fun findEventSignUpsByAccessToken(@PathVariable("accessToken") accessToken: String?): MutableList<EventSignUpDTO?>? {
+    fun findEventSignUpsByAccessToken(@PathVariable("accessToken") accessToken: String): MutableList<EventSignUpDTO> {
         val signUps = service.findByGuestAccessToken(accessToken)
         return mapper.toDTOs(signUps)
     }
@@ -41,7 +41,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
     @Transactional(readOnly = true)
-    fun findEventSignUpsByEventId(@PathVariable("eventId") eventId: Long?): MutableList<EventSignUpDTO?>? {
+    fun findEventSignUpsByEventId(@PathVariable("eventId") eventId: Long): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByEventId(eventId)
         return mapper.toDTOs(eventSignUps)
     }
@@ -51,7 +51,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @PreAuthorize("hasAuthority('BOARD') or hasPermission(#dto.eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
-    fun createEventSignup(@Valid @RequestBody dto: @Valid EventSignUpDTO): EventSignUpDTO? {
+    fun createEventSignup(@Valid @RequestBody dto: EventSignUpDTO): EventSignUpDTO {
         if (principal != null) {
             dto.userId = principal.id
         }
@@ -67,17 +67,19 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
             "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
     )
     fun updateEventSignUp(
-        @PathVariable("eventId") eventId: Long?,
-        @Valid @RequestBody dto: @Valid EventSignUpDTO?,
+        @PathVariable("eventId") eventId: Long,
+        @Valid @RequestBody dto: EventSignUpDTO,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
-    ): EventSignUpDTO? {
-        var signUp = if (accessToken == null)
-            service.findByUserIdAndEventId(principal.id, eventId)
-        else
+    ): EventSignUpDTO {
+        val signUp = if (accessToken == null) {
+            val principalId = requireNotNull(principal?.id) { "User must be authenticated" }
+            service.findByUserIdAndEventId(principalId, eventId)
+        } else {
             service.findByGuestAccessTokenAndEventId(accessToken, eventId)
+        }
         mapper.fromDTO(dto, signUp)
-        signUp = service.update(signUp)
-        return mapper.toDTO(signUp)
+        val updated = service.update(signUp)
+        return mapper.toDTO(updated)
     }
 
 
@@ -90,7 +92,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
     fun deleteEventSignup(
-        @PathVariable("eventSignupId") eventSignupId: Long?,
+        @PathVariable("eventSignupId") eventSignupId: Long,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ) {
         service.deleteById(eventSignupId)

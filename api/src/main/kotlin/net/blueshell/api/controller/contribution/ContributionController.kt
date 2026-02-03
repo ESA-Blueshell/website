@@ -18,7 +18,7 @@ class ContributionController @Autowired constructor(service: ContributionService
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributions")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createContribution(@Valid @RequestBody dto: @Valid ContributionDTO?): ContributionDTO? {
+    fun createContribution(@Valid @RequestBody dto: ContributionDTO): ContributionDTO {
         var contribution = mapper.fromDTO(dto)
         contribution = service.create(contribution)
         return mapper.toDTO(contribution)
@@ -26,7 +26,7 @@ class ContributionController @Autowired constructor(service: ContributionService
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributions")
-    fun findContributions(@RequestParam(required = false) contributionPeriodId: Long?): MutableList<ContributionDTO?>? {
+    fun findContributions(@RequestParam contributionPeriodId: Long): MutableList<ContributionDTO> {
         val contributions = service.findByContributionPeriodId(contributionPeriodId)
         return mapper.toDTOs(contributions)
     }
@@ -34,13 +34,13 @@ class ContributionController @Autowired constructor(service: ContributionService
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteContribution(@PathVariable("id") id: Long?) {
+    fun deleteContribution(@PathVariable("id") id: Long) {
         service.deleteById(id)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
-    fun findContributionsByPeriodId(@PathVariable("periodId") periodId: Long?): MutableList<ContributionDTO?>? {
+    fun findContributionsByPeriodId(@PathVariable("periodId") periodId: Long): MutableList<ContributionDTO> {
         val contributions = service.findByContributionPeriodId(periodId)
         return mapper.toDTOs(contributions)
     }

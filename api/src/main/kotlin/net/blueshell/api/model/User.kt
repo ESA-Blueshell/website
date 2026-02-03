@@ -14,7 +14,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import java.sql.Date
 import java.util.*
-import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -70,7 +69,7 @@ class User : BaseModel(), UserDetails {
 
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
-    val address: Address? = null
+    var address: Address? = null
 
     @Column(name = "address_id", updatable = false, insertable = false)
     var addressId: Long? = null
@@ -175,7 +174,7 @@ class User : BaseModel(), UserDetails {
 
     val inheritedRoles: MutableSet<Role?>
         get() = HashSet<Role?>(
-            getRoles()
+            roles
                 .stream()
                 .flatMap<Role?> { role: Role? ->
                     role!!.allInheritedRoles.stream()
@@ -183,7 +182,7 @@ class User : BaseModel(), UserDetails {
         )
 
     fun hasRole(role: Role?): Boolean {
-        return getRoles().stream().anyMatch { r: Role? -> r == role }
+        return roles.stream().anyMatch { r: Role? -> r == role }
     }
 
     fun hasAuthority(role: Role?): Boolean {
@@ -192,7 +191,7 @@ class User : BaseModel(), UserDetails {
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority?> {
         val auths = HashSet<GrantedAuthority?>()
-        getRoles().stream()
+        roles.stream()
             .flatMap<Role?> { role: Role? -> role!!.allInheritedRoles.stream() }
             .map<SimpleGrantedAuthority?> { authority: Role? -> SimpleGrantedAuthority(authority!!.reprString) }
             .forEach { e: SimpleGrantedAuthority? -> auths.add(e) }
@@ -200,25 +199,27 @@ class User : BaseModel(), UserDetails {
         return auths
     }
 
+    override fun getPassword(): String = password
+    override fun getUsername(): String = username
     override fun isEnabled(): Boolean = enabled
 
     fun addRole(role: Role?) {
-        getRoles().add(role)
+        roles.add(role)
     }
 
     fun removeRole(role: Role?) {
-        getRoles().remove(role)
+        roles.remove(role)
     }
 
     fun setEmail(email: String) {
-        this.email = email.lowercase(Locale.default)
+        this.email = email.lowercase()
     }
 
     val fullName: String
         get() {
             if (prefix == null || prefix!!.isEmpty()) {
-                return firstName + " " + lastName
+                return "$firstName $lastName"
             }
-            return firstName + " " + prefix + " " + lastName
+            return "$firstName $prefix $lastName"
         }
 }

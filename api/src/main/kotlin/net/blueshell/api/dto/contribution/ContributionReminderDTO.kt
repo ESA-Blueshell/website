@@ -8,10 +8,10 @@ import java.sql.Timestamp
 @Schema(name = "ContributionReminder")
 data class ContributionReminderDTO(
     @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
     @field:NotNull
-    var contributionPeriodId: Long? = null,
+    var contributionPeriodId: Long,
 
     var remindedAt: Timestamp? = null
 ) : BaseDTO()

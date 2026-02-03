@@ -57,7 +57,7 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/{id}"])
-    fun updateMembership(@PathVariable("id") id: Long, @RequestBody dto: MembershipDTO): MembershipDTO? {
+    fun updateMembership(@PathVariable id: Long, @RequestBody dto: MembershipDTO): MembershipDTO? {
         var membership = service.findById(id)
         mapper.fromDTO(dto, membership)
         membership = service.update(membership)
@@ -66,7 +66,7 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/{id}"])
-    fun findMembershipById(@PathVariable("id") id: Long): MembershipDTO {
+    fun findMembershipById(@PathVariable id: Long): MembershipDTO {
         return mapper.toDTO(service.findById(id))
     }
 }

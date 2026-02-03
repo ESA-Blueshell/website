@@ -6,7 +6,6 @@ import net.blueshell.api.model.File
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.properties.Delegates
 
 @Entity
 @Table(

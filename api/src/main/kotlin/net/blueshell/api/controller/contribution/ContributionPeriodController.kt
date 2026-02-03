@@ -20,13 +20,13 @@ class ContributionPeriodController @Autowired constructor(
 ) : BaseController<ContributionPeriodService, ContributionPeriodMapper>(service, mapper) {
     @GetMapping("/contributionPeriods")
     @PermitAll
-    fun findContributionPeriods(): MutableList<ContributionPeriodDTO?>? {
+    fun findContributionPeriods(): MutableList<ContributionPeriodDTO> {
         return mapper.toDTOs(service.findAll())
     }
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
-    fun findCurrentContributionPeriod(): ContributionPeriodDTO? {
+    fun findCurrentContributionPeriod(): ContributionPeriodDTO {
         val contributionPeriod = service.findLatest()
         return mapper.toDTO(contributionPeriod)
     }
@@ -34,7 +34,7 @@ class ContributionPeriodController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createContributionPeriod(@Valid @RequestBody dto: @Valid ContributionPeriodDTO?): ContributionPeriodDTO? {
+    fun createContributionPeriod(@Valid @RequestBody dto: ContributionPeriodDTO): ContributionPeriodDTO {
         var contributionPeriod = mapper.fromDTO(dto)
         contributionPeriod = service.create(contributionPeriod)
         return mapper.toDTO(contributionPeriod)
@@ -43,9 +43,9 @@ class ContributionPeriodController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD') && #dto.id == #id")
     @PutMapping("/contributionPeriods/{id}")
     fun updateContributionPeriod(
-        @PathVariable("id") id: Long?,
-        @Valid @RequestBody dto: @Valid ContributionPeriodDTO?
-    ): ContributionPeriodDTO? {
+        @PathVariable("id") id: Long,
+        @Valid @RequestBody dto: ContributionPeriodDTO
+    ): ContributionPeriodDTO {
         var contributionPeriod = service.findById(id)
         mapper.fromDTO(dto, contributionPeriod)
         contributionPeriod = service.update(contributionPeriod)
@@ -55,7 +55,7 @@ class ContributionPeriodController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteContributionPeriodById(@PathVariable("id") id: Long?) {
+    fun deleteContributionPeriodById(@PathVariable("id") id: Long) {
         service.deleteById(id)
     }
 }

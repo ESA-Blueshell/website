@@ -40,13 +40,13 @@ class UserController(
     @PostMapping("/users")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED) // TODO: Once all members are in the site, remove the ability for admins to create new users
-    fun createUser(@RequestBody dto: AdvancedUserDTO?): AdvancedUserDTO? {
-        val groups: Array<Class<*>?> = if (hasAuthority(Role.BOARD))
-            arrayOf<Class<*>>(Administration::class.java)
+    fun createUser(@RequestBody dto: AdvancedUserDTO): AdvancedUserDTO {
+        val groups: Array<Class<*>> = if (hasAuthority(Role.BOARD))
+            arrayOf(Administration::class.java)
         else
-            arrayOf<Class<*>>(Creation::class.java)
+            arrayOf(Creation::class.java)
 
-        val violations = validator.validate<AdvancedUserDTO?>(dto, *groups)
+        val violations = validator.validate(dto, *groups)
         if (!violations.isEmpty()) {
             throw ConstraintViolationException(violations)
         }
@@ -60,7 +60,7 @@ class UserController(
     @PostMapping("/users/guest")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGuestUser(@Validated(Creation::class) @RequestBody dto: SimpleUserDTO?): SimpleUserDTO? {
+    fun createGuestUser(@Validated(Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
         var user = simpleMapper.fromDTO(dto, User())
         user = service.create(user)
         return simpleMapper.toDTO(user)
@@ -69,9 +69,9 @@ class UserController(
     @PutMapping("/users/guest/{id}")
     @PermitAll
     fun updateGuestUser(
-        @PathVariable("id") id: Long?,
-        @Validated(Update::class) @RequestBody dto: SimpleUserDTO?
-    ): SimpleUserDTO? {
+        @PathVariable("id") id: Long,
+        @Validated(Update::class) @RequestBody dto: SimpleUserDTO
+    ): SimpleUserDTO {
         var user = service.findById(id)
         simpleMapper.fromDTO(dto, user)
         user = service.update(user)
@@ -81,9 +81,9 @@ class UserController(
     @PutMapping(value = ["/users/{id}"])
     @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     fun updateUser(
-        @PathVariable("id") id: Long?,
-        @Validated(Update::class) @RequestBody dto: AdvancedUserDTO?
-    ): AdvancedUserDTO? {
+        @PathVariable("id") id: Long,
+        @Validated(Update::class) @RequestBody dto: AdvancedUserDTO
+    ): AdvancedUserDTO {
         var user = service.findById(id)
         advancedMapper.fromDTO(dto, user)
         user = service.update(user)
@@ -92,14 +92,17 @@ class UserController(
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
-    fun findUsers(@ParameterObject filter: UserFilter?, @ParameterObject pageable: Pageable?): Page<AdvancedUserDTO?>? {
+    fun findUsers(
+        @ParameterObject filter: UserFilter = UserFilter(),
+        @ParameterObject pageable: Pageable = Pageable.unpaged()
+    ): Page<AdvancedUserDTO> {
         val users = service.findByFilter(filter, pageable)
         return advancedMapper.toDTOs(users)
     }
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
-    fun findUserById(@PathVariable("userId") userId: Long?): AdvancedUserDTO? {
+    fun findUserById(@PathVariable("userId") userId: Long): AdvancedUserDTO {
         val user = service.findById(userId)
         return advancedMapper.toDTO(user)
     }
@@ -107,16 +110,16 @@ class UserController(
     @DeleteMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteUserById(@PathVariable("userId") userId: Long?) {
+    fun deleteUserById(@PathVariable("userId") userId: Long) {
         service.deleteById(userId)
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
     @PreAuthorize("hasAuthority('ADMIN')")
     fun toggleUserRole(
-        @PathVariable("userId") userId: Long?,
-        @RequestParam(value = "role") role: Role?
-    ): AdvancedUserDTO? {
+        @PathVariable("userId") userId: Long,
+        @RequestParam(value = "role") role: Role
+    ): AdvancedUserDTO {
         val user = service.toggleRole(userId, role)
         return advancedMapper.toDTO(user)
     }

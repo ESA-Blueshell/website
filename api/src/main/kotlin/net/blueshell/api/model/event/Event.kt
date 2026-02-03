@@ -54,7 +54,7 @@ import kotlin.properties.Delegates
 class Event : BaseModel() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
-    val committee: Committee? = null
+    var committee: Committee? = null
 
     @Column(name = "committee_id")
     var committeeId: Long? = null

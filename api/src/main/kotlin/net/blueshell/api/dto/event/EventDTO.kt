@@ -13,24 +13,24 @@ import java.time.Instant
 @Schema(name = "Event")
 data class EventDTO(
     @field:NotNull
-    var committeeId: Long? = null,
+    var committeeId: Long,
 
     @field:NotBlank(message = "Event title cannot be empty.")
     @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")
-    var title: String? = null,
+    var title: String,
 
     @field:NotBlank(message = "Event description cannot be empty.")
     @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
-    var description: String? = null,
+    var description: String,
 
     @field:JsonProperty("location")
     var location: String? = null,
 
     @field:NotNull
-    var startTime: Instant? = null,
+    var startTime: Instant,
 
     @field:NotNull
-    var endTime: Instant? = null,
+    var endTime: Instant,
 
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,

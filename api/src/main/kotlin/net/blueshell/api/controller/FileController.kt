@@ -24,7 +24,7 @@ class FileController(service: FileService, repository: FileRepository, private v
     BaseController<FileService, FileRepository>(service, repository) {
     @GetMapping("/events/banners/{bannerId}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
-    fun downloadEventBanner(@PathVariable("bannerId") bannerId: Long?): ResponseEntity<Resource?>? {
+    fun downloadEventBanner(@PathVariable("bannerId") bannerId: Long): ResponseEntity<Resource> {
         val file = service.findByEventBannerId(bannerId)
         return service.prepareFileResponse(file)
     }
@@ -41,8 +41,8 @@ class FileController(service: FileService, repository: FileRepository, private v
             "image/jpg",
             "image/webp",
             "image/gif"
-        ) file: @NotNull(message = "File is required") MultipartFile?
-    ): FileDTO? {
+        ) file: @NotNull(message = "File is required") MultipartFile
+    ): FileDTO {
         val stored = service.storeMultipart(file, FileType.EVENT_BANNER)
         return fileMapper.toDTO(stored)
     }

@@ -27,15 +27,13 @@ class CommitteeController(
 ) {
     @GetMapping("/committeeMembers/committees")
     @PermitAll
-    fun findCommitteesForCurrentUser(): MutableList<BaseDTO> {
-        if (principal?.id == null) {
-            return mutableListOf()
-        }
+    fun findCommitteesForCurrentUser(): MutableList<out BaseDTO> {
+        val principalId = principal?.id ?: return mutableListOf()
         if (hasAuthority(Role.BOARD)) {
             return advancedMapper.toDTOs(service.findAll())
         }
 
-        val committees = service.findAllByUserId(principal!!.id)
+        val committees = service.findAllByUserId(principalId)
         return advancedMapper.toDTOs(committees)
     }
 

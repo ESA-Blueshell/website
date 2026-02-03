@@ -412,7 +412,7 @@ class DatabaseSeeder(
         createEventSignUpWithAnswers(committeeUser, previouslyApproved)
 
         // Revoke approval
-        previouslyApproved = requireNotNull(eventService.findById(previouslyApproved.id)) { "Event not found" }
+        previouslyApproved = requireNotNull(eventService.findById(previouslyApproved.id!!)) { "Event not found" }
         previouslyApproved.approved = false
         eventService.update(previouslyApproved)
 
@@ -492,7 +492,7 @@ class DatabaseSeeder(
             enabled = true
 
             // 🔁 If you have inherited roles, replace this with your helper:
-            roles = setOf(role)
+            roles = setOf(role) as MutableSet<Role>
 
             newsletter = false
             dateOfBirth = Date.valueOf(LocalDate.of(1995, 1, 1))

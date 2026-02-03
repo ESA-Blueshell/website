@@ -12,14 +12,9 @@ import org.springframework.security.access.expression.method.MethodSecurityExpre
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl
 import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer
-import org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer
-import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
@@ -42,10 +37,10 @@ class SecurityConfig(
 
     @Bean
     fun roleHierarchy(): RoleHierarchy {
-        val hierarchy = Arrays.stream<Role?>(Role.entries.toTypedArray())
-            .sorted { a: Role?, b: Role? -> b!!.getAuthorities().size - a!!.getAuthorities().size }
-            .map<Any?> { obj: Role? -> obj!!.getName() }
-            .reduce { a: Any?, b: Any? -> a.toString() + " > " + b }
+        val hierarchy = Arrays.stream(Role.entries.toTypedArray())
+            .sorted { a: Role, b: Role -> b.authorities.size - a.authorities.size }
+            .map { it.name }
+            .reduce { a: String, b: String -> "$a > $b" }
             .orElse("").toString()
         return RoleHierarchyImpl.fromHierarchy(hierarchy)
     }
@@ -73,23 +68,18 @@ class SecurityConfig(
     @Throws(Exception::class)
     fun authChain(http: HttpSecurity): SecurityFilterChain? {
         http.securityMatcher("/**")
-            .csrf(Customizer { obj: CsrfConfigurer<HttpSecurity?>? -> obj!!.disable() })
-            .sessionManagement(Customizer { s: SessionManagementConfigurer<HttpSecurity?>? ->
-                s!!.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
-            })
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
-            .authorizeHttpRequests(Customizer { a: AuthorizationManagerRequestMatcherRegistry? ->
-                a
-                    .requestMatchers(
-                        HttpMethod.POST,
-                        "/auth",
-                        "/recovery/**",
-                        "/events/*/signups",
-                        "/users",
-                        "/users/guest"
-                    ).permitAll()
+            .authorizeHttpRequests {
+                it.requestMatchers(
+                    HttpMethod.POST,
+                    "/auth",
+                    "/recovery/**",
+                    "/events/*/signups",
+                    "/users",
+                    "/users/guest"
+                ).permitAll()
                     .requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
@@ -103,12 +93,8 @@ class SecurityConfig(
                     ).permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
                     .anyRequest().authenticated()
-            })
-            .exceptionHandling(Customizer { e: ExceptionHandlingConfigurer<HttpSecurity?>? ->
-                e!!.authenticationEntryPoint(
-                    authenticationEntryPoint
-                )
-            })
+            }
+            .exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }
         return http.build()
     }
 

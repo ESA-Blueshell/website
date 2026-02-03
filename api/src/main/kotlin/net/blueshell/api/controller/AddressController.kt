@@ -20,17 +20,17 @@ class AddressController(service: AddressService, mapper: AddressMapper, private 
     @ResponseStatus(
         HttpStatus.CREATED
     )
-    fun createAddress(@PathVariable("userId") userId: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
+    fun createAddress(@PathVariable userId: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
         var user = users.findById(userId)
         val address = mapper.fromDTO(dto)
         user.address = address
         user = users.update(user)
-        return mapper.toDTO(user.address)
+        return mapper.toDTO(user.address!!)
     }
 
     @PutMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Address', 'write'))")
-    fun updateAddress(@PathVariable("id") id: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
+    fun updateAddress(@PathVariable id: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
         var address = service.findById(id)
         mapper.fromDTO(dto, address)
         address = service.update(address)
@@ -46,7 +46,7 @@ class AddressController(service: AddressService, mapper: AddressMapper, private 
 
     @GetMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'read')")
-    fun findAddressById(@PathVariable("id") id: Long): AddressDTO {
+    fun findAddressById(@PathVariable id: Long): AddressDTO {
         val address = service.findById(id)
         return mapper.toDTO(address)
     }
@@ -54,7 +54,7 @@ class AddressController(service: AddressService, mapper: AddressMapper, private 
     @DeleteMapping("/users/{userId}/addresses")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteUserAddress(@PathVariable("userId") userId: Long) {
+    fun deleteUserAddress(@PathVariable userId: Long) {
         val user = users.findById(userId)
         user.address = null
         users.update(user)
@@ -63,7 +63,7 @@ class AddressController(service: AddressService, mapper: AddressMapper, private 
     @DeleteMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteAddressById(@PathVariable("id") id: Long) {
+    fun deleteAddressById(@PathVariable id: Long) {
         service.deleteById(id)
     }
 }

@@ -1,7 +1,6 @@
 package net.blueshell.api.service.email
 
 import net.blueshell.api.model.User
-import org.commonmark.Extension
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
@@ -9,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
-import java.util.List
 
 @Service
 class EmailTemplateService(templateEngine: TemplateEngine) {
@@ -18,10 +16,10 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
     private val templateEngine: TemplateEngine
 
     @Value("\${frontend.url}")
-    private val appUrl: String = null
+    private lateinit var appUrl: String
 
     init {
-        val extensions = List.of<Extension>(TablesExtension.create())
+        val extensions = listOf(TablesExtension.create())
         this.parser = Parser.builder().extensions(extensions).build()
         this.renderer = HtmlRenderer.builder().extensions(extensions).build()
         this.templateEngine = templateEngine
@@ -29,7 +27,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
 
     private fun processTemplate(templateName: String, variables: MutableMap<String, Any>): String {
         val context = Context()
-        context.variables = variables
+        context.setVariables(variables)
         return templateEngine.process(templateName, context)
     }
 
@@ -52,11 +50,11 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
 
         // Prepare template variables
         val variables: MutableMap<String, Any> = HashMap<String, Any>()
-        variables.put("appUrl", appUrl)
-        variables.put("emailContent", htmlContent)
-        variables.put("sentTo", toUser.email)
-        variables.put("fullName", toUser.fullName)
-        variables.put("mainTitle", mainTitle)
+        variables["appUrl"] = appUrl
+        variables["emailContent"] = htmlContent
+        variables["sentTo"] = toUser.email
+        variables["fullName"] = toUser.fullName
+        variables["mainTitle"] = mainTitle
 
         // Process the template
         return processTemplate("emails/email-template", variables)

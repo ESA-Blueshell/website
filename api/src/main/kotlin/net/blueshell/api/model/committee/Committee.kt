@@ -5,7 +5,6 @@ import net.blueshell.api.base.BaseModel
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
@@ -30,10 +29,20 @@ class Committee : BaseModel() {
 
     @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _members: MutableSet<CommitteeMember> = linkedSetOf()
-    val members: Set<CommitteeMember>
+    var members: Set<CommitteeMember>
         get() = _members
+        set(value) {
+            _members.clear()
+            _members.addAll(value)
+            _members.forEach { it.committee = this }
+        }
 
     fun hasMember(user: User?): Boolean {
         return user != null && _members.any { cm -> cm.user.id == user.id }
+    }
+
+    fun addMember(member: CommitteeMember) {
+        member.committee = this
+        _members.add(member)
     }
 }

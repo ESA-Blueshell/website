@@ -79,7 +79,6 @@ object EventSignUpSpecifications : IdentityProvider() {
     }
 
     fun eventId(eventId: Long): Specification<EventSignUp> {
-        if (eventId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.equal(
                 root!!.get<Any>(
@@ -89,7 +88,7 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun fromFilter(f: EventSignUpFilter, user: User): Specification<EventSignUp> {
+    fun fromFilter(f: EventSignUpFilter, user: User?): Specification<EventSignUp> {
         var spec = distinct() // avoid duplicates due to joins
 
         if (f == null) return spec
@@ -103,7 +102,7 @@ object EventSignUpSpecifications : IdentityProvider() {
         if (f.committeeId != null) {
             spec = spec.and(committeeId(f.committeeId))
         }
-        if (!user.hasAuthority(Role.BOARD) && !user.committeeIds.contains(f.committeeId)) {
+        if (!user?.hasAuthority(Role.BOARD)!! && !user.committeeIds?.contains(f.committeeId)) {
             spec = spec.and(approved(true))
         }
         if (f.eventId != null) {

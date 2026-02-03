@@ -28,27 +28,25 @@ class EventSignUpService @Autowired constructor(repository: EventSignUpRepositor
 
     @Transactional(readOnly = true)
     fun findByGuestAccessToken(accessToken: String): MutableList<EventSignUp> {
-        return repository!!.findByGuestAccessToken(accessToken)
+        return repository.findByGuestAccessToken(accessToken)
     }
 
     fun findByEventId(eventId: Long): MutableList<EventSignUp> {
-        return repository!!.findByEventId(eventId)
+        return repository.findByEventId(eventId)
     }
 
     fun findByFilter(filter: EventSignUpFilter): MutableList<EventSignUp> {
-        var filter = filter
-        if (filter == null) filter = EventSignUpFilter()
         val spec = EventSignUpSpecifications.fromFilter(filter, principal)
-        return repository!!.findAll(spec)
+        return repository.findAll(spec)
     }
 
     fun findBySurveyId(surveyId: Long): MutableSet<EventSignUp> {
-        return repository!!.findAllByEventSignUpFormId(surveyId)
+        return repository.findAllByEventSignUpFormId(surveyId)
     }
 
     fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): EventSignUp {
-        return repository!!.findByGuestAccessTokenAndEventId(accessToken, eventId)
-            .orElseThrow<ResponseStatusException>(Supplier {
+        return repository.findByGuestAccessTokenAndEventId(accessToken, eventId)
+            .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "EventSignUp not found for accessToken: $accessToken and event: $eventId"

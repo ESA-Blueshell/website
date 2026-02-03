@@ -1,6 +1,5 @@
 package net.blueshell.api.listener.jpa
 
-import lombok.RequiredArgsConstructor
 import net.blueshell.api.common.event.job.EventSignupEmailEvent
 import net.blueshell.api.common.event.jpa.PrePersistEvent
 import net.blueshell.api.model.event.EventSignUp
@@ -12,10 +11,9 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-@RequiredArgsConstructor
-class EventSignUpEventListener {
-    private val eventPublisher: ApplicationEventPublisher? = null
-
+class EventSignUpEventListener(
+    private val eventPublisher: ApplicationEventPublisher
+) {
     /**
      * send e-mail only if the transaction COMMITTED successfully
      */
@@ -25,7 +23,7 @@ class EventSignUpEventListener {
         val e = evt.getSource()
 
         if (e.getGuest() != null) {
-            eventPublisher!!.publishEvent(EventSignupEmailEvent(e.getId()))
+            eventPublisher.publishEvent(EventSignupEmailEvent(e.getId()))
         }
     }
 }

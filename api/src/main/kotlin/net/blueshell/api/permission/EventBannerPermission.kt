@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component
 
 @Component
 class EventBannerPermission @Autowired constructor(
-    service: EventBannerService?,
+    service: EventBannerService,
     private val eventPermission: EventPermission
-) : BasePermissionEvaluator<EventBanner?, EventBannerService?>(service) {
+) : BasePermissionEvaluator<EventBanner, EventBannerService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
         targetDomainObject: Any?,
@@ -22,7 +22,7 @@ class EventBannerPermission @Autowired constructor(
         }
         val target = targetDomainObject as EventBanner
         return when (permission) {
-            "read" -> eventPermission.hasPermission(authentication, target.getEvent(), "read")
+            "read" -> eventPermission.hasPermission(authentication, target.event, "read")
             else -> false
         }
     }
@@ -31,7 +31,7 @@ class EventBannerPermission @Autowired constructor(
         if (authentication == null || targetId == null || permission == null) {
             return false
         }
-        val target = service!!.findById(targetId as Long)
+        val target = service.findById(targetId as Long)
         return target != null && hasPermission(authentication, target, permission)
     }
 }

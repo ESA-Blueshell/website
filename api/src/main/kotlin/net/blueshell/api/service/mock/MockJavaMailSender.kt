@@ -3,8 +3,7 @@ package net.blueshell.api.service.mock
 import jakarta.mail.Address
 import jakarta.mail.Session
 import jakarta.mail.internet.MimeMessage
-import lombok.Getter
-import lombok.extern.slf4j.Slf4j
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.mail.MailException
@@ -23,18 +22,15 @@ import java.util.concurrent.CopyOnWriteArrayList
 /**
  * Test double for JavaMailSender capturing outbox for assertions.
  */
-@Slf4j
 @Component
 @Primary
 @Profile("test | dev")
 class MockJavaMailSender : JavaMailSender {
     private val session: Session = Session.getInstance(Properties())
 
-    @Getter
-    private val outbox: MutableList<MimeMessage?> = CopyOnWriteArrayList<MimeMessage?>()
+    val outbox: MutableList<MimeMessage?> = CopyOnWriteArrayList<MimeMessage?>()
 
-    @Getter
-    private val simpleOutbox: MutableList<SimpleMailMessage?> = CopyOnWriteArrayList<SimpleMailMessage?>()
+    val simpleOutbox: MutableList<SimpleMailMessage?> = CopyOnWriteArrayList<SimpleMailMessage?>()
 
     override fun createMimeMessage(): MimeMessage {
         return MimeMessage(session)
@@ -119,6 +115,8 @@ class MockJavaMailSender : JavaMailSender {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(MockJavaMailSender::class.java)
+
         private fun safeSubject(m: MimeMessage): String? {
             try {
                 return m.subject

@@ -1,10 +1,9 @@
 package net.blueshell.api.job.contact
 
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.service.ContactService
 import net.blueshell.api.service.UserService
 import net.blueshell.api.service.contribution.ContributionPeriodService
+import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover
 import org.springframework.retry.annotation.Retryable
@@ -16,13 +15,11 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
-class RemoveContactFromListJob {
-    private val contacts: ContactService? = null
-    private val users: UserService? = null
-    private val contributionPeriods: ContributionPeriodService? = null
-
+class RemoveContactFromListJob(
+    private val contacts: ContactService,
+    private val users: UserService,
+    private val contributionPeriods: ContributionPeriodService
+) {
     @Async
     @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
     fun removeFromList(userId: Long?, periodId: Long?): CompletableFuture<Void?> {
@@ -30,7 +27,7 @@ class RemoveContactFromListJob {
 
         // Ensure uniqueness - prevent duplicate job execution
         if (processingJobs.putIfAbsent(jobKey, true) != null) {
-            RemoveContactFromListJob.log.info(
+            log.info(
                 "Remove-from-list job already processing for user ID: {} and period ID: {}",
                 userId,
                 periodId
@@ -42,29 +39,29 @@ class RemoveContactFromListJob {
 
         try {
             lock.lock()
-            RemoveContactFromListJob.log.info(
+            log.info(
                 "Starting remove-from-list job for user ID: {} and period ID: {}",
                 userId,
                 periodId
             )
 
-            val user = users!!.findById(userId)
-            val period = contributionPeriods!!.findById(periodId)
+            val user = users.findById(userId)
+            val period = contributionPeriods.findById(periodId)
 
-            contacts!!.removeFromList(period, user)
+            contacts.removeFromList(period, user)
 
-            RemoveContactFromListJob.log.info(
+            log.info(
                 "Successfully removed contact {} (user ID: {}) from list for period ID: {}",
                 user.getEmail(), userId, periodId
             )
         } catch (e: RestClientResponseException) {
-            RemoveContactFromListJob.log.error(
+            log.error(
                 "Failed to remove contact for user ID: {} and period ID: {} due to REST client error: {}",
                 userId, periodId, e.message, e
             )
             throw e // Re-throw to trigger retry mechanism
         } catch (e: Exception) {
-            RemoveContactFromListJob.log.error(
+            log.error(
                 "Failed to remove contact for user ID: {} and period ID: {} due to unexpected error: {}",
                 userId, periodId, e.message, e
             )
@@ -81,7 +78,7 @@ class RemoveContactFromListJob {
     fun recoverRemoveContactFromList(ex: Exception, userId: Long?, periodId: Long?): CompletableFuture<Void?> {
         val jobKey = generateJobKey(userId, periodId)
         processingJobs.remove(jobKey)
-        RemoveContactFromListJob.log.error(
+        log.error(
             "Failed to remove user with ID: {} from contribution period list with ID: {}. Error: {}",
             userId, periodId, ex.message, ex
         )
@@ -98,6 +95,7 @@ class RemoveContactFromListJob {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(RemoveContactFromListJob::class.java)
         private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
         private val processingJobs = ConcurrentHashMap<String?, Boolean?>()
     }

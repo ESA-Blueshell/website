@@ -1,6 +1,5 @@
 package net.blueshell.api.listener.jpa
 
-import lombok.RequiredArgsConstructor
 import net.blueshell.api.common.event.job.AddEventToCalendarEvent
 import net.blueshell.api.common.event.job.RemoveEventFromCalendarEvent
 import net.blueshell.api.common.event.job.SyncEventToCalendarEvent
@@ -16,10 +15,9 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-@RequiredArgsConstructor
-class EventEventListener {
-    private val eventPublisher: ApplicationEventPublisher? = null
-
+class EventEventListener(
+    private val eventPublisher: ApplicationEventPublisher
+) {
     /**
      * After commit, enqueue add if approved
      */
@@ -27,8 +25,8 @@ class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: PrePersistEvent<Event>) {
         val e = evt.getSource()
-        if (e.isApproved()) {
-            eventPublisher!!.publishEvent(AddEventToCalendarEvent(e.getId()))
+        if (e.approved) {
+            eventPublisher.publishEvent(AddEventToCalendarEvent(e.getId()))
         }
     }
 
@@ -39,10 +37,10 @@ class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<Event>) {
         val e = evt.getSource()
-        if (e.isApproved()) {
-            eventPublisher!!.publishEvent(SyncEventToCalendarEvent(e.getId()))
+        if (e.approved) {
+            eventPublisher.publishEvent(SyncEventToCalendarEvent(e.getId()))
         } else {
-            eventPublisher!!.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
+            eventPublisher.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
         }
     }
 
@@ -53,6 +51,6 @@ class EventEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<Event>) {
         val e = evt.getSource()
-        eventPublisher!!.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
+        eventPublisher.publishEvent(RemoveEventFromCalendarEvent(e.getId()))
     }
 }

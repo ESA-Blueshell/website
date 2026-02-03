@@ -1,10 +1,9 @@
 package net.blueshell.api.base
 
-import lombok.Getter
 import net.blueshell.api.model.User
 
 abstract class BaseEmail(
-    @field:Getter protected val recipient: User?,
+    protected val recipient: User?,
     protected val frontendUrl: String?,
     protected val appUrl: String?
 ) {

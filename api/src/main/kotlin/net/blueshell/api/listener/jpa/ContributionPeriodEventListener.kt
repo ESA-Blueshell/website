@@ -1,6 +1,5 @@
 package net.blueshell.api.listener.jpa
 
-import lombok.RequiredArgsConstructor
 import net.blueshell.api.common.event.job.CreateContributionPeriodListEvent
 import net.blueshell.api.common.event.jpa.PostPersistEvent
 import net.blueshell.api.common.event.jpa.PostUpdateEvent
@@ -13,16 +12,15 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-@RequiredArgsConstructor
-class ContributionPeriodEventListener {
-    private val eventPublisher: ApplicationEventPublisher? = null
-
+class ContributionPeriodEventListener(
+    private val eventPublisher: ApplicationEventPublisher
+) {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<ContributionPeriod>) {
         val c = evt.getSource()
         if (c.getListId() != null) return
-        eventPublisher!!.publishEvent(CreateContributionPeriodListEvent(c.getId()))
+        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.getId()))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -30,6 +28,6 @@ class ContributionPeriodEventListener {
     fun onCreate(evt: PostPersistEvent<ContributionPeriod>) {
         val c = evt.getSource()
         if (c.getListId() != null) return
-        eventPublisher!!.publishEvent(CreateContributionPeriodListEvent(c.getId()))
+        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.getId()))
     }
 }

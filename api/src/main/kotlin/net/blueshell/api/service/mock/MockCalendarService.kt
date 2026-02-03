@@ -1,9 +1,8 @@
 package net.blueshell.api.service.mock
 
-import lombok.Getter
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.model.event.Event
 import net.blueshell.api.service.CalendarService
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -21,7 +20,6 @@ import kotlin.collections.remove
 /**
  * Test double for CalendarService: in-memory store with stable IDs.
  */
-@Slf4j
 @Service
 @Primary
 @Profile("test | dev")
@@ -29,8 +27,7 @@ class MockCalendarService : CalendarService() {
     private val seq = AtomicLong(1000000L)
     private val eventsById: MutableMap<String?, Event?> = ConcurrentHashMap<String?, Event?>()
 
-    @Getter
-    private val readOnlyEvents: MutableMap<String?, Event?> = Collections.unmodifiableMap<String?, Event?>(eventsById)
+    val readOnlyEvents: MutableMap<String?, Event?> = Collections.unmodifiableMap<String?, Event?>(eventsById)
 
     @Throws(IOException::class)
     override fun add(event: Event) {
@@ -95,6 +92,8 @@ class MockCalendarService : CalendarService() {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(MockCalendarService::class.java)
+
         private fun copyOf(src: Event): Event {
             val e = Event()
             e.setId(src.getId())

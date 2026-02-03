@@ -26,7 +26,7 @@ class TelemetryController protected constructor(service: TelemetryService?, mapp
     @PostMapping("/telemetry")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createTelemetry(@PathParam("platform") platform: PlatformType?, @PathParam("url") url: String?): TelemetryDTO? {
+    fun createTelemetry(@PathParam("platform") platform: PlatformType, @PathParam("url") url: String): TelemetryDTO? {
         val telemetry = service!!.createTelemetry(platform, url)
         return mapper!!.toDTO(telemetry)
     }

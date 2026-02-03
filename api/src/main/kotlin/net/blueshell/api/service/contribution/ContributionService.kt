@@ -11,10 +11,10 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionService @Autowired constructor(
     repository: ContributionRepository,
     private val periodService: ContributionPeriodService
-) : BaseModelService<Contribution?, ContributionRepository?>(repository) {
+) : BaseModelService<Contribution, ContributionRepository>(repository) {
     @Transactional(readOnly = true)
-    fun findByContributionPeriodId(contributionPeriodId: Long?): MutableList<Contribution?>? {
+    fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution> {
         val contributionPeriod = periodService.findById(contributionPeriodId)
-        return repository!!.findByContributionPeriod(contributionPeriod)
+        return repository.findByContributionPeriod(contributionPeriod)
     }
 }

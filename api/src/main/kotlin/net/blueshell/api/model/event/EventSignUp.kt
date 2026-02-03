@@ -1,16 +1,13 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.User
 import net.blueshell.api.model.survey.Answer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -38,30 +35,24 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class EventSignUp : BaseModel() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", insertable = false, updatable = false, nullable = false)
-    private val event: Event? = null
+    lateinit var event: Event
 
     @Column(name = "event_id", nullable = false)
-    @ToString.Include
-    private var eventId: Long? = null
+    var eventId: Long by Delegates.notNull()
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private val user: User? = null
+    val user: User? = null
 
     @Column(name = "user_id")
-    @ToString.Include
-    private var userId: Long? = null
+    var userId: Long? = null
 
     @ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
     @JoinColumn(name = "guest_id")
-    private val guest: Guest? = null
+    val guest: Guest? = null
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(
@@ -69,5 +60,5 @@ class EventSignUp : BaseModel() {
         joinColumns = [JoinColumn(name = "event_sign_up_id")],
         inverseJoinColumns = [JoinColumn(name = "answer_id")]
     )
-    private val answers: MutableSet<Answer?>? = null
+    val answers: MutableSet<Answer?>? = null
 }

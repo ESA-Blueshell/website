@@ -1,6 +1,5 @@
 package net.blueshell.api.mapper.event
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.dto.event.EventDTO
@@ -8,7 +7,6 @@ import net.blueshell.api.mapper.survey.SurveyMapper
 import net.blueshell.api.model.event.Event
 import org.mapstruct.*
 
-@Slf4j
 @Mapper(componentModel = "spring", uses = [EventBannerMapper::class, SurveyMapper::class])
 abstract class EventMapper : BaseMapper<Event?, EventDTO?>() {
     @Mapping(target = "id")
@@ -35,7 +33,7 @@ abstract class EventMapper : BaseMapper<Event?, EventDTO?>() {
             event.getBanner().setEvent(event)
         }
         if (hasAuthority(Role.BOARD)) {
-            event.setApproved(dto.isApproved())
+            event.setApproved(dto.approved)
         } else {
             event.setApproved(false)
         }

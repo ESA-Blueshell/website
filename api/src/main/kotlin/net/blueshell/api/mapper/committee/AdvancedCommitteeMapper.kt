@@ -1,13 +1,11 @@
 package net.blueshell.api.mapper.committee
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO
 import net.blueshell.api.model.committee.Committee
 import org.mapstruct.*
+import org.slf4j.LoggerFactory
 
-
-@Slf4j
 @Mapper(componentModel = "spring", uses = [CommitteeMemberMapper::class])
 abstract class AdvancedCommitteeMapper : BaseMapper<Committee?, AdvancedCommitteeDTO?>() {
     @BeanMapping(ignoreByDefault = true)
@@ -37,4 +35,8 @@ abstract class AdvancedCommitteeMapper : BaseMapper<Committee?, AdvancedCommitte
     @Mapping(target = "members")
     @Mapping(target = "version")
     abstract override fun toDTO(committee: Committee?): AdvancedCommitteeDTO?
+
+    companion object {
+        private val log = LoggerFactory.getLogger(AdvancedCommitteeMapper::class.java)
+    }
 }

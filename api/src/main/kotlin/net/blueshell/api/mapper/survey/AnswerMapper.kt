@@ -1,6 +1,5 @@
 package net.blueshell.api.mapper.survey
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.dto.survey.AnswerDTO
 import net.blueshell.api.model.survey.Answer
@@ -9,7 +8,6 @@ import org.mapstruct.Mapper
 import org.mapstruct.Mapping
 import org.mapstruct.MappingTarget
 
-@Slf4j
 @Mapper(componentModel = "spring")
 abstract class AnswerMapper : BaseMapper<Answer?, AnswerDTO?>() {
     @Mapping(target = "id")

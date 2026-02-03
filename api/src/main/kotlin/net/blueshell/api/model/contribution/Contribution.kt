@@ -1,15 +1,12 @@
 package net.blueshell.api.model.contribution
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -32,24 +29,18 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE contributions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class Contribution : BaseModel() {
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
-    private val user: User? = null
+    lateinit var user: User
 
     @Column(name = "user_id", nullable = false)
-    @ToString.Include
-    private var userId: Long? = null
+    var userId: Long by Delegates.notNull()
 
     @ManyToOne
     @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
-    private val contributionPeriod: ContributionPeriod? = null
+    lateinit var contributionPeriod: ContributionPeriod
 
     @Column(name = "contribution_period_id", nullable = false)
-    @ToString.Include
-    private var contributionPeriodId: Long? = null
+    var contributionPeriodId: Long by Delegates.notNull()
 }

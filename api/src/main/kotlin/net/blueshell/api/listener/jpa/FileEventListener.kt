@@ -1,6 +1,5 @@
 package net.blueshell.api.listener.jpa
 
-import lombok.RequiredArgsConstructor
 import net.blueshell.api.common.event.jpa.PostRemoveEvent
 import net.blueshell.api.model.File
 import net.blueshell.api.service.FileService
@@ -11,14 +10,13 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-@RequiredArgsConstructor
-class FileEventListener {
-    private val files: FileService? = null
-
+class FileEventListener(
+    private val files: FileService
+) {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<File>) {
         val f = evt.getSource()
-        files!!.deleteFromStorage(f)
+        files.deleteFromStorage(f)
     }
 }

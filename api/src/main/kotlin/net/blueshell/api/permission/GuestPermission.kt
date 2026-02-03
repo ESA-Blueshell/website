@@ -8,8 +8,8 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class GuestPermission @Autowired constructor(service: GuestService?) :
-    BasePermissionEvaluator<Guest?, GuestService?>(service) {
+class GuestPermission @Autowired constructor(service: GuestService) :
+    BasePermissionEvaluator<Guest, GuestService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
         targetDomainObject: Any?,
@@ -21,7 +21,7 @@ class GuestPermission @Autowired constructor(service: GuestService?) :
 
         targetDomainObject as Guest
         return when (permission) {
-            "read", "write" -> targetDomainObject != null
+            "read", "write" -> true
             else -> false
         }
     }
@@ -30,7 +30,7 @@ class GuestPermission @Autowired constructor(service: GuestService?) :
         if (authentication == null || accessToken == null || permission == null) {
             return false
         }
-        val guest = service!!.findByAccessToken(accessToken as String)
+        val guest = service.findByAccessToken(accessToken as String)
         return hasPermission(authentication, guest, permission)
     }
 }

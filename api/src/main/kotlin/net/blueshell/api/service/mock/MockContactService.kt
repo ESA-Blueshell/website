@@ -1,12 +1,11 @@
 package net.blueshell.api.service.mock
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.mapper.BrevoContactMapper
 import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
 import net.blueshell.api.service.ContactService
 import net.blueshell.api.service.UserService
-import org.springframework.beans.factory.annotation.Autowired
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -19,19 +18,18 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * Test double for ContactService; models an in-memory contact store and list membership.
  */
-@Slf4j
 @Service
 @Primary
 @Profile("test | dev")
-class MockContactService(mapper: BrevoContactMapper?, users: UserService?) : ContactService(mapper, users) {
+class MockContactService(
+    mapper: BrevoContactMapper?,
+    private val users: UserService
+) : ContactService(mapper, users) {
     private val contactSeq = AtomicLong(100000L)
     private val listSeq = AtomicLong(10000L)
 
     private val emailToContactId: ConcurrentMap<String?, Long?> = ConcurrentHashMap<String?, Long?>()
     private val listMembers: ConcurrentMap<Long?, MutableSet<Long?>?> = ConcurrentHashMap<Long?, MutableSet<Long?>?>()
-
-    @Autowired
-    private val users: UserService? = null
 
     override fun getUpdate(user: User) {
         if (user.getContactId() != null) return
@@ -50,7 +48,7 @@ class MockContactService(mapper: BrevoContactMapper?, users: UserService?) : Con
             val id =
                 emailToContactId.computeIfAbsent(user.getEmail()) { k: String? -> contactSeq.getAndIncrement() }!!
             user.setContactId(id)
-            users!!.updateContactId(user.getId(), id)
+            users.updateContactId(user.getId(), id)
             MockContactService.log.info("[brevo-mock] created contact email={} -> id={}", user.getEmail(), id)
         } else {
             MockContactService.log.info(
@@ -80,7 +78,7 @@ class MockContactService(mapper: BrevoContactMapper?, users: UserService?) : Con
     override fun addToList(contributionPeriod: ContributionPeriod, user: User) {
         if (user.getContactId() == null) {
             sync(user)
-            users!!.update(user)
+            users.update(user)
         }
         var listId = contributionPeriod.getListId()
         if (listId == null) {
@@ -108,5 +106,9 @@ class MockContactService(mapper: BrevoContactMapper?, users: UserService?) : Con
 
     fun getListMembers(): MutableMap<Long?, MutableSet<Long?>?> {
         return Collections.unmodifiableMap<Long?, MutableSet<Long?>?>(listMembers)
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(MockContactService::class.java)
     }
 }

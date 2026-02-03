@@ -1,10 +1,6 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.survey.Answer
@@ -32,16 +28,12 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE event_sign_up_answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class EventSignUpAnswer : BaseModel() {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_sign_up_id", nullable = false)
-    private val eventSignUp: EventSignUp? = null
+    lateinit var eventSignUp: EventSignUp
 
     @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = [CascadeType.ALL])
     @JoinColumn(name = "answer_id", nullable = false)
-    private val answer: Answer? = null
+    lateinit var answer: Answer
 }

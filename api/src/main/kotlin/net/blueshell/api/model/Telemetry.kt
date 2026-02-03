@@ -1,10 +1,6 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.common.enums.PlatformType
 import org.hibernate.annotations.SQLDelete
@@ -27,16 +23,19 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
-class Telemetry(
-    @field:Column(nullable = false) @field:Enumerated(EnumType.STRING) private var platform: PlatformType?,
-    @field:Column(
-        nullable = false
-    ) private var url: String?
-) : BaseModel() {
+class Telemetry : BaseModel() {
+    @field:Column(nullable = false)
+    @field:Enumerated(EnumType.STRING)
+    lateinit var platform: PlatformType
+
+    @field:Column(nullable = false)
+    lateinit var url: String
+
     @OneToMany(mappedBy = "telemetry", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val redirects: MutableSet<Redirect?>? = null
+    val redirects: MutableSet<Redirect?>? = null
+
+    constructor(platform: PlatformType, url: String) : this() {
+        this.platform = platform
+        this.url = url
+    }
 }

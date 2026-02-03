@@ -1,19 +1,18 @@
 package net.blueshell.api.mapper.committee
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.dto.committee.CommitteeMemberDTO
 import net.blueshell.api.mapper.user.SimpleUserMapper
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.service.CommitteeMemberService
 import org.mapstruct.*
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 
-@Slf4j
 @Mapper(componentModel = "spring", uses = [SimpleUserMapper::class])
 abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember?, CommitteeMemberDTO?>() {
     @Autowired
-    private val committeeMemberService: CommitteeMemberService? = null
+    private lateinit var committeeMemberService: CommitteeMemberService
 
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
@@ -28,7 +27,7 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember?, CommitteeMem
         if (dto.getId() == null) {
             return CommitteeMember()
         } else {
-            return committeeMemberService!!.findById(dto.getId())
+            return committeeMemberService.findById(dto.getId())
         }
     }
 
@@ -38,4 +37,8 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember?, CommitteeMem
     @Mapping(target = "userId")
     @Mapping(target = "version")
     abstract fun fromDTO(dto: CommitteeMemberDTO?, @MappingTarget member: CommitteeMember?): CommitteeMember?
+
+    companion object {
+        private val log = LoggerFactory.getLogger(CommitteeMemberMapper::class.java)
+    }
 }

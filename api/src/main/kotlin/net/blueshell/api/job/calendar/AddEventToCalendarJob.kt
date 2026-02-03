@@ -1,9 +1,8 @@
 package net.blueshell.api.job.calendar
 
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.service.CalendarService
 import net.blueshell.api.service.event.EventService
+import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover
 import org.springframework.retry.annotation.Retryable
@@ -16,12 +15,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
-class AddEventToCalendarJob {
-    private val calendarService: CalendarService? = null
-    private val eventService: EventService? = null
-
+class AddEventToCalendarJob(
+    private val calendarService: CalendarService,
+    private val eventService: EventService
+) {
     @Async
     @Retryable(
         retryFor = [Exception::class, UncheckedIOException::class],
@@ -35,19 +32,19 @@ class AddEventToCalendarJob {
         val lock: ReentrantLock = locks.computeIfAbsent(eventId) { k: Long? -> ReentrantLock() }
         try {
             lock.lock()
-            val e = eventService!!.findById(eventId)
+            val e = eventService.findById(eventId)
             if (e == null) {
-                AddEventToCalendarJob.log.warn("Add skipped: eventId {} not found", eventId)
+                log.warn("Add skipped: eventId {} not found", eventId)
                 return CompletableFuture.completedFuture<Void?>(null)
             }
-            if (!e.isApproved()) {
-                AddEventToCalendarJob.log.info("Add skipped: eventId {} not approved", eventId)
+            if (!e.approved) {
+                log.info("Add skipped: eventId {} not approved", eventId)
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
-            calendarService!!.add(e)
+            calendarService.add(e)
             eventService.update(e)
-            AddEventToCalendarJob.log.info("Added eventId {} to Google Calendar as {}", eventId, e.getGoogleId())
+            log.info("Added eventId {} to Google Calendar as {}", eventId, e.getGoogleId())
             return CompletableFuture.completedFuture<Void?>(null)
         } catch (ex: IOException) {
             throw UncheckedIOException(ex)
@@ -60,7 +57,7 @@ class AddEventToCalendarJob {
     @Recover
     fun recover(ex: Exception, eventId: Long?): CompletableFuture<Void?> {
         processing.remove(key("add", eventId))
-        AddEventToCalendarJob.log.error("Giving up add for eventId {}: {}", eventId, ex.message, ex)
+        log.error("Giving up add for eventId {}: {}", eventId, ex.message, ex)
         return CompletableFuture.completedFuture<Void?>(null)
     }
 
@@ -69,6 +66,7 @@ class AddEventToCalendarJob {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(AddEventToCalendarJob::class.java)
         private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
         private val processing = ConcurrentHashMap<String?, Boolean?>()
     }

@@ -2,7 +2,6 @@ package net.blueshell.api.controller
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.NotNull
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseController
 import net.blueshell.api.common.enums.FileType
 import net.blueshell.api.dto.FileDTO
@@ -19,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
-@Slf4j
 @RestController
 @Tag(name = "Files")
 class FileController(service: FileService?, repository: FileRepository?, private val fileMapper: FileMapper) :

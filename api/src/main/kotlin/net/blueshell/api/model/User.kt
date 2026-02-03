@@ -1,10 +1,6 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.common.enums.Role
@@ -51,104 +47,81 @@ import java.util.*
 )
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
 @EntityListeners(JpaListener::class)
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class User : BaseModel(), UserDetails {
     @Column(nullable = false)
-    @ToString.Include
-    private var username: String? = null
+    lateinit var username: String
 
     @Column(nullable = false)
-    private var password: String? = null
+    lateinit var password: String
 
     @Column(name = "first_name", nullable = false)
-    @ToString.Include
-    private var firstName: String? = null
+    lateinit var firstName: String
 
     @Column(name = "last_name", nullable = false)
-    @ToString.Include
-    private var lastName: String? = null
+    lateinit var lastName: String
 
     @Column
-    @ToString.Include
-    private var prefix: String? = null
+    var prefix: String? = null
 
     @Column
-    @ToString.Include
-    private var initials: String? = null
+    var initials: String? = null
 
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
-    private val address: Address? = null
+    val address: Address? = null
 
     @Column(name = "address_id", updatable = false, insertable = false)
-    @ToString.Include
-    private var addressId: Long? = null
+    var addressId: Long? = null
 
     @Column(name = "phone_number")
-    @ToString.Include
-    private var phoneNumber: String? = null
+    var phoneNumber: String? = null
 
     @Column(nullable = false)
-    @ToString.Include
-    private var email: String? = null
+    lateinit var email: String
 
     @Column(name = "student_number")
-    @ToString.Include
-    private var studentNumber: String? = null
+    var studentNumber: String? = null
 
     @Column(name = "date_of_birth")
-    @ToString.Include
-    private var dateOfBirth: Date? = null
+    var dateOfBirth: Date? = null
 
     @Column
-    @ToString.Include
-    private var discord: String? = null
+    var discord: String? = null
 
     @Column
-    @ToString.Include
-    private var steamid: String? = null
+    var steamid: String? = null
 
     @Column(nullable = false)
-    @ToString.Include
-    private var newsletter = false
+    var newsletter = false
 
     @Column(nullable = false)
-    @ToString.Include
-    private var enabled = false
+    var enabled = false
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    private val recoveryTokens: MutableSet<RecoveryToken?>? = null
+    val recoveryTokens: MutableSet<RecoveryToken?>? = null
 
     @Column(name = "consent_privacy")
-    @ToString.Include
-    private var consentPrivacy = false
+    var consentPrivacy = false
 
     @Column(name = "consent_gdpr")
-    @ToString.Include
-    private var consentGdpr = false
+    var consentGdpr = false
 
     @Column
-    @ToString.Include
-    private var gender: String? = null
+    var gender: String? = null
 
     @Column(name = "photo_consent")
-    @ToString.Include
-    private var photoConsent = false
+    var photoConsent = false
 
     @Column
-    @ToString.Include
-    private var nationality: String? = null
+    var nationality: String? = null
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
-    private val profilePicture: File? = null
+    val profilePicture: File? = null
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    private val committeeMembers: MutableSet<CommitteeMember> = HashSet<CommitteeMember>()
+    val committeeMembers: MutableSet<CommitteeMember> = HashSet<CommitteeMember>()
 
     @ElementCollection(targetClass = Role::class, fetch = FetchType.LAZY)
     @CollectionTable(name = "authorities", joinColumns = [JoinColumn(name = "user_id")])
@@ -156,37 +129,31 @@ class User : BaseModel(), UserDetails {
         EnumType.STRING
     )
     @Column(name = "authority")
-    @ToString.Include
-    private var roles: MutableSet<Role?> = EnumSet.of<Role?>(Role.GUEST)
+    var roles: MutableSet<Role?> = EnumSet.of<Role?>(Role.GUEST)
 
     @Column(name = "ehbo")
-    @ToString.Include
-    private var ehbo = false
+    var ehbo = false
 
     @Column(name = "contact_id")
-    @ToString.Include
-    private var contactId: Long? = null
+    var contactId: Long? = null
 
     @Column(name = "bhv")
-    @ToString.Include
-    private var bhv = false
+    var bhv = false
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val contributions: MutableSet<Contribution?>? = null
+    val contributions: MutableSet<Contribution?>? = null
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL])
-    private val memberships: MutableSet<Membership?>? = null
+    val memberships: MutableSet<Membership?>? = null
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val eventSignUps: MutableSet<EventSignUp?>? = null
+    val eventSignUps: MutableSet<EventSignUp?>? = null
 
     @Column(name = "study")
-    @ToString.Include
-    private var study: String? = null
+    var study: String? = null
 
     @Column(name = "start_study_year")
-    @ToString.Include
-    private var startStudyYear: Long? = null
+    var startStudyYear: Long? = null
 
     val committeeIds: MutableSet<Long?>
         get() {
@@ -230,6 +197,8 @@ class User : BaseModel(), UserDetails {
 
         return auths
     }
+
+    override fun isEnabled(): Boolean = enabled
 
     fun addRole(role: Role?) {
         getRoles().add(role)

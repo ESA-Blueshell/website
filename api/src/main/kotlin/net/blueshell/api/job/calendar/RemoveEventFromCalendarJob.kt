@@ -1,9 +1,8 @@
 package net.blueshell.api.job.calendar
 
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.service.CalendarService
 import net.blueshell.api.service.event.EventService
+import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover
 import org.springframework.retry.annotation.Retryable
@@ -16,12 +15,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
-class RemoveEventFromCalendarJob {
-    private val calendarService: CalendarService? = null
-    private val eventService: EventService? = null
-
+class RemoveEventFromCalendarJob(
+    private val calendarService: CalendarService,
+    private val eventService: EventService
+) {
     @Async
     @Retryable(
         retryFor = [Exception::class, UncheckedIOException::class],
@@ -35,24 +32,24 @@ class RemoveEventFromCalendarJob {
         val lock: ReentrantLock = locks.computeIfAbsent(eventId) { k: Long? -> ReentrantLock() }
         try {
             lock.lock()
-            val e = eventService!!.findById(eventId)
+            val e = eventService.findById(eventId)
             if (e == null) {
                 // If hard-deleted, consider keeping a shadow/audit of (eventId, googleId) to allow removal.
-                RemoveEventFromCalendarJob.log.warn(
+                log.warn(
                     "Remove: eventId {} not found; if events are hard-deleted, persist googleId before deletion.",
                     eventId
                 )
                 return CompletableFuture.completedFuture<Void?>(null)
             }
             if (e.getGoogleId() == null) {
-                RemoveEventFromCalendarJob.log.info("Remove skipped: eventId {} not present on Google", eventId)
+                log.info("Remove skipped: eventId {} not present on Google", eventId)
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
-            calendarService!!.remove(e)
+            calendarService.remove(e)
             e.setGoogleId(null)
             eventService.update(e) // persist null googleId
-            RemoveEventFromCalendarJob.log.info("Removed eventId {} from Google Calendar", eventId)
+            log.info("Removed eventId {} from Google Calendar", eventId)
             return CompletableFuture.completedFuture<Void?>(null)
         } catch (ex: IOException) {
             throw UncheckedIOException(ex)
@@ -65,7 +62,7 @@ class RemoveEventFromCalendarJob {
     @Recover
     fun recover(ex: Exception, eventId: Long?): CompletableFuture<Void?> {
         processing.remove(key("remove", eventId))
-        RemoveEventFromCalendarJob.log.error("Giving up remove for eventId {}: {}", eventId, ex.message, ex)
+        log.error("Giving up remove for eventId {}: {}", eventId, ex.message, ex)
         return CompletableFuture.completedFuture<Void?>(null)
     }
 
@@ -74,6 +71,7 @@ class RemoveEventFromCalendarJob {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(RemoveEventFromCalendarJob::class.java)
         private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
         private val processing = ConcurrentHashMap<String?, Boolean?>()
     }

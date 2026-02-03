@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired
 
 @JvmRecord
 data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository?) :
-    ConstraintValidator<ValidAnswer?, AnswerDTO?> {
-    override fun isValid(dto: AnswerDTO?, context: ConstraintValidatorContext?): Boolean {
+    ConstraintValidator<ValidAnswer, AnswerDTO> {
+    override fun isValid(dto: AnswerDTO, context: ConstraintValidatorContext?): Boolean {
         if (dto == null || dto.getQuestionId() == null) {
             return true // Let @NotNull handle this
         }

@@ -10,5 +10,5 @@ import kotlin.reflect.KClass
 annotation class ValidQuestion(
     val message: String = "Invalid question",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload?>> = []
+    val payload: Array<KClass<out Payload>> = []
 )

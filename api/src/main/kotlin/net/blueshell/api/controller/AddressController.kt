@@ -2,7 +2,6 @@ package net.blueshell.api.controller
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseController
 import net.blueshell.api.dto.AddressDTO
 import net.blueshell.api.mapper.AddressMapper
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Addresses")
-@Slf4j
 class AddressController(service: AddressService?, mapper: AddressMapper?, private val users: UserService) :
     BaseController<AddressService?, AddressMapper?>(service, mapper) {
     @PostMapping("/users/{userId}/addresses")

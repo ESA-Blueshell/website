@@ -1,8 +1,6 @@
 package net.blueshell.api.config
 
 import com.github.javafaker.Faker
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.common.enums.MemberType
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.common.enums.Role
@@ -26,6 +24,7 @@ import net.blueshell.api.service.contribution.ContributionService
 import net.blueshell.api.service.event.EventService
 import net.blueshell.api.service.event.EventSignUpService
 import net.blueshell.api.service.survey.SurveyService
+import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
 import org.springframework.dao.DataIntegrityViolationException
@@ -74,21 +73,20 @@ import kotlin.toString
 
 @Component
 @Profile("dev")
-@RequiredArgsConstructor
-@Slf4j
-class DatabaseSeeder : CommandLineRunner {
-    private val userService: UserService? = null
-    private val addressService: AddressService? = null
-    private val committeeService: CommitteeService? = null
-    private val committeeMemberService: CommitteeMemberService? = null
-    private val eventService: EventService? = null
-    private val eventSignUpService: EventSignUpService? = null
-    private val membershipService: MembershipService? = null
-    private val contributionPeriodService: ContributionPeriodService? = null
-    private val contributionService: ContributionService? = null
-    private val recoveryService: RecoveryService? = null
-    private val surveyService: SurveyService? = null
-    private val passwordEncoder: PasswordEncoder? = null
+class DatabaseSeeder(
+    private val userService: UserService,
+    private val addressService: AddressService,
+    private val committeeService: CommitteeService,
+    private val committeeMemberService: CommitteeMemberService,
+    private val eventService: EventService,
+    private val eventSignUpService: EventSignUpService,
+    private val membershipService: MembershipService,
+    private val contributionPeriodService: ContributionPeriodService,
+    private val contributionService: ContributionService,
+    private val recoveryService: RecoveryService,
+    private val surveyService: SurveyService,
+    private val passwordEncoder: PasswordEncoder
+) : CommandLineRunner {
     private val faker = Faker(Locale.ENGLISH)
     private val createdUsers: MutableMap<String?, User?> = LinkedHashMap<String?, User?>()
     private val rnd = Random(42)
@@ -102,7 +100,7 @@ class DatabaseSeeder : CommandLineRunner {
     private val contributionsByPeriod: MutableMap<Long?, MutableSet<Long?>> = HashMap<Long?, MutableSet<Long?>>()
 
     override fun run(vararg args: String?) {
-        if (userService!!.existsByUsername("board.user")) {
+        if (userService.existsByUsername("board.user")) {
             DatabaseSeeder.log.info("DEV database seeding skipped: already seeded.")
             return
         }
@@ -264,7 +262,7 @@ class DatabaseSeeder : CommandLineRunner {
 
         // Consume recovery tokens for enabled users (mirrors RecoveryController flows)
         createdUsers.values.forEach(Consumer { u: User? ->
-            if (u!!.isEnabled && u.getRecoveryTokens() != null) {
+            if (u!!.enabled && u.getRecoveryTokens() != null) {
                 u.getRecoveryTokens().forEach(Consumer { rt: RecoveryToken? -> rt!!.setConsumedAt(Instant.now()) })
             }
         })
@@ -330,9 +328,9 @@ class DatabaseSeeder : CommandLineRunner {
 
         // Seed initial "reference" signups like controllers would set principal → userId
         for (e in events) {
-            if (e.isSignUp()) {
+            if (e.signUp) {
                 createEventSignUpWithAnswers(memberUser, e)
-                if (!e.isMembersOnly()) {
+                if (!e.membersOnly) {
                     createEventSignUpWithAnswers(normalUser, e)
                 }
             }
@@ -340,12 +338,12 @@ class DatabaseSeeder : CommandLineRunner {
 
         // Add lots of realistic signups, avoiding duplicates and respecting members-only
         for (e in events) {
-            if (e.isSignUp()) seedSignUps(e, memberPool, guestPool)
+            if (e.signUp) seedSignUps(e, memberPool, guestPool)
         }
 
         // Add guest sign-ups for public events with sign-up enabled
         for (e in events) {
-            if (e.isSignUp() && !e.isMembersOnly()) {
+            if (e.signUp && !e.membersOnly) {
                 seedGuestSignUps(e)
             }
         }
@@ -355,7 +353,7 @@ class DatabaseSeeder : CommandLineRunner {
         createEventSignUpWithAnswers(committeeUser, previouslyApproved)
 
         // Revoke approval on that event (mirrors EventController.approve)
-        previouslyApproved = eventService!!.findById(previouslyApproved.getId())
+        previouslyApproved = eventService.findById(previouslyApproved.getId())
         previouslyApproved.setApproved(false)
         eventService.update(previouslyApproved)
 
@@ -391,7 +389,7 @@ class DatabaseSeeder : CommandLineRunner {
         if (!includeAddress && rnd.nextBoolean()) {
             val addr = createAddressEntity()
             u.setAddress(addr)
-            u = userService!!.update(u)
+            u = userService.update(u)
         }
 
         return u
@@ -404,7 +402,7 @@ class DatabaseSeeder : CommandLineRunner {
     private fun uniqueUsername(base: kotlin.String?): kotlin.String? {
         var u = base
         var i = 1
-        while (userService!!.existsByUsername(u)) {
+        while (userService.existsByUsername(u)) {
             u = base + "." + i++
         }
         return u
@@ -426,7 +424,7 @@ class DatabaseSeeder : CommandLineRunner {
         membership.setEndDate(period.getEndDate())
         membership.setMemberType(MemberType.REGULAR)
         membership.setUserId(user.getId())
-        return membershipService!!.create(membership)
+        return membershipService.create(membership)
     }
 
     private fun event(
@@ -459,7 +457,7 @@ class DatabaseSeeder : CommandLineRunner {
     ): User {
         val user = User()
         user.setUsername(username)
-        user.setPassword(passwordEncoder!!.encode("password"))
+        user.setPassword(passwordEncoder.encode("password"))
         user.setFirstName(firstName)
         user.setLastName(lastName)
         user.setEmail(email)
@@ -470,7 +468,7 @@ class DatabaseSeeder : CommandLineRunner {
         user.setConsentPrivacy(true)
         user.setConsentGdpr(true)
         if (includeAddress) user.setAddress(createAddressEntity())
-        return userService!!.create(user)
+        return userService.create(user)
     }
 
     private fun createInactiveUser(
@@ -482,7 +480,7 @@ class DatabaseSeeder : CommandLineRunner {
     ): User {
         val user = User()
         user.setUsername(username)
-        user.setPassword(passwordEncoder!!.encode("temporary"))
+        user.setPassword(passwordEncoder.encode("temporary"))
         user.setFirstName(firstName)
         user.setLastName(lastName)
         user.setEmail(email)
@@ -493,7 +491,7 @@ class DatabaseSeeder : CommandLineRunner {
         user.setConsentPrivacy(true)
         user.setConsentGdpr(true)
         if (includeAddress) user.setAddress(createAddressEntity())
-        return userService!!.create(user)
+        return userService.create(user)
     }
 
     private fun createAddressEntity(): Address {
@@ -511,7 +509,7 @@ class DatabaseSeeder : CommandLineRunner {
         committee.setName(name)
         committee.setDescription(description)
         committee.setMembers(HashSet<CommitteeMember?>())
-        return committeeService!!.create(committee)
+        return committeeService.create(committee)
     }
 
     private fun createCommitteeMember(user: User?, committee: Committee?, role: kotlin.String?): CommitteeMember? {
@@ -538,7 +536,7 @@ class DatabaseSeeder : CommandLineRunner {
         member.setCommittee(committee)
         member.setRole(role)
 
-        val created = committeeMemberService!!.create(member)
+        val created = committeeMemberService.create(member)
         committeeMemberCounts.put(committee.getId(), currentCount + 1)
         committeeMemberships.add(key)
         return created
@@ -551,14 +549,14 @@ class DatabaseSeeder : CommandLineRunner {
         period.setHalfYearFee(10.0)
         period.setFullYearFee(18.0)
         period.setAlumniFee(5.0)
-        return contributionPeriodService!!.create(period)
+        return contributionPeriodService.create(period)
     }
 
     private fun createContribution(user: User, period: ContributionPeriod): Contribution? {
         val c = Contribution()
         c.setUserId(user.getId())
         c.setContributionPeriodId(period.getId())
-        val created = contributionService!!.create(c)
+        val created = contributionService.create(c)
 
         contributionsByPeriod
             .computeIfAbsent(period.getId()) { id: Long? -> HashSet<Long?>() }
@@ -596,11 +594,11 @@ class DatabaseSeeder : CommandLineRunner {
         event.setMemberPrice(10.0)
         event.setPublicPrice(15.0)
         event.setSignUpForm(survey)
-        return eventService!!.create(event)
+        return eventService.create(event)
     }
 
     private fun findExistingSignUp(eventId: Long?, userId: Long?): Optional<EventSignUp?> {
-        return eventSignUpService!!.findByEventId(eventId).stream()
+        return eventSignUpService.findByEventId(eventId).stream()
             .filter { su: EventSignUp? -> su!!.getUserId() == userId }
             .findFirst()
     }
@@ -618,7 +616,7 @@ class DatabaseSeeder : CommandLineRunner {
 
         val answers = LinkedHashSet<Answer?>()
         val form = event.getSignUpForm()
-        if (event.isSignUp() && form != null && form.getQuestions() != null) {
+        if (event.signUp && form != null && form.getQuestions() != null) {
             for (q in form.getQuestions()) {
                 answers.add(createAnswerForQuestion(q))
             }
@@ -627,7 +625,7 @@ class DatabaseSeeder : CommandLineRunner {
 
         try {
             // 2) Normal path
-            return eventSignUpService!!.create(signUp)
+            return eventSignUpService.create(signUp)
         } catch (ex: DataIntegrityViolationException) {
             // 3) Defensive: if another thread/seed pass created it just now, fetch and return it
             DatabaseSeeder.log.warn(
@@ -642,10 +640,10 @@ class DatabaseSeeder : CommandLineRunner {
     private fun seedSignUps(event: Event, memberPool: MutableList<User?>, guestPool: MutableList<User?>) {
         // Build candidate list
         val candidates: MutableList<User> = ArrayList<User>(memberPool)
-        if (!event.isMembersOnly()) candidates.addAll(guestPool)
+        if (!event.membersOnly) candidates.addAll(guestPool)
 
         // Avoid duplicates: find existing signups for this event
-        val existingUserIds = eventSignUpService!!.findByEventId(event.getId()).stream()
+        val existingUserIds = eventSignUpService.findByEventId(event.getId()).stream()
             .map<Long?> { obj: EventSignUp? -> obj!!.getUserId() }
             .filter { obj: Long? -> Objects.nonNull(obj) }
             .collect(Collectors.toSet())
@@ -755,19 +753,19 @@ class DatabaseSeeder : CommandLineRunner {
 
         val answers = LinkedHashSet<Answer?>()
         val form = event.getSignUpForm()
-        if (event.isSignUp() && form != null && form.getQuestions() != null) {
+        if (event.signUp && form != null && form.getQuestions() != null) {
             for (q in form.getQuestions()) {
                 answers.add(createAnswerForQuestion(q))
             }
         }
         signUp.setAnswers(answers)
 
-        return eventSignUpService!!.create(signUp)
+        return eventSignUpService.create(signUp)
     }
 
     private fun seedGuestSignUps(event: Event) {
         // Only public events with sign-up should get guest sign-ups
-        if (event.isMembersOnly() || !event.isSignUp()) {
+        if (event.membersOnly || !event.signUp) {
             return
         }
 
@@ -899,7 +897,7 @@ class DatabaseSeeder : CommandLineRunner {
     ) {
         val candidates: MutableList<User> = allUsers.stream()
             .filter { obj: User? -> Objects.nonNull(obj) }
-            .filter { obj: User? -> obj!!.isEnabled }
+            .filter { obj: User? -> obj!!.enabled }
             .filter { u: User? -> !excludedUsernames.contains(u!!.username) }
             .collect(Collectors.toList())
 
@@ -909,7 +907,7 @@ class DatabaseSeeder : CommandLineRunner {
         val limit = min(count, candidates.size)
 
         for (i in 0..<limit) {
-            val u = userService!!.findById(candidates.get(i).getId())
+            val u = userService.findById(candidates.get(i).getId())
 
             u.setEnabled(false)
             val updated = userService.update(u)
@@ -918,6 +916,7 @@ class DatabaseSeeder : CommandLineRunner {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(DatabaseSeeder::class.java)
         private val DEFAULT_RADIO_CHOICES =
             mutableListOf<kotlin.String?>("Option A", "Option B", "Option C", "Option D")
         private val DEFAULT_CHECKBOX_CHOICES = mutableListOf<kotlin.String?>(

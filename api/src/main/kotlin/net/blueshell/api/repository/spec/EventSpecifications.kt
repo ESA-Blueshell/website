@@ -3,20 +3,19 @@ package net.blueshell.api.repository.spec
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
-import lombok.NoArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.controller.filter.EventFilter
 import net.blueshell.api.model.User
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.model.event.Event
+import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 import java.util.*
 
-@Slf4j
-@NoArgsConstructor
 object EventSpecifications {
+    private val log = LoggerFactory.getLogger(EventSpecifications::class.java)
+
     fun approved(): Specification<Event?> {
         return Specification { root: Root<Event?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
             cb!!.isTrue(
@@ -142,14 +141,14 @@ object EventSpecifications {
         // Board members can see all events
         // So we don't filter further
         if (user == null || !user.hasAuthority(Role.MEMBER)) {
-            EventSpecifications.log.info("User {} has no member role", user)
+            log.info("User {} has no member role", user)
             // Only approved are visible
             spec = spec.and(approved())
         } else if (!user.hasAuthority(Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
             // And approved events are included
             spec = spec.and(approved().or(userIsCommitteeMember(user)))
-            EventSpecifications.log.info("User {} has member role", user)
+            log.info("User {} has member role", user)
         }
 
         return spec

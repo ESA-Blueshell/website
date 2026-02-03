@@ -1,10 +1,6 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -24,20 +20,14 @@ import java.time.Instant
 )
 @SQLDelete(sql = "UPDATE blogs SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
 class Blog : BaseModel() {
     @Column(name = "title", nullable = false)
-    @ToString.Include
-    private var title: String? = null
+    lateinit var title: String
 
     @Lob
     @Column(name = "html", nullable = false)
-    @ToString.Include
-    private var html: String? = null
+    lateinit var html: String
 
     @Column(name = "published_at", nullable = false)
-    @ToString.Include
-    private var publishedAt: Instant? = null
+    lateinit var publishedAt: Instant
 }

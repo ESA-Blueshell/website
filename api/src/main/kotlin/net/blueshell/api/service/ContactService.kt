@@ -1,7 +1,6 @@
 package net.blueshell.api.service
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.mapper.BrevoContactMapper
 import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
@@ -10,12 +9,12 @@ import net.blueshell.clients.brevo.invoker.ApiClient
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateList
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClientResponseException
 
-@Slf4j
 @Service
 class ContactService(private val mapper: BrevoContactMapper, private val users: UserService) {
     @Value("\${brevo.apiKey}")
@@ -129,5 +128,9 @@ class ContactService(private val mapper: BrevoContactMapper, private val users: 
         val payload = RemoveContactFromListRequest()
         payload.ids = ids
         api.removeContactFromList(contributionPeriod.getListId(), payload)
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ContactService::class.java)
     }
 }

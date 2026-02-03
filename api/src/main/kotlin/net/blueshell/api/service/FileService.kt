@@ -2,7 +2,6 @@ package net.blueshell.api.service
 
 import jakarta.annotation.PostConstruct
 import jakarta.ws.rs.BadRequestException
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.enums.FileType
 import net.blueshell.api.mapper.FileMapper
@@ -10,6 +9,7 @@ import net.blueshell.api.model.File
 import net.blueshell.api.repository.FileRepository
 import net.blueshell.api.service.event.EventBannerService
 import net.blueshell.api.service.event.EventService
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.Resource
@@ -29,7 +29,6 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 
-@Slf4j
 @Service
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
@@ -195,5 +194,9 @@ class FileService @Autowired constructor(
         } catch (e: IOException) {
             FileService.log.error("Failed to delete file {}", fullPath, e)
         }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(FileService::class.java)
     }
 }

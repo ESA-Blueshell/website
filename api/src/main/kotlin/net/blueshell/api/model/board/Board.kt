@@ -1,10 +1,6 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.model.File
 import org.hibernate.annotations.SQLDelete
@@ -28,34 +24,26 @@ import java.time.LocalDate
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class Board : BaseModel() {
     @Column(name = "name", nullable = false)
-    @ToString.Include
-    private var name: String? = null
+    lateinit var name: String
 
     @JoinColumn(name = "picture_id")
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val picture: File? = null
+    val picture: File? = null
 
     @OneToMany(mappedBy = "board", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val members: MutableSet<BoardMember?>? = null
+    val members: MutableSet<BoardMember?>? = null
 
     @Column(name = "candidate", nullable = false)
-    @ToString.Include
-    private var candidate: String? = null
+    lateinit var candidate: String
 
     @Column(name = "start_date", nullable = false)
-    @ToString.Include
-    private var startDate: LocalDate? = null
+    lateinit var startDate: LocalDate
 
     @Column(name = "end_date")
-    @ToString.Include
-    private var endDate: LocalDate? = null
+    var endDate: LocalDate? = null
 
     @OneToMany(mappedBy = "board")
-    private val documents: MutableSet<BoardDocument?>? = null
+    val documents: MutableSet<BoardDocument?>? = null
 }

@@ -8,16 +8,15 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class ContributionPermission @Autowired constructor(service: ContributionService?) :
-    BasePermissionEvaluator<Contribution?, ContributionService?>(service) {
+class ContributionPermission @Autowired constructor(service: ContributionService) :
+    BasePermissionEvaluator<Contribution, ContributionService>(service) {
     override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
         if (authentication == null || `object` == null || permission == null) {
             return false
         }
         val contribution = `object` as Contribution
-        val principal = getPrincipal()
         return when (permission) {
-            "read" -> (principal.getId() == contribution.getUserId())
+            "read" -> (principal?.id == contribution.userId)
             else -> false
         }
     }
@@ -27,7 +26,7 @@ class ContributionPermission @Autowired constructor(service: ContributionService
             return false
         }
 
-        val targetContribution = service!!.findById(targetId as Long)
+        val targetContribution = service.findById(targetId as Long)
         return targetContribution != null && hasPermission(authentication, targetContribution, permission)
     }
 }

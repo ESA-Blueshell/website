@@ -2,7 +2,6 @@ package net.blueshell.api.base
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import lombok.extern.slf4j.Slf4j
 import org.springframework.core.ResolvableType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -34,7 +33,6 @@ import java.util.function.Supplier
  * `pre…` / `post…` hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).
  */
-@Slf4j
 abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected constructor(protected val repository: R) :
     IdentityProvider() {
     private val entityLabel: String
@@ -94,7 +92,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
         if (id == null || !repository.existsById(id)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id")
         }
-        entity = repository.saveAndFlush<T>(entity)
+        entity = repository.saveAndFlush(entity)
         em.refresh(entity)
         return entity
     }
@@ -119,7 +117,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)
-    open fun findById(id: Long): T? {
+    open fun findById(id: Long): T {
         return repository.findById(id).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id"
@@ -159,7 +157,7 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected 
      * The repository must implement `JpaSpecificationExecutor`.
      */
     @Transactional(readOnly = true)
-    fun findAll(spec: Specification<T>, pageable: Pageable): Page<T> {
+    open fun findAll(spec: Specification<T>, pageable: Pageable): Page<T> {
         return repository.findAll(spec, pageable)
     }
 

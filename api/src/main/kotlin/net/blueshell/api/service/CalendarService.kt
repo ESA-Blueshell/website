@@ -17,8 +17,8 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
 import jakarta.annotation.PostConstruct
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.model.event.Event
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.io.IOException
@@ -29,7 +29,6 @@ import java.util.List
 import kotlin.collections.MutableCollection
 import kotlin.collections.MutableList
 
-@Slf4j
 @Service
 class CalendarService {
     @Value("\${google.calendar.id}")
@@ -156,6 +155,7 @@ class CalendarService {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(CalendarService::class.java)
         private const val APPLICATION_NAME = "Blueshell Google Calendar API"
         private val SCOPES: MutableList<String?> = List.of<String?>(CalendarScopes.CALENDAR_EVENTS)
         private const val TZ_ID = "Europe/Amsterdam"

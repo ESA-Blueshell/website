@@ -7,12 +7,11 @@ import com.fasterxml.jackson.databind.type.CollectionType
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
-import lombok.extern.slf4j.Slf4j
 
 @Slf4j
 @Converter
 class StringListConverter : AttributeConverter<MutableList<String?>?, String?> {
-    private val objectMapper = ObjectMapper()
+    val objectMapper = ObjectMapper()
 
     override fun convertToDatabaseColumn(attribute: MutableList<String?>?): String? {
         try {
@@ -36,7 +35,7 @@ class StringListConverter : AttributeConverter<MutableList<String?>?, String?> {
     }
 
     companion object {
-        private val MAPPER: ObjectMapper = JsonMapper.builder()
+        val MAPPER: ObjectMapper = JsonMapper.builder()
             .addModule(JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build()

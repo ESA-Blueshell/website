@@ -1,7 +1,6 @@
 package net.blueshell.api.base
 
 import jakarta.persistence.*
-import lombok.Setter
 import net.blueshell.api.common.event.jpa.*
 import org.springframework.context.ApplicationEventPublisher
 
@@ -49,7 +48,11 @@ class JpaListener {
     }
 
     companion object {
-        @Setter
-        private val publisher: ApplicationEventPublisher? = null
+        private var publisher: ApplicationEventPublisher? = null
+
+        @JvmStatic
+        fun setPublisher(eventPublisher: ApplicationEventPublisher?) {
+            publisher = eventPublisher
+        }
     }
 }

@@ -3,7 +3,6 @@ package net.blueshell.api.controller
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.AdvancedController
 import net.blueshell.api.base.BaseDTO
 import net.blueshell.api.common.enums.Role
@@ -15,69 +14,68 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
-@Slf4j
 @RestController
 @Tag(name = "Committees")
 class CommitteeController(
-    service: CommitteeService?,
-    advancedCommitteeMapper: AdvancedCommitteeMapper?,
-    simpleCommitteeMapper: SimpleCommitteeMapper?
-) : AdvancedController<CommitteeService?, AdvancedCommitteeMapper?, SimpleCommitteeMapper?>(
+    service: CommitteeService,
+    advancedCommitteeMapper: AdvancedCommitteeMapper,
+    simpleCommitteeMapper: SimpleCommitteeMapper
+) : AdvancedController<CommitteeService, AdvancedCommitteeMapper, SimpleCommitteeMapper>(
     service,
     advancedCommitteeMapper,
     simpleCommitteeMapper
 ) {
     @GetMapping("/committeeMembers/committees")
     @PermitAll
-    fun findCommitteesForCurrentUser(): MutableList<out BaseDTO?>? {
+    fun findCommitteesForCurrentUser(): MutableList<BaseDTO> {
         if (hasAuthority(Role.BOARD)) {
-            return advancedMapper!!.toDTOs(service!!.findAll())
+            return advancedMapper.toDTOs(service.findAll())
         }
 
-        val committees = service!!.findAllByUserId(getPrincipal().getId())
-        return advancedMapper!!.toDTOs(committees)
+        val committees = service.findAllByUserId(principal?.id)
+        return advancedMapper.toDTOs(committees)
     }
 
     @GetMapping("/committees")
     @PermitAll
-    fun findCommittees(): MutableList<out BaseDTO?>? {
+    fun findCommittees(): MutableList<out BaseDTO> {
         if (hasAuthority(Role.BOARD)) {
-            return advancedMapper!!.toDTOs(service!!.findAll())
+            return advancedMapper.toDTOs(service.findAll())
         }
 
-        return simpleMapper!!.toDTOs(service!!.findAll())
+        return simpleMapper.toDTOs(service.findAll())
     }
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
     fun findCommitteeById(
-        @PathVariable("committeeId") committeeId: Long?
-    ): BaseDTO? {
-        val committee = service!!.findById(committeeId)
+        @PathVariable("committeeId") committeeId: Long
+    ): BaseDTO {
+        val committee = service.findById(committeeId)
         if (hasAuthority(Role.BOARD) || committee.hasMember(getPrincipal())) {
-            return advancedMapper!!.toDTO(committee)
+            return advancedMapper.toDTO(committee)
         }
 
-        return simpleMapper!!.toDTO(committee)
+        return simpleMapper.toDTO(committee)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createCommittee(@Valid @RequestBody advancedCommitteeDTO: @Valid AdvancedCommitteeDTO?): AdvancedCommitteeDTO? {
-        var committee = advancedMapper!!.fromDTO(advancedCommitteeDTO)
-        committee = service!!.create(committee)
+    fun createCommittee(@Valid @RequestBody advancedCommitteeDTO: @Valid AdvancedCommitteeDTO): AdvancedCommitteeDTO {
+        var committee = advancedMapper.fromDTO(advancedCommitteeDTO)
+        committee = service.create(committee)
         return advancedMapper.toDTO(committee)
     }
 
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Committee', 'write'))")
     @PutMapping(value = ["/committees/{id}"])
     fun updateCommittee(
-        @PathVariable("id") id: Long?,
-        @Valid @RequestBody dto: @Valid AdvancedCommitteeDTO?
-    ): AdvancedCommitteeDTO? {
-        var committee = service!!.findById(id)
-        advancedMapper!!.fromDTO(dto, committee)
+        @PathVariable("id") id: Long,
+        @Valid @RequestBody dto: @Valid AdvancedCommitteeDTO
+    ): AdvancedCommitteeDTO {
+        var committee = service.findById(id)
+        advancedMapper.fromDTO(dto, committee)
         committee = service.update(committee)
         return advancedMapper.toDTO(committee)
     }
@@ -85,7 +83,7 @@ class CommitteeController(
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteCommitteeById(@PathVariable("id") id: Long?) {
-        service!!.deleteById(id)
+    fun deleteCommitteeById(@PathVariable("id") id: Long) {
+        service.deleteById(id)
     }
 }

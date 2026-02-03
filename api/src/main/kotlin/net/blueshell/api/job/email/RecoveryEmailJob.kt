@@ -1,9 +1,8 @@
 package net.blueshell.api.job.email
 
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.common.enums.ResetType
 import net.blueshell.api.service.email.EmailService
+import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover
 import org.springframework.retry.annotation.Retryable
@@ -13,22 +12,20 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
-class RecoveryEmailJob {
-    private val emails: EmailService? = null
-
+class RecoveryEmailJob(
+    private val emails: EmailService
+) {
     @Async
     @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
     fun send(userId: Long?, token: String?, resetType: ResetType): CompletableFuture<Void?> {
         val key = jobKey(resetType.toString(), userId)
         if (processing.putIfAbsent(key, true) != null) {
-            RecoveryEmailJob.log.info("Reset email already processing for userId={}", userId)
+            log.info("Reset email already processing for userId={}", userId)
             return CompletableFuture.completedFuture<Void?>(null)
         }
 
         try {
-            emails!!.sendUserResetEmail(userId, token, resetType)
+            emails.sendUserResetEmail(userId, token, resetType)
             return CompletableFuture.completedFuture<Void?>(null)
         } finally {
             processing.remove(key)
@@ -38,7 +35,7 @@ class RecoveryEmailJob {
     @Recover
     fun recover(ex: Exception, userId: Long?): CompletableFuture<Void?> {
         processing.remove(jobKey("reset", userId))
-        RecoveryEmailJob.log.error("Giving up reset email for userId={}: {}", userId, ex.message, ex)
+        log.error("Giving up reset email for userId={}: {}", userId, ex.message, ex)
         return CompletableFuture.completedFuture<Void?>(null)
     }
 
@@ -47,6 +44,7 @@ class RecoveryEmailJob {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(RecoveryEmailJob::class.java)
         private val processing = ConcurrentHashMap<String?, Boolean?>()
     }
 }

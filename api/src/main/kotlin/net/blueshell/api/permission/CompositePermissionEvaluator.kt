@@ -1,6 +1,5 @@
 package net.blueshell.api.permission
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BasePermissionEvaluator
 import net.blueshell.api.base.IdentityProvider
 import org.springframework.beans.factory.annotation.Autowired
@@ -11,7 +10,6 @@ import org.springframework.util.ClassUtils
 import java.io.Serializable
 import java.util.function.Function
 
-@Slf4j
 @Component
 class CompositePermissionEvaluator @Autowired constructor(private val evaluators: MutableList<BasePermissionEvaluator<*, *>?>) :
     IdentityProvider(), PermissionEvaluator {
@@ -21,14 +19,13 @@ class CompositePermissionEvaluator @Autowired constructor(private val evaluators
         return evaluators.stream()
             .filter { e: BasePermissionEvaluator<*, *>? -> e!!.supports(domainClass) }
             .findFirst()
-            .map<Boolean?>(Function { e: BasePermissionEvaluator<*, *>? ->
+            .map(Function { e: BasePermissionEvaluator<*, *>? ->
                 e!!.hasPermission(
                     auth,
                     target,
                     perm.toString()
                 )
-            })
-            .orElse(false)
+            }).orElse(false)
     }
 
     override fun hasPermission(
@@ -46,7 +43,7 @@ class CompositePermissionEvaluator @Autowired constructor(private val evaluators
                         || dt.getName() == targetType
             }
             .findFirst()
-            .map<Boolean?>(Function { e: BasePermissionEvaluator<*, *>? ->
+            .map(Function { e: BasePermissionEvaluator<*, *>? ->
                 e!!.hasPermissionId(
                     auth,
                     targetId,

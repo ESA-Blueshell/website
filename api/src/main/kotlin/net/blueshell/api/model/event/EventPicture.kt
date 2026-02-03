@@ -1,10 +1,6 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.model.File
 import org.hibernate.annotations.SQLDelete
@@ -27,16 +23,12 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE event_pictures SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class EventPicture : BaseModel() {
     @OneToOne
     @JoinColumn(name = "picture_id", nullable = false)
-    private val picture: File? = null
+    lateinit var picture: File
 
     @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
-    private val event: Event? = null
+    lateinit var event: Event
 }

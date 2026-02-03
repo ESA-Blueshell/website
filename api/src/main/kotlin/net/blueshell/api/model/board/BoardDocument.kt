@@ -1,10 +1,6 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.model.File
 import org.hibernate.annotations.SQLDelete
@@ -27,20 +23,15 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_documents SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class BoardDocument : BaseModel() {
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne
-    private val board: Board? = null
+    lateinit var board: Board
 
     @Column(name = "name", nullable = false)
-    @ToString.Include
-    private var name: String? = null
+    lateinit var name: String
 
     @JoinColumn(name = "file_id", nullable = false)
     @OneToOne
-    private val file: File? = null
+    lateinit var file: File
 }

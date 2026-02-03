@@ -1,10 +1,6 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -23,24 +19,17 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE sponsors SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class Sponsor : BaseModel() {
     @Column(nullable = false)
-    @ToString.Include
-    private var name: String? = null
+    lateinit var name: String
 
     @Column(nullable = false, length = 4095)
-    @ToString.Include
-    private var description: String? = null
+    lateinit var description: String
 
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn(name = "logo_id", nullable = false, insertable = false, updatable = false)
-    private val picture: File? = null
+    lateinit var picture: File
 
     @Column(name = "logo_id")
-    @ToString.Include
-    private var pictureId: Long? = null
+    var pictureId: Long? = null
 }

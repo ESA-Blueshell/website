@@ -4,14 +4,12 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
-import lombok.NoArgsConstructor
 import net.blueshell.api.controller.filter.MembershipFilter
 import net.blueshell.api.model.Membership
 import net.blueshell.api.model.User
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 
-@NoArgsConstructor
 object MembershipSpecifications {
     fun timeOverlap(from: LocalDate?, to: LocalDate?): Specification<Membership?> {
         return Specification { root: Root<Membership?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->

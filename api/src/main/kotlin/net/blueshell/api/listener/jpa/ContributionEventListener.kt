@@ -1,6 +1,5 @@
 package net.blueshell.api.listener.jpa
 
-import lombok.RequiredArgsConstructor
 import net.blueshell.api.common.event.job.AddContactToListEvent
 import net.blueshell.api.common.event.job.RemoveContactFromListEvent
 import net.blueshell.api.common.event.jpa.PostPersistEvent
@@ -15,28 +14,27 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-@RequiredArgsConstructor
-class ContributionEventListener {
-    private val eventPublisher: ApplicationEventPublisher? = null
-
+class ContributionEventListener(
+    private val eventPublisher: ApplicationEventPublisher
+) {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: PostPersistEvent<Contribution>) {
         val c = evt.getSource()
-        eventPublisher!!.publishEvent(AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()))
+        eventPublisher.publishEvent(AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: PostUpdateEvent<Contribution>) {
         val c = evt.getSource()
-        eventPublisher!!.publishEvent(AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()))
+        eventPublisher.publishEvent(AddContactToListEvent(c.getUserId(), c.getContributionPeriodId()))
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDelete(evt: PostRemoveEvent<Contribution>) {
         val c = evt.getSource()
-        eventPublisher!!.publishEvent(RemoveContactFromListEvent(c.getUserId(), c.getContributionPeriodId()))
+        eventPublisher.publishEvent(RemoveContactFromListEvent(c.getUserId(), c.getContributionPeriodId()))
     }
 }

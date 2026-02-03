@@ -2,8 +2,6 @@ package net.blueshell.api.controller
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.auth.JWTAuthBase
 import net.blueshell.api.auth.JwtTokenUtil
 import net.blueshell.api.dto.request.JwtRequest
@@ -17,14 +15,13 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
-@Slf4j
 @RestController
 @Tag(name = "Authentication")
-@RequiredArgsConstructor
-class AuthenticationController : JWTAuthBase() {
-    private val authenticationManager: AuthenticationManager? = null
-    private val jwtTokenUtil: JwtTokenUtil? = null
-    private val users: UserService? = null
+class AuthenticationController(
+    private val authenticationManager: AuthenticationManager,
+    private val jwtTokenUtil: JwtTokenUtil,
+    private val users: UserService
+) : JWTAuthBase() {
 
     @Value("\${app.jwt.expiration}")
     private val expiration: Long? = null
@@ -37,8 +34,8 @@ class AuthenticationController : JWTAuthBase() {
             authenticationRequest.getPassword()
         )
 
-        val user = users!!.findByUsername(authenticationRequest.getUsername())
-        val token = jwtTokenUtil!!.generateToken(user)
+        val user = users.findByUsername(authenticationRequest.getUsername())
+        val token = jwtTokenUtil.generateToken(user)
         val expirationTime = System.currentTimeMillis() + expiration!!
 
         return AuthenticationDTO(
@@ -52,7 +49,7 @@ class AuthenticationController : JWTAuthBase() {
     }
 
     private fun authenticate(username: String?, password: String?) {
-        authenticationManager!!.authenticate(
+        authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(username, password)
         )
     }

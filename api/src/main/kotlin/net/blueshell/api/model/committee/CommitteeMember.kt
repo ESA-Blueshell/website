@@ -1,15 +1,12 @@
 package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -32,28 +29,21 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE committee_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class CommitteeMember : BaseModel() {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, updatable = false, insertable = false)
-    private val user: User? = null
+    lateinit var user: User
 
     @Column(name = "user_id", nullable = false)
-    @ToString.Include
-    private var userId: Long? = null
+    var userId: Long by Delegates.notNull()
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "committee_id", nullable = false)
-    private val committee: Committee? = null
+    lateinit var committee: Committee
 
     @Column(name = "committee_id", insertable = false, updatable = false)
-    @ToString.Include
-    private var committeeId: Long? = null
+    var committeeId: Long? = null
 
     @Column(name = "role", length = 255)
-    @ToString.Include
-    private var role: String? = null
+    var role: String? = null
 }

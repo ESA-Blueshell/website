@@ -60,7 +60,7 @@ class DirtyTrackingInterceptor : Interceptor {
         private val DIRTY_FIELD_NAMES_CACHE = ConcurrentHashMap<Class<*>?, MutableSet<String?>>()
 
         private fun isDirtyModel(cls: Class<*>?): Boolean {
-            return DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: Class<*>? ->
+            return DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: java.lang.Class<*>? ->
                 c.isAnnotationPresent(
                     DirtyModel::class.java
                 )
@@ -78,8 +78,8 @@ class DirtyTrackingInterceptor : Interceptor {
             run {
                 var c = cls
                 while (c != null && c != Any::class.java) {
-                    for (f in c.declaredFields) {
-                        if (f.isAnnotationPresent(DirtyField::class.java)) names.add(f.name)
+                    for (f in c.getDeclaredFields()) {
+                        if (f.isAnnotationPresent(DirtyField::class.java)) names.add(f.getName())
                     }
                     c = c.getSuperclass()
                 }
@@ -87,9 +87,9 @@ class DirtyTrackingInterceptor : Interceptor {
 
             var c = cls
             while (c != null && c != Any::class.java) {
-                for (m in c.declaredMethods) {
+                for (m in c.getDeclaredMethods()) {
                     if (!m.isAnnotationPresent(DirtyField::class.java)) continue
-                    val n = m.name
+                    val n = m.getName()
                     if (n.startsWith("get") && n.length > 3) names.add(decapitalize(n.substring(3)))
                     else if (n.startsWith("is") && n.length > 2) names.add(decapitalize(n.substring(2)))
                 }

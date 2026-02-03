@@ -1,6 +1,5 @@
 package net.blueshell.api.service
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.enums.ResetType
 import net.blueshell.api.common.enums.Role
@@ -27,7 +26,6 @@ import java.util.function.Consumer
 import java.util.function.Predicate
 import java.util.function.Supplier
 
-@Slf4j
 @Service
 class RecoveryService protected constructor(
     repository: RecoveryTokenRepository,
@@ -156,7 +154,7 @@ class RecoveryService protected constructor(
     fun resendActivation(username: String?) {
         try {
             val user = users.findByUsername(username)
-            if (user.isEnabled()) return
+            if (user.enabled) return
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
             eventPublisher.publishEvent(RecoveryEmailEvent(user.getId(), rawToken, ResetType.USER_ACTIVATION))
         } catch (ignored: ResponseStatusException) {
@@ -168,7 +166,7 @@ class RecoveryService protected constructor(
     @jakarta.transaction.Transactional
     fun resendActivationEmail(userId: Long?) {
         val user = users.findById(userId)
-        if (user.isEnabled()) return
+        if (user.enabled) return
 
         val recoveryTokens = repository!!.findAllByUser_IdAndConsumedAtIsNull(userId)
         if (recoveryTokens.stream().anyMatch { r: RecoveryToken? -> r!!.getType() == ResetType.MEMBER_ACTIVATION }) {

@@ -8,8 +8,8 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class CommitteePermission @Autowired constructor(service: CommitteeService?) :
-    BasePermissionEvaluator<Committee?, CommitteeService?>(service) {
+class CommitteePermission @Autowired constructor(service: CommitteeService) :
+    BasePermissionEvaluator<Committee, CommitteeService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
         targetDomainObject: Any?,
@@ -18,7 +18,6 @@ class CommitteePermission @Autowired constructor(service: CommitteeService?) :
         if (authentication == null || targetDomainObject == null || permission == null) {
             return false
         }
-        val principal = getPrincipal()
         val committee = targetDomainObject as Committee
         return when (permission) {
             "read" -> true
@@ -31,7 +30,7 @@ class CommitteePermission @Autowired constructor(service: CommitteeService?) :
         if (authentication == null || targetId == null || permission == null) {
             return false
         }
-        val committee = service!!.findById(targetId as Long)
+        val committee = service.findById(targetId as Long)
         return committee != null && hasPermission(authentication, committee, permission)
     }
 }

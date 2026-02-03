@@ -4,7 +4,6 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
-import lombok.NoArgsConstructor
 import net.blueshell.api.base.IdentityProvider
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.controller.filter.EventSignUpFilter
@@ -13,7 +12,6 @@ import net.blueshell.api.model.event.EventSignUp
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 
-@NoArgsConstructor
 object EventSignUpSpecifications : IdentityProvider() {
     private fun distinct(): Specification<EventSignUp?> {
         return Specification { root: Root<EventSignUp?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? ->

@@ -1,9 +1,8 @@
 package net.blueshell.api.job.calendar
 
-import lombok.RequiredArgsConstructor
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.service.CalendarService
 import net.blueshell.api.service.event.EventService
+import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover
 import org.springframework.retry.annotation.Retryable
@@ -16,12 +15,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
-class SyncEventToCalendarJob {
-    private val calendarService: CalendarService? = null
-    private val eventService: EventService? = null
-
+class SyncEventToCalendarJob(
+    private val calendarService: CalendarService,
+    private val eventService: EventService
+) {
     @Async
     @Retryable(
         retryFor = [Exception::class, UncheckedIOException::class],
@@ -35,33 +32,33 @@ class SyncEventToCalendarJob {
         val lock: ReentrantLock = locks.computeIfAbsent(eventId) { k: Long? -> ReentrantLock() }
         try {
             lock.lock()
-            val e = eventService!!.findById(eventId)
+            val e = eventService.findById(eventId)
             if (e == null) {
-                SyncEventToCalendarJob.log.warn("Sync skipped: eventId {} not found", eventId)
+                log.warn("Sync skipped: eventId {} not found", eventId)
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
-            if (!e.isApproved()) {
+            if (!e.approved) {
                 // remove if previously on Google
                 if (e.getGoogleId() != null) {
-                    calendarService!!.remove(e)
+                    calendarService.remove(e)
                     e.setGoogleId(null)
                     eventService.update(e)
-                    SyncEventToCalendarJob.log.info("EventId {} unapproved -> removed from Google", eventId)
+                    log.info("EventId {} unapproved -> removed from Google", eventId)
                 } else {
-                    SyncEventToCalendarJob.log.info("EventId {} unapproved and not on Google -> noop", eventId)
+                    log.info("EventId {} unapproved and not on Google -> noop", eventId)
                 }
                 return CompletableFuture.completedFuture<Void?>(null)
             }
 
             // approved: add or update
             if (e.getGoogleId() == null) {
-                calendarService!!.add(e)
+                calendarService.add(e)
                 eventService.update(e)
-                SyncEventToCalendarJob.log.info("EventId {} synced by add; googleId={}", eventId, e.getGoogleId())
+                log.info("EventId {} synced by add; googleId={}", eventId, e.getGoogleId())
             } else {
-                calendarService!!.update(e)
-                SyncEventToCalendarJob.log.info("EventId {} synced by update; googleId={}", eventId, e.getGoogleId())
+                calendarService.update(e)
+                log.info("EventId {} synced by update; googleId={}", eventId, e.getGoogleId())
             }
             return CompletableFuture.completedFuture<Void?>(null)
         } catch (ex: IOException) {
@@ -75,7 +72,7 @@ class SyncEventToCalendarJob {
     @Recover
     fun recover(ex: Exception, eventId: Long?): CompletableFuture<Void?> {
         processing.remove(key("sync", eventId))
-        SyncEventToCalendarJob.log.error("Giving up sync for eventId {}: {}", eventId, ex.message, ex)
+        log.error("Giving up sync for eventId {}: {}", eventId, ex.message, ex)
         return CompletableFuture.completedFuture<Void?>(null)
     }
 
@@ -84,6 +81,7 @@ class SyncEventToCalendarJob {
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(SyncEventToCalendarJob::class.java)
         private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
         private val processing = ConcurrentHashMap<String?, Boolean?>()
     }

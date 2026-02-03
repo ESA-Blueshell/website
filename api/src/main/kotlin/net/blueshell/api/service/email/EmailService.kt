@@ -1,6 +1,5 @@
 package net.blueshell.api.service.email
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseEmail
 import net.blueshell.api.common.enums.ResetType
 import net.blueshell.api.email.ContributionReminderEmail
@@ -11,10 +10,10 @@ import net.blueshell.api.email.recovery.UserActivationEmail
 import net.blueshell.api.service.UserService
 import net.blueshell.api.service.contribution.ContributionReminderService
 import net.blueshell.api.service.event.EventSignUpService
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
-@Slf4j
 @Service
 class EmailService(
     private val templateService: EmailTemplateService,
@@ -85,5 +84,9 @@ class EmailService(
         if (email == null) return
 
         deliver(email)
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(EmailService::class.java)
     }
 }

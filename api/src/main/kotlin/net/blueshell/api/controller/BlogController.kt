@@ -3,7 +3,6 @@ package net.blueshell.api.controller
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseController
 import net.blueshell.api.dto.BlogDTO
 import net.blueshell.api.mapper.BlogMapper
@@ -12,7 +11,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
-@Slf4j
 @RestController
 @Tag(name = "Blogs")
 class BlogController(blogService: BlogService?, blogMapper: BlogMapper?) :

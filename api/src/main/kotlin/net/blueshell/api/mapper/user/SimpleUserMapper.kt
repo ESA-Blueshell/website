@@ -1,6 +1,5 @@
 package net.blueshell.api.mapper.user
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.dto.user.SimpleUserDTO
 import net.blueshell.api.model.User
@@ -8,11 +7,10 @@ import org.mapstruct.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
 
-@Slf4j
 @Mapper(componentModel = "spring")
 abstract class SimpleUserMapper : BaseMapper<User?, SimpleUserDTO?>() {
     @Autowired
-    private val passwordEncoder: PasswordEncoder? = null
+    private lateinit var passwordEncoder: PasswordEncoder
 
     @Mapping(target = "id")
     @Mapping(target = "initials")
@@ -49,6 +47,6 @@ abstract class SimpleUserMapper : BaseMapper<User?, SimpleUserDTO?>() {
     protected fun afterFromDTO(dto: SimpleUserDTO, @MappingTarget user: User) {
         if (user.getId() != null) return
 
-        user.setPassword(passwordEncoder!!.encode(dto.getPassword()))
+        user.setPassword(passwordEncoder.encode(dto.getPassword()))
     }
 }

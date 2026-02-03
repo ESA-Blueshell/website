@@ -2,7 +2,6 @@ package net.blueshell.api.controller.event
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseController
 import net.blueshell.api.controller.filter.EventSignUpFilter
 import net.blueshell.api.dto.event.EventSignUpDTO
@@ -15,19 +14,15 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
-@Slf4j
 @RestController
 @Tag(name = "EventSignUps")
 class EventSignUpController @Autowired constructor(service: EventSignUpService?, mapper: EventSignUpMapper?) :
     BaseController<EventSignUpService?, EventSignUpMapper?>(service, mapper) {
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
-        """
-            hasAuthority('BOARD')
-            or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read'))
-            or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))
-            
-            """.trimIndent()
+        "hasAuthority('BOARD') " +
+            "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
+            "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
     @Transactional(readOnly = true)
     fun findEventSignUps(@ParameterObject filter: EventSignUpFilter?): MutableList<EventSignUpDTO?> {
@@ -67,12 +62,9 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService?,
 
     @PutMapping("/events/{eventId}/signups")
     @PreAuthorize(
-        """
-            hasAuthority('BOARD')
-            or hasPermission(#eventId, 'Event', 'signUp')
-            or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))
-            
-            """.trimIndent()
+        "hasAuthority('BOARD') " +
+            "or hasPermission(#eventId, 'Event', 'signUp') " +
+            "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
     )
     fun updateEventSignUp(
         @PathVariable("eventId") eventId: Long?,
@@ -91,12 +83,9 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService?,
 
     @DeleteMapping(value = ["/events/signups/{eventSignupId}"])
     @PreAuthorize(
-        """
-            hasAuthority('BOARD')
-            or hasPermission(#eventSignupId, 'EventSignUp', 'delete')
-            or hasPermission(#accessToken, 'Guest', 'write')
-            
-            """.trimIndent()
+        "hasAuthority('BOARD') " +
+            "or hasPermission(#eventSignupId, 'EventSignUp', 'delete') " +
+            "or hasPermission(#accessToken, 'Guest', 'write')"
     )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional

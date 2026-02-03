@@ -46,7 +46,7 @@ abstract class MembershipMapper : BaseMapper<Membership?, MembershipDTO?>() {
                 BiConsumer { obj: Membership?, memberType: MemberType? -> obj!!.setMemberType(memberType) })
             MappingUtil.applyIfFieldIsNotNull<Membership?, Boolean?>(
                 membership,
-                dto.isIncasso(),
+                dto.incasso,
                 BiConsumer { obj: Membership?, incasso: Boolean? -> obj!!.setIncasso(incasso!!) })
         }
     }

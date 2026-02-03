@@ -1,10 +1,6 @@
 package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.EqualsAndHashCode
-import lombok.NoArgsConstructor
-import lombok.ToString
 import net.blueshell.api.base.BaseModel
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
@@ -24,23 +20,17 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@NoArgsConstructor
-@ToString(onlyExplicitlyIncluded = true, callSuper = true)
 class Committee : BaseModel() {
     @Column(name = "name", nullable = false)
-    @ToString.Include
-    private var name: String? = null
+    lateinit var name: String
 
     @Column(name = "description", nullable = false, length = 4095)
-    @ToString.Include
-    private var description: String? = null
+    lateinit var description: String
 
     @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    private val members: MutableSet<CommitteeMember?> = HashSet<CommitteeMember?>()
+    val members: MutableSet<CommitteeMember?> = HashSet<CommitteeMember?>()
 
-    fun hasMember(user: User): Boolean {
-        return getMembers().stream().anyMatch { cm: CommitteeMember? -> cm!!.getUser().getId() == user.getId() }
+    fun hasMember(user: User?): Boolean {
+        return user != null && members.stream().anyMatch { cm: CommitteeMember? -> cm?.user?.id == user.id }
     }
 }

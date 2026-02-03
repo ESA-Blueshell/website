@@ -1,6 +1,5 @@
 package net.blueshell.api.mapper.event
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.dto.event.EventBannerDTO
 import net.blueshell.api.mapper.FileMapper
@@ -10,7 +9,6 @@ import org.mapstruct.Mapper
 import org.mapstruct.Mapping
 import org.mapstruct.MappingTarget
 
-@Slf4j
 @Mapper(componentModel = "spring", uses = [FileMapper::class])
 abstract class EventBannerMapper : BaseMapper<EventBanner?, EventBannerDTO?>() {
     @Mapping(target = "id")

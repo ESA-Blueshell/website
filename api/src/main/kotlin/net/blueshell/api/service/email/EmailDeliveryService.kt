@@ -1,7 +1,7 @@
 package net.blueshell.api.service.email
 
 import jakarta.mail.MessagingException
-import lombok.extern.slf4j.Slf4j
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
 import org.springframework.mail.javamail.JavaMailSender
@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 import java.io.UnsupportedEncodingException
 
 @Service
-@Slf4j
 class EmailDeliveryService @Autowired constructor(private val mailSender: JavaMailSender) {
     /**
      * Sends an HTML email (synchronous). Jobs wrap retries/async.
@@ -57,5 +56,8 @@ class EmailDeliveryService @Autowired constructor(private val mailSender: JavaMa
             throw RuntimeException("Failed to send email", e)
         }
     }
-}
 
+    companion object {
+        private val log = LoggerFactory.getLogger(EmailDeliveryService::class.java)
+    }
+}

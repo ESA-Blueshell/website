@@ -1,21 +1,20 @@
 package net.blueshell.api.base
 
 import jakarta.persistence.Transient
-import lombok.Getter
 import java.util.*
 
 abstract class DirtyAwareModel : BaseModel() {
-    @Getter
     @Transient
-    private var dirtyFields = mutableSetOf<String?>()
+    var dirtyFields: Set<String?> = emptySet()
+        private set
 
     @Transient
-    @Getter
-    private var dirty = false
+    var dirty = false
+        private set
 
     fun __applyDirtyFields(fields: MutableSet<String?>?) {
         if (fields == null || fields.isEmpty()) {
-            this.dirtyFields = mutableSetOf<String?>()
+            this.dirtyFields = emptySet()
             this.dirty = false
         } else {
             // preserve order of discovery, expose as unmodifiable

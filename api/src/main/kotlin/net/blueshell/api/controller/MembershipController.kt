@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping
 @Tag(name = "Memberships")
-class MembershipController(service: MembershipService?, mapper: MembershipMapper?) :
-    BaseController<MembershipService?, MembershipMapper?>(service, mapper) {
+class MembershipController(service: MembershipService, mapper: MembershipMapper) :
+    BaseController<MembershipService, MembershipMapper>(service, mapper) {
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject filter: MembershipFilter?): MutableList<MembershipDTO?>? {
-        return mapper!!.toDTOs(service!!.findByFilter(filter))
+        return mapper.toDTOs(service.findByFilter(filter))
     }
 
     @PreAuthorize("hasAuthority('GUEST')")
@@ -39,8 +39,8 @@ class MembershipController(service: MembershipService?, mapper: MembershipMapper
 
         val membership = Membership()
         membership.setUserId(getPrincipal().getId())
-        service!!.create(membership)
-        return mapper!!.toDTO(membership)
+        service.create(membership)
+        return mapper.toDTO(membership)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
@@ -49,16 +49,16 @@ class MembershipController(service: MembershipService?, mapper: MembershipMapper
     fun boardCreateMembership(
         @Validated(Administration::class) @RequestBody dto: MembershipDTO?
     ): MembershipDTO? {
-        var membership = mapper!!.fromDTO(dto)
-        membership = service!!.create(membership)
+        var membership = mapper.fromDTO(dto)
+        membership = service.create(membership)
         return mapper.toDTO(membership)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/{id}"])
     fun updateMembership(@PathVariable("id") id: Long?, @RequestBody dto: MembershipDTO?): MembershipDTO? {
-        var membership = service!!.findById(id)
-        mapper!!.fromDTO(dto, membership)
+        var membership = service.findById(id)
+        mapper.fromDTO(dto, membership)
         membership = service.update(membership)
         return mapper.toDTO(membership)
     }
@@ -66,6 +66,6 @@ class MembershipController(service: MembershipService?, mapper: MembershipMapper
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/{id}"])
     fun findMembershipById(@PathVariable("id") id: Long?): MembershipDTO? {
-        return mapper!!.toDTO(service!!.findById(id))
+        return mapper.toDTO(service.findById(id))
     }
 }

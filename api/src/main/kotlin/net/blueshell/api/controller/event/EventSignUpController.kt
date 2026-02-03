@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "EventSignUps")
-class EventSignUpController @Autowired constructor(service: EventSignUpService?, mapper: EventSignUpMapper?) :
-    BaseController<EventSignUpService?, EventSignUpMapper?>(service, mapper) {
+class EventSignUpController @Autowired constructor(service: EventSignUpService, mapper: EventSignUpMapper) :
+    BaseController<EventSignUpService, EventSignUpMapper>(service, mapper) {
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
         "hasAuthority('BOARD') " +
@@ -26,24 +26,24 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService?,
     )
     @Transactional(readOnly = true)
     fun findEventSignUps(@ParameterObject filter: EventSignUpFilter?): MutableList<EventSignUpDTO?> {
-        val eventSignUps = service!!.findByFilter(filter)
-        return mapper!!.toDTOs(eventSignUps.stream()).toList()
+        val eventSignUps = service.findByFilter(filter)
+        return mapper.toDTOs(eventSignUps.stream()).toList()
     }
 
     @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
     @Transactional(readOnly = true)
     fun findEventSignUpsByAccessToken(@PathVariable("accessToken") accessToken: String?): MutableList<EventSignUpDTO?>? {
-        val signUps = service!!.findByGuestAccessToken(accessToken)
-        return mapper!!.toDTOs(signUps)
+        val signUps = service.findByGuestAccessToken(accessToken)
+        return mapper.toDTOs(signUps)
     }
 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
     @Transactional(readOnly = true)
     fun findEventSignUpsByEventId(@PathVariable("eventId") eventId: Long?): MutableList<EventSignUpDTO?>? {
-        val eventSignUps = service!!.findByEventId(eventId)
-        return mapper!!.toDTOs(eventSignUps)
+        val eventSignUps = service.findByEventId(eventId)
+        return mapper.toDTOs(eventSignUps)
     }
 
 
@@ -55,8 +55,8 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService?,
         if (getPrincipal() != null) {
             dto.setUserId(getPrincipal().getId())
         }
-        var eventSignUp = mapper!!.fromDTO(dto)
-        eventSignUp = service!!.create(eventSignUp)
+        var eventSignUp = mapper.fromDTO(dto)
+        eventSignUp = service.create(eventSignUp)
         return mapper.toDTO(eventSignUp)
     }
 
@@ -72,10 +72,10 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService?,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ): EventSignUpDTO? {
         var signUp = if (accessToken == null)
-            service!!.findByUserIdAndEventId(getPrincipal().getId(), eventId)
+            service.findByUserIdAndEventId(getPrincipal().getId(), eventId)
         else
-            service!!.findByGuestAccessTokenAndEventId(accessToken, eventId)
-        mapper!!.fromDTO(dto, signUp)
+            service.findByGuestAccessTokenAndEventId(accessToken, eventId)
+        mapper.fromDTO(dto, signUp)
         signUp = service.update(signUp)
         return mapper.toDTO(signUp)
     }
@@ -93,6 +93,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService?,
         @PathVariable("eventSignupId") eventSignupId: Long?,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ) {
-        service!!.deleteById(eventSignupId)
+        service.deleteById(eventSignupId)
     }
 }

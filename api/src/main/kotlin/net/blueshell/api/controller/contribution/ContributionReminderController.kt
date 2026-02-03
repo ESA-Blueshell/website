@@ -14,15 +14,15 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "ContributionReminders")
 class ContributionReminderController @Autowired constructor(
-    service: ContributionReminderService?,
-    mapper: ContributionReminderMapper?
-) : BaseController<ContributionReminderService?, ContributionReminderMapper?>(service, mapper) {
+    service: ContributionReminderService,
+    mapper: ContributionReminderMapper
+) : BaseController<ContributionReminderService, ContributionReminderMapper>(service, mapper) {
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminder(@Valid @RequestBody dto: @Valid ContributionReminderDTO?): ContributionReminderDTO? {
-        var reminder = mapper!!.fromDTO(dto)
-        service!!.sendReminder(reminder)
+        var reminder = mapper.fromDTO(dto)
+        service.sendReminder(reminder)
         reminder = service.create(reminder)
         return mapper.toDTO(reminder)
     }
@@ -31,8 +31,8 @@ class ContributionReminderController @Autowired constructor(
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminderBatch(@Valid @RequestBody dtos: @Valid MutableList<ContributionReminderDTO?>): MutableList<ContributionReminderDTO?>? {
-        var reminders = mapper!!.fromDTOs(dtos)
-        service!!.sendReminders(reminders)
+        var reminders = mapper.fromDTOs(dtos)
+        service.sendReminders(reminders)
         reminders = service.createAll(reminders)
         return mapper.toDTOs(reminders)
     }
@@ -40,7 +40,7 @@ class ContributionReminderController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributionReminders")
     fun findContributionReminders(@RequestParam(required = false) contributionPeriodId: Long?): MutableList<ContributionReminderDTO?>? {
-        val contributions = service!!.findByContributionPeriodId(contributionPeriodId)
-        return mapper!!.toDTOs(contributions)
+        val contributions = service.findByContributionPeriodId(contributionPeriodId)
+        return mapper.toDTOs(contributions)
     }
 }

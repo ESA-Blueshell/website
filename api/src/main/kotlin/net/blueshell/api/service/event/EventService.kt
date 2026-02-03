@@ -1,6 +1,5 @@
 package net.blueshell.api.service.event
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.controller.filter.EventFilter
 import net.blueshell.api.model.event.Event
@@ -12,7 +11,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
 @Service
-@Slf4j
 class EventService @Autowired constructor(repository: EventRepository) :
     BaseModelService<Event?, EventRepository?>(repository) {
     fun findByFilter(pageable: Pageable?, filter: EventFilter?): Page<Event?> {

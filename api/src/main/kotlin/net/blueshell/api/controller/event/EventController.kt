@@ -20,24 +20,24 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping
 @Tag(name = "Events")
-class EventController @Autowired constructor(service: EventService?, mapper: EventMapper?) :
-    BaseController<EventService?, EventMapper?>(service, mapper) {
+class EventController @Autowired constructor(service: EventService, mapper: EventMapper) :
+    BaseController<EventService, EventMapper>(service, mapper) {
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#dto.committeeId, 'Committee', 'events')")
     @PostMapping("/events")
     @ResponseStatus(
         HttpStatus.CREATED
     )
     fun createEvent(@Valid @RequestBody dto: @Valid EventDTO?): EventDTO? {
-        var event = mapper!!.fromDTO(dto)
-        event = service!!.create(event)
+        var event = mapper.fromDTO(dto)
+        event = service.create(event)
         return mapper.toDTO(event)
     }
 
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Event', 'write'))")
     @PutMapping("/events/{id}")
     fun updateEvent(@PathVariable("id") id: Long?, @Valid @RequestBody dto: @Valid EventDTO?): EventDTO? {
-        var event = service!!.findById(id)
-        mapper!!.fromDTO(dto, event)
+        var event = service.findById(id)
+        mapper.fromDTO(dto, event)
         event = service.update(event)
         return mapper.toDTO(event)
     }
@@ -45,30 +45,30 @@ class EventController @Autowired constructor(service: EventService?, mapper: Eve
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("/events/{id}/approve")
     fun approveEvent(@PathVariable("id") id: Long?, @QueryParam(value = "approved") approved: Boolean): EventDTO? {
-        var event = service!!.findById(id)
+        var event = service.findById(id)
         event.setApproved(approved)
         event = service.update(event)
-        return mapper!!.toDTO(event)
+        return mapper.toDTO(event)
     }
 
     @GetMapping("/events/{id}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Event', 'read')")
     fun findEventById(@PathVariable("id") id: Long?): EventDTO? {
-        val event = service!!.findById(id)
-        return mapper!!.toDTO(event)
+        val event = service.findById(id)
+        return mapper.toDTO(event)
     }
 
     @GetMapping("/events")
     @PermitAll
     fun findEvents(@ParameterObject pageable: Pageable?, @ParameterObject filter: EventFilter?): Page<EventDTO?>? {
-        val events = service!!.findByFilter(pageable, filter)
-        return mapper!!.toDTOs(events)
+        val events = service.findByFilter(pageable, filter)
+        return mapper.toDTOs(events)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/events/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteEventById(@PathVariable("eventId") eventId: Long?) {
-        service!!.deleteById(eventId)
+        service.deleteById(eventId)
     }
 }

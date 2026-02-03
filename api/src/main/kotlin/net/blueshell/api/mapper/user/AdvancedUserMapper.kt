@@ -15,7 +15,7 @@ import java.util.function.BiConsumer
 @Mapper(componentModel = "spring")
 abstract class AdvancedUserMapper : BaseMapper<User?, AdvancedUserDTO?>() {
     @Autowired
-    private val passwordEncoder: PasswordEncoder? = null
+    private lateinit var passwordEncoder: PasswordEncoder
 
     @Mapping(target = "id")
     @Mapping(target = "initials")
@@ -71,9 +71,9 @@ abstract class AdvancedUserMapper : BaseMapper<User?, AdvancedUserDTO?>() {
         if (user.getId() != null) return
 
         if (hasAuthority(Role.BOARD)) {
-            user.setPassword(passwordEncoder!!.encode(MappingUtil.generateRandomString()))
+            user.setPassword(passwordEncoder.encode(MappingUtil.generateRandomString()))
         } else {
-            user.setPassword(passwordEncoder!!.encode(dto.getPassword()))
+            user.setPassword(passwordEncoder.encode(dto.getPassword()))
         }
 
         applyRestrictedFields(dto, user)

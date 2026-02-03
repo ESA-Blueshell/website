@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Addresses")
-class AddressController(service: AddressService?, mapper: AddressMapper?, private val users: UserService) :
-    BaseController<AddressService?, AddressMapper?>(service, mapper) {
+class AddressController(service: AddressService, mapper: AddressMapper, private val users: UserService) :
+    BaseController<AddressService, AddressMapper>(service, mapper) {
     @PostMapping("/users/{userId}/addresses")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'write')")
     @ResponseStatus(
@@ -22,7 +22,7 @@ class AddressController(service: AddressService?, mapper: AddressMapper?, privat
     )
     fun createAddress(@PathVariable("userId") userId: Long?, @Valid @RequestBody dto: @Valid AddressDTO?): AddressDTO? {
         var user = users.findById(userId)
-        val address = mapper!!.fromDTO(dto)
+        val address = mapper.fromDTO(dto)
         user.setAddress(address)
         user = users.update(user)
         return mapper.toDTO(user.getAddress())
@@ -31,8 +31,8 @@ class AddressController(service: AddressService?, mapper: AddressMapper?, privat
     @PutMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Address', 'write'))")
     fun updateAddress(@PathVariable("id") id: Long?, @Valid @RequestBody dto: @Valid AddressDTO?): AddressDTO? {
-        var address = service!!.findById(id)
-        mapper!!.fromDTO(dto, address)
+        var address = service.findById(id)
+        mapper.fromDTO(dto, address)
         address = service.update(address)
         return mapper.toDTO(address)
     }
@@ -40,15 +40,15 @@ class AddressController(service: AddressService?, mapper: AddressMapper?, privat
     @GetMapping("/addresses")
     @PreAuthorize("hasAuthority('BOARD')")
     fun findAllAddresses(): MutableList<AddressDTO?>? {
-        val addresses = service!!.findAll()
-        return mapper!!.toDTOs(addresses)
+        val addresses = service.findAll()
+        return mapper.toDTOs(addresses)
     }
 
     @GetMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'read')")
     fun findAddressById(@PathVariable("id") id: Long?): AddressDTO? {
-        val address = service!!.findById(id)
-        return mapper!!.toDTO(address)
+        val address = service.findById(id)
+        return mapper.toDTO(address)
     }
 
     @DeleteMapping("/users/{userId}/addresses")
@@ -64,6 +64,6 @@ class AddressController(service: AddressService?, mapper: AddressMapper?, privat
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAddressById(@PathVariable("id") id: Long?) {
-        service!!.deleteById(id)
+        service.deleteById(id)
     }
 }

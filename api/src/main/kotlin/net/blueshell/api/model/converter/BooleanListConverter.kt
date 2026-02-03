@@ -8,7 +8,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 
-@Slf4j
 @Converter
 class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?> {
     val objectMapper = ObjectMapper()

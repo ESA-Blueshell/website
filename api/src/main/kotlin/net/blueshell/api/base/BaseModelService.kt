@@ -6,7 +6,6 @@ import org.springframework.core.ResolvableType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
@@ -33,7 +32,7 @@ import java.util.function.Supplier
  * `pre…` / `post…` hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).
  */
-abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>> protected constructor(protected val repository: R) :
+abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>>(protected val repository: R) :
     IdentityProvider() {
     private val entityLabel: String
 

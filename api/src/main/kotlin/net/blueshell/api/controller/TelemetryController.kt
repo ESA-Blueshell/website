@@ -14,20 +14,20 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Telemetries")
-class TelemetryController protected constructor(service: TelemetryService?, mapper: TelemetryMapper?) :
-    BaseController<TelemetryService?, TelemetryMapper?>(service, mapper) {
+class TelemetryController protected constructor(service: TelemetryService, mapper: TelemetryMapper) :
+    BaseController<TelemetryService, TelemetryMapper>(service, mapper) {
     @GetMapping("/telemetry/{id}")
     @PermitAll
     fun findTelemetryById(@PathVariable id: Long?): TelemetryDTO? {
-        val telemetry = service!!.findById(id)
-        return mapper!!.toDTO(telemetry)
+        val telemetry = service.findById(id)
+        return mapper.toDTO(telemetry)
     }
 
     @PostMapping("/telemetry")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTelemetry(@PathParam("platform") platform: PlatformType, @PathParam("url") url: String): TelemetryDTO? {
-        val telemetry = service!!.createTelemetry(platform, url)
-        return mapper!!.toDTO(telemetry)
+        val telemetry = service.createTelemetry(platform, url)
+        return mapper.toDTO(telemetry)
     }
 }

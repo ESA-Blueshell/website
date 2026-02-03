@@ -1,6 +1,5 @@
 package net.blueshell.api.service
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.controller.filter.UserFilter
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
-@Slf4j
 @Service
 class UserService @Autowired constructor(repository: UserRepository, private val passwordEncoder: PasswordEncoder) :
     BaseModelService<User, UserRepository?>(repository), UserDetailsService {

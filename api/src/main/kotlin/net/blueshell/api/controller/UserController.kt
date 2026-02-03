@@ -28,11 +28,11 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping
 @Tag(name = "Users")
 class UserController(
-    service: UserService?,
-    advancedUserMapper: AdvancedUserMapper?,
-    simpleUserMapper: SimpleUserMapper?,
+    service: UserService,
+    advancedUserMapper: AdvancedUserMapper,
+    simpleUserMapper: SimpleUserMapper,
     private val validator: Validator
-) : AdvancedController<UserService?, AdvancedUserMapper?, SimpleUserMapper?>(
+) : AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper>(
     service,
     advancedUserMapper,
     simpleUserMapper
@@ -51,9 +51,9 @@ class UserController(
             throw ConstraintViolationException(violations)
         }
 
-        var user = advancedMapper!!.fromDTO(dto, User())
+        var user = advancedMapper.fromDTO(dto, User())
 
-        user = service!!.create(user)
+        user = service.create(user)
         return advancedMapper.toDTO(user)
     }
 
@@ -61,8 +61,8 @@ class UserController(
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
     fun createGuestUser(@Validated(Creation::class) @RequestBody dto: SimpleUserDTO?): SimpleUserDTO? {
-        var user = simpleMapper!!.fromDTO(dto, User())
-        user = service!!.create(user)
+        var user = simpleMapper.fromDTO(dto, User())
+        user = service.create(user)
         return simpleMapper.toDTO(user)
     }
 
@@ -72,8 +72,8 @@ class UserController(
         @PathVariable("id") id: Long?,
         @Validated(Update::class) @RequestBody dto: SimpleUserDTO?
     ): SimpleUserDTO? {
-        var user = service!!.findById(id)
-        simpleMapper!!.fromDTO(dto, user)
+        var user = service.findById(id)
+        simpleMapper.fromDTO(dto, user)
         user = service.update(user)
         return simpleMapper.toDTO(user)
     }
@@ -84,8 +84,8 @@ class UserController(
         @PathVariable("id") id: Long?,
         @Validated(Update::class) @RequestBody dto: AdvancedUserDTO?
     ): AdvancedUserDTO? {
-        var user = service!!.findById(id)
-        advancedMapper!!.fromDTO(dto, user)
+        var user = service.findById(id)
+        advancedMapper.fromDTO(dto, user)
         user = service.update(user)
         return advancedMapper.toDTO(user)
     }
@@ -93,22 +93,22 @@ class UserController(
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
     fun findUsers(@ParameterObject filter: UserFilter?, @ParameterObject pageable: Pageable?): Page<AdvancedUserDTO?>? {
-        val users = service!!.findByFilter(filter, pageable)
-        return advancedMapper!!.toDTOs(users)
+        val users = service.findByFilter(filter, pageable)
+        return advancedMapper.toDTOs(users)
     }
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
     fun findUserById(@PathVariable("userId") userId: Long?): AdvancedUserDTO? {
-        val user = service!!.findById(userId)
-        return advancedMapper!!.toDTO(user)
+        val user = service.findById(userId)
+        return advancedMapper.toDTO(user)
     }
 
     @DeleteMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserById(@PathVariable("userId") userId: Long?) {
-        service!!.deleteById(userId)
+        service.deleteById(userId)
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
@@ -117,7 +117,7 @@ class UserController(
         @PathVariable("userId") userId: Long?,
         @RequestParam(value = "role") role: Role?
     ): AdvancedUserDTO? {
-        val user = service!!.toggleRole(userId, role)
-        return advancedMapper!!.toDTO(user)
+        val user = service.toggleRole(userId, role)
+        return advancedMapper.toDTO(user)
     }
 }

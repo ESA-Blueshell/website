@@ -15,28 +15,28 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "ContributionPeriods")
 class ContributionPeriodController @Autowired constructor(
-    service: ContributionPeriodService?,
-    mapper: ContributionPeriodMapper?
-) : BaseController<ContributionPeriodService?, ContributionPeriodMapper?>(service, mapper) {
+    service: ContributionPeriodService,
+    mapper: ContributionPeriodMapper
+) : BaseController<ContributionPeriodService, ContributionPeriodMapper>(service, mapper) {
     @GetMapping("/contributionPeriods")
     @PermitAll
     fun findContributionPeriods(): MutableList<ContributionPeriodDTO?>? {
-        return mapper!!.toDTOs(service!!.findAll())
+        return mapper.toDTOs(service.findAll())
     }
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
     fun findCurrentContributionPeriod(): ContributionPeriodDTO? {
-        val contributionPeriod = service!!.findLatest()
-        return mapper!!.toDTO(contributionPeriod)
+        val contributionPeriod = service.findLatest()
+        return mapper.toDTO(contributionPeriod)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody dto: @Valid ContributionPeriodDTO?): ContributionPeriodDTO? {
-        var contributionPeriod = mapper!!.fromDTO(dto)
-        contributionPeriod = service!!.create(contributionPeriod)
+        var contributionPeriod = mapper.fromDTO(dto)
+        contributionPeriod = service.create(contributionPeriod)
         return mapper.toDTO(contributionPeriod)
     }
 
@@ -46,8 +46,8 @@ class ContributionPeriodController @Autowired constructor(
         @PathVariable("id") id: Long?,
         @Valid @RequestBody dto: @Valid ContributionPeriodDTO?
     ): ContributionPeriodDTO? {
-        var contributionPeriod = service!!.findById(id)
-        mapper!!.fromDTO(dto, contributionPeriod)
+        var contributionPeriod = service.findById(id)
+        mapper.fromDTO(dto, contributionPeriod)
         contributionPeriod = service.update(contributionPeriod)
         return mapper.toDTO(contributionPeriod)
     }
@@ -56,6 +56,6 @@ class ContributionPeriodController @Autowired constructor(
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteContributionPeriodById(@PathVariable("id") id: Long?) {
-        service!!.deleteById(id)
+        service.deleteById(id)
     }
 }

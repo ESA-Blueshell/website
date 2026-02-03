@@ -20,12 +20,12 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @Tag(name = "Files")
-class FileController(service: FileService?, repository: FileRepository?, private val fileMapper: FileMapper) :
-    BaseController<FileService?, FileRepository?>(service, repository) {
+class FileController(service: FileService, repository: FileRepository, private val fileMapper: FileMapper) :
+    BaseController<FileService, FileRepository>(service, repository) {
     @GetMapping("/events/banners/{bannerId}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
     fun downloadEventBanner(@PathVariable("bannerId") bannerId: Long?): ResponseEntity<Resource?>? {
-        val file = service!!.findByEventBannerId(bannerId)
+        val file = service.findByEventBannerId(bannerId)
         return service.prepareFileResponse(file)
     }
 
@@ -43,7 +43,7 @@ class FileController(service: FileService?, repository: FileRepository?, private
             "image/gif"
         ) file: @NotNull(message = "File is required") MultipartFile?
     ): FileDTO? {
-        val stored = service!!.storeMultipart(file, FileType.EVENT_BANNER)
+        val stored = service.storeMultipart(file, FileType.EVENT_BANNER)
         return fileMapper.toDTO(stored)
     }
 }

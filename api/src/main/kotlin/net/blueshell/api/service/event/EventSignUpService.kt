@@ -1,6 +1,5 @@
 package net.blueshell.api.service.event
 
-import lombok.extern.slf4j.Slf4j
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.controller.filter.EventSignUpFilter
 import net.blueshell.api.model.event.EventSignUp
@@ -13,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
-@Slf4j
 @Service
 class EventSignUpService @Autowired constructor(repository: EventSignUpRepository) :
     BaseModelService<EventSignUp?, EventSignUpRepository?>(repository) {

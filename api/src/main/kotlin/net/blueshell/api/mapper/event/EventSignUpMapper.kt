@@ -30,19 +30,19 @@ abstract class EventSignUpMapper : BaseMapper<EventSignUp?, EventSignUpDTO?>() {
     abstract fun fromDTO(dto: EventSignUpDTO?, @MappingTarget signUp: EventSignUp?): EventSignUp?
 
     @Autowired
-    private val guests: GuestService? = null
+    private lateinit var guests: GuestService
 
     @Autowired
-    private val guestMapper: GuestMapper? = null
+    private lateinit var guestMapper: GuestMapper
 
     @AfterMapping
     protected fun afterFromDTO(dto: EventSignUpDTO, @MappingTarget signUp: EventSignUp) {
         if (dto.getGuest() != null && dto.getGuest().getAccessToken() != null) {
-            val guest = guests!!.findByAccessToken(dto.getGuest().getAccessToken())
-            guestMapper!!.fromDTO(dto.getGuest(), guest)
+            val guest = guests.findByAccessToken(dto.getGuest().getAccessToken())
+            guestMapper.fromDTO(dto.getGuest(), guest)
             signUp.setGuest(guest)
         } else if (dto.getGuest() != null) {
-            signUp.setGuest(guestMapper!!.fromDTO(dto.getGuest()))
+            signUp.setGuest(guestMapper.fromDTO(dto.getGuest()))
         }
     }
 }

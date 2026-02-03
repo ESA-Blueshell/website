@@ -10,13 +10,13 @@ import org.springframework.stereotype.Repository
 import java.time.OffsetDateTime
 
 @Repository
-interface RedirectRepository : BaseRepository<Redirect?> {
+interface RedirectRepository : BaseRepository<Redirect> {
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
-    override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Redirect?>
+    override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Redirect>
 
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
-    override fun findAll(): MutableList<Redirect?>
+    override fun findAll(): MutableList<Redirect>
 
     @Query("SELECT e FROM Redirect e WHERE e.createdAt >= :from AND e.createdAt <= :to ORDER BY e.createdAt DESC")
-    fun findCreatedAtBetween(from: OffsetDateTime?, to: OffsetDateTime?): MutableList<Redirect?>?
+    fun findCreatedAtBetween(from: OffsetDateTime, to: OffsetDateTime): MutableList<Redirect>
 }

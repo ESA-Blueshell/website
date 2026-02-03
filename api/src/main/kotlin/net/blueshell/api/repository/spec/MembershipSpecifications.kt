@@ -11,8 +11,8 @@ import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 
 object MembershipSpecifications {
-    fun timeOverlap(from: LocalDate?, to: LocalDate?): Specification<Membership?> {
-        return Specification { root: Root<Membership?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+    fun timeOverlap(from: LocalDate, to: LocalDate): Specification<Membership> {
+        return Specification { root: Root<Membership>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (from == null && to == null) {
                 return@Specification cb!!.conjunction()
             }
@@ -24,28 +24,28 @@ object MembershipSpecifications {
                 t = tmp
             }
 
-            val start = root!!.get<LocalDate?>("startDate")
-            val end = root.get<LocalDate?>("endDate")
+            val start = root!!.get<LocalDate>("startDate")
+            val end = root.get<LocalDate>("endDate")
 
-            val ands: MutableList<Predicate?> = ArrayList<Predicate?>(2)
+            val ands: MutableList<Predicate> = ArrayList<Predicate>(2)
 
             if (t != null) {
-                ands.add(cb!!.lessThanOrEqualTo<LocalDate?>(start, t))
+                ands.add(cb!!.lessThanOrEqualTo<LocalDate>(start, t))
             }
 
             if (f != null) {
-                ands.add(cb!!.or(cb.isNull(end), cb.greaterThanOrEqualTo<LocalDate?>(end, f)))
+                ands.add(cb!!.or(cb.isNull(end), cb.greaterThanOrEqualTo<LocalDate>(end, f)))
             }
-            cb!!.and(*ands.toTypedArray<Predicate?>())
+            cb!!.and(*ands.toTypedArray<Predicate>())
         }
     }
 
-    fun fromFilter(f: MembershipFilter, user: User?): Specification<Membership?> {
+    fun fromFilter(f: MembershipFilter, user: User): Specification<Membership> {
         var spec =
-            Specification { root: Root<Membership?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+            Specification { root: Root<Membership>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 
-        if (f.getFrom() != null || f.getTo() != null) {
-            spec = spec.and(timeOverlap(f.getFrom(), f.getTo()))
+        if (f.from != null || f.to != null) {
+            spec = spec.and(timeOverlap(f.from, f.to))
         }
 
         return spec

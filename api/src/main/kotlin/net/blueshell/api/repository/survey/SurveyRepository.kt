@@ -5,4 +5,4 @@ import net.blueshell.api.model.survey.Survey
 import org.springframework.stereotype.Repository
 
 @Repository
-interface SurveyRepository : BaseRepository<Survey?>
+interface SurveyRepository : BaseRepository<Survey>

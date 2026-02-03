@@ -9,13 +9,13 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.stereotype.Repository
 
 @Repository
-interface EventRepository : BaseRepository<Event?> {
+interface EventRepository : BaseRepository<Event> {
     @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(spec: Specification<Event?>?, pageable: Pageable): Page<Event?>
+    override fun findAll(spec: Specification<Event>, pageable: Pageable): Page<Event>
 
     @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(pageable: Pageable): Page<Event?>
+    override fun findAll(pageable: Pageable): Page<Event>
 
     @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(): MutableList<Event?>
+    override fun findAll(): MutableList<Event>
 }

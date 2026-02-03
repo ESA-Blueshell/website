@@ -5,6 +5,6 @@ import net.blueshell.api.model.Membership
 import org.springframework.stereotype.Repository
 
 @Repository
-interface MemberRepository : BaseRepository<Membership?> {
-    fun existsByUserId(userId: Long?): Boolean
+interface MemberRepository : BaseRepository<Membership> {
+    fun existsByUserId(userId: Long): Boolean
 }

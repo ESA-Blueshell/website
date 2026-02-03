@@ -12,26 +12,26 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface EventSignUpRepository : BaseRepository<EventSignUp?> {
+interface EventSignUpRepository : BaseRepository<EventSignUp> {
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(spec: Specification<EventSignUp?>?): MutableList<EventSignUp?>
+    override fun findAll(spec: Specification<EventSignUp>): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(spec: Specification<EventSignUp?>?, pageable: Pageable): Page<EventSignUp?>
+    override fun findAll(spec: Specification<EventSignUp>, pageable: Pageable): Page<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByUserIdAndEventId(userId: Long?, eventId: Long?): Optional<EventSignUp?>?
+    fun findByUserIdAndEventId(userId: Long, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessToken = :accessToken")
-    fun findByGuestAccessToken(@Param("accessToken") accessToken: String?): MutableList<EventSignUp?>?
+    fun findByGuestAccessToken(@Param("accessToken") accessToken: String): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByEventId(eventId: Long?): MutableList<EventSignUp?>?
+    fun findByEventId(eventId: Long): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByGuestAccessTokenAndEventId(accessToken: String?, eventId: Long?): Optional<EventSignUp?>?
+    fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findAllByEventSignUpFormId(surveyId: Long?): MutableSet<EventSignUp?>?
+    fun findAllByEventSignUpFormId(surveyId: Long): MutableSet<EventSignUp>
 }

@@ -5,4 +5,4 @@ import net.blueshell.api.model.Address
 import org.springframework.stereotype.Repository
 
 @Repository
-interface AddressRepository : BaseRepository<Address?>
+interface AddressRepository : BaseRepository<Address>

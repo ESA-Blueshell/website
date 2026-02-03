@@ -5,4 +5,4 @@ import net.blueshell.api.model.event.EventPicture
 import org.springframework.stereotype.Repository
 
 @Repository
-interface EventPictureRepository : BaseRepository<EventPicture?>
+interface EventPictureRepository : BaseRepository<EventPicture>

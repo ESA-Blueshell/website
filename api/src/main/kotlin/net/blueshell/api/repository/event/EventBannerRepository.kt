@@ -5,4 +5,4 @@ import net.blueshell.api.model.event.EventBanner
 import org.springframework.stereotype.Repository
 
 @Repository
-interface EventBannerRepository : BaseRepository<EventBanner?>
+interface EventBannerRepository : BaseRepository<EventBanner>

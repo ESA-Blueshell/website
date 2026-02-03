@@ -6,10 +6,10 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface FileRepository : BaseRepository<File?> {
-    fun findByName(name: String?): Optional<File?>?
+interface FileRepository : BaseRepository<File> {
+    fun findByName(name: String): Optional<File>
 
-    fun findByEventBanners_Id(bannerId: Long?): Optional<File?>?
+    fun findByEventBanners_Id(bannerId: Long): Optional<File>
 
-    fun findByPath(path: String?): Optional<File?>?
+    fun findByPath(path: String): Optional<File>
 }

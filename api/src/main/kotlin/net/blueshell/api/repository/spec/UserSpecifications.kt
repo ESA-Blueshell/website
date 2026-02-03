@@ -12,55 +12,55 @@ import org.springframework.data.jpa.domain.Specification
 import java.util.*
 
 object UserSpecifications {
-    fun approved(): Specification<Event?> {
-        return Specification { root: Root<Event?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+    fun approved(): Specification<Event> {
+        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.isTrue(
-                root!!.get<Boolean?>(
+                root!!.get<Boolean>(
                     "approved"
                 )
             )
         }
     }
 
-    fun hasMemberAuthority(): Specification<User?> {
+    fun hasMemberAuthority(): Specification<User> {
         return hasAuthorityAtLeast(Role.MEMBER)
     }
 
     /**
      * Generic version: users that have `base` or any role that inherits `base`.
      */
-    fun hasAuthorityAtLeast(base: Role?): Specification<User?> {
-        val allowed: MutableSet<Role?> = Role.allThatInherit(base)
+    fun hasAuthorityAtLeast(base: Role): Specification<User> {
+        val allowed: MutableSet<Role> = Role.allThatInherit(base)
 
-        return Specification { root: Root<User?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+        return Specification { root: Root<User>, query: CriteriaQuery<*>, cb: CriteriaBuilder ->
             // Avoid duplicates when joining element collections
             query!!.distinct(true)
 
             // Join the ElementCollection<ROLE>
-            val rolesJoin = root!!.join<User?, Role?>("roles", JoinType.INNER)
+            val rolesJoin = root!!.join<User, Role>("roles", JoinType.INNER)
             rolesJoin.`in`(allowed)
         }
     }
 
-    fun hasMemberRole(hasMemberRole: Boolean): Specification<User?> {
-        return Specification { root: Root<User?>?, q: CriteriaQuery<*>?, cb: CriteriaBuilder? ->
+    fun hasMemberRole(hasMemberRole: Boolean): Specification<User> {
+        return Specification { root: Root<User>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             q!!.distinct(true)
-            val rolesJoin = root!!.join<Any?, Any?>("roles", JoinType.INNER)
+            val rolesJoin = root!!.join<Any, Any>("roles", JoinType.INNER)
             if (hasMemberRole) {
-                return@Specification rolesJoin.`in`(EnumSet.of<Role?>(Role.MEMBER))
+                return@Specification rolesJoin.`in`(EnumSet.of<Role>(Role.MEMBER))
             } else {
-                return@Specification cb!!.not(rolesJoin.`in`(EnumSet.of<Role?>(Role.MEMBER)))
+                return@Specification cb!!.not(rolesJoin.`in`(EnumSet.of<Role>(Role.MEMBER)))
             }
         }
     }
 
 
-    fun fromFilter(f: UserFilter, user: User?): Specification<User?> {
+    fun fromFilter(f: UserFilter, user: User): Specification<User> {
         var spec =
-            Specification { root: Root<User?>?, query: CriteriaQuery<*>?, cb: CriteriaBuilder? -> cb!!.conjunction() }
+            Specification { root: Root<User>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 
-        if (f.getIsMember() != null) {
-            spec = spec.and(hasMemberRole(f.getIsMember()))
+        if (f.isMember != null) {
+            spec = spec.and(hasMemberRole(f.isMember))
         }
 
         return spec

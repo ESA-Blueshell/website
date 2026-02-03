@@ -7,51 +7,39 @@ import org.springframework.context.ApplicationEventPublisher
 class JpaListener {
     @PrePersist
     fun prePersist(entity: Any?) {
-        if (publisher == null) return
-
-        publisher.publishEvent(PrePersistEvent<Any?>(entity))
+        publisher.publishEvent(PrePersistEvent(entity))
     }
 
     @PostPersist
     fun postPersist(entity: Any?) {
-        if (publisher == null) return
-
-        publisher.publishEvent(PostPersistEvent<Any?>(entity))
+        publisher.publishEvent(PostPersistEvent(entity))
     }
 
     @PreUpdate
     fun preUpdate(entity: Any?) {
-        if (publisher == null) return
-
-        publisher.publishEvent(PreUpdateEvent<Any?>(entity))
+        publisher.publishEvent(PreUpdateEvent(entity))
     }
 
     @PostUpdate
     fun postUpdate(entity: Any?) {
-        if (publisher == null) return
-
-        publisher.publishEvent(PostUpdateEvent<Any?>(entity))
+        publisher.publishEvent(PostUpdateEvent(entity))
     }
 
     @PreRemove
     fun preRemove(entity: Any?) {
-        if (publisher == null) return
-
-        publisher.publishEvent(PreRemoveEvent<Any?>(entity))
+        publisher.publishEvent(PreRemoveEvent(entity))
     }
 
     @PostRemove
     fun postRemove(entity: Any?) {
-        if (publisher == null) return
-
-        publisher.publishEvent(PostRemoveEvent<Any?>(entity))
+        publisher.publishEvent(PostRemoveEvent(entity))
     }
 
     companion object {
-        private var publisher: ApplicationEventPublisher? = null
+        private lateinit var publisher: ApplicationEventPublisher
 
         @JvmStatic
-        fun setPublisher(eventPublisher: ApplicationEventPublisher?) {
+        fun setPublisher(eventPublisher: ApplicationEventPublisher) {
             publisher = eventPublisher
         }
     }

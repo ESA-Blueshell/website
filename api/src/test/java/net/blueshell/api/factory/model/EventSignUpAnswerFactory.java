@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.event.EventSignUp;
@@ -23,7 +24,7 @@ public class EventSignUpAnswerFactory {
 
     public EventSignUpAnswer createBasic() {
         EventSignUpAnswer esa = new EventSignUpAnswer();
-        esa.setId(generateId());
+        ModelTestUtils.setId(esa, generateId());
         EventSignUp es = eventSignUpFactory.createBasic();
         Answer answer = answerFactory.createBasic();
         esa.setEventSignUp(es);

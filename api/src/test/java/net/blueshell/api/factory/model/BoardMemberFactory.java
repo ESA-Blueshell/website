@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.File;
@@ -25,7 +26,7 @@ public class BoardMemberFactory {
 
     public BoardMember createBasic() {
         BoardMember bm = new BoardMember();
-        bm.setId(generateId());
+        ModelTestUtils.setId(bm, generateId());
 
         Board board = boardFactory.createBasic();
         User user = userFactory.createFull();

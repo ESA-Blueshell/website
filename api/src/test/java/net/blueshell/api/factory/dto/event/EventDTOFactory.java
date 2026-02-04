@@ -23,21 +23,22 @@ public class EventDTOFactory extends BaseDtoFactory<EventDTO> {
 
     @Override
     public EventDTO createBasic() {
-        EventDTO dto = new EventDTO();
-        dto.setCommitteeId(nextId());
-        dto.setTitle(unique("Event"));
-        dto.setDescription("Test event description");
-        dto.setLocation("Test Location");
-        dto.setStartTime(now().plusSeconds(3600));
-        dto.setEndTime(dto.getStartTime().plusSeconds(3600));
-        dto.setMemberPrice(0.0);
-        dto.setPublicPrice(10.0);
-        dto.setApproved(true);
-        dto.setMembersOnly(false);
-        dto.setSignUp(true);
-        dto.setBanner(bannerFactory.createBasic());
-        dto.setSignUpForm(surveyFactory.createBasic());
-        dto.setSignUpCount(0L);
-        return dto;
+        var start = now().plusSeconds(3600);
+        return new EventDTO(
+                nextId(),
+                unique("Event"),
+                "Test event description",
+                "Test Location",
+                start,
+                start.plusSeconds(3600),
+                0.0,
+                10.0,
+                true,
+                false,
+                true,
+                bannerFactory.createBasic(),
+                0L,
+                surveyFactory.createBasic()
+        );
     }
 }

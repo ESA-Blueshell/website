@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.User;
@@ -23,7 +24,7 @@ public class ContributionFactory {
 
     public Contribution createBasic() {
         Contribution c = new Contribution();
-        c.setId(generateId());
+        ModelTestUtils.setId(c, generateId());
         User user = userFactory.createBasic();
         ContributionPeriod period = contributionPeriodFactory.createBasic();
         c.setUser(user);

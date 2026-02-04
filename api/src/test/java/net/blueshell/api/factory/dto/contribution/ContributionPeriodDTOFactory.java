@@ -19,13 +19,13 @@ public class ContributionPeriodDTOFactory extends BaseDtoFactory<ContributionPer
 
     @Override
     public ContributionPeriodDTO createBasic() {
-        ContributionPeriodDTO dto = new ContributionPeriodDTO();
-        dto.setStartDate(today());
-        dto.setEndDate(today().plusMonths(6));
-        dto.setHalfYearFee(10.0);
-        dto.setFullYearFee(18.0);
-        dto.setAlumniFee(5.0);
-        dto.setListId(nextId());
-        return dto;
+        return new ContributionPeriodDTO(
+                today(),
+                today().plusMonths(6),
+                10.0,
+                18.0,
+                5.0,
+                nextId()
+        );
     }
 }

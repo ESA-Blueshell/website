@@ -21,10 +21,10 @@ public class ContributionDTOFactory extends BaseDtoFactory<ContributionDTO> {
 
     @Override
     public ContributionDTO createBasic() {
-        ContributionDTO dto = new ContributionDTO();
-        dto.setUserId(nextId());
-        dto.setContributionPeriodId(nextId());
-        dto.setRemindedAt(Timestamp.from(now()));
-        return dto;
+        return new ContributionDTO(
+                nextId(),
+                nextId(),
+                Timestamp.from(now())
+        );
     }
 }

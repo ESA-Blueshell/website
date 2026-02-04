@@ -1,8 +1,7 @@
-import org.gradle.api.GradleException
-import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
-import org.springframework.boot.gradle.tasks.run.BootRun
 import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
@@ -32,6 +31,9 @@ java {
 configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
+    }
+    testCompileOnly {
+        extendsFrom(configurations.testAnnotationProcessor.get())
     }
 }
 
@@ -140,6 +142,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    systemProperty("spring.profiles.active", "test")
 }
 
 tasks.withType<BootRun>().configureEach {
@@ -210,10 +213,19 @@ tasks.register<GenerateTask>("generateBrevoClient") {
     }
 }
 
+tasks.named<JavaCompile>("compileJava") {
+    options.annotationProcessorPath = configurations.annotationProcessor.get()
+}
+
+tasks.named<JavaCompile>("compileTestJava") {
+    options.annotationProcessorPath = configurations.testAnnotationProcessor.get()
+    options.compilerArgs = options.compilerArgs.filter { it != "-proc:none" }.toMutableList()
+    doFirst {
+        options.compilerArgs.removeAll(listOf("-proc:none"))
+    }
+}
+
 tasks.withType<KaptGenerateStubsTask>().configureEach {
     dependsOn("generateBrevoClient")
 }
 val compileKotlin: KotlinCompile by tasks
-compileKotlin.compilerOptions {
-    freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property=param-property"))
-}

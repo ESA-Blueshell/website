@@ -11,6 +11,7 @@ import net.blueshell.api.factory.dto.survey.QuestionDTOFactory;
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory;
 import net.blueshell.api.model.survey.Question;
 import net.blueshell.api.repository.survey.QuestionRepository;
+import net.blueshell.api.testutil.ModelTestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +39,7 @@ class SurveyValidatorTest {
 
     private static Question mkQuestion(QuestionType type) {
         Question q = new Question();
-        q.setId(42L);
+        ModelTestUtils.setId(q, 42L);
         q.setType(type);
         if (type == QuestionType.RADIO || type == QuestionType.CHECKBOX) {
             q.setChoiceLabels(List.of("A", "B", "C"));

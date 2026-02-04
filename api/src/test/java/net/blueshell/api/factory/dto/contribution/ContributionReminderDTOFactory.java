@@ -21,10 +21,10 @@ public class ContributionReminderDTOFactory extends BaseDtoFactory<ContributionR
 
     @Override
     public ContributionReminderDTO createBasic() {
-        ContributionReminderDTO dto = new ContributionReminderDTO();
-        dto.setUserId(nextId());
-        dto.setContributionPeriodId(nextId());
-        dto.setRemindedAt(Timestamp.from(now()));
-        return dto;
+        return new ContributionReminderDTO(
+                nextId(),
+                nextId(),
+                Timestamp.from(now())
+        );
     }
 }

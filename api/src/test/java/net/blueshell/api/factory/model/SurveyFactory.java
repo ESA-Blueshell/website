@@ -1,11 +1,11 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.survey.Survey;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -21,8 +21,7 @@ public class SurveyFactory {
 
     public Survey createBasic() {
         Survey survey = new Survey();
-        survey.setId(generateId());
-        survey.setQuestions(new HashSet<>());
+        ModelTestUtils.setId(survey, generateId());
         survey.setResponseCount(0L);
         return survey;
     }

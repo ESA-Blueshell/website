@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.User;
@@ -8,8 +9,6 @@ import net.blueshell.api.model.event.EventSignUp;
 import net.blueshell.api.model.survey.Answer;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -27,7 +26,7 @@ public class EventSignUpFactory {
 
     public EventSignUp createBasic() {
         EventSignUp es = new EventSignUp();
-        es.setId(generateId());
+        ModelTestUtils.setId(es, generateId());
 
         Event event = eventFactory.createFull();
         User user = userFactory.createFull();
@@ -38,9 +37,7 @@ public class EventSignUpFactory {
         es.setUserId(user.getId());
         es.setGuest(null);
 
-        Set<Answer> answers = new HashSet<>();
-        answers.add(answerFactory.createBasic());
-        es.setAnswers(answers);
+        es.getAnswers().add(answerFactory.createBasic());
 
         return es;
     }

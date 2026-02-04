@@ -1,7 +1,6 @@
 package net.blueshell.api.factory;
 
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import net.blueshell.api.factory.dto.BaseDtoFactory;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +17,6 @@ import java.util.stream.IntStream;
  * Unified entrypoint to create test fixtures (DTOs and models), delegating to registered factories.
  */
 @Component
-@RequiredArgsConstructor
 public class UnifiedFactory {
 
     private final DtoFactoryRegistry dtoRegistry;
@@ -26,6 +24,11 @@ public class UnifiedFactory {
 
     /** Indexed at startup: model product type -> invocation bundle. */
     private final Map<Class<?>, Creator<?>> modelCreators = new ConcurrentHashMap<>();
+
+    public UnifiedFactory(DtoFactoryRegistry dtoRegistry, FactoryRegistry modelRegistry) {
+        this.dtoRegistry = dtoRegistry;
+        this.modelRegistry = modelRegistry;
+    }
 
     @PostConstruct
     void init() {

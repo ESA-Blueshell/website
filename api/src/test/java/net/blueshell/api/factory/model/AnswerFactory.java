@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.QuestionType;
@@ -24,10 +25,9 @@ public class AnswerFactory {
 
     public Answer createBasic() {
         Answer answer = new Answer();
-        answer.setId(generateId());
+        ModelTestUtils.setId(answer, generateId());
 
         Question q = questionFactory.createFull();
-        answer.setQuestion(q);
         answer.setQuestionId(q.getId());
 
         if (q.getType() == QuestionType.CHECKBOX || q.getType() == QuestionType.RADIO) {

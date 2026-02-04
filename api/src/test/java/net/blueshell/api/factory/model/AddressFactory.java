@@ -1,5 +1,7 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
+
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.Address;
@@ -19,7 +21,7 @@ public class AddressFactory {
 
     public Address createBasic() {
         Address address = new Address();
-        address.setId(generateId());
+        ModelTestUtils.setId(address, generateId());
         address.setCountry("Netherlands");
         address.setCity(faker.address().city());
         address.setStreet(faker.address().streetName());

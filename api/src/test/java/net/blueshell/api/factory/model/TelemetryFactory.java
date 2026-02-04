@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.PlatformType;
@@ -20,7 +21,7 @@ public class TelemetryFactory {
 
     public Telemetry createBasic() {
         Telemetry t = new Telemetry();
-        t.setId(generateId());
+        ModelTestUtils.setId(t, generateId());
         t.setPlatform(faker.options().option(PlatformType.class));
         t.setUrl(faker.internet().url());
         return t;

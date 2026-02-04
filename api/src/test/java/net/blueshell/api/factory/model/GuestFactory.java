@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.event.Guest;
@@ -20,7 +21,7 @@ public class GuestFactory {
 
     public Guest createBasic() {
         Guest guest = new Guest();
-        guest.setId(generateId());
+        ModelTestUtils.setId(guest, generateId());
         guest.setName(faker.name().fullName());
         guest.setDiscord(faker.name().username() + "#" + faker.number().numberBetween(1000, 9999));
         guest.setEmail(faker.internet().emailAddress());

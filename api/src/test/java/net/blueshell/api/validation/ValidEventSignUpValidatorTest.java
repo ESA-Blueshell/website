@@ -10,6 +10,7 @@ import net.blueshell.api.model.survey.Question;
 import net.blueshell.api.model.survey.Survey;
 import net.blueshell.api.repository.survey.QuestionRepository;
 import net.blueshell.api.service.event.EventService;
+import net.blueshell.api.testutil.ModelTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,10 +52,10 @@ class ValidEventSignUpValidatorTest {
         when(questionRepository.findById(Q_CHECK)).thenReturn(Optional.of(checkboxQ));
 
         var form = new Survey();
-        form.setQuestions(Set.of(openQ, radioQ, checkboxQ));
+        form.getQuestions().addAll(Set.of(openQ, radioQ, checkboxQ));
 
         var event = new Event();
-        event.setId(1L);
+        ModelTestUtils.setId(event, 1L);
         event.setSignUpForm(form);
 
         when(eventService.findById(1L)).thenReturn(event);
@@ -159,7 +160,7 @@ class ValidEventSignUpValidatorTest {
 
     private static Question mkQuestion(long id, QuestionType type, List<String> choices) {
         Question q = new Question();
-        q.setId(id);
+        ModelTestUtils.setId(q, id);
         q.setType(type);
         q.setChoiceLabels(choices);
         return q;

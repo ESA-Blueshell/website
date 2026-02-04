@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.event.EventPicture;
@@ -21,7 +22,7 @@ public class EventPictureFactory {
 
     public EventPicture createBasic() {
         EventPicture ep = new EventPicture();
-        ep.setId(generateId());
+        ModelTestUtils.setId(ep, generateId());
         ep.setEvent(eventFactory.createBasic());
         ep.setPicture(fileFactory.createImage());
         return ep;

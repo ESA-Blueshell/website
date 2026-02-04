@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.File;
@@ -21,7 +22,7 @@ public class SponsorFactory {
 
     public Sponsor createBasic() {
         Sponsor s = new Sponsor();
-        s.setId(generateId());
+        ModelTestUtils.setId(s, generateId());
         s.setName(faker.company().name());
         s.setDescription(faker.lorem().paragraph(3));
         File logo = fileFactory.createImage();

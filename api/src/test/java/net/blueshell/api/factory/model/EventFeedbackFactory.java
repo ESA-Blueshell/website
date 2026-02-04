@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.event.EventFeedback;
@@ -20,7 +21,7 @@ public class EventFeedbackFactory {
 
     public EventFeedback createBasic() {
         EventFeedback ef = new EventFeedback();
-        ef.setId(generateId());
+        ModelTestUtils.setId(ef, generateId());
         ef.setEvent(eventFactory.createBasic());
         ef.setFeedback(faker.lorem().sentence(10));
         return ef;

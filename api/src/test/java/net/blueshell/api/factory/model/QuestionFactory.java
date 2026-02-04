@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.QuestionType;
@@ -23,7 +24,7 @@ public class QuestionFactory {
 
     public Question createBasic() {
         Question question = new Question();
-        question.setId(generateId());
+        ModelTestUtils.setId(question, generateId());
         question.setIdx((long) faker.number().numberBetween(1, 100));
         question.setType(faker.options().option(QuestionType.class));
         question.setLabel(faker.lorem().sentence() + "?");

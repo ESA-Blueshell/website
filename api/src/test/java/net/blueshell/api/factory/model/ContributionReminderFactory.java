@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.User;
@@ -23,7 +24,7 @@ public class ContributionReminderFactory {
 
     public ContributionReminder createBasic() {
         ContributionReminder cr = new ContributionReminder();
-        cr.setId(generateId());
+        ModelTestUtils.setId(cr, generateId());
         User user = userFactory.createBasic();
         ContributionPeriod period = contributionPeriodFactory.createBasic();
         cr.setUser(user);

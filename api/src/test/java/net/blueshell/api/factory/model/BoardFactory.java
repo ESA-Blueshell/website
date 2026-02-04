@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.File;
@@ -7,7 +8,6 @@ import net.blueshell.api.model.board.Board;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -23,20 +23,18 @@ public class BoardFactory {
 
     public Board createBasic() {
         Board board = new Board();
-        board.setId(generateId());
+        ModelTestUtils.setId(board, generateId());
         board.setName(faker.company().name() + " Board");
         board.setCandidate(faker.name().fullName());
         board.setStartDate(LocalDate.now().minusYears(1));
         board.setEndDate(LocalDate.now().plusYears(1));
-        board.setMembers(new HashSet<>());
-        board.setDocuments(new HashSet<>());
         return board;
     }
 
     public Board createFull() {
         Board board = createBasic();
         File picture = fileFactory.createImage();
-        board.setPicture(picture);
+        ModelTestUtils.setField(board, "picture", picture);
         return board;
     }
 

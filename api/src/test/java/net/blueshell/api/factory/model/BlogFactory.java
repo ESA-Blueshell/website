@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.Blog;
@@ -20,7 +21,7 @@ public class BlogFactory {
 
     public Blog createBasic() {
         Blog blog = new Blog();
-        blog.setId(generateId());
+        ModelTestUtils.setId(blog, generateId());
         blog.setTitle(faker.book().title());
         blog.setHtml("<p>" + faker.lorem().paragraph(10) + "</p>");
         blog.setPublishedAt(Instant.now());

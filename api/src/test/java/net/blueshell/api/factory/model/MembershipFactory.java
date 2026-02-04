@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.MemberType;
@@ -23,10 +24,9 @@ public class MembershipFactory {
 
     public Membership createBasic() {
         Membership membership = new Membership();
-        membership.setId(generateId());
+        ModelTestUtils.setId(membership, generateId());
 
         User user = userFactory.createBasic();
-        membership.setUser(user);
         membership.setUserId(user.getId());
 
         membership.setStartDate(LocalDate.now().minusMonths(6));

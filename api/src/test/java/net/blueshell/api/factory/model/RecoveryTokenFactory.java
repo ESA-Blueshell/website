@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.ResetType;
@@ -24,7 +25,7 @@ public class RecoveryTokenFactory {
 
     public RecoveryToken createBasic() {
         RecoveryToken rt = new RecoveryToken();
-        rt.setId(generateId());
+        ModelTestUtils.setId(rt, generateId());
         User u = userFactory.createBasic();
         rt.setUser(u);
         rt.setType(faker.options().option(ResetType.class));

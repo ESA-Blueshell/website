@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.committee.Committee;
@@ -20,7 +21,7 @@ public class CommitteeFactory {
 
     public Committee createBasic() {
         Committee committee = new Committee();
-        committee.setId(generateId());
+        ModelTestUtils.setId(committee, generateId());
         committee.setName(faker.company().name() + " Committee");
         committee.setDescription(faker.lorem().paragraph(3));
         committee.setMembers(new HashSet<>());

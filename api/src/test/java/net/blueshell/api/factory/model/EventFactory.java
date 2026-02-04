@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.committee.Committee;
 import net.blueshell.api.model.event.Event;
 import net.blueshell.api.model.survey.Survey;
+import net.blueshell.api.testutil.ModelTestUtils;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -25,7 +26,7 @@ public class EventFactory {
 
     public Event createBasic() {
         Event event = new Event();
-        event.setId(generateId());
+        ModelTestUtils.setId(event, generateId());
         event.setTitle(faker.book().title() + " Event");
         event.setDescription(faker.lorem().paragraph(5));
         event.setLocation(faker.address().fullAddress());
@@ -48,7 +49,7 @@ public class EventFactory {
         event.setPublicPrice(faker.number().randomDouble(2, 0, 100));
         event.setGoogleId(faker.internet().uuid());
 
-        if (event.isSignUp()) {
+        if (event.getSignUp()) {
             Survey survey = surveyFactory.createBasic();
             event.setSignUpForm(survey);
             event.setSignUpFormId(survey.getId());

@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.contribution.ContributionPeriod;
@@ -20,7 +21,7 @@ public class ContributionPeriodFactory {
 
     public ContributionPeriod createBasic() {
         ContributionPeriod cp = new ContributionPeriod();
-        cp.setId(generateId());
+        ModelTestUtils.setId(cp, generateId());
         LocalDate start = LocalDate.now().withDayOfMonth(1);
         cp.setStartDate(start);
         cp.setEndDate(start.plusMonths(6));

@@ -2,7 +2,6 @@ package net.blueshell.api.factory.dto;
 
 import com.github.javafaker.Faker;
 import jakarta.persistence.MappedSuperclass;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -16,7 +15,6 @@ import java.util.function.Consumer;
 /**
  * Base support for DTO factories to produce reproducible test fixtures.
  */
-@RequiredArgsConstructor
 @MappedSuperclass
 public abstract class BaseDtoFactory<T> {
 
@@ -25,6 +23,12 @@ public abstract class BaseDtoFactory<T> {
     protected final Faker faker;
     protected final PasswordEncoder passwordEncoder;
     protected final Random random;
+
+    protected BaseDtoFactory(Faker faker, PasswordEncoder passwordEncoder, Random random) {
+        this.faker = faker;
+        this.passwordEncoder = passwordEncoder;
+        this.random = random;
+    }
 
     protected BaseDtoFactory() {
         this(new Faker(), NoOpPasswordEncoder.getInstance(), new Random());

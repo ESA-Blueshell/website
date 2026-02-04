@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.board.BoardDocument;
@@ -21,7 +22,7 @@ public class BoardDocumentFactory {
 
     public BoardDocument createBasic() {
         BoardDocument bd = new BoardDocument();
-        bd.setId(generateId());
+        ModelTestUtils.setId(bd, generateId());
         bd.setBoard(boardFactory.createBasic());
         bd.setName(faker.book().title() + ".pdf");
         bd.setFile(fileFactory.createDocument());

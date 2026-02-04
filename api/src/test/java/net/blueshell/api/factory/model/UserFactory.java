@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.common.enums.Role;
@@ -28,7 +29,7 @@ public class UserFactory {
 
     public User createBasic() {
         User user = new User();
-        user.setId(generateId());
+        ModelTestUtils.setId(user, generateId());
         user.setUsername(faker.name().username().toLowerCase().replaceAll("[^a-z0-9]", ""));
         user.setPassword(passwordEncoder.encode("password123"));
         user.setFirstName(faker.name().firstName());

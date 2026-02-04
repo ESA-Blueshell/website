@@ -6,7 +6,7 @@ import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.base.IdentityProvider
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.controller.filter.EventSignUpFilter
+import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.model.User
 import net.blueshell.api.model.event.EventSignUp
 import org.springframework.data.jpa.domain.Specification

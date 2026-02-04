@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.base.AdvancedController
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.BaseDTO
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper

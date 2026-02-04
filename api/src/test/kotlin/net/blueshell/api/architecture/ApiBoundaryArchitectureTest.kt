@@ -17,6 +17,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import net.blueshell.api.base.entity.Identifiable
+import jakarta.persistence.Entity
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -47,6 +48,7 @@ class ApiBoundaryArchitectureTest {
         classes()
             .that().resideInAnyPackage(MODEL)
             .and().resideOutsideOfPackage(MODEL_CONVERTER)
+            .and().areAnnotatedWith(Entity::class.java)
             .should().beAssignableTo(Identifiable::class.java)
             .because("All model entities should share identity contract.")
 

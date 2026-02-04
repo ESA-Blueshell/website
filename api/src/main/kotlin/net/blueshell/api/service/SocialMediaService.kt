@@ -3,7 +3,7 @@ import net.blueshell.api.validation.user.UniqueUser
 import net.blueshell.api.validation.group.Administration
 import net.blueshell.api.dto.PersonalInfoDTO
 import net.blueshell.api.dto.user.SimpleUserDTO
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.BaseDTO
 import net.blueshell.api.dto.error.FieldValidationErrorDTO
 import net.blueshell.api.dto.event.EventBannerDTO
 import net.blueshell.api.dto.survey.SurveyDTO
@@ -238,7 +238,7 @@ import net.blueshell.api.repository.event.EventRepository
 import net.blueshell.api.repository.spec.EventSpecifications
 import net.blueshell.api.repository.event.EventBannerRepository
 import net.blueshell.api.repository.event.EventSignUpRepository
-import net.blueshell.api.controller.filter.EventSignUpFilter
+import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.repository.spec.EventSignUpSpecifications
 import net.blueshell.api.repository.event.EventPictureRepository
 import net.blueshell.api.repository.survey.AnswerRepository
@@ -255,7 +255,7 @@ import net.blueshell.api.service.FileService
 import org.springframework.http.ResponseEntity
 import net.blueshell.api.repository.UserRepository
 import org.springframework.security.core.userdetails.UsernameNotFoundException
-import net.blueshell.api.controller.filter.UserFilter
+import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.repository.spec.UserSpecifications
 import net.blueshell.api.repository.GuestRepository
 import net.blueshell.api.repository.AddressRepository
@@ -275,7 +275,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import net.blueshell.api.repository.committee.CommitteeRepository
 import net.blueshell.api.repository.TelemetryRepository
 import net.blueshell.api.repository.MemberRepository
-import net.blueshell.api.controller.filter.MembershipFilter
+import net.blueshell.api.model.filter.MembershipFilter
 import net.blueshell.api.repository.spec.MembershipSpecifications
 import net.blueshell.api.repository.committee.CommitteeMemberRepository
 import net.blueshell.api.common.event.job.SyncContactEvent

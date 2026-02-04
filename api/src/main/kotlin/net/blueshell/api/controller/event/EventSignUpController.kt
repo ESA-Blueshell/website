@@ -3,7 +3,7 @@ package net.blueshell.api.controller.event
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.base.BaseController
-import net.blueshell.api.controller.filter.EventSignUpFilter
+import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.dto.event.EventSignUpDTO
 import net.blueshell.api.mapper.event.EventSignUpMapper
 import net.blueshell.api.service.event.EventSignUpService

@@ -1,4 +1,4 @@
-package net.blueshell.api.controller.filter
+package net.blueshell.api.model.filter
 
 class UserFilter {
     var isMember: Boolean? = null

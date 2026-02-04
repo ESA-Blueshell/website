@@ -128,9 +128,9 @@ class JpaMappingArchTest {
                 val hasIdField = owner.allFields.any { it.name == idFieldName }
                 if (!hasIdField) return
 
-                val hasMapsId = item.getAnnotationOfType(MapsId::class.java) != null
+                val hasMapsId = item.getAnnotationOfTypeOrNull(MapsId::class.java) != null
 
-                val joinColumn: JoinColumn? = item.getAnnotationOfType(JoinColumn::class.java)
+                val joinColumn: JoinColumn? = item.getAnnotationOfTypeOrNull(JoinColumn::class.java)
                 val insertable = joinColumn?.insertable
                 val updatable = joinColumn?.updatable
                 val readOnlyJoin = (insertable == false && updatable == false)
@@ -194,6 +194,14 @@ class JpaMappingArchTest {
             val value = m.invoke(this)
             enumType.cast(value)
         } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun <A : Annotation> JavaField.getAnnotationOfTypeOrNull(annotationType: Class<A>): A? {
+        return try {
+            getAnnotationOfType(annotationType)
+        } catch (_: IllegalArgumentException) {
             null
         }
     }

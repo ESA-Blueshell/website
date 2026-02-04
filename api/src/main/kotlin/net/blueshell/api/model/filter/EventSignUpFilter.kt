@@ -1,17 +1,16 @@
-package net.blueshell.api.controller.filter
+package net.blueshell.api.model.filter
 
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDateTime
 
-class EventFilter {
+class EventSignUpFilter {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     var from: LocalDateTime? = null
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     var to: LocalDateTime? = null
-
-    var approved: Boolean? = null
-
+    var userId: Long? = null
     var committeeId: Long? = null
-    var titleContains: String? = null
+    var approved: Boolean? = null
+    var eventId: Long? = null
 }

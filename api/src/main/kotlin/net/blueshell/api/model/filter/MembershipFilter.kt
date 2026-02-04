@@ -1,4 +1,4 @@
-package net.blueshell.api.controller.filter
+package net.blueshell.api.model.filter
 
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate

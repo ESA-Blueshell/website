@@ -9,14 +9,13 @@ import org.hibernate.annotations.SQLRestriction
 @Entity
 @Table(
     name = "committees",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_committees_name_deleted_at",
-        columnNames = ["name", "deleted_at"]
-    )],
-    indexes = [Index(name = "idx_committees_deleted_at", columnList = "deleted_at"), Index(
-        name = "idx_committees_name",
-        columnList = "name"
-    )]
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_committees_name_deleted_at", columnNames = ["name", "deleted_at"]),
+    ],
+    indexes = [
+        Index(name = "idx_committees_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_committees_name", columnList = "name"),
+    ]
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

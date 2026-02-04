@@ -4,20 +4,17 @@ import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
+import jakarta.persistence.Entity
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
 import net.blueshell.api.architecture.ArchitecturePackages.DTO
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.RestController
-
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
-import jakarta.persistence.Entity
 
 /**
  * ArchUnit: controller and DTO decoration expectations.
@@ -47,6 +44,7 @@ class DecoratorsArchitectureTest {
     val dtosAreDecoratedWithSchema: ArchRule =
         classes()
             .that().resideInAnyPackage(DTO)
+            .and().areTopLevelClasses()
             .should().beAnnotatedWith(Schema::class.java)
 
     @ArchTest

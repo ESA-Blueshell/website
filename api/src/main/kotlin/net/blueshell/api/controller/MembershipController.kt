@@ -3,7 +3,7 @@ package net.blueshell.api.controller
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.base.BaseController
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.controller.filter.MembershipFilter
+import net.blueshell.api.model.filter.MembershipFilter
 import net.blueshell.api.dto.MembershipDTO
 import net.blueshell.api.mapper.MembershipMapper
 import net.blueshell.api.model.Membership

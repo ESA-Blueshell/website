@@ -24,4 +24,6 @@ object ArchitecturePackages {
 
     const val CONFIG = "$ROOT.config.."
     const val SECURITY = "$ROOT.security.."
+
+    const val COMMON = "$ROOT.common.."
 }

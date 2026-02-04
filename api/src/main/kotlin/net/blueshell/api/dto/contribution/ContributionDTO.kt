@@ -2,7 +2,7 @@ package net.blueshell.api.dto.contribution
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import java.sql.Timestamp
 
 @Schema(name = "Contribution")
@@ -14,4 +14,4 @@ data class ContributionDTO(
     var contributionPeriodId: Long,
 
     var remindedAt: Timestamp? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

@@ -2,7 +2,7 @@ package net.blueshell.api.dto.contribution
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import java.time.LocalDate
 
 @Schema(name = "ContributionPeriod")
@@ -23,4 +23,4 @@ data class ContributionPeriodDTO(
     var alumniFee: Double = 0.0,
 
     var listId: Long? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

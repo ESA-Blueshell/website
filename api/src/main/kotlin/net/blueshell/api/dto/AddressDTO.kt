@@ -2,7 +2,7 @@ package net.blueshell.api.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import net.blueshell.api.validation.address.ValidCountryCode
 
 @Schema(name = "Address")
@@ -22,4 +22,4 @@ data class AddressDTO(
 
     @field:NotEmpty
     var zipCode: String? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

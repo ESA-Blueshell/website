@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import net.blueshell.api.validation.survey.ValidQuestionList
 import java.util.function.Function
 
@@ -16,7 +16,7 @@ data class SurveyDTO(
     @field:Valid
     var questions: MutableList<QuestionDTO?>? = null,
     var responseCount: Long? = null
-) : BaseDTO() {
+) : AuditedAutoIdDTO() {
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionDTO?>
         get() {

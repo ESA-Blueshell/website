@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 
 @Schema(name = "AdvancedCommittee")
 data class AdvancedCommitteeDTO(
@@ -20,4 +20,4 @@ data class AdvancedCommitteeDTO(
 
     @field:NotEmpty
     var members: MutableList<CommitteeMemberDTO?> = mutableListOf()
-) : BaseDTO()
+) : AuditedAutoIdDTO()

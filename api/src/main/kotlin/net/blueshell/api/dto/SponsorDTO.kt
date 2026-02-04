@@ -3,7 +3,7 @@ package net.blueshell.api.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 
 @Schema(name = "Sponsor")
 data class SponsorDTO(
@@ -14,4 +14,4 @@ data class SponsorDTO(
     @field:NotBlank(message = "Sponsor description cannot be empty.")
     @field:Size(max = 4095, message = "Sponsor description cannot exceed 4095 characters.")
     var description: String? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

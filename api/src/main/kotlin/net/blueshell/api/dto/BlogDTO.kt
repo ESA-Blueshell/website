@@ -2,7 +2,7 @@ package net.blueshell.api.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import java.time.Instant
 
 @Schema(name = "Blog")
@@ -16,4 +16,4 @@ data class BlogDTO(
     var html: String? = null,
 
     var publishedAt: Instant? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

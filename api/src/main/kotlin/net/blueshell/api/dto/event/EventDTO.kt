@@ -6,7 +6,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import net.blueshell.api.dto.survey.SurveyDTO
 import java.time.Instant
 
@@ -42,4 +42,4 @@ data class EventDTO(
 
     @field:Valid
     var signUpForm: SurveyDTO? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

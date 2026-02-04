@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.validation.survey.ValidQuestion
 
@@ -22,4 +22,4 @@ data class QuestionDTO(
     @field:Size(max = 2055, message = "Label cannot exceed 2055 characters.")
     var label: String? = null,
     var choiceLabels: MutableList<String?>? = null
-) : BaseDTO()
+) : AuditedAutoIdDTO()

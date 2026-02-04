@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
-import net.blueshell.api.base.BaseDTO
+import net.blueshell.api.base.dto.AuditedAutoIdDTO
 import net.blueshell.api.common.enums.MemberType
 import net.blueshell.api.validation.date.Today
 import net.blueshell.api.validation.group.Administration
@@ -39,4 +39,4 @@ data class MembershipDTO(
     @field:JsonProperty
     @field:NotNull
     var incasso: Boolean = false
-) : BaseDTO()
+) : AuditedAutoIdDTO()

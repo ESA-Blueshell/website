@@ -29,7 +29,7 @@ abstract class EventMapper : BaseMapper<Event, EventDTO>() {
     @AfterMapping
     protected fun afterFromDTO(dto: EventDTO, @MappingTarget event: Event) {
         if (event.banner != null) {
-            event.banner.event = event
+            event.banner!!.event = event
         }
         if (hasAuthority(Role.BOARD)) {
             event.approved = dto.approved

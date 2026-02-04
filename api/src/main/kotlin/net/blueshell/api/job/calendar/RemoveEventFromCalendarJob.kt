@@ -23,9 +23,9 @@ class RemoveEventFromCalendarJob(
     @Retryable(
         retryFor = [Exception::class, UncheckedIOException::class],
         maxAttempts = 3,
-        backoff = Backoff(delay = 2000, multiplier = 2)
+        backoff = Backoff(delay = 2000, multiplier = 2.0)
     )
-    fun remove(eventId: Long?): CompletableFuture<Void?> {
+    fun remove(eventId: Long): CompletableFuture<Void?> {
         val key = key("remove", eventId)
         if (processing.putIfAbsent(key, true) != null) return CompletableFuture.completedFuture<Void?>(null)
 
@@ -33,14 +33,6 @@ class RemoveEventFromCalendarJob(
         try {
             lock.lock()
             val e = eventService.findById(eventId)
-            if (e == null) {
-                // If hard-deleted, consider keeping a shadow/audit of (eventId, googleId) to allow removal.
-                log.warn(
-                    "Remove: eventId {} not found; if events are hard-deleted, persist googleId before deletion.",
-                    eventId
-                )
-                return CompletableFuture.completedFuture<Void?>(null)
-            }
             if (e.googleId == null) {
                 log.info("Remove skipped: eventId {} not present on Google", eventId)
                 return CompletableFuture.completedFuture<Void?>(null)
@@ -72,7 +64,7 @@ class RemoveEventFromCalendarJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(RemoveEventFromCalendarJob::class.java)
-        private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
-        private val processing = ConcurrentHashMap<String?, Boolean?>()
+        private val locks = ConcurrentHashMap<Long, ReentrantLock>()
+        private val processing = ConcurrentHashMap<String, Boolean>()
     }
 }

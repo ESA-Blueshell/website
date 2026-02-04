@@ -16,8 +16,8 @@ class RecoveryEmailJob(
     private val emails: EmailService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun send(userId: Long?, token: String?, resetType: ResetType): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun send(userId: Long, token: String, resetType: ResetType): CompletableFuture<Void?> {
         val key = jobKey(resetType.toString(), userId)
         if (processing.putIfAbsent(key, true) != null) {
             log.info("Reset email already processing for userId={}", userId)
@@ -45,6 +45,6 @@ class RecoveryEmailJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(RecoveryEmailJob::class.java)
-        private val processing = ConcurrentHashMap<String?, Boolean?>()
+        private val processing = ConcurrentHashMap<String, Boolean>()
     }
 }

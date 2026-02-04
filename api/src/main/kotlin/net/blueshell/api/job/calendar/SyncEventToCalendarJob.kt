@@ -23,9 +23,9 @@ class SyncEventToCalendarJob(
     @Retryable(
         retryFor = [Exception::class, UncheckedIOException::class],
         maxAttempts = 3,
-        backoff = Backoff(delay = 2000, multiplier = 2)
+        backoff = Backoff(delay = 2000, multiplier = 2.0)
     )
-    fun sync(eventId: Long?): CompletableFuture<Void?> {
+    fun sync(eventId: Long): CompletableFuture<Void?> {
         val key = key("sync", eventId)
         if (processing.putIfAbsent(key, true) != null) return CompletableFuture.completedFuture<Void?>(null)
 
@@ -33,11 +33,6 @@ class SyncEventToCalendarJob(
         try {
             lock.lock()
             val e = eventService.findById(eventId)
-            if (e == null) {
-                log.warn("Sync skipped: eventId {} not found", eventId)
-                return CompletableFuture.completedFuture<Void?>(null)
-            }
-
             if (!e.approved) {
                 // remove if previously on Google
                 if (e.googleId != null) {
@@ -82,7 +77,7 @@ class SyncEventToCalendarJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(SyncEventToCalendarJob::class.java)
-        private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
-        private val processing = ConcurrentHashMap<String?, Boolean?>()
+        private val locks = ConcurrentHashMap<Long, ReentrantLock>()
+        private val processing = ConcurrentHashMap<String, Boolean>()
     }
 }

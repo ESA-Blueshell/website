@@ -15,8 +15,8 @@ class EventSignupEmailJob(
     private val emails: EmailService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun send(eventSignUpId: Long?): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun send(eventSignUpId: Long): CompletableFuture<Void?> {
         val key = jobKey("event_signup", eventSignUpId)
         if (processing.putIfAbsent(key, true) != null) {
             log.info("Event signup email already processing for eventSignUpId={}", eventSignUpId)
@@ -48,6 +48,6 @@ class EventSignupEmailJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(EventSignupEmailJob::class.java)
-        private val processing = ConcurrentHashMap<String?, Boolean?>()
+        private val processing = ConcurrentHashMap<String, Boolean>()
     }
 }

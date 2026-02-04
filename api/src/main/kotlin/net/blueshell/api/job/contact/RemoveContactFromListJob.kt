@@ -21,8 +21,8 @@ class RemoveContactFromListJob(
     private val contributionPeriods: ContributionPeriodService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun removeFromList(userId: Long?, periodId: Long?): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun removeFromList(userId: Long, periodId: Long): CompletableFuture<Void?> {
         val jobKey = generateJobKey(userId, periodId)
 
         // Ensure uniqueness - prevent duplicate job execution
@@ -96,7 +96,7 @@ class RemoveContactFromListJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(RemoveContactFromListJob::class.java)
-        private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
-        private val processingJobs = ConcurrentHashMap<String?, Boolean?>()
+        private val locks = ConcurrentHashMap<Long, ReentrantLock>()
+        private val processingJobs = ConcurrentHashMap<String, Boolean>()
     }
 }

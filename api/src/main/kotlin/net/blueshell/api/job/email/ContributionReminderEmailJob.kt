@@ -15,8 +15,8 @@ class ContributionReminderEmailJob(
     private val emails: EmailService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun send(reminderId: Long?): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun send(reminderId: Long): CompletableFuture<Void?> {
         val key = jobKey("contribution_reminder", reminderId)
         if (processing.putIfAbsent(key, true) != null) {
             log.info(
@@ -51,6 +51,6 @@ class ContributionReminderEmailJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(ContributionReminderEmailJob::class.java)
-        private val processing = ConcurrentHashMap<String?, Boolean?>()
+        private val processing = ConcurrentHashMap<String, Boolean>()
     }
 }

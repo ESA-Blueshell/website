@@ -19,8 +19,8 @@ class SyncContactJob(
     private val users: UserService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun sync(userId: Long?): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun sync(userId: Long): CompletableFuture<Void?> {
         val jobKey = generateJobKey(userId)
 
         // Ensure uniqueness - prevent duplicate job execution
@@ -84,7 +84,7 @@ class SyncContactJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(SyncContactJob::class.java)
-        private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
-        private val processingJobs = ConcurrentHashMap<String?, Boolean?>()
+        private val locks = ConcurrentHashMap<Long, ReentrantLock>()
+        private val processingJobs = ConcurrentHashMap<String, Boolean>()
     }
 }

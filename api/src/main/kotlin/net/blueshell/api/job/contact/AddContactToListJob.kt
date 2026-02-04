@@ -20,8 +20,8 @@ class AddContactToListJob(
     private val contributionPeriods: ContributionPeriodService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun addToList(userId: Long?, periodId: Long?): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun addToList(userId: Long, periodId: Long): CompletableFuture<Void?> {
         val jobKey = generateJobKey(userId, periodId)
         if (processingJobs.putIfAbsent(jobKey, true) != null) {
             log.info(
@@ -89,6 +89,6 @@ class AddContactToListJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(AddContactToListJob::class.java)
-        private val processingJobs = ConcurrentHashMap<String?, Boolean?>()
+        private val processingJobs = ConcurrentHashMap<String, Boolean>()
     }
 }

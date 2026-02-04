@@ -18,8 +18,8 @@ class CreateContributionPeriodListJob(
     private val contributionPeriods: ContributionPeriodService
 ) {
     @Async
-    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2))
-    fun createList(periodId: Long?): CompletableFuture<Void?> {
+    @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
+    fun createList(periodId: Long): CompletableFuture<Void?> {
         val jobKey = generateJobKey(periodId)
         if (processingJobs.putIfAbsent(jobKey, true) != null) {
             log.info("Create-list job already processing for periodId={}", periodId)
@@ -82,6 +82,6 @@ class CreateContributionPeriodListJob(
 
     companion object {
         private val log = LoggerFactory.getLogger(CreateContributionPeriodListJob::class.java)
-        private val processingJobs = ConcurrentHashMap<String?, Boolean?>()
+        private val processingJobs = ConcurrentHashMap<String, Boolean>()
     }
 }

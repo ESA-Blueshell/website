@@ -5,22 +5,22 @@ import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.common.enums.PlatformType
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.collections.linkedSetOf
 
 @Entity
 @Table(
     name = "telemetries",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_telemetries_platform_url_deleted_at",
-        columnNames = ["platform", "url", "deleted_at"]
-    )],
-    indexes = [Index(
-        name = "idx_telemetries_deleted_at",
-        columnList = "deleted_at"
-    ), Index(name = "idx_telemetries_platform", columnList = "platform"), Index(
-        name = "idx_telemetries_url",
-        columnList = "url"
-    ), Index(name = "idx_telemetries_created_at", columnList = "created_at")]
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_telemetries_platform_url_deleted_at",
+            columnNames = ["platform", "url", "deleted_at"]
+        )
+    ],
+    indexes = [
+        Index(name = "idx_telemetries_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_telemetries_platform", columnList = "platform"),
+        Index(name = "idx_telemetries_url", columnList = "url"),
+        Index(name = "idx_telemetries_created_at", columnList = "created_at")
+    ]
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

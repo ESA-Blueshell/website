@@ -37,7 +37,7 @@ class Board : BaseModel() {
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val picture: File? = null
 
-    @OneToMany(mappedBy = "board", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_board", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _members: MutableSet<BoardMember> = linkedSetOf()
     val members: Set<BoardMember>
         get() = _members

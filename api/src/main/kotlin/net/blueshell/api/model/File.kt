@@ -51,7 +51,7 @@ class File : BaseModel() {
     @Column(name = "type", nullable = false)
     lateinit var type: FileType
 
-    @OneToMany(mappedBy = "file", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_file", fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private val _eventBanners: MutableSet<EventBanner> = linkedSetOf()
     val eventBanners: Set<EventBanner>

@@ -11,6 +11,6 @@ import org.springframework.stereotype.Service
 class CommitteeService @Autowired constructor(repository: CommitteeRepository, events: ApplicationEventPublisher) :
     BaseModelService<Committee, CommitteeRepository>(repository) {
     fun findAllByUserId(id: Long): MutableList<Committee> {
-        return repository!!.findALlByMembersUserIdEquals(id)
+        return repository.findAllBy_membersUserIdEquals(id)
     }
 }

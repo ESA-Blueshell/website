@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CommitteeRepository : BaseRepository<Committee> {
-    fun findALlByMembersUserIdEquals(userId: Long): MutableList<Committee>
+    fun findAllBy_membersUserIdEquals(userId: Long): MutableList<Committee>
 }

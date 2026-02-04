@@ -27,7 +27,7 @@ class Committee : BaseModel() {
     @Column(name = "description", nullable = false, length = 4095)
     lateinit var description: String
 
-    @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _members: MutableSet<CommitteeMember> = linkedSetOf()
     var members: Set<CommitteeMember>
         get() = _members

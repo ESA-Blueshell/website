@@ -7,8 +7,6 @@ import net.blueshell.api.model.User
 import net.blueshell.api.model.survey.Answer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.collections.linkedSetOf
-import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -30,8 +28,13 @@ import kotlin.properties.Delegates
 )
 @NamedEntityGraph(
     name = "EventSignUp.withGuestAndAnswers",
-    attributeNodes = [NamedAttributeNode("guest"), NamedAttributeNode(value = "answers", subgraph = "answersSub")],
-    subgraphs = [NamedSubgraph(name = "answersSub", attributeNodes = [NamedAttributeNode("question")])]
+    attributeNodes = [
+        NamedAttributeNode("guest"),
+        NamedAttributeNode(value = "_answers", subgraph = "answersSub")
+    ],
+    subgraphs = [
+        NamedSubgraph(name = "answersSub", attributeNodes = [NamedAttributeNode("question")])
+    ]
 )
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

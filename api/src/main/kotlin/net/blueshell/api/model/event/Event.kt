@@ -8,7 +8,6 @@ import net.blueshell.api.model.survey.Survey
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.Instant
-import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -34,18 +33,14 @@ import kotlin.properties.Delegates
 @NamedEntityGraphs(
     NamedEntityGraph(
         name = "Event.withBannerFileAndFormQuestions",
-        attributeNodes = [NamedAttributeNode(
-            value = "banner",
-            subgraph = "bannerSub"
-        ), NamedAttributeNode(value = "signUpForm", subgraph = "formSub")],
+        attributeNodes = [
+            NamedAttributeNode(value = "banner", subgraph = "bannerSub"),
+            NamedAttributeNode(value = "signUpForm", subgraph = "formSub"),
+        ],
         subgraphs = [
-            NamedSubgraph(
-                name = "bannerSub", attributeNodes = [
-                    NamedAttributeNode("file")]
-            ), NamedSubgraph(
-                name = "formSub",
-                attributeNodes = [NamedAttributeNode("questions")]
-            )]
+            NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("_file")]),
+            NamedSubgraph(name = "formSub", attributeNodes = [NamedAttributeNode("_questions")]),
+        ]
     )
 )
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -74,7 +69,7 @@ class Event : BaseModel() {
     @Column(name = "end_time", nullable = false)
     lateinit var endTime: Instant
 
-    @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "_event", cascade = [CascadeType.ALL], orphanRemoval = true)
     var banner: EventBanner? = null
 
     @Column(name = "price_member")

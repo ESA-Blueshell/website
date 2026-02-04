@@ -51,7 +51,7 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
         }
 
         val discord = dto.discord
-        if (StringUtils.hasText(discord)) {
+        if (!discord.isNullOrEmpty()) {
             val taken = if (currentUserId == null)
                 users.existsByDiscord(discord)
             else
@@ -64,7 +64,7 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
 
         if (dto is AdvancedUserDTO) {
             val phoneNumber = dto.phoneNumber
-            if (StringUtils.hasText(phoneNumber)) {
+            if (!phoneNumber.isNullOrEmpty()) {
                 val taken = if (currentUserId == null)
                     users.existsByPhoneNumber(phoneNumber)
                 else

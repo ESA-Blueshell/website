@@ -42,7 +42,7 @@ class AuthenticationController(
             user.id!!,
             user.username,
             expirationTime,
-            user.inheritedRoles,
+            user.inheritedRoles as MutableSet,
             user.addressId
         )
     }

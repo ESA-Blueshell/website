@@ -510,7 +510,8 @@ class DatabaseSeeder(
         email: String,
         includeAddress: Boolean
     ): User {
-        val user = User().apply {
+        val user = User(
+        ).apply {
             this.username = username
             password = passwordEncoder.encode("temporary")
             this.firstName = firstName

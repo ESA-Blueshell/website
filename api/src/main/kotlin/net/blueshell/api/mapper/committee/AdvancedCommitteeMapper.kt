@@ -20,9 +20,12 @@ abstract class AdvancedCommitteeMapper : BaseMapper<Committee, AdvancedCommittee
         log.info("Wiring back refs for committee {}", committee)
         log.info("dto: {}", dto)
         log.info("Wiring members for committee {}", committee.members)
+        val committeeId = committee.id
         for (m in committee.members) {
             log.info("Member of committee member: {}", m)
-            m.committee = committee
+            if (committeeId != null) {
+                m.committeeId = committeeId
+            }
         }
     }
 

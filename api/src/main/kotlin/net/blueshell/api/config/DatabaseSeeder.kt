@@ -560,7 +560,7 @@ class DatabaseSeeder(
 
         val member = CommitteeMember().apply {
             userId = user.id!!
-            this.committee = committee
+            this.committeeId = committee.id!!
             this.role = role
         }
 

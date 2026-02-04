@@ -142,7 +142,7 @@ class User(
     private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()
     val recoveryTokens: Set<RecoveryToken> get() = _recoveryTokens
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @OneToMany(mappedBy = "_user", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     private val _committeeMembers: MutableSet<CommitteeMember> = linkedSetOf()
     val committeeMembers: Set<CommitteeMember> get() = _committeeMembers
 

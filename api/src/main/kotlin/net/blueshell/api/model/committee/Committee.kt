@@ -34,7 +34,10 @@ class Committee : AuditedAutoIdEntity() {
         set(value) {
             _members.clear()
             _members.addAll(value)
-            _members.forEach { it.committee = this }
+            val committeeId = id
+            if (committeeId != null) {
+                _members.forEach { it.committeeId = committeeId }
+            }
         }
 
     fun hasMember(user: User?): Boolean {
@@ -42,7 +45,10 @@ class Committee : AuditedAutoIdEntity() {
     }
 
     fun addMember(member: CommitteeMember) {
-        member.committee = this
+        val committeeId = id
+        if (committeeId != null) {
+            member.committeeId = committeeId
+        }
         _members.add(member)
     }
 }

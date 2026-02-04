@@ -558,13 +558,13 @@ class DatabaseSeeder(
         }
 
         val member = CommitteeMember().apply {
-            userId = e fixeuser.id
+            userId = user.id!!
             this.committee = committee
             this.role = role
         }
 
         val created = committeeMemberService.create(member)
-        committeeMemberCounts[committee.id] = currentCount + 1
+        committeeMemberCounts[committee.id!!] = currentCount + 1
         committeeMemberships += key
 
         return created
@@ -583,12 +583,12 @@ class DatabaseSeeder(
 
     private fun createContribution(user: User, period: ContributionPeriod): Contribution {
         val c = Contribution().apply {
-            userId = user.id
-            contributionPeriodId = period.id
+            userId = user.id!!
+            contributionPeriodId = period.id!!
         }
         val created = requireNotNull(contributionService.create(c)) { "Contribution create returned null" }
 
-        contributionsByPeriod.getOrPut(period.id) { mutableSetOf() }.add(user.id)
+        contributionsByPeriod.getOrPut(period.id!!) { mutableSetOf() }.add(user.id!!)
         return created
     }
 
@@ -628,10 +628,10 @@ class DatabaseSeeder(
             ?.firstOrNull { it.userId == userId }
 
     private fun createEventSignUpWithAnswers(user: User, event: Event): EventSignUp? {
-        findExistingSignUp(event.id, user.id)?.let { return it }
+        findExistingSignUp(event.id!!, user.id!!)?.let { return it }
 
         val signUp = EventSignUp().apply {
-            eventId = event.id
+            eventId = event.id!!
             userId = user.id
 
             val form = event.signUpForm
@@ -649,7 +649,7 @@ class DatabaseSeeder(
                 "Sign-up already exists for eventId={}, userId={}, skipping duplicate insert.",
                 event.id, user.id
             )
-            findExistingSignUp(event.id, user.id) ?: throw ex
+            findExistingSignUp(event.id!!, user.id!!) ?: throw ex
         }
     }
 
@@ -659,7 +659,7 @@ class DatabaseSeeder(
             if (!event.membersOnly) addAll(guestPool)
         }.toMutableList()
 
-        val existingUserIds = eventSignUpService.findByEventId(event.id)
+        val existingUserIds = eventSignUpService.findByEventId(event.id!!)
             ?.mapNotNull { it.userId }
             ?.toMutableSet() ?: mutableSetOf()
 
@@ -672,7 +672,7 @@ class DatabaseSeeder(
             if (added >= maxDesired) break
             if (u.id in existingUserIds) continue
             createEventSignUpWithAnswers(u, event)
-            existingUserIds += u.id
+            existingUserIds += u.id!!
             added++
         }
     }
@@ -681,7 +681,7 @@ class DatabaseSeeder(
         val survey = Survey()
         val questions = linkedSetOf<Question>()
 
-        questions += buildQuestion(1L, QuestionType.DESCRIPTION, "Important information:", null)
+        questions += buildQuestion(1L, QuestionType.DESCRIPTION, "Important information:", emptyList<String>() as MutableList<String>)
         questions += buildQuestion(
             2L,
             QuestionType.RADIO,
@@ -694,7 +694,7 @@ class DatabaseSeeder(
             "Select all that apply:",
             DEFAULT_CHECKBOX_CHOICES.toMutableList()
         )
-        questions += buildQuestion(4L, QuestionType.OPEN, "What are your thoughts?", null)
+        questions += buildQuestion(4L, QuestionType.OPEN, "What are your thoughts?", emptyList<String>() as MutableList<String>)
 
         survey.questions = questions
         survey.questions.forEach { it.survey = survey }
@@ -706,7 +706,7 @@ class DatabaseSeeder(
         idx: Long,
         type: QuestionType,
         label: String,
-        choiceLabels: MutableList<String>?
+        choiceLabels: MutableList<String>
     ): Question =
         Question().apply {
             this.idx = idx
@@ -723,7 +723,7 @@ class DatabaseSeeder(
         when (q.type) {
             QuestionType.OPEN -> a.textResponse = "Sample answer text"
             QuestionType.RADIO -> {
-                val n = q.choiceLabels?.size ?: 0
+                val n = q.choiceLabels.size
                 val selections = MutableList(max(n, 1)) { false }
                 if (n > 0) selections[0] = true
                 a.optionSelections = selections
@@ -753,7 +753,7 @@ class DatabaseSeeder(
 
     private fun createGuestEventSignUpWithAnswers(guest: Guest, event: Event): EventSignUp? {
         val signUp = EventSignUp().apply {
-            eventId = event.id
+            eventId = event.id!!
             userId = null
             this.guest = guest
 
@@ -867,7 +867,7 @@ class DatabaseSeeder(
         val limit = min(count, candidates.size)
 
         repeat(limit) { idx ->
-            val u = requireNotNull(userService.findById(candidates[idx].id)) { "User not found" }
+            val u = requireNotNull(userService.findById(candidates[idx].id!!)) { "User not found" }
             u.enabled = false
             val updated = requireNotNull(userService.update(u)) { "User update returned null" }
             createdUsers[updated.username] = updated

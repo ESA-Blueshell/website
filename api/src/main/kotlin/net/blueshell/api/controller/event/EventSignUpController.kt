@@ -52,9 +52,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
     fun createEventSignup(@Valid @RequestBody dto: EventSignUpDTO): EventSignUpDTO {
-        if (principal != null) {
-            dto.userId = principal.id
-        }
+        principal?.id?.let { dto.userId = principal!!.id }
         var eventSignUp = mapper.fromDTO(dto)
         eventSignUp = service.create(eventSignUp)
         return mapper.toDTO(eventSignUp)

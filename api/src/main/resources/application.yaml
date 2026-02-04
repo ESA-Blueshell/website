@@ -98,6 +98,7 @@ storage:
 
 brevo:
   apiKey: ${BREVO_API_KEY}
+  baseUrl: ${BREVO_BASE_URL:https://api.brevo.com/v3}
   folders:
     contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID}
 

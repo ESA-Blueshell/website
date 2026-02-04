@@ -21,7 +21,7 @@ object EventSignUpSpecifications : IdentityProvider() {
     }
 
     @JvmOverloads
-    fun approved(value: Boolean = true): Specification<EventSignUp> {
+    fun approved(value: Boolean? = true): Specification<EventSignUp> {
         if (value == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (value)
@@ -31,7 +31,7 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun startTimeFrom(from: LocalDateTime): Specification<EventSignUp> {
+    fun startTimeFrom(from: LocalDateTime?): Specification<EventSignUp> {
         if (from == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.greaterThanOrEqualTo<LocalDateTime>(
@@ -41,7 +41,7 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun startTimeTo(to: LocalDateTime): Specification<EventSignUp> {
+    fun startTimeTo(to: LocalDateTime?): Specification<EventSignUp> {
         if (to == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.lessThanOrEqualTo<LocalDateTime>(
@@ -51,11 +51,11 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun timeBetween(from: LocalDateTime, to: LocalDateTime): Specification<EventSignUp> {
+    fun timeBetween(from: LocalDateTime?, to: LocalDateTime?): Specification<EventSignUp> {
         return startTimeFrom(from).and(startTimeTo(to))
     }
 
-    fun committeeId(committeeId: Long): Specification<EventSignUp> {
+    fun committeeId(committeeId: Long?): Specification<EventSignUp> {
         if (committeeId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.equal(
@@ -67,7 +67,7 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun userId(userId: Long): Specification<EventSignUp> {
+    fun userId(userId: Long?): Specification<EventSignUp> {
         if (userId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.equal(
@@ -78,7 +78,8 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun eventId(eventId: Long): Specification<EventSignUp> {
+    fun eventId(eventId: Long?): Specification<EventSignUp> {
+        if (eventId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.equal(
                 root!!.get<Any>(
@@ -91,8 +92,6 @@ object EventSignUpSpecifications : IdentityProvider() {
     fun fromFilter(f: EventSignUpFilter, user: User?): Specification<EventSignUp> {
         var spec = distinct() // avoid duplicates due to joins
 
-        if (f == null) return spec
-
         if (f.from != null || f.to != null) {
             spec = spec.and(timeBetween(f.from, f.to))
         }
@@ -102,7 +101,9 @@ object EventSignUpSpecifications : IdentityProvider() {
         if (f.committeeId != null) {
             spec = spec.and(committeeId(f.committeeId))
         }
-        if (!user?.hasAuthority(Role.BOARD)!! && !user.committeeIds?.contains(f.committeeId)) {
+        val isBoard = user?.hasAuthority(Role.BOARD) == true
+        val inCommittee = f.committeeId != null && user?.committeeIds?.contains(f.committeeId) == true
+        if (!isBoard && !inCommittee) {
             spec = spec.and(approved(true))
         }
         if (f.eventId != null) {

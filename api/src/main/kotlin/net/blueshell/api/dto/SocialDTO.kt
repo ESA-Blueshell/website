@@ -9,5 +9,5 @@ data class SocialDTO(
     var title: String? = null,
     var text: String? = null,
     var url: String? = null,
-    var platforms: Array<PlatformType?>? = null
+    var platforms: Array<PlatformType> = emptyArray(),
 ) : BaseDTO()

@@ -54,13 +54,13 @@ class ValidationProblemDetailsAdvice {
         pd.instance = URI.create(request.requestURI)
 
         val errors = ex.constraintViolations.stream()
-            .map<MutableMap<String?, Any?>?> { cv: ConstraintViolation<*>? ->
+            .map { cv: ConstraintViolation<*>? ->
                 errorMap(
                     cv!!.rootBeanClass.simpleName,
                     cv.propertyPath.toString(),
                     cv.invalidValue,
                     cv.message,
-                    cv.constraintDescriptor.annotation.annotationType().simpleName
+                    cv.constraintDescriptor.annotation.annotationClass.simpleName
                 )
             }
             .toList()
@@ -85,7 +85,7 @@ class ValidationProblemDetailsAdvice {
             code: String?
         ): MutableMap<String?, Any?> {
             val m: MutableMap<String?, Any?> = LinkedHashMap<String?, Any?>()
-            m.put("objectName", objectName)
+            m["objectName"] = objectName
             m.put("field", field)
             m.put("rejectedValue", rejectedValue)
             m.put("message", message)

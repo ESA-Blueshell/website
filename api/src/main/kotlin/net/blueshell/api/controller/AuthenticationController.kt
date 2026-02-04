@@ -39,7 +39,7 @@ class AuthenticationController(
 
         return AuthenticationDTO(
             token,
-            user.id,
+            user.id!!,
             user.username,
             expirationTime,
             user.inheritedRoles,

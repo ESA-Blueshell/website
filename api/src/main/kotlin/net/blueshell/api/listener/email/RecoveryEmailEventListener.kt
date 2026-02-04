@@ -13,7 +13,6 @@ class RecoveryEmailEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onReset(evt: RecoveryEmailEvent) {
         val userId = evt.userId
-        if (evt.userId == null) return
 
         recoveryEmailJob.send(userId, evt.token, evt.resetType)
     }

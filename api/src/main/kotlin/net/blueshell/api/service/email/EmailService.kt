@@ -26,8 +26,6 @@ class EmailService(
 ) {
     fun sendContributionReminderEmail(reminderId: Long) {
         val reminder = reminders.findById(reminderId)
-        if (reminder == null || reminder.user == null) return
-
         val email: BaseEmail = ContributionReminderEmail(
             reminder.user,
             frontendUrl,
@@ -39,8 +37,6 @@ class EmailService(
 
     fun sendEventSignupEmail(eventSignUpId: Long) {
         val eventSignUp = eventSignUps.findById(eventSignUpId)
-        if (eventSignUp == null) return
-
         val email: BaseEmail = EventSignupEmail(eventSignUp, frontendUrl, appUrl)
         deliver(email)
     }
@@ -68,20 +64,13 @@ class EmailService(
 
     fun sendUserResetEmail(userId: Long, token: String, resetType: ResetType) {
         val user = users.findById(userId)
-        if (user == null || resetType == null || token == null) {
-            EmailService.log.info("Activation skipped: user={} or resetType missing", userId)
-            return
-        } else {
-            EmailService.log.info("Sending {} email for user={}", resetType, userId)
-        }
+        log.info("Sending {} email for user={}", resetType, userId)
 
         val email: BaseEmail = when (resetType) {
             ResetType.MEMBER_ACTIVATION -> MemberActivationEmail(user, token, frontendUrl, appUrl)
             ResetType.USER_ACTIVATION -> UserActivationEmail(user, token, frontendUrl, appUrl)
             ResetType.PASSWORD_RESET -> PasswordResetEmail(user, token, frontendUrl, appUrl)
-            else -> null
         }
-        if (email == null) return
 
         deliver(email)
     }

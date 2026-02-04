@@ -18,7 +18,7 @@ class TelemetryController protected constructor(service: TelemetryService, mappe
     BaseController<TelemetryService, TelemetryMapper>(service, mapper) {
     @GetMapping("/telemetry/{id}")
     @PermitAll
-    fun findTelemetryById(@PathVariable id: Long?): TelemetryDTO? {
+    fun findTelemetryById(@PathVariable id: Long): TelemetryDTO? {
         val telemetry = service.findById(id)
         return mapper.toDTO(telemetry)
     }

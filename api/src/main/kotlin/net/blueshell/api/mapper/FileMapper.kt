@@ -21,7 +21,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
      */
     fun buildHashedFilename(sha256: String, originalName: String): String {
         val ext = getExtensionSafe(originalName)
-        return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.default))
+        return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.getDefault()))
     }
 
     /**

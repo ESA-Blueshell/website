@@ -30,7 +30,7 @@ class Answer : BaseModel() {
 
     @Column(name = "option_selections", columnDefinition = "JSON")
     @Convert(converter = BooleanListConverter::class)
-    var optionSelections: MutableList<Boolean?>? = null
+    var optionSelections: MutableList<Boolean>? = null
 
     @Column(name = "text_response")
     var textResponse: String? = null

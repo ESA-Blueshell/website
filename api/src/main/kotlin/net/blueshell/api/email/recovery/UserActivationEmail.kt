@@ -4,15 +4,15 @@ import net.blueshell.api.model.User
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class UserActivationEmail(recipient: User?, token: String?, frontendUrl: String?, appUrl: String?) :
+class UserActivationEmail(
+    recipient: User, token: String, frontendUrl: String, appUrl: String,
+    override val subject: String = "Activate your Account",
+    override val markdownContent: String
+) :
     RecoveryEmail(recipient, token, frontendUrl, appUrl) {
-    override fun getSubject(): String {
-        return "Activate your Account"
-    }
-
     override fun getMarkdownContent(): String {
         val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
-        val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
+        val token = URLEncoder.encode(token, StandardCharsets.UTF_8)
         val redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8)
 
         val activationLink = String.format(

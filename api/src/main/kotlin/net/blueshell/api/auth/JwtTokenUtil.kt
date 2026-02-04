@@ -45,12 +45,12 @@ class JwtTokenUtil {
         return tokenExpiration.before(Date())
     }
 
-    fun generateToken(userDetails: UserDetails): String? {
-        val claims: MutableMap<String?, Any?> = HashMap<String?, Any?>()
+    fun generateToken(userDetails: UserDetails): String {
+        val claims: MutableMap<String, Any> = HashMap<String, Any>()
         return doGenerateToken(claims, userDetails.username)
     }
 
-    private fun doGenerateToken(claims: MutableMap<String?, Any?>?, subject: String?): String? {
+    private fun doGenerateToken(claims: MutableMap<String, Any>, subject: String): String {
         return Jwts.builder()
             .claims(claims)
             .subject(subject)

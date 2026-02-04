@@ -100,7 +100,7 @@ class MockJavaMailSender : JavaMailSender {
     @Throws(MailException::class)
     override fun send(simpleMessage: SimpleMailMessage) {
         simpleOutbox.add(SimpleMailMessage(simpleMessage))
-        MockJavaMailSender.log.info(
+        log.info(
             "[mail-mock] captured simple email: subject='{}' to={}",
             simpleMessage.subject,
             simpleMessage.to.contentToString()
@@ -118,24 +118,23 @@ class MockJavaMailSender : JavaMailSender {
         private val log = LoggerFactory.getLogger(MockJavaMailSender::class.java)
 
         private fun safeSubject(m: MimeMessage): String {
-            try {
-                return m.subject
-            } catch (ignored: Exception) {
-                return "<n/a>"
+            return try {
+                m.subject
+            } catch (_: Exception) {
+                "<n/a>"
             }
         }
 
         private fun safeRecipients(m: MimeMessage): MutableList<String> {
-            try {
-                return Arrays.stream<Address>(
-                    Objects.requireNonNullElse<Array<Address>>(
+            return try {
+                Arrays.stream(
+                    Objects.requireNonNullElse(
                         m.allRecipients,
-                        arrayOfNulls<Address>(0)
+                        emptyArray<Address>()
                     )
-                )
-                    .map<String> { obj: Address -> obj.toString() }.toList()
-            } catch (ignored: Exception) {
-                return mutableListOf<String>()
+                ).map { obj: Address -> obj.toString() }.toList()
+            } catch (_: Exception) {
+                mutableListOf()
             }
         }
     }

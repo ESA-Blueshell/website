@@ -1,11 +1,9 @@
 package net.blueshell.api.service
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import net.blueshell.api.mapper.BrevoContactMapper
 import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
 import net.blueshell.clients.brevo.api.ContactsApi
-import net.blueshell.clients.brevo.invoker.ApiClient
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateList
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
@@ -13,32 +11,33 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 
 @Service
-class ContactService(private val mapper: BrevoContactMapper, private val users: UserService) {
-    @Value("\${brevo.apiKey}")
-    private val apiKey: String = null
+class ContactService(
+    private val mapper: BrevoContactMapper,
+    private val users: UserService,
+    private val restClientBuilder: RestClient.Builder,
+) {
+    @Value($$"${brevo.apiKey}")
+    private lateinit var apiKey: String
 
-    @Value("\${brevo.folders.contributionPeriodsId}")
-    private val contributionPeriodsFolder: Long = null
+    @Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")
+    private lateinit var brevoBaseUrl: String
 
-    private val contacts: ContactsApi = null
+    @Value($$"${brevo.folders.contributionPeriodsId}")
+    private lateinit var contributionPeriodsFolder: Long
+
+    private lateinit var contacts: ContactsApi
 
     private val contactsApi: ContactsApi
         get() {
-            val dateFormat = ApiClient.createDefaultDateFormat()
-            val objectMapper =
-                ApiClient.createDefaultObjectMapper(dateFormat)
-                    .serializationInclusion = JsonInclude.Include.NON_EMPTY
-                    .defaultPropertyInclusion = JsonInclude.Value.construct(
-                            JsonInclude.Include.NON_EMPTY,
-                            JsonInclude.Include.NON_EMPTY
-                        )
-
-            val apiClient = ApiClient(objectMapper, dateFormat)
-            apiClient.apiKey = this.apiKey
-            return ContactsApi(apiClient)
+            val client = restClientBuilder
+                .baseUrl(brevoBaseUrl)
+                .defaultHeader("api-key", apiKey)
+                .build()
+            return ContactsApi(client)
         }
 
     fun getUpdate(user: User) {

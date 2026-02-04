@@ -62,6 +62,6 @@ class EventSignUp : BaseModel() {
         inverseJoinColumns = [JoinColumn(name = "answer_id")]
     )
     private val _answers: MutableSet<Answer> = linkedSetOf()
-    val answers: Set<Answer>
+    var answers: Set<Answer>
         get() = _answers
 }

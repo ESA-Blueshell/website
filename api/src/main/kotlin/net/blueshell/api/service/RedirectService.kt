@@ -213,8 +213,6 @@ import net.blueshell.api.model.Sponsor
 import net.blueshell.api.dto.SponsorDTO
 import net.blueshell.api.dto.RedirectDTO
 import net.blueshell.api.dto.MembershipDTO
-import net.blueshell.clients.brevo.model.CreateContact
-import net.blueshell.clients.brevo.model.UpdateContact
 import org.springframework.context.annotation.Primary
 import net.blueshell.api.mapper.BrevoContactMapper
 import net.blueshell.api.service.mock.MockContactService
@@ -261,15 +259,6 @@ import net.blueshell.api.controller.filter.UserFilter
 import net.blueshell.api.repository.spec.UserSpecifications
 import net.blueshell.api.repository.GuestRepository
 import net.blueshell.api.repository.AddressRepository
-import net.blueshell.clients.brevo.api.ContactsApi
-import net.blueshell.clients.brevo.invoker.ApiClient
-import net.blueshell.clients.brevo.model.GetExtendedContactDetails
-import org.springframework.web.client.HttpClientErrorException
-import net.blueshell.clients.brevo.model.CreateUpdateContactModel
-import net.blueshell.clients.brevo.model.CreateList
-import net.blueshell.clients.brevo.model.CreateModel
-import net.blueshell.clients.brevo.model.AddContactToListRequest
-import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import net.blueshell.api.repository.SponsorRepository
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.auth.oauth2.ServiceAccountCredentials
@@ -377,4 +366,3 @@ import net.blueshell.api.config.StorageConfig
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.boot.SpringApplication
-

@@ -111,7 +111,7 @@ object EventSpecifications {
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.like(
                 cb.lower(root!!.get<String>("title")), "%" + text.lowercase(
-                    Locale.default
+                    Locale.getDefault()
                 ) + "%"
             )
         }

@@ -12,12 +12,12 @@ abstract class SimpleUserMapper : BaseMapper<User, SimpleUserDTO>() {
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
 
-    @Mapping(target = "initials", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "firstName", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "prefix", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "lastName", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "username", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "email", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "initials", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "firstName", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "prefix", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "lastName", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "username", conditionExpression = "java(user.getId() == null)")
+    @Mapping(target = "email", conditionExpression = "java(user.getId() == null)")
     @Mapping(target = "discord")
     @Mapping(target = "phoneNumber")
     @Mapping(target = "newsletter")
@@ -36,7 +36,7 @@ abstract class SimpleUserMapper : BaseMapper<User, SimpleUserDTO>() {
     @Mapping(target = "email")
     @Mapping(target = "phoneNumber")
     @Mapping(target = "newsletter")
-    @Mapping(target = "fullName", expression = "java(user.fullName)")
+    @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "version")
     @Mapping(target = "addressId")

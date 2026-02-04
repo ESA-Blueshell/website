@@ -34,7 +34,7 @@ class LayeredArchitectureTest {
             .layer("Services").definedBy(ArchitecturePackages.SERVICE)
             .layer("Repositories").definedBy(ArchitecturePackages.REPOSITORY)
             .layer("Model").definedBy(ArchitecturePackages.MODEL)
-            .layer("DTO").definedBy(ArchitecturePackages.DTO)   // <-- add this
+            .layer("DTO").definedBy(ArchitecturePackages.DTO)
 
             .whereLayer("Controllers")
             .mayOnlyAccessLayers("Controllers", "Mappers", "Validation", "Services", "Model", "DTO")
@@ -43,5 +43,5 @@ class LayeredArchitectureTest {
             .whereLayer("Services").mayOnlyAccessLayers("Services", "Repositories", "Model", "Mappers")
             .whereLayer("Repositories").mayOnlyAccessLayers("Repositories", "Model")
             .whereLayer("Model").mayOnlyAccessLayers("Model")
-            .whereLayer("DTO").mayOnlyAccessLayers("DTO")       // optional, but nice + explicit
+            .whereLayer("DTO").mayOnlyAccessLayers("DTO")
 }

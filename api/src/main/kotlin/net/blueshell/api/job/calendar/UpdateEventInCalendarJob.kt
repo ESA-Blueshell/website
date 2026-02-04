@@ -23,20 +23,16 @@ class UpdateEventInCalendarJob(
     @Retryable(
         retryFor = [Exception::class, UncheckedIOException::class],
         maxAttempts = 3,
-        backoff = Backoff(delay = 2000, multiplier = 2)
+        backoff = Backoff(delay = 2000, multiplier = 2.0)
     )
-    fun update(eventId: Long?): CompletableFuture<Void?> {
+    fun update(eventId: Long): CompletableFuture<Void> {
         val key = key("update", eventId)
-        if (processing.putIfAbsent(key, true) != null) return CompletableFuture.completedFuture<Void?>(null)
+        if (processing.putIfAbsent(key, true) != null) return CompletableFuture.completedFuture<Void>(null)
 
-        val lock: ReentrantLock = locks.computeIfAbsent(eventId) { k: Long? -> ReentrantLock() }
+        val lock: ReentrantLock = locks.computeIfAbsent(eventId) { k: Long -> ReentrantLock() }
         try {
             lock.lock()
             val e = eventService.findById(eventId)
-            if (e == null) {
-                log.warn("Update skipped: eventId {} not found", eventId)
-                return CompletableFuture.completedFuture<Void?>(null)
-            }
             if (!e.approved) {
                 // reflect visibility change: remove if present
                 if (e.googleId != null) {
@@ -47,7 +43,7 @@ class UpdateEventInCalendarJob(
                 } else {
                     log.info("EventId {} not approved and not on Google -> noop", eventId)
                 }
-                return CompletableFuture.completedFuture<Void?>(null)
+                return CompletableFuture.completedFuture<Void>(null)
             }
 
             if (e.googleId == null) {
@@ -67,7 +63,7 @@ class UpdateEventInCalendarJob(
                     e.googleId
                 )
             }
-            return CompletableFuture.completedFuture<Void?>(null)
+            return CompletableFuture.completedFuture(null)
         } catch (ex: IOException) {
             throw UncheckedIOException(ex)
         } finally {
@@ -77,19 +73,19 @@ class UpdateEventInCalendarJob(
     }
 
     @Recover
-    fun recover(ex: Exception, eventId: Long?): CompletableFuture<Void?> {
+    fun recover(ex: Exception, eventId: Long): CompletableFuture<Void> {
         processing.remove(key("update", eventId))
         log.error("Giving up update for eventId {}: {}", eventId, ex.message, ex)
-        return CompletableFuture.completedFuture<Void?>(null)
+        return CompletableFuture.completedFuture(null)
     }
 
-    private fun key(op: String?, id: Long?): String {
+    private fun key(op: String, id: Long): String {
         return op + "_" + id + "_" + (System.currentTimeMillis() / 10000)
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(UpdateEventInCalendarJob::class.java)
-        private val locks = ConcurrentHashMap<Long?, ReentrantLock>()
-        private val processing = ConcurrentHashMap<String?, Boolean?>()
+        private val locks = ConcurrentHashMap<Long, ReentrantLock>()
+        private val processing = ConcurrentHashMap<String, Boolean>()
     }
 }

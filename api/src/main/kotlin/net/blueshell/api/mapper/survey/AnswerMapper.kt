@@ -10,7 +10,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
 abstract class AnswerMapper : BaseMapper<Answer, AnswerDTO>() {
-    @Mapping(target = "id")
     @Mapping(target = "questionId")
     @Mapping(target = "optionSelections")
     @Mapping(target = "textResponse")

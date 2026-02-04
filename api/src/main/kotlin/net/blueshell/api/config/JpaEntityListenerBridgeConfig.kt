@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class JpaEntityListenerBridgeConfig @Autowired constructor(eventPublisher: ApplicationEventPublisher?) {
+class JpaEntityListenerBridgeConfig @Autowired constructor(eventPublisher: ApplicationEventPublisher) {
     init {
         JpaListener.setPublisher(eventPublisher)
     }

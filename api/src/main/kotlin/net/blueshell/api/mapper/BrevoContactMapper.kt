@@ -25,13 +25,13 @@ interface BrevoContactMapper {
     @Named("toAttributes")
     fun toAttributes(user: User): MutableMap<String, Any> {
         val attrs: MutableMap<String, Any> = HashMap<String, Any>()
-        attrs.put("NEWSLETTER", user.newsletter)
-        attrs.put("IS_MEMBER", user.hasRole(Role.MEMBER))
-        attrs.put("FIRSTNAME", user.firstName)
-        attrs.put("LASTNAME", user.lastName)
-        attrs.put("SURNAME", user.lastName)
-        attrs.put("SMS", user.phoneNumber)
-        attrs.put("WHATSAPP", user.phoneNumber)
+        attrs["NEWSLETTER"] = user.newsletter
+        attrs["IS_MEMBER"] = user.hasRole(Role.MEMBER)
+        attrs["FIRSTNAME"] = user.firstName
+        attrs["LASTNAME"] = user.lastName
+        attrs["SURNAME"] = user.lastName
+        attrs["SMS"] = user.phoneNumber!!
+        attrs["WHATSAPP"] = user.phoneNumber!!
         return attrs
     }
 }

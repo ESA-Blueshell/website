@@ -79,12 +79,8 @@ class UserService @Autowired constructor(repository: UserRepository, private val
     }
 
     fun findByFilter(filter: UserFilter, pageable: Pageable): Page<User> {
-        var filter = filter
-        var pageable = pageable
-        if (filter == null) filter = UserFilter()
-        if (pageable == null) pageable = Pageable.unpaged()
         val spec = UserSpecifications.fromFilter(filter, principal)
-        return repository!!.findAll(spec, pageable)
+        return repository.findAll(spec, pageable)
     }
 
     @Transactional

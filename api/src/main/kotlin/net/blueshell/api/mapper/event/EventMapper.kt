@@ -9,7 +9,6 @@ import org.mapstruct.*
 
 @Mapper(componentModel = "spring", uses = [EventBannerMapper::class, SurveyMapper::class])
 abstract class EventMapper : BaseMapper<Event, EventDTO>() {
-    @Mapping(target = "id")
     @Mapping(target = "committeeId")
     @Mapping(target = "title")
     @Mapping(target = "description")

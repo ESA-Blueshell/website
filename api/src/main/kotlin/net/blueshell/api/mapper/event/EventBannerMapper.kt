@@ -11,7 +11,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring", uses = [FileMapper::class])
 abstract class EventBannerMapper : BaseMapper<EventBanner, EventBannerDTO>() {
-    @Mapping(target = "id")
     @Mapping(target = "file")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)

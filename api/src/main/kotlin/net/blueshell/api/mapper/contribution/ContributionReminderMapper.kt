@@ -10,14 +10,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
 abstract class ContributionReminderMapper : BaseMapper<ContributionReminder, ContributionReminderDTO>() {
-    @Mapping(target = "id")
-    @Mapping(target = "userId")
-    @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(reminder: ContributionReminder): ContributionReminderDTO
-
-    @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
     @Mapping(target = "version")
@@ -26,4 +18,11 @@ abstract class ContributionReminderMapper : BaseMapper<ContributionReminder, Con
         dto: ContributionReminderDTO,
         @MappingTarget reminder: ContributionReminder
     ): ContributionReminder
+
+    @Mapping(target = "id")
+    @Mapping(target = "userId")
+    @Mapping(target = "contributionPeriodId")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
+    abstract override fun toDTO(reminder: ContributionReminder): ContributionReminderDTO
 }

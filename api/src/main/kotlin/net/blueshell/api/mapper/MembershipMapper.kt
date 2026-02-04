@@ -26,7 +26,6 @@ abstract class MembershipMapper : BaseMapper<Membership, MembershipDTO>() {
     @Mapping(target = "version")
     abstract override fun toDTO(membership: Membership): MembershipDTO
 
-    @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)

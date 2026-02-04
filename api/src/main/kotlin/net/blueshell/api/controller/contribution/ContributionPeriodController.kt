@@ -43,7 +43,7 @@ class ContributionPeriodController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD') && #dto.id == #id")
     @PutMapping("/contributionPeriods/{id}")
     fun updateContributionPeriod(
-        @PathVariable("id") id: Long,
+        @PathVariable id: Long,
         @Valid @RequestBody dto: ContributionPeriodDTO
     ): ContributionPeriodDTO {
         var contributionPeriod = service.findById(id)

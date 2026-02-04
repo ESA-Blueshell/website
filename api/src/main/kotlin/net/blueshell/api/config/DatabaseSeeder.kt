@@ -470,7 +470,7 @@ class DatabaseSeeder(
             startDate = period.startDate
             endDate = period.endDate
             memberType = MemberType.REGULAR
-            userId = user.id
+            userId = user.id!!
         }
         return requireNotNull(membershipService.create(membership)) { "Membership create returned null" }
     }
@@ -517,7 +517,7 @@ class DatabaseSeeder(
             this.lastName = lastName
             this.email = email
             enabled = false
-            roles = setOf(Role.GUEST)
+            roles = setOf(Role.GUEST) as MutableSet<Role>
             newsletter = false
             dateOfBirth = Date.valueOf(LocalDate.of(1995, 1, 1))
             consentPrivacy = true
@@ -558,7 +558,7 @@ class DatabaseSeeder(
         }
 
         val member = CommitteeMember().apply {
-            userId = user.id
+            userId = e fixeuser.id
             this.committee = committee
             this.role = role
         }

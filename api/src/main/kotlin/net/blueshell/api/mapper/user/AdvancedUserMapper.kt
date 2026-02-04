@@ -17,6 +17,28 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
 
+    @Mapping(target = "initials", ignore = true)
+    @Mapping(target = "firstName", ignore = true)
+    @Mapping(target = "prefix", ignore = true)
+    @Mapping(target = "lastName", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "discord")
+    @Mapping(target = "dateOfBirth")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "nationality")
+    @Mapping(target = "photoConsent")
+    @Mapping(target = "bhv")
+    @Mapping(target = "ehbo")
+    @Mapping(target = "newsletter")
+    @Mapping(target = "gender")
+    @Mapping(target = "studentNumber")
+    @Mapping(target = "addressId")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    abstract fun fromDTO(dto: AdvancedUserDTO, @MappingTarget user: User): User
+
     @Mapping(target = "id")
     @Mapping(target = "initials")
     @Mapping(target = "firstName")
@@ -43,28 +65,6 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     abstract override fun toDTO(user: User): AdvancedUserDTO
-
-    @Mapping(target = "initials", ignore = true)
-    @Mapping(target = "firstName", ignore = true)
-    @Mapping(target = "prefix", ignore = true)
-    @Mapping(target = "lastName", ignore = true)
-    @Mapping(target = "username", ignore = true)
-    @Mapping(target = "email", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "discord")
-    @Mapping(target = "dateOfBirth")
-    @Mapping(target = "phoneNumber")
-    @Mapping(target = "nationality")
-    @Mapping(target = "photoConsent")
-    @Mapping(target = "bhv")
-    @Mapping(target = "ehbo")
-    @Mapping(target = "newsletter")
-    @Mapping(target = "gender")
-    @Mapping(target = "studentNumber")
-    @Mapping(target = "addressId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    abstract fun fromDTO(dto: AdvancedUserDTO, @MappingTarget user: User): User
 
     @AfterMapping
     protected fun onCreation(dto: AdvancedUserDTO, @MappingTarget user: User) {

@@ -15,6 +15,7 @@ abstract class BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null
+        protected set
 
     @Column(name = "deleted_at", insertable = false, updatable = false, nullable = false)
     @ColumnDefault("'9999-12-31 23:59:59'")

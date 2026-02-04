@@ -12,6 +12,20 @@ abstract class SimpleUserMapper : BaseMapper<User, SimpleUserDTO>() {
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
 
+    @Mapping(target = "initials", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "firstName", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "prefix", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "lastName", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "username", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "email", conditionExpression = "java(user.id == null)")
+    @Mapping(target = "discord")
+    @Mapping(target = "phoneNumber")
+    @Mapping(target = "newsletter")
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    abstract fun fromDTO(dto: SimpleUserDTO, @MappingTarget user: User): User
+
     @Mapping(target = "id")
     @Mapping(target = "initials")
     @Mapping(target = "firstName")
@@ -28,20 +42,6 @@ abstract class SimpleUserMapper : BaseMapper<User, SimpleUserDTO>() {
     @Mapping(target = "addressId")
     @BeanMapping(ignoreByDefault = true)
     abstract override fun toDTO(user: User): SimpleUserDTO
-
-    @Mapping(target = "initials", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "firstName", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "prefix", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "lastName", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "username", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "email", conditionExpression = "java(user.id == null)")
-    @Mapping(target = "discord")
-    @Mapping(target = "phoneNumber")
-    @Mapping(target = "newsletter")
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    abstract fun fromDTO(dto: SimpleUserDTO, @MappingTarget user: User): User
 
     @AfterMapping
     protected fun afterFromDTO(dto: SimpleUserDTO, @MappingTarget user: User) {

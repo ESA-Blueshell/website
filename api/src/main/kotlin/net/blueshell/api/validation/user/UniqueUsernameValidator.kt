@@ -14,7 +14,7 @@ import org.springframework.util.StringUtils
 class UniqueUsernameValidator @Autowired constructor(private val userService: UserService) :
     ConstraintValidator<UniqueUsername?, String?> {
     override fun isValid(username: String?, context: ConstraintValidatorContext?): Boolean {
-        if (!StringUtils.hasText(username)) {
+        if (username.isNullOrEmpty()) {
             // Let @NotBlank handle this
             return true
         }

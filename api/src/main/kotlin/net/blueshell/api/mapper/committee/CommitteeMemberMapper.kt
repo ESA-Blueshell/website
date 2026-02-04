@@ -15,6 +15,12 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemb
     private lateinit var committeeMemberService: CommitteeMemberService
 
     @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "role")
+    @Mapping(target = "userId")
+    @Mapping(target = "version")
+    abstract fun fromDTO(dto: CommitteeMemberDTO, @MappingTarget member: CommitteeMember): CommitteeMember
+
+    @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "role")
     @Mapping(target = "userId")
@@ -30,13 +36,6 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemb
             return committeeMemberService.findById(dto.id)
         }
     }
-
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "role")
-    @Mapping(target = "userId")
-    @Mapping(target = "version")
-    abstract fun fromDTO(dto: CommitteeMemberDTO, @MappingTarget member: CommitteeMember): CommitteeMember
 
     companion object {
         private val log = LoggerFactory.getLogger(CommitteeMemberMapper::class.java)

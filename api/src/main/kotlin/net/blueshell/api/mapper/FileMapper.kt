@@ -107,7 +107,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
     private fun getExtensionFromName(filename: String): String {
         val i = filename.lastIndexOf('.')
         if (i < 0 || i == filename.length - 1) return ""
-        return filename.substring(i + 1).lowercase(Locale.default)
+        return filename.substring(i + 1).lowercase(Locale.getDefault())
     }
 
     private fun extToMime(ext: String): String {

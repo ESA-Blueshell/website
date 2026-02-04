@@ -12,6 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired
 
 @Mapper(componentModel = "spring", uses = [GuestMapper::class, AnswerMapper::class, SimpleUserMapper::class])
 abstract class EventSignUpMapper : BaseMapper<EventSignUp, EventSignUpDTO>() {
+    @Mapping(target = "eventId")
+    @Mapping(target = "guest", ignore = true)
+    @Mapping(target = "userId")
+    @Mapping(target = "answers")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
+    abstract fun fromDTO(dto: EventSignUpDTO, @MappingTarget signUp: EventSignUp): EventSignUp
+
     @Mapping(target = "id")
     @Mapping(target = "eventId")
     @Mapping(target = "guest")
@@ -20,14 +28,6 @@ abstract class EventSignUpMapper : BaseMapper<EventSignUp, EventSignUpDTO>() {
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     abstract override fun toDTO(signUp: EventSignUp): EventSignUpDTO
-
-    @Mapping(target = "eventId")
-    @Mapping(target = "guest", ignore = true)
-    @Mapping(target = "userId")
-    @Mapping(target = "answers")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: EventSignUpDTO, @MappingTarget signUp: EventSignUp): EventSignUp
 
     @Autowired
     private lateinit var guests: GuestService

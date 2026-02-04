@@ -26,7 +26,7 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
                 .addConstraintViolation()
         }
 
-        if (StringUtils.hasText(dto.username)) {
+        if (dto.username.isNotBlank()) {
             val taken = if (currentUserId == null)
                 users.existsByUsername(dto.username)
             else
@@ -37,7 +37,7 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
             }
         }
 
-        if (StringUtils.hasText(dto.email)) {
+        if (!dto.email.isNullOrEmpty()) {
             val taken = if (currentUserId == null)
                 users.existsByEmail(dto.email)
             else

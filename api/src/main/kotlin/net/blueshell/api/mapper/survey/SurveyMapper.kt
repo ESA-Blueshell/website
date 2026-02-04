@@ -9,7 +9,6 @@ import java.util.function.Consumer
 
 @Mapper(componentModel = "spring", uses = [QuestionMapper::class])
 abstract class SurveyMapper : BaseMapper<Survey, SurveyDTO>() {
-    @Mapping(target = "id")
     @Mapping(target = "questions")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)

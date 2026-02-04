@@ -37,7 +37,7 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
         if (authentication == null || targetId == null || permission == null) {
             return false
         }
-        val signUp = service.findById(targetId as Long)
-        return signUp != null && hasPermission(authentication, signUp, permission)
+
+        return hasPermission(authentication, service.findById(targetId as Long), permission)
     }
 }

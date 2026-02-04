@@ -11,19 +11,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
 abstract class ContributionPeriodMapper : BaseMapper<ContributionPeriod, ContributionPeriodDTO>() {
-    @Mapping(target = "id")
-    @Mapping(target = "startDate")
-    @Mapping(target = "endDate")
-    @Mapping(target = "halfYearFee")
-    @Mapping(target = "fullYearFee")
-    @Mapping(target = "alumniFee")
-    @Mapping(target = "listId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(contributionPeriod: ContributionPeriod): ContributionPeriodDTO
-
-
-    @Mapping(target = "id")
     @Mapping(target = "startDate")
     @Mapping(target = "endDate")
     @Mapping(target = "halfYearFee")
@@ -35,4 +22,15 @@ abstract class ContributionPeriodMapper : BaseMapper<ContributionPeriod, Contrib
         dto: ContributionPeriodDTO,
         @MappingTarget contributionPeriod: ContributionPeriod
     ): ContributionPeriod
+
+    @Mapping(target = "id")
+    @Mapping(target = "startDate")
+    @Mapping(target = "endDate")
+    @Mapping(target = "halfYearFee")
+    @Mapping(target = "fullYearFee")
+    @Mapping(target = "alumniFee")
+    @Mapping(target = "listId")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
+    abstract override fun toDTO(contributionPeriod: ContributionPeriod): ContributionPeriodDTO
 }

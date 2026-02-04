@@ -106,13 +106,13 @@ class RecoveryService protected constructor(
         token.expiresAt = Instant.now().plus(ttl)
 
         create(token)
-        return selector + "." + verifier
+        return "$selector.$verifier"
     }
 
     @jakarta.transaction.Transactional
     fun verify(rawToken: String, expectedType: ResetType): RecoveryToken {
         val parts: Array<String> =
-            if (rawToken != null) rawToken.split("\\.".toRegex(), limit = 2).toTypedArray() else arrayOfNulls<String>(0)
+            if (rawToken != null) rawToken.split("\\.".toRegex(), limit = 2).toTypedArray() else arrayOfNulls(0)
         if (parts.size != 2 || parts[0].isBlank() || parts[1].isBlank()) {
             throw notFound()
         }
@@ -145,7 +145,7 @@ class RecoveryService protected constructor(
     private fun randomUrlSafe(numBytes: Int): String {
         val bytes = ByteArray(numBytes)
         random.nextBytes(bytes)
-        return Base64.urlEncoder.withoutPadding().encodeToString(bytes)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
     }
 
     // in RecoveryService

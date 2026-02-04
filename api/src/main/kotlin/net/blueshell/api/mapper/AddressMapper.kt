@@ -9,7 +9,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
 abstract class AddressMapper : BaseMapper<Address, AddressDTO>() {
-    @Mapping(target = "id")
     @Mapping(target = "country")
     @Mapping(target = "city")
     @Mapping(target = "street")
@@ -17,7 +16,7 @@ abstract class AddressMapper : BaseMapper<Address, AddressDTO>() {
     @Mapping(target = "zipCode")
     @Mapping(target = "createdAt")
     @Mapping(target = "version")
-    abstract override fun toDTO(address: Address): AddressDTO
+    abstract fun fromDTO(dto: AddressDTO, @MappingTarget address: Address): Address
 
     @Mapping(target = "id")
     @Mapping(target = "country")
@@ -27,5 +26,5 @@ abstract class AddressMapper : BaseMapper<Address, AddressDTO>() {
     @Mapping(target = "zipCode")
     @Mapping(target = "createdAt")
     @Mapping(target = "version")
-    abstract fun fromDTO(dto: AddressDTO, @MappingTarget address: Address): Address
+    abstract override fun toDTO(address: Address): AddressDTO
 }

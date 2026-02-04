@@ -10,7 +10,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring")
 abstract class QuestionMapper : BaseMapper<Question, QuestionDTO>() {
-    @Mapping(target = "id")
     @Mapping(target = "label")
     @Mapping(target = "type")
     @Mapping(target = "idx")

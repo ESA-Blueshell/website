@@ -55,7 +55,7 @@ object UserSpecifications {
     }
 
 
-    fun fromFilter(f: UserFilter, user: User): Specification<User> {
+    fun fromFilter(f: UserFilter, user: User?): Specification<User> {
         var spec =
             Specification { root: Root<User>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 

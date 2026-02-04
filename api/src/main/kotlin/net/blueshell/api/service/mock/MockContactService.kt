@@ -33,7 +33,7 @@ class MockContactService(
 
     override fun getUpdate(user: User) {
         if (user.contactId != null) return
-        val id = emailToContactId.get(user.email)
+        val id = emailToContactId[user.email]
         if (id != null) {
             user.contactId = id
             log.debug("[brevo-mock] found existing contactId={} for email={}", id, user.email)
@@ -84,8 +84,7 @@ class MockContactService(
         if (listId == null) {
             listId = createList(contributionPeriod)
         }
-        listMembers.computeIfAbsent(listId) { k: Long -> ConcurrentHashMap.newKeySet<Long>() }!!
-            .add(user.contactId)
+        listMembers.computeIfAbsent(listId) { _: Long -> ConcurrentHashMap.newKeySet() }!!.add(user.contactId)
         log.info("[brevo-mock] added contactId={} to listId={}", user.contactId, listId)
     }
 

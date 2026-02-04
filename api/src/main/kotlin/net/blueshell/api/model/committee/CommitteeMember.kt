@@ -3,6 +3,7 @@ package net.blueshell.api.model.committee
 import jakarta.persistence.*
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.base.entity.AuditedSoftDeleteEntity
+import net.blueshell.api.base.entity.Identifiable
 import net.blueshell.api.model.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -28,11 +29,25 @@ import org.hibernate.annotations.SQLRestriction
 )
 @EntityListeners(JpaListener::class)
 class CommitteeMember(
-
     @EmbeddedId
-    var id: CommitteeMemberId = CommitteeMemberId()
+    override var id: CommitteeMemberId = CommitteeMemberId()
+) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMemberId> {
 
-) : AuditedSoftDeleteEntity() {
+    @get:Transient
+    @set:Transient
+    var committeeId: Long
+        get() = id.committeeId
+        set(value) {
+            id.committeeId = value
+        }
+
+    @get:Transient
+    @set:Transient
+    var userId: Long
+        get() = id.userId
+        set(value) {
+            id.userId = value
+        }
 
     @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -46,15 +61,6 @@ class CommitteeMember(
 
     @Column(name = "role", length = 255)
     var role: String? = null
-
-    fun setRelations(committee: Committee, user: User) {
-        this.committee = committee
-        this.user = user
-        this.id = CommitteeMemberId(
-            committeeId = committee.id ?: id.committeeId,
-            userId = user.id ?: id.userId
-        )
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

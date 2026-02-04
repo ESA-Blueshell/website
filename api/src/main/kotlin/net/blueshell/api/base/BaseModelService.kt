@@ -169,4 +169,20 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
     open fun delete(entity: T) {
         repository.delete(entity)
     }
+
+    /**
+     * Delete all entities.
+     */
+    @Transactional
+    open fun deleteAll(entities: Set<T>) {
+        repository.deleteAll(entities)
+    }
+
+    /**
+     * Delete all entities by their ids.
+     */
+    @Transactional
+    open fun deleteAllById(ids: Set<ID>) {
+        repository.deleteAllById(ids)
+    }
 }

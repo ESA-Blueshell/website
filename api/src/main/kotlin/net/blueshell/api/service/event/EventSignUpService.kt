@@ -17,8 +17,8 @@ class EventSignUpService @Autowired constructor(repository: EventSignUpRepositor
     BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByUserIdAndEventId(userId: Long, eventId: Long): EventSignUp {
-        return repository!!.findByUserIdAndEventId(userId, eventId)
-            .orElseThrow<ResponseStatusException>(Supplier {
+        return repository.findByUserIdAndEventId(userId, eventId)
+            .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "EventSignUp not found for user: $userId and event: $eventId"

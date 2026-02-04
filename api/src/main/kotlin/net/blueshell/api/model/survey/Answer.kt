@@ -23,9 +23,15 @@ class Answer : AuditedAutoIdEntity() {
     @Column(name = "question_id", nullable = false)
     var questionId: Long = 0
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", insertable = false, updatable = false)
-    val question: Question? = null
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "question_id", insertable = false, updatable = false)
+    private var _question: Question? = null
+    var question: Question?
+        get() = _question
+        set(value) {
+            _question = value
+            questionId = value?.id ?: questionId
+        }
 
     @Column(name = "option_selections", columnDefinition = "JSON")
     @Convert(converter = BooleanListConverter::class)
@@ -34,6 +40,8 @@ class Answer : AuditedAutoIdEntity() {
     @Column(name = "text_response")
     var textResponse: String? = null
 
-    @OneToOne(mappedBy = "answer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val eventSignUpAnswer: EventSignUpAnswer? = null
+    @field:OneToOne(mappedBy = "_answer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    private var _eventSignUpAnswer: EventSignUpAnswer? = null
+    val eventSignUpAnswer: EventSignUpAnswer?
+        get() = _eventSignUpAnswer
 }

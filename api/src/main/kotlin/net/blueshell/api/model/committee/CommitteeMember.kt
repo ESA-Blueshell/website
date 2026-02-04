@@ -49,15 +49,25 @@ class CommitteeMember(
             id.userId = value
         }
 
-    @MapsId("userId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    lateinit var user: User
+    @field:MapsId("userId")
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "user_id", nullable = false)
+    private var _user: User? = null
+    var user: User
+        get() = requireNotNull(_user) { "User is required" }
+        set(value) {
+            _user = value
+        }
 
-    @MapsId("committeeId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "committee_id", nullable = false)
-    lateinit var committee: Committee
+    @field:MapsId("committeeId")
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "committee_id", nullable = false)
+    private var _committee: Committee? = null
+    var committee: Committee
+        get() = requireNotNull(_committee) { "Committee is required" }
+        set(value) {
+            _committee = value
+        }
 
     @Column(name = "role", length = 255)
     var role: String? = null

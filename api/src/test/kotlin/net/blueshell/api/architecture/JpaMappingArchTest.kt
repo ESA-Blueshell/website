@@ -3,77 +3,45 @@ package net.blueshell.api.architecture
 import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaField
 import com.tngtech.archunit.core.domain.JavaModifier
-import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
+import com.tngtech.archunit.junit.AnalyzeClasses
+import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import jakarta.persistence.*
-import org.junit.jupiter.api.Test
 
 /**
  * ArchUnit rules to guide refactors towards “clean” Kotlin + Spring Boot + JPA mappings.
  *
  * Intentionally strict; expected to fail during refactor.
  */
+@AnalyzeClasses(
+    packages = [ArchitecturePackages.MODEL_BASE],
+    importOptions = [ImportOption.DoNotIncludeTests::class]
+)
 class JpaMappingArchTest {
 
-    private val classes = ClassFileImporter()
-        .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-        .importPackages("net.blueshell.api.model")
-
-    @Test
-    fun `to-one associations must be LAZY`() {
-        toOneManyToOneMustBeLazy().check(classes)
-        toOneOneToOneMustBeLazy().check(classes)
-    }
-
-    @Test
-    fun `to-one association fields should be private and underscore-prefixed`() {
-        toOneAssociationsShouldUsePrivateUnderscoreBackingField().check(classes)
-    }
-
-    @Test
-    fun `if both relation + foreign key id exist, relation must be read-only or mapsId`() {
-        relationsWithSeparateIdColumnMustBeReadOnlyOrMapsId().check(classes)
-    }
-
-    @Test
-    fun `collections should be private underscore-backed vals`() {
-        collectionAssociationsShouldBePrivateUnderscoreVals().check(classes)
-    }
-
-    @Test
-    fun `IdClass types must implement Serializable`() {
-        idClassTypesMustImplementSerializable().check(classes)
-    }
-
-    @Test
-    fun `avoid Lombok in Kotlin entities`() {
-        noLombokInModel().check(classes)
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // Rules
-    // ---------------------------------------------------------------------------------------------
-
-    private fun toOneManyToOneMustBeLazy(): ArchRule =
+    @ArchTest
+    val toOneManyToOneMustBeLazy: ArchRule =
         fields()
             .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
             .and().areAnnotatedWith(ManyToOne::class.java)
             .should(haveFetchTypeLazyFromRuntimeAnnotation(ManyToOne::class.java))
             .because("@ManyToOne defaults to EAGER; prefer LAZY.")
 
-    private fun toOneOneToOneMustBeLazy(): ArchRule =
+    @ArchTest
+    val toOneOneToOneMustBeLazy: ArchRule =
         fields()
             .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
             .and().areAnnotatedWith(OneToOne::class.java)
             .should(haveFetchTypeLazyFromRuntimeAnnotation(OneToOne::class.java))
             .because("@OneToOne defaults to EAGER; prefer LAZY.")
 
-    private fun toOneAssociationsShouldUsePrivateUnderscoreBackingField(): ArchRule =
+    @ArchTest
+    val toOneAssociationsShouldUsePrivateUnderscoreBackingField: ArchRule =
         fields()
             .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
             .and().areAnnotatedWith(ManyToOne::class.java)
@@ -81,7 +49,8 @@ class JpaMappingArchTest {
             .should(bePrivateAndUnderscorePrefixed())
             .because("Use private underscore-backed fields for JPA relations to keep control/invariants.")
 
-    private fun relationsWithSeparateIdColumnMustBeReadOnlyOrMapsId(): ArchRule =
+    @ArchTest
+    val relationsWithSeparateIdColumnMustBeReadOnlyOrMapsId: ArchRule =
         fields()
             .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
             .and().areAnnotatedWith(ManyToOne::class.java)
@@ -89,7 +58,8 @@ class JpaMappingArchTest {
             .should(relationWithIdFieldMustBeReadOnlyOrMapsId())
             .because("If you keep both <name>Id + <name> relation, ensure a single source of truth.")
 
-    private fun collectionAssociationsShouldBePrivateUnderscoreVals(): ArchRule =
+    @ArchTest
+    val collectionAssociationsShouldBePrivateUnderscoreVals: ArchRule =
         fields()
             .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
             .and().areAnnotatedWith(OneToMany::class.java)
@@ -97,15 +67,17 @@ class JpaMappingArchTest {
             .should(bePrivateUnderscoreAndFinal())
             .because("Keep mutable collections private; expose read-only views.")
 
-    private fun idClassTypesMustImplementSerializable(): ArchRule =
+    @ArchTest
+    val idClassTypesMustImplementSerializable: ArchRule =
         classes()
             .that().areAnnotatedWith(IdClass::class.java)
             .should(idClassValueMustImplementSerializable())
             .because("JPA requires IdClass types to be Serializable.")
 
-    private fun noLombokInModel(): ArchRule =
+    @ArchTest
+    val noLombokInModel: ArchRule =
         noClasses()
-            .that().resideInAPackage("net.blueshell.api.model..")
+            .that().resideInAPackage(ArchitecturePackages.MODEL)
             .should().dependOnClassesThat().resideInAnyPackage("lombok..")
             .because("Lombok in Kotlin entities is usually a smell; prefer Kotlin-native patterns.")
 

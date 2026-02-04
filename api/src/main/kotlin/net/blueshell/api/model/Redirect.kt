@@ -23,7 +23,12 @@ class Redirect() : AuditedAutoIdEntity() {
     @field:ToString.Include
     @field:JoinColumn(name = "telemetry_id", nullable = false)
     @field:ManyToOne(fetch = FetchType.LAZY)
-    lateinit var telemetry: Telemetry
+    private var _telemetry: Telemetry? = null
+    var telemetry: Telemetry
+        get() = requireNotNull(_telemetry) { "Telemetry is required" }
+        set(value) {
+            _telemetry = value
+        }
 
     constructor(telemetry: Telemetry) : this() {
         this.telemetry = telemetry

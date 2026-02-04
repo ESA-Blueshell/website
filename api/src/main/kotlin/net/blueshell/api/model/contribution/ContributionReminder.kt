@@ -32,16 +32,28 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class ContributionReminder : AuditedAutoIdEntity() {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
-    lateinit var user: User
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
+    private var _user: User? = null
+    var user: User
+        get() = requireNotNull(_user) { "User is required" }
+        set(value) {
+            _user = value
+            userId = value.id ?: userId
+        }
 
     @Column(name = "user_id", nullable = false)
     var userId: Long = 0
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
-    lateinit var contributionPeriod: ContributionPeriod
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
+    private var _contributionPeriod: ContributionPeriod? = null
+    var contributionPeriod: ContributionPeriod
+        get() = requireNotNull(_contributionPeriod) { "Contribution period is required" }
+        set(value) {
+            _contributionPeriod = value
+            contributionPeriodId = value.id ?: contributionPeriodId
+        }
 
     @Column(name = "contribution_period_id", nullable = false)
     var contributionPeriodId: Long = 0

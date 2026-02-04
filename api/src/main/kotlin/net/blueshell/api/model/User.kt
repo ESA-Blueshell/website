@@ -60,9 +60,9 @@ class User(
     @Column
     var initials: String? = null,
 
-    @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "address_id")
-    var address: Address? = null,
+    @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+    @field:JoinColumn(name = "address_id", insertable = false, updatable = false)
+    private var _address: Address? = null,
 
     @Column(name = "address_id", updatable = false, insertable = false)
     var addressId: Long? = null,
@@ -124,7 +124,14 @@ class User(
     @Column(name = "start_study_year")
     var startStudyYear: Long? = null,
 
-    ) : AuditedAutoIdEntity(), UserDetails {
+) : AuditedAutoIdEntity(), UserDetails {
+
+    var address: Address?
+        get() = _address
+        set(value) {
+            _address = value
+            addressId = value?.id ?: addressId
+        }
 
     @Column(nullable = false)
     var email: String = ""
@@ -134,11 +141,13 @@ class User(
         get() = field.trim().lowercase()
 
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
-    val profilePicture: File? = null
+    @field:OneToOne(fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
+    private var _profilePicture: File? = null
+    val profilePicture: File?
+        get() = _profilePicture
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()
     val recoveryTokens: Set<RecoveryToken> get() = _recoveryTokens
 
@@ -146,15 +155,15 @@ class User(
     private val _committeeMembers: MutableSet<CommitteeMember> = linkedSetOf()
     val committeeMembers: Set<CommitteeMember> get() = _committeeMembers
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _contributions: MutableSet<Contribution> = linkedSetOf()
     val contributions: Set<Contribution> get() = _contributions
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _memberships: MutableSet<Membership> = linkedSetOf()
     val memberships: Set<Membership> get() = _memberships
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _eventSignUps: MutableSet<EventSignUp> = linkedSetOf()
     val eventSignUps: Set<EventSignUp> get() = _eventSignUps
 

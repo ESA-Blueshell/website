@@ -33,9 +33,14 @@ class Board : AuditedAutoIdEntity() {
     @Column(name = "name", nullable = false)
     lateinit var name: String
 
-    @JoinColumn(name = "picture_id")
-    @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val picture: File? = null
+    @field:JoinColumn(name = "picture_id")
+    @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    private var _picture: File? = null
+    var picture: File?
+        get() = _picture
+        set(value) {
+            _picture = value
+        }
 
     @OneToMany(mappedBy = "_board", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _members: MutableSet<BoardMember> = linkedSetOf()
@@ -51,7 +56,7 @@ class Board : AuditedAutoIdEntity() {
     @Column(name = "end_date")
     var endDate: LocalDate? = null
 
-    @OneToMany(mappedBy = "board", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_board", fetch = FetchType.LAZY)
     private val _documents: MutableSet<BoardDocument> = linkedSetOf()
     val documents: Set<BoardDocument>
         get() = _documents

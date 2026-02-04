@@ -34,8 +34,8 @@ import java.time.Instant
     NamedEntityGraph(
         name = "Event.withBannerFileAndFormQuestions",
         attributeNodes = [
-            NamedAttributeNode(value = "banner", subgraph = "bannerSub"),
-            NamedAttributeNode(value = "signUpForm", subgraph = "formSub"),
+            NamedAttributeNode(value = "_banner", subgraph = "bannerSub"),
+            NamedAttributeNode(value = "_signUpForm", subgraph = "formSub"),
         ],
         subgraphs = [
             NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("_file")]),
@@ -47,9 +47,15 @@ import java.time.Instant
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class Event : AuditedAutoIdEntity() {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "committee_id", insertable = false, updatable = false)
-    lateinit var committee: Committee
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "committee_id", insertable = false, updatable = false)
+    private var _committee: Committee? = null
+    var committee: Committee
+        get() = requireNotNull(_committee) { "Committee is required" }
+        set(value) {
+            _committee = value
+            committeeId = value.id
+        }
 
     @Column(name = "committee_id")
     var committeeId: Long? = null
@@ -69,8 +75,13 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "end_time", nullable = false)
     lateinit var endTime: Instant
 
-    @OneToOne(mappedBy = "_event", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    var banner: EventBanner? = null
+    @field:OneToOne(mappedBy = "_event", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    private var _banner: EventBanner? = null
+    var banner: EventBanner?
+        get() = _banner
+        set(value) {
+            _banner = value
+        }
 
     @Column(name = "price_member")
     var memberPrice: Double? = null
@@ -78,12 +89,12 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "price_public")
     var publicPrice: Double? = null
 
-    @OneToMany(cascade = [CascadeType.ALL], mappedBy = "event", fetch = FetchType.LAZY)
+    @OneToMany(cascade = [CascadeType.ALL], mappedBy = "_event", fetch = FetchType.LAZY)
     private val _feedbacks: MutableSet<EventFeedback> = linkedSetOf()
     val feedbacks: Set<EventFeedback>
         get() = _feedbacks
 
-    @OneToMany(mappedBy = "event", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_event", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _pictures: MutableSet<EventPicture> = linkedSetOf()
     val pictures: Set<EventPicture>
         get() = _pictures
@@ -100,9 +111,15 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "sign_up", nullable = false)
     var signUp = false
 
-    @JoinColumn(name = "survey_id")
-    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    var signUpForm: Survey? = null
+    @field:JoinColumn(name = "survey_id", insertable = false, updatable = false)
+    @field:OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    private var _signUpForm: Survey? = null
+    var signUpForm: Survey?
+        get() = _signUpForm
+        set(value) {
+            _signUpForm = value
+            signUpFormId = value?.id
+        }
 
     @Column(name = "survey_id", updatable = false, insertable = false)
     var signUpFormId: Long? = null

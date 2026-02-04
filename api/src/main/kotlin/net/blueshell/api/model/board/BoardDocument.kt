@@ -24,14 +24,24 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_documents SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class BoardDocument : AuditedAutoIdEntity() {
-    @JoinColumn(name = "board_id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
-    lateinit var board: Board
+    @field:JoinColumn(name = "board_id", nullable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    private var _board: Board? = null
+    var board: Board
+        get() = requireNotNull(_board) { "Board is required" }
+        set(value) {
+            _board = value
+        }
 
     @Column(name = "name", nullable = false)
     lateinit var name: String
 
-    @JoinColumn(name = "file_id", nullable = false)
-    @OneToOne(fetch = FetchType.LAZY)
-    lateinit var file: File
+    @field:JoinColumn(name = "file_id", nullable = false)
+    @field:OneToOne(fetch = FetchType.LAZY)
+    private var _file: File? = null
+    var file: File
+        get() = requireNotNull(_file) { "File is required" }
+        set(value) {
+            _file = value
+        }
 }

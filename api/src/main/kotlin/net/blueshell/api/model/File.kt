@@ -33,9 +33,15 @@ class File : AuditedAutoIdEntity() {
     @Column(nullable = false)
     lateinit var path: String
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploader_id", nullable = false, insertable = false, updatable = false)
-    lateinit var uploader: User
+    @field:OneToOne(fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "uploader_id", nullable = false, insertable = false, updatable = false)
+    private var _uploader: User? = null
+    var uploader: User
+        get() = requireNotNull(_uploader) { "Uploader is required" }
+        set(value) {
+            _uploader = value
+            uploaderId = value.id ?: uploaderId
+        }
 
     @Column(name = "uploader_id", nullable = false)
     var uploaderId: Long = 0

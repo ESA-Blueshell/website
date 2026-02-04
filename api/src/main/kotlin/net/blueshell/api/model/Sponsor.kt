@@ -26,9 +26,15 @@ class Sponsor : AuditedAutoIdEntity() {
     @Column(nullable = false, length = 4095)
     lateinit var description: String
 
-    @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    @JoinColumn(name = "logo_id", nullable = false, insertable = false, updatable = false)
-    lateinit var picture: File
+    @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @field:JoinColumn(name = "logo_id", nullable = false, insertable = false, updatable = false)
+    private var _picture: File? = null
+    var picture: File
+        get() = requireNotNull(_picture) { "Picture is required" }
+        set(value) {
+            _picture = value
+            pictureId = value.id ?: pictureId
+        }
 
     @Column(name = "logo_id", nullable = false)
     var pictureId: Long = 0

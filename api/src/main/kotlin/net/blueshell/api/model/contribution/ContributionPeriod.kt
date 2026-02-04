@@ -30,7 +30,7 @@ import kotlin.collections.linkedSetOf
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class ContributionPeriod : AuditedAutoIdEntity() {
-    @OneToMany(mappedBy = "contributionPeriod", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_contributionPeriod", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _contributions: MutableSet<Contribution> = linkedSetOf()
     val contributions: Set<Contribution>
         get() = _contributions

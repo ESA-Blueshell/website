@@ -24,9 +24,15 @@ import java.time.LocalDate
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class Membership : AuditedAutoIdEntity() {
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
-    val user: User? = null
+    @field:JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY)
+    private var _user: User? = null
+    var user: User?
+        get() = _user
+        set(value) {
+            _user = value
+            userId = value?.id ?: userId
+        }
 
     @Column(name = "user_id", nullable = false)
     var userId: Long = 0

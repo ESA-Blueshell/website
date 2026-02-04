@@ -32,7 +32,7 @@ class Telemetry() : AuditedAutoIdEntity() {
     @field:Column(nullable = false)
     lateinit var url: String
 
-    @OneToMany(mappedBy = "telemetry", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_telemetry", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _redirects: MutableSet<Redirect> = linkedSetOf()
     val redirects: Set<Redirect>
         get() = _redirects

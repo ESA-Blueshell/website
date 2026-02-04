@@ -51,7 +51,12 @@ class BoardMember : AuditedAutoIdEntity() {
     @Column(name = "user_id", nullable = false)
     var userId: Long = 0
 
-    @JoinColumn(name = "picture_id")
-    @OneToOne(fetch = FetchType.LAZY)
-    var picture: File? = null
+    @field:JoinColumn(name = "picture_id")
+    @field:OneToOne(fetch = FetchType.LAZY)
+    private var _picture: File? = null
+    var picture: File?
+        get() = _picture
+        set(value) {
+            _picture = value
+        }
 }

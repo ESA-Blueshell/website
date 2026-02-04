@@ -29,11 +29,21 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
 class EventSignUpAnswer : AuditedAutoIdEntity() {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_sign_up_id", nullable = false)
-    lateinit var eventSignUp: EventSignUp
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "event_sign_up_id", nullable = false)
+    private var _eventSignUp: EventSignUp? = null
+    var eventSignUp: EventSignUp
+        get() = requireNotNull(_eventSignUp) { "Event sign-up is required" }
+        set(value) {
+            _eventSignUp = value
+        }
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "answer_id", nullable = false)
-    lateinit var answer: Answer
+    @field:OneToOne(fetch = FetchType.LAZY, optional = false, cascade = [CascadeType.ALL])
+    @field:JoinColumn(name = "answer_id", nullable = false)
+    private var _answer: Answer? = null
+    var answer: Answer
+        get() = requireNotNull(_answer) { "Answer is required" }
+        set(value) {
+            _answer = value
+        }
 }

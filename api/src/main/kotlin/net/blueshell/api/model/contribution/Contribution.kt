@@ -1,12 +1,11 @@
 package net.blueshell.api.model.contribution
 
 import jakarta.persistence.*
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.properties.Delegates
 
 @Entity
 @Table(
@@ -29,7 +28,7 @@ import kotlin.properties.Delegates
 @SQLDelete(sql = "UPDATE contributions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class Contribution : BaseModel() {
+class Contribution : AuditedAutoIdEntity() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
     lateinit var user: User

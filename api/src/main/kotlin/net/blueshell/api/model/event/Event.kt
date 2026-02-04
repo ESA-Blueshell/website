@@ -1,7 +1,7 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.model.survey.Survey
@@ -46,7 +46,7 @@ import java.time.Instant
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class Event : BaseModel() {
+class Event : AuditedAutoIdEntity() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "committee_id", insertable = false, updatable = false)
     lateinit var committee: Committee

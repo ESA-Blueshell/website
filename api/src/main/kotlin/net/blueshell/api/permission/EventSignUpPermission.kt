@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class EventSignUpPermission @Autowired constructor(service: EventSignUpService, private val events: EventService) :
-    BasePermissionEvaluator<EventSignUp, EventSignUpService>(service) {
+    BasePermissionEvaluator<EventSignUp, Long, EventSignUpService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
         targetDomainObject: Any?,

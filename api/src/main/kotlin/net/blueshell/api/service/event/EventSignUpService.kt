@@ -14,7 +14,7 @@ import java.util.function.Supplier
 
 @Service
 class EventSignUpService @Autowired constructor(repository: EventSignUpRepository) :
-    BaseModelService<EventSignUp, EventSignUpRepository>(repository) {
+    BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByUserIdAndEventId(userId: Long, eventId: Long): EventSignUp {
         return repository!!.findByUserIdAndEventId(userId, eventId)

@@ -12,7 +12,7 @@ import java.util.function.Supplier
 
 @Service
 class SponsorService @Autowired constructor(repository: SponsorRepository, events: ApplicationEventPublisher) :
-    BaseModelService<Sponsor, SponsorRepository>(repository) {
+    BaseModelService<Sponsor, Long, SponsorRepository>(repository) {
     fun findByPicture(picture: File): Sponsor {
         return repository!!.findByPicture(picture)
             .orElseThrow<NotFoundException>(Supplier { NotFoundException("Sponsor not found for picture: " + picture.name) })

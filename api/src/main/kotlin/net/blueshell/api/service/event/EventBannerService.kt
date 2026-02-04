@@ -9,4 +9,4 @@ import org.springframework.stereotype.Service
 @Service
 class EventBannerService @Autowired constructor(
     repository: EventBannerRepository
-) : BaseModelService<EventBanner, EventBannerRepository>(repository)
+) : BaseModelService<EventBanner, Long, EventBannerRepository>(repository)

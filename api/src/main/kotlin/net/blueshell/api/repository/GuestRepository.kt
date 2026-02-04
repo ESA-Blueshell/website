@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface GuestRepository : BaseRepository<Guest> {
+interface GuestRepository : BaseRepository<Guest, Long> {
     fun findByAccessToken(accessToken: String): Optional<Guest>
 }

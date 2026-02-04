@@ -1,7 +1,7 @@
 package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -20,7 +20,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Committee : BaseModel() {
+class Committee : AuditedAutoIdEntity() {
     @Column(name = "name", nullable = false)
     lateinit var name: String
 

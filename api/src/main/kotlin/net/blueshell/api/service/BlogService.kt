@@ -9,4 +9,4 @@ import org.springframework.stereotype.Service
 
 @Service
 class BlogService @Autowired constructor(blogRepository: BlogRepository, events: ApplicationEventPublisher) :
-    BaseModelService<Blog, BlogRepository>(blogRepository)
+    BaseModelService<Blog, Long, BlogRepository>(blogRepository)

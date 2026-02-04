@@ -20,7 +20,7 @@ import java.util.function.Supplier
 
 @Service
 class UserService @Autowired constructor(repository: UserRepository, private val passwordEncoder: PasswordEncoder) :
-    BaseModelService<User, UserRepository>(repository), UserDetailsService {
+    BaseModelService<User, Long, UserRepository>(repository), UserDetailsService {
     @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): User {
         return findByUsername(username)

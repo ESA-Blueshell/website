@@ -4,7 +4,7 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.entity.BaseModel;
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;

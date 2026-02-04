@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.stereotype.Repository
 
 @Repository
-interface EventRepository : BaseRepository<Event> {
+interface EventRepository : BaseRepository<Event, Long> {
     @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
     override fun findAll(spec: Specification<Event>, pageable: Pageable): Page<Event>
 

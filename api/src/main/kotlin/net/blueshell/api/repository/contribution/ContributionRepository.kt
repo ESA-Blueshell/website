@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ContributionRepository : BaseRepository<Contribution> {
+interface ContributionRepository : BaseRepository<Contribution, Long> {
     @Modifying
     @Query("DELETE FROM Contribution c WHERE c.contributionPeriod = :contributionPeriod")
     fun deleteByContributionPeriod(@Param("contributionPeriod") contributionPeriod: ContributionPeriod)

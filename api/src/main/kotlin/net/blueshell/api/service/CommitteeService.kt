@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class CommitteeService @Autowired constructor(repository: CommitteeRepository, events: ApplicationEventPublisher) :
-    BaseModelService<Committee, CommitteeRepository>(repository) {
+    BaseModelService<Committee, Long, CommitteeRepository>(repository) {
     fun findAllByUserId(id: Long): MutableList<Committee> {
         return repository.findAllBy_membersUserIdEquals(id)
     }

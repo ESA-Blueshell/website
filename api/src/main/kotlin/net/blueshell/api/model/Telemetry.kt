@@ -1,7 +1,7 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.common.enums.PlatformType
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -24,7 +24,7 @@ import kotlin.collections.linkedSetOf
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Telemetry() : BaseModel() {
+class Telemetry() : AuditedAutoIdEntity() {
     @field:Column(nullable = false)
     @field:Enumerated(EnumType.STRING)
     lateinit var platform: PlatformType

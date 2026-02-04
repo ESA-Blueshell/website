@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
 @Repository
-interface BlogRepository : BaseRepository<Blog> {
+interface BlogRepository : BaseRepository<Blog, Long> {
     @Query("SELECT n FROM Blog n ORDER BY n.publishedAt DESC")
     override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Blog>
 

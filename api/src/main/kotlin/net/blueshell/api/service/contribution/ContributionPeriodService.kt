@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionPeriodService @Autowired constructor(
     repository: ContributionPeriodRepository,
     events: ApplicationEventPublisher
-) : BaseModelService<ContributionPeriod, ContributionPeriodRepository>(repository) {
+) : BaseModelService<ContributionPeriod, Long, ContributionPeriodRepository>(repository) {
     @Transactional(readOnly = true)
     fun findLatest(): ContributionPeriod {
         return repository!!.findCurrentOrLatestContributionPeriod()

@@ -1,7 +1,7 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.model.File
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
@@ -24,7 +24,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-class BoardMember : BaseModel() {
+class BoardMember : AuditedAutoIdEntity() {
     @field:JoinColumn(name = "board_id", nullable = false, insertable = false, updatable = false)
     @field:ManyToOne(fetch = FetchType.LAZY)
     private var _board: Board? = null

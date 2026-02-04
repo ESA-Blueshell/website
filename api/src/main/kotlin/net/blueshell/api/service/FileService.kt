@@ -36,7 +36,7 @@ class FileService @Autowired constructor(
     private val events: EventService,
     private val banners: EventBannerService,
     @Value("\${storage.location}") storageLocation: String
-) : BaseModelService<File, FileRepository>(fileRepository) {
+) : BaseModelService<File, Long, FileRepository>(fileRepository) {
     private val rootLocation: Path
     private val assetsLocation: Path = Paths.get("assets")
 

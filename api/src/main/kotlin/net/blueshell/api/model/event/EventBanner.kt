@@ -1,7 +1,7 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.model.File
 import org.hibernate.annotations.SQLDelete
@@ -22,7 +22,7 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE event_banners SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class EventBanner : BaseModel() {
+class EventBanner : AuditedAutoIdEntity() {
     @Column(name = "event_id", nullable = false)
     var eventId: Long = 0
 

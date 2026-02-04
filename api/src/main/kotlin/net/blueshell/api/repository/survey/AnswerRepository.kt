@@ -5,6 +5,6 @@ import net.blueshell.api.model.survey.Answer
 import org.springframework.stereotype.Repository
 
 @Repository
-interface AnswerRepository : BaseRepository<Answer> {
+interface AnswerRepository : BaseRepository<Answer, Long> {
     fun findByQuestionSurveyId(surveyId: Long): MutableSet<Answer>
 }

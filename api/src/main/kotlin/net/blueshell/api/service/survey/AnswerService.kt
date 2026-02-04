@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class AnswerService @Autowired constructor(repository: AnswerRepository) :
-    BaseModelService<Answer, AnswerRepository>(repository) {
+    BaseModelService<Answer, Long, AnswerRepository>(repository) {
     fun findBySurveyId(surveyId: Long): MutableSet<Answer> {
         return repository!!.findByQuestionSurveyId(surveyId)
     }

@@ -1,9 +1,10 @@
 package net.blueshell.api.base
 
+import net.blueshell.api.base.entity.Identifiable
 import org.springframework.core.GenericTypeResolver
 import org.springframework.security.core.Authentication
 
-abstract class BasePermissionEvaluator<T : BaseModel, S : BaseModelService<T, *>>(protected val service: S) :
+abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID, S : BaseModelService<T, ID, *>>(protected val service: S) :
     IdentityProvider() {
     val domainType: Class<T>
 

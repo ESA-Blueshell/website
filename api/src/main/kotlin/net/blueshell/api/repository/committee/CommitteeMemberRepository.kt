@@ -5,4 +5,4 @@ import net.blueshell.api.model.committee.CommitteeMember
 import org.springframework.stereotype.Repository
 
 @Repository
-interface CommitteeMemberRepository : BaseRepository<CommitteeMember>
+interface CommitteeMemberRepository : BaseRepository<CommitteeMember, CommitteeMember.CommitteeMemberId>

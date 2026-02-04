@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class UserPermission @Autowired constructor(service: UserService) :
-    BasePermissionEvaluator<User, UserService>(service) {
+    BasePermissionEvaluator<User, Long, UserService>(service) {
     override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
         if (authentication == null || `object` == null || permission == null) {
             return false

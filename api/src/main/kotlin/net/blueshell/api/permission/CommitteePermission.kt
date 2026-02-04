@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CommitteePermission @Autowired constructor(service: CommitteeService) :
-    BasePermissionEvaluator<Committee, CommitteeService>(service) {
+    BasePermissionEvaluator<Committee, Long, CommitteeService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
         targetDomainObject: Any?,

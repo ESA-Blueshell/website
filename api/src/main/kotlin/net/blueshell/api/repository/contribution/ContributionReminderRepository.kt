@@ -6,6 +6,6 @@ import net.blueshell.api.model.contribution.ContributionReminder
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ContributionReminderRepository : BaseRepository<ContributionReminder> {
+interface ContributionReminderRepository : BaseRepository<ContributionReminder, Long> {
     fun findByContributionPeriod(contributionPeriod: ContributionPeriod): MutableList<ContributionReminder>
 }

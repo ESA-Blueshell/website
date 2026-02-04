@@ -1,10 +1,8 @@
 package net.blueshell.api.factory.model;
 
-import net.blueshell.api.testutil.ModelTestUtils;
-
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
-import net.blueshell.api.base.BaseModel;
+import net.blueshell.api.base.entity.BaseModel;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;

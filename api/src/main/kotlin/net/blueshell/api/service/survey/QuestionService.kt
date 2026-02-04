@@ -8,4 +8,4 @@ import org.springframework.stereotype.Service
 
 @Service
 class QuestionService @Autowired constructor(repository: QuestionRepository) :
-    BaseModelService<Question, QuestionRepository>(repository)
+    BaseModelService<Question, Long, QuestionRepository>(repository)

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 import java.time.OffsetDateTime
 
 @Repository
-interface RedirectRepository : BaseRepository<Redirect> {
+interface RedirectRepository : BaseRepository<Redirect, Long> {
     @Query("SELECT n FROM Redirect n ORDER BY n.createdAt DESC")
     override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Redirect>
 

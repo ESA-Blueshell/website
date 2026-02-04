@@ -8,4 +8,4 @@ import org.springframework.stereotype.Service
 
 @Service
 class SurveyService @Autowired constructor(repository: SurveyRepository) :
-    BaseModelService<Survey, SurveyRepository>(repository)
+    BaseModelService<Survey, Long, SurveyRepository>(repository)

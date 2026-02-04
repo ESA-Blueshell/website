@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class EventService @Autowired constructor(repository: EventRepository) :
-    BaseModelService<Event, EventRepository>(repository) {
+    BaseModelService<Event, Long, EventRepository>(repository) {
     fun findByFilter(pageable: Pageable, filter: EventFilter): Page<Event> {
         var pageable = pageable
         var filter = filter

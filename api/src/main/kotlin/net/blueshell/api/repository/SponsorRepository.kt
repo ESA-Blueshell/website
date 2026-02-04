@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface SponsorRepository : BaseRepository<Sponsor> {
+interface SponsorRepository : BaseRepository<Sponsor, Long> {
     fun findByPicture(picture: File): Optional<Sponsor>
 }

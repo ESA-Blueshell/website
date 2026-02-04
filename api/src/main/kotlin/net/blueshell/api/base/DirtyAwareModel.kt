@@ -1,9 +1,10 @@
 package net.blueshell.api.base
 
 import jakarta.persistence.Transient
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import java.util.*
 
-abstract class DirtyAwareModel : BaseModel() {
+abstract class DirtyAwareModel : AuditedAutoIdEntity() {
     @Transient
     var dirtyFields: Set<String> = emptySet()
         private set

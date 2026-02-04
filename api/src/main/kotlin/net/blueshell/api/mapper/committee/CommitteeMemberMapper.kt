@@ -16,28 +16,15 @@ abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemb
 
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "role")
+    @Mapping(target = "committeeId")
     @Mapping(target = "userId")
     @Mapping(target = "version")
     abstract fun fromDTO(dto: CommitteeMemberDTO, @MappingTarget member: CommitteeMember): CommitteeMember
 
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
     @Mapping(target = "role")
+    @Mapping(target = "committeeId")
     @Mapping(target = "userId")
     @Mapping(target = "version")
     abstract override fun toDTO(member: CommitteeMember): CommitteeMemberDTO
-
-    @ObjectFactory
-    fun create(dto: CommitteeMemberDTO): CommitteeMember {
-        CommitteeMemberMapper.log.info("creating a new committee member for dto {}", dto)
-        return if (dto.id == null) {
-            CommitteeMember()
-        } else {
-            committeeMemberService.findById(dto.id!!)
-        }
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(CommitteeMemberMapper::class.java)
-    }
 }

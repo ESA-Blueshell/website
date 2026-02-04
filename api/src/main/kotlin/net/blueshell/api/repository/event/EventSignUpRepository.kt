@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface EventSignUpRepository : BaseRepository<EventSignUp> {
+interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     override fun findAll(spec: Specification<EventSignUp>): MutableList<EventSignUp>
 

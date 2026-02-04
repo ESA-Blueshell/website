@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ContributionPeriodRepository : BaseRepository<ContributionPeriod> {
+interface ContributionPeriodRepository : BaseRepository<ContributionPeriod, Long> {
     @Query(
         ("SELECT cp FROM ContributionPeriod cp " +
                 "WHERE cp.startDate <= CURRENT_DATE " +

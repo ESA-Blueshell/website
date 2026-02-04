@@ -13,7 +13,7 @@ import java.util.function.Supplier
 
 @Service
 class GuestService @Autowired constructor(repository: GuestRepository, events: ApplicationEventPublisher) :
-    BaseModelService<Guest, GuestRepository>(repository) {
+    BaseModelService<Guest, Long, GuestRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByAccessToken(accessToken: String): Guest {
         return repository!!.findByAccessToken(accessToken)

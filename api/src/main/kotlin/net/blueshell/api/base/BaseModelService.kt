@@ -2,6 +2,7 @@ package net.blueshell.api.base
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
+import net.blueshell.api.base.entity.Identifiable
 import org.springframework.core.ResolvableType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -18,7 +19,7 @@ import java.util.function.Supplier
  * A reusable base class that wraps a JPA repository and exposes
  * common CRUD operations. Subclasses supply:
  * 
- *  * `T`  – the entity type (extends [BaseModel])
+ *  * `T`  – the entity type (implements [net.blueshell.api.base.entity.Identifiable])
  *  * `ID` – the entity’s primary-key type
  *  * `R`  – a Spring-Data repository for `T`
  * 
@@ -32,7 +33,7 @@ import java.util.function.Supplier
  * `pre…` / `post…` hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).
  */
-abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>>(protected val repository: R) :
+abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, ID>>(protected val repository: R) :
     IdentityProvider() {
     private val entityLabel: String
 
@@ -116,76 +117,56 @@ abstract class BaseModelService<T : BaseModel, R : BaseRepository<T>>(protected 
      * @throws ResponseStatusException (404) if not present
      */
     @Transactional(readOnly = true)
-    open fun findById(id: Long): T {
+    open fun findById(id: ID): T {
         return repository.findById(id).orElseThrow(Supplier {
-            ResponseStatusException(
-                HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id"
-            )
+            ResponseStatusException(HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id")
         })
     }
 
     /**
-     * Return *all* records.
+     * Find all entities.
      */
     @Transactional(readOnly = true)
-    open fun findAll(): MutableList<T> {
-        return repository.findAll()
-    }
+    open fun findAll(): MutableList<T> = repository.findAll()
 
     /**
-     * Return a paged slice, preserving any sort supplied in the pageable.
+     * Find all entities with pagination.
      */
     @Transactional(readOnly = true)
-    open fun findAll(pageable: Pageable): Page<T> {
-        return repository.findAll(pageable).map { it!! }
-    }
+    open fun findAll(pageable: Pageable): Page<T> = repository.findAll(pageable)
 
     /**
-     * Fetch the entities whose ids are in `ids`.
-     *
-     * The order of the returned list is the repository’s default (usually
-     * primary-key order).
+     * Find all entities matching a specification.
      */
     @Transactional(readOnly = true)
-    open fun findAllById(ids: MutableList<Long>): MutableList<T> {
-        return repository.findAllById(ids).filterNotNull().toMutableList()
-    }
+    open fun findAll(specification: Specification<T>): MutableList<T> = repository.findAll(specification)
 
     /**
-     * Find by specification &amp; paging.
-     * The repository must implement `JpaSpecificationExecutor`.
+     * Find all entities matching a specification with pagination.
      */
     @Transactional(readOnly = true)
-    open fun findAll(spec: Specification<T>, pageable: Pageable): Page<T> {
-        return repository.findAll(spec, pageable)
-    }
+    open fun findAll(specification: Specification<T>, pageable: Pageable): Page<T> =
+        repository.findAll(specification, pageable)
 
     /* -----------------------------------------------------------------
      * DELETE
      * ----------------------------------------------------------------- */
     /**
-     * Delete the entity with the given primary key
+     * Delete an entity by its primary key.
      */
     @Transactional
-    open fun deleteById(id: Long) {
+    open fun deleteById(id: ID) {
+        if (!repository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id")
+        }
         repository.deleteById(id)
     }
 
-    @Transactional
-    open fun deleteAllById(ids: MutableSet<Long>) {
-        repository.deleteAllByIdInBatch(ids)
-    }
-
     /**
-     * Delete the given entity instance
+     * Delete an entity.
      */
     @Transactional
     open fun delete(entity: T) {
         repository.delete(entity)
-    }
-
-    @Transactional
-    open fun deleteAll(entities: MutableSet<T>) {
-        repository.deleteAllInBatch(entities)
     }
 }

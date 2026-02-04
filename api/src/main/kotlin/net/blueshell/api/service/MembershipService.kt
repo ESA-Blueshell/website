@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class MembershipService @Autowired constructor(repository: MemberRepository, events: ApplicationEventPublisher) :
-    BaseModelService<Membership, MemberRepository>(repository) {
+    BaseModelService<Membership, Long, MemberRepository>(repository) {
     fun existsByUserId(userId: Long): Boolean {
         return repository!!.existsByUserId(userId)
     }

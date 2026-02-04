@@ -5,4 +5,4 @@ import net.blueshell.api.model.event.EventFeedback
 import org.springframework.stereotype.Repository
 
 @Repository
-interface EventFeedbackRepository : BaseRepository<EventFeedback>
+interface EventFeedbackRepository : BaseRepository<EventFeedback, Long>

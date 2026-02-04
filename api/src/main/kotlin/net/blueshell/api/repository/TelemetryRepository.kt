@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
 @Repository
-interface TelemetryRepository : BaseRepository<Telemetry> {
+interface TelemetryRepository : BaseRepository<Telemetry, Long> {
     @Query("SELECT n FROM Telemetry n ORDER BY n.createdAt DESC")
     override fun findAll(@NotNull pageable: @NotNull Pageable): Page<Telemetry>
 

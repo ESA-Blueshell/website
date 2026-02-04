@@ -31,7 +31,7 @@ class RecoveryService protected constructor(
     private val encoder: PasswordEncoder,
     private val eventPublisher: ApplicationEventPublisher,
     private val users: UserService
-) : BaseModelService<RecoveryToken, RecoveryTokenRepository>(repository) {
+) : BaseModelService<RecoveryToken, Long, RecoveryTokenRepository>(repository) {
     private val random = SecureRandom()
 
     /**

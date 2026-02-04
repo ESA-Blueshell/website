@@ -66,7 +66,7 @@ import jakarta.persistence.JoinColumn
 import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.data.annotation.LastModifiedBy
 import org.hibernate.Hibernate
-import net.blueshell.api.base.BaseModel
+import net.blueshell.api.base.entity.BaseModel
 import jakarta.persistence.PrePersist
 import net.blueshell.api.base.JpaListener
 import net.blueshell.api.common.event.jpa.PrePersistEvent

@@ -14,7 +14,7 @@ class ContributionService @Autowired constructor(
 ) : BaseModelService<Contribution, Long, ContributionRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution> {
-        val contributionPeriod = periodService.findById(contributionPeriodId)
-        return repository.findByContributionPeriod(contributionPeriod)
+        periodService.findById(contributionPeriodId)
+        return repository.findByContributionPeriodId(contributionPeriodId)
     }
 }

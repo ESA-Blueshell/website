@@ -177,7 +177,7 @@ class FileService @Autowired constructor(
     }
 
     fun findByEventBannerId(bannerId: Long): File {
-        return repository.findBy_eventBanners_Id(bannerId).orElseThrow<ResponseStatusException>(Supplier {
+        return repository.findByEventBanners_Id(bannerId).orElseThrow<ResponseStatusException>(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Event banner not found with id: $bannerId"
             )

@@ -1,8 +1,8 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.model.survey.Survey
 import org.hibernate.annotations.SQLDelete
@@ -12,23 +12,19 @@ import java.time.Instant
 @Entity
 @Table(
     name = "events",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_events_google_id_deleted_at",
-        columnNames = ["google_id", "deleted_at"]
-    )],
-    indexes = [Index(name = "idx_events_deleted_at", columnList = "deleted_at"), Index(
-        name = "idx_events_committee_id",
-        columnList = "committee_id"
-    ), Index(name = "idx_events_start_time", columnList = "start_time"), Index(
-        name = "idx_events_end_time",
-        columnList = "end_time"
-    ), Index(name = "idx_events_title", columnList = "title"), Index(
-        name = "idx_events_approved",
-        columnList = "approved"
-    ), Index(name = "idx_events_members_only", columnList = "members_only"), Index(
-        name = "idx_events_sign_up",
-        columnList = "sign_up"
-    )]
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_events_google_id_deleted_at", columnNames = ["google_id", "deleted_at"])
+    ],
+    indexes = [
+        Index(name = "idx_events_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_events_committee_id", columnList = "committee_id"),
+        Index(name = "idx_events_start_time", columnList = "start_time"),
+        Index(name = "idx_events_end_time", columnList = "end_time"),
+        Index(name = "idx_events_title", columnList = "title"),
+        Index(name = "idx_events_approved", columnList = "approved"),
+        Index(name = "idx_events_members_only", columnList = "members_only"),
+        Index(name = "idx_events_sign_up", columnList = "sign_up")
+    ]
 )
 @NamedEntityGraphs(
     NamedEntityGraph(

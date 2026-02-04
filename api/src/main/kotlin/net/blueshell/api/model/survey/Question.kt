@@ -9,23 +9,22 @@ import net.blueshell.api.common.hibernate.DirtyModel
 import net.blueshell.api.model.converter.StringListConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import kotlin.collections.linkedSetOf
-import kotlin.properties.Delegates
 
 @Entity
 @Table(
     name = "questions",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_questions_survey_idx_deleted_at",
-        columnNames = ["survey_id", "idx", "deleted_at"]
-    )],
-    indexes = [Index(
-        name = "idx_questions_deleted_at",
-        columnList = "deleted_at"
-    ), Index(name = "idx_questions_survey_id", columnList = "survey_id"), Index(
-        name = "idx_questions_survey_idx",
-        columnList = "survey_id, idx"
-    ), Index(name = "idx_questions_type", columnList = "type")]
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_questions_survey_idx_deleted_at",
+            columnNames = ["survey_id", "idx", "deleted_at"]
+        )
+    ],
+    indexes = [
+        Index(name = "idx_questions_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_questions_survey_id", columnList = "survey_id"),
+        Index(name = "idx_questions_survey_idx", columnList = "survey_id, idx"),
+        Index(name = "idx_questions_type", columnList = "type")
+    ]
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")

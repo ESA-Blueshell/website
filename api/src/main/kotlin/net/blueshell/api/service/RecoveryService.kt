@@ -92,7 +92,7 @@ class RecoveryService protected constructor(
     @jakarta.transaction.Transactional
     fun issue(user: User, type: ResetType, ttl: Duration): String {
         // Invalidate all existing active token of this type
-        repository.findAllByUser_IdAndTypeAndConsumedAtIsNull(user.id!!, type)
+        repository.findAllUnconsumedByTypeAndUserId(user.id!!, type)
             .forEach { this.delete(it) }
 
         val selector = randomUrlSafe(16) // 128-bit
@@ -166,7 +166,7 @@ class RecoveryService protected constructor(
         val user = users.findById(userId)
         if (user.enabled) return
 
-        val recoveryTokens = repository.findAllByUser_IdAndConsumedAtIsNull(userId)
+        val recoveryTokens = repository.findAllUnconsumedByUserId(userId)
         if (recoveryTokens.stream().anyMatch { r: RecoveryToken -> r.type == ResetType.MEMBER_ACTIVATION }) {
             val rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
             eventPublisher.publishEvent(

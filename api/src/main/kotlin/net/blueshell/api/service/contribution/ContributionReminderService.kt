@@ -17,8 +17,8 @@ class ContributionReminderService @Autowired constructor(
 ) : BaseModelService<ContributionReminder, Long, ContributionReminderRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
-        val contributionPeriod = periodService.findById(contributionPeriodId)
-        return repository!!.findByContributionPeriod(contributionPeriod)
+        periodService.findById(contributionPeriodId)
+        return repository!!.findByContributionPeriodId(contributionPeriodId)
     }
 
     fun sendReminder(reminder: ContributionReminder) {

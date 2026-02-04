@@ -1,8 +1,8 @@
 package net.blueshell.api.model.survey
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.model.converter.BooleanListConverter
 import net.blueshell.api.model.event.EventSignUpAnswer
 import org.hibernate.annotations.SQLDelete
@@ -11,10 +11,10 @@ import org.hibernate.annotations.SQLRestriction
 @Entity
 @Table(
     name = "answers",
-    indexes = [Index(
-        name = "idx_answers_deleted_at",
-        columnList = "deleted_at"
-    ), Index(name = "idx_answers_question_id", columnList = "question_id")]
+    indexes = [
+        Index(name = "idx_answers_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_answers_question_id", columnList = "question_id")
+    ]
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")

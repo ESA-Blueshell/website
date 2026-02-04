@@ -1,8 +1,8 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.model.User
 import net.blueshell.api.model.survey.Answer
 import org.hibernate.annotations.SQLDelete
@@ -11,20 +11,22 @@ import org.hibernate.annotations.SQLRestriction
 @Entity
 @Table(
     name = "event_signups",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_event_signups_event_user_deleted_at",
-        columnNames = ["event_id", "user_id", "deleted_at"]
-    ), UniqueConstraint(
-        name = "uk_event_signups_event_guest_deleted_at",
-        columnNames = ["event_id", "guest_id", "deleted_at"]
-    )],
-    indexes = [Index(
-        name = "idx_event_signups_deleted_at",
-        columnList = "deleted_at"
-    ), Index(name = "idx_event_signups_event_id", columnList = "event_id"), Index(
-        name = "idx_event_signups_user_id",
-        columnList = "user_id"
-    ), Index(name = "idx_event_signups_guest_id", columnList = "guest_id")]
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_event_signups_event_user_deleted_at",
+            columnNames = ["event_id", "user_id", "deleted_at"]
+        ),
+        UniqueConstraint(
+            name = "uk_event_signups_event_guest_deleted_at",
+            columnNames = ["event_id", "guest_id", "deleted_at"]
+        )
+    ],
+    indexes = [
+        Index(name = "idx_event_signups_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_event_signups_event_id", columnList = "event_id"),
+        Index(name = "idx_event_signups_user_id", columnList = "user_id"),
+        Index(name = "idx_event_signups_guest_id", columnList = "guest_id")
+    ]
 )
 @NamedEntityGraph(
     name = "EventSignUp.withGuestAndAnswers",

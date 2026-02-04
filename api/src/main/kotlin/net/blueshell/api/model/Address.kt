@@ -1,4 +1,3 @@
-// Address.java
 package net.blueshell.api.model
 
 import jakarta.persistence.Column

@@ -26,47 +26,53 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
                 .addConstraintViolation()
         }
 
-        if (dto.username.isNotBlank()) {
+        val username = dto.username
+        if (!username.isNullOrBlank()) {
             val taken = if (currentUserId == null)
-                users.existsByUsername(dto.username)
+                users.existsByUsername(username)
             else
-                users.existsByUsernameAndIdNot(dto.username, currentUserId)
+                users.existsByUsernameAndIdNot(username, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("username", "Username is taken.")
             }
         }
 
-        if (!dto.email.isNullOrEmpty()) {
+        val email = dto.email
+        if (!email.isNullOrEmpty()) {
             val taken = if (currentUserId == null)
-                users.existsByEmail(dto.email)
+                users.existsByEmail(email)
             else
-                users.existsByEmailAndIdNot(dto.email, currentUserId)
+                users.existsByEmailAndIdNot(email, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("email", "Email is taken.")
             }
         }
 
-        if (StringUtils.hasText(dto.discord)) {
+        val discord = dto.discord
+        if (StringUtils.hasText(discord)) {
             val taken = if (currentUserId == null)
-                users.existsByDiscord(dto.discord)
+                users.existsByDiscord(discord)
             else
-                users.existsByDiscordAndIdNot(dto.discord, currentUserId)
+                users.existsByDiscordAndIdNot(discord, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("discord", "Discord is taken.")
             }
         }
 
-        if (dto is AdvancedUserDTO && StringUtils.hasText(dto.phoneNumber)) {
-            val taken = if (currentUserId == null)
-                users.existsByPhoneNumber(dto.phoneNumber)
-            else
-                users.existsByPhoneNumberAndIdNot(dto.phoneNumber, currentUserId)
+        if (dto is AdvancedUserDTO) {
+            val phoneNumber = dto.phoneNumber
+            if (StringUtils.hasText(phoneNumber)) {
+                val taken = if (currentUserId == null)
+                    users.existsByPhoneNumber(phoneNumber)
+                else
+                    users.existsByPhoneNumberAndIdNot(phoneNumber, currentUserId)
             if (taken) {
                 isValid = false
                 addViolation.accept("phoneNumber", "Phone number is taken.")
+            }
             }
         }
 

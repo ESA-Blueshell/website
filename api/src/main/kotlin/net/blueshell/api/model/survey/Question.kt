@@ -59,7 +59,7 @@ class Question : DirtyAwareModel() {
     @Column(name = "choice_labels", columnDefinition = "JSON")
     @Convert(converter = StringListConverter::class)
     @DirtyField
-    lateinit var choiceLabels: MutableList<String>
+    var choiceLabels: MutableList<String>? = null
 
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
     var answerCount: Long = 0

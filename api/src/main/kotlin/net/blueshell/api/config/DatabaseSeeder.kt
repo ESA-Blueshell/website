@@ -733,7 +733,7 @@ class DatabaseSeeder(
         when (q.type) {
             QuestionType.OPEN -> a.textResponse = "Sample answer text"
             QuestionType.RADIO -> {
-                val n = q.choiceLabels.size
+                val n = q.choiceLabels?.size ?: 0
                 val selections = MutableList(max(n, 1)) { false }
                 if (n > 0) selections[0] = true
                 a.optionSelections = selections

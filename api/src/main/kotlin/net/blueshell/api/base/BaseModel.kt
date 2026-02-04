@@ -14,17 +14,19 @@ import java.time.Instant
 abstract class BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public var id: Long? = null
+    var id: Long? = null
         protected set
 
     @Column(name = "deleted_at", insertable = false, updatable = false, nullable = false)
     @ColumnDefault("'9999-12-31 23:59:59'")
-    lateinit var deletedAt: Instant
+    var deletedAt: Instant? = null
+        private set
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
-    lateinit var createdAt: Instant
+    var createdAt: Instant? = null
+        private set
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
@@ -34,7 +36,8 @@ abstract class BaseModel {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
-    lateinit var updatedAt: Instant
+    var updatedAt: Instant? = null
+        private set
 
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)

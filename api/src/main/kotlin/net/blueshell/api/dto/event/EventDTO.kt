@@ -27,10 +27,10 @@ data class EventDTO(
     var location: String? = null,
 
     @field:NotNull
-    var startTime: Instant,
+    var startTime: Instant? = null,
 
     @field:NotNull
-    var endTime: Instant,
+    var endTime: Instant? = null,
 
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,

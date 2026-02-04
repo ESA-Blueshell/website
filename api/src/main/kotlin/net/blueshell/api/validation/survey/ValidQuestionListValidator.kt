@@ -5,13 +5,13 @@ import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.dto.survey.QuestionDTO
 
 class ValidQuestionListValidator : ConstraintValidator<ValidQuestionList, MutableList<QuestionDTO>> {
-    override fun isValid(questions: MutableList<QuestionDTO>, context: ConstraintValidatorContext): Boolean {
-        if (questions.isEmpty()) {
+    override fun isValid(questions: MutableList<QuestionDTO>?, context: ConstraintValidatorContext): Boolean {
+        if (questions.isNullOrEmpty()) {
             // handled by @NotEmpty
             return true
         }
 
-        val seenIdx: MutableSet<Long?> = HashSet<Long?>()
+        val seenIdx: MutableSet<Long?> = HashSet()
         for (q in questions) {
             if (q.idx == null) return false
             if (!seenIdx.add(q.idx)) {

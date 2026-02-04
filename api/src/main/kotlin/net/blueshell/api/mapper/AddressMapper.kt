@@ -14,7 +14,6 @@ abstract class AddressMapper : BaseMapper<Address, AddressDTO>() {
     @Mapping(target = "street")
     @Mapping(target = "houseNumber")
     @Mapping(target = "zipCode")
-    @Mapping(target = "createdAt")
     @Mapping(target = "version")
     abstract fun fromDTO(dto: AddressDTO, @MappingTarget address: Address): Address
 

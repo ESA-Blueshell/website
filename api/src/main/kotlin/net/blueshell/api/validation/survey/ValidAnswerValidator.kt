@@ -35,14 +35,14 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
             return false
         }
 
-        return selections.size == choiceLabels.size
+        return !choiceLabels.isNullOrEmpty() && selections.size == choiceLabels.size
     }
 
     private fun isValidRadioAnswer(dto: AnswerDTO, question: Question): Boolean {
         val selections = dto.optionSelections
         val choiceLabels = question.choiceLabels
 
-        if (selections == null || selections.size != choiceLabels.size) {
+        if (selections == null || (!choiceLabels.isNullOrEmpty() && selections.size != choiceLabels.size)) {
             return false
         }
 

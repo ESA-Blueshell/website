@@ -9,7 +9,7 @@ import java.util.*
 interface FileRepository : BaseRepository<File> {
     fun findByName(name: String): Optional<File>
 
-    fun findByEventBanners_Id(bannerId: Long): Optional<File>
+    fun findBy_eventBanners_Id(bannerId: Long): Optional<File>
 
     fun findByPath(path: String): Optional<File>
 }

@@ -4,8 +4,8 @@ import net.blueshell.api.base.BaseEmail
 import net.blueshell.api.model.User
 
 abstract class RecoveryEmail(
-    recipient: User?,
-    protected val token: String?,
-    frontendUrl: String?,
-    appUrl: String?
+    recipient: User,
+    protected val token: String,
+    frontendUrl: String,
+    appUrl: String
 ) : BaseEmail(recipient, frontendUrl, appUrl)

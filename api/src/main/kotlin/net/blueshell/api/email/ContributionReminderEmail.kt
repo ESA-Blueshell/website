@@ -5,17 +5,16 @@ import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
 
 class ContributionReminderEmail(
-    recipient: User?,
-    frontendUrl: String?,
-    appUrl: String?,
+    recipient: User,
+    frontendUrl: String,
+    appUrl: String,
     private val contributionPeriod: ContributionPeriod
 ) : BaseEmail(recipient, frontendUrl, appUrl) {
-    override fun getSubject(): String {
-        return "Contribution Payment Reminder - Blueshell Esports"
-    }
+    override val subject: String
+        get() = "Contribution Payment Reminder - Blueshell Esports"
 
-    override fun getMarkdownContent(): String {
-        return String.format(
+    override val markdownContent: String
+        get() = String.format(
             """
                         Dear %s,
                         
@@ -42,13 +41,10 @@ class ContributionReminderEmail(
             contributionPeriod.alumniFee,
             appUrl
         )
-    }
 
-    override fun getSenderName(): String {
-        return "Treasurer of Blueshell"
-    }
+    override val senderName: String
+        get() = "Treasurer of Blueshell"
 
-    override fun getReplyTo(): String {
-        return "board@blueshell.utwente.nl"
-    }
+    override val replyTo: String
+        get() = "board@blueshell.utwente.nl"
 }

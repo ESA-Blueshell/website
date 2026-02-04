@@ -4,18 +4,18 @@ import net.blueshell.api.model.User
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class MemberActivationEmail(recipient: User?, token: String?, frontendUrl: String?, appUrl: String?) :
+class MemberActivationEmail(recipient: User, token: String, frontendUrl: String, appUrl: String) :
     RecoveryEmail(recipient, token, frontendUrl, appUrl) {
-    override fun getSubject(): String {
-        return "Activate your Account"
-    }
+    override val subject: String
+        get() = "Activate your Account"
 
-    override fun getMarkdownContent(): String {
-        val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
-        val activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token)
+    override val markdownContent: String
+        get() {
+            val token = URLEncoder.encode(this.token, StandardCharsets.UTF_8)
+            val activationLink = String.format("%s/account/activate/member?token=%s", frontendUrl, token)
 
-        return String.format(
-            """
+            return String.format(
+                """
                         Dear %s,
                         
                         A member of the board of Blueshell has created an account on the website for you. This was done
@@ -29,12 +29,11 @@ class MemberActivationEmail(recipient: User?, token: String?, frontendUrl: Strin
                         Board of ESA Blueshell
                         
                         """.trimIndent(),
-            recipient.fullName,
-            activationLink
-        )
-    }
+                recipient.fullName,
+                activationLink
+            )
+        }
 
-    override fun getReplyTo(): String {
-        return "board@blueshell.utwente.nl"
-    }
+    override val replyTo: String
+        get() = "board@blueshell.utwente.nl"
 }

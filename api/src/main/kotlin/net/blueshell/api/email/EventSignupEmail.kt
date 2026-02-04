@@ -5,23 +5,24 @@ import net.blueshell.api.model.User
 import net.blueshell.api.model.event.Event
 import net.blueshell.api.model.event.EventSignUp
 
-class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String?, appUrl: String?) : BaseEmail(
+class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String, appUrl: String) : BaseEmail(
     createRecipientFromSignUp(
         eventSignUp
     ), frontendUrl, appUrl
 ) {
-    override fun getSubject(): String {
-        return String.format("Event Registration Confirmed - %s", eventSignUp.event.title)
-    }
+    override val subject: String
+        get() = String.format("Event Registration Confirmed - %s", eventSignUp.event.title)
 
-    override fun getMarkdownContent(): String {
-        val event = eventSignUp.event
-        val editLink = String.format(frontendUrl + "/events/signups/edit/%s", eventSignUp.guest.accessToken)
+    override val markdownContent: String
+        get() {
+            val event = eventSignUp.event
+            val guest = requireNotNull(eventSignUp.guest) { "Event signup email requires a guest signup." }
+            val editLink = String.format(frontendUrl + "/events/signups/edit/%s", guest.accessToken)
 
-        val eventDetailsLink = String.format(frontendUrl + "/events#%d", event.id)
+            val eventDetailsLink = String.format(frontendUrl + "/events#%d", event.id)
 
-        return String.format(
-            """
+            return String.format(
+                """
                         Dear %s,
                         
                         Thank you for registering for **%s**!
@@ -52,19 +53,18 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
                         Blueshell Events Team
                         
                         """.trimIndent(),
-            eventSignUp.guest.name,
-            event.title,
-            event.title,
-            formatEventDate(event), formatEventLocation(event),
-            eventDetailsLink,
-            editLink,
-            appUrl
-        )
-    }
+                guest.name,
+                event.title,
+                event.title,
+                formatEventDate(event), formatEventLocation(event),
+                eventDetailsLink,
+                editLink,
+                appUrl
+            )
+        }
 
-    override fun getSenderName(): String {
-        return "Blueshell Events"
-    }
+    override val senderName: String
+        get() = "Blueshell Events"
 
     private fun formatEventDate(event: Event): String {
         if (event.startTime != null) {
@@ -77,17 +77,19 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
     }
 
     private fun formatEventLocation(event: Event): String {
-        if (event.location != null && !event.location.trim { it <= ' ' }.isEmpty()) {
-            return event.location
+        val location = event.location
+        if (!location.isNullOrBlank()) {
+            return location
         }
         return "Location details will be provided closer to the event date"
     }
 
     companion object {
         private fun createRecipientFromSignUp(signUp: EventSignUp): User {
+            val guest = requireNotNull(signUp.guest) { "Event signup email requires a guest signup." }
             val guestUser = User()
-            guestUser.email = signUp.guest.email
-            guestUser.firstName = signUp.guest.name
+            guestUser.email = guest.email
+            guestUser.firstName = guest.name
             return guestUser
         }
     }

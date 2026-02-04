@@ -5,22 +5,24 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 class UserActivationEmail(
-    recipient: User, token: String, frontendUrl: String, appUrl: String,
-    override val subject: String = "Activate your Account",
-    override val markdownContent: String
+    recipient: User, token: String, frontendUrl: String, appUrl: String
 ) :
     RecoveryEmail(recipient, token, frontendUrl, appUrl) {
-    override fun getMarkdownContent(): String {
-        val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
-        val token = URLEncoder.encode(token, StandardCharsets.UTF_8)
-        val redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8)
+    override val subject: String
+        get() = "Activate your Account"
 
-        val activationLink = String.format(
-            "%s/account/activate/user?username=%s&token=%s&redirect=%s",
-            frontendUrl, username, token, redirectEnc
-        )
-        return String.format(
-            """
+    override val markdownContent: String
+        get() {
+            val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
+            val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
+            val redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8)
+
+            val activationLink = String.format(
+                "%s/account/activate/user?username=%s&token=%s&redirect=%s",
+                frontendUrl, username, encodedToken, redirectEnc
+            )
+            return String.format(
+                """
                         Dear %s,
                         
                         Thank you for signing up to the Blueshell website!
@@ -35,9 +37,9 @@ class UserActivationEmail(
                         Blueshell Esports
                         
                         """.trimIndent(),
-            recipient.fullName,
-            activationLink,
-            appUrl
-        )
-    }
+                recipient.fullName,
+                activationLink,
+                appUrl
+            )
+        }
 }

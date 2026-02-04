@@ -4,19 +4,20 @@ import net.blueshell.api.model.User
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class PasswordResetEmail(recipient: User?, token: String?, frontendUrl: String?, appUrl: String?) :
+class PasswordResetEmail(recipient: User, token: String, frontendUrl: String, appUrl: String) :
     RecoveryEmail(recipient, token, frontendUrl, appUrl) {
-    override fun getSubject(): String {
-        return "Reset Your Blueshell Account Password"
-    }
+    override val subject: String
+        get() = "Reset Your Blueshell Account Password"
 
-    override fun getMarkdownContent(): String {
-        val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
-        val token = URLEncoder.encode(getToken(), StandardCharsets.UTF_8)
-        val resetLink = String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token)
+    override val markdownContent: String
+        get() {
+            val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
+            val token = URLEncoder.encode(this.token, StandardCharsets.UTF_8)
+            val resetLink =
+                String.format("%s/account/reset-password?username=%s&token=%s", frontendUrl, username, token)
 
-        return String.format(
-            """
+            return String.format(
+                """
                         Dear %s,
                         
                         We received a request to reset your account's password.
@@ -37,9 +38,9 @@ class PasswordResetEmail(recipient: User?, token: String?, frontendUrl: String?,
                         Blueshell Esports Security Team
                         
                         """.trimIndent(),
-            recipient.fullName,
-            resetLink,
-            appUrl
-        )
-    }
+                recipient.fullName,
+                resetLink,
+                appUrl
+            )
+        }
 }

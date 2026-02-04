@@ -48,7 +48,7 @@ class RemoveContactFromListJob(
             val user = users.findById(userId)
             val period = contributionPeriods.findById(periodId)
 
-            contacts.removeFromList(period, user)
+            contacts.removeFromList(period, user.contactId!!)
 
             log.info(
                 "Successfully removed contact {} (user ID: {}) from list for period ID: {}",

@@ -59,8 +59,9 @@ object UserSpecifications {
         var spec =
             Specification { root: Root<User>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 
-        if (f.isMember != null) {
-            spec = spec.and(hasMemberRole(f.isMember))
+        val isMember = f.isMember
+        if (isMember != null) {
+            spec = spec.and(hasMemberRole(isMember))
         }
 
         return spec

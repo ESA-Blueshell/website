@@ -69,7 +69,7 @@ class ContactService(
         val api = this.contactsApi
         val createContact = mapper.toCreate(user)
         val response = api.createContact(createContact)
-        users.updateContactId(user.id, response.id)
+        users.updateContactId(user.id!!, response.id!!)
     }
 
     @Throws(RestClientResponseException::class)
@@ -87,18 +87,20 @@ class ContactService(
     @Throws(RestClientResponseException::class)
     fun createList(contributionPeriod: ContributionPeriod): Long {
         if (contributionPeriod.listId != null) {
-            return contributionPeriod.listId
+            return contributionPeriod.listId!!
         }
 
         val api = this.contactsApi
-        val createList = CreateList()
+
         val periodName = String.format(
             "Contribution Paid %d - %d",
             contributionPeriod.startDate.year,
             contributionPeriod.endDate.year
         )
-        createList.name(periodName)
-        createList.folderId = contributionPeriodsFolder
+        val createList = CreateList(
+            periodName,
+            contributionPeriodsFolder
+        )
         val createModel = api.createList(createList)
         return createModel.id
     }
@@ -111,20 +113,20 @@ class ContactService(
 
         val api = this.contactsApi
         val ids: MutableList<Long> = ArrayList<Long>()
-        ids.add(user.contactId)
+        ids.add(user.contactId!!)
         val payload = AddContactToListRequest()
         payload.ids = ids
-        api.addContactToList(contributionPeriod.listId, payload)
+        api.addContactToList(contributionPeriod.listId!!, payload)
     }
 
     @Throws(RestClientResponseException::class)
-    fun removeFromList(contributionPeriod: ContributionPeriod, user: User) {
+    fun removeFromList(contributionPeriod: ContributionPeriod, contactId: Long) {
         val api = this.contactsApi
         val ids: MutableList<Long> = ArrayList<Long>()
-        ids.add(user.contactId)
+        ids.add(contactId)
         val payload = RemoveContactFromListRequest()
         payload.ids = ids
-        api.removeContactFromList(contributionPeriod.listId, payload)
+        api.removeContactFromList(contributionPeriod.listId!!, payload)
     }
 
     companion object {

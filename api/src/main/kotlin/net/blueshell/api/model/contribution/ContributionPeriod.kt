@@ -39,7 +39,7 @@ class ContributionPeriod : BaseModel() {
     lateinit var startDate: LocalDate
 
     @Column(name = "end_date")
-    var endDate: LocalDate? = null
+    lateinit var endDate: LocalDate
 
     @Column(name = "half_year_fee", nullable = false)
     var halfYearFee = 0.0

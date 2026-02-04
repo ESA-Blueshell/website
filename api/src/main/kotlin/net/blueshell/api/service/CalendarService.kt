@@ -15,7 +15,6 @@ import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
-import com.vladsch.flexmark.util.misc.Extension
 import jakarta.annotation.PostConstruct
 import net.blueshell.api.model.event.Event
 import org.slf4j.LoggerFactory
@@ -24,31 +23,27 @@ import org.springframework.stereotype.Service
 import java.io.IOException
 import java.security.GeneralSecurityException
 import java.time.ZoneId
-import java.util.*
-import java.util.List
-import kotlin.collections.MutableCollection
-import kotlin.collections.MutableList
 
 @Service
 class CalendarService {
     @Value("\${google.calendar.id}")
-    private val calendarId: String = null
+    private lateinit var calendarId: String
 
     @Value("\${google.calendar.clientId}")
-    private val clientId: String = null
+    private lateinit var clientId: String
 
     @Value("\${google.calendar.clientEmail}")
-    private val clientEmail: String = null
+    private lateinit var clientEmail: String
 
     @Value("\${google.calendar.privateKeyPkcs8}")
-    private val privateKeyPkcs8: String = null
+    private lateinit var privateKeyPkcs8: String
 
     @Value("\${google.calendar.privateKeyId}")
-    private val privateKeyId: String = null
+    private lateinit var privateKeyId: String
 
-    private var service: Calendar = null
-    private var htmlRenderer: HtmlRenderer = null
-    private var htmlParser: Parser = null
+    private lateinit var service: Calendar
+    private lateinit var htmlRenderer: HtmlRenderer
+    private lateinit var htmlParser: Parser
 
     @PostConstruct
     fun init() {
@@ -62,16 +57,12 @@ class CalendarService {
                 httpTransport,
                 GsonFactory.getDefaultInstance(),
                 HttpCredentialsAdapter(credentials)
-            )
-                .applicationName = APPLICATION_NAME
+            ).setApplicationName(APPLICATION_NAME)
                 .build()
 
             val options = MutableDataSet()
-            options.set<MutableCollection<Extension>>(
-                Parser.EXTENSIONS, Arrays.asList<Extension>(
-                    TablesExtension.create(),
-                    StrikethroughExtension.create()
-                )
+            options.set(
+                Parser.EXTENSIONS, listOf(TablesExtension.create(), StrikethroughExtension.create())
             )
             htmlParser = Parser.builder(options).build()
             htmlRenderer = HtmlRenderer.builder(options).build()
@@ -90,7 +81,7 @@ class CalendarService {
     fun add(event: Event) {
         var googleEvent = toGoogleEvent(event)
         try {
-            googleEvent = service!!.events()
+            googleEvent = service.events()
                 .insert(calendarId, googleEvent)
                 .execute()
             event.googleId = googleEvent.id
@@ -105,7 +96,7 @@ class CalendarService {
     fun update(event: Event) {
         try {
             val googleEvent = toGoogleEvent(event)
-            service!!.events()
+            service.events()
                 .update(calendarId, event.googleId, googleEvent)
                 .execute()
             log.info("Updated event {} in calendar {}", event.googleId, calendarId)
@@ -119,7 +110,7 @@ class CalendarService {
     fun remove(event: Event) {
         if (event.googleId == null) return
         try {
-            service!!.events().delete(calendarId, event.googleId).execute()
+            service.events().delete(calendarId, event.googleId).execute()
             log.info("Removed event {} from calendar {}", event.googleId, calendarId)
             event.googleId = null
         } catch (e: GoogleJsonResponseException) {
@@ -136,10 +127,10 @@ class CalendarService {
 
     private fun toGoogleEvent(event: Event): com.google.api.services.calendar.model.Event {
         val googleEvent = com.google.api.services.calendar.model.Event()
-            .summary = event.title
-            .location = event.location
+            .setSummary(event.title)
+            .setLocation(event.location)
 
-        var preProcessedHtml = htmlRenderer!!.render(htmlParser!!.parse(event.description))
+        var preProcessedHtml = htmlRenderer.render(htmlParser.parse(event.description ?: ""))
         preProcessedHtml = preProcessedHtml.replace("<p>", "").replace("</p>", "")
         googleEvent.description = preProcessedHtml
 
@@ -157,7 +148,7 @@ class CalendarService {
     companion object {
         private val log = LoggerFactory.getLogger(CalendarService::class.java)
         private const val APPLICATION_NAME = "Blueshell Google Calendar API"
-        private val SCOPES: MutableList<String> = List.of<String>(CalendarScopes.CALENDAR_EVENTS)
+        private val SCOPES: List<String> = listOf(CalendarScopes.CALENDAR_EVENTS)
         private const val TZ_ID = "Europe/Amsterdam"
         private val ZONE: ZoneId = ZoneId.of(TZ_ID)
     }

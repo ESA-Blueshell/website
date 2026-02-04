@@ -635,7 +635,7 @@ class DatabaseSeeder(
             userId = user.id
 
             val form = event.signUpForm
-            answers = if (event.signUp && form?.questions != null) {
+            if (event.signUp && form?.questions != null) {
                 form.questions.map { q -> createAnswerForQuestion(q) }.toMutableSet()
             } else {
                 mutableSetOf()
@@ -681,7 +681,12 @@ class DatabaseSeeder(
         val survey = Survey()
         val questions = linkedSetOf<Question>()
 
-        questions += buildQuestion(1L, QuestionType.DESCRIPTION, "Important information:", emptyList<String>() as MutableList<String>)
+        questions += buildQuestion(
+            1L,
+            QuestionType.DESCRIPTION,
+            "Important information:",
+            emptyList<String>() as MutableList<String>
+        )
         questions += buildQuestion(
             2L,
             QuestionType.RADIO,
@@ -694,10 +699,14 @@ class DatabaseSeeder(
             "Select all that apply:",
             DEFAULT_CHECKBOX_CHOICES.toMutableList()
         )
-        questions += buildQuestion(4L, QuestionType.OPEN, "What are your thoughts?", emptyList<String>() as MutableList<String>)
+        questions += buildQuestion(
+            4L,
+            QuestionType.OPEN,
+            "What are your thoughts?",
+            emptyList<String>() as MutableList<String>
+        )
 
-        survey.questions = questions
-        survey.questions.forEach { it.survey = survey }
+        questions.forEach { it.survey = survey }
 
         return survey
     }
@@ -758,7 +767,7 @@ class DatabaseSeeder(
             this.guest = guest
 
             val form = event.signUpForm
-            answers = if (event.signUp && form?.questions != null) {
+            if (event.signUp && form?.questions != null) {
                 form.questions.map { q -> createAnswerForQuestion(q) }.toMutableSet()
             } else {
                 mutableSetOf()

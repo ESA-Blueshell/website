@@ -22,7 +22,7 @@ import kotlin.collections.linkedSetOf
 class Survey : BaseModel() {
     @OneToMany(mappedBy = "survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _questions: MutableSet<Question> = linkedSetOf()
-    var questions: Set<Question>
+    val questions: Set<Question>
         get() = _questions
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)

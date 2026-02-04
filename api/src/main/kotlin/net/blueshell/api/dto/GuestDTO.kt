@@ -7,6 +7,6 @@ import jakarta.validation.constraints.NotNull
 data class GuestDTO(
     @field:NotNull
     var name: String? = null,
-
-    var accessToken: String? = null
-) : PersonalInfoDTO()
+) : PersonalInfoDTO() {
+    lateinit var accessToken: String
+}

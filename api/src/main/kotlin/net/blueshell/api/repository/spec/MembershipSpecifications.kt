@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 
 object MembershipSpecifications {
-    fun timeOverlap(from: LocalDate, to: LocalDate): Specification<Membership> {
+    fun timeOverlap(from: LocalDate?, to: LocalDate?): Specification<Membership> {
         return Specification { root: Root<Membership>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (from == null && to == null) {
                 return@Specification cb!!.conjunction()
@@ -40,7 +40,7 @@ object MembershipSpecifications {
         }
     }
 
-    fun fromFilter(f: MembershipFilter, user: User): Specification<Membership> {
+    fun fromFilter(f: MembershipFilter, user: User?): Specification<Membership> {
         var spec =
             Specification { root: Root<Membership>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 

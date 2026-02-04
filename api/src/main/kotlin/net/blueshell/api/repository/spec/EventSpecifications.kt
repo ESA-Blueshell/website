@@ -26,7 +26,7 @@ object EventSpecifications {
         }
     }
 
-    fun approved(value: Boolean): Specification<Event> {
+    fun approved(value: Boolean?): Specification<Event> {
         if (value == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (value) cb!!.isTrue(
@@ -35,7 +35,7 @@ object EventSpecifications {
         }
     }
 
-    fun startTimeFrom(from: LocalDateTime): Specification<Event> {
+    fun startTimeFrom(from: LocalDateTime?): Specification<Event> {
         if (from == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.greaterThanOrEqualTo<LocalDateTime>(
@@ -45,7 +45,7 @@ object EventSpecifications {
         }
     }
 
-    fun startTimeTo(to: LocalDateTime): Specification<Event> {
+    fun startTimeTo(to: LocalDateTime?): Specification<Event> {
         if (to == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.lessThanOrEqualTo<LocalDateTime>(
@@ -55,7 +55,7 @@ object EventSpecifications {
         }
     }
 
-    fun timeBetween(from: LocalDateTime, to: LocalDateTime): Specification<Event> {
+    fun timeBetween(from: LocalDateTime?, to: LocalDateTime?): Specification<Event> {
         return startTimeFrom(from).and(startTimeTo(to))
     }
 
@@ -66,7 +66,7 @@ object EventSpecifications {
             )
         }
 
-    fun membersOnly(value: Boolean): Specification<Event> {
+    fun membersOnly(value: Boolean?): Specification<Event> {
         if (value == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (value) cb!!.isTrue(
@@ -95,7 +95,7 @@ object EventSpecifications {
         }
     }
 
-    fun committeeId(committeeId: Long): Specification<Event> {
+    fun committeeId(committeeId: Long?): Specification<Event> {
         if (committeeId == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.equal(
@@ -106,7 +106,7 @@ object EventSpecifications {
         }
     }
 
-    fun titleContains(text: String): Specification<Event> {
+    fun titleContains(text: String?): Specification<Event> {
         if (text == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.like(
@@ -121,20 +121,25 @@ object EventSpecifications {
         var spec =
             Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
 
-        if (f.from != null) {
-            spec = spec.and(startTimeFrom(f.from))
+        val from = f.from
+        if (from != null) {
+            spec = spec.and(startTimeFrom(from))
         }
-        if (f.to != null) {
-            spec = spec.and(startTimeTo(f.to))
+        val to = f.to
+        if (to != null) {
+            spec = spec.and(startTimeTo(to))
         }
-        if (f.approved != null) {
-            spec = spec.and(approved(f.approved))
+        val approved = f.approved
+        if (approved != null) {
+            spec = spec.and(approved(approved))
         }
-        if (f.committeeId != null) {
-            spec = spec.and(committeeId(f.committeeId))
+        val committeeId = f.committeeId
+        if (committeeId != null) {
+            spec = spec.and(committeeId(committeeId))
         }
-        if (f.titleContains != null && !f.titleContains.isBlank()) {
-            spec = spec.and(titleContains(f.titleContains))
+        val titleContains = f.titleContains
+        if (titleContains != null && !titleContains.isBlank()) {
+            spec = spec.and(titleContains(titleContains))
         }
 
         // Select the events that are visible to the user

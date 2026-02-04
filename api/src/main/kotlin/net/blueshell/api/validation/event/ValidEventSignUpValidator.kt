@@ -17,10 +17,11 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
     ConstraintValidator<ValidEventSignUp?, EventSignUpDTO?> {
     override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
+        val eventId = dto.eventId ?: return violation(ctx, "eventId", "eventId is required.")
 
         ctx.disableDefaultConstraintViolation()
 
-        val event = findEvent(dto.eventId)
+        val event = findEvent(eventId)
         if (event == null) {
             return violation(ctx, "eventId", "Unknown event.")
         }
@@ -31,9 +32,6 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         }
 
         val answers = dto.answers
-        if (answers == null) {
-            return violation(ctx, "answers", "Answers are required for this event’s sign-up form.")
-        }
 
         // Collect all question IDs on the form (keep insertion order for stable error messages)
         val formQuestionIds: MutableSet<Long?> = form.questions
@@ -97,12 +95,12 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         return valid
     }
 
-    private fun findEvent(eventId: Long?): Event? {
-        try {
+    private fun findEvent(eventId: Long): Event? {
+        return try {
             // Ensure signUpForm.questions are fetched (entity graph / join fetch) in your service
-            return events.findById(eventId)
+            events.findById(eventId)
         } catch (ignored: Exception) {
-            return null
+            null
         }
     }
 

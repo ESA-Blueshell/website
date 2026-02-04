@@ -19,15 +19,10 @@ class ContactService(
     private val mapper: BrevoContactMapper,
     private val users: UserService,
     private val restClientBuilder: RestClient.Builder,
+    @param:Value("\${brevo.apiKey}") private val apiKey: String,
+    @param:Value("\${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
+    @param:Value("\${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
 ) {
-    @Value($$"${brevo.apiKey}")
-    private lateinit var apiKey: String
-
-    @Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")
-    private lateinit var brevoBaseUrl: String
-
-    @Value($$"${brevo.folders.contributionPeriodsId}")
-    private lateinit var contributionPeriodsFolder: Long
 
     private lateinit var contacts: ContactsApi
 

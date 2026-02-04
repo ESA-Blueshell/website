@@ -2,6 +2,7 @@ import org.gradle.api.GradleException
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
 import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
@@ -211,4 +212,8 @@ tasks.register<GenerateTask>("generateBrevoClient") {
 
 tasks.withType<KaptGenerateStubsTask>().configureEach {
     dependsOn("generateBrevoClient")
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.compilerOptions {
+    freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property=param-property"))
 }

@@ -7,16 +7,16 @@ import org.springframework.web.multipart.MultipartFile
 import java.util.*
 import java.util.stream.Collectors
 
-class AllowedContentTypesValidator : ConstraintValidator<AllowedContentTypes?, MultipartFile?> {
+class AllowedContentTypesValidator : ConstraintValidator<AllowedContentTypes, MultipartFile?> {
     private var allowed: MutableList<MediaType?>? = null
 
     override fun initialize(constraintAnnotation: AllowedContentTypes) {
-        this.allowed = Arrays.stream<String?>(constraintAnnotation.value)
-            .map<MediaType?> { mediaType: String? -> MediaType.parseMediaType(mediaType) }
+        this.allowed = Arrays.stream(constraintAnnotation.value)
+            .map { mediaType: String? -> MediaType.parseMediaType(mediaType) }
             .collect(Collectors.toList())
     }
 
-    override fun isValid(file: MultipartFile?, context: ConstraintValidatorContext?): Boolean {
+    override fun isValid(file: MultipartFile?, context: ConstraintValidatorContext): Boolean {
         // Let @NotNull/@NotEmpty handle requiredness
         if (file == null || file.isEmpty) {
             return true

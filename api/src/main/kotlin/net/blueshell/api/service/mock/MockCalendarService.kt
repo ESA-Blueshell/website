@@ -9,10 +9,8 @@ import org.springframework.stereotype.Service
 import java.io.IOException
 import java.time.Instant
 import java.util.*
-import java.util.Map
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
-import java.util.function.Function
 import java.util.stream.Collectors
 import kotlin.collections.MutableMap
 import kotlin.collections.remove
@@ -53,8 +51,10 @@ class MockCalendarService : CalendarService() {
             return
         }
         val id = event.googleId
-        eventsById.put(id, copyOf(event))
-        MockCalendarService.log.info("[calendar-mock] updated event id={} title='{}'", id, event.title)
+        if (id != null) {
+            eventsById[id] = copyOf(event)
+            MockCalendarService.log.info("[calendar-mock] updated event id={} title='{}'", id, event.title)
+        }
     }
 
     @Throws(IOException::class)
@@ -76,19 +76,18 @@ class MockCalendarService : CalendarService() {
         eventsById.clear()
     }
 
-    fun findByGoogleId(googleId: String): Event {
-        val e = eventsById.get(googleId)
-        return if (e == null) null else copyOf(e)
+    fun findByGoogleId(googleId: String): Event? {
+        return eventsById[googleId]
     }
 
     fun findBetween(startInclusive: Instant, endExclusive: Instant): MutableMap<String, Event> {
         return eventsById.entries.stream()
             .filter { en: MutableMap.MutableEntry<String, Event> ->
-                val s = en!!.value!!.startTime
-                val e = en.value!!.endTime
-                s != null && e != null && !s.isBefore(startInclusive) && e.isBefore(endExclusive)
+                val s = en.value.startTime
+                val e = en.value.endTime
+                !s.isBefore(startInclusive) && e.isBefore(endExclusive)
             }
-            .collect(Collectors.toUnmodifiableMap(Function { Map.Entry.key }, Function { Map.Entry.value }))
+            .collect(Collectors.toUnmodifiableMap({ entry -> entry.key }, { entry -> entry.value }))
     }
 
     companion object {
@@ -96,7 +95,6 @@ class MockCalendarService : CalendarService() {
 
         private fun copyOf(src: Event): Event {
             val e = Event()
-            e.id = src.id
             e.title = src.title
             e.location = src.location
             e.description = src.description

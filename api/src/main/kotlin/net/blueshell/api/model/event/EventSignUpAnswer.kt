@@ -66,6 +66,7 @@ class EventSignUpAnswer(
         get() = requireNotNull(_eventSignUp) { "Event sign-up is required" }
         set(value) {
             _eventSignUp = value
+            value.id?.let { eventSignUpId = it }
         }
 
     @field:MapsId("answerId")
@@ -76,6 +77,7 @@ class EventSignUpAnswer(
         get() = requireNotNull(_answer) { "Answer is required" }
         set(value) {
             _answer = value
+            value.id?.let { answerId = it }
         }
 
     override fun equals(other: Any?): Boolean {

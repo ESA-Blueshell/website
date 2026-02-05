@@ -57,6 +57,7 @@ class CommitteeMember(
         get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
+            value.id?.let { userId = it }
         }
 
     @field:MapsId("committeeId")
@@ -67,6 +68,7 @@ class CommitteeMember(
         get() = requireNotNull(_committee) { "Committee is required" }
         set(value) {
             _committee = value
+            value.id?.let { committeeId = it }
         }
 
     @Column(name = "role", length = 255)

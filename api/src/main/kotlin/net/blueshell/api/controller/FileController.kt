@@ -24,7 +24,7 @@ class FileController(service: FileService, repository: FileRepository, private v
     BaseController<FileService, FileRepository>(service, repository) {
     @GetMapping("/events/banners/{bannerId}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
-    fun downloadEventBanner(@PathVariable("bannerId") bannerId: Long): ResponseEntity<Resource> {
+    fun downloadEventBanner(@PathVariable bannerId: Long): ResponseEntity<Resource> {
         val file = service.findByEventBannerId(bannerId)
         return service.prepareFileResponse(file)
     }

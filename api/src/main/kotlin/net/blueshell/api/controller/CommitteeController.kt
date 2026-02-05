@@ -50,7 +50,7 @@ class CommitteeController(
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
     fun findCommitteeById(
-        @PathVariable("committeeId") committeeId: Long
+        @PathVariable committeeId: Long
     ): BaseDTO {
         val committee = service.findById(committeeId)
         if (hasAuthority(Role.BOARD) || committee.hasMember(principal)) {
@@ -72,7 +72,7 @@ class CommitteeController(
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Committee', 'write'))")
     @PutMapping(value = ["/committees/{id}"])
     fun updateCommittee(
-        @PathVariable("id") id: Long,
+        @PathVariable id: Long,
         @Valid @RequestBody dto: @Valid AdvancedCommitteeDTO
     ): AdvancedCommitteeDTO {
         var committee = service.findById(id)
@@ -84,7 +84,7 @@ class CommitteeController(
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteCommitteeById(@PathVariable("id") id: Long) {
+    fun deleteCommitteeById(@PathVariable id: Long) {
         service.deleteById(id)
     }
 }

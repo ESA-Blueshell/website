@@ -69,7 +69,7 @@ class UserController(
     @PutMapping("/users/guest/{id}")
     @PermitAll
     fun updateGuestUser(
-        @PathVariable("id") id: Long,
+        @PathVariable id: Long,
         @Validated(Update::class) @RequestBody dto: SimpleUserDTO
     ): SimpleUserDTO {
         var user = service.findById(id)
@@ -81,7 +81,7 @@ class UserController(
     @PutMapping(value = ["/users/{id}"])
     @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     fun updateUser(
-        @PathVariable("id") id: Long,
+        @PathVariable id: Long,
         @Validated(Update::class) @RequestBody dto: AdvancedUserDTO
     ): AdvancedUserDTO {
         var user = service.findById(id)
@@ -102,7 +102,7 @@ class UserController(
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
-    fun findUserById(@PathVariable("userId") userId: Long): AdvancedUserDTO {
+    fun findUserById(@PathVariable userId: Long): AdvancedUserDTO {
         val user = service.findById(userId)
         return advancedMapper.toDTO(user)
     }
@@ -110,14 +110,14 @@ class UserController(
     @DeleteMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteUserById(@PathVariable("userId") userId: Long) {
+    fun deleteUserById(@PathVariable userId: Long) {
         service.deleteById(userId)
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
     @PreAuthorize("hasAuthority('ADMIN')")
     fun toggleUserRole(
-        @PathVariable("userId") userId: Long,
+        @PathVariable userId: Long,
         @RequestParam(value = "role") role: Role
     ): AdvancedUserDTO {
         val user = service.toggleRole(userId, role)

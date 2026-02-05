@@ -33,7 +33,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
     @Transactional(readOnly = true)
-    fun findEventSignUpsByAccessToken(@PathVariable("accessToken") accessToken: String): MutableList<EventSignUpDTO> {
+    fun findEventSignUpsByAccessToken(@PathVariable accessToken: String): MutableList<EventSignUpDTO> {
         val signUps = service.findByGuestAccessToken(accessToken)
         return mapper.toDTOs(signUps)
     }
@@ -41,7 +41,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
     @Transactional(readOnly = true)
-    fun findEventSignUpsByEventId(@PathVariable("eventId") eventId: Long): MutableList<EventSignUpDTO> {
+    fun findEventSignUpsByEventId(@PathVariable eventId: Long): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByEventId(eventId)
         return mapper.toDTOs(eventSignUps)
     }
@@ -65,7 +65,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
                 "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
     )
     fun updateEventSignUp(
-        @PathVariable("eventId") eventId: Long,
+        @PathVariable eventId: Long,
         @Valid @RequestBody dto: EventSignUpDTO,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ): EventSignUpDTO {
@@ -90,7 +90,7 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
     fun deleteEventSignup(
-        @PathVariable("eventSignupId") eventSignupId: Long,
+        @PathVariable eventSignupId: Long,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ) {
         service.deleteById(eventSignupId)

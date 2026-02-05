@@ -26,7 +26,7 @@ class BlogController(blogService: BlogService, blogMapper: BlogMapper) :
 
     @PostMapping("/blogs/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
-    fun updateBlog(@PathVariable("id") id: Long, @Valid @RequestBody dto: BlogDTO): BlogDTO {
+    fun updateBlog(@PathVariable id: Long, @Valid @RequestBody dto: BlogDTO): BlogDTO {
         var blog = service.findById(id)
         mapper.fromDTO(dto, blog)
         blog = service.update(blog)

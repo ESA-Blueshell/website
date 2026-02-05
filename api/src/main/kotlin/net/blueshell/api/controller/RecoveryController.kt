@@ -22,7 +22,7 @@ class RecoveryController(
     @PostMapping("/password/reset/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun resetPassword(@PathVariable("username") username: String) {
+    fun resetPassword(@PathVariable username: String) {
         recoveryService.resetPassword(username)
     }
 
@@ -60,14 +60,14 @@ class RecoveryController(
     @PostMapping("/user/activate/resend/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun resendUserActivation(@PathVariable("username") username: String) {
+    fun resendUserActivation(@PathVariable username: String) {
         recoveryService.resendActivation(username)
     }
 
     @PostMapping("/users/{userId}/resend/recovery")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasPermission('BOARD')")
-    fun resendMemberActivationEmail(@PathVariable("userId") userId: Long) {
+    fun resendMemberActivationEmail(@PathVariable userId: Long) {
         recoveryService.resendActivationEmail(userId)
     }
 }

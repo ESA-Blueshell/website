@@ -35,7 +35,7 @@ class EventController @Autowired constructor(service: EventService, mapper: Even
 
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Event', 'write'))")
     @PutMapping("/events/{id}")
-    fun updateEvent(@PathVariable("id") id: Long, @Valid @RequestBody dto: EventDTO): EventDTO {
+    fun updateEvent(@PathVariable id: Long, @Valid @RequestBody dto: EventDTO): EventDTO {
         var event = service.findById(id)
         mapper.fromDTO(dto, event)
         event = service.update(event)
@@ -44,7 +44,7 @@ class EventController @Autowired constructor(service: EventService, mapper: Even
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("/events/{id}/approve")
-    fun approveEvent(@PathVariable("id") id: Long, @QueryParam(value = "approved") approved: Boolean): EventDTO {
+    fun approveEvent(@PathVariable id: Long, @QueryParam(value = "approved") approved: Boolean): EventDTO {
         var event = service.findById(id)
         event.approved = approved
         event = service.update(event)
@@ -53,7 +53,7 @@ class EventController @Autowired constructor(service: EventService, mapper: Even
 
     @GetMapping("/events/{id}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Event', 'read')")
-    fun findEventById(@PathVariable("id") id: Long): EventDTO {
+    fun findEventById(@PathVariable id: Long): EventDTO {
         val event = service.findById(id)
         return mapper.toDTO(event)
     }
@@ -71,7 +71,7 @@ class EventController @Autowired constructor(service: EventService, mapper: Even
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/events/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteEventById(@PathVariable("eventId") eventId: Long) {
+    fun deleteEventById(@PathVariable eventId: Long) {
         service.deleteById(eventId)
     }
 }

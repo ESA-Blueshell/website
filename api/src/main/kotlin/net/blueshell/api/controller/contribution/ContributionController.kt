@@ -34,13 +34,13 @@ class ContributionController @Autowired constructor(service: ContributionService
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteContribution(@PathVariable("id") id: Long) {
+    fun deleteContribution(@PathVariable id: Long) {
         service.deleteById(id)
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
-    fun findContributionsByPeriodId(@PathVariable("periodId") periodId: Long): MutableList<ContributionDTO> {
+    fun findContributionsByPeriodId(@PathVariable periodId: Long): MutableList<ContributionDTO> {
         val contributions = service.findByContributionPeriodId(periodId)
         return mapper.toDTOs(contributions)
     }

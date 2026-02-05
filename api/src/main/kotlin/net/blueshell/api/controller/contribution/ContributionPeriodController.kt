@@ -55,7 +55,7 @@ class ContributionPeriodController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteContributionPeriodById(@PathVariable("id") id: Long) {
+    fun deleteContributionPeriodById(@PathVariable id: Long) {
         service.deleteById(id)
     }
 }

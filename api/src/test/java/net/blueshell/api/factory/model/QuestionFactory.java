@@ -24,7 +24,6 @@ public class QuestionFactory {
 
     public Question createBasic() {
         Question question = new Question();
-        ModelTestUtils.setId(question, generateId());
         question.setIdx((long) faker.number().numberBetween(1, 100));
         question.setType(faker.options().option(QuestionType.class));
         question.setLabel(faker.lorem().sentence() + "?");

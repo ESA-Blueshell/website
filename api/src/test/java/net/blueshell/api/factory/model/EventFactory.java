@@ -26,7 +26,6 @@ public class EventFactory {
 
     public Event createBasic() {
         Event event = new Event();
-        ModelTestUtils.setId(event, generateId());
         event.setTitle(faker.book().title() + " Event");
         event.setDescription(faker.lorem().paragraph(5));
         event.setLocation(faker.address().fullAddress());

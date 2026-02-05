@@ -21,7 +21,6 @@ public class ContributionPeriodFactory {
 
     public ContributionPeriod createBasic() {
         ContributionPeriod cp = new ContributionPeriod();
-        ModelTestUtils.setId(cp, generateId());
         LocalDate start = LocalDate.now().withDayOfMonth(1);
         cp.setStartDate(start);
         cp.setEndDate(start.plusMonths(6));

@@ -21,7 +21,6 @@ public class TelemetryFactory {
 
     public Telemetry createBasic() {
         Telemetry t = new Telemetry();
-        ModelTestUtils.setId(t, generateId());
         t.setPlatform(faker.options().option(PlatformType.class));
         t.setUrl(faker.internet().url());
         return t;

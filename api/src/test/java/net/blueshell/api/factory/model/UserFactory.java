@@ -29,7 +29,6 @@ public class UserFactory {
 
     public User createBasic() {
         User user = new User();
-        ModelTestUtils.setId(user, generateId());
         user.setUsername(faker.name().username().toLowerCase().replaceAll("[^a-z0-9]", ""));
         user.setPassword(passwordEncoder.encode("password123"));
         user.setFirstName(faker.name().firstName());

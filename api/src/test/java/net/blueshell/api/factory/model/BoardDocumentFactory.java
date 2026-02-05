@@ -22,7 +22,6 @@ public class BoardDocumentFactory {
 
     public BoardDocument createBasic() {
         BoardDocument bd = new BoardDocument();
-        ModelTestUtils.setId(bd, generateId());
         bd.setBoard(boardFactory.createBasic());
         bd.setName(faker.book().title() + ".pdf");
         bd.setFile(fileFactory.createDocument());

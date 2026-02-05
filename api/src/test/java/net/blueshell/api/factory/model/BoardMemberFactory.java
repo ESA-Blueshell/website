@@ -26,7 +26,6 @@ public class BoardMemberFactory {
 
     public BoardMember createBasic() {
         BoardMember bm = new BoardMember();
-        ModelTestUtils.setId(bm, generateId());
 
         Board board = boardFactory.createBasic();
         User user = userFactory.createFull();

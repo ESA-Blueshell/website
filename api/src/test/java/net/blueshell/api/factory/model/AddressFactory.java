@@ -21,7 +21,6 @@ public class AddressFactory {
 
     public Address createBasic() {
         Address address = new Address();
-        ModelTestUtils.setId(address, generateId());
         address.setCountry("Netherlands");
         address.setCity(faker.address().city());
         address.setStreet(faker.address().streetName());

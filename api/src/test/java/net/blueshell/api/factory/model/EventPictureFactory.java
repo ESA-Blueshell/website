@@ -22,7 +22,6 @@ public class EventPictureFactory {
 
     public EventPicture createBasic() {
         EventPicture ep = new EventPicture();
-        ModelTestUtils.setId(ep, generateId());
         ep.setEvent(eventFactory.createBasic());
         ep.setPicture(fileFactory.createImage());
         return ep;

@@ -24,7 +24,6 @@ public class EventSignUpAnswerFactory {
 
     public EventSignUpAnswer createBasic() {
         EventSignUpAnswer esa = new EventSignUpAnswer();
-        ModelTestUtils.setId(esa, generateId());
         EventSignUp es = eventSignUpFactory.createBasic();
         Answer answer = answerFactory.createBasic();
         esa.setEventSignUp(es);

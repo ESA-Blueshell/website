@@ -24,13 +24,10 @@ public class ContributionFactory {
 
     public Contribution createBasic() {
         Contribution c = new Contribution();
-        ModelTestUtils.setId(c, generateId());
         User user = userFactory.createBasic();
         ContributionPeriod period = contributionPeriodFactory.createBasic();
         c.setUser(user);
-        c.setUserId(user.getId());
         c.setContributionPeriod(period);
-        c.setContributionPeriodId(period.getId());
         return c;
     }
 

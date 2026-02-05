@@ -24,8 +24,6 @@ public class MembershipFactory {
 
     public Membership createBasic() {
         Membership membership = new Membership();
-        ModelTestUtils.setId(membership, generateId());
-
         User user = userFactory.createBasic();
         membership.setUserId(user.getId());
 

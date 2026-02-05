@@ -23,7 +23,6 @@ public class BoardFactory {
 
     public Board createBasic() {
         Board board = new Board();
-        ModelTestUtils.setId(board, generateId());
         board.setName(faker.company().name() + " Board");
         board.setCandidate(faker.name().fullName());
         board.setStartDate(LocalDate.now().minusYears(1));
@@ -34,7 +33,7 @@ public class BoardFactory {
     public Board createFull() {
         Board board = createBasic();
         File picture = fileFactory.createImage();
-        ModelTestUtils.setField(board, "picture", picture);
+        board.setPicture(picture);
         return board;
     }
 

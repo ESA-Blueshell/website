@@ -33,6 +33,7 @@ class Committee : AuditedAutoIdEntity() {
         set(newMembers) {
             _members.clear()
             _members.addAll(newMembers)
+            _members.forEach { it.committee = this }
             val committeeId = id
             if (committeeId != null) {
                 _members.forEach { it.committeeId = committeeId }
@@ -44,6 +45,7 @@ class Committee : AuditedAutoIdEntity() {
     }
 
     fun addMember(member: CommitteeMember) {
+        member.committee = this
         val committeeId = id
         if (committeeId != null) {
             member.committeeId = committeeId

@@ -21,7 +21,6 @@ public class CommitteeFactory {
 
     public Committee createBasic() {
         Committee committee = new Committee();
-        ModelTestUtils.setId(committee, generateId());
         committee.setName(faker.company().name() + " Committee");
         committee.setDescription(faker.lorem().paragraph(3));
         committee.setMembers(new HashSet<>());

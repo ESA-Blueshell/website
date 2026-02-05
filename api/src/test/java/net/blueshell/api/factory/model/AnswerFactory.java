@@ -25,10 +25,8 @@ public class AnswerFactory {
 
     public Answer createBasic() {
         Answer answer = new Answer();
-        ModelTestUtils.setId(answer, generateId());
 
         Question q = questionFactory.createFull();
-        answer.setQuestionId(q.getId());
 
         if (q.getType() == QuestionType.CHECKBOX || q.getType() == QuestionType.RADIO) {
             List<Boolean> selections = new ArrayList<>();

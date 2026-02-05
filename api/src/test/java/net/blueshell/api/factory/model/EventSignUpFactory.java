@@ -26,13 +26,11 @@ public class EventSignUpFactory {
 
     public EventSignUp createBasic() {
         EventSignUp es = new EventSignUp();
-        ModelTestUtils.setId(es, generateId());
 
         Event event = eventFactory.createFull();
         User user = userFactory.createFull();
 
         es.setEvent(event);
-        es.setEventId(event.getId());
         es.setUser(user);
         es.setUserId(user.getId());
         es.setGuest(null);

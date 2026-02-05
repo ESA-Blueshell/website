@@ -22,7 +22,6 @@ public class RedirectFactory {
 
     public Redirect createBasic() {
         Redirect r = new Redirect();
-        ModelTestUtils.setId(r, generateId());
         Telemetry t = telemetryFactory.createBasic();
         r.setTelemetry(t);
         return r;

@@ -24,13 +24,10 @@ public class ContributionReminderFactory {
 
     public ContributionReminder createBasic() {
         ContributionReminder cr = new ContributionReminder();
-        ModelTestUtils.setId(cr, generateId());
         User user = userFactory.createBasic();
         ContributionPeriod period = contributionPeriodFactory.createBasic();
         cr.setUser(user);
-        cr.setUserId(user.getId());
         cr.setContributionPeriod(period);
-        cr.setContributionPeriodId(period.getId());
         return cr;
     }
 

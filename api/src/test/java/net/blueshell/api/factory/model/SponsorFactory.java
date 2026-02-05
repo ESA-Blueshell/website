@@ -22,12 +22,10 @@ public class SponsorFactory {
 
     public Sponsor createBasic() {
         Sponsor s = new Sponsor();
-        ModelTestUtils.setId(s, generateId());
         s.setName(faker.company().name());
         s.setDescription(faker.lorem().paragraph(3));
         File logo = fileFactory.createImage();
         s.setPicture(logo);
-        s.setPictureId(logo.getId());
         return s;
     }
 

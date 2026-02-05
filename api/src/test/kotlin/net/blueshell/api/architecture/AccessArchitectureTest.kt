@@ -1,9 +1,5 @@
 package net.blueshell.api.architecture
 
-import com.tngtech.archunit.core.importer.ImportOption
-import com.tngtech.archunit.junit.AnalyzeClasses
-import com.tngtech.archunit.junit.ArchTest
-import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
@@ -19,93 +15,116 @@ import net.blueshell.api.architecture.ArchitecturePackages.REPOSITORY
 import net.blueshell.api.architecture.ArchitecturePackages.SECURITY
 import net.blueshell.api.architecture.ArchitecturePackages.SERVICE
 import net.blueshell.api.architecture.ArchitecturePackages.VALIDATION
-import net.blueshell.api.architecture.support.DoNotIncludeFactory
-import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
+import net.blueshell.api.architecture.support.ArchJUnitTestBase
+import org.junit.jupiter.api.Test
 
-/**
- * ArchUnit: access restrictions + “best practice” boundaries between common app layers.
- */
-@AnalyzeClasses(
-    packages = [ArchitecturePackages.ROOT],
-    importOptions = [
-        ImportOption.DoNotIncludeTests::class,
-        DoNotIncludeTestSupport::class,
-        DoNotIncludeFactory::class
-    ]
-)
-class AccessArchitectureTest {
+class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
-    // ---- Existing rules (kept) ----
+    @Test
+    fun `dto only accessed at api border`(): Unit =
+        arch("DTOs only accessed at API border") {
+            classes()
+                .that().resideInAnyPackage(DTO)
+                .should().onlyBeAccessed().byAnyPackage(CONTROLLER, MAPPER, DTO, VALIDATION)
+                .because("DTOs should not leak into services/repositories; keep them at the API boundary.")
+        }
 
-    @ArchTest
-    val dtoOnlyAccessedAtApiBorder: ArchRule =
-        classes()
-            .that().resideInAnyPackage(DTO)
-            .should().onlyBeAccessed().byAnyPackage(CONTROLLER, MAPPER, DTO, VALIDATION)
-            .because("DTOs should not leak into services/repositories; keep them at the API boundary.")
+    @Test
+    fun `models not accessed in dtos`(): Unit =
+        arch("DTOs must not depend on model entities") {
+            noClasses()
+                .that().resideInAnyPackage(DTO)
+                .should().accessClassesThat().resideInAnyPackage(MODEL)
+                .because("DTOs must not depend on model entities.")
+        }
 
-    @ArchTest
-    val modelsNotAccessedInDtos: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(DTO)
-            .should().accessClassesThat().resideInAnyPackage(MODEL)
-            .because("DTOs must not depend on model entities.")
+    @Test
+    fun `repository only accessed by services and validation`(): Unit =
+        arch("Repositories only accessed from service/validation") {
+            classes()
+                .that().resideInAnyPackage(REPOSITORY)
+                .should().onlyBeAccessed().byAnyPackage(SERVICE, REPOSITORY, VALIDATION)
+                .because("Repositories are an inner ring; only services/validation should touch them.")
+        }
 
-    @ArchTest
-    val repositoryOnlyAccessedByServicesAndValidation: ArchRule =
-        classes()
-            .that().resideInAnyPackage(REPOSITORY)
-            .should().onlyBeAccessed().byAnyPackage(SERVICE, REPOSITORY, VALIDATION)
-            .because("Repositories are an inner ring; only services/validation should touch them.")
+    @Test
+    fun `jobs only accessed from listeners`(): Unit =
+        arch("Jobs only triggered by listeners") {
+            classes()
+                .that().resideInAnyPackage(JOB)
+                .should().onlyBeAccessed().byAnyPackage(LISTENER, JOB)
+                .because("Jobs should be triggered by listeners / scheduling infrastructure.")
+        }
 
-    @ArchTest
-    val jobsOnlyAccessedFromListeners: ArchRule =
-        classes()
-            .that().resideInAnyPackage(JOB)
-            .should().onlyBeAccessed().byAnyPackage(LISTENER, JOB)
-            .because("Jobs should be triggered by listeners / scheduling infrastructure.")
+    @Test
+    fun `jobs not accessed from jpa listeners`(): Unit =
+        arch("No job triggers from JPA listeners") {
+            noClasses()
+                .that().resideInAnyPackage(LISTENER_JPA)
+                .should().accessClassesThat().resideInAnyPackage(JOB)
+                .because("JPA listeners should not kick off jobs (transaction boundaries, side effects).")
+        }
 
-    @ArchTest
-    val jobsNotAccessedFromJpaListeners: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(LISTENER_JPA)
-            .should().accessClassesThat().resideInAnyPackage(JOB)
-            .because("JPA listeners should not kick off jobs (transaction boundaries, side effects).")
+    @Test
+    fun `controllers do not access repositories directly`(): Unit =
+        arch("Controllers must not access repositories") {
+            noClasses()
+                .that().resideInAnyPackage(CONTROLLER)
+                .should().accessClassesThat().resideInAnyPackage(REPOSITORY)
+                .because("Controllers should depend on services, never repositories directly.")
+        }
 
-    // ---- Stronger best-practice rules (added) ----
+    @Test
+    fun `services do not depend on controllers`(): Unit =
+        arch("Inner layers must not depend on controllers") {
+            noClasses()
+                .that().resideInAnyPackage(SERVICE, VALIDATION, REPOSITORY, MODEL)
+                .should().dependOnClassesThat().resideInAnyPackage(CONTROLLER)
+                .because("Inner layers must not depend on the web layer.")
+        }
 
-    @ArchTest
-    val controllersDoNotAccessRepositoriesDirectly: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(CONTROLLER)
-            .should().accessClassesThat().resideInAnyPackage(REPOSITORY)
-            .because("Controllers should depend on services, never repositories directly.")
+    @Test
+    fun `services do not depend on DTOs`(): Unit =
+        arch("Services must not depend on DTOs") {
+            noClasses()
+                .that().resideInAnyPackage(SERVICE)
+                .should().dependOnClassesThat().resideInAnyPackage(DTO)
+                .because("Keep DTO usage at the boundary; services should work with domain types/commands.")
+        }
 
-    @ArchTest
-    val servicesDoNotDependOnControllers: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(SERVICE, VALIDATION, REPOSITORY, MODEL)
-            .should().dependOnClassesThat().resideInAnyPackage(CONTROLLER)
-            .because("Inner layers must not depend on the web layer.")
+    @Test
+    fun `mappers are not used by repositories`(): Unit =
+        arch("Repositories must not depend on mappers/DTO") {
+            noClasses()
+                .that().resideInAnyPackage(REPOSITORY)
+                .should().dependOnClassesThat().resideInAnyPackage(MAPPER, DTO)
+                .because("Persistence layer should not know about mapping/DTO concerns.")
+        }
 
-    @ArchTest
-    val mappersAreNotUsedByRepositories: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(REPOSITORY)
-            .should().dependOnClassesThat().resideInAnyPackage(MAPPER, DTO)
-            .because("Persistence layer should not know about mapping/DTO concerns.")
+    @Test
+    fun `repositories do not depend on services`(): Unit =
+        arch("Repositories must not depend on services") {
+            noClasses()
+                .that().resideInAnyPackage(REPOSITORY)
+                .should().dependOnClassesThat().resideInAnyPackage(SERVICE)
+                .because("Dependency direction should be Service -> Repository, never the other way around.")
+        }
 
-    @ArchTest
-    val noCyclicDependenciesByTopLevelPackage: ArchRule =
-        slices()
-            .matching("${ArchitecturePackages.ROOT}.(*)..")
-            .should().beFreeOfCycles()
-            .because("Cyclic package dependencies make refactors risky and coupling invisible.")
+    @Test
+    fun `no cyclic dependencies by top level package`(): Unit =
+        arch("No cyclic dependencies by top-level package") {
+            slices()
+                .matching("${ArchitecturePackages.ROOT}.(*)..")
+                .should().beFreeOfCycles()
+                .because("Cyclic package dependencies make refactors risky and coupling invisible.")
+        }
 
-    @ArchTest
-    val configurationDoesNotDependOnWebControllers: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(CONFIG, SECURITY)
-            .should().dependOnClassesThat().resideInAnyPackage(CONTROLLER)
-            .because("Configuration should wire beans without coupling to controllers.")
+    @Test
+    fun `configuration does not depend on web controllers`(): Unit =
+        arch("Config must not depend on controllers") {
+            noClasses()
+                .that().resideInAnyPackage(CONFIG, SECURITY)
+                .should().dependOnClassesThat().resideInAnyPackage(CONTROLLER)
+                .because("Configuration should wire beans without coupling to controllers.")
+        }
 }

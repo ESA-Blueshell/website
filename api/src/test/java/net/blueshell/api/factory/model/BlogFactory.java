@@ -21,7 +21,6 @@ public class BlogFactory {
 
     public Blog createBasic() {
         Blog blog = new Blog();
-        ModelTestUtils.setId(blog, generateId());
         blog.setTitle(faker.book().title());
         blog.setHtml("<p>" + faker.lorem().paragraph(10) + "</p>");
         blog.setPublishedAt(Instant.now());

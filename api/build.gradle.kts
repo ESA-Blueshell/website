@@ -118,6 +118,8 @@ dependencies {
     testImplementation("org.testcontainers:mariadb")
     testImplementation("io.rest-assured:spring-mock-mvc:5.5.6")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("io.mockk:mockk:1.13.13")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 

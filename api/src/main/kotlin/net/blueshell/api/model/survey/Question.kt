@@ -34,7 +34,7 @@ class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
     var idx: Long = 0
 
-    @Column(name = "survey_id", insertable = false, updatable = false, nullable = false)
+    @Column(name = "survey_id", nullable = false)
     var surveyId: Long = 0
 
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)

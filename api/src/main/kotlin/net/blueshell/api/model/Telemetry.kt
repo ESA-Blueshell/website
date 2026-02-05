@@ -26,7 +26,7 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Telemetry() : AuditedAutoIdEntity() {
     @field:Column(nullable = false)
-    @field:Enumerated(EnumType.STRING)
+    @field:Enumerated(EnumType.ORDINAL)
     lateinit var platform: PlatformType
 
     @field:Column(nullable = false)

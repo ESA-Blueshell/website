@@ -23,7 +23,6 @@ public class FileFactory {
 
     public File createBasic() {
         File file = new File();
-        ModelTestUtils.setId(file, generateId());
         file.setName(faker.file().fileName());
         file.setPath("/uploads/" + faker.file().fileName());
         file.setMediaType(faker.options().option("image/jpeg", "image/png", "application/pdf"));
@@ -31,7 +30,6 @@ public class FileFactory {
         file.setType(faker.options().option(FileType.class));
 
         User uploader = userFactory.createBasic();
-        file.setUploaderId(uploader.getId());
 
         return file;
     }

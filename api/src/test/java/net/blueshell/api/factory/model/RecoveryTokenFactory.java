@@ -25,7 +25,6 @@ public class RecoveryTokenFactory {
 
     public RecoveryToken createBasic() {
         RecoveryToken rt = new RecoveryToken();
-        ModelTestUtils.setId(rt, generateId());
         User u = userFactory.createBasic();
         rt.setUser(u);
         rt.setType(faker.options().option(ResetType.class));

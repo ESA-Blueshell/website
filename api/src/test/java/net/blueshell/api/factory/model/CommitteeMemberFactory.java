@@ -18,11 +18,11 @@ public class CommitteeMemberFactory {
     private final UserFactory userFactory;
     private final CommitteeFactory committeeFactory;
 
-    public CommitteeMember createBasic() {
+    public CommitteeMember createBasic(
+            User user,
+            Committee committee
+    ) {
         CommitteeMember member = new CommitteeMember();
-        User user = userFactory.createBasic();
-        Committee committee = committeeFactory.createBasic();
-
         member.setUserId(user.getId());
         member.setCommitteeId(committee.getId());
         member.setRole(faker.options().option("Chair", "Secretary", "Treasurer", "Member"));
@@ -30,26 +30,20 @@ public class CommitteeMemberFactory {
         return member;
     }
 
-    public CommitteeMember createFull() {
-        return createBasic();
+    public CommitteeMember createFull(
+            User user,
+            Committee committee
+    ) {
+        return createBasic(user, committee);
     }
 
-    public CommitteeMember createWithCustomizations(java.util.function.Consumer<CommitteeMember> customizer) {
-        CommitteeMember member = createFull();
+    public CommitteeMember createWithCustomizations(
+            java.util.function.Consumer<CommitteeMember> customizer,
+            User user,
+            Committee committee
+    ) {
+        CommitteeMember member = createFull(user, committee);
         customizer.accept(member);
         return member;
     }
-
-    public CommitteeMember createForCommittee(Committee committee) {
-        return createWithCustomizations(member -> {
-            member.setCommitteeId(committee.getId());
-        });
-    }
-
-    public CommitteeMember createForUser(User user) {
-        return createWithCustomizations(member -> {
-            member.setUserId(user.getId());
-        });
-    }
-
 }

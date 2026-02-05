@@ -1,60 +1,72 @@
 package net.blueshell.api.architecture
 
-import com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo
-import com.tngtech.archunit.core.importer.ImportOption
-import com.tngtech.archunit.junit.AnalyzeClasses
-import com.tngtech.archunit.junit.ArchTest
-import com.tngtech.archunit.lang.ArchRule
+import com.tngtech.archunit.base.DescribedPredicate
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import jakarta.persistence.Entity
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL_CONVERTER
-import net.blueshell.api.base.entity.BaseModel
+import net.blueshell.api.architecture.support.ArchJUnitTestBase
+import net.blueshell.api.architecture.support.SignatureConditions
 import net.blueshell.api.base.entity.Identifiable
-import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
-import net.blueshell.api.architecture.support.GenericsPredicates.assignableToGeneric
-import net.blueshell.api.architecture.support.ReturnTypeConditions.notHaveReturnType
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.junit.jupiter.api.Test
 
-/**
- * ArchUnit: API boundary rules:
- * - Controllers must not leak entities (models) in return types.
- * - All model classes extend BaseModel (excluding converters).
- * - Controllers should not be in “mixed” packages.
- */
-@AnalyzeClasses(
-    packages = [ArchitecturePackages.ROOT],
-    importOptions = [ImportOption.DoNotIncludeTests::class, DoNotIncludeTestSupport::class]
-)
-class ApiBoundaryArchitectureTest {
+class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
-    @ArchTest
-    val controllerMethodsDontReturnModels: ArchRule =
-        methods()
-            .that().areDeclaredInClassesThat().resideInAnyPackage(CONTROLLER)
-            .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
-            .and().arePublic()
-            .should().notHaveRawReturnType(assignableTo(BaseModel::class.java))
-            .andShould(notHaveReturnType(assignableToGeneric(Iterable::class.java, BaseModel::class.java)))
-            .because("Controllers must return DTOs/resources, not persistence entities.")
+    @Test
+    fun `controllers must not expose entities in method signatures (including generics)`() =
+        arch("Controllers must not expose persistence entities in method signatures") {
 
-    @ArchTest
-    val modelsExtendIdentifiable: ArchRule =
-        classes()
-            .that().resideInAnyPackage(MODEL)
-            .and().resideOutsideOfPackage(MODEL_CONVERTER)
-            .and().areAnnotatedWith(Entity::class.java)
-            .should().beAssignableTo(Identifiable::class.java)
-            .because("All model entities should share identity contract.")
+            val isEntityOrBaseModel: DescribedPredicate<JavaClass> =
+                DescribedPredicate.describe("be annotated with @Entity OR be assignable to BaseModel") { jc ->
+                    jc.hasAnnotationOrNull(Entity::class.java) || jc.isAssignableToOrNull(Identifiable::class.java)
+                }
 
-    // Best-practice: web annotations must not appear in model layer
-    @ArchTest
-    val modelMustNotDependOnWebMvc: ArchRule =
-        noClasses()
-            .that().resideInAnyPackage(MODEL)
-            .should().dependOnClassesThat().areAnnotatedWith(RestController::class.java)
-            .orShould().dependOnClassesThat().areAnnotatedWith(RequestMapping::class.java)
-            .because("Model layer must not depend on Spring MVC/web concerns.")
+            methods()
+                .that().areDeclaredInClassesThat().resideInAnyPackage(CONTROLLER)
+                .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
+                .and().arePublic()
+                .should(SignatureConditions.notReferenceTypes(isEntityOrBaseModel))
+                .because("Controllers are an API boundary: expose DTOs/resources, never persistence types (even nested in wrappers).")
+        }
+
+    @Test
+    fun `controllers must not depend on JPA or Hibernate types`(): Unit =
+        arch("Controllers must not depend on JPA/Hibernate") {
+            noClasses()
+                .that().resideInAnyPackage(CONTROLLER)
+                .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..", "org.hibernate..")
+        }
+
+    @Test
+    fun `models extend Identifiable`(): Unit =
+        arch("Entities must implement Identifiable") {
+            classes()
+                .that().resideInAnyPackage(MODEL)
+                .and().resideOutsideOfPackage(MODEL_CONVERTER)
+                .and().areAnnotatedWith(Entity::class.java)
+                .should().beAssignableTo(Identifiable::class.java)
+        }
+
+    @Test
+    fun `model must not depend on Spring MVC or HTTP`(): Unit =
+        arch("Model must not depend on Spring Web") {
+            noClasses()
+                .that().resideInAnyPackage(MODEL)
+                .should().dependOnClassesThat().resideInAnyPackage(
+                    "org.springframework.web..",
+                    "org.springframework.http.."
+                )
+        }
+
+    private fun JavaClass.hasAnnotationOrNull(annotation: Class<out Annotation>): Boolean =
+        try {
+            getAnnotationOfType(annotation) != null
+        } catch (_: IllegalArgumentException) {
+            false
+        }
+
+    private fun JavaClass.isAssignableToOrNull(type: Class<*>): Boolean =
+        runCatching { type.isAssignableFrom(this.reflect()) }.getOrDefault(false)
 }

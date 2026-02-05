@@ -21,7 +21,6 @@ public class EventFeedbackFactory {
 
     public EventFeedback createBasic() {
         EventFeedback ef = new EventFeedback();
-        ModelTestUtils.setId(ef, generateId());
         ef.setEvent(eventFactory.createBasic());
         ef.setFeedback(faker.lorem().sentence(10));
         return ef;

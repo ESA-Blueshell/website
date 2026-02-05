@@ -24,7 +24,6 @@ public class EventBannerFactory {
 
     public EventBanner createBasic() {
         EventBanner eb = new EventBanner();
-        ModelTestUtils.setId(eb, generateId());
 
         Event event = eventFactory.createBasic();
         File file = fileFactory.createImage();

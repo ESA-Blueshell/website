@@ -1,5 +1,7 @@
 package net.blueshell.api.config;
 
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
@@ -16,6 +18,7 @@ import java.util.List;
  * Test listener that truncates all test-schema tables between tests (excluding Flyway history).
  * Hard guards against accidental non-test schema truncation.
  */
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class TruncateTestDatabaseListener implements TestExecutionListener {
 
     private static final String TEST_SCHEMA = "blueshell-test";
@@ -25,9 +28,8 @@ public class TruncateTestDatabaseListener implements TestExecutionListener {
     @Override
     public void beforeTestMethod(TestContext testContext) throws Exception {
         DataSource dataSource = testContext.getApplicationContext().getBean(DataSource.class);
-
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);
-             Statement st = conn.createStatement()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (Statement st = conn.createStatement()) {
 
             conn.setAutoCommit(true);
 
@@ -63,6 +65,8 @@ public class TruncateTestDatabaseListener implements TestExecutionListener {
                 st.execute("TRUNCATE TABLE `" + TEST_SCHEMA + "`.`" + table + "`");
             }
             st.execute("SET FOREIGN_KEY_CHECKS = 1");
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }

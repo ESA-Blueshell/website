@@ -21,7 +21,6 @@ public class SurveyFactory {
 
     public Survey createBasic() {
         Survey survey = new Survey();
-        ModelTestUtils.setId(survey, generateId());
         survey.setResponseCount(0L);
         return survey;
     }

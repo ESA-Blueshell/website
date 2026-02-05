@@ -5,19 +5,16 @@ import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
-import net.blueshell.api.base.entity.BaseModel
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+import jakarta.persistence.Entity
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL_CONVERTER
+import net.blueshell.api.base.entity.BaseModel
+import net.blueshell.api.base.entity.Identifiable
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport
 import net.blueshell.api.testsupport.GenericsPredicates.assignableToGeneric
 import net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnType
-
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
-import net.blueshell.api.base.entity.Identifiable
-import jakarta.persistence.Entity
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 

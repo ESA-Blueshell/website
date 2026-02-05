@@ -26,19 +26,19 @@ import java.time.ZoneId
 
 @Service
 class CalendarService {
-    @Value("\${google.calendar.id}")
+    @Value($$"${google.calendar.id}")
     private lateinit var calendarId: String
 
-    @Value("\${google.calendar.clientId}")
+    @Value($$"${google.calendar.clientId}")
     private lateinit var clientId: String
 
-    @Value("\${google.calendar.clientEmail}")
+    @Value($$"${google.calendar.clientEmail}")
     private lateinit var clientEmail: String
 
-    @Value("\${google.calendar.privateKeyPkcs8}")
+    @Value($$"${google.calendar.privateKeyPkcs8}")
     private lateinit var privateKeyPkcs8: String
 
-    @Value("\${google.calendar.privateKeyId}")
+    @Value($$"${google.calendar.privateKeyId}")
     private lateinit var privateKeyId: String
 
     private lateinit var service: Calendar

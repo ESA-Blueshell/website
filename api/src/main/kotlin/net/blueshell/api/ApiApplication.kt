@@ -1,7 +1,6 @@
 package net.blueshell.api
 
 import net.blueshell.api.config.StorageConfig
-import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing
@@ -15,9 +14,8 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableAsync
 @EnableRetry
 @EnableScheduling
-object ApiApplication {
-    @JvmStatic
-    fun main(args: Array<String>) {
-        SpringApplication.run(ApiApplication::class.java, *args)
-    }
+class ApiApplication
+
+fun main(args: Array<String>) {
+    org.springframework.boot.runApplication<ApiApplication>(*args)
 }

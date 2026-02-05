@@ -6,12 +6,12 @@ import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.base.AdvancedController
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.dto.user.AdvancedUserDTO
 import net.blueshell.api.dto.user.SimpleUserDTO
 import net.blueshell.api.mapper.user.AdvancedUserMapper
 import net.blueshell.api.mapper.user.SimpleUserMapper
 import net.blueshell.api.model.User
+import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.service.UserService
 import net.blueshell.api.validation.group.Administration
 import net.blueshell.api.validation.group.Creation

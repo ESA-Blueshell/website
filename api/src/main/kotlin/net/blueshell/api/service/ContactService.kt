@@ -19,9 +19,9 @@ class ContactService(
     private val mapper: BrevoContactMapper,
     private val users: UserService,
     private val restClientBuilder: RestClient.Builder,
-    @param:Value("\${brevo.apiKey}") private val apiKey: String,
-    @param:Value("\${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
-    @param:Value("\${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
+    @param:Value($$"${brevo.apiKey}") private val apiKey: String,
+    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
+    @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
 ) {
 
     private lateinit var contacts: ContactsApi
@@ -37,7 +37,7 @@ class ContactService(
 
     fun getUpdate(user: User) {
         if (user.contactId != null) return
-        ContactService.log.info("Getting update for user: {}", user.email)
+        log.info("Getting update for user: {}", user.email)
 
         try {
             val api = this.contactsApi
@@ -45,7 +45,7 @@ class ContactService(
                 api.getContactInfo(user.email, "email_id", null, null)
             user.contactId = details.id
         } catch (e: HttpClientErrorException) {
-            ContactService.log.info("Failed to get contact details for user: {}", user.email)
+            log.info("Failed to get contact details for user: {}", user.email)
         }
     }
 
@@ -60,7 +60,7 @@ class ContactService(
 
     @Throws(RestClientResponseException::class)
     private fun createContact(user: User) {
-        ContactService.log.info("Creating contact for user: {}", user.email)
+        log.info("Creating contact for user: {}", user.email)
         val api = this.contactsApi
         val createContact = mapper.toCreate(user)
         val response = api.createContact(createContact)
@@ -69,7 +69,7 @@ class ContactService(
 
     @Throws(RestClientResponseException::class)
     private fun sendUpdate(user: User) {
-        ContactService.log.info("Sending update for user: {}", user.email)
+        log.info("Sending update for user: {}", user.email)
         val api = this.contactsApi
         val contact = mapper.toUpdate(user)
         api.updateContact(

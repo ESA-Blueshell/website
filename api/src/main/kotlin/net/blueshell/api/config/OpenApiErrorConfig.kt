@@ -115,7 +115,7 @@ class OpenApiErrorConfig {
     }
 
     private fun refSchema(name: String?): Schema<*>? {
-        return Schema<Any?>().`$ref`("#/components/schemas/" + name)
+        return Schema<Any?>().`$ref`("#/components/schemas/$name")
     }
 
     // ───────────────────── Examples ─────────────────────

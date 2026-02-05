@@ -23,7 +23,7 @@ class AuthenticationController(
     private val users: UserService
 ) : JWTAuthBase() {
 
-    @Value("\${app.jwt.expiration}")
+    @Value($$"${app.jwt.expiration}")
     private var expiration: Long = 0
 
     @PostMapping(("/auth"))

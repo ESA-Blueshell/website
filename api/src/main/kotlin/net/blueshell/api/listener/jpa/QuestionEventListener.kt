@@ -57,7 +57,7 @@ class QuestionEventListener(
         // If a question is just removed, without anything else being changed
         // There is no need to wipe all existing answers for the survey.
         // All existing answers only need to be wiped if a new question is added to a survey
-        // Or if a existing question is modified and thus all questions need to be re-answered
+        // Or if an existing question is modified and thus all questions need to be re-answered
         if (!q.answers.isEmpty()) {
             answers.deleteAll(q.answers as MutableSet<Answer>)
         }

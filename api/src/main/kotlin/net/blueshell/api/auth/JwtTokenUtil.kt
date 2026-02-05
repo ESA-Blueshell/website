@@ -13,10 +13,10 @@ import javax.crypto.SecretKey
 
 @Component("commonJwtTokenUtil")
 class JwtTokenUtil {
-    @Value("\${app.jwt.expiration}")
+    @Value($$"${app.jwt.expiration}")
     private val expiration: Long? = null
 
-    @Value("\${app.jwt.secret}")
+    @Value($$"${app.jwt.secret}")
     private val secret: String? = null
 
     fun getUsernameFromToken(token: String?): String {

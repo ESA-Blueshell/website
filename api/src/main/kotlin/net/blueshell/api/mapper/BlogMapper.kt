@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value
 
 @Mapper(componentModel = "spring")
 abstract class BlogMapper : BaseMapper<Blog, BlogDTO>() {
-    @Value("\${frontend.url}")
+    @Value($$"${frontend.url}")
     private lateinit var frontendUrl: String
 
     @BeanMapping(ignoreByDefault = true)
@@ -46,7 +46,7 @@ abstract class BlogMapper : BaseMapper<Blog, BlogDTO>() {
 
     /**
      * Extracts the title using the "h1.default-heading1" selector.
-     * Uses the parsed Document to avoid re-parsing.
+     * Uses the parsed Document to avoid reparsing.
      */
     private fun extractTitle(doc: Document): String {
         val titleElement = doc.selectFirst("h1.default-heading1")

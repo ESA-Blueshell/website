@@ -5,8 +5,10 @@ import net.blueshell.api.dto.committee.CommitteeMemberDTO
 import net.blueshell.api.mapper.user.SimpleUserMapper
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.service.CommitteeMemberService
-import org.mapstruct.*
-import org.slf4j.LoggerFactory
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.MappingTarget
 import org.springframework.beans.factory.annotation.Autowired
 
 @Mapper(componentModel = "spring", uses = [SimpleUserMapper::class])

@@ -69,7 +69,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
      * Create a collection of entities.
      *
      * Each element is processed individually, so every item still triggers
-     * the pre/post hooks and id-existence check.
+     * the pre- / post-hooks and id-existence check.
      */
     @Transactional
     open fun createAll(entities: MutableList<T>): MutableList<T> {
@@ -101,7 +101,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
      * Update a collection of entities.
      *
      * Each element is processed individually, so every item still triggers
-     * the pre/post hooks and id-existence check.
+     * the pre- / post-hooks and id-existence check.
      */
     @Transactional
     open fun updateAll(entities: MutableList<T>): MutableList<T> {

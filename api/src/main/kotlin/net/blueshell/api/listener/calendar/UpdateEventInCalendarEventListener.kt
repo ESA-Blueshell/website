@@ -11,8 +11,7 @@ class UpdateEventInCalendarEventListener(
 ) {
     @EventListener
     fun onUpdate(evt: UpdateEventInCalendarEvent) {
-        val id = evt.eventId
-        if (id == null) return
+        val id = evt.eventId ?: return
         job.update(id)
     }
 }

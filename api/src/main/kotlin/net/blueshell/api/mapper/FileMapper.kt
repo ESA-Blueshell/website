@@ -28,11 +28,11 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
      * Resolve media type using preferred -> probed(path) -> fallback.
      */
     fun resolveMediaType(filename: String, path: Path, preferred: String): String {
-        if (preferred != null && !preferred.isBlank()) return preferred
+        if (!preferred.isBlank()) return preferred
         try {
             val probed = Files.probeContentType(path)
-            return if (probed != null) probed else detectContentType(filename, UrlResource(path.toUri()))
-        } catch (e: Exception) {
+            return probed ?: detectContentType(filename, UrlResource(path.toUri()))
+        } catch (_: Exception) {
             return "application/octet-stream"
         }
     }
@@ -53,9 +53,9 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
         try {
             file.size = Files.size(fullPath)
         } catch (e: IOException) {
-            throw RuntimeException("Could not read file size for: " + path, e)
+            throw RuntimeException("Could not read file size for: $path", e)
         }
-        file.path = path.toString()
+        file.path = path
     }
 
     /**
@@ -97,7 +97,6 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
     }
 
     private fun getExtensionSafe(originalName: String): String {
-        if (originalName == null) return ""
         val name = Path.of(originalName).fileName.toString()
         val i = name.lastIndexOf('.')
         if (i < 0 || i == name.length - 1) return ""

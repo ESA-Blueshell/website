@@ -5,9 +5,9 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.model.User
 import net.blueshell.api.model.event.Event
+import net.blueshell.api.model.filter.UserFilter
 import org.springframework.data.jpa.domain.Specification
 import java.util.*
 

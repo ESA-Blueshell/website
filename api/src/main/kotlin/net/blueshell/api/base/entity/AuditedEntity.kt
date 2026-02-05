@@ -1,10 +1,6 @@
 package net.blueshell.api.base.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.FetchType
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.*
 import net.blueshell.api.model.User
 import org.hibernate.annotations.ColumnDefault
 import org.hibernate.annotations.CreationTimestamp

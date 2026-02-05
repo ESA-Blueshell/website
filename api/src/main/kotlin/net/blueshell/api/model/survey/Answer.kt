@@ -40,7 +40,7 @@ class Answer : AuditedAutoIdEntity() {
     @Column(name = "text_response")
     var textResponse: String? = null
 
-    @field:OneToOne(mappedBy = "_answer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @field:OneToOne(mappedBy = "_answer", cascade = [CascadeType.ALL])
     private var _eventSignUpAnswer: EventSignUpAnswer? = null
     val eventSignUpAnswer: EventSignUpAnswer?
         get() = _eventSignUpAnswer

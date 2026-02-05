@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value
 
 @Mapper(componentModel = "spring")
 abstract class SocialMapper {
-    @Value("\${frontend.url}")
+    @Value($$"${frontend.url}")
     private lateinit var frontendUrl: String
 
     @BeanMapping(ignoreByDefault = true)

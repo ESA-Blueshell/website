@@ -15,7 +15,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
     private val renderer: HtmlRenderer
     private val templateEngine: TemplateEngine
 
-    @Value("\${frontend.url}")
+    @Value($$"${frontend.url}")
     private lateinit var appUrl: String
 
     init {
@@ -32,11 +32,11 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
     }
 
     /**
-     * Send an email using the template with markdown content
+     * Send an email using the template with Markdown content
      * 
      * @param toUser          The recipient
      * @param mainTitle       The main title for the email
-     * @param markdownContent The email content in markdown format
+     * @param markdownContent The email content in Markdown format
      * @return The processed HTML email content
      */
     fun createEmail(
@@ -44,7 +44,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         mainTitle: String,
         markdownContent: String
     ): String {
-        // Convert markdown to HTML
+        // Convert Markdown to HTML
         val document = parser.parse(markdownContent)
         val htmlContent = renderer.render(document)
 

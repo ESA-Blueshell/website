@@ -1,8 +1,8 @@
 package net.blueshell.api.service
 
 import net.blueshell.api.base.BaseModelService
-import net.blueshell.api.model.filter.MembershipFilter
 import net.blueshell.api.model.Membership
+import net.blueshell.api.model.filter.MembershipFilter
 import net.blueshell.api.repository.MemberRepository
 import net.blueshell.api.repository.spec.MembershipSpecifications
 import org.springframework.beans.factory.annotation.Autowired

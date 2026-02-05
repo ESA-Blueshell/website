@@ -1,8 +1,8 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.base.JpaListener
+import net.blueshell.api.base.entity.AuditedAutoIdEntity
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.model.contribution.Contribution
@@ -124,7 +124,7 @@ class User(
     @Column(name = "start_study_year")
     var startStudyYear: Long? = null,
 
-) : AuditedAutoIdEntity(), UserDetails {
+    ) : AuditedAutoIdEntity(), UserDetails {
 
     var address: Address?
         get() = _address

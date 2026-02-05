@@ -11,8 +11,7 @@ class SyncContactEventListener(
 ) {
     @EventListener
     fun onSync(evt: SyncContactEvent) {
-        val userId = evt.userId
-        if (userId == null) return
+        val userId = evt.userId ?: return
         job.sync(userId)
     }
 }

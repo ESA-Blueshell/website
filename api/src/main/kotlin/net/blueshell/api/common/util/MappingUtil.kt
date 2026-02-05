@@ -19,7 +19,7 @@ object MappingUtil {
         val password = StringBuilder(PASSWORD_LENGTH)
         for (i in 0..<PASSWORD_LENGTH) {
             val index = random.nextInt(CHAR_SET.length)
-            password.append(CHAR_SET.get(index))
+            password.append(CHAR_SET[index])
         }
         return password.toString()
     }

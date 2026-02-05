@@ -19,10 +19,7 @@ class HibernateDirtyTrackingConfig {
     @Bean
     fun dirtyTrackingCustomizer(dirtyTrackingInterceptor: Interceptor?): HibernatePropertiesCustomizer {
         return HibernatePropertiesCustomizer { props: MutableMap<String?, Any?>? ->
-            props!!.put(
-                "hibernate.session_factory.interceptor",
-                dirtyTrackingInterceptor
-            )
+            props!!["hibernate.session_factory.interceptor"] = dirtyTrackingInterceptor
         }
     }
 }

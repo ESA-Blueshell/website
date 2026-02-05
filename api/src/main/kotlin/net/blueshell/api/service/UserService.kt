@@ -2,8 +2,8 @@ package net.blueshell.api.service
 
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.model.User
+import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.repository.UserRepository
 import net.blueshell.api.repository.spec.UserSpecifications
 import org.springframework.beans.factory.annotation.Autowired

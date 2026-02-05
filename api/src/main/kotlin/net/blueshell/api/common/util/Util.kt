@@ -5,7 +5,7 @@ import java.util.*
 
 object Util {
     const val ACTIVATION_KEY_LENGTH: Int = 30
-    val ACTIVATION_VALID_SECONDS: Long = (3600 * 24 * 3 // 3 days
+    const val ACTIVATION_VALID_SECONDS: Long = (3600 * 24 * 3 // 3 days
             ).toLong()
     private val random: Random = SecureRandom()
 
@@ -16,7 +16,7 @@ object Util {
 
         for (i in 1..length) {
             options = options.uppercase(Locale.getDefault())
-            randKey.append(options.get(getRandom(options.length - 1)))
+            randKey.append(options[getRandom(options.length - 1)])
         }
 
         return randKey.toString()

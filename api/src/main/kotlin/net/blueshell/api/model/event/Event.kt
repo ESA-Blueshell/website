@@ -71,7 +71,7 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "end_time", nullable = false)
     lateinit var endTime: Instant
 
-    @field:OneToOne(mappedBy = "_event", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @field:OneToOne(mappedBy = "_event", cascade = [CascadeType.ALL], orphanRemoval = true)
     private var _banner: EventBanner? = null
     var banner: EventBanner?
         get() = _banner

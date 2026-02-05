@@ -366,12 +366,10 @@ class DatabaseSeeder(
         )
 
         val events = mutableListOf<Event>()
-        var committeeIndex = 0
-        for (ec in eventsConfig) {
+        for ((committeeIndex, ec) in eventsConfig.withIndex()) {
             val hostingCommittee =
                 if (committeeIndex < allCommittees.size) allCommittees[committeeIndex]
                 else allCommittees[rnd.nextInt(allCommittees.size)]
-            committeeIndex++
 
             events += createEvent(
                 committee = hostingCommittee,
@@ -761,7 +759,7 @@ class DatabaseSeeder(
             accessToken = UUID.randomUUID().toString()
         }
 
-    private fun createGuestEventSignUpWithAnswers(guest: Guest, event: Event): EventSignUp? {
+    private fun createGuestEventSignUpWithAnswers(guest: Guest, event: Event): EventSignUp {
         val signUp = EventSignUp().apply {
             eventId = event.id!!
             userId = null

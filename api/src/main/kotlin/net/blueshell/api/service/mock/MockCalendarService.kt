@@ -12,8 +12,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.stream.Collectors
-import kotlin.collections.MutableMap
-import kotlin.collections.remove
 
 /**
  * Test double for CalendarService: in-memory store with stable IDs.
@@ -36,9 +34,9 @@ class MockCalendarService : CalendarService() {
         val id = "mock-" + seq.andIncrement
         val stored: Event = copyOf(event)
         stored.googleId = id
-        eventsById.put(id, stored)
+        eventsById[id] = stored
         event.googleId = id
-        MockCalendarService.log.info(
+        log.info(
             "[calendar-mock] added event id={} title='{}' start={} end={}",
             id, event.title, event.startTime, event.endTime
         )
@@ -53,17 +51,16 @@ class MockCalendarService : CalendarService() {
         val id = event.googleId
         if (id != null) {
             eventsById[id] = copyOf(event)
-            MockCalendarService.log.info("[calendar-mock] updated event id={} title='{}'", id, event.title)
+            log.info("[calendar-mock] updated event id={} title='{}'", id, event.title)
         }
     }
 
     @Throws(IOException::class)
     override fun remove(event: Event) {
-        val id = event.googleId
-        if (id == null) return
+        val id = event.googleId ?: return
         eventsById.remove(id)
         event.googleId = null
-        MockCalendarService.log.info("[calendar-mock] removed event id={}", id)
+        log.info("[calendar-mock] removed event id={}", id)
     }
 
     @Throws(IOException::class)

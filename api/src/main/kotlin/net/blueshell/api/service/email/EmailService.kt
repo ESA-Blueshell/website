@@ -21,8 +21,8 @@ class EmailService(
     private val users: UserService,
     private val reminders: ContributionReminderService,
     private val eventSignUps: EventSignUpService,
-    @param:Value("\${frontend.url}") private val frontendUrl: String,
-    @param:Value("\${app.url}") private val appUrl: String
+    @param:Value($$"${frontend.url}") private val frontendUrl: String,
+    @param:Value($$"${app.url}") private val appUrl: String
 ) {
     fun sendContributionReminderEmail(reminderId: Long) {
         val reminder = reminders.findById(reminderId)

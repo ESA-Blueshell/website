@@ -21,7 +21,7 @@ class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?>
     }
 
     override fun convertToEntityAttribute(dbData: String?): MutableList<Boolean?>? {
-        if (dbData == null || dbData.isBlank() || "null".equals(dbData, ignoreCase = true)) {
+        if (dbData.isNullOrBlank() || "null".equals(dbData, ignoreCase = true)) {
             return ArrayList<Boolean?>()
         }
         try {

@@ -1,8 +1,8 @@
 package net.blueshell.api.service.event
 
 import net.blueshell.api.base.BaseModelService
-import net.blueshell.api.model.filter.EventFilter
 import net.blueshell.api.model.event.Event
+import net.blueshell.api.model.filter.EventFilter
 import net.blueshell.api.repository.event.EventRepository
 import net.blueshell.api.repository.spec.EventSpecifications
 import org.springframework.beans.factory.annotation.Autowired

@@ -30,9 +30,9 @@ class Committee : AuditedAutoIdEntity() {
     private val _members: MutableSet<CommitteeMember> = linkedSetOf()
     var members: Set<CommitteeMember>
         get() = _members
-        set(value) {
+        set(newMembers) {
             _members.clear()
-            _members.addAll(value)
+            _members.addAll(newMembers)
             val committeeId = id
             if (committeeId != null) {
                 _members.forEach { it.committeeId = committeeId }

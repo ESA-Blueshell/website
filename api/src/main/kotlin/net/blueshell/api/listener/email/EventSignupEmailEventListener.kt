@@ -11,8 +11,7 @@ class EventSignupEmailEventListener(
 ) {
     @EventListener
     fun onSend(evt: EventSignupEmailEvent) {
-        val id = evt.eventSignUpId
-        if (id == null) return
+        val id = evt.eventSignUpId ?: return
         job.send(id)
     }
 }

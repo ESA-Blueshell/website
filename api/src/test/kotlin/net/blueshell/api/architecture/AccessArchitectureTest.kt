@@ -4,6 +4,8 @@ import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
 import net.blueshell.api.architecture.ArchitecturePackages.CONFIG
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
@@ -19,9 +21,6 @@ import net.blueshell.api.architecture.ArchitecturePackages.SERVICE
 import net.blueshell.api.architecture.ArchitecturePackages.VALIDATION
 import net.blueshell.api.testsupport.DoNotIncludeFactory
 import net.blueshell.api.testsupport.DoNotIncludeTestSupport
-
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 
 /**
  * ArchUnit: access restrictions + “best practice” boundaries between common app layers.

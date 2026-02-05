@@ -21,10 +21,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
 
         ctx.disableDefaultConstraintViolation()
 
-        val event = findEvent(eventId)
-        if (event == null) {
-            return violation(ctx, "eventId", "Unknown event.")
-        }
+        val event = findEvent(eventId) ?: return violation(ctx, "eventId", "Unknown event.")
 
         val form = event.signUpForm // survey = sign-up form
         if (form == null || CollectionUtils.isEmpty(form.questions)) {
@@ -49,7 +46,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         val provided: MutableSet<Long?> = LinkedHashSet<Long?>()
 
         for (i in answers.indices) {
-            val a = answers.get(i)
+            val a = answers[i]
 
             if (a == null) {
                 violationAtAnswer(ctx, i)
@@ -67,7 +64,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
             if (!formQuestionIds.contains(qid)) {
                 violationAtQuestionId(
                     ctx, i,
-                    "Question does not belong to this event’s sign-up form (id=" + qid + ")."
+                    "Question does not belong to this event’s sign-up form (id=$qid)."
                 )
                 valid = false
                 // keep going to collect other errors
@@ -76,7 +73,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
             if (!provided.add(qid)) {
                 violationAtQuestionId(
                     ctx, i,
-                    "Duplicate answer for questionId " + qid + "."
+                    "Duplicate answer for questionId $qid."
                 )
                 valid = false
             }
@@ -86,7 +83,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         val missing: MutableSet<Long?> = LinkedHashSet<Long?>(formQuestionIds)
         missing.removeAll(provided)
         if (!missing.isEmpty()) {
-            ctx.buildConstraintViolationWithTemplate("Missing answers for questionIds: " + missing)
+            ctx.buildConstraintViolationWithTemplate("Missing answers for questionIds: $missing")
                 .addPropertyNode("answers")
                 .addConstraintViolation()
             valid = false

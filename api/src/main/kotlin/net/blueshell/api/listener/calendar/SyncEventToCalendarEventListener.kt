@@ -11,8 +11,7 @@ class SyncEventToCalendarEventListener(
 ) {
     @EventListener
     fun onSync(evt: SyncEventToCalendarEvent) {
-        val id = evt.eventId
-        if (id == null) return
+        val id = evt.eventId ?: return
         job.sync(id)
     }
 }

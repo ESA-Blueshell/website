@@ -48,7 +48,7 @@ class MockJavaMailSender : JavaMailSender {
     @Throws(MailException::class)
     override fun send(mimeMessage: MimeMessage) {
         outbox.add(cloneMessage(mimeMessage))
-        MockJavaMailSender.log.info(
+        log.info(
             "[mail-mock] captured email: subject='{}' to={}",
             safeSubject(mimeMessage),
             safeRecipients(mimeMessage)

@@ -7,7 +7,6 @@ import net.blueshell.api.dto.user.SimpleUserDTO
 import net.blueshell.api.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.util.StringUtils
 import java.util.function.BiConsumer
 
 @Component
@@ -69,10 +68,10 @@ class UniqueUserValidator @Autowired constructor(private val users: UserReposito
                     users.existsByPhoneNumber(phoneNumber)
                 else
                     users.existsByPhoneNumberAndIdNot(phoneNumber, currentUserId)
-            if (taken) {
-                isValid = false
-                addViolation.accept("phoneNumber", "Phone number is taken.")
-            }
+                if (taken) {
+                    isValid = false
+                    addViolation.accept("phoneNumber", "Phone number is taken.")
+                }
             }
         }
 

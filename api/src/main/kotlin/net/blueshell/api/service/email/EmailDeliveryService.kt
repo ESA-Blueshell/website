@@ -35,9 +35,9 @@ class EmailDeliveryService @Autowired constructor(private val mailSender: JavaMa
             helper.addInline("bg", ClassPathResource("templates/assets/BackdropBlack.png"), "image/png")
 
             mailSender.send(message)
-            EmailDeliveryService.log.info("Sent email to {} from {} with subject {}", toEmail, senderAddress, subject)
+            log.info("Sent email to {} from {} with subject {}", toEmail, senderAddress, subject)
         } catch (e: MessagingException) {
-            EmailDeliveryService.log.error(
+            log.error(
                 "Failed to send email to {} with subject {}: {}",
                 toEmail,
                 subject,
@@ -46,7 +46,7 @@ class EmailDeliveryService @Autowired constructor(private val mailSender: JavaMa
             )
             throw RuntimeException("Failed to send email", e)
         } catch (e: UnsupportedEncodingException) {
-            EmailDeliveryService.log.error(
+            log.error(
                 "Failed to send email to {} with subject {}: {}",
                 toEmail,
                 subject,

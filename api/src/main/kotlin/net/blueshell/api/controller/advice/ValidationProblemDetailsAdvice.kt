@@ -86,10 +86,10 @@ class ValidationProblemDetailsAdvice {
         ): MutableMap<String?, Any?> {
             val m: MutableMap<String?, Any?> = LinkedHashMap<String?, Any?>()
             m["objectName"] = objectName
-            m.put("field", field)
-            m.put("rejectedValue", rejectedValue)
-            m.put("message", message)
-            m.put("code", code)
+            m["field"] = field
+            m["rejectedValue"] = rejectedValue
+            m["message"] = message
+            m["code"] = code
             return m
         }
     }

@@ -17,9 +17,9 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
         get() {
             val event = eventSignUp.event
             val guest = requireNotNull(eventSignUp.guest) { "Event signup email requires a guest signup." }
-            val editLink = String.format(frontendUrl + "/events/signups/edit/%s", guest.accessToken)
+            val editLink = String.format("$frontendUrl/events/signups/edit/%s", guest.accessToken)
 
-            val eventDetailsLink = String.format(frontendUrl + "/events#%d", event.id)
+            val eventDetailsLink = String.format("$frontendUrl/events#%d", event.id)
 
             return String.format(
                 """

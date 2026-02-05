@@ -25,7 +25,7 @@ class OpenApiSchemasCustomizer {
     }
 
     companion object {
-        private val EXPLICIT_CLASSES: MutableSet<Class<*>?> = Set.of<Class<*>?>(
+        private val EXPLICIT_CLASSES: MutableSet<Class<*>> = mutableSetOf(
             PersonalInfoDTO::class.java,
             SimpleCommitteeDTO::class.java
         )

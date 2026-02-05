@@ -3,9 +3,9 @@ package net.blueshell.api.controller.event
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.base.BaseController
-import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.dto.event.EventSignUpDTO
 import net.blueshell.api.mapper.event.EventSignUpMapper
+import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.service.event.EventSignUpService
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,8 +21,8 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
         "hasAuthority('BOARD') " +
-            "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
-            "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
+                "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
+                "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
     @Transactional(readOnly = true)
     fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpDTO> {
@@ -61,8 +61,8 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @PutMapping("/events/{eventId}/signups")
     @PreAuthorize(
         "hasAuthority('BOARD') " +
-            "or hasPermission(#eventId, 'Event', 'signUp') " +
-            "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
+                "or hasPermission(#eventId, 'Event', 'signUp') " +
+                "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
     )
     fun updateEventSignUp(
         @PathVariable("eventId") eventId: Long,
@@ -84,8 +84,8 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @DeleteMapping(value = ["/events/signups/{eventSignupId}"])
     @PreAuthorize(
         "hasAuthority('BOARD') " +
-            "or hasPermission(#eventSignupId, 'EventSignUp', 'delete') " +
-            "or hasPermission(#accessToken, 'Guest', 'write')"
+                "or hasPermission(#eventSignupId, 'EventSignUp', 'delete') " +
+                "or hasPermission(#accessToken, 'Guest', 'write')"
     )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional

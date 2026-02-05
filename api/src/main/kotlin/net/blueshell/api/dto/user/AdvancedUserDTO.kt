@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.common.enums.Role
 import java.sql.Date
-import java.util.Comparator
 import java.util.function.ToIntFunction
 
 @Schema(name = "AdvancedUser")

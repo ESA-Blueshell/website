@@ -11,8 +11,7 @@ class RemoveEventFromCalendarEventListener(
 ) {
     @EventListener
     fun onRemove(evt: RemoveEventFromCalendarEvent) {
-        val id = evt.eventId
-        if (id == null) return
+        val id = evt.eventId ?: return
         job.remove(id)
     }
 }

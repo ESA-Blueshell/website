@@ -6,7 +6,7 @@ import java.util.*
 
 class CountryCodeValidator : ConstraintValidator<ValidCountryCode?, String?> {
     override fun isValid(value: String?, context: ConstraintValidatorContext?): Boolean {
-        if (value == null || value.isEmpty()) {
+        if (value.isNullOrEmpty()) {
             return true // Let @NotNull handle null/empty validation
         }
 

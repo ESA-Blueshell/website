@@ -40,10 +40,10 @@ class RecoveryController(
     fun userActivate(@Valid @RequestBody request: UserActivationRequest): RedirectResponseDTO {
         val token = requireNotNull(request.token) { "Token is required" }
         val user = recoveryService.activateUser(token)
-        if (user.dateOfBirth != null) {
-            return RedirectResponseDTO("/membership/signUp?step=2")
+        return if (user.dateOfBirth != null) {
+            RedirectResponseDTO("/membership/signUp?step=2")
         } else {
-            return RedirectResponseDTO("/")
+            RedirectResponseDTO("/")
         }
     }
 

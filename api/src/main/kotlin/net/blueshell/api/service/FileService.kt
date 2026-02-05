@@ -35,15 +35,10 @@ class FileService @Autowired constructor(
     private val fileMapper: FileMapper,
     private val events: EventService,
     private val banners: EventBannerService,
-    @Value("\${storage.location}") storageLocation: String
+    @Value($$"${storage.location}") storageLocation: String
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
-    private val rootLocation: Path
+    private val rootLocation: Path = Paths.get(storageLocation)
     private val assetsLocation: Path = Paths.get("assets")
-
-
-    init {
-        this.rootLocation = Paths.get(storageLocation)
-    }
 
     @Transactional(readOnly = true)
     fun findByName(name: String): File {
@@ -92,7 +87,7 @@ class FileService @Autowired constructor(
             val path = type.directory + "/" + hashedFilename
             val fullPath = rootLocation.resolve(path).normalize()
 
-            FileService.log.info("Storing {} at {}", multipart.originalFilename, fullPath)
+            log.info("Storing {} at {}", multipart.originalFilename, fullPath)
 
             if (Files.exists(fullPath)) {
                 Files.deleteIfExists(tmp)
@@ -113,10 +108,10 @@ class FileService @Autowired constructor(
             fileMapper.populateAfterStore(entity, multipart.originalFilename, fullPath, path, mediaType)
             entity.type = type
 
-            if (entity.id != null) {
-                return update(entity)
+            return if (entity.id != null) {
+                update(entity)
             } else {
-                return create(entity)
+                create(entity)
             }
         } catch (e: IOException) {
             throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e)
@@ -192,7 +187,7 @@ class FileService @Autowired constructor(
                 Files.deleteIfExists(fullPath)
             }
         } catch (e: IOException) {
-            FileService.log.error("Failed to delete file {}", fullPath, e)
+            log.error("Failed to delete file {}", fullPath, e)
         }
     }
 

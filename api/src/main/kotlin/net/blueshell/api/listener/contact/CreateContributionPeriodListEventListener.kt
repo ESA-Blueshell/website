@@ -11,8 +11,7 @@ class CreateContributionPeriodListEventListener(
 ) {
     @EventListener
     fun onCreate(evt: CreateContributionPeriodListEvent) {
-        val periodId = evt.periodId
-        if (periodId == null) return
+        val periodId = evt.periodId ?: return
         job.createList(periodId)
     }
 }

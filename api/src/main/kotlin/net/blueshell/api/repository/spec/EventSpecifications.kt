@@ -4,10 +4,10 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.model.filter.EventFilter
 import net.blueshell.api.model.User
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.model.event.Event
+import net.blueshell.api.model.filter.EventFilter
 import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
@@ -138,7 +138,7 @@ object EventSpecifications {
             spec = spec.and(committeeId(committeeId))
         }
         val titleContains = f.titleContains
-        if (titleContains != null && !titleContains.isBlank()) {
+        if (!titleContains.isNullOrBlank()) {
             spec = spec.and(titleContains(titleContains))
         }
 

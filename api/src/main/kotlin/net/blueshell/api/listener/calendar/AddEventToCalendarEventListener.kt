@@ -11,8 +11,7 @@ class AddEventToCalendarEventListener(
 ) {
     @EventListener
     fun onAdd(evt: AddEventToCalendarEvent) {
-        val id = evt.eventId
-        if (id == null) return
+        val id = evt.eventId ?: return
         job.add(id)
     }
 }

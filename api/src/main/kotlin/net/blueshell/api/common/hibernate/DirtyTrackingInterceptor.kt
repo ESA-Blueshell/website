@@ -37,7 +37,7 @@ class DirtyTrackingInterceptor : Interceptor {
         val trackable: MutableSet<String> = getDirtyFieldNames(entityClass)
         if (trackable.isEmpty()) return false
 
-        var changed: MutableSet<String> = HashSet<String>()
+        val changed: MutableSet<String> = HashSet<String>()
         for (i in propertyNames.indices) {
             val prop = propertyNames[i]
             if (!trackable.contains(prop)) continue
@@ -59,7 +59,7 @@ class DirtyTrackingInterceptor : Interceptor {
         private val DIRTY_FIELD_NAMES_CACHE = ConcurrentHashMap<Class<*>, MutableSet<String>>()
 
         private fun isDirtyModel(cls: Class<*>): Boolean {
-            return DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: java.lang.Class<*> ->
+            return DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: Class<*> ->
                 c.isAnnotationPresent(
                     DirtyModel::class.java
                 )
@@ -100,7 +100,7 @@ class DirtyTrackingInterceptor : Interceptor {
 
         private fun decapitalize(s: String): String {
             if (s.isEmpty()) return s
-            return s.get(0).lowercaseChar().toString() + s.substring(1)
+            return s[0].lowercaseChar().toString() + s.substring(1)
         }
     }
 }

@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestClientResponseException
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -27,9 +27,9 @@ class MockContactService(
     mapper: BrevoContactMapper,
     private val users: UserService,
     restClientBuilder: RestClient.Builder,
-    @param:Value("\${brevo.apiKey:}") apiKey: String,
-    @param:Value("\${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
-    @param:Value("\${brevo.folders.contributionPeriodsId:0}") contributionPeriodsFolder: Long,
+    @param:Value($$"${brevo.apiKey:}") apiKey: String,
+    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
+    @param:Value($$"${brevo.folders.contributionPeriodsId:0}") contributionPeriodsFolder: Long,
 ) : ContactService(mapper, users, restClientBuilder, apiKey, brevoBaseUrl, contributionPeriodsFolder) {
     private val contactSeq = AtomicLong(100000L)
     private val listSeq = AtomicLong(10000L)
@@ -97,8 +97,7 @@ class MockContactService(
 
     @Throws(RestClientResponseException::class)
     override fun removeFromList(contributionPeriod: ContributionPeriod, contactId: Long) {
-        val listId = contributionPeriod.listId
-        if (listId == null) return
+        val listId = contributionPeriod.listId ?: return
         listMembers.computeIfPresent(listId) { id: Long, set: MutableSet<Long> ->
             set!!.remove(contactId)
             set

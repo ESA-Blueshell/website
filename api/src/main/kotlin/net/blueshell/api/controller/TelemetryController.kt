@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Telemetries")
-class TelemetryController protected constructor(service: TelemetryService, mapper: TelemetryMapper) :
+class TelemetryController private constructor(service: TelemetryService, mapper: TelemetryMapper) :
     BaseController<TelemetryService, TelemetryMapper>(service, mapper) {
     @GetMapping("/telemetry/{id}")
     @PermitAll

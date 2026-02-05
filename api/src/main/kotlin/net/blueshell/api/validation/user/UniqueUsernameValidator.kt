@@ -5,7 +5,6 @@ import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.service.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.util.StringUtils
 
 /**
  * Validator to check if the username is unique.

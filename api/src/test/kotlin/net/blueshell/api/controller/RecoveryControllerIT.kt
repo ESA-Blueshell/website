@@ -1,5 +1,8 @@
 package net.blueshell.api.controller
 
+import jakarta.mail.Multipart
+import jakarta.mail.Part
+import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.common.enums.ResetType
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.factory.dto.request.MemberActivationRequestFactory
@@ -8,10 +11,11 @@ import net.blueshell.api.factory.dto.request.UserActivationRequestFactory
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.model.User
 import net.blueshell.api.service.RecoveryService
+import net.blueshell.api.service.mock.MockJavaMailSender
 import net.blueshell.api.testsupport.UserTestSupport
-import org.junit.jupiter.api.Assertions.assertAll
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -36,12 +40,26 @@ class RecoveryControllerIT @Autowired constructor(
     private val memberActivationRequestFactory: MemberActivationRequestFactory
 ) : UserTestSupport() {
 
+    @Autowired
+    private lateinit var mailSender: MockJavaMailSender
+
+    @BeforeEach
+    fun clearOutbox() {
+        mailSender.clear()
+    }
+
     @Test
     fun `requests password reset by username`() {
         val user = userRepository.save(userFactory.createBasic())
 
         mvc.perform(post("/recovery/password/reset/{username}", user.username))
             .andExpect(status().isNoContent())
+
+        assertLastEmail(
+            toEmail = user.email,
+            subject = "Reset Your Blueshell Account Password",
+            bodyContains = "/account/reset-password?username="
+        )
     }
 
     @Test
@@ -119,11 +137,19 @@ class RecoveryControllerIT @Autowired constructor(
             .andExpect(jsonPath("$.path").value("/"))
 
         val refreshed = refreshUser(user)
-        assertAll(
-            { assertTrue(refreshed.enabled) },
-            { assertEquals(payload.username, refreshed.username) },
-            { assertTrue(passwordEncoder.matches(payload.password, refreshed.password)) },
-        )
+        assertThat(refreshed.enabled)
+            .`as`("User should be enabled after member activation.")
+            .isTrue()
+        assertThat(refreshed.username)
+            .`as`(
+                "Username should be updated during member activation. expected=%s actual=%s",
+                payload.username,
+                refreshed.username
+            )
+            .isEqualTo(payload.username)
+        assertThat(passwordEncoder.matches(payload.password, refreshed.password))
+            .`as`("Password should be updated during member activation.")
+            .isTrue()
     }
 
     @Test
@@ -132,6 +158,12 @@ class RecoveryControllerIT @Autowired constructor(
 
         mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
             .andExpect(status().isNoContent())
+
+        assertLastEmail(
+            toEmail = user.email,
+            subject = "Activate your Account",
+            bodyContains = "/account/activate/user?username="
+        )
     }
 
     @Test
@@ -145,12 +177,78 @@ class RecoveryControllerIT @Autowired constructor(
                 .with(bearer(board))
         )
             .andExpect(status().isNoContent())
+
+        assertLastEmail(
+            toEmail = user.email,
+            subject = "Activate your Account",
+            bodyContains = "/account/activate/member?token="
+        )
     }
 
     private fun disabledUser(dateOfBirth: Date?): User {
         return userFactory.createBasic().apply {
             enabled = false
             this.dateOfBirth = dateOfBirth
+        }
+    }
+
+    private fun assertLastEmail(toEmail: String, subject: String, bodyContains: String) {
+        val message = awaitLastEmail()
+        val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
+        val body = messageBody(message)
+
+        assertThat(recipients)
+            .`as`("Email recipients mismatch. expected=%s actual=%s", toEmail, recipients)
+            .contains(toEmail)
+        assertThat(message.subject)
+            .`as`("Email subject mismatch. expected=%s actual=%s", subject, message.subject)
+            .isEqualTo(subject)
+        assertThat(body)
+            .`as`("Email body missing expected fragment. expected=%s actualSnippet=%s", bodyContains, bodySnippet(body))
+            .contains(bodyContains)
+    }
+
+    private fun bodySnippet(body: String, maxLen: Int = 400): String {
+        val trimmed = body.replace("\n", " ").replace("\r", " ").trim()
+        return if (trimmed.length <= maxLen) trimmed else trimmed.substring(0, maxLen) + "..."
+    }
+
+    private fun awaitLastEmail(timeoutMs: Long = 2000, pollMs: Long = 50): MimeMessage {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val last = mailSender.outbox.lastOrNull()
+            if (last != null) return last
+            Thread.sleep(pollMs)
+        }
+        val last = mailSender.outbox.lastOrNull()
+        checkNotNull(last) { "Expected email to be sent within ${timeoutMs}ms." }
+        return last
+    }
+
+    private fun messageBody(message: MimeMessage): String {
+        val content = message.content
+        return when (content) {
+            is String -> content
+            is Multipart -> extractFromMultipart(content)
+            else -> content.toString()
+        }
+    }
+
+    private fun extractFromMultipart(multipart: Multipart): String {
+        for (i in 0 until multipart.count) {
+            val part = multipart.getBodyPart(i)
+            val content = extractFromPart(part)
+            if (content != null) return content
+        }
+        return ""
+    }
+
+    private fun extractFromPart(part: Part): String? {
+        val content = part.content
+        return when (content) {
+            is String -> content
+            is Multipart -> extractFromMultipart(content)
+            else -> null
         }
     }
 }

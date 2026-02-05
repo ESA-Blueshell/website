@@ -32,7 +32,7 @@ import org.hibernate.annotations.SQLRestriction
     """
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class EventPicture(
+open class EventPicture(
     @EmbeddedId
     override var id: EventPictureId = EventPictureId()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventPictureId> {

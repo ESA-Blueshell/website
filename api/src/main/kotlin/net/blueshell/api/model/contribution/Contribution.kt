@@ -34,7 +34,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class Contribution(
+open class Contribution(
     @EmbeddedId
     override var id: ContributionId = ContributionId()
 ) : AuditedSoftDeleteEntity(), Identifiable<ContributionId> {

@@ -28,7 +28,7 @@ import org.hibernate.annotations.SQLRestriction
     """
 )
 @EntityListeners(JpaListener::class)
-class CommitteeMember(
+open class CommitteeMember(
     @EmbeddedId
     override var id: CommitteeMemberId = CommitteeMemberId()
 ) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMemberId> {

@@ -30,7 +30,7 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener::class)
 @DirtyModel
-class Question : DirtyAwareModel() {
+open class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
     var idx: Long = 0
 

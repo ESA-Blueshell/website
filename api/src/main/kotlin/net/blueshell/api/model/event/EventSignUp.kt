@@ -41,7 +41,7 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class EventSignUp : AuditedAutoIdEntity() {
+open class EventSignUp : AuditedAutoIdEntity() {
     @field:ManyToOne(fetch = FetchType.LAZY)
     @field:JoinColumn(name = "event_id", insertable = false, updatable = false, nullable = false)
     private var _event: Event? = null

@@ -20,7 +20,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE guests SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Guest : AuditedAutoIdEntity() {
+open class Guest : AuditedAutoIdEntity() {
     @Column(nullable = false)
     lateinit var name: String
 

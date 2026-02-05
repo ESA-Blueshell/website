@@ -24,7 +24,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Telemetry() : AuditedAutoIdEntity() {
+open class Telemetry() : AuditedAutoIdEntity() {
     @field:Column(nullable = false)
     @field:Enumerated(EnumType.ORDINAL)
     lateinit var platform: PlatformType

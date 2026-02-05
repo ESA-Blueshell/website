@@ -36,7 +36,7 @@ import org.hibernate.annotations.SQLRestriction
       WHERE board_id = ? AND user_id = ? AND version = ?
     """
 )
-class BoardMember(
+open class BoardMember(
     @EmbeddedId
     override var id: BoardMemberId = BoardMemberId()
 ) : AuditedSoftDeleteEntity(), Identifiable<BoardMemberId> {

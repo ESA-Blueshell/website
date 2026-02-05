@@ -1,8 +1,11 @@
 package net.blueshell.api.factory.dto;
 
+import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.dto.GuestDTO;
 import org.springframework.stereotype.Component;
+
+import java.util.Locale;
 
 /**
  * Factory for GuestDTO test instances.
@@ -23,7 +26,7 @@ public class GuestDTOFactory extends BaseDtoFactory<GuestDTO> {
         dto.setName("Guest " + nextId());
         dto.setDiscord("guest");
         dto.setEmail(email("guest"));
-        dto.setPhoneNumber("+31698765432");
+        dto.setPhoneNumber("+31651319571");
         dto.setAccessToken(unique("acct"));
         return dto;
     }

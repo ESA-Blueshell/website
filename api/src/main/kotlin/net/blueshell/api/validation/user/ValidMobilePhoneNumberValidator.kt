@@ -15,7 +15,7 @@ import org.springframework.util.StringUtils
 class ValidMobilePhoneNumberValidator @Autowired constructor(private val phoneNumberUtil: PhoneNumberUtil) :
     ConstraintValidator<ValidMobilePhoneNumber?, String?> {
     override fun isValid(phoneNumber: String?, context: ConstraintValidatorContext?): Boolean {
-        if (!StringUtils.hasText(phoneNumber)) {
+        if (phoneNumber.isNullOrBlank()) {
             // Let @NotBlank or other annotations handle null/empty cases
             return true
         }
@@ -25,6 +25,8 @@ class ValidMobilePhoneNumberValidator @Autowired constructor(private val phoneNu
             val isValid = phoneNumberUtil.isValidNumber(parsedNumber)
             val isMobile = phoneNumberUtil.getNumberType(parsedNumber) == PhoneNumberUtil.PhoneNumberType.MOBILE
                     || phoneNumberUtil.getNumberType(parsedNumber) == PhoneNumberUtil.PhoneNumberType.FIXED_LINE_OR_MOBILE
+
+            print("is valid? $isValid, is mobile? $isMobile")
 
             return isValid && isMobile
         } catch (e: NumberParseException) {

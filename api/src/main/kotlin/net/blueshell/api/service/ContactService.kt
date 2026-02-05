@@ -107,7 +107,7 @@ class ContactService(
         }
 
         val api = this.contactsApi
-        val ids: MutableList<Long> = ArrayList<Long>()
+        val ids: MutableList<Long> = ArrayList()
         ids.add(user.contactId!!)
         val payload = AddContactToListRequest()
         payload.ids = ids
@@ -117,7 +117,7 @@ class ContactService(
     @Throws(RestClientResponseException::class)
     fun removeFromList(contributionPeriod: ContributionPeriod, contactId: Long) {
         val api = this.contactsApi
-        val ids: MutableList<Long> = ArrayList<Long>()
+        val ids: MutableList<Long> = ArrayList()
         ids.add(contactId)
         val payload = RemoveContactFromListRequest()
         payload.ids = ids

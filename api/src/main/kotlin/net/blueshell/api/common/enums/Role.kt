@@ -48,7 +48,7 @@ enum class Role(val reprString: String, vararg inheritedRoles: Role) {
 
     companion object {
         fun allThatInherit(base: Role): MutableSet<Role> {
-            val res = EnumSet.noneOf<Role>(Role::class.java)
+            val res = EnumSet.noneOf(Role::class.java)
             for (r in entries) {
                 if (r.matchesRole(base)) {
                     res.add(r)

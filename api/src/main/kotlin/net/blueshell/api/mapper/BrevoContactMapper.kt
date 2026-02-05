@@ -24,7 +24,7 @@ interface BrevoContactMapper {
 
     @Named("toAttributes")
     fun toAttributes(user: User): MutableMap<String, Any> {
-        val attrs: MutableMap<String, Any> = HashMap<String, Any>()
+        val attrs: MutableMap<String, Any> = HashMap()
         attrs["NEWSLETTER"] = user.newsletter
         attrs["IS_MEMBER"] = user.hasRole(Role.MEMBER)
         attrs["FIRSTNAME"] = user.firstName

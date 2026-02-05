@@ -22,7 +22,7 @@ abstract class SocialMapper {
         dto.url = frontendUrl + "/blogs" + blog.id
         dto.title = blog.title
         dto.text = dto.text
-        val platforms = arrayOf<PlatformType>(
+        val platforms = arrayOf(
             PlatformType.FACEBOOK,
             PlatformType.TWITTER,
             PlatformType.INSTAGRAM,

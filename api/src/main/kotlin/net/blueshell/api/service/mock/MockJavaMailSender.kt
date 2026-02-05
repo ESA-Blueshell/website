@@ -28,9 +28,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 class MockJavaMailSender : JavaMailSender {
     private val session: Session = Session.getInstance(Properties())
 
-    val outbox: MutableList<MimeMessage> = CopyOnWriteArrayList<MimeMessage>()
+    val outbox: MutableList<MimeMessage> = CopyOnWriteArrayList()
 
-    val simpleOutbox: MutableList<SimpleMailMessage> = CopyOnWriteArrayList<SimpleMailMessage>()
+    val simpleOutbox: MutableList<SimpleMailMessage> = CopyOnWriteArrayList()
 
     override fun createMimeMessage(): MimeMessage {
         return MimeMessage(session)

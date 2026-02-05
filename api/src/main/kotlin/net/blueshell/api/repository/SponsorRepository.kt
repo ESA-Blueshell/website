@@ -8,5 +8,5 @@ import java.util.*
 
 @Repository
 interface SponsorRepository : BaseRepository<Sponsor, Long> {
-    fun findByPicture(picture: File): Optional<Sponsor>
+    fun findBy_picture(picture: File): Optional<Sponsor>
 }

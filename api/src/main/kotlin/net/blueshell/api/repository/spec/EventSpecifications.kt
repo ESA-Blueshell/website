@@ -19,7 +19,7 @@ object EventSpecifications {
     fun approved(): Specification<Event> {
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.isTrue(
-                root!!.get<Boolean>(
+                root!!.get(
                     "approved"
                 )
             )
@@ -30,16 +30,16 @@ object EventSpecifications {
         if (value == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (value) cb!!.isTrue(
-                root!!.get<Boolean>("approved")
-            ) else cb!!.isFalse(root!!.get<Boolean>("approved"))
+                root!!.get("approved")
+            ) else cb!!.isFalse(root!!.get("approved"))
         }
     }
 
     fun startTimeFrom(from: LocalDateTime?): Specification<Event> {
         if (from == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.greaterThanOrEqualTo<LocalDateTime>(
-                root!!.get<LocalDateTime>("startTime"),
+            cb!!.greaterThanOrEqualTo(
+                root!!.get("startTime"),
                 from
             )
         }
@@ -48,8 +48,8 @@ object EventSpecifications {
     fun startTimeTo(to: LocalDateTime?): Specification<Event> {
         if (to == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.lessThanOrEqualTo<LocalDateTime>(
-                root!!.get<LocalDateTime>("startTime"),
+            cb!!.lessThanOrEqualTo(
+                root!!.get("startTime"),
                 to
             )
         }
@@ -62,7 +62,7 @@ object EventSpecifications {
     val isPublicEvent: Specification<Event>
         get() = Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.isFalse(
-                root!!.get<Boolean>("membersOnly")
+                root!!.get("membersOnly")
             )
         }
 
@@ -70,8 +70,8 @@ object EventSpecifications {
         if (value == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (value) cb!!.isTrue(
-                root!!.get<Boolean>("membersOnly")
-            ) else cb!!.isFalse(root!!.get<Boolean>("membersOnly"))
+                root!!.get("membersOnly")
+            ) else cb!!.isFalse(root!!.get("membersOnly"))
         }
     }
 
@@ -81,9 +81,9 @@ object EventSpecifications {
         }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             q!!.distinct(true)
-            val sq = q.subquery<Long>(Long::class.java)
-            val cm = sq.from<CommitteeMember>(CommitteeMember::class.java)
-            sq.select(cb!!.literal<Long>(1L))
+            val sq = q.subquery(Long::class.java)
+            val cm = sq.from(CommitteeMember::class.java)
+            sq.select(cb!!.literal(1L))
                 .where(
                     cb.equal(
                         cm.get<Any>("committee").get<Any>("id"),
@@ -110,7 +110,7 @@ object EventSpecifications {
         if (text == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.like(
-                cb.lower(root!!.get<String>("title")), "%" + text.lowercase(
+                cb.lower(root!!.get("title")), "%" + text.lowercase(
                     Locale.getDefault()
                 ) + "%"
             )

@@ -22,7 +22,7 @@ class StringListConverter : AttributeConverter<MutableList<String?>?, String?> {
 
     override fun convertToEntityAttribute(dbData: String?): MutableList<String?>? {
         if (dbData.isNullOrBlank() || "null".equals(dbData, ignoreCase = true)) {
-            return ArrayList<String?>()
+            return ArrayList()
         }
         try {
             val type: CollectionType? = MAPPER.typeFactory

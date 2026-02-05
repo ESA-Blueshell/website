@@ -20,7 +20,7 @@ data class SurveyDTO(
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionDTO?>
         get() {
-            if (questions == null) return mutableListOf<QuestionDTO?>()
+            if (questions == null) return mutableListOf()
             return questions!!.stream()
                 .sorted(
                     Comparator

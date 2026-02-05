@@ -42,7 +42,7 @@ class FileService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun findByName(name: String): File {
-        return repository!!.findByName(name).orElseThrow<ResponseStatusException>(Supplier {
+        return repository!!.findByName(name).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "File not found with name: $name"
             )
@@ -157,22 +157,22 @@ class FileService @Autowired constructor(
         return ResponseEntity.ok()
             .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
             .headers(headers)
-            .body<Resource>(resource)
+            .body(resource)
     }
 
     fun prepareAssetResponse(filename: String): ResponseEntity<Resource> {
         val resource = loadAssetAsResource(filename)
         val headers = HttpHeaders()
-        headers.contentType = MediaType.valueOf(fileMapper.detectContentTypeForAsset(filename, resource))
+        headers.contentType = MediaType.valueOf(fileMapper.detectContentType(filename, resource))
         headers.contentDisposition = ContentDisposition.attachment().filename(filename).build()
         return ResponseEntity.ok()
             .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
             .headers(headers)
-            .body<Resource>(resource)
+            .body(resource)
     }
 
     fun findByEventBannerId(bannerId: Long): File {
-        return repository.findByEventBanners_Id(bannerId).orElseThrow<ResponseStatusException>(Supplier {
+        return repository.findBy_eventBanners_Id(bannerId).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Event banner not found with id: $bannerId"
             )

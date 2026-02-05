@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName", "FunctionName", "FunctionName", "FunctionName", "FunctionName")
+
 package net.blueshell.api.repository.event
 
 import net.blueshell.api.base.BaseRepository
@@ -11,13 +13,14 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.util.*
 
+@Suppress("FunctionName", "FunctionName", "FunctionName", "FunctionName", "FunctionName")
 @Repository
 interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(spec: Specification<EventSignUp>): MutableList<EventSignUp>
+    override fun findAll(spec: Specification<EventSignUp>?): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(spec: Specification<EventSignUp>, pageable: Pageable): Page<EventSignUp>
+    override fun findAll(spec: Specification<EventSignUp>?, pageable: Pageable): Page<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findByUserIdAndEventId(userId: Long, eventId: Long): Optional<EventSignUp>
@@ -30,8 +33,8 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     fun findByEventId(eventId: Long): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): Optional<EventSignUp>
+    fun findBy_guestAccessTokenAndEventId(accessToken: String, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findAllByEventSignUpFormId(surveyId: Long): MutableSet<EventSignUp>
+    fun findAllBy_eventSignUpFormId(surveyId: Long): MutableSet<EventSignUp>
 }

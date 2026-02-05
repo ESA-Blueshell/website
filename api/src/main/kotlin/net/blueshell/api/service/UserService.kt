@@ -27,7 +27,7 @@ class UserService @Autowired constructor(repository: UserRepository, private val
     }
 
     fun findByUsername(username: String): User {
-        return repository!!.findByUsername(username).orElseThrow<ResponseStatusException>(Supplier {
+        return repository!!.findByUsername(username).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "User not found with username: $username"
             )

@@ -12,7 +12,7 @@ class RestClientConfig {
      * 
      * 
      * - Uses Spring’s [RestTemplateBuilder] so any
-     * auto-registered customisers (Jackson, timeouts, interceptors, etc.)
+     * auto-registered customizers (Jackson, timeouts, interceptors, etc.)
      * are applied automatically.
      */
     @Bean

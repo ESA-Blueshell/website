@@ -50,7 +50,7 @@ class DirtyTrackingInterceptor : Interceptor {
             }
         }
 
-        entity.__applyDirtyFields(changed)
+        entity.applyDirtyFields(changed)
         return false
     }
 
@@ -95,7 +95,7 @@ class DirtyTrackingInterceptor : Interceptor {
                 c = c.superclass
             }
 
-            return Collections.unmodifiableSet<String>(names)
+            return Collections.unmodifiableSet(names)
         }
 
         private fun decapitalize(s: String): String {

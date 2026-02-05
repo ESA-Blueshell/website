@@ -27,15 +27,15 @@ class MockContactService(
     mapper: BrevoContactMapper,
     private val users: UserService,
     restClientBuilder: RestClient.Builder,
-    @param:Value($$"${brevo.apiKey:}") apiKey: String,
-    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
-    @param:Value($$"${brevo.folders.contributionPeriodsId:0}") contributionPeriodsFolder: Long,
+    @Value($$"${brevo.apiKey:}") apiKey: String,
+    @Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
+    @Value($$"${brevo.folders.contributionPeriodsId:0}") contributionPeriodsFolder: Long,
 ) : ContactService(mapper, users, restClientBuilder, apiKey, brevoBaseUrl, contributionPeriodsFolder) {
     private val contactSeq = AtomicLong(100000L)
     private val listSeq = AtomicLong(10000L)
 
-    private val emailToContactId: ConcurrentMap<String, Long> = ConcurrentHashMap<String, Long>()
-    private val listMembers: ConcurrentMap<Long, MutableSet<Long>> = ConcurrentHashMap<Long, MutableSet<Long>>()
+    private val emailToContactId: ConcurrentMap<String, Long> = ConcurrentHashMap()
+    private val listMembers: ConcurrentMap<Long, MutableSet<Long>> = ConcurrentHashMap()
 
     override fun getUpdate(user: User) {
         if (user.contactId != null) return
@@ -76,7 +76,7 @@ class MockContactService(
                 contributionPeriod.id
             )
         }
-        listMembers.putIfAbsent(listId, ConcurrentHashMap.newKeySet<Long>())
+        listMembers.putIfAbsent(listId, ConcurrentHashMap.newKeySet())
         return listId
     }
 
@@ -106,11 +106,11 @@ class MockContactService(
     }
 
     fun getEmailToContactId(): MutableMap<String, Long> {
-        return Collections.unmodifiableMap<String, Long>(emailToContactId)
+        return Collections.unmodifiableMap(emailToContactId)
     }
 
     fun getListMembers(): MutableMap<Long, MutableSet<Long>> {
-        return Collections.unmodifiableMap<Long, MutableSet<Long>>(listMembers)
+        return Collections.unmodifiableMap(listMembers)
     }
 
     companion object {

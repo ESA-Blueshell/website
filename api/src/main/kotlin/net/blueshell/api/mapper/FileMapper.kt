@@ -17,7 +17,7 @@ import java.util.*
 @Mapper(componentModel = "spring")
 abstract class FileMapper : BaseMapper<File, FileDTO>() {
     /**
-     * Build hashed filename from content hash + original name's extension.
+     * Build hashed filename from content hash and original name's extension.
      */
     fun buildHashedFilename(sha256: String, originalName: String): String {
         val ext = getExtensionSafe(originalName)
@@ -25,7 +25,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
     }
 
     /**
-     * Resolve media type using preferred -> probed(path) -> fallback.
+     * Resolve the media type using preferred -> probed(path) -> fallback.
      */
     fun resolveMediaType(filename: String, path: Path, preferred: String): String {
         if (!preferred.isBlank()) return preferred
@@ -58,22 +58,6 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
         file.path = path
     }
 
-    /**
-     * Public helper for assets endpoint (moved from service).
-     */
-    fun detectContentTypeForAsset(filename: String, resource: Resource): String {
-        try {
-            var contentType = Files.probeContentType(Path.of(filename))
-            if (contentType != null) return contentType
-            resource.file
-            contentType = Files.probeContentType(resource.file.toPath())
-            if (contentType != null) return contentType
-            return extToMime(getExtensionFromName(filename))
-        } catch (e: Exception) {
-            return "application/octet-stream"
-        }
-    }
-
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "mediaType")
@@ -83,7 +67,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
     @BeanMapping(ignoreByDefault = true)
     abstract override fun toDTO(file: File): FileDTO
 
-    private fun detectContentType(filename: String, resource: Resource): String {
+    fun detectContentType(filename: String, resource: Resource): String {
         try {
             var contentType = Files.probeContentType(Path.of(filename))
             if (contentType != null) return contentType

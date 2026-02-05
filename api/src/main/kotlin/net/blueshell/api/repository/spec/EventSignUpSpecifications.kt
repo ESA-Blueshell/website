@@ -25,17 +25,17 @@ object EventSignUpSpecifications : IdentityProvider() {
         if (value == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             if (value)
-                cb!!.isTrue(root!!.join<Any, Any>("event", JoinType.INNER).get<Boolean>("approved"))
+                cb!!.isTrue(root!!.join<Any, Any>("event", JoinType.INNER).get("approved"))
             else
-                cb!!.isFalse(root!!.join<Any, Any>("event", JoinType.INNER).get<Boolean>("approved"))
+                cb!!.isFalse(root!!.join<Any, Any>("event", JoinType.INNER).get("approved"))
         }
     }
 
     fun startTimeFrom(from: LocalDateTime?): Specification<EventSignUp> {
         if (from == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.greaterThanOrEqualTo<LocalDateTime>(
-                root!!.join<Any, Any>("event", JoinType.INNER).get<LocalDateTime>("startTime"),
+            cb!!.greaterThanOrEqualTo(
+                root!!.join<Any, Any>("event", JoinType.INNER).get("startTime"),
                 from
             )
         }
@@ -44,8 +44,8 @@ object EventSignUpSpecifications : IdentityProvider() {
     fun startTimeTo(to: LocalDateTime?): Specification<EventSignUp> {
         if (to == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
         return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.lessThanOrEqualTo<LocalDateTime>(
-                root!!.join<Any, Any>("event", JoinType.INNER).get<LocalDateTime>("startTime"),
+            cb!!.lessThanOrEqualTo(
+                root!!.join<Any, Any>("event", JoinType.INNER).get("startTime"),
                 to
             )
         }

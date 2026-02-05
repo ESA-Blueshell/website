@@ -8,7 +8,6 @@ import net.blueshell.api.dto.committee.SimpleCommitteeDTO
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.util.Set
 
 @Configuration
 class OpenApiSchemasCustomizer {

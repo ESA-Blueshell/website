@@ -27,7 +27,7 @@ class ValidationProblemDetailsAdvice {
         pd.instance = URI.create(request.requestURI)
 
         val errors = ex.bindingResult.fieldErrors.stream()
-            .map<MutableMap<String?, Any?>?> { fe: FieldError? ->
+            .map { fe: FieldError? ->
                 errorMap(
                     fe!!.objectName,
                     fe.field,
@@ -84,7 +84,7 @@ class ValidationProblemDetailsAdvice {
             message: String?,
             code: String?
         ): MutableMap<String?, Any?> {
-            val m: MutableMap<String?, Any?> = LinkedHashMap<String?, Any?>()
+            val m: MutableMap<String?, Any?> = LinkedHashMap()
             m["objectName"] = objectName
             m["field"] = field
             m["rejectedValue"] = rejectedValue

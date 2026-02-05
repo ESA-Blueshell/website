@@ -49,7 +49,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         val htmlContent = renderer.render(document)
 
         // Prepare template variables
-        val variables: MutableMap<String, Any> = HashMap<String, Any>()
+        val variables: MutableMap<String, Any> = HashMap()
         variables["appUrl"] = appUrl
         variables["emailContent"] = htmlContent
         variables["sentTo"] = toUser.email

@@ -15,7 +15,7 @@ object UserSpecifications {
     fun approved(): Specification<Event> {
         return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
             cb!!.isTrue(
-                root!!.get<Boolean>(
+                root!!.get(
                     "approved"
                 )
             )
@@ -47,9 +47,9 @@ object UserSpecifications {
             q!!.distinct(true)
             val rolesJoin = root!!.join<Any, Any>("roles", JoinType.INNER)
             if (hasMemberRole) {
-                return@Specification rolesJoin.`in`(EnumSet.of<Role>(Role.MEMBER))
+                return@Specification rolesJoin.`in`(EnumSet.of(Role.MEMBER))
             } else {
-                return@Specification cb!!.not(rolesJoin.`in`(EnumSet.of<Role>(Role.MEMBER)))
+                return@Specification cb!!.not(rolesJoin.`in`(EnumSet.of(Role.MEMBER)))
             }
         }
     }

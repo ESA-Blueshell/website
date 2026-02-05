@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface AnswerRepository : BaseRepository<Answer, Long> {
-    fun findByQuestionSurveyId(surveyId: Long): MutableSet<Answer>
+    fun findBy_questionSurveyId(surveyId: Long): MutableSet<Answer>
 }

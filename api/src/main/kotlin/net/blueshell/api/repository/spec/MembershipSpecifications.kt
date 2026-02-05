@@ -27,14 +27,14 @@ object MembershipSpecifications {
             val start = root!!.get<LocalDate>("startDate")
             val end = root.get<LocalDate>("endDate")
 
-            val ands: MutableList<Predicate> = ArrayList<Predicate>(2)
+            val ands: MutableList<Predicate> = ArrayList(2)
 
             if (t != null) {
-                ands.add(cb!!.lessThanOrEqualTo<LocalDate>(start, t))
+                ands.add(cb!!.lessThanOrEqualTo(start, t))
             }
 
             if (f != null) {
-                ands.add(cb!!.or(cb.isNull(end), cb.greaterThanOrEqualTo<LocalDate>(end, f)))
+                ands.add(cb!!.or(cb.isNull(end), cb.greaterThanOrEqualTo(end, f)))
             }
             cb!!.and(*ands.toTypedArray<Predicate>())
         }

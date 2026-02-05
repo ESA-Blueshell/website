@@ -97,7 +97,7 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
             user,
             dto.firstName,
             BiConsumer { obj: User, firstName: String -> obj!!.firstName = firstName })
-        MappingUtil.applyIfFieldIsNotNull<User, String>(
+        MappingUtil.applyIfFieldIsNotNull(
             user,
             dto.prefix,
             BiConsumer { obj: User, prefix: String -> obj!!.prefix = prefix })

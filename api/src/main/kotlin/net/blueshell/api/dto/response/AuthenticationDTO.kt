@@ -34,7 +34,7 @@ data class AuthenticationDTO(
             if (roles.isEmpty()) return ArrayList()
 
             return roles.stream()
-                .sorted(Comparator.comparingInt<Role>(ToIntFunction { obj: Role -> obj.ordinal }))
+                .sorted(Comparator.comparingInt(ToIntFunction { obj: Role -> obj.ordinal }))
                 .toList()
         }
 

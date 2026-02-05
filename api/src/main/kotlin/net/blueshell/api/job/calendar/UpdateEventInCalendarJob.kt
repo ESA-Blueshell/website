@@ -27,7 +27,7 @@ class UpdateEventInCalendarJob(
     )
     fun update(eventId: Long): CompletableFuture<Void> {
         val key = key("update", eventId)
-        if (processing.putIfAbsent(key, true) != null) return CompletableFuture.completedFuture<Void>(null)
+        if (processing.putIfAbsent(key, true) != null) return CompletableFuture.completedFuture(null)
 
         val lock: ReentrantLock = locks.computeIfAbsent(eventId) { k: Long -> ReentrantLock() }
         try {
@@ -43,7 +43,7 @@ class UpdateEventInCalendarJob(
                 } else {
                     log.info("EventId {} not approved and not on Google -> noop", eventId)
                 }
-                return CompletableFuture.completedFuture<Void>(null)
+                return CompletableFuture.completedFuture(null)
             }
 
             if (e.googleId == null) {

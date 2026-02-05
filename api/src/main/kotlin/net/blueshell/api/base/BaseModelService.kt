@@ -59,7 +59,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
     @Transactional
     open fun create(entity: T): T {
         var entity = entity
-        entity = repository.saveAndFlush<T>(entity)
+        entity = repository.saveAndFlush(entity)
         em.refresh(entity)
         return entity
     }

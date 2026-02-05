@@ -5,11 +5,12 @@ import net.blueshell.api.model.File
 import org.springframework.stereotype.Repository
 import java.util.*
 
+@Suppress("FunctionName")
 @Repository
 interface FileRepository : BaseRepository<File, Long> {
     fun findByName(name: String): Optional<File>
 
-    fun findByEventBanners_Id(bannerId: Long): Optional<File>
+    fun findBy_eventBanners_Id(bannerId: Long): Optional<File>
 
     fun findByPath(path: String): Optional<File>
 }

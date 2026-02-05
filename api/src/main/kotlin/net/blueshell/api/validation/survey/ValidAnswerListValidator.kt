@@ -15,7 +15,7 @@ class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, MutableLis
             return true // Let @NotNull handle if required
         }
 
-        val seenQuestionIds: MutableSet<Long?> = HashSet<Long?>()
+        val seenQuestionIds: MutableSet<Long?> = HashSet()
         for (a in answers) {
             if (a.questionId == null) return false
             if (!seenQuestionIds.add(a.questionId)) {

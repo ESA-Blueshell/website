@@ -22,7 +22,7 @@ class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?>
 
     override fun convertToEntityAttribute(dbData: String?): MutableList<Boolean?>? {
         if (dbData.isNullOrBlank() || "null".equals(dbData, ignoreCase = true)) {
-            return ArrayList<Boolean?>()
+            return ArrayList()
         }
         try {
             val type: CollectionType? = MAPPER.typeFactory

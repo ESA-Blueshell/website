@@ -23,7 +23,7 @@ class MockCalendarService : CalendarService() {
     private val seq = AtomicLong(1000000L)
     private val eventsById: MutableMap<String, Event> = ConcurrentHashMap<String, Event>()
 
-    val readOnlyEvents: MutableMap<String, Event> = Collections.unmodifiableMap<String, Event>(eventsById)
+    val readOnlyEvents: MutableMap<String, Event> = Collections.unmodifiableMap(eventsById)
 
     @Throws(IOException::class)
     override fun add(event: Event) {

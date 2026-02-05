@@ -17,7 +17,7 @@ class GuestService @Autowired constructor(repository: GuestRepository, events: A
     @Transactional(readOnly = true)
     fun findByAccessToken(accessToken: String): Guest {
         return repository!!.findByAccessToken(accessToken)
-            .orElseThrow<ResponseStatusException>(Supplier {
+            .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Guest not found"

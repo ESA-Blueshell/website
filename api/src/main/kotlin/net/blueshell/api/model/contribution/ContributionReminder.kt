@@ -2,8 +2,10 @@ package net.blueshell.api.model.contribution
 
 import jakarta.persistence.*
 import net.blueshell.api.base.JpaListener
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
+import net.blueshell.api.base.entity.AuditedSoftDeleteEntity
+import net.blueshell.api.base.entity.Identifiable
 import net.blueshell.api.model.User
+import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -24,33 +26,71 @@ import org.hibernate.annotations.SQLRestriction
         )
     ]
 )
-@SQLDelete(sql = "UPDATE contribution_reminders SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLDelete(
+    sql = """
+      UPDATE contribution_reminders
+      SET deleted_at = NOW(), version = version + 1
+      WHERE user_id = ? AND contribution_period_id = ? AND version = ?
+    """
+)
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class ContributionReminder : AuditedAutoIdEntity() {
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "user_id", insertable = false, updatable = false, nullable = false)
+class ContributionReminder(
+    @EmbeddedId
+    override var id: ContributionReminderId = ContributionReminderId()
+) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminderId> {
+
+    @get:Transient
+    @set:Transient
+    var userId: Long
+        get() = requireNotNull(id.userId) { "userId is required" }
+        set(value) {
+            id.userId = value
+        }
+
+    @get:Transient
+    @set:Transient
+    var contributionPeriodId: Long
+        get() = requireNotNull(id.contributionPeriodId) { "contributionPeriodId is required" }
+        set(value) {
+            id.contributionPeriodId = value
+        }
+
+    @field:MapsId("userId")
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "user_id", nullable = false)
     private var _user: User? = null
     var user: User
         get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
-            userId = value.id ?: userId
+            value.id?.let { userId = it }
         }
 
-    @Column(name = "user_id", nullable = false)
-    var userId: Long = 0
-
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "contribution_period_id", insertable = false, updatable = false, nullable = false)
+    @field:MapsId("contributionPeriodId")
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "contribution_period_id", nullable = false)
     private var _contributionPeriod: ContributionPeriod? = null
     var contributionPeriod: ContributionPeriod
         get() = requireNotNull(_contributionPeriod) { "Contribution period is required" }
         set(value) {
             _contributionPeriod = value
-            contributionPeriodId = value.id ?: contributionPeriodId
+            value.id?.let { contributionPeriodId = it }
         }
 
-    @Column(name = "contribution_period_id", nullable = false)
-    var contributionPeriodId: Long = 0
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null) return false
+        if (Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as ContributionReminder
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
 }
+
+@Embeddable
+data class ContributionReminderId(
+    var userId: Long? = null,
+    var contributionPeriodId: Long? = null
+) : java.io.Serializable

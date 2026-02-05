@@ -19,7 +19,6 @@ abstract class ContributionReminderMapper : BaseMapper<ContributionReminder, Con
         @MappingTarget reminder: ContributionReminder
     ): ContributionReminder
 
-    @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
     @Mapping(target = "version")

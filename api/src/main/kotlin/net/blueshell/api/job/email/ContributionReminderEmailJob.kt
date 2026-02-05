@@ -1,5 +1,6 @@
 package net.blueshell.api.job.email
 
+import net.blueshell.api.model.contribution.ContributionReminderId
 import net.blueshell.api.service.email.EmailService
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
@@ -16,7 +17,7 @@ class ContributionReminderEmailJob(
 ) {
     @Async
     @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
-    fun send(reminderId: Long): CompletableFuture<Void?> {
+    fun send(reminderId: ContributionReminderId): CompletableFuture<Void?> {
         val key = jobKey("contribution_reminder", reminderId)
         if (processing.putIfAbsent(key, true) != null) {
             log.info(
@@ -34,7 +35,7 @@ class ContributionReminderEmailJob(
     }
 
     @Recover
-    fun recover(ex: Exception, reminderId: Long?): CompletableFuture<Void?> {
+    fun recover(ex: Exception, reminderId: ContributionReminderId?): CompletableFuture<Void?> {
         processing.remove(jobKey("contribution_reminder", reminderId))
         log.error(
             "Giving up contribution reminder for reminderId={}: {}",
@@ -45,7 +46,7 @@ class ContributionReminderEmailJob(
         return CompletableFuture.completedFuture<Void?>(null)
     }
 
-    private fun jobKey(type: String?, id: Long?): String {
+    private fun jobKey(type: String?, id: ContributionReminderId?): String {
         return "${type}_${id}_${System.currentTimeMillis() / 10000}"
     }
 

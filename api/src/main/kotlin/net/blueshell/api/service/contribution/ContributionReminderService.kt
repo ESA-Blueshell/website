@@ -3,6 +3,7 @@ package net.blueshell.api.service.contribution
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.event.job.ContributionReminderEmailEvent
 import net.blueshell.api.model.contribution.ContributionReminder
+import net.blueshell.api.model.contribution.ContributionReminderId
 import net.blueshell.api.repository.contribution.ContributionReminderRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
@@ -14,11 +15,11 @@ class ContributionReminderService @Autowired constructor(
     repository: ContributionReminderRepository,
     private val periodService: ContributionPeriodService,
     private val eventPublisher: ApplicationEventPublisher
-) : BaseModelService<ContributionReminder, Long, ContributionReminderRepository>(repository) {
+) : BaseModelService<ContributionReminder, ContributionReminderId, ContributionReminderRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
         periodService.findById(contributionPeriodId)
-        return repository.findByContributionPeriodId(contributionPeriodId)
+        return repository.findById_ContributionPeriodId(contributionPeriodId)
     }
 
     fun sendReminder(reminder: ContributionReminder) {

@@ -6,6 +6,7 @@ import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.enums.FileType
 import net.blueshell.api.mapper.FileMapper
 import net.blueshell.api.model.File
+import net.blueshell.api.model.event.EventBannerId
 import net.blueshell.api.repository.FileRepository
 import net.blueshell.api.service.event.EventBannerService
 import net.blueshell.api.service.event.EventService
@@ -171,10 +172,10 @@ class FileService @Autowired constructor(
             .body(resource)
     }
 
-    fun findByEventBannerId(bannerId: Long): File {
-        return repository.findBy_eventBanners_Id(bannerId).orElseThrow(Supplier {
+    fun findByBannerEventId(eventId: Long): File {
+        return repository.findFirstBy_eventBanners_Id_EventId(eventId).orElseThrow(Supplier {
             ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Event banner not found with id: $bannerId"
+                HttpStatus.NOT_FOUND, "Event banner not found for event with id: $eventId"
             )
         })
     }

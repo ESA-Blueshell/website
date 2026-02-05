@@ -2,8 +2,10 @@ package net.blueshell.api.model.event
 
 import jakarta.persistence.*
 import net.blueshell.api.base.JpaListener
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
+import net.blueshell.api.base.entity.AuditedSoftDeleteEntity
+import net.blueshell.api.base.entity.Identifiable
 import net.blueshell.api.model.File
+import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -19,39 +21,75 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_event_banners_file", columnList = "file_id")
     ]
 )
-@SQLDelete(sql = "UPDATE event_banners SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLDelete(
+    sql = """
+      UPDATE event_banners
+      SET deleted_at = NOW(), version = version + 1
+      WHERE event_id = ? AND file_id = ? AND version = ?
+    """
+)
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-class EventBanner : AuditedAutoIdEntity() {
-    @Column(name = "event_id", nullable = false)
-    var eventId: Long = 0
+class EventBanner(
+    @EmbeddedId
+    override var id: EventBannerId = EventBannerId()
+) : AuditedSoftDeleteEntity(), Identifiable<EventBannerId> {
 
-    @Column(name = "file_id", nullable = false)
-    var fileId: Long = 0
+    @get:Transient
+    @set:Transient
+    var eventId: Long
+        get() = requireNotNull(id.eventId) { "eventId is required" }
+        set(value) {
+            id.eventId = value
+        }
 
+    @get:Transient
+    @set:Transient
+    var fileId: Long
+        get() = requireNotNull(id.fileId) { "fileId is required" }
+        set(value) {
+            id.fileId = value
+        }
+
+    @field:MapsId("eventId")
     @field:OneToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "event_id", nullable = false, insertable = false, updatable = false)
+    @field:JoinColumn(name = "event_id", nullable = false)
     private var _event: Event? = null
     var event: Event
         get() = requireNotNull(_event) { "Event is required" }
         set(value) {
             _event = value
-            eventId = value.id ?: eventId
+            value.id?.let { eventId = it }
         }
 
+    @field:MapsId("fileId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(
         name = "file_id",
         nullable = false,
-        foreignKey = ForeignKey(name = "fk_event_banners_file"),
-        insertable = false,
-        updatable = false
+        foreignKey = ForeignKey(name = "fk_event_banners_file")
     )
     private var _file: File? = null
     var file: File
         get() = requireNotNull(_file) { "File is required" }
         set(value) {
             _file = value
-            fileId = value.id ?: fileId
+            value.id?.let { fileId = it }
         }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null) return false
+        if (Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as EventBanner
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
 }
+
+@Embeddable
+data class EventBannerId(
+    var eventId: Long? = null,
+    var fileId: Long? = null
+) : java.io.Serializable

@@ -1,9 +1,11 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
+import net.blueshell.api.base.entity.AuditedSoftDeleteEntity
+import net.blueshell.api.base.entity.Identifiable
 import net.blueshell.api.model.File
 import net.blueshell.api.model.User
+import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -27,33 +29,55 @@ import org.hibernate.annotations.SQLRestriction
     ]
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@SQLDelete(sql = "UPDATE board_members SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-class BoardMember : AuditedAutoIdEntity() {
-    @field:JoinColumn(name = "board_id", nullable = false, insertable = false, updatable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY)
+@SQLDelete(
+    sql = """
+      UPDATE board_members
+      SET deleted_at = NOW(), version = version + 1
+      WHERE board_id = ? AND user_id = ? AND version = ?
+    """
+)
+class BoardMember(
+    @EmbeddedId
+    override var id: BoardMemberId = BoardMemberId()
+) : AuditedSoftDeleteEntity(), Identifiable<BoardMemberId> {
+
+    @get:Transient
+    @set:Transient
+    var boardId: Long
+        get() = requireNotNull(id.boardId) { "boardId is required" }
+        set(value) {
+            id.boardId = value
+        }
+
+    @get:Transient
+    @set:Transient
+    var userId: Long
+        get() = requireNotNull(id.userId) { "userId is required" }
+        set(value) {
+            id.userId = value
+        }
+
+    @field:MapsId("boardId")
+    @field:JoinColumn(name = "board_id", nullable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     private var _board: Board? = null
     var board: Board
         get() = requireNotNull(_board) { "Board is required" }
         set(value) {
             _board = value
-            boardId = value.id ?: boardId
+            value.id?.let { boardId = it }
         }
 
-    @Column(name = "board_id", nullable = false)
-    var boardId: Long = 0
-
-    @field:JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY)
+    @field:MapsId("userId")
+    @field:JoinColumn(name = "user_id", nullable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     private var _user: User? = null
     var user: User
         get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
-            userId = value.id ?: userId
+            value.id?.let { userId = it }
         }
-
-    @Column(name = "user_id", nullable = false)
-    var userId: Long = 0
 
     @field:JoinColumn(name = "picture_id")
     @field:OneToOne(fetch = FetchType.LAZY)
@@ -63,4 +87,20 @@ class BoardMember : AuditedAutoIdEntity() {
         set(value) {
             _picture = value
         }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null) return false
+        if (Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as BoardMember
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
 }
+
+@Embeddable
+data class BoardMemberId(
+    var boardId: Long? = null,
+    var userId: Long? = null
+) : java.io.Serializable

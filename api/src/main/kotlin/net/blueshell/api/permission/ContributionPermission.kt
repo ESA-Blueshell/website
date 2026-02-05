@@ -2,6 +2,7 @@ package net.blueshell.api.permission
 
 import net.blueshell.api.base.BasePermissionEvaluator
 import net.blueshell.api.model.contribution.Contribution
+import net.blueshell.api.model.contribution.ContributionId
 import net.blueshell.api.service.contribution.ContributionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class ContributionPermission @Autowired constructor(service: ContributionService) :
-    BasePermissionEvaluator<Contribution, Long, ContributionService>(service) {
+    BasePermissionEvaluator<Contribution, ContributionId, ContributionService>(service) {
     override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
         if (authentication == null || `object` == null || permission == null) {
             return false
@@ -26,7 +27,7 @@ class ContributionPermission @Autowired constructor(service: ContributionService
             return false
         }
 
-        val targetContribution = service.findById(targetId as Long)
+        val targetContribution = service.findById(targetId as ContributionId)
         return targetContribution != null && hasPermission(authentication, targetContribution, permission)
     }
 }

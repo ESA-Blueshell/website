@@ -16,7 +16,6 @@ abstract class ContributionMapper : BaseMapper<Contribution, ContributionDTO>() 
     @BeanMapping(ignoreByDefault = true)
     abstract fun fromDTO(dto: ContributionDTO, @MappingTarget contribution: Contribution): Contribution
 
-    @Mapping(target = "id")
     @Mapping(target = "userId")
     @Mapping(target = "contributionPeriodId")
     @Mapping(target = "version")

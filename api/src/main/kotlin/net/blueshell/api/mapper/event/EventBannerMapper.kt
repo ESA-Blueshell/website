@@ -16,7 +16,6 @@ abstract class EventBannerMapper : BaseMapper<EventBanner, EventBannerDTO>() {
     @BeanMapping(ignoreByDefault = true)
     abstract fun fromDTO(dto: EventBannerDTO, @MappingTarget banner: EventBanner): EventBanner
 
-    @Mapping(target = "id")
     @Mapping(target = "file")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)

@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import net.blueshell.api.base.BaseController
 import net.blueshell.api.dto.contribution.ContributionDTO
 import net.blueshell.api.mapper.contribution.ContributionMapper
+import net.blueshell.api.model.contribution.ContributionId
 import net.blueshell.api.service.contribution.ContributionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -32,10 +33,10 @@ class ContributionController @Autowired constructor(service: ContributionService
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
-    @DeleteMapping("/contributions/{id}")
+    @DeleteMapping("contributionPeriods/{contributionPeriodId}/users/{userId}/contributions")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteContribution(@PathVariable id: Long) {
-        service.deleteById(id)
+    fun deleteContribution(@PathVariable userId: Long, @PathVariable contributionPeriodId: Long) {
+        service.deleteById(ContributionId(userId, contributionPeriodId))
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

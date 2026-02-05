@@ -7,6 +7,7 @@ import net.blueshell.api.email.EventSignupEmail
 import net.blueshell.api.email.recovery.MemberActivationEmail
 import net.blueshell.api.email.recovery.PasswordResetEmail
 import net.blueshell.api.email.recovery.UserActivationEmail
+import net.blueshell.api.model.contribution.ContributionReminderId
 import net.blueshell.api.service.UserService
 import net.blueshell.api.service.contribution.ContributionReminderService
 import net.blueshell.api.service.event.EventSignUpService
@@ -24,7 +25,7 @@ class EmailService(
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String
 ) {
-    fun sendContributionReminderEmail(reminderId: Long) {
+    fun sendContributionReminderEmail(reminderId: ContributionReminderId) {
         val reminder = reminders.findById(reminderId)
         val email: BaseEmail = ContributionReminderEmail(
             reminder.user,

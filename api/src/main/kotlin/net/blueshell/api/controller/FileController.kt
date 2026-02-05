@@ -22,10 +22,10 @@ import org.springframework.web.multipart.MultipartFile
 @Tag(name = "Files")
 class FileController(service: FileService, repository: FileRepository, private val fileMapper: FileMapper) :
     BaseController<FileService, FileRepository>(service, repository) {
-    @GetMapping("/events/banners/{bannerId}")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#bannerId, 'EventBanner', 'read')")
-    fun downloadEventBanner(@PathVariable bannerId: Long): ResponseEntity<Resource> {
-        val file = service.findByEventBannerId(bannerId)
+    @GetMapping("/events/{eventId}/banners")
+    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'read')")
+    fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
+        val file = service.findByBannerEventId(eventId)
         return service.prepareFileResponse(file)
     }
 

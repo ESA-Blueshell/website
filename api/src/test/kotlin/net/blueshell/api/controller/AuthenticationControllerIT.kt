@@ -26,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional(propagation = Propagation.NEVER) // fail fast if a transaction is opened
-@TestExecutionListeners(listeners = [], mergeMode = MergeMode.MERGE_WITH_DEFAULTS) // ensure no truncate listener
+@Transactional(propagation = Propagation.NEVER)
+@TestExecutionListeners(listeners = [], mergeMode = MergeMode.MERGE_WITH_DEFAULTS)
 class AuthenticationControllerIT @Autowired constructor(
     private val jwtTokenUtil: JwtTokenUtil
 ) {

@@ -11,6 +11,8 @@ plugins {
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.spring") version "2.3.0"
     kotlin("plugin.jpa") version "2.3.0"
+    kotlin("plugin.allopen") version "2.3.0"
+    kotlin("plugin.noarg") version "2.3.0"
     kotlin("kapt") version "2.3.0"
     kotlin("plugin.lombok") version "2.3.0"
 
@@ -135,6 +137,18 @@ dependencies {
 
 springBoot {
     mainClass.set("net.blueshell.api.ApiApplication")
+}
+
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
+}
+
+noArg {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
 }
 
 tasks.withType<JavaCompile>().configureEach {

@@ -10,5 +10,4 @@ abstract class SoftDeleteEntity {
     @Column(name = "deleted_at", insertable = false, updatable = false, nullable = false)
     @ColumnDefault("'9999-12-31 23:59:59'")
     var deletedAt: Instant? = null
-        private set
 }

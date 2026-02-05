@@ -7,11 +7,9 @@ import java.util.LinkedHashSet
 abstract class DirtyAwareModel : AuditedAutoIdEntity() {
     @Transient
     var dirtyFields: Set<String> = emptySet()
-        private set
 
     @Transient
     var dirty = false
-        private set
 
     fun applyDirtyFields(fields: MutableSet<String>) {
         if (fields.isEmpty()) {

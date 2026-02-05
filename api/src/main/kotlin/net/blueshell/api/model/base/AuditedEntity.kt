@@ -15,7 +15,6 @@ abstract class AuditedEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     var createdAt: Instant? = null
-        private set
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,7 +25,6 @@ abstract class AuditedEntity {
     @Column(name = "updated_at", nullable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     var updatedAt: Instant? = null
-        private set
 
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)

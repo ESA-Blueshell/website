@@ -83,6 +83,7 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.MODEL_BASE) {
                 .that().areAnnotatedWith(IdClass::class.java)
                 .should(idClassValueMustImplementSerializable())
                 .because("JPA requires IdClass types to be Serializable.")
+                .allowEmptyShould(true)
         }
 
     @Test

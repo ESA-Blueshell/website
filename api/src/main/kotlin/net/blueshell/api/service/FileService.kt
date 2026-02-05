@@ -4,12 +4,8 @@ import jakarta.annotation.PostConstruct
 import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.base.BaseModelService
 import net.blueshell.api.common.enums.FileType
-import net.blueshell.api.mapper.FileMapper
 import net.blueshell.api.model.File
-import net.blueshell.api.model.event.EventBannerId
 import net.blueshell.api.repository.FileRepository
-import net.blueshell.api.service.event.EventBannerService
-import net.blueshell.api.service.event.EventService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -33,9 +29,6 @@ import java.util.function.Supplier
 @Service
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
-    private val fileMapper: FileMapper,
-    private val events: EventService,
-    private val banners: EventBannerService,
     @Value($$"${storage.location}") storageLocation: String
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
     private val rootLocation: Path = Paths.get(storageLocation)
@@ -43,7 +36,7 @@ class FileService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun findByName(name: String): File {
-        return repository!!.findByName(name).orElseThrow(Supplier {
+        return repository.findByName(name).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "File not found with name: $name"
             )
@@ -64,7 +57,7 @@ class FileService @Autowired constructor(
      */
     @Transactional
     fun storeMultipart(multipart: MultipartFile, type: FileType): File {
-        if (multipart == null || multipart.isEmpty) {
+        if (multipart.isEmpty) {
             throw BadRequestException("Empty file")
         }
 
@@ -84,7 +77,7 @@ class FileService @Autowired constructor(
             }
             val sha256 = HexFormat.of().formatHex(md.digest())
 
-            val hashedFilename = fileMapper.buildHashedFilename(sha256, multipart.originalFilename)
+            val hashedFilename = buildHashedFilename(sha256, multipart.originalFilename)
             val path = type.directory + "/" + hashedFilename
             val fullPath = rootLocation.resolve(path).normalize()
 
@@ -105,8 +98,8 @@ class FileService @Autowired constructor(
                 entity = File()
             }
 
-            val mediaType = fileMapper.resolveMediaType(hashedFilename, fullPath, multipart.contentType)
-            fileMapper.populateAfterStore(entity, multipart.originalFilename, fullPath, path, mediaType)
+            val mediaType = resolveMediaType(hashedFilename, fullPath, multipart.contentType)
+            populateAfterStore(entity, multipart.originalFilename, fullPath, path, mediaType)
             entity.type = type
 
             return if (entity.id != null) {
@@ -130,7 +123,7 @@ class FileService @Autowired constructor(
                 HttpStatus.NOT_FOUND,
                 "File not found with name: ${file.name}"
             )
-        } catch (e: MalformedURLException) {
+        } catch (_: MalformedURLException) {
             throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                 "File not found with name: ${file.name}"
@@ -144,7 +137,7 @@ class FileService @Autowired constructor(
             val resource: Resource = UrlResource(filePath.toUri())
             if (resource.exists() || resource.isReadable) return resource
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: $filename")
-        } catch (e: MalformedURLException) {
+        } catch (_: MalformedURLException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: $filename")
         }
     }
@@ -164,12 +157,85 @@ class FileService @Autowired constructor(
     fun prepareAssetResponse(filename: String): ResponseEntity<Resource> {
         val resource = loadAssetAsResource(filename)
         val headers = HttpHeaders()
-        headers.contentType = MediaType.valueOf(fileMapper.detectContentType(filename, resource))
+        headers.contentType = MediaType.valueOf(detectContentType(filename, resource))
         headers.contentDisposition = ContentDisposition.attachment().filename(filename).build()
         return ResponseEntity.ok()
             .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
             .headers(headers)
             .body(resource)
+    }
+
+    private fun buildHashedFilename(sha256: String, originalName: String): String {
+        val ext = getExtensionSafe(originalName)
+        return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.getDefault()))
+    }
+
+    private fun resolveMediaType(filename: String, path: Path, preferred: String?): String {
+        if (!preferred.isNullOrBlank()) return preferred
+        try {
+            val probed = Files.probeContentType(path)
+            return probed ?: detectContentType(filename, UrlResource(path.toUri()))
+        } catch (_: Exception) {
+            return "application/octet-stream"
+        }
+    }
+
+    private fun populateAfterStore(file: File, name: String, fullPath: Path, path: String, mediaType: String) {
+        file.name = name
+        file.mediaType = mediaType
+        file.uploaderId = principal!!.id!!
+        try {
+            file.size = Files.size(fullPath)
+        } catch (e: IOException) {
+            throw RuntimeException("Could not read file size for: $path", e)
+        }
+        file.path = path
+    }
+
+    private fun detectContentType(filename: String, resource: Resource): String {
+        try {
+            var contentType = Files.probeContentType(Path.of(filename))
+            if (contentType != null) return contentType
+            resource.file
+            contentType = Files.probeContentType(resource.file.toPath())
+            if (contentType != null) return contentType
+            return extToMime(getExtensionFromName(filename))
+        } catch (_: Exception) {
+            return "application/octet-stream"
+        }
+    }
+
+    private fun getExtensionSafe(originalName: String): String {
+        val name = Path.of(originalName).fileName.toString()
+        val i = name.lastIndexOf('.')
+        if (i < 0 || i == name.length - 1) return ""
+        return name.substring(i + 1)
+    }
+
+    private fun getExtensionFromName(filename: String): String {
+        val i = filename.lastIndexOf('.')
+        if (i < 0 || i == filename.length - 1) return ""
+        return filename.substring(i + 1).lowercase(Locale.getDefault())
+    }
+
+    private fun extToMime(ext: String): String {
+        return when (ext) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "svg" -> "image/svg+xml"
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            "html" -> "text/html"
+            "css" -> "text/css"
+            "js" -> "application/javascript"
+            "json" -> "application/json"
+            "xml" -> "application/xml"
+            "zip" -> "application/zip"
+            "mp4" -> "video/mp4"
+            "mp3" -> "audio/mpeg"
+            else -> "application/octet-stream"
+        }
     }
 
     fun findByBannerEventId(eventId: Long): File {

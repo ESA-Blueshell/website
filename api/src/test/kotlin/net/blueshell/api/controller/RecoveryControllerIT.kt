@@ -193,7 +193,7 @@ class RecoveryControllerIT @Autowired constructor(
     }
 
     private fun assertLastEmail(toEmail: String, subject: String, bodyContains: String) {
-        val message = awaitLastEmail()
+        val message = awaitEmail(toEmail, subject, bodyContains)
         val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
         val body = messageBody(message)
 
@@ -213,21 +213,34 @@ class RecoveryControllerIT @Autowired constructor(
         return if (trimmed.length <= maxLen) trimmed else trimmed.substring(0, maxLen) + "..."
     }
 
-    private fun awaitLastEmail(timeoutMs: Long = 2000, pollMs: Long = 50): MimeMessage {
+    private fun awaitEmail(
+        toEmail: String,
+        subject: String,
+        bodyContains: String,
+        timeoutMs: Long = 2000,
+        pollMs: Long = 50
+    ): MimeMessage {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
-            val last = mailSender.outbox.lastOrNull()
-            if (last != null) return last
+            val message = findMatchingEmail(toEmail, subject, bodyContains)
+            if (message != null) return message
             Thread.sleep(pollMs)
         }
-        val last = mailSender.outbox.lastOrNull()
-        checkNotNull(last) { "Expected email to be sent within ${timeoutMs}ms." }
-        return last
+        val message = findMatchingEmail(toEmail, subject, bodyContains)
+        checkNotNull(message) { "Expected email to be sent within ${timeoutMs}ms." }
+        return message
+    }
+
+    private fun findMatchingEmail(toEmail: String, subject: String, bodyContains: String): MimeMessage? {
+        return mailSender.outbox.firstOrNull { message ->
+            val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
+            val body = messageBody(message)
+            recipients.contains(toEmail) && message.subject == subject && body.contains(bodyContains)
+        }
     }
 
     private fun messageBody(message: MimeMessage): String {
-        val content = message.content
-        return when (content) {
+        return when (val content = message.content) {
             is String -> content
             is Multipart -> extractFromMultipart(content)
             else -> content.toString()
@@ -244,8 +257,7 @@ class RecoveryControllerIT @Autowired constructor(
     }
 
     private fun extractFromPart(part: Part): String? {
-        val content = part.content
-        return when (content) {
+        return when (val content = part.content) {
             is String -> content
             is Multipart -> extractFromMultipart(content)
             else -> null

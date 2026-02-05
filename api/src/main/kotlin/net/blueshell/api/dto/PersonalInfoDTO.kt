@@ -18,6 +18,6 @@ open class PersonalInfoDTO(
     open var email: String? = null,
 
     @field:NotBlank
-    @field:ValidMobilePhoneNumber
+    @field:net.blueshell.api.validation.user.ValidMobilePhoneNumber
     open var phoneNumber: String? = null
 ) : AuditedAutoIdDTO()

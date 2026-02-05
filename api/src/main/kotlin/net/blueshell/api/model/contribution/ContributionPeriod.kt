@@ -1,7 +1,7 @@
 package net.blueshell.api.model.contribution
 
 import jakarta.persistence.*
-import net.blueshell.api.listener.base.JpaListener
+import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

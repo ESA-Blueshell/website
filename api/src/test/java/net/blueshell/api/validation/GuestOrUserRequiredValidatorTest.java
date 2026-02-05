@@ -2,10 +2,10 @@ package net.blueshell.api.validation;
 
 import jakarta.validation.ConstraintValidatorContext;
 import net.blueshell.api.dto.event.EventSignUpDTO;
+import net.blueshell.api.validation.event.GuestOrUserRequiredValidator;
 import net.blueshell.api.factory.dto.GuestDTOFactory;
 import net.blueshell.api.factory.dto.event.EventSignUpDTOFactory;
 import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory;
-import net.blueshell.api.validation.event.GuestOrUserRequiredValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

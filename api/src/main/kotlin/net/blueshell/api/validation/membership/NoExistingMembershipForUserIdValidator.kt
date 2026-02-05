@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class NoExistingMembershipForUserIdValidator @Autowired constructor(private val members: MembershipService) :
-    ConstraintValidator<NoExistingMembershipForUserId?, Long?> {
+    ConstraintValidator<net.blueshell.api.validation.membership.NoExistingMembershipForUserId?, Long?> {
     override fun isValid(userId: Long?, context: ConstraintValidatorContext?): Boolean {
         if (userId == null) return true
 

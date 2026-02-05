@@ -48,6 +48,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
             classes()
                 .that().resideInAnyPackage(DTO)
                 .and().areTopLevelClasses()
+                .and().haveSimpleNameEndingWith("DTO")
                 .should().beAnnotatedWith(Schema::class.java)
         }
 

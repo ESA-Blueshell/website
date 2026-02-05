@@ -15,6 +15,9 @@ import net.blueshell.api.dto.event.EventSignUpDTO
 import net.blueshell.api.dto.survey.AnswerDTO
 import net.blueshell.api.dto.user.AdvancedUserDTO
 import net.blueshell.api.dto.user.SimpleUserDTO
+import net.blueshell.api.validation.group.Administration
+import net.blueshell.api.validation.group.Creation
+import net.blueshell.api.validation.group.Update
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.factory.dto.committee.CommitteeMemberDTOFactory
 import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
@@ -27,9 +30,6 @@ import net.blueshell.api.repository.survey.QuestionRepository
 import net.blueshell.api.service.MembershipService
 import net.blueshell.api.service.event.EventService
 import net.blueshell.api.testutil.ModelTestUtils
-import net.blueshell.api.validation.group.Administration
-import net.blueshell.api.validation.group.Creation
-import net.blueshell.api.validation.group.Update
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test

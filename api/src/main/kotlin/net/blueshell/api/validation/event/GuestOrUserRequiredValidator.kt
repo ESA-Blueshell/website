@@ -4,7 +4,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.dto.event.EventSignUpDTO
 
-class GuestOrUserRequiredValidator : ConstraintValidator<GuestOrUserRequired?, EventSignUpDTO?> {
+class GuestOrUserRequiredValidator : ConstraintValidator<GuestOrUserRequired, EventSignUpDTO> {
     override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
 

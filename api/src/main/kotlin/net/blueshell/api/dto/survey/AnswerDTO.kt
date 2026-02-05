@@ -6,7 +6,7 @@ import net.blueshell.api.dto.base.AuditedAutoIdDTO
 import net.blueshell.api.validation.survey.ValidAnswer
 
 @Schema(name = "Answer")
-@ValidAnswer
+@net.blueshell.api.validation.survey.ValidAnswer
 data class AnswerDTO(
     @field:NotNull
     var questionId: Long? = null,

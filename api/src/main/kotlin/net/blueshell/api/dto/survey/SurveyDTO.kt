@@ -12,7 +12,7 @@ import java.util.function.Function
 @Schema(name = "Survey")
 data class SurveyDTO(
     @field:NotEmpty
-    @field:ValidQuestionList
+    @field:net.blueshell.api.validation.survey.ValidQuestionList
     @field:Valid
     var questions: MutableList<QuestionDTO?>? = null,
     var responseCount: Long? = null

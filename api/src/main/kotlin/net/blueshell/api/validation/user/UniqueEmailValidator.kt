@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class UniqueEmailValidator @Autowired constructor(private val userService: UserService) :
-    ConstraintValidator<UniqueEmail?, String?> {
+    ConstraintValidator<net.blueshell.api.validation.user.UniqueEmail?, String?> {
     override fun isValid(email: String?, context: ConstraintValidatorContext?): Boolean {
         if (email.isNullOrBlank()) {
             // Let @NotBlank or @Email handle this

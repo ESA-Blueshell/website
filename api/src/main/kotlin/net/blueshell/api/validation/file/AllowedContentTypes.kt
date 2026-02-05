@@ -5,7 +5,7 @@ import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
 @MustBeDocumented
-@Constraint(validatedBy = [AllowedContentTypesValidator::class])
+@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.file.AllowedContentTypesValidator::class])
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class AllowedContentTypes(

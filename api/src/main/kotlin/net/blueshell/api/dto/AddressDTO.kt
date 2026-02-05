@@ -8,7 +8,7 @@ import net.blueshell.api.validation.address.ValidCountryCode
 @Schema(name = "Address")
 data class AddressDTO(
     @field:NotEmpty
-    @field:ValidCountryCode
+    @field:net.blueshell.api.validation.address.ValidCountryCode
     var country: String? = null,
 
     @field:NotEmpty

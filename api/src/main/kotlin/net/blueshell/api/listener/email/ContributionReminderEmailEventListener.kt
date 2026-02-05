@@ -11,7 +11,8 @@ class ContributionReminderEmailEventListener(
 ) {
     @EventListener
     fun onSend(evt: ContributionReminderEmailEvent) {
-        val reminderId = evt.reminderId ?: return
-        job.send(reminderId)
+        val userId = evt.userId ?: return
+        val contributionPeriodId = evt.contributionPeriodId ?: return
+        job.send(userId, contributionPeriodId)
     }
 }

@@ -1,7 +1,7 @@
 package net.blueshell.api.service.email
 
-import net.blueshell.api.email.base.BaseEmail
 import net.blueshell.api.common.enums.ResetType
+import net.blueshell.api.email.base.BaseEmail
 import net.blueshell.api.email.ContributionReminderEmail
 import net.blueshell.api.email.EventSignupEmail
 import net.blueshell.api.email.recovery.MemberActivationEmail
@@ -25,8 +25,8 @@ class EmailService(
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String
 ) {
-    fun sendContributionReminderEmail(reminderId: ContributionReminderId) {
-        val reminder = reminders.findById(reminderId)
+    fun sendContributionReminderEmail(userId: Long, contributionPeriodId: Long) {
+        val reminder = reminders.findById(ContributionReminderId(userId, contributionPeriodId))
         val email: BaseEmail = ContributionReminderEmail(
             reminder.user,
             frontendUrl,

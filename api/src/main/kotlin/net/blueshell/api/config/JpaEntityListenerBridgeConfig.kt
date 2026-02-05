@@ -1,6 +1,6 @@
 package net.blueshell.api.config
 
-import net.blueshell.api.listener.base.JpaListener
+import net.blueshell.api.common.jpa.JpaListener
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Configuration

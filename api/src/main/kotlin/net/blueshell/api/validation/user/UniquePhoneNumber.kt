@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
  * Custom annotation to ensure the uniqueness of the phone number.
  */
 @MustBeDocumented
-@Constraint(validatedBy = [UniquePhoneNumberValidator::class])
+@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.user.UniquePhoneNumberValidator::class])
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class UniquePhoneNumber(

@@ -1,6 +1,6 @@
 package net.blueshell.api.config
 
-import net.blueshell.api.common.hibernate.DirtyTrackingInterceptor
+import net.blueshell.api.model.hibernate.DirtyTrackingInterceptor
 import org.hibernate.Interceptor
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
 import org.springframework.context.annotation.Bean

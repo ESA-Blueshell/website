@@ -10,8 +10,8 @@ import net.blueshell.api.validation.event.GuestOrUserRequired
 import net.blueshell.api.validation.event.ValidEventSignUp
 
 @Schema(name = "EventSignUp")
-@ValidEventSignUp
-@GuestOrUserRequired
+@net.blueshell.api.validation.event.ValidEventSignUp
+@net.blueshell.api.validation.event.GuestOrUserRequired
 data class EventSignUpDTO(
     var eventId: Long? = null,
 

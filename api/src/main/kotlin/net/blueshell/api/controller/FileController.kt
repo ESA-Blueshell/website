@@ -35,7 +35,7 @@ class FileController(service: FileService, repository: FileRepository, private v
     )
     @PreAuthorize("hasAuthority('COMMITTEE')")
     fun uploadEventBanner(
-        @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 2 * 1024 * 1024) @AllowedContentTypes(
+        @RequestPart("file") @NotNull(message = "File is required") @net.blueshell.api.validation.file.FileSize(max = 2 * 1024 * 1024) @net.blueshell.api.validation.file.AllowedContentTypes(
             "image/png",
             "image/jpeg",
             "image/jpg",

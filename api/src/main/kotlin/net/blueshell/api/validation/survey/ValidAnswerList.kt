@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [ValidAnswerListValidator::class])
+@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.survey.ValidAnswerListValidator::class])
 annotation class ValidAnswerList(
     val message: String = "Invalid list of answers",
     val groups: Array<KClass<*>> = [],

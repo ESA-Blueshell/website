@@ -1,7 +1,7 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
-import net.blueshell.api.listener.base.JpaListener
+import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
 import net.blueshell.api.model.User
 import net.blueshell.api.model.survey.Answer

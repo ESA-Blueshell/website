@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils
  */
 @Component
 class ValidMobilePhoneNumberValidator @Autowired constructor(private val phoneNumberUtil: PhoneNumberUtil) :
-    ConstraintValidator<ValidMobilePhoneNumber?, String?> {
+    ConstraintValidator<net.blueshell.api.validation.user.ValidMobilePhoneNumber?, String?> {
     override fun isValid(phoneNumber: String?, context: ConstraintValidatorContext?): Boolean {
         if (phoneNumber.isNullOrBlank()) {
             // Let @NotBlank or other annotations handle null/empty cases

@@ -12,7 +12,7 @@ import org.springframework.util.StringUtils
  */
 @Component
 class ExistingUsernameValidator @Autowired constructor(private val userService: UserService) :
-    ConstraintValidator<ExistingUsername, String> {
+    ConstraintValidator<net.blueshell.api.validation.user.ExistingUsername, String> {
     override fun isValid(username: String, context: ConstraintValidatorContext): Boolean {
         if (!StringUtils.hasText(username)) {
             // Let @NotBlank handle this

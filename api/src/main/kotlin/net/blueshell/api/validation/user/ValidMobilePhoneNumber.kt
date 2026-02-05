@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
  * Custom annotation to validate that a phone number is a valid mobile number.
  */
 @MustBeDocumented
-@Constraint(validatedBy = [ValidMobilePhoneNumberValidator::class])
+@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.user.ValidMobilePhoneNumberValidator::class])
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ValidMobilePhoneNumber(

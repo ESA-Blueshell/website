@@ -9,7 +9,7 @@ import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.validation.survey.ValidQuestion
 
 @Schema(name = "Question")
-@ValidQuestion
+@net.blueshell.api.validation.survey.ValidQuestion
 data class QuestionDTO(
     @field:NotNull
     var idx: Long? = null,

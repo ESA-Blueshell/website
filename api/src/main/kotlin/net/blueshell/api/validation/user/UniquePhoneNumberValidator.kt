@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class UniquePhoneNumberValidator @Autowired constructor(private val userService: UserService) :
-    ConstraintValidator<UniquePhoneNumber, String> {
+    ConstraintValidator<net.blueshell.api.validation.user.UniquePhoneNumber, String> {
     override fun isValid(phoneNumber: String?, context: ConstraintValidatorContext): Boolean {
         if (phoneNumber.isNullOrEmpty()) {
             // Let @NotBlank or @Pattern handle this

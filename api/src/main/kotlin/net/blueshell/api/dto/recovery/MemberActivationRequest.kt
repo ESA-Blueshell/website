@@ -14,7 +14,7 @@ data class MemberActivationRequest(
     var token: String? = null,
 
     @field:NotBlank
-    @field:UniqueUsername
+    @field:net.blueshell.api.validation.user.UniqueUsername
     var username: String? = null,
 
     @field:JsonProperty

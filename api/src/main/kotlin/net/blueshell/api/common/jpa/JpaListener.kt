@@ -1,4 +1,4 @@
-package net.blueshell.api.listener.base
+package net.blueshell.api.common.jpa
 
 import jakarta.persistence.PostPersist
 import jakarta.persistence.PostRemove

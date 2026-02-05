@@ -1,5 +1,7 @@
-package net.blueshell.api.common.hibernate
+package net.blueshell.api.model.hibernate
 
+import net.blueshell.api.common.hibernate.DirtyField
+import net.blueshell.api.common.hibernate.DirtyModel
 import net.blueshell.api.model.base.DirtyAwareModel
 import org.hibernate.CallbackException
 import org.hibernate.Interceptor
@@ -11,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap
  * Hibernate 6 compatible interceptor:
  * - implements Interceptor (EmptyInterceptor is deprecated)
  * - overrides onFlushDirty(Object id, ...)
- * 
- * 
+ *
+ *
  * Runs only for entities that extend DirtyAwareModel AND are annotated with @DirtyModel.
  */
 class DirtyTrackingInterceptor : Interceptor {

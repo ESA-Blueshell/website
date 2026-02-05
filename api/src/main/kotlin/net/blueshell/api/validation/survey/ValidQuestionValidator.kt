@@ -6,7 +6,7 @@ import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.dto.survey.QuestionDTO
 import org.springframework.beans.factory.annotation.Autowired
 
-class ValidQuestionValidator @Autowired constructor() : ConstraintValidator<ValidQuestion?, QuestionDTO?> {
+class ValidQuestionValidator @Autowired constructor() : ConstraintValidator<net.blueshell.api.validation.survey.ValidQuestion?, QuestionDTO?> {
     override fun isValid(dto: QuestionDTO?, context: ConstraintValidatorContext?): Boolean {
         if (dto == null || dto.type == null) {
             return true // Let @NotNull handle this

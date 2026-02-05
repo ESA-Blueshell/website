@@ -12,7 +12,7 @@ import net.blueshell.api.validation.group.Update
 import net.blueshell.api.validation.user.UniqueUser
 
 @Schema(name = "SimpleUser")
-@UniqueUser(groups = [Update::class, Creation::class, Administration::class])
+@net.blueshell.api.validation.user.UniqueUser(groups = [_root_ide_package_.net.blueshell.api.validation.group.Update::class, _root_ide_package_.net.blueshell.api.validation.group.Creation::class, _root_ide_package_.net.blueshell.api.validation.group.Administration::class])
 open class SimpleUserDTO(
     var fullName: String? = null,
 
@@ -33,17 +33,17 @@ open class SimpleUserDTO(
     @field:NotNull
     var newsletter: Boolean = false,
 
-    @field:NotBlank(groups = [Creation::class])
+    @field:NotBlank(groups = [_root_ide_package_.net.blueshell.api.validation.group.Creation::class])
     @field:Size(
         min = 8,
         max = 100,
         message = "Password must be at least 8 characters",
-        groups = [Creation::class]
+        groups = [_root_ide_package_.net.blueshell.api.validation.group.Creation::class]
     )
     @field:Pattern(
         regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
         message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
-        groups = [Creation::class]
+        groups = [_root_ide_package_.net.blueshell.api.validation.group.Creation::class]
     )
     var password: String? = null,
 

@@ -14,7 +14,7 @@ import java.util.function.Supplier
 import java.util.stream.Collectors
 
 class ValidEventSignUpValidator @Autowired constructor(private val events: EventService) :
-    ConstraintValidator<ValidEventSignUp?, EventSignUpDTO?> {
+    ConstraintValidator<ValidEventSignUp, EventSignUpDTO> {
     override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
         val eventId = dto.eventId ?: return violation(ctx, "eventId", "eventId is required.")

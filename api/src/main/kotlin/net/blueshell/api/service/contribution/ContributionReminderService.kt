@@ -23,7 +23,13 @@ class ContributionReminderService @Autowired constructor(
     }
 
     fun sendReminder(reminder: ContributionReminder) {
-        eventPublisher.publishEvent(ContributionReminderEmailEvent(reminder.id))
+        val reminderId = reminder.id
+        eventPublisher.publishEvent(
+            ContributionReminderEmailEvent(
+                reminderId.userId,
+                reminderId.contributionPeriodId
+            )
+        )
     }
 
     fun sendReminders(reminders: MutableList<ContributionReminder>) {

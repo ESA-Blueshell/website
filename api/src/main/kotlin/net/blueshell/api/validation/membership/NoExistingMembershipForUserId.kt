@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
  * Custom annotation to ensure the uniqueness of the username.
  */
 @MustBeDocumented
-@Constraint(validatedBy = [NoExistingMembershipForUserIdValidator::class])
+@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.membership.NoExistingMembershipForUserIdValidator::class])
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class NoExistingMembershipForUserId(

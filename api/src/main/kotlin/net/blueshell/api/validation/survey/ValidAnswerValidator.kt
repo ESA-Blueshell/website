@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 
 
 data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository) :
-    ConstraintValidator<ValidAnswer, AnswerDTO> {
+    ConstraintValidator<net.blueshell.api.validation.survey.ValidAnswer, AnswerDTO> {
     override fun isValid(dto: AnswerDTO?, context: ConstraintValidatorContext?): Boolean {
         if (dto == null || dto.questionId == null) {
             return true // Let @NotNull handle this

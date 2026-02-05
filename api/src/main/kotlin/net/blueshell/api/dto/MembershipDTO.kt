@@ -16,21 +16,21 @@ import java.time.LocalDate
 @Schema(name = "Membership")
 data class MembershipDTO(
     @field:NotNull
-    @field:NoExistingMembershipForUserId
+    @field:net.blueshell.api.validation.membership.NoExistingMembershipForUserId
     var userId: Long? = null,
 
-    @field:NotNull(groups = [Administration::class])
+    @field:NotNull(groups = [_root_ide_package_.net.blueshell.api.validation.group.Administration::class])
     var memberType: MemberType? = null,
 
-    @field:NotNull(groups = [Creation::class])
+    @field:NotNull(groups = [_root_ide_package_.net.blueshell.api.validation.group.Creation::class])
     var city: String? = null,
 
-    @field:NotNull(groups = [Creation::class])
+    @field:NotNull(groups = [_root_ide_package_.net.blueshell.api.validation.group.Creation::class])
     var country: String? = null,
 
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @field:PastOrPresent(groups = [Administration::class])
-    @field:Today(groups = [Creation::class])
+    @field:PastOrPresent(groups = [_root_ide_package_.net.blueshell.api.validation.group.Administration::class])
+    @field:net.blueshell.api.validation.date.Today(groups = [_root_ide_package_.net.blueshell.api.validation.group.Creation::class])
     var startDate: LocalDate? = null,
 
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

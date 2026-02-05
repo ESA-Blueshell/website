@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
  * Custom annotation to ensure the uniqueness of the email.
  */
 @MustBeDocumented
-@Constraint(validatedBy = [UniqueEmailValidator::class])
+@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.user.UniqueEmailValidator::class])
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class UniqueEmail(

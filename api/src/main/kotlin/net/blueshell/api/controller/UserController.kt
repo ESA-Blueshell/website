@@ -42,9 +42,9 @@ class UserController(
     @ResponseStatus(HttpStatus.CREATED) // TODO: Once all members are in the site, remove the ability for admins to create new users
     fun createUser(@RequestBody dto: AdvancedUserDTO): AdvancedUserDTO {
         val groups: Array<Class<*>> = if (hasAuthority(Role.BOARD))
-            arrayOf(Administration::class.java)
+            arrayOf(_root_ide_package_.net.blueshell.api.validation.group.Administration::class.java)
         else
-            arrayOf(Creation::class.java)
+            arrayOf(_root_ide_package_.net.blueshell.api.validation.group.Creation::class.java)
 
         val violations = validator.validate(dto, *groups)
         if (!violations.isEmpty()) {
@@ -60,7 +60,7 @@ class UserController(
     @PostMapping("/users/guest")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGuestUser(@Validated(Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
+    fun createGuestUser(@Validated(_root_ide_package_.net.blueshell.api.validation.group.Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
         var user = simpleMapper.fromDTO(dto, User())
         user = service.create(user)
         return simpleMapper.toDTO(user)
@@ -70,7 +70,7 @@ class UserController(
     @PermitAll
     fun updateGuestUser(
         @PathVariable id: Long,
-        @Validated(Update::class) @RequestBody dto: SimpleUserDTO
+        @Validated(_root_ide_package_.net.blueshell.api.validation.group.Update::class) @RequestBody dto: SimpleUserDTO
     ): SimpleUserDTO {
         var user = service.findById(id)
         simpleMapper.fromDTO(dto, user)
@@ -82,7 +82,7 @@ class UserController(
     @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     fun updateUser(
         @PathVariable id: Long,
-        @Validated(Update::class) @RequestBody dto: AdvancedUserDTO
+        @Validated(_root_ide_package_.net.blueshell.api.validation.group.Update::class) @RequestBody dto: AdvancedUserDTO
     ): AdvancedUserDTO {
         var user = service.findById(id)
         advancedMapper.fromDTO(dto, user)

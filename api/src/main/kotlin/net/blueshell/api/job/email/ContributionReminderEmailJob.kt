@@ -1,6 +1,5 @@
 package net.blueshell.api.job.email
 
-import net.blueshell.api.model.contribution.ContributionReminderId
 import net.blueshell.api.service.email.EmailService
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
@@ -17,17 +16,18 @@ class ContributionReminderEmailJob(
 ) {
     @Async
     @Retryable(retryFor = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 2000, multiplier = 2.0))
-    fun send(reminderId: ContributionReminderId): CompletableFuture<Void?> {
-        val key = jobKey("contribution_reminder", reminderId)
+    fun send(userId: Long, contributionPeriodId: Long): CompletableFuture<Void?> {
+        val key = jobKey("contribution_reminder", userId, contributionPeriodId)
         if (processing.putIfAbsent(key, true) != null) {
             log.info(
-                "Contribution reminder already processing for reminderId={}",
-                reminderId
+                "Contribution reminder already processing for userId={} contributionPeriodId={}",
+                userId,
+                contributionPeriodId
             )
             return CompletableFuture.completedFuture<Void?>(null)
         }
         try {
-            emails.sendContributionReminderEmail(reminderId)
+            emails.sendContributionReminderEmail(userId, contributionPeriodId)
             return CompletableFuture.completedFuture<Void?>(null)
         } finally {
             processing.remove(key)
@@ -35,19 +35,20 @@ class ContributionReminderEmailJob(
     }
 
     @Recover
-    fun recover(ex: Exception, reminderId: ContributionReminderId?): CompletableFuture<Void?> {
-        processing.remove(jobKey("contribution_reminder", reminderId))
+    fun recover(ex: Exception, userId: Long, contributionPeriodId: Long): CompletableFuture<Void?> {
+        processing.remove(jobKey("contribution_reminder", userId, contributionPeriodId))
         log.error(
-            "Giving up contribution reminder for reminderId={}: {}",
-            reminderId,
+            "Giving up contribution reminder for userId={} contributionPeriodId={}: {}",
+            userId,
+            contributionPeriodId,
             ex.message,
             ex
         )
         return CompletableFuture.completedFuture<Void?>(null)
     }
 
-    private fun jobKey(type: String?, id: ContributionReminderId?): String {
-        return "${type}_${id}_${System.currentTimeMillis() / 10000}"
+    private fun jobKey(type: String?, userId: Long?, contributionPeriodId: Long?): String {
+        return "${type}_${userId}_${contributionPeriodId}_${System.currentTimeMillis() / 10000}"
     }
 
     companion object {

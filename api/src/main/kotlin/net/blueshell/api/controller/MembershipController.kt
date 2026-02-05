@@ -47,7 +47,7 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
     @PostMapping("memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
-        @Validated(Administration::class) @RequestBody dto: MembershipDTO
+        @Validated(_root_ide_package_.net.blueshell.api.validation.group.Administration::class) @RequestBody dto: MembershipDTO
     ): MembershipDTO? {
         var membership = mapper.fromDTO(dto)
         membership = service.create(membership)

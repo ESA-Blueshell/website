@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper.event
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.common.util.MappingUtil.randomCapitalString
 import net.blueshell.api.dto.GuestDTO
 import net.blueshell.api.model.event.Guest

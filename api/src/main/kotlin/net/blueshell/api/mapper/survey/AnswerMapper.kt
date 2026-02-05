@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper.survey
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.survey.AnswerDTO
 import net.blueshell.api.model.survey.Answer
 import org.mapstruct.BeanMapping

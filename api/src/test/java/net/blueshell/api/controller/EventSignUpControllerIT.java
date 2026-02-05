@@ -47,12 +47,20 @@ class EventSignUpControllerIT extends UserTestSupport {
 
     private final Map<Role, User> users = new EnumMap<>(Role.class);
 
+    private final UnifiedFactory uf;
+    private final AdvancedCommitteeDTOFactory committeeDTOFactory;
+    private final SurveyDTOFactory surveyFactory;
+
     @Autowired
-    private UnifiedFactory uf;
-    @Autowired
-    private AdvancedCommitteeDTOFactory committeeDTOFactory;
-    @Autowired
-    private SurveyDTOFactory surveyFactory;
+    EventSignUpControllerIT(
+            UnifiedFactory uf,
+            AdvancedCommitteeDTOFactory committeeDTOFactory,
+            SurveyDTOFactory surveyFactory
+    ) {
+        this.uf = uf;
+        this.committeeDTOFactory = committeeDTOFactory;
+        this.surveyFactory = surveyFactory;
+    }
 
     @BeforeEach
     void setupUsers() {

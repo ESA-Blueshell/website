@@ -2,7 +2,7 @@ package net.blueshell.api.controller.contribution
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.base.BaseController
+import net.blueshell.api.controller.base.BaseController
 import net.blueshell.api.dto.contribution.ContributionDTO
 import net.blueshell.api.mapper.contribution.ContributionMapper
 import net.blueshell.api.model.contribution.ContributionId

@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper.committee
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.committee.CommitteeMemberDTO
 import net.blueshell.api.mapper.user.SimpleUserMapper
 import net.blueshell.api.model.committee.CommitteeMember

@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.base.dto.BaseDTO
+import net.blueshell.api.dto.base.BaseDTO
 import net.blueshell.api.common.enums.Role
 import java.io.Serial
 import java.util.function.ToIntFunction

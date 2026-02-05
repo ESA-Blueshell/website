@@ -19,8 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class AddressValidatorTest {
 
-    @Autowired private Validator validator;
-    @Autowired private AddressDTOFactory addressFactory;
+    private final Validator validator;
+    private final AddressDTOFactory addressFactory;
+
+    @Autowired
+    AddressValidatorTest(Validator validator, AddressDTOFactory addressFactory) {
+        this.validator = validator;
+        this.addressFactory = addressFactory;
+    }
 
     @Test
     void validAddressDTO_passesValidation() {

@@ -33,8 +33,14 @@ class CommitteeControllerIT extends UserTestSupport {
 
     private final Map<Role, User> users = new EnumMap<>(Role.class);
 
-    @Autowired private UnifiedFactory uf;
-    @Autowired private AdvancedCommitteeDTOFactory committeeDTOFactory;
+    private final UnifiedFactory uf;
+    private final AdvancedCommitteeDTOFactory committeeDTOFactory;
+
+    @Autowired
+    CommitteeControllerIT(UnifiedFactory uf, AdvancedCommitteeDTOFactory committeeDTOFactory) {
+        this.uf = uf;
+        this.committeeDTOFactory = committeeDTOFactory;
+    }
 
     @BeforeEach
     void setupUsers() {

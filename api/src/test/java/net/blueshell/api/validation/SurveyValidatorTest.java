@@ -31,11 +31,24 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class SurveyValidatorTest {
 
-    @Autowired private Validator validator;
-    @Autowired private SurveyDTOFactory surveyFactory;
-    @Autowired private QuestionDTOFactory questionFactory;
-    @Autowired private AnswerDTOFactory answerFactory;
+    private final Validator validator;
+    private final SurveyDTOFactory surveyFactory;
+    private final QuestionDTOFactory questionFactory;
+    private final AnswerDTOFactory answerFactory;
     @MockitoBean private QuestionRepository questionRepository;
+
+    @Autowired
+    SurveyValidatorTest(
+            Validator validator,
+            SurveyDTOFactory surveyFactory,
+            QuestionDTOFactory questionFactory,
+            AnswerDTOFactory answerFactory
+    ) {
+        this.validator = validator;
+        this.surveyFactory = surveyFactory;
+        this.questionFactory = questionFactory;
+        this.answerFactory = answerFactory;
+    }
 
     private static Question mkQuestion(QuestionType type) {
         Question q = new Question();

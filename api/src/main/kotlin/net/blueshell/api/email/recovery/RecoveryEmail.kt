@@ -1,6 +1,6 @@
 package net.blueshell.api.email.recovery
 
-import net.blueshell.api.base.BaseEmail
+import net.blueshell.api.email.base.BaseEmail
 import net.blueshell.api.model.User
 
 abstract class RecoveryEmail(

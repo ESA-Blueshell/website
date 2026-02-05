@@ -20,8 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class EventValidatorTest {
 
-    @Autowired private Validator validator;
-    @Autowired private EventDTOFactory eventFactory;
+    private final Validator validator;
+    private final EventDTOFactory eventFactory;
+
+    @Autowired
+    EventValidatorTest(Validator validator, EventDTOFactory eventFactory) {
+        this.validator = validator;
+        this.eventFactory = eventFactory;
+    }
 
     @Test
     void validEventDTO_passesValidation() {

@@ -30,8 +30,12 @@ class BlogControllerIT extends UserTestSupport {
 
     private final Map<Role, User> users = new EnumMap<>(Role.class);
 
+    private final UnifiedFactory uf;
+
     @Autowired
-    private UnifiedFactory uf;
+    BlogControllerIT(UnifiedFactory uf) {
+        this.uf = uf;
+    }
 
     @BeforeEach
     void setup() {

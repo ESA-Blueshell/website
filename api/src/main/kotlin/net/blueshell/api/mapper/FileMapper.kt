@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.FileDTO
 import net.blueshell.api.model.File
 import org.mapstruct.BeanMapping

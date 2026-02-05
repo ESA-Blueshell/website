@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper.event
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.dto.event.EventDTO
 import net.blueshell.api.mapper.survey.SurveyMapper

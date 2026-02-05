@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
-import net.blueshell.api.base.AdvancedController
+import net.blueshell.api.controller.base.AdvancedController
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.dto.user.AdvancedUserDTO
 import net.blueshell.api.dto.user.SimpleUserDTO

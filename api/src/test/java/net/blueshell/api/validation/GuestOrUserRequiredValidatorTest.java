@@ -22,9 +22,20 @@ class GuestOrUserRequiredValidatorTest {
 
     private final GuestOrUserRequiredValidator validator = new GuestOrUserRequiredValidator();
 
-    @Autowired private EventSignUpDTOFactory signUpFactory;
-    @Autowired private GuestDTOFactory guestFactory;
-    @Autowired private SimpleUserDTOFactory simpleUserFactory;
+    private final EventSignUpDTOFactory signUpFactory;
+    private final GuestDTOFactory guestFactory;
+    private final SimpleUserDTOFactory simpleUserFactory;
+
+    @Autowired
+    GuestOrUserRequiredValidatorTest(
+            EventSignUpDTOFactory signUpFactory,
+            GuestDTOFactory guestFactory,
+            SimpleUserDTOFactory simpleUserFactory
+    ) {
+        this.signUpFactory = signUpFactory;
+        this.guestFactory = guestFactory;
+        this.simpleUserFactory = simpleUserFactory;
+    }
 
     @Test
     void valid_when_guest_present() {

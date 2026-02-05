@@ -1,12 +1,10 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.mapper.BrevoContactMapper
+import net.blueshell.api.common.enums.Role
 import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
 import net.blueshell.clients.brevo.api.ContactsApi
-import net.blueshell.clients.brevo.model.AddContactToListRequest
-import net.blueshell.clients.brevo.model.CreateList
-import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
+import net.blueshell.clients.brevo.model.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -16,16 +14,12 @@ import org.springframework.web.client.RestClientResponseException
 
 @Service
 class ContactService(
-    private val mapper: BrevoContactMapper,
     private val users: UserService,
     private val restClientBuilder: RestClient.Builder,
     @param:Value($$"${brevo.apiKey}") private val apiKey: String,
     @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
     @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
 ) {
-
-    private lateinit var contacts: ContactsApi
-
     private val contactsApi: ContactsApi
         get() {
             val client = restClientBuilder
@@ -44,7 +38,7 @@ class ContactService(
             val details =
                 api.getContactInfo(user.email, "email_id", null, null)
             user.contactId = details.id
-        } catch (e: HttpClientErrorException) {
+        } catch (_: HttpClientErrorException) {
             log.info("Failed to get contact details for user: {}", user.email)
         }
     }
@@ -62,7 +56,7 @@ class ContactService(
     private fun createContact(user: User) {
         log.info("Creating contact for user: {}", user.email)
         val api = this.contactsApi
-        val createContact = mapper.toCreate(user)
+        val createContact = toCreateContact(user)
         val response = api.createContact(createContact)
         users.updateContactId(user.id!!, response.id!!)
     }
@@ -71,12 +65,39 @@ class ContactService(
     private fun sendUpdate(user: User) {
         log.info("Sending update for user: {}", user.email)
         val api = this.contactsApi
-        val contact = mapper.toUpdate(user)
+        val contact = toUpdateContact(user)
         api.updateContact(
             user.email,
             contact,
             "email_id"
         )
+    }
+
+    private fun toCreateContact(user: User): CreateContact {
+        val contact = CreateContact()
+        contact.email = user.email
+        contact.extId = user.id.toString()
+        contact.attributes = toAttributes(user)
+        return contact
+    }
+
+    private fun toUpdateContact(user: User): UpdateContact {
+        val contact = UpdateContact()
+        contact.extId = user.id.toString()
+        contact.attributes = toAttributes(user)
+        return contact
+    }
+
+    private fun toAttributes(user: User): MutableMap<String, Any> {
+        val attrs: MutableMap<String, Any> = HashMap()
+        attrs["NEWSLETTER"] = user.newsletter
+        attrs["IS_MEMBER"] = user.hasRole(Role.MEMBER)
+        attrs["FIRSTNAME"] = user.firstName
+        attrs["LASTNAME"] = user.lastName
+        attrs["SURNAME"] = user.lastName
+        attrs["SMS"] = user.phoneNumber!!
+        attrs["WHATSAPP"] = user.phoneNumber!!
+        return attrs
     }
 
     @Throws(RestClientResponseException::class)

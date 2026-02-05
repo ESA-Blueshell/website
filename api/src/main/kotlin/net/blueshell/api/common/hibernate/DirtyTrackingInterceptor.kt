@@ -1,6 +1,6 @@
 package net.blueshell.api.common.hibernate
 
-import net.blueshell.api.base.DirtyAwareModel
+import net.blueshell.api.model.base.DirtyAwareModel
 import org.hibernate.CallbackException
 import org.hibernate.Interceptor
 import org.hibernate.type.Type

@@ -1,0 +1,26 @@
+package net.blueshell.api.model.base
+
+import jakarta.persistence.Transient
+import java.util.Collections
+import java.util.LinkedHashSet
+
+abstract class DirtyAwareModel : AuditedAutoIdEntity() {
+    @Transient
+    var dirtyFields: Set<String> = emptySet()
+        private set
+
+    @Transient
+    var dirty = false
+        private set
+
+    fun applyDirtyFields(fields: MutableSet<String>) {
+        if (fields.isEmpty()) {
+            this.dirtyFields = emptySet()
+            this.dirty = false
+        } else {
+            // preserve order of discovery, expose as unmodifiable
+            this.dirtyFields = Collections.unmodifiableSet(LinkedHashSet(fields))
+            this.dirty = true
+        }
+    }
+}

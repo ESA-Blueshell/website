@@ -3,7 +3,7 @@ package net.blueshell.api.controller
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.ws.rs.PathParam
-import net.blueshell.api.base.BaseController
+import net.blueshell.api.controller.base.BaseController
 import net.blueshell.api.common.enums.PlatformType
 import net.blueshell.api.dto.TelemetryDTO
 import net.blueshell.api.mapper.TelemetryMapper

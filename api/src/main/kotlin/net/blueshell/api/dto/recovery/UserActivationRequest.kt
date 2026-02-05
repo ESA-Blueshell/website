@@ -2,7 +2,7 @@ package net.blueshell.api.dto.recovery
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import net.blueshell.api.base.dto.BaseDTO
+import net.blueshell.api.dto.base.BaseDTO
 
 @Schema(name = "UserActivationRequest")
 data class UserActivationRequest(

@@ -2,7 +2,7 @@ package net.blueshell.api.controller.event
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.base.BaseController
+import net.blueshell.api.controller.base.BaseController
 import net.blueshell.api.dto.event.EventSignUpDTO
 import net.blueshell.api.mapper.event.EventSignUpMapper
 import net.blueshell.api.model.filter.EventSignUpFilter
@@ -11,7 +11,6 @@ import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -24,7 +23,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
                 "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
                 "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
-    @Transactional(readOnly = true)
     fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByFilter(filter)
         return mapper.toDTOs(eventSignUps.stream()).toList()
@@ -32,7 +30,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
 
     @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
-    @Transactional(readOnly = true)
     fun findEventSignUpsByAccessToken(@PathVariable accessToken: String): MutableList<EventSignUpDTO> {
         val signUps = service.findByGuestAccessToken(accessToken)
         return mapper.toDTOs(signUps)
@@ -40,7 +37,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
-    @Transactional(readOnly = true)
     fun findEventSignUpsByEventId(@PathVariable eventId: Long): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByEventId(eventId)
         return mapper.toDTOs(eventSignUps)
@@ -50,7 +46,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @PostMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') or hasPermission(#dto.eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
-    @Transactional
     fun createEventSignup(@Valid @RequestBody dto: EventSignUpDTO): EventSignUpDTO {
         principal?.id?.let { dto.userId = principal!!.id }
         var eventSignUp = mapper.fromDTO(dto)
@@ -88,7 +83,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
                 "or hasPermission(#accessToken, 'Guest', 'write')"
     )
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Transactional
     fun deleteEventSignup(
         @PathVariable eventSignupId: Long,
         @RequestParam(value = "accessToken", required = false) accessToken: String?

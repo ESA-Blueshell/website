@@ -1,6 +1,6 @@
 package net.blueshell.api.email
 
-import net.blueshell.api.base.BaseEmail
+import net.blueshell.api.email.base.BaseEmail
 import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
 

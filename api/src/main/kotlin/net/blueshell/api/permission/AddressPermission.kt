@@ -1,6 +1,6 @@
 package net.blueshell.api.permission
 
-import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.permission.BasePermissionEvaluator
 import net.blueshell.api.model.Address
 import net.blueshell.api.service.AddressService
 import org.springframework.beans.factory.annotation.Autowired

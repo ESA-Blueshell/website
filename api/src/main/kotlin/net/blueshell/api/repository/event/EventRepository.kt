@@ -1,6 +1,6 @@
 package net.blueshell.api.repository.event
 
-import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.repository.base.BaseRepository
 import net.blueshell.api.model.event.Event
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class ValidEventSignUpValidatorTest {
 
-    @Autowired private Validator validator;
+    private final Validator validator;
 
     @MockitoBean private QuestionRepository questionRepository;
     @MockitoBean private EventService eventService;
@@ -40,6 +40,11 @@ class ValidEventSignUpValidatorTest {
     private static final long Q_OPEN = 101L;
     private static final long Q_RADIO = 102L;
     private static final long Q_CHECK = 103L;
+
+    @Autowired
+    ValidEventSignUpValidatorTest(Validator validator) {
+        this.validator = validator;
+    }
 
     @BeforeEach
     void setupQuestions() {

@@ -1,8 +1,8 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedSoftDeleteEntity
-import net.blueshell.api.base.entity.Identifiable
+import net.blueshell.api.model.base.AuditedSoftDeleteEntity
+import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.File
 import net.blueshell.api.model.User
 import org.hibernate.Hibernate

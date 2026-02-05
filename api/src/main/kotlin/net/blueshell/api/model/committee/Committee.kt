@@ -1,7 +1,7 @@
 package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
-import net.blueshell.api.base.entity.AuditedAutoIdEntity
+import net.blueshell.api.model.base.AuditedAutoIdEntity
 import net.blueshell.api.model.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

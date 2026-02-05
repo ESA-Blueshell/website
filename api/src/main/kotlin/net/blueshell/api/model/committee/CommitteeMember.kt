@@ -1,9 +1,9 @@
 package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
-import net.blueshell.api.base.JpaListener
-import net.blueshell.api.base.entity.AuditedSoftDeleteEntity
-import net.blueshell.api.base.entity.Identifiable
+import net.blueshell.api.listener.base.JpaListener
+import net.blueshell.api.model.base.AuditedSoftDeleteEntity
+import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete

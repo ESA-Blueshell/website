@@ -1,6 +1,6 @@
 package net.blueshell.api.service.email
 
-import net.blueshell.api.base.BaseEmail
+import net.blueshell.api.email.base.BaseEmail
 import net.blueshell.api.common.enums.ResetType
 import net.blueshell.api.email.ContributionReminderEmail
 import net.blueshell.api.email.EventSignupEmail

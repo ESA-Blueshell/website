@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper.contribution
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.contribution.ContributionDTO
 import net.blueshell.api.model.contribution.Contribution
 import org.mapstruct.BeanMapping

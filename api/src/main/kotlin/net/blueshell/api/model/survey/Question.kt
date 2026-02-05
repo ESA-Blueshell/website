@@ -1,8 +1,8 @@
 package net.blueshell.api.model.survey
 
 import jakarta.persistence.*
-import net.blueshell.api.base.DirtyAwareModel
-import net.blueshell.api.base.JpaListener
+import net.blueshell.api.model.base.DirtyAwareModel
+import net.blueshell.api.listener.base.JpaListener
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.common.hibernate.DirtyField
 import net.blueshell.api.common.hibernate.DirtyModel

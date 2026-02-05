@@ -2,9 +2,9 @@ package net.blueshell.api.service.base
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import net.blueshell.api.base.BaseRepository
-import net.blueshell.api.base.IdentityProvider
-import net.blueshell.api.base.entity.Identifiable
+import net.blueshell.api.repository.base.BaseRepository
+import net.blueshell.api.auth.IdentityProvider
+import net.blueshell.api.model.base.Identifiable
 import org.springframework.core.ResolvableType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -21,7 +21,7 @@ import java.util.function.Supplier
  * A reusable base class that wraps a JPA repository and exposes
  * common CRUD operations. Subclasses supply:
  *
- *  * `T`  – the entity type (implements [net.blueshell.api.base.entity.Identifiable])
+ *  * `T`  – the entity type (implements [Identifiable])
  *  * `ID` – the entity’s primary-key type
  *  * `R`  – a Spring-Data repository for `T`
  *

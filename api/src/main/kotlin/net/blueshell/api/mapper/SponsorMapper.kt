@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.SponsorDTO
 import net.blueshell.api.model.Sponsor
 import org.mapstruct.BeanMapping

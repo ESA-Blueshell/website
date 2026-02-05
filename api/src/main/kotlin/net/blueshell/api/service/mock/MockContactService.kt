@@ -1,6 +1,5 @@
 package net.blueshell.api.service.mock
 
-import net.blueshell.api.mapper.BrevoContactMapper
 import net.blueshell.api.model.User
 import net.blueshell.api.model.contribution.ContributionPeriod
 import net.blueshell.api.service.ContactService
@@ -24,13 +23,12 @@ import java.util.concurrent.atomic.AtomicLong
 @Primary
 @Profile("test | dev")
 class MockContactService(
-    mapper: BrevoContactMapper,
     private val users: UserService,
     restClientBuilder: RestClient.Builder,
     @Value($$"${brevo.apiKey:}") apiKey: String,
     @Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
     @Value($$"${brevo.folders.contributionPeriodsId:0}") contributionPeriodsFolder: Long,
-) : ContactService(mapper, users, restClientBuilder, apiKey, brevoBaseUrl, contributionPeriodsFolder) {
+) : ContactService(users, restClientBuilder, apiKey, brevoBaseUrl, contributionPeriodsFolder) {
     private val contactSeq = AtomicLong(100000L)
     private val listSeq = AtomicLong(10000L)
 

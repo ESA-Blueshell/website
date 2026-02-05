@@ -1,6 +1,6 @@
 package net.blueshell.api.permission
 
-import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.permission.BasePermissionEvaluator
 import net.blueshell.api.model.event.EventBanner
 import net.blueshell.api.model.event.EventBannerId
 import net.blueshell.api.service.event.EventBannerService

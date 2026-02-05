@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import jakarta.ws.rs.QueryParam
-import net.blueshell.api.base.BaseController
+import net.blueshell.api.controller.base.BaseController
 import net.blueshell.api.dto.event.EventDTO
 import net.blueshell.api.mapper.event.EventMapper
 import net.blueshell.api.model.filter.EventFilter

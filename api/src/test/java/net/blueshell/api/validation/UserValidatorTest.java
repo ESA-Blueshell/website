@@ -23,9 +23,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class UserValidatorTest {
 
-    @Autowired private Validator validator;
-    @Autowired private SimpleUserDTOFactory simpleUserFactory;
-    @Autowired private AdvancedUserDTOFactory advancedUserFactory;
+    private final Validator validator;
+    private final SimpleUserDTOFactory simpleUserFactory;
+    private final AdvancedUserDTOFactory advancedUserFactory;
+
+    @Autowired
+    UserValidatorTest(
+            Validator validator,
+            SimpleUserDTOFactory simpleUserFactory,
+            AdvancedUserDTOFactory advancedUserFactory
+    ) {
+        this.validator = validator;
+        this.simpleUserFactory = simpleUserFactory;
+        this.advancedUserFactory = advancedUserFactory;
+    }
 
     @Test
     void validSimpleUserDTO_passesValidation() {

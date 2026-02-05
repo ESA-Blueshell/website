@@ -22,8 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class MembershipValidatorTest {
 
-    @Autowired private Validator validator;
-    @Autowired private MembershipDTOFactory membershipFactory;
+    private final Validator validator;
+    private final MembershipDTOFactory membershipFactory;
+
+    @Autowired
+    MembershipValidatorTest(Validator validator, MembershipDTOFactory membershipFactory) {
+        this.validator = validator;
+        this.membershipFactory = membershipFactory;
+    }
 
     @Test
     void validMembershipDTO_passesValidation() {

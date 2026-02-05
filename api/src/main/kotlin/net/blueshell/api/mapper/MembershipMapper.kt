@@ -1,6 +1,6 @@
 package net.blueshell.api.mapper
 
-import net.blueshell.api.base.BaseMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.dto.MembershipDTO
 import net.blueshell.api.model.Membership

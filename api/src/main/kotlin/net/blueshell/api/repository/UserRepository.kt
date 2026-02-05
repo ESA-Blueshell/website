@@ -1,6 +1,6 @@
 package net.blueshell.api.repository
 
-import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.repository.base.BaseRepository
 import net.blueshell.api.model.User
 import org.springframework.stereotype.Repository
 import java.util.*

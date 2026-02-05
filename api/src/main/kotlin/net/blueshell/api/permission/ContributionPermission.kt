@@ -1,6 +1,6 @@
 package net.blueshell.api.permission
 
-import net.blueshell.api.base.BasePermissionEvaluator
+import net.blueshell.api.permission.BasePermissionEvaluator
 import net.blueshell.api.model.contribution.Contribution
 import net.blueshell.api.model.contribution.ContributionId
 import net.blueshell.api.service.contribution.ContributionService

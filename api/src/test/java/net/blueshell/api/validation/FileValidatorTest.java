@@ -18,8 +18,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class FileValidatorTest {
 
-    @Autowired private Validator validator;
-    @Autowired private FileDTOFactory fileFactory;
+    private final Validator validator;
+    private final FileDTOFactory fileFactory;
+
+    @Autowired
+    FileValidatorTest(Validator validator, FileDTOFactory fileFactory) {
+        this.validator = validator;
+        this.fileFactory = fileFactory;
+    }
 
     @Test
     void validFileDTO_passesValidation() {

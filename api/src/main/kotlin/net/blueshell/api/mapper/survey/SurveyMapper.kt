@@ -20,11 +20,4 @@ abstract class SurveyMapper : BaseMapper<Survey, SurveyDTO>() {
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     abstract override fun toDTO(survey: Survey): SurveyDTO
-
-    @AfterMapping
-    protected fun linkQuestions(@MappingTarget survey: Survey) {
-        if (survey.questions != null) {
-            survey.questions.forEach(Consumer { q: Question -> q!!.survey = survey })
-        }
-    }
 }

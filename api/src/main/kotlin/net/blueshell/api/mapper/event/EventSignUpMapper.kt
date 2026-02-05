@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 @Mapper(componentModel = "spring", uses = [GuestMapper::class, AnswerMapper::class, SimpleUserMapper::class])
 abstract class EventSignUpMapper : BaseMapper<EventSignUp, EventSignUpDTO>() {
     @Mapping(target = "eventId")
-    @Mapping(target = "guest", ignore = true)
+    @Mapping(target = "guest")
     @Mapping(target = "userId")
     @Mapping(target = "answers")
     @Mapping(target = "version")
@@ -28,21 +28,4 @@ abstract class EventSignUpMapper : BaseMapper<EventSignUp, EventSignUpDTO>() {
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)
     abstract override fun toDTO(signUp: EventSignUp): EventSignUpDTO
-
-    @Autowired
-    private lateinit var guests: GuestService
-
-    @Autowired
-    private lateinit var guestMapper: GuestMapper
-
-    @AfterMapping
-    protected fun afterFromDTO(dto: EventSignUpDTO, @MappingTarget signUp: EventSignUp) {
-        if (dto.guest?.accessToken != null) {
-            val guest = guests.findByAccessToken(dto.guest!!.accessToken)
-            guestMapper.fromDTO(dto.guest!!, guest)
-            signUp.guest = guest
-        } else if (dto.guest != null) {
-            signUp.guest = guestMapper.fromDTO(dto.guest!!)
-        }
-    }
 }

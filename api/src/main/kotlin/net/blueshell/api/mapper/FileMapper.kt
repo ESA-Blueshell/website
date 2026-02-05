@@ -75,7 +75,7 @@ abstract class FileMapper : BaseMapper<File, FileDTO>() {
             contentType = Files.probeContentType(resource.file.toPath())
             if (contentType != null) return contentType
             return extToMime(getExtensionFromName(filename))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return "application/octet-stream"
         }
     }

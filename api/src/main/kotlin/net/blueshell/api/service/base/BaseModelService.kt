@@ -1,7 +1,9 @@
-package net.blueshell.api.base
+package net.blueshell.api.service.base
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
+import net.blueshell.api.base.BaseRepository
+import net.blueshell.api.base.IdentityProvider
 import net.blueshell.api.base.entity.Identifiable
 import org.springframework.core.ResolvableType
 import org.springframework.data.domain.Page
@@ -14,21 +16,21 @@ import java.util.function.Supplier
 
 /**
  * <h2>Generic CRUD service</h2>
- * 
- * 
+ *
+ *
  * A reusable base class that wraps a JPA repository and exposes
  * common CRUD operations. Subclasses supply:
- * 
+ *
  *  * `T`  – the entity type (implements [net.blueshell.api.base.entity.Identifiable])
  *  * `ID` – the entity’s primary-key type
  *  * `R`  – a Spring-Data repository for `T`
- * 
- * 
- * 
+ *
+ *
+ *
  * The internal repository is **private**, so concrete services cannot call it
  * directly – all persistence goes through the methods defined here.
- * 
- * 
+ *
+ *
  * Every data-changing operation calls the corresponding
  * `pre…` / `post…` hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).
@@ -52,7 +54,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
      * ----------------------------------------------------------------- */
     /**
      * Save a new entity.
-     * 
+     *
      * Sequence:&nbsp;
      * `preCreate → save&flush → refresh → postCreate`
      */
@@ -83,7 +85,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
     /**
      * Update an existing entity.
      *
-     * Throws [ResponseStatusException] if the id is unknown.
+     * Throws [org.springframework.web.server.ResponseStatusException] if the id is unknown.
      */
     @Transactional
     open fun update(entity: T): T {

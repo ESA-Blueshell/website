@@ -1,6 +1,6 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.common.enums.PlatformType
 import net.blueshell.api.model.Telemetry
 import net.blueshell.api.repository.TelemetryRepository

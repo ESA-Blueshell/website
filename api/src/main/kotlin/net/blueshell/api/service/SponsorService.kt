@@ -1,7 +1,7 @@
 package net.blueshell.api.service
 
 import jakarta.ws.rs.NotFoundException
-import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.File
 import net.blueshell.api.model.Sponsor
 import net.blueshell.api.repository.SponsorRepository

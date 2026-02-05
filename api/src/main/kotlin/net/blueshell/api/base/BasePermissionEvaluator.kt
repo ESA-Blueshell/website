@@ -1,6 +1,7 @@
 package net.blueshell.api.base
 
 import net.blueshell.api.base.entity.Identifiable
+import net.blueshell.api.service.base.BaseModelService
 import org.springframework.core.GenericTypeResolver
 import org.springframework.security.core.Authentication
 

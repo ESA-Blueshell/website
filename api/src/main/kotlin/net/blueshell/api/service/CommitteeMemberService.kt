@@ -1,6 +1,6 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.model.committee.CommitteeMemberId
 import net.blueshell.api.repository.committee.CommitteeMemberRepository

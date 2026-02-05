@@ -1,6 +1,6 @@
 package net.blueshell.api.service.event
 
-import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.event.EventBanner
 import net.blueshell.api.model.event.EventBannerId
 import net.blueshell.api.repository.event.EventBannerRepository

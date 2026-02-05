@@ -1,6 +1,6 @@
 package net.blueshell.api.service.event
 
-import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.event.EventSignUp
 import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.repository.event.EventSignUpRepository

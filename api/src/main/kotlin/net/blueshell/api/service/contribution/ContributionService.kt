@@ -1,6 +1,6 @@
 package net.blueshell.api.service.contribution
 
-import net.blueshell.api.base.BaseModelService
+import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.contribution.Contribution
 import net.blueshell.api.model.contribution.ContributionId
 import net.blueshell.api.repository.contribution.ContributionRepository

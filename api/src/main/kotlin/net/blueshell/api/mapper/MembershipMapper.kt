@@ -1,17 +1,10 @@
 package net.blueshell.api.mapper
 
-import jakarta.validation.constraints.NotNull
-import jakarta.validation.constraints.PastOrPresent
 import net.blueshell.api.base.BaseMapper
-import net.blueshell.api.common.enums.MemberType
 import net.blueshell.api.common.enums.Role
-import net.blueshell.api.common.util.MappingUtil
 import net.blueshell.api.dto.MembershipDTO
 import net.blueshell.api.model.Membership
-import net.blueshell.api.validation.group.Administration
 import org.mapstruct.*
-import java.time.LocalDate
-import java.util.function.BiConsumer
 
 
 @Mapper(componentModel = "spring")
@@ -33,20 +26,11 @@ abstract class MembershipMapper : BaseMapper<Membership, MembershipDTO>() {
 
     @AfterMapping
     protected fun afterFromDTO(dto: MembershipDTO, @MappingTarget membership: Membership) {
-        if (hasAuthority(Role.BOARD)) {
-            MappingUtil.applyIfFieldIsNotNull<Membership, @PastOrPresent(groups = [Administration::class]) LocalDate>(
-                membership,
-                dto.startDate,
-                BiConsumer { obj: Membership, startDate: LocalDate -> obj!!.startDate = startDate })
-            membership.endDate = dto.endDate // Must be applied, in order to be able to resume memberships
-            MappingUtil.applyIfFieldIsNotNull<Membership, @NotNull(groups = [Administration::class]) MemberType>(
-                membership,
-                dto.memberType,
-                BiConsumer { obj: Membership, memberType: MemberType -> obj!!.memberType = memberType })
-            MappingUtil.applyIfFieldIsNotNull(
-                membership,
-                dto.incasso,
-                BiConsumer { obj: Membership, incasso: Boolean -> obj!!.incasso = incasso!! })
-        }
+        if (!hasAuthority(Role.BOARD)) return
+
+        dto.startDate?.let { membership.startDate = it }
+        membership.endDate = dto.endDate // Must be applied, in order to be able to resume memberships
+        dto.memberType?.let { membership.memberType = it }
+        dto.incasso.let { membership.incasso = it }
     }
 }

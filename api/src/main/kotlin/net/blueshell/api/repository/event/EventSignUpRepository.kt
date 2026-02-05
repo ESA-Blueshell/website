@@ -1,5 +1,3 @@
-@file:Suppress("FunctionName", "FunctionName", "FunctionName", "FunctionName", "FunctionName")
-
 package net.blueshell.api.repository.event
 
 import net.blueshell.api.base.BaseRepository
@@ -13,7 +11,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.util.*
 
-@Suppress("FunctionName", "FunctionName", "FunctionName", "FunctionName", "FunctionName")
+@Suppress("FunctionName")
 @Repository
 interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
@@ -26,7 +24,7 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     fun findByUserIdAndEventId(userId: Long, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessToken = :accessToken")
+    @Query("SELECT es FROM EventSignUp es WHERE es._guest.accessToken = :accessToken")
     fun findByGuestAccessToken(@Param("accessToken") accessToken: String): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)

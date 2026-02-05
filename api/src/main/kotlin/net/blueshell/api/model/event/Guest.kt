@@ -34,5 +34,5 @@ class Guest : AuditedAutoIdEntity() {
     var phoneNumber: String? = null
 
     @Column(name = "access_token", nullable = false)
-    lateinit var accessToken: String
+    var accessToken: String? = null
 }

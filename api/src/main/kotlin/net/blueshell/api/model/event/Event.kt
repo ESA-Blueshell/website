@@ -26,18 +26,16 @@ import java.time.Instant
         Index(name = "idx_events_sign_up", columnList = "sign_up")
     ]
 )
-@NamedEntityGraphs(
-    NamedEntityGraph(
-        name = "Event.withBannerFileAndFormQuestions",
-        attributeNodes = [
-            NamedAttributeNode(value = "_banner", subgraph = "bannerSub"),
-            NamedAttributeNode(value = "_signUpForm", subgraph = "formSub"),
-        ],
-        subgraphs = [
-            NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("_file")]),
-            NamedSubgraph(name = "formSub", attributeNodes = [NamedAttributeNode("_questions")]),
-        ]
-    )
+@NamedEntityGraph(
+    name = "Event.withBannerFileAndFormQuestions",
+    attributeNodes = [
+        NamedAttributeNode(value = "_banner", subgraph = "bannerSub"),
+        NamedAttributeNode(value = "_signUpForm", subgraph = "formSub"),
+    ],
+    subgraphs = [
+        NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("_file")]),
+        NamedSubgraph(name = "formSub", attributeNodes = [NamedAttributeNode("_questions")]),
+    ]
 )
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

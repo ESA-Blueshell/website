@@ -36,7 +36,7 @@ class CommitteeMember(
     @get:Transient
     @set:Transient
     var committeeId: Long
-        get() = id.committeeId
+        get() = requireNotNull(id.committeeId) { "committeeId is required" }
         set(value) {
             id.committeeId = value
         }
@@ -44,7 +44,7 @@ class CommitteeMember(
     @get:Transient
     @set:Transient
     var userId: Long
-        get() = id.userId
+        get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
             id.userId = value
         }
@@ -82,3 +82,9 @@ class CommitteeMember(
 
     override fun hashCode(): Int = id.hashCode()
 }
+
+@Embeddable
+data class CommitteeMemberId(
+    var committeeId: Long? = null,
+    var userId: Long? = null
+) : java.io.Serializable

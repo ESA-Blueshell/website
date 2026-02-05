@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.event
 
 import net.blueshell.api.base.BaseMapper
-import net.blueshell.api.common.util.Util
+import net.blueshell.api.common.util.MappingUtil.randomCapitalString
 import net.blueshell.api.dto.GuestDTO
 import net.blueshell.api.model.event.Guest
 import org.mapstruct.*
@@ -19,9 +19,9 @@ abstract class GuestMapper : BaseMapper<Guest, GuestDTO>() {
 
     @AfterMapping
     protected fun afterFromDTO(dto: GuestDTO, @MappingTarget guest: Guest) {
-        if (guest.accessToken == null) {
-            guest.accessToken = Util.getRandomCapitalString(30)
-        }
+        if (guest.accessToken != null) return
+
+        guest.accessToken = randomCapitalString(30)
     }
 
     @Mapping(target = "name")

@@ -1,7 +1,5 @@
 package net.blueshell.api.mapper.user
 
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
 import net.blueshell.api.base.BaseMapper
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.common.util.MappingUtil
@@ -10,7 +8,6 @@ import net.blueshell.api.model.User
 import org.mapstruct.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
-import java.util.function.BiConsumer
 
 @Mapper(componentModel = "spring")
 abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
@@ -89,29 +86,11 @@ abstract class AdvancedUserMapper : BaseMapper<User, AdvancedUserDTO>() {
     }
 
     private fun applyRestrictedFields(dto: AdvancedUserDTO, @MappingTarget user: User) {
-        MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
-            user,
-            dto.initials,
-            BiConsumer { obj: User, initials: String -> obj!!.initials = initials })
-        MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
-            user,
-            dto.firstName,
-            BiConsumer { obj: User, firstName: String -> obj!!.firstName = firstName })
-        MappingUtil.applyIfFieldIsNotNull(
-            user,
-            dto.prefix,
-            BiConsumer { obj: User, prefix: String -> obj!!.prefix = prefix })
-        MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
-            user,
-            dto.lastName,
-            BiConsumer { obj: User, lastName: String -> obj!!.lastName = lastName })
-        MappingUtil.applyIfFieldIsNotNull<User, @NotBlank @Email String>(
-            user,
-            dto.email,
-            BiConsumer { obj: User, email: String -> obj!!.email = email })
-        MappingUtil.applyIfFieldIsNotNull<User, @NotBlank String>(
-            user,
-            dto.username,
-            BiConsumer { obj: User, username: String -> obj!!.username = username })
+        dto.initials?.let { user.initials = it }
+        dto.firstName?.let { user.firstName = it }
+        dto.prefix?.let { user.prefix = it }
+        dto.lastName?.let { user.lastName = it }
+        dto.email?.let { user.email = it }
+        dto.username?.let { user.username = it }
     }
 }

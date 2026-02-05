@@ -1,26 +1,38 @@
 package net.blueshell.api.common.util
 
 import java.security.SecureRandom
-import java.util.function.BiConsumer
 
 object MappingUtil {
     private const val CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*()-_=+<>?"
     private const val PASSWORD_LENGTH = 12
     private val random = SecureRandom()
+    private const val CAPITAL_ALNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+    fun generateRandomString(length: Int = PASSWORD_LENGTH): String {
+        require(length >= 0) { "length must be >= 0" }
 
-    fun <O, T> applyIfFieldIsNotNull(user: O?, obj: T?, applier: BiConsumer<O?, T?>) {
-        if (obj != null) {
-            applier.accept(user, obj)
+        return buildString(length) {
+            repeat(length) {
+                append(CHAR_SET[random.nextInt(CHAR_SET.length)])
+            }
         }
     }
 
-    fun generateRandomString(): String {
-        val password = StringBuilder(PASSWORD_LENGTH)
-        for (i in 0..<PASSWORD_LENGTH) {
-            val index = random.nextInt(CHAR_SET.length)
-            password.append(CHAR_SET[index])
+    fun randomCapitalString(length: Int): String {
+        require(length >= 0) { "length must be >= 0" }
+
+        return buildString(length) {
+            repeat(length) {
+                append(CAPITAL_ALNUM[random.nextInt(CAPITAL_ALNUM.length)])
+            }
         }
-        return password.toString()
+    }
+
+    /**
+     * Returns a random Int in 0..inclBound (inclusive).
+     */
+    fun randomInclusive(inclBound: Int): Int {
+        require(inclBound >= 0) { "inclBound must be >= 0" }
+        return random.nextInt(inclBound + 1)
     }
 }

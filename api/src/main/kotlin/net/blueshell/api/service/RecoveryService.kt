@@ -26,7 +26,7 @@ import java.util.function.Predicate
 import java.util.function.Supplier
 
 @Service
-class RecoveryService private constructor(
+class RecoveryService(
     repository: RecoveryTokenRepository,
     private val encoder: PasswordEncoder,
     private val eventPublisher: ApplicationEventPublisher,

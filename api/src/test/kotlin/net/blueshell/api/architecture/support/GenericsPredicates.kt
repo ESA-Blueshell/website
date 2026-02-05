@@ -1,4 +1,4 @@
-package net.blueshell.api.testsupport
+package net.blueshell.api.architecture.support
 
 import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass

@@ -11,7 +11,7 @@ import jakarta.annotation.security.PermitAll
 import jakarta.persistence.Entity
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
 import net.blueshell.api.architecture.ArchitecturePackages.DTO
-import net.blueshell.api.testsupport.DoNotIncludeTestSupport
+import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.RestController

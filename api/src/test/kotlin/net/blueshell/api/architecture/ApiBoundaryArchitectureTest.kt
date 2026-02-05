@@ -12,9 +12,9 @@ import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL_CONVERTER
 import net.blueshell.api.base.entity.BaseModel
 import net.blueshell.api.base.entity.Identifiable
-import net.blueshell.api.testsupport.DoNotIncludeTestSupport
-import net.blueshell.api.testsupport.GenericsPredicates.assignableToGeneric
-import net.blueshell.api.testsupport.ReturnTypeConditions.notHaveReturnType
+import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
+import net.blueshell.api.architecture.support.GenericsPredicates.assignableToGeneric
+import net.blueshell.api.architecture.support.ReturnTypeConditions.notHaveReturnType
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 

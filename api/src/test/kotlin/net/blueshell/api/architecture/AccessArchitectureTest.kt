@@ -19,8 +19,8 @@ import net.blueshell.api.architecture.ArchitecturePackages.REPOSITORY
 import net.blueshell.api.architecture.ArchitecturePackages.SECURITY
 import net.blueshell.api.architecture.ArchitecturePackages.SERVICE
 import net.blueshell.api.architecture.ArchitecturePackages.VALIDATION
-import net.blueshell.api.testsupport.DoNotIncludeFactory
-import net.blueshell.api.testsupport.DoNotIncludeTestSupport
+import net.blueshell.api.architecture.support.DoNotIncludeFactory
+import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
 
 /**
  * ArchUnit: access restrictions + “best practice” boundaries between common app layers.

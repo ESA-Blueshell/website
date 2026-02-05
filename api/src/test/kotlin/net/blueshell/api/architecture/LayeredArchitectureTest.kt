@@ -5,8 +5,8 @@ import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.library.Architectures.layeredArchitecture
-import net.blueshell.api.testsupport.DoNotIncludeFactory
-import net.blueshell.api.testsupport.DoNotIncludeTestSupport
+import net.blueshell.api.architecture.support.DoNotIncludeFactory
+import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
 
 /**
  * High-level layering rule (best practice).

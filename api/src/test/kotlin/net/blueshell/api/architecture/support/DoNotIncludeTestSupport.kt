@@ -1,4 +1,4 @@
-package net.blueshell.api.testsupport
+package net.blueshell.api.architecture.support
 
 import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.core.importer.Location

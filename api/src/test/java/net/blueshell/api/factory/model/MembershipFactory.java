@@ -22,11 +22,9 @@ public class MembershipFactory {
     private final Faker faker;
     private final UserFactory userFactory;
 
-    public Membership createBasic() {
+    public Membership createBasic(User user) {
         Membership membership = new Membership();
-        User user = userFactory.createBasic();
-        membership.setUserId(user.getId());
-
+        membership.setUser(user);
         membership.setStartDate(LocalDate.now().minusMonths(6));
         membership.setMemberType(faker.options().option(MemberType.class));
         membership.setIncasso(faker.bool().bool());
@@ -34,29 +32,29 @@ public class MembershipFactory {
         return membership;
     }
 
-    public Membership createFull() {
-        Membership membership = createBasic();
+    public Membership createFull(User user) {
+        Membership membership = createBasic(user);
         if (faker.bool().bool()) {
             membership.setEndDate(LocalDate.now().plusMonths(6));
         }
         return membership;
     }
 
-    public Membership createWithCustomizations(java.util.function.Consumer<Membership> customizer) {
-        Membership membership = createFull();
+    public Membership createWithCustomizations(User user, java.util.function.Consumer<Membership> customizer) {
+        Membership membership = createFull(user);
         customizer.accept(membership);
         return membership;
     }
 
-    public Membership createActive() {
-        return createWithCustomizations(membership -> {
+    public Membership createActive(User user) {
+        return createWithCustomizations(user, membership -> {
             membership.setStartDate(LocalDate.now().minusMonths(3));
             membership.setEndDate(null);
         });
     }
 
-    public Membership createExpired() {
-        return createWithCustomizations(membership -> {
+    public Membership createExpired(User user) {
+        return createWithCustomizations(user, membership -> {
             membership.setStartDate(LocalDate.now().minusYears(2));
             membership.setEndDate(LocalDate.now().minusYears(1));
         });

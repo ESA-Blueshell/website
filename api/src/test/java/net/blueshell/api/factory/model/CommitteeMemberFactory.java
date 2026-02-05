@@ -23,8 +23,8 @@ public class CommitteeMemberFactory {
             Committee committee
     ) {
         CommitteeMember member = new CommitteeMember();
-        member.setUserId(user.getId());
-        member.setCommitteeId(committee.getId());
+        member.setUser(user);
+        member.setCommittee(committee);
         member.setRole(faker.options().option("Chair", "Secretary", "Treasurer", "Member"));
 
         return member;

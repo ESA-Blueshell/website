@@ -24,28 +24,27 @@ public class BoardMemberFactory {
     private final UserFactory userFactory;
     private final FileFactory fileFactory;
 
-    public BoardMember createBasic() {
+    public BoardMember createBasic(
+            Board board,
+            User user
+    ) {
         BoardMember bm = new BoardMember();
 
-        Board board = boardFactory.createBasic();
-        User user = userFactory.createFull();
         File picture = fileFactory.createImage();
 
         bm.setBoard(board);
-        bm.setBoardId(board.getId());
         bm.setUser(user);
-        bm.setUserId(user.getId());
         bm.setPicture(picture);
 
         return bm;
     }
 
-    public BoardMember createFull() {
-        return createBasic();
+    public BoardMember createFull(Board board, User user) {
+        return createBasic(board, user);
     }
 
-    public BoardMember createWithCustomizations(java.util.function.Consumer<BoardMember> customizer) {
-        BoardMember bm = createFull();
+    public BoardMember createWithCustomizations(Board board, User user, java.util.function.Consumer<BoardMember> customizer) {
+        BoardMember bm = createFull(board, user);
         customizer.accept(bm);
         return bm;
     }

@@ -218,12 +218,9 @@ class ModelFactoryPersistenceTest {
         val board = persist(boardFactory.createBasic())
         val user = persistUser()
         val picture = fileWithUploader(fileFactory.createImage())
-        persist(picture)
 
-        val member = boardMemberFactory.createBasic()
-        member.board = board
-        member.user = user
-        member.picture = picture
+        val member = boardMemberFactory.createBasic(board, user)
+        member.picture = persist(picture)
 
         val saved = persist(member)
         assertPersisted(BoardMember::class.java, saved.id)
@@ -231,13 +228,12 @@ class ModelFactoryPersistenceTest {
 
     @Test
     fun boardDocumentFactory_creates_persistable_board_document() {
-        val board = persist(boardFactory.createBasic())
+        val board = boardFactory.createBasic()
         val document = fileWithUploader(fileFactory.createDocument())
-        persist(document)
 
         val boardDocument = boardDocumentFactory.createBasic()
-        boardDocument.board = board
-        boardDocument.file = document
+        boardDocument.board = persist(board)
+        boardDocument.file = persist(document)
 
         val saved = persist(boardDocument)
         assertPersisted(BoardDocument::class.java, saved.id)
@@ -264,7 +260,7 @@ class ModelFactoryPersistenceTest {
     @Test
     fun membershipFactory_creates_persistable_membership() {
         val user = persistUser()
-        val membership = membershipFactory.createBasic()
+        val membership = membershipFactory.createBasic(user)
         membership.user = user
 
         val saved = persist(membership)
@@ -409,11 +405,10 @@ class ModelFactoryPersistenceTest {
     fun eventPictureFactory_creates_persistable_event_picture() {
         val event = persistEvent()
         val pictureFile = fileWithUploader(fileFactory.createImage())
-        persist(pictureFile)
 
         val picture = eventPictureFactory.createBasic()
         picture.event = event
-        picture.picture = pictureFile
+        picture.picture = persist(pictureFile)
 
         val saved = persist(picture)
         assertPersisted(EventPicture::class.java, saved.id)
@@ -460,13 +455,16 @@ class ModelFactoryPersistenceTest {
         signUp.event = event
         signUp.user = user
         signUp.userId = user.id
+        val signUpAnswers = signUp.answers as MutableSet<Answer>
+        signUpAnswers.clear()
+        val savedSignUp = persist(signUp)
 
         val signUpAnswer = eventSignUpAnswerFactory.createBasic()
         signUpAnswer.answer = answer
-        signUpAnswer.eventSignUp = persist(signUp)
+        signUpAnswer.eventSignUp = savedSignUp
 
-        val saved = persist(signUpAnswer)
-        assertPersisted(EventSignUpAnswer::class.java, saved.id)
+        val savedAnswer = persist(signUpAnswer)
+        assertPersisted(EventSignUpAnswer::class.java, savedAnswer.id)
     }
 
     @Test

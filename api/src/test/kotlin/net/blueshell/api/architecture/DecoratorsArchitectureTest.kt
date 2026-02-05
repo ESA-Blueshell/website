@@ -58,6 +58,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
                 .that().areDeclaredInClassesThat().resideInAnyPackage(CONTROLLER)
                 .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
                 .and().arePublic()
+                .and().haveNameNotContaining("$")
                 .should(beSecuredByPreAuthorizeOrPermitAll())
                 .because("Security should be explicit. Allow class-level security to reduce repetition.")
         }

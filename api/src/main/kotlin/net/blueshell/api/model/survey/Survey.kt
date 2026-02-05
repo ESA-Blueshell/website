@@ -21,7 +21,7 @@ import org.hibernate.annotations.SQLRestriction
 open class Survey : AuditedAutoIdEntity() {
     @OneToMany(mappedBy = "_survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _questions: MutableSet<Question> = linkedSetOf()
-    val questions: Set<Question>
+    val questions: MutableSet<Question>
         get() = _questions
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)

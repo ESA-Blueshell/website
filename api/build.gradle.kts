@@ -61,6 +61,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 
     implementation("com.nimbusds:nimbus-jose-jwt:10.5")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")

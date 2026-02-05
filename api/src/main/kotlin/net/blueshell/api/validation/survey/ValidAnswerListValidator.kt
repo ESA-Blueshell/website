@@ -3,7 +3,7 @@ package net.blueshell.api.validation.survey
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.dto.survey.AnswerDTO
-class ValidAnswerListValidator : ConstraintValidator<net.blueshell.api.validation.survey.ValidAnswerList, MutableList<AnswerDTO>> {
+class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, MutableList<AnswerDTO>> {
     override fun isValid(answers: MutableList<AnswerDTO>?, context: ConstraintValidatorContext): Boolean {
         if (answers == null) {
             return true // Let @NotNull handle if required

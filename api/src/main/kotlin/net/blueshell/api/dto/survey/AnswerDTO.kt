@@ -6,12 +6,12 @@ import net.blueshell.api.dto.base.AuditedAutoIdDTO
 import net.blueshell.api.validation.survey.ValidAnswer
 
 @Schema(name = "Answer")
-@net.blueshell.api.validation.survey.ValidAnswer
+@ValidAnswer
 data class AnswerDTO(
     @field:NotNull
     var questionId: Long? = null,
 
-    var optionSelections: MutableList<Boolean?>? = null,
+    var optionSelections: MutableList<Boolean>? = null,
 
     var textResponse: String? = null
 ) : AuditedAutoIdDTO()

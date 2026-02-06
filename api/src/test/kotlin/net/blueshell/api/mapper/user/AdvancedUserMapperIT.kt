@@ -1,9 +1,9 @@
 package net.blueshell.api.mapper.user
 
+import net.blueshell.api.common.enums.Role
 import net.blueshell.api.factory.dto.user.AdvancedUserDTOFactory
 import net.blueshell.api.factory.model.AddressFactory
 import net.blueshell.api.mapper.MapperTestSupport
-import net.blueshell.api.common.enums.Role
 import net.blueshell.api.model.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -46,6 +46,11 @@ class AdvancedUserMapperIT @Autowired constructor(
             val user = userFactory.createBasic()
 
             val mapped = advancedUserMapper.fromDTO(dto, user)
+
+            assertThat(mapped.username).isEqualTo(dto.username)
+            assertThat(mapped.email).isEqualTo(dto.email)
+            assertThat(mapped.addressId).isEqualTo(address.id)
+
             val saved = persist(mapped)
             flushAndClear()
 

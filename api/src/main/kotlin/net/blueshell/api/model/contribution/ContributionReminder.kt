@@ -1,13 +1,16 @@
 package net.blueshell.api.model.contribution
 
 import jakarta.persistence.*
+import net.blueshell.api.common.jpa.EntityReferenceHelper
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.User
+import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import org.springframework.beans.factory.annotation.Autowired
 
 @Entity
 @Table(
@@ -37,7 +40,7 @@ import org.hibernate.annotations.SQLRestriction
 @EntityListeners(JpaListener::class)
 open class ContributionReminder(
     @EmbeddedId
-    override var id: ContributionReminderId = ContributionReminderId()
+    override var id: ContributionReminderId = ContributionReminderId(),
 ) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminderId> {
 
     @get:Transient
@@ -47,7 +50,7 @@ open class ContributionReminder(
         set(value) {
             id.userId = value
             if (_user?.id != value) {
-                _user = null
+                _user = User::class.asRef(value)
             }
         }
 
@@ -58,7 +61,7 @@ open class ContributionReminder(
         set(value) {
             id.contributionPeriodId = value
             if (_contributionPeriod?.id != value) {
-                _contributionPeriod = null
+                _contributionPeriod = ContributionPeriod::class.asRef(value)
             }
         }
 

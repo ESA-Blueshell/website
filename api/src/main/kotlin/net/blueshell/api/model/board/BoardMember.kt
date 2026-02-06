@@ -5,6 +5,7 @@ import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.File
 import net.blueshell.api.model.User
+import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -48,7 +49,7 @@ open class BoardMember(
         set(value) {
             id.boardId = value
             if (_board?.id != value) {
-                _board = null
+                _board = Board::class.asRef(value)
             }
         }
 
@@ -59,7 +60,7 @@ open class BoardMember(
         set(value) {
             id.userId = value
             if (_user?.id != value) {
-                _user = null
+                _user = User::class.asRef(value)
             }
         }
 

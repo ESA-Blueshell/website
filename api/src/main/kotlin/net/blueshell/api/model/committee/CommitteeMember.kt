@@ -5,6 +5,7 @@ import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.User
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
+import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -41,7 +42,7 @@ class CommitteeMember(
         set(value) {
             id.committeeId = value
             if (_committee?.id != value) {
-                _committee = null
+                _committee = Committee::class.asRef(value)
             }
         }
 
@@ -51,7 +52,7 @@ class CommitteeMember(
         set(value) {
             id.userId = value
             if (_user?.id != value) {
-                _user = null
+                _user = User::class.asRef(value)
             }
         }
 

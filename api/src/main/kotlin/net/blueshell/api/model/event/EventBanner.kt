@@ -5,6 +5,7 @@ import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.File
+import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -42,7 +43,7 @@ open class EventBanner(
         set(value) {
             id.eventId = value
             if (_event?.id != value) {
-                _event = null
+                _event = Event::class.asRef(value)
             }
         }
 
@@ -53,7 +54,7 @@ open class EventBanner(
         set(value) {
             id.fileId = value
             if (_file?.id != value) {
-                _file = null
+                _file = File::class.asRef(value)
             }
         }
 

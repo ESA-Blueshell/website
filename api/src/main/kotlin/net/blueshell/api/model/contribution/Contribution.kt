@@ -5,6 +5,7 @@ import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.User
+import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -46,7 +47,7 @@ open class Contribution(
         set(value) {
             id.userId = value
             if (_user?.id != value) {
-                _user = null
+                _user = User::class.asRef(value)
             }
         }
 
@@ -57,7 +58,7 @@ open class Contribution(
         set(value) {
             id.contributionPeriodId = value
             if (_contributionPeriod?.id != value) {
-                _contributionPeriod = null
+                _contributionPeriod = ContributionPeriod::class.asRef(value)
             }
         }
 

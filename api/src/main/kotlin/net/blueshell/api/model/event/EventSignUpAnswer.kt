@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.survey.Answer
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -49,7 +50,7 @@ open class EventSignUpAnswer(
         set(value) {
             id.eventSignUpId = value
             if (_eventSignUp?.id != value) {
-                _eventSignUp = null
+                _eventSignUp = EventSignUp::class.asRef(value)
             }
         }
 
@@ -60,7 +61,7 @@ open class EventSignUpAnswer(
         set(value) {
             id.answerId = value
             if (_answer?.id != value) {
-                _answer = null
+                _answer = Answer::class.asRef(value)
             }
         }
 

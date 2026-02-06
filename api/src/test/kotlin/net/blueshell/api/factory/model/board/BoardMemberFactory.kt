@@ -23,10 +23,8 @@ class BoardMemberFactory(
 
     fun createBasic(board: Board, user: User): BoardMember {
         val boardMember = BoardMember()
-        val picture = fileFactory.createImage()
         boardMember.board = board
         boardMember.user = user
-        boardMember.picture = picture
         return boardMember
     }
 

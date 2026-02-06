@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.File
+import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -44,7 +45,7 @@ open class EventPicture(
         set(value) {
             id.eventId = value
             if (_event?.id != value) {
-                _event = null
+                _event = Event::class.asRef(value)
             }
         }
 
@@ -55,7 +56,7 @@ open class EventPicture(
         set(value) {
             id.pictureId = value
             if (_picture?.id != value) {
-                _picture = null
+                _picture = File::class.asRef(value)
             }
         }
 

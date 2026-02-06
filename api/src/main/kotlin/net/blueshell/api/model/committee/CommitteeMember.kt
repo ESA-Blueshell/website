@@ -2,9 +2,9 @@ package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
+import net.blueshell.api.model.User
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
-import net.blueshell.api.model.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -30,6 +30,10 @@ import org.hibernate.annotations.SQLRestriction
 @EntityListeners(JpaListener::class)
 open class CommitteeMember(
     @EmbeddedId
+    @AttributeOverrides(
+        AttributeOverride(name = "committeeId", column = Column(name = "committee_id", nullable = false)),
+        AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)),
+    )
     override var id: CommitteeMemberId = CommitteeMemberId()
 ) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMemberId> {
 
@@ -49,9 +53,8 @@ open class CommitteeMember(
             id.userId = value
         }
 
-    @field:MapsId("userId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "user_id", nullable = false)
+    @field:JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
     private var _user: User? = null
     var user: User
         get() = requireNotNull(_user) { "User is required" }
@@ -60,9 +63,8 @@ open class CommitteeMember(
             value.id?.let { userId = it }
         }
 
-    @field:MapsId("committeeId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "committee_id", nullable = false)
+    @field:JoinColumn(name = "committee_id", nullable = false, insertable = false, updatable = false)
     private var _committee: Committee? = null
     var committee: Committee
         get() = requireNotNull(_committee) { "Committee is required" }

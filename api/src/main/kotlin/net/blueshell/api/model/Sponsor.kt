@@ -37,8 +37,10 @@ class Sponsor : AuditedAutoIdEntity() {
             pictureId = value.id ?: pictureId
         }
 
-    @get:Transient
+    @field:Column(name = "logo_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var pictureId: Long = 0
+        get() = requireNotNull(_picture?.id) { "Picture ID is required" }
         set(value) {
             field = value
             if (_picture?.id != value) {

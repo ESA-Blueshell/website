@@ -35,24 +35,26 @@ class CommitteeMember(
     @AttributeOverrides(AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)))
     override var id: Id = Id(),
 ) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMember.Id> {
+    @field:MapsId("committeeId")
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "committee_id", nullable = false)
+    private var _committee: Committee? = null
+    var committee: Committee
+        get() = requireNotNull(_committee) { "Committee is required" }
+        set(value) {
+            _committee = value
+            value.id?.let { id.committeeId = it }
+        }
 
-    @get:Transient
-    var committeeId: Long
+    @Column(name = "committee_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
+    var committeeId: Long = 0
         get() = requireNotNull(id.committeeId) { "committeeId is required" }
         set(value) {
+            field = value
             id.committeeId = value
             if (_committee?.id != value) {
                 _committee = Committee::class.asRef(value)
-            }
-        }
-
-    @get:Transient
-    var userId: Long
-        get() = requireNotNull(id.userId) { "userId is required" }
-        set(value) {
-            id.userId = value
-            if (_user?.id != value) {
-                _user = User::class.asRef(value)
             }
         }
 
@@ -67,15 +69,16 @@ class CommitteeMember(
             value.id?.let { id.userId = it }
         }
 
-    @field:MapsId("committeeId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "committee_id", nullable = false)
-    private var _committee: Committee? = null
-    var committee: Committee
-        get() = requireNotNull(_committee) { "Committee is required" }
+    @field:Transient
+    @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
+    var userId: Long = 0
+        get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
-            _committee = value
-            value.id?.let { id.committeeId = it }
+            field = value
+            id.userId = value
+            if (_user?.id != value) {
+                _user = User::class.asRef(value)
+            }
         }
 
     @Column(name = "role", length = 255)

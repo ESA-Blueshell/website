@@ -35,8 +35,10 @@ class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
     var idx: Long = 0
 
-    @get:Transient
+    @field:Column(name = "survey_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var surveyId: Long = 0
+        get() = requireNotNull(_survey?.id) { "Survey ID is required" }
         set(value) {
             field = value
             if (_survey?.id != value) {

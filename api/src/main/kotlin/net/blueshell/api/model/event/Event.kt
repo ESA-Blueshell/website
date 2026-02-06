@@ -52,10 +52,15 @@ class Event : AuditedAutoIdEntity() {
             committeeId = value.id ?: committeeId
         }
 
+    @field:Column(name = "committee_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var committeeId: Long = 0
+        get() = requireNotNull(_committee?.id) { "Committee ID is required" }
         set(value) {
             field = value
-            _committee = Committee::class.asRef(value)
+            if (_committee?.id != value) {
+                _committee = Committee::class.asRef(value)
+            }
         }
 
     @Column(name = "title", nullable = false)
@@ -119,10 +124,10 @@ class Event : AuditedAutoIdEntity() {
             signUpFormId = value?.id
         }
 
-    @Column(name = "survey_id", updatable = false, insertable = false)
-    @get:Transient
-    @set:Transient
+    @field:Column(name = "survey_id", updatable = false, insertable = false)
+    @field:Transient
     var signUpFormId: Long? = null
+        get() = _signUpForm?.id
         set(value) {
             field = value
             if (value == null) {

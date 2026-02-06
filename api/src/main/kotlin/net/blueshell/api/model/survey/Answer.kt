@@ -21,8 +21,10 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener::class)
 class Answer : AuditedAutoIdEntity() {
-    @get:Transient
+    @field:Column(name = "question_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var questionId: Long = 0
+        get() = requireNotNull(_question?.id) { "Question ID is required" }
         set(value) {
             field = value
             if (_question?.id != value) {

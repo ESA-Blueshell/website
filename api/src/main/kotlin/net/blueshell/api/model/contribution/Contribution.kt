@@ -40,22 +40,24 @@ class Contribution(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<Contribution.Id> {
 
-    @get:Transient
-    @set:Transient
-    var userId: Long
+    @field:Transient
+    @Column(name = "user_id", nullable = false, updatable = false, insertable = false)
+    var userId: Long = 0
         get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
+            field = value
             id.userId = value
             if (_user?.id != value) {
                 _user = User::class.asRef(value)
             }
         }
 
-    @get:Transient
-    @set:Transient
-    var contributionPeriodId: Long
+    @field:Transient
+    @Column(name = "contribution_period_id", nullable = false, insertable = false, updatable = false)
+    var contributionPeriodId: Long = 0
         get() = requireNotNull(id.contributionPeriodId) { "contributionPeriodId is required" }
         set(value) {
+            field = 0
             id.contributionPeriodId = value
             if (_contributionPeriod?.id != value) {
                 _contributionPeriod = ContributionPeriod::class.asRef(value)

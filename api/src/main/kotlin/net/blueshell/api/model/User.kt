@@ -122,9 +122,17 @@ class User(
     @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @field:JoinColumn(name = "address_id")
     private var _address: Address? = null
+    var address: Address?
+        get() = _address
+        set(value) {
+            _address = value
+            addressId = value?.id
+        }
 
-    @get:Transient
+    @field:Column(name = "address_id", updatable = false, insertable = false)
+    @field:Transient
     var addressId: Long? = null
+        get() = _address?.id
         set(value) {
             field = value
             if (value == null) {
@@ -132,13 +140,6 @@ class User(
             } else if (_address?.id != value) {
                 _address = Address::class.asRef(value)
             }
-        }
-
-    var address: Address?
-        get() = _address
-        set(value) {
-            _address = value
-            addressId = value?.id
         }
 
     @Column(nullable = false)
@@ -159,8 +160,10 @@ class User(
             profilePictureId = value?.id
         }
 
-    @get:Transient
+    @field:Column(name = "profile_picture_id", updatable = false, insertable = false)
+    @field:Transient
     var profilePictureId: Long? = null
+        get() = _profilePicture?.id
         set(value) {
             field = value
             if (value == null) {

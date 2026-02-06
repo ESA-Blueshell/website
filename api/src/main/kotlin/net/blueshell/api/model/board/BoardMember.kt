@@ -41,29 +41,6 @@ class BoardMember(
     @EmbeddedId
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<BoardMember.Id> {
-
-    @get:Transient
-    @set:Transient
-    var boardId: Long
-        get() = requireNotNull(id.boardId) { "boardId is required" }
-        set(value) {
-            id.boardId = value
-            if (_board?.id != value) {
-                _board = Board::class.asRef(value)
-            }
-        }
-
-    @get:Transient
-    @set:Transient
-    var userId: Long
-        get() = requireNotNull(id.userId) { "userId is required" }
-        set(value) {
-            id.userId = value
-            if (_user?.id != value) {
-                _user = User::class.asRef(value)
-            }
-        }
-
     @field:MapsId("boardId")
     @field:JoinColumn(name = "board_id", nullable = false)
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -73,6 +50,18 @@ class BoardMember(
         set(value) {
             _board = value
             value.id?.let { boardId = it }
+        }
+
+    @field:Transient
+    @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
+    var boardId: Long = 0
+        get() = requireNotNull(id.boardId) { "boardId is required" }
+        set(value) {
+            field = value
+            id.boardId = value
+            if (_board?.id != value) {
+                _board = Board::class.asRef(value)
+            }
         }
 
     @field:MapsId("userId")
@@ -86,6 +75,18 @@ class BoardMember(
             value.id?.let { userId = it }
         }
 
+    @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
+    var userId: Long = 0
+        get() = requireNotNull(id.userId) { "userId is required" }
+        set(value) {
+            field = value
+            id.userId = value
+            if (_user?.id != value) {
+                _user = User::class.asRef(value)
+            }
+        }
+
     @field:JoinColumn(name = "picture_id")
     @field:OneToOne(fetch = FetchType.LAZY)
     private var _picture: File? = null
@@ -96,8 +97,10 @@ class BoardMember(
             pictureId = value?.id
         }
 
-    @get:Transient
+    @field:Column(name = "picture_id", updatable = false, insertable = false)
+    @field:Transient
     var pictureId: Long? = null
+        get() = _picture?.id
         set(value) {
             field = value
             if (value == null) {

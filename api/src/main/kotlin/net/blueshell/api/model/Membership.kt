@@ -28,15 +28,17 @@ class Membership : AuditedAutoIdEntity() {
     @field:JoinColumn(name = "user_id", nullable = false)
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     private var _user: User? = null
-    var user: User?
-        get() = _user
+    var user: User
+        get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
-            userId = value?.id ?: userId
+            userId = value.id ?: userId
         }
 
-    @get:Transient
+    @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var userId: Long = 0
+        get() = requireNotNull(_user?.id) { "User ID is required" }
         set(value) {
             field = value
             if (_user?.id != value) {

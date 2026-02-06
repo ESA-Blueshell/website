@@ -38,22 +38,24 @@ class EventPicture(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventPicture.Id> {
 
-    @get:Transient
-    @set:Transient
-    var eventId: Long
+    @field:Transient
+    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
+    var eventId: Long = 0
         get() = requireNotNull(id.eventId) { "eventId is required" }
         set(value) {
+            field = value
             id.eventId = value
             if (_event?.id != value) {
                 _event = Event::class.asRef(value)
             }
         }
 
-    @get:Transient
-    @set:Transient
-    var pictureId: Long
+    @field:Transient
+    @field:Column(name = "picture_id", nullable = false, updatable = false, insertable = false)
+    var pictureId: Long = 0
         get() = requireNotNull(id.pictureId) { "pictureId is required" }
         set(value) {
+            field = value
             id.pictureId = value
             if (_picture?.id != value) {
                 _picture = File::class.asRef(value)

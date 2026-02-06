@@ -31,9 +31,6 @@ import java.time.LocalDate
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class Board : AuditedAutoIdEntity() {
-    @Column(name = "name", nullable = false)
-    lateinit var name: String
-
     @field:JoinColumn(name = "picture_id")
     @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private var _picture: File? = null
@@ -44,8 +41,10 @@ class Board : AuditedAutoIdEntity() {
             pictureId = value?.id
         }
 
-    @get:Transient
+    @field:Column(name = "picture_id", updatable = false, insertable = false)
+    @field:Transient
     var pictureId: Long? = null
+        get() = _picture?.id
         set(value) {
             field = value
             if (value == null) {
@@ -60,6 +59,11 @@ class Board : AuditedAutoIdEntity() {
     val members: Set<BoardMember>
         get() = _members
 
+    @OneToMany(mappedBy = "_board", fetch = FetchType.LAZY)
+    private val _documents: MutableSet<BoardDocument> = linkedSetOf()
+    val documents: Set<BoardDocument>
+        get() = _documents
+
     @Column(name = "candidate", nullable = false)
     lateinit var candidate: String
 
@@ -69,8 +73,6 @@ class Board : AuditedAutoIdEntity() {
     @Column(name = "end_date")
     var endDate: LocalDate? = null
 
-    @OneToMany(mappedBy = "_board", fetch = FetchType.LAZY)
-    private val _documents: MutableSet<BoardDocument> = linkedSetOf()
-    val documents: Set<BoardDocument>
-        get() = _documents
+    @Column(name = "name", nullable = false)
+    lateinit var name: String
 }

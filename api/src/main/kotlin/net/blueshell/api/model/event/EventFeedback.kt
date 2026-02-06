@@ -30,8 +30,10 @@ class EventFeedback : AuditedAutoIdEntity() {
             eventId = value.id ?: eventId
         }
 
-    @get:Transient
+    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var eventId: Long = 0
+        get() = requireNotNull(_event?.id) { "Event ID is required" }
         set(value) {
             field = value
             if (_event?.id != value) {

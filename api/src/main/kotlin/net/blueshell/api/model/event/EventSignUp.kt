@@ -53,8 +53,10 @@ class EventSignUp : AuditedAutoIdEntity() {
             eventId = value.id ?: eventId
         }
 
-    @get:Transient
+    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
+    @field:Transient
     var eventId: Long = 0
+        get() = requireNotNull(_event?.id) { "Event ID is required" }
         set(value) {
             field = value
             if (_event?.id != value) {
@@ -72,8 +74,10 @@ class EventSignUp : AuditedAutoIdEntity() {
             userId = value?.id
         }
 
-    @get:Transient
+    @field:Column(name = "user_id", updatable = false, insertable = false)
+    @field:Transient
     var userId: Long? = null
+        get() = _user?.id
         set(value) {
             field = value
             if (value == null) {
@@ -92,8 +96,10 @@ class EventSignUp : AuditedAutoIdEntity() {
             _guest = value
         }
 
-    @get:Transient
+    @field:Column(name = "guest_id", updatable = false, insertable = false)
+    @field:Transient
     var guestId: Long? = null
+        get() = _guest?.id
         set(value) {
             field = value
             if (value == null) {

@@ -36,22 +36,24 @@ class EventBanner(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventBanner.Id> {
 
-    @get:Transient
-    @set:Transient
-    var eventId: Long
+    @field:Transient
+    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
+    var eventId: Long = 0
         get() = requireNotNull(id.eventId) { "eventId is required" }
         set(value) {
+            field = value
             id.eventId = value
             if (_event?.id != value) {
                 _event = Event::class.asRef(value)
             }
         }
 
-    @get:Transient
-    @set:Transient
-    var fileId: Long
+    @field:Transient
+    @field:Column(name = "file_id", nullable = false, updatable = false, insertable = false)
+    var fileId: Long = 0
         get() = requireNotNull(id.fileId) { "fileId is required" }
         set(value) {
+            field = value
             id.fileId = value
             if (_file?.id != value) {
                 _file = File::class.asRef(value)
@@ -100,4 +102,3 @@ class EventBanner(
         var fileId: Long? = null
     ) : java.io.Serializable
 }
-

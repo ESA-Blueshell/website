@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.contribution.ContributionReminder
 import org.junit.jupiter.api.Test
 
 class ContributionReminderFactoryTest : ModelFactoryTestSupport() {
@@ -14,6 +15,6 @@ class ContributionReminderFactoryTest : ModelFactoryTestSupport() {
         reminder.contributionPeriod = period
 
         val saved = persist(reminder)
-        assertPersisted(net.blueshell.api.model.contribution.ContributionReminder::class.java, saved.id)
+        assertPersisted(ContributionReminder::class.java, saved.id)
     }
 }

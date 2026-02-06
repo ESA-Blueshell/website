@@ -2,6 +2,7 @@ package net.blueshell.api.factory.model
 
 import io.mockk.mockk
 import io.mockk.verify
+import net.blueshell.api.model.Address
 import org.junit.jupiter.api.Test
 import java.util.function.Consumer
 
@@ -11,7 +12,7 @@ class AddressFactoryTest : ModelFactoryTestSupport() {
     fun `creates persistable address`() {
         val address = addressFactory.createBasic()
         val saved = persist(address)
-        assertPersisted(net.blueshell.api.model.Address::class.java, saved.id)
+        assertPersisted(Address::class.java, saved.id)
     }
 
     @Test

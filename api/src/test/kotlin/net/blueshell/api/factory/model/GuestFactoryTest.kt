@@ -1,6 +1,8 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.event.Guest
 import org.junit.jupiter.api.Test
+import kotlin.jvm.java
 
 class GuestFactoryTest : ModelFactoryTestSupport() {
 
@@ -8,6 +10,6 @@ class GuestFactoryTest : ModelFactoryTestSupport() {
     fun `creates persistable guest`() {
         val guest = guestFactory.createBasic()
         val saved = persist(guest)
-        assertPersisted(net.blueshell.api.model.Guest::class.java, saved.id)
+        assertPersisted(Guest::class.java, saved.id)
     }
 }

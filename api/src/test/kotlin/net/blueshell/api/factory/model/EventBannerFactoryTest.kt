@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.event.EventBanner
 import org.junit.jupiter.api.Test
 
 class EventBannerFactoryTest : ModelFactoryTestSupport() {
@@ -15,6 +16,6 @@ class EventBannerFactoryTest : ModelFactoryTestSupport() {
         banner.file = bannerFile
 
         val saved = persist(banner)
-        assertPersisted(net.blueshell.api.model.event.EventBanner::class.java, saved.id)
+        assertPersisted(EventBanner::class.java, saved.id)
     }
 }

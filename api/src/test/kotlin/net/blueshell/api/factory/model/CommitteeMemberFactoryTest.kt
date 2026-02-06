@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.committee.CommitteeMember
 import org.junit.jupiter.api.Test
 
 class CommitteeMemberFactoryTest : ModelFactoryTestSupport() {
@@ -12,6 +13,6 @@ class CommitteeMemberFactoryTest : ModelFactoryTestSupport() {
         val member = committeeMemberFactory.createBasic(user, committee)
 
         val saved = persist(member)
-        assertPersisted(net.blueshell.api.model.committee.CommitteeMember::class.java, saved.id)
+        assertPersisted(CommitteeMember::class.java, saved.id)
     }
 }

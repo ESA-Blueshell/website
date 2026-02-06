@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.event.EventSignUpAnswer
 import net.blueshell.api.model.survey.Answer
 import org.junit.jupiter.api.Test
 
@@ -26,6 +27,6 @@ class EventSignUpAnswerFactoryTest : ModelFactoryTestSupport() {
         signUpAnswer.eventSignUp = savedSignUp
 
         val savedAnswer = persist(signUpAnswer)
-        assertPersisted(net.blueshell.api.model.event.EventSignUpAnswer::class.java, savedAnswer.id)
+        assertPersisted(EventSignUpAnswer::class.java, savedAnswer.id)
     }
 }

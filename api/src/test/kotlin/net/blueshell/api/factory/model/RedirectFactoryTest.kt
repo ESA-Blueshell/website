@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.Redirect
 import org.junit.jupiter.api.Test
 
 class RedirectFactoryTest : ModelFactoryTestSupport() {
@@ -11,6 +12,6 @@ class RedirectFactoryTest : ModelFactoryTestSupport() {
         redirect.telemetry = telemetry
 
         val saved = persist(redirect)
-        assertPersisted(net.blueshell.api.model.Redirect::class.java, saved.id)
+        assertPersisted(Redirect::class.java, saved.id)
     }
 }

@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.contribution.Contribution
 import org.junit.jupiter.api.Test
 
 class ContributionFactoryTest : ModelFactoryTestSupport() {
@@ -14,6 +15,6 @@ class ContributionFactoryTest : ModelFactoryTestSupport() {
         contribution.contributionPeriod = period
 
         val saved = persist(contribution)
-        assertPersisted(net.blueshell.api.model.contribution.Contribution::class.java, saved.id)
+        assertPersisted(Contribution::class.java, saved.id)
     }
 }

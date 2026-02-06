@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.event.EventPicture
 import org.junit.jupiter.api.Test
 
 class EventPictureFactoryTest : ModelFactoryTestSupport() {
@@ -14,6 +15,6 @@ class EventPictureFactoryTest : ModelFactoryTestSupport() {
         picture.picture = persist(pictureFile)
 
         val saved = persist(picture)
-        assertPersisted(net.blueshell.api.model.event.EventPicture::class.java, saved.id)
+        assertPersisted(EventPicture::class.java, saved.id)
     }
 }

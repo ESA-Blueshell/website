@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.RecoveryToken
 import org.junit.jupiter.api.Test
 
 class RecoveryTokenFactoryTest : ModelFactoryTestSupport() {
@@ -11,6 +12,6 @@ class RecoveryTokenFactoryTest : ModelFactoryTestSupport() {
         token.user = user
 
         val saved = persist(token)
-        assertPersisted(net.blueshell.api.model.RecoveryToken::class.java, saved.id)
+        assertPersisted(RecoveryToken::class.java, saved.id)
     }
 }

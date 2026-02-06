@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.Telemetry
 import org.junit.jupiter.api.Test
 
 class TelemetryFactoryTest : ModelFactoryTestSupport() {
@@ -8,6 +9,6 @@ class TelemetryFactoryTest : ModelFactoryTestSupport() {
     fun `creates persistable telemetry`() {
         val telemetry = telemetryFactory.createBasic()
         val saved = persist(telemetry)
-        assertPersisted(net.blueshell.api.model.Telemetry::class.java, saved.id)
+        assertPersisted(Telemetry::class.java, saved.id)
     }
 }

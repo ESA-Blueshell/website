@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.survey.Question
 import org.junit.jupiter.api.Test
 
 class QuestionFactoryTest : ModelFactoryTestSupport() {
@@ -11,6 +12,6 @@ class QuestionFactoryTest : ModelFactoryTestSupport() {
         question.survey = persist(survey)
 
         val saved = persist(question)
-        assertPersisted(net.blueshell.api.model.survey.Question::class.java, saved.id)
+        assertPersisted(Question::class.java, saved.id)
     }
 }

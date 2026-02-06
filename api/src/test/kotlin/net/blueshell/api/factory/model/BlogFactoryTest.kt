@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.Blog
 import org.junit.jupiter.api.Test
 
 class BlogFactoryTest : ModelFactoryTestSupport() {
@@ -8,6 +9,6 @@ class BlogFactoryTest : ModelFactoryTestSupport() {
     fun `creates persistable blog`() {
         val blog = blogFactory.createBasic()
         val saved = persist(blog)
-        assertPersisted(net.blueshell.api.model.Blog::class.java, saved.id)
+        assertPersisted(Blog::class.java, saved.id)
     }
 }

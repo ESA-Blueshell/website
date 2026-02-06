@@ -1,6 +1,8 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.File
 import org.junit.jupiter.api.Test
+import kotlin.jvm.java
 
 class FileFactoryTest : ModelFactoryTestSupport() {
 
@@ -8,6 +10,6 @@ class FileFactoryTest : ModelFactoryTestSupport() {
     fun `creates persistable file`() {
         val file = fileWithUploader(fileFactory.createBasic())
         val saved = persist(file)
-        assertPersisted(net.blueshell.api.model.File::class.java, saved.id)
+        assertPersisted(File::class.java, saved.id)
     }
 }

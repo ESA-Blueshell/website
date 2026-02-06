@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.event.EventFeedback
 import org.junit.jupiter.api.Test
 
 class EventFeedbackFactoryTest : ModelFactoryTestSupport() {
@@ -11,6 +12,6 @@ class EventFeedbackFactoryTest : ModelFactoryTestSupport() {
         feedback.event = event
 
         val saved = persist(feedback)
-        assertPersisted(net.blueshell.api.model.event.EventFeedback::class.java, saved.id)
+        assertPersisted(EventFeedback::class.java, saved.id)
     }
 }

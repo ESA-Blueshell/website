@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.Sponsor
 import org.junit.jupiter.api.Test
 
 class SponsorFactoryTest : ModelFactoryTestSupport() {
@@ -11,6 +12,6 @@ class SponsorFactoryTest : ModelFactoryTestSupport() {
         sponsor.picture = persist(logo)
 
         val saved = persist(sponsor)
-        assertPersisted(net.blueshell.api.model.Sponsor::class.java, saved.id)
+        assertPersisted(Sponsor::class.java, saved.id)
     }
 }

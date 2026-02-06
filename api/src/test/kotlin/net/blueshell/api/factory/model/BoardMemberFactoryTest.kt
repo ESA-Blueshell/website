@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.model.board.BoardMember
 import org.junit.jupiter.api.Test
 
 class BoardMemberFactoryTest : ModelFactoryTestSupport() {
@@ -14,6 +15,6 @@ class BoardMemberFactoryTest : ModelFactoryTestSupport() {
         member.picture = persist(picture)
 
         val saved = persist(member)
-        assertPersisted(net.blueshell.api.model.board.BoardMember::class.java, saved.id)
+        assertPersisted(BoardMember::class.java, saved.id)
     }
 }

@@ -487,6 +487,27 @@ export type UserActivationRequest = {
     version?: number;
 };
 
+export enum JobExecutionStatus {
+    QUEUED = 'QUEUED',
+    RUNNING = 'RUNNING',
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED'
+}
+
+export type JobExecution = {
+    id?: number;
+    jobType?: string;
+    status?: JobExecutionStatus;
+    payload?: string;
+    errorMessage?: string;
+    attempts?: number;
+    queuedAt?: string;
+    startedAt?: string;
+    finishedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
 export type FindAllAddressesData = {
     body?: never;
     path?: never;
@@ -3532,3 +3553,44 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type ListJobExecutionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/jobs';
+};
+
+export type ListJobExecutionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<JobExecution>;
+};
+
+export type ListJobExecutionsResponse = ListJobExecutionsResponses[keyof ListJobExecutionsResponses];
+
+export type RetryJobExecutionData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/jobs/{id}/retry';
+};
+
+export type RetryJobExecutionErrors = {
+    /**
+     * Not Found
+     */
+    404: unknown;
+};
+
+export type RetryJobExecutionResponses = {
+    /**
+     * OK
+     */
+    200: JobExecution;
+};
+
+export type RetryJobExecutionResponse = RetryJobExecutionResponses[keyof RetryJobExecutionResponses];

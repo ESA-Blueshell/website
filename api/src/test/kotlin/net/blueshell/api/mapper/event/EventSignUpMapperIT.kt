@@ -30,15 +30,10 @@ class EventSignUpMapperIT @Autowired constructor(
             val event = persistEvent()
             val user = persistUser()
             val question = persistQuestionWithSurvey(persistSurvey())
-            val answer = persist(answerFactory.createBasic().apply {
-                this.question = question
-            })
             val signUp = persist(eventSignUpFactory.createBasic().apply {
                 this.event = event
                 this.user = user
                 this.userId = user.id
-                (this.answers as MutableSet<Answer>).clear()
-                this.answers.add(answer)
             })
 
             val dto = eventSignUpMapper.toDTO(signUp)

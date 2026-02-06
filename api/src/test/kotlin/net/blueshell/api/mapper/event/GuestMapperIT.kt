@@ -35,9 +35,7 @@ class GuestMapperIT @Autowired constructor(
     inner class FromDTO {
         @Test
         fun `persists generated access token`() {
-            val dto = guestDTOFactory.createBasic().apply {
-                accessToken = null
-            }
+            val dto = guestDTOFactory.createBasic()
             val guest = guestFactory.createBasic()
 
             guestMapper.fromDTO(dto, guest)

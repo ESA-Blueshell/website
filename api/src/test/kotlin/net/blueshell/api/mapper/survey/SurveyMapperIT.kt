@@ -14,8 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class SurveyMapperIT @Autowired constructor(
     private val surveyMapper: SurveyMapper,
-    private val surveyDTOFactory: SurveyDTOFactory,
-    private val surveyFactory: SurveyFactory
+    private val surveyDTOFactory: SurveyDTOFactory
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {

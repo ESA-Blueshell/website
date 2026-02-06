@@ -13,8 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class QuestionMapperIT @Autowired constructor(
     private val questionMapper: QuestionMapper,
-    private val questionDTOFactory: QuestionDTOFactory,
-    private val questionFactory: QuestionFactory
+    private val questionDTOFactory: QuestionDTOFactory
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {

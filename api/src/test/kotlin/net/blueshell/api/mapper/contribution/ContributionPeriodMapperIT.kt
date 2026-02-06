@@ -14,7 +14,6 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionPeriodMapperIT @Autowired constructor(
     private val contributionPeriodMapper: ContributionPeriodMapper,
     private val contributionPeriodDTOFactory: ContributionPeriodDTOFactory,
-    private val contributionPeriodFactory: ContributionPeriodFactory
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {

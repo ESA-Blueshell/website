@@ -20,7 +20,6 @@ class EventMapperIT @Autowired constructor(
     private val eventDTOFactory: EventDTOFactory,
     private val eventBannerDTOFactory: EventBannerDTOFactory,
     private val fileDTOFactory: FileDTOFactory,
-    private val eventFactory: EventFactory,
     private val fileFactory: FileFactory
 ) : MapperTestSupport() {
     @Nested

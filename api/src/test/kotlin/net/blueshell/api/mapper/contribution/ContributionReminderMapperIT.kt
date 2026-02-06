@@ -41,8 +41,8 @@ class ContributionReminderMapperIT @Autowired constructor(
             val user = persistUser()
             val period = persistContributionPeriod()
             val dto = contributionReminderDTOFactory.createBasic().apply {
-                userId = user.id
-                contributionPeriodId = period.id
+                userId = user.id!!
+                contributionPeriodId = period.id!!
             }
             val reminder = contributionReminderFactory.createBasic().apply {
                 this.user = user

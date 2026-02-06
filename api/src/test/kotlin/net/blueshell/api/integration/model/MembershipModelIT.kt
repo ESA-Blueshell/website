@@ -45,7 +45,7 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
             val user = persist(userFactory.createBasic())
             val membership = membershipFactory.createBasic(user)
             membership.user = null
-            membership.userId = user.id ?: 0
+            membership.userId = user.id!!
 
             val found = persistAndReload(membership, Membership::class.java) { it.id }
 

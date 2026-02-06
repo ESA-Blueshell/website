@@ -32,7 +32,7 @@ class ContributionReminderModelIT : ModelPersistenceTestSupport() {
             val period = persist(contributionPeriodFactory.createBasic())
 
             val reminder = contributionReminderFactory.createBasic()
-            reminder.userId = user.id ?: 0
+            reminder.userId = user.id!!
             reminder.contributionPeriod = period
 
             val found = persistAndReload(reminder, ContributionReminder::class.java) { it.id }
@@ -63,7 +63,7 @@ class ContributionReminderModelIT : ModelPersistenceTestSupport() {
 
             val reminder = contributionReminderFactory.createBasic()
             reminder.user = user
-            reminder.contributionPeriodId = period.id ?: 0
+            reminder.contributionPeriodId = period.id!!
 
             val found = persistAndReload(reminder, ContributionReminder::class.java) { it.id }
 

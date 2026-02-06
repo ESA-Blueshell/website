@@ -41,12 +41,12 @@ class SurveyModelIT : ModelPersistenceTestSupport() {
             val questionOne = questionFactory.createBasic()
             questionOne.type = QuestionType.OPEN
             questionOne.label = "Survey question 1"
-            questionOne.surveyId = survey.id ?: 0
+            questionOne.surveyId = survey.id!!
             persist(questionOne)
             val questionTwo = questionFactory.createBasic()
             questionTwo.type = QuestionType.OPEN
             questionTwo.label = "Survey question 2"
-            questionTwo.surveyId = survey.id ?: 0
+            questionTwo.surveyId = survey.id!!
             persist(questionTwo)
             entityManager.flush()
             entityManager.clear()

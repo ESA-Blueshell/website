@@ -19,7 +19,7 @@ class FileModelIT : ModelPersistenceTestSupport() {
             file.mediaType = "text/plain"
             file.size = 2048
             file.type = FileType.DOCUMENT
-            file.uploaderId = persist(userFactory.createBasic()).id ?: 0
+            file.uploaderId = persist(userFactory.createBasic()).id!!
 
             val found = persistAndReload(file, File::class.java) { it.id }
 
@@ -54,7 +54,7 @@ class FileModelIT : ModelPersistenceTestSupport() {
             file.mediaType = "text/plain"
             file.type = FileType.DOCUMENT
             val uploader = persist(userFactory.createBasic())
-            file.uploaderId = uploader.id ?: 0
+            file.uploaderId = uploader.id!!
 
             val found = persistAndReload(file, File::class.java) { it.id }
 

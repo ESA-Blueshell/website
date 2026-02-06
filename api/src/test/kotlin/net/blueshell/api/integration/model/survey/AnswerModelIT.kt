@@ -16,7 +16,7 @@ class AnswerModelIT : ModelPersistenceTestSupport() {
             val survey = persistSurvey()
             val question = persistQuestionWithSurvey(survey)
             val answer = answerFactory.createBasic()
-            answer.questionId = question.id ?: 0
+            answer.questionId = question.id!!
             answer.optionSelections = mutableListOf(true, false, true)
             answer.textResponse = "Response"
 
@@ -46,7 +46,7 @@ class AnswerModelIT : ModelPersistenceTestSupport() {
             val survey = persistSurvey()
             val question = persistQuestionWithSurvey(survey)
             val answer = answerFactory.createBasic()
-            answer.questionId = question.id ?: 0
+            answer.questionId = question.id!!
             answer.optionSelections = mutableListOf(true, false, true)
             answer.textResponse = "Response"
 

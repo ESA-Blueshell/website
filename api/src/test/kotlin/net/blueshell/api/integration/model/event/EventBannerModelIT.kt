@@ -33,7 +33,7 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
             val file: File = persist(fileWithUploader(fileFactory.createImage()))
 
             val banner = eventBannerFactory.createBasic()
-            banner.eventId = event.id ?: 0
+            banner.eventId = event.id!!
             banner.file = file
 
             val found = persistAndReload(banner, EventBanner::class.java) { it.id }
@@ -64,7 +64,7 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
 
             val banner = eventBannerFactory.createBasic()
             banner.event = event
-            banner.fileId = file.id ?: 0
+            banner.fileId = file.id!!
 
             val found = persistAndReload(banner, EventBanner::class.java) { it.id }
 

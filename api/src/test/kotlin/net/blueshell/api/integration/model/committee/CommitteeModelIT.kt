@@ -52,10 +52,10 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             val userTwo = persist(userFactory.createBasic())
             val memberOne = CommitteeMember()
             memberOne.user = userOne
-            memberOne.committeeId = savedCommittee.id ?: 0
+            memberOne.committeeId = savedCommittee.id!!
             val memberTwo = CommitteeMember()
             memberTwo.user = userTwo
-            memberTwo.committeeId = savedCommittee.id ?: 0
+            memberTwo.committeeId = savedCommittee.id!!
             persist(memberOne)
             persist(memberTwo)
 

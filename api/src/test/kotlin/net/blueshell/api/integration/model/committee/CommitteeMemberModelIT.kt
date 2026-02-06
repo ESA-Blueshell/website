@@ -44,7 +44,7 @@ class CommitteeMemberModelIT : ModelPersistenceTestSupport() {
 
             val member = CommitteeMember()
             member.user = user
-            member.committeeId = committee.id ?: 0
+            member.committeeId = committee.id!!
 
             val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
 
@@ -72,7 +72,7 @@ class CommitteeMemberModelIT : ModelPersistenceTestSupport() {
 
             val member = CommitteeMember()
             member.committee = committee
-            member.userId = user.id ?: 0
+            member.userId = user.id!!
 
             val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
 

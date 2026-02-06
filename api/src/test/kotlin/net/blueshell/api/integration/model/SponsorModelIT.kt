@@ -15,7 +15,7 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
             val sponsor = sponsorFactory.createBasic()
             sponsor.name = unique("sponsor")
             sponsor.description = "Sponsor description"
-            sponsor.pictureId = persist(fileWithUploader(fileFactory.createImage())).id ?: 0
+            sponsor.pictureId = persist(fileWithUploader(fileFactory.createImage())).id!!
 
             val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
 
@@ -43,7 +43,7 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
             val sponsor = sponsorFactory.createBasic()
             sponsor.name = unique("sponsor")
             sponsor.description = "Sponsor description"
-            sponsor.pictureId = picture.id ?: 0
+            sponsor.pictureId = picture.id!!
 
             val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
 

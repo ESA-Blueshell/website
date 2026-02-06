@@ -34,7 +34,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
             val user = persist(userFactory.createBasic())
 
             val signUp = EventSignUp()
-            signUp.eventId = event.id ?: 0
+            signUp.eventId = event.id!!
             signUp.user = user
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }

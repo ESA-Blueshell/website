@@ -1,6 +1,5 @@
 package net.blueshell.api.permission
 
-import net.blueshell.api.permission.BasePermissionEvaluator
 import net.blueshell.api.auth.IdentityProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.PermissionEvaluator

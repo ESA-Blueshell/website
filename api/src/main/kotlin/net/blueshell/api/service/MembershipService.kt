@@ -1,10 +1,10 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.Membership
 import net.blueshell.api.model.filter.MembershipFilter
 import net.blueshell.api.repository.MemberRepository
 import net.blueshell.api.repository.spec.MembershipSpecifications
+import net.blueshell.api.service.base.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service

@@ -172,7 +172,7 @@ abstract class ModelPersistenceTestSupport {
         val committee = persistCommittee()
         val event = eventFactory.createBasic()
         event.committee = committee
-        event.committeeId = committee.id
+        event.committeeId = committee.id!!
         event.signUp = false
         event.startTime = Instant.now() + 1.hours.toJavaDuration()
         event.endTime = Instant.now() + 5.hours.toJavaDuration()

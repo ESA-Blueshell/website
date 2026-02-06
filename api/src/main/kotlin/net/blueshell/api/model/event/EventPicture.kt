@@ -1,9 +1,9 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
+import net.blueshell.api.model.File
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
-import net.blueshell.api.model.File
 import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -33,10 +33,10 @@ import org.hibernate.annotations.SQLRestriction
     """
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-open class EventPicture(
+class EventPicture(
     @EmbeddedId
-    override var id: EventPictureId = EventPictureId()
-) : AuditedSoftDeleteEntity(), Identifiable<EventPictureId> {
+    override var id: Id = Id()
+) : AuditedSoftDeleteEntity(), Identifiable<EventPicture.Id> {
 
     @get:Transient
     @set:Transient
@@ -91,10 +91,12 @@ open class EventPicture(
     }
 
     override fun hashCode(): Int = id.hashCode()
-}
 
-@Embeddable
-data class EventPictureId(
-    var eventId: Long? = null,
-    var pictureId: Long? = null
-) : java.io.Serializable
+
+    @Embeddable
+    data class Id(
+        var eventId: Long? = null,
+        var pictureId: Long? = null
+    ) : java.io.Serializable
+
+}

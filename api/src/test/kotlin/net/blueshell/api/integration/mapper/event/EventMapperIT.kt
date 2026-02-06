@@ -30,7 +30,7 @@ class EventMapperIT @Autowired constructor(
             val committee = persistCommittee()
             val event = persist(eventFactory.createBasic().apply {
                 this.committee = committee
-                this.committeeId = committee.id
+                this.committeeId = committee.id!!
             })
 
             val dto = eventMapper.toDTO(event)

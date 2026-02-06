@@ -1,11 +1,11 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.model.User
 import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.repository.UserRepository
 import net.blueshell.api.repository.spec.UserSpecifications
+import net.blueshell.api.service.base.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

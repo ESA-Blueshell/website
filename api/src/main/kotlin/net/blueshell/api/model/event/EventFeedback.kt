@@ -2,6 +2,7 @@ package net.blueshell.api.model.event
 
 import jakarta.persistence.*
 import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -15,12 +16,12 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE event_feedback SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-open class EventFeedback : AuditedAutoIdEntity() {
+class EventFeedback : AuditedAutoIdEntity() {
     @Column(name = "feedback", nullable = false)
     lateinit var feedback: String
 
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "event_id", nullable = false, insertable = false, updatable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "event_id", nullable = false)
     private var _event: Event? = null
     var event: Event
         get() = requireNotNull(_event) { "Event is required" }
@@ -29,12 +30,12 @@ open class EventFeedback : AuditedAutoIdEntity() {
             eventId = value.id ?: eventId
         }
 
-    @Column(name = "event_id", nullable = false)
+    @get:Transient
     var eventId: Long = 0
         set(value) {
             field = value
             if (_event?.id != value) {
-                _event = null
+                _event = Event::class.asRef(value)
             }
         }
 }

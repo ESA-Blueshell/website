@@ -1,7 +1,7 @@
 package net.blueshell.api.repository.committee
 
-import net.blueshell.api.repository.base.BaseRepository
 import net.blueshell.api.model.committee.Committee
+import net.blueshell.api.repository.base.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository

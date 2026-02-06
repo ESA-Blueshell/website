@@ -1,9 +1,10 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
+import net.blueshell.api.common.enums.Role
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
-import net.blueshell.api.common.enums.Role
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.committee.CommitteeMember
 import net.blueshell.api.model.contribution.Contribution
 import net.blueshell.api.model.event.EventSignUp
@@ -40,7 +41,7 @@ import java.sql.Date
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class User(
+class User(
 
     @Column(nullable = false, unique = false)
     private var username: String = "",
@@ -119,15 +120,17 @@ open class User(
 
     ) : AuditedAutoIdEntity(), UserDetails {
     @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-    @field:JoinColumn(name = "address_id", insertable = false, updatable = false)
+    @field:JoinColumn(name = "address_id")
     private var _address: Address? = null
 
-    @Column(name = "address_id")
+    @get:Transient
     var addressId: Long? = null
         set(value) {
             field = value
-            if (value == null || _address?.id != value) {
+            if (value == null) {
                 _address = null
+            } else if (_address?.id != value) {
+                _address = Address::class.asRef(value)
             }
         }
 
@@ -147,10 +150,26 @@ open class User(
 
 
     @field:OneToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "profile_picture_id", insertable = false, updatable = false)
+    @field:JoinColumn(name = "profile_picture_id")
     private var _profilePicture: File? = null
-    val profilePicture: File?
+    var profilePicture: File?
         get() = _profilePicture
+        set(value) {
+            _profilePicture = value
+            profilePictureId = value?.id
+        }
+
+    @get:Transient
+    var profilePictureId: Long? = null
+        set(value) {
+            field = value
+            if (value == null) {
+                _profilePicture = null
+            } else if (_profilePicture?.id != value) {
+                _profilePicture = File::class.asRef(value)
+            }
+        }
+
 
     @OneToMany(mappedBy = "_user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()

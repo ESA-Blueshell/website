@@ -3,6 +3,7 @@ package net.blueshell.api.model.event
 import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.model.survey.Survey
 import org.hibernate.annotations.SQLDelete
@@ -40,24 +41,21 @@ import java.time.Instant
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class Event : AuditedAutoIdEntity() {
+class Event : AuditedAutoIdEntity() {
     @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "committee_id", insertable = false, updatable = false)
+    @field:JoinColumn(name = "committee_id")
     private var _committee: Committee? = null
     var committee: Committee
         get() = requireNotNull(_committee) { "Committee is required" }
         set(value) {
             _committee = value
-            committeeId = value.id
+            committeeId = value.id ?: committeeId
         }
 
-    @Column(name = "committee_id")
-    var committeeId: Long? = null
+    var committeeId: Long = 0
         set(value) {
             field = value
-            if (value == null || _committee?.id != value) {
-                _committee = null
-            }
+            _committee = Committee::class.asRef(value)
         }
 
     @Column(name = "title", nullable = false)
@@ -111,7 +109,7 @@ open class Event : AuditedAutoIdEntity() {
     @Column(name = "sign_up", nullable = false)
     var signUp = false
 
-    @field:JoinColumn(name = "survey_id", insertable = false, updatable = false)
+    @field:JoinColumn(name = "survey_id")
     @field:OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     private var _signUpForm: Survey? = null
     var signUpForm: Survey?
@@ -122,7 +120,17 @@ open class Event : AuditedAutoIdEntity() {
         }
 
     @Column(name = "survey_id", updatable = false, insertable = false)
+    @get:Transient
+    @set:Transient
     var signUpFormId: Long? = null
+        set(value) {
+            field = value
+            if (value == null) {
+                _signUpForm = null
+            } else if (_signUpForm?.id != value) {
+                _signUpForm = Survey::class.asRef(value)
+            }
+        }
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
     var signUpCount: Long = 0

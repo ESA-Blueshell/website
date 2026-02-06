@@ -1,9 +1,10 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
+import net.blueshell.api.common.enums.FileType
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
-import net.blueshell.api.common.enums.FileType
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.event.EventBanner
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
@@ -27,15 +28,15 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE files SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class File : AuditedAutoIdEntity() {
+class File : AuditedAutoIdEntity() {
     @Column(nullable = false)
     lateinit var name: String
 
     @Column(nullable = false)
     lateinit var path: String
 
-    @field:OneToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "uploader_id", nullable = false, insertable = false, updatable = false)
+    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "uploader_id", nullable = false)
     private var _uploader: User? = null
     var uploader: User
         get() = requireNotNull(_uploader) { "Uploader is required" }
@@ -44,12 +45,14 @@ open class File : AuditedAutoIdEntity() {
             uploaderId = value.id ?: uploaderId
         }
 
-    @Column(name = "uploader_id", nullable = false)
+    @get:Transient
+    @set:Transient
     var uploaderId: Long = 0
+        get() = requireNotNull(_uploader?.id) { "Uploader ID is required" }
         set(value) {
             field = value
             if (_uploader?.id != value) {
-                _uploader = null
+                _uploader = User::class.asRef(value)
             }
         }
 

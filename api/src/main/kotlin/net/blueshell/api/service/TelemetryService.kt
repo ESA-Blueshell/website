@@ -1,9 +1,9 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.common.enums.PlatformType
 import net.blueshell.api.model.Telemetry
 import net.blueshell.api.repository.TelemetryRepository
+import net.blueshell.api.service.base.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service

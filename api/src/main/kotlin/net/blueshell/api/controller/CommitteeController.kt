@@ -3,9 +3,9 @@ package net.blueshell.api.controller
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.common.enums.Role
 import net.blueshell.api.controller.base.AdvancedController
 import net.blueshell.api.dto.base.BaseDTO
-import net.blueshell.api.common.enums.Role
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO
 import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper
 import net.blueshell.api.mapper.committee.SimpleCommitteeMapper

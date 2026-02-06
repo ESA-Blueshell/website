@@ -2,9 +2,9 @@ package net.blueshell.api.model.event
 
 import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
+import net.blueshell.api.model.File
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
-import net.blueshell.api.model.File
 import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -31,10 +31,10 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class EventBanner(
+class EventBanner(
     @EmbeddedId
-    override var id: EventBannerId = EventBannerId()
-) : AuditedSoftDeleteEntity(), Identifiable<EventBannerId> {
+    override var id: Id = Id()
+) : AuditedSoftDeleteEntity(), Identifiable<EventBanner.Id> {
 
     @get:Transient
     @set:Transient
@@ -93,10 +93,11 @@ open class EventBanner(
     }
 
     override fun hashCode(): Int = id.hashCode()
+
+    @Embeddable
+    data class Id(
+        var eventId: Long? = null,
+        var fileId: Long? = null
+    ) : java.io.Serializable
 }
 
-@Embeddable
-data class EventBannerId(
-    var eventId: Long? = null,
-    var fileId: Long? = null
-) : java.io.Serializable

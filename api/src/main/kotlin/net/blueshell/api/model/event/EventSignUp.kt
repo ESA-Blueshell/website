@@ -2,8 +2,9 @@ package net.blueshell.api.model.event
 
 import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
-import net.blueshell.api.model.base.AuditedAutoIdEntity
 import net.blueshell.api.model.User
+import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.survey.Answer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -41,9 +42,9 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class EventSignUp : AuditedAutoIdEntity() {
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "event_id", insertable = false, updatable = false, nullable = false)
+class EventSignUp : AuditedAutoIdEntity() {
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "event_id", nullable = false)
     private var _event: Event? = null
     var event: Event
         get() = requireNotNull(_event) { "Event is required" }
@@ -52,17 +53,17 @@ open class EventSignUp : AuditedAutoIdEntity() {
             eventId = value.id ?: eventId
         }
 
-    @Column(name = "event_id", nullable = false)
+    @get:Transient
     var eventId: Long = 0
         set(value) {
             field = value
             if (_event?.id != value) {
-                _event = null
+                _event = Event::class.asRef(value)
             }
         }
 
     @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @field:JoinColumn(name = "user_id")
     private var _user: User? = null
     var user: User?
         get() = _user
@@ -71,12 +72,14 @@ open class EventSignUp : AuditedAutoIdEntity() {
             userId = value?.id
         }
 
-    @Column(name = "user_id")
+    @get:Transient
     var userId: Long? = null
         set(value) {
             field = value
-            if (value == null || _user?.id != value) {
+            if (value == null) {
                 _user = null
+            } else if (_user?.id != value) {
+                _user = User::class.asRef(value)
             }
         }
 
@@ -87,6 +90,17 @@ open class EventSignUp : AuditedAutoIdEntity() {
         get() = _guest
         set(value) {
             _guest = value
+        }
+
+    @get:Transient
+    var guestId: Long? = null
+        set(value) {
+            field = value
+            if (value == null) {
+                _guest = null
+            } else if (_guest?.id != value) {
+                _guest = Guest::class.asRef(value)
+            }
         }
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])

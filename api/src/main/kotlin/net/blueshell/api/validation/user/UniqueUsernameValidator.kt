@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class UniqueUsernameValidator @Autowired constructor(private val userService: UserService) :
-    ConstraintValidator<net.blueshell.api.validation.user.UniqueUsername?, String?> {
+    ConstraintValidator<UniqueUsername?, String?> {
     override fun isValid(username: String?, context: ConstraintValidatorContext?): Boolean {
         if (username.isNullOrEmpty()) {
             // Let @NotBlank handle this

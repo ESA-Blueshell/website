@@ -1,6 +1,5 @@
 package net.blueshell.api.permission
 
-import net.blueshell.api.permission.BasePermissionEvaluator
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.model.event.EventSignUp
 import net.blueshell.api.service.event.EventService

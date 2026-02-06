@@ -1,8 +1,8 @@
 package net.blueshell.api.repository
 
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.repository.base.BaseRepository
 import net.blueshell.api.model.Blog
+import net.blueshell.api.repository.base.BaseRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Query

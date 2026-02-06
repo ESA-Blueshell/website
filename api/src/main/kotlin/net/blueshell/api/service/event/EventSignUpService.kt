@@ -1,10 +1,10 @@
 package net.blueshell.api.service.event
 
-import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.model.event.EventSignUp
 import net.blueshell.api.model.filter.EventSignUpFilter
 import net.blueshell.api.repository.event.EventSignUpRepository
 import net.blueshell.api.repository.spec.EventSignUpSpecifications
+import net.blueshell.api.service.base.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service

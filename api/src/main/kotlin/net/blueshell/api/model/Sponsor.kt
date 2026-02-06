@@ -2,6 +2,7 @@ package net.blueshell.api.model
 
 import jakarta.persistence.*
 import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -19,7 +20,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE sponsors SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-open class Sponsor : AuditedAutoIdEntity() {
+class Sponsor : AuditedAutoIdEntity() {
     @Column(nullable = false)
     lateinit var name: String
 
@@ -27,7 +28,7 @@ open class Sponsor : AuditedAutoIdEntity() {
     lateinit var description: String
 
     @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "logo_id", nullable = false, insertable = false, updatable = false)
+    @field:JoinColumn(name = "logo_id", nullable = false)
     private var _picture: File? = null
     var picture: File
         get() = requireNotNull(_picture) { "Picture is required" }
@@ -36,12 +37,12 @@ open class Sponsor : AuditedAutoIdEntity() {
             pictureId = value.id ?: pictureId
         }
 
-    @Column(name = "logo_id", nullable = false)
+    @get:Transient
     var pictureId: Long = 0
         set(value) {
             field = value
             if (_picture?.id != value) {
-                _picture = null
+                _picture = File::class.asRef(value)
             }
         }
 }

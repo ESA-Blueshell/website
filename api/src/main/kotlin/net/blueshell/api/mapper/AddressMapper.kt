@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper
 
-import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.AddressDTO
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.model.Address
 import org.mapstruct.Mapper
 import org.mapstruct.Mapping

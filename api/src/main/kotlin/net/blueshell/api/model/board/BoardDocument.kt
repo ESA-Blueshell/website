@@ -1,8 +1,9 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import net.blueshell.api.model.base.AuditedAutoIdEntity
 import net.blueshell.api.model.File
+import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -27,7 +28,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE board_documents SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-open class BoardDocument : AuditedAutoIdEntity() {
+class BoardDocument : AuditedAutoIdEntity() {
     @field:JoinColumn(name = "board_id", nullable = false)
     @field:ManyToOne(fetch = FetchType.LAZY)
     private var _board: Board? = null
@@ -47,5 +48,15 @@ open class BoardDocument : AuditedAutoIdEntity() {
         get() = requireNotNull(_file) { "File is required" }
         set(value) {
             _file = value
+            fileId = value.id ?: fileId
+        }
+
+    @get:Transient
+    var fileId: Long = 0
+        set(value) {
+            field = value
+            if (_file?.id != value) {
+                _file = File::class.asRef(value)
+            }
         }
 }

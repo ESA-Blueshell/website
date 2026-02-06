@@ -1,11 +1,11 @@
 package net.blueshell.api.mapper.survey
 
-import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.survey.SurveyDTO
-import net.blueshell.api.model.survey.Question
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.model.survey.Survey
-import org.mapstruct.*
-import java.util.function.Consumer
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
 
 @Mapper(componentModel = "spring", uses = [QuestionMapper::class])
 abstract class SurveyMapper : BaseMapper<Survey, SurveyDTO>() {

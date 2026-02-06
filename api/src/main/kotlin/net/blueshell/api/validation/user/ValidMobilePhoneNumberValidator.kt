@@ -6,14 +6,13 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.util.StringUtils
 
 /**
  * Validator to check if the phone number is a valid mobile number using libphonenumber.
  */
 @Component
 class ValidMobilePhoneNumberValidator @Autowired constructor(private val phoneNumberUtil: PhoneNumberUtil) :
-    ConstraintValidator<net.blueshell.api.validation.user.ValidMobilePhoneNumber?, String?> {
+    ConstraintValidator<ValidMobilePhoneNumber?, String?> {
     override fun isValid(phoneNumber: String?, context: ConstraintValidatorContext?): Boolean {
         if (phoneNumber.isNullOrBlank()) {
             // Let @NotBlank or other annotations handle null/empty cases

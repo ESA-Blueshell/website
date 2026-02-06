@@ -1,9 +1,9 @@
 package net.blueshell.api.mapper.user
 
-import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.common.util.MappingUtil
 import net.blueshell.api.dto.user.AdvancedUserDTO
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.model.User
 import org.mapstruct.*
 import org.springframework.beans.factory.annotation.Autowired

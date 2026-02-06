@@ -7,7 +7,7 @@ import kotlin.reflect.KClass
 @MustBeDocumented
 @Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.file.FileSizeValidator::class])
+@Constraint(validatedBy = [FileSizeValidator::class])
 annotation class FileSize(
     val message: String = "File size must be between {min} and {max} bytes",
     val groups: Array<KClass<*>> = [],

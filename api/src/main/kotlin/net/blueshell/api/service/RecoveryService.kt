@@ -1,6 +1,5 @@
 package net.blueshell.api.service
 
-import net.blueshell.api.service.base.BaseModelService
 import net.blueshell.api.common.enums.ResetType
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.common.event.job.RecoveryEmailEvent
@@ -8,6 +7,7 @@ import net.blueshell.api.common.event.jpa.PostPersistEvent
 import net.blueshell.api.model.RecoveryToken
 import net.blueshell.api.model.User
 import net.blueshell.api.repository.RecoveryTokenRepository
+import net.blueshell.api.service.base.BaseModelService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize

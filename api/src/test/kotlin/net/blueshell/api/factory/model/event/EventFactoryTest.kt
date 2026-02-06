@@ -11,7 +11,7 @@ class EventFactoryTest : ModelFactoryTestSupport() {
         val committee = persistCommittee()
         val event = eventFactory.createBasic()
         event.committee = committee
-        event.committeeId = committee.id
+        event.committeeId = committee.id!!
 
         val saved = persist(event)
         assertPersisted(Event::class.java, saved.id)
@@ -22,7 +22,7 @@ class EventFactoryTest : ModelFactoryTestSupport() {
         val committee = persistCommittee()
         val event = eventFactory.createApproved()
         event.committee = committee
-        event.committeeId = committee.id
+        event.committeeId = committee.id!!
 
         val saved = persist(event)
         assertPersisted(Event::class.java, saved.id)
@@ -33,7 +33,7 @@ class EventFactoryTest : ModelFactoryTestSupport() {
         val committee = persistCommittee()
         val event = eventFactory.createWithSignUp()
         event.committee = committee
-        event.committeeId = committee.id
+        event.committeeId = committee.id!!
 
         val saved = persist(event)
         assertPersisted(Event::class.java, saved.id)

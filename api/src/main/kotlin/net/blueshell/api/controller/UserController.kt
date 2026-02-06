@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
-import net.blueshell.api.controller.base.AdvancedController
 import net.blueshell.api.common.enums.Role
+import net.blueshell.api.controller.base.AdvancedController
 import net.blueshell.api.dto.user.AdvancedUserDTO
 import net.blueshell.api.dto.user.SimpleUserDTO
 import net.blueshell.api.mapper.user.AdvancedUserMapper
@@ -13,9 +13,6 @@ import net.blueshell.api.mapper.user.SimpleUserMapper
 import net.blueshell.api.model.User
 import net.blueshell.api.model.filter.UserFilter
 import net.blueshell.api.service.UserService
-import net.blueshell.api.validation.group.Administration
-import net.blueshell.api.validation.group.Creation
-import net.blueshell.api.validation.group.Update
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -42,9 +39,9 @@ class UserController(
     @ResponseStatus(HttpStatus.CREATED) // TODO: Once all members are in the site, remove the ability for admins to create new users
     fun createUser(@RequestBody dto: AdvancedUserDTO): AdvancedUserDTO {
         val groups: Array<Class<*>> = if (hasAuthority(Role.BOARD))
-            arrayOf(_root_ide_package_.net.blueshell.api.validation.group.Administration::class.java)
+            arrayOf(net.blueshell.api.validation.group.Administration::class.java)
         else
-            arrayOf(_root_ide_package_.net.blueshell.api.validation.group.Creation::class.java)
+            arrayOf(net.blueshell.api.validation.group.Creation::class.java)
 
         val violations = validator.validate(dto, *groups)
         if (!violations.isEmpty()) {
@@ -60,7 +57,7 @@ class UserController(
     @PostMapping("/users/guest")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGuestUser(@Validated(_root_ide_package_.net.blueshell.api.validation.group.Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
+    fun createGuestUser(@Validated(net.blueshell.api.validation.group.Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
         var user = simpleMapper.fromDTO(dto, User())
         user = service.create(user)
         return simpleMapper.toDTO(user)
@@ -70,7 +67,7 @@ class UserController(
     @PermitAll
     fun updateGuestUser(
         @PathVariable id: Long,
-        @Validated(_root_ide_package_.net.blueshell.api.validation.group.Update::class) @RequestBody dto: SimpleUserDTO
+        @Validated(net.blueshell.api.validation.group.Update::class) @RequestBody dto: SimpleUserDTO
     ): SimpleUserDTO {
         var user = service.findById(id)
         simpleMapper.fromDTO(dto, user)
@@ -82,7 +79,7 @@ class UserController(
     @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     fun updateUser(
         @PathVariable id: Long,
-        @Validated(_root_ide_package_.net.blueshell.api.validation.group.Update::class) @RequestBody dto: AdvancedUserDTO
+        @Validated(net.blueshell.api.validation.group.Update::class) @RequestBody dto: AdvancedUserDTO
     ): AdvancedUserDTO {
         var user = service.findById(id)
         advancedMapper.fromDTO(dto, user)

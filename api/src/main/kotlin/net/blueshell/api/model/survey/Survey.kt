@@ -18,7 +18,7 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE surveys SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener::class)
-open class Survey : AuditedAutoIdEntity() {
+class Survey : AuditedAutoIdEntity() {
     @OneToMany(mappedBy = "_survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _questions: MutableSet<Question> = linkedSetOf()
     val questions: MutableSet<Question>

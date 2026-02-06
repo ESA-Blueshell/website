@@ -1,8 +1,9 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import net.blueshell.api.model.base.AuditedAutoIdEntity
 import net.blueshell.api.model.File
+import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
@@ -29,7 +30,7 @@ import java.time.LocalDate
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-open class Board : AuditedAutoIdEntity() {
+class Board : AuditedAutoIdEntity() {
     @Column(name = "name", nullable = false)
     lateinit var name: String
 
@@ -40,6 +41,18 @@ open class Board : AuditedAutoIdEntity() {
         get() = _picture
         set(value) {
             _picture = value
+            pictureId = value?.id
+        }
+
+    @get:Transient
+    var pictureId: Long? = null
+        set(value) {
+            field = value
+            if (value == null) {
+                _picture = null
+            } else if (_picture?.id != value) {
+                _picture = File::class.asRef(value)
+            }
         }
 
     @OneToMany(mappedBy = "_board", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

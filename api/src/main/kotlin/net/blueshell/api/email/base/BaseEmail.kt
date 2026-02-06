@@ -1,6 +1,5 @@
 package net.blueshell.api.email.base
 
-import net.blueshell.api.email.base.EmailContent
 import net.blueshell.api.model.User
 
 abstract class BaseEmail(

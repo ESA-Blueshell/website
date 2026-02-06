@@ -1,10 +1,10 @@
 package net.blueshell.api.model.board
 
 import jakarta.persistence.*
-import net.blueshell.api.model.base.AuditedSoftDeleteEntity
-import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.File
 import net.blueshell.api.model.User
+import net.blueshell.api.model.base.AuditedSoftDeleteEntity
+import net.blueshell.api.model.base.Identifiable
 import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -37,10 +37,10 @@ import org.hibernate.annotations.SQLRestriction
       WHERE board_id = ? AND user_id = ? AND version = ?
     """
 )
-open class BoardMember(
+class BoardMember(
     @EmbeddedId
-    override var id: BoardMemberId = BoardMemberId()
-) : AuditedSoftDeleteEntity(), Identifiable<BoardMemberId> {
+    override var id: Id = Id()
+) : AuditedSoftDeleteEntity(), Identifiable<BoardMember.Id> {
 
     @get:Transient
     @set:Transient
@@ -93,6 +93,18 @@ open class BoardMember(
         get() = _picture
         set(value) {
             _picture = value
+            pictureId = value?.id
+        }
+
+    @get:Transient
+    var pictureId: Long? = null
+        set(value) {
+            field = value
+            if (value == null) {
+                _picture = null
+            } else if (_picture?.id != value) {
+                _picture = File::class.asRef(value)
+            }
         }
 
     override fun equals(other: Any?): Boolean {
@@ -104,10 +116,10 @@ open class BoardMember(
     }
 
     override fun hashCode(): Int = id.hashCode()
-}
 
-@Embeddable
-data class BoardMemberId(
-    var boardId: Long? = null,
-    var userId: Long? = null
-) : java.io.Serializable
+    @Embeddable
+    data class Id(
+        var boardId: Long? = null,
+        var userId: Long? = null
+    ) : java.io.Serializable
+}

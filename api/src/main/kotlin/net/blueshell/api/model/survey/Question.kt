@@ -1,11 +1,12 @@
 package net.blueshell.api.model.survey
 
 import jakarta.persistence.*
-import net.blueshell.api.model.base.DirtyAwareModel
-import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.common.hibernate.DirtyField
 import net.blueshell.api.common.hibernate.DirtyModel
+import net.blueshell.api.common.jpa.JpaListener
+import net.blueshell.api.model.base.DirtyAwareModel
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.converter.StringListConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -30,21 +31,21 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener::class)
 @DirtyModel
-open class Question : DirtyAwareModel() {
+class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
     var idx: Long = 0
 
-    @Column(name = "survey_id", nullable = false)
+    @get:Transient
     var surveyId: Long = 0
         set(value) {
             field = value
             if (_survey?.id != value) {
-                _survey = null
+                _survey = Survey::class.asRef(value)
             }
         }
 
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "survey_id", insertable = false, updatable = false)
+    @field:JoinColumn(name = "survey_id", nullable = false)
     private var _survey: Survey? = null
     var survey: Survey
         get() = requireNotNull(_survey) { "Survey is required" }

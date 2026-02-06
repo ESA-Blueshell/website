@@ -3,6 +3,7 @@ package net.blueshell.api.model.survey
 import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
+import net.blueshell.api.model.base.asRef
 import net.blueshell.api.model.converter.BooleanListConverter
 import net.blueshell.api.model.event.EventSignUpAnswer
 import org.hibernate.annotations.SQLDelete
@@ -19,18 +20,18 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @EntityListeners(JpaListener::class)
-open class Answer : AuditedAutoIdEntity() {
-    @Column(name = "question_id", nullable = false)
+class Answer : AuditedAutoIdEntity() {
+    @get:Transient
     var questionId: Long = 0
         set(value) {
             field = value
             if (_question?.id != value) {
-                _question = null
+                _question = Question::class.asRef(value)
             }
         }
 
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "question_id", insertable = false, updatable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @field:JoinColumn(name = "question_id", nullable = false)
     private var _question: Question? = null
     var question: Question?
         get() = _question

@@ -1,8 +1,8 @@
 package net.blueshell.api.mapper.event
 
-import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.event.EventBannerDTO
 import net.blueshell.api.mapper.FileMapper
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.model.event.EventBanner
 import org.mapstruct.BeanMapping
 import org.mapstruct.Mapper

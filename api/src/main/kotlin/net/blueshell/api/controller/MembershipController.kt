@@ -1,14 +1,13 @@
 package net.blueshell.api.controller
 
 import io.swagger.v3.oas.annotations.tags.Tag
-import net.blueshell.api.controller.base.BaseController
 import net.blueshell.api.common.enums.Role
+import net.blueshell.api.controller.base.BaseController
 import net.blueshell.api.dto.MembershipDTO
 import net.blueshell.api.mapper.MembershipMapper
 import net.blueshell.api.model.Membership
 import net.blueshell.api.model.filter.MembershipFilter
 import net.blueshell.api.service.MembershipService
-import net.blueshell.api.validation.group.Administration
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
@@ -47,7 +46,7 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
     @PostMapping("memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
-        @Validated(_root_ide_package_.net.blueshell.api.validation.group.Administration::class) @RequestBody dto: MembershipDTO
+        @Validated(net.blueshell.api.validation.group.Administration::class) @RequestBody dto: MembershipDTO
     ): MembershipDTO? {
         var membership = mapper.fromDTO(dto)
         membership = service.create(membership)

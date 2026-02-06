@@ -1,9 +1,10 @@
 package net.blueshell.api.model
 
 import jakarta.persistence.*
+import net.blueshell.api.common.enums.MemberType
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedAutoIdEntity
-import net.blueshell.api.common.enums.MemberType
+import net.blueshell.api.model.base.asRef
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
@@ -23,9 +24,9 @@ import java.time.LocalDate
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class Membership : AuditedAutoIdEntity() {
-    @field:JoinColumn(name = "user_id", insertable = false, updatable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY)
+class Membership : AuditedAutoIdEntity() {
+    @field:JoinColumn(name = "user_id", nullable = false)
+    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     private var _user: User? = null
     var user: User?
         get() = _user
@@ -34,12 +35,12 @@ open class Membership : AuditedAutoIdEntity() {
             userId = value?.id ?: userId
         }
 
-    @Column(name = "user_id", nullable = false)
+    @get:Transient
     var userId: Long = 0
         set(value) {
             field = value
             if (_user?.id != value) {
-                _user = null
+                _user = User::class.asRef(value)
             }
         }
 

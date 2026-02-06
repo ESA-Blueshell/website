@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.date.TodayValidator::class])
+@Constraint(validatedBy = [TodayValidator::class])
 annotation class Today(
     val message: String = "Date must be today",
     val groups: Array<KClass<*>> = [],

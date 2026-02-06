@@ -2,9 +2,9 @@ package net.blueshell.api.model.contribution
 
 import jakarta.persistence.*
 import net.blueshell.api.common.jpa.JpaListener
+import net.blueshell.api.model.User
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
-import net.blueshell.api.model.User
 import net.blueshell.api.model.base.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -35,10 +35,10 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class Contribution(
+class Contribution(
     @EmbeddedId
-    override var id: ContributionId = ContributionId()
-) : AuditedSoftDeleteEntity(), Identifiable<ContributionId> {
+    override var id: Id = Id()
+) : AuditedSoftDeleteEntity(), Identifiable<Contribution.Id> {
 
     @get:Transient
     @set:Transient
@@ -93,10 +93,10 @@ open class Contribution(
     }
 
     override fun hashCode(): Int = id.hashCode()
-}
 
-@Embeddable
-data class ContributionId(
-    var userId: Long? = null,
-    var contributionPeriodId: Long? = null
-) : java.io.Serializable
+    @Embeddable
+    data class Id(
+        var userId: Long? = null,
+        var contributionPeriodId: Long? = null
+    ) : java.io.Serializable
+}

@@ -11,7 +11,7 @@ import java.util.function.BiConsumer
 
 @Component
 class UniqueUserValidator @Autowired constructor(private val users: UserRepository) :
-    ConstraintValidator<net.blueshell.api.validation.user.UniqueUser?, SimpleUserDTO?> {
+    ConstraintValidator<UniqueUser?, SimpleUserDTO?> {
     override fun isValid(dto: SimpleUserDTO?, context: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
 

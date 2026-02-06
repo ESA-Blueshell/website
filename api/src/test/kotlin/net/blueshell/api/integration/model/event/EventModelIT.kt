@@ -16,7 +16,7 @@ class EventModelIT : ModelPersistenceTestSupport() {
             val committee = persistCommittee()
             val event = eventFactory.createBasic()
             event.committee = committee
-            event.committeeId = committee.id
+            event.committeeId = committee.id!!
             event.title = unique("event")
             event.description = "Event description"
             event.location = "HQ"
@@ -64,7 +64,7 @@ class EventModelIT : ModelPersistenceTestSupport() {
         fun `persists committee relation when setting id`() {
             val committee = persistCommittee()
             val event = eventFactory.createBasic()
-            event.committeeId = committee.id
+            event.committeeId = committee.id!!
             event.title = unique("event")
             event.startTime = timestamp().plusSeconds(3600)
             event.endTime = timestamp().plusSeconds(7200)

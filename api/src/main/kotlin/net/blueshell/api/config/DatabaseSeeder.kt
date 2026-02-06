@@ -592,7 +592,7 @@ class DatabaseSeeder(
     }
 
     private fun createEvent(
-        committee: Committee?,
+        committee: Committee,
         title: String,
         approved: Boolean,
         membersOnly: Boolean,
@@ -605,7 +605,7 @@ class DatabaseSeeder(
             if (signUp && withForm) createSurveyWithAllQuestionTypes() else null
 
         val event = Event().apply {
-            committeeId = committee?.id
+            committeeId = committee.id!!
             this.title = title
             description = "Description for $title"
             location = "Test Location"

@@ -5,7 +5,7 @@ import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
 @MustBeDocumented
-@Constraint(validatedBy = [_root_ide_package_.net.blueshell.api.validation.user.UniqueUserValidator::class])
+@Constraint(validatedBy = [UniqueUserValidator::class])
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class UniqueUser(

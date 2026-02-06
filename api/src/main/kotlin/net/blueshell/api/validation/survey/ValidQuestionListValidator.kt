@@ -4,7 +4,8 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.dto.survey.QuestionDTO
 
-class ValidQuestionListValidator : ConstraintValidator<net.blueshell.api.validation.survey.ValidQuestionList, MutableList<QuestionDTO>> {
+class ValidQuestionListValidator :
+    ConstraintValidator<ValidQuestionList, MutableList<QuestionDTO>> {
     override fun isValid(questions: MutableList<QuestionDTO>?, context: ConstraintValidatorContext): Boolean {
         if (questions.isNullOrEmpty()) {
             // handled by @NotEmpty

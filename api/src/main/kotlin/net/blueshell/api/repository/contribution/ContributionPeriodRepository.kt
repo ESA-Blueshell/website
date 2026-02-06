@@ -1,7 +1,7 @@
 package net.blueshell.api.repository.contribution
 
-import net.blueshell.api.repository.base.BaseRepository
 import net.blueshell.api.model.contribution.ContributionPeriod
+import net.blueshell.api.repository.base.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 

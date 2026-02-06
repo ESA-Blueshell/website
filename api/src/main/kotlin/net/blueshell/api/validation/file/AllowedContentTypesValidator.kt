@@ -7,10 +7,11 @@ import org.springframework.web.multipart.MultipartFile
 import java.util.*
 import java.util.stream.Collectors
 
-class AllowedContentTypesValidator : ConstraintValidator<net.blueshell.api.validation.file.AllowedContentTypes, MultipartFile?> {
+class AllowedContentTypesValidator :
+    ConstraintValidator<AllowedContentTypes, MultipartFile?> {
     private var allowed: MutableList<MediaType?>? = null
 
-    override fun initialize(constraintAnnotation: net.blueshell.api.validation.file.AllowedContentTypes) {
+    override fun initialize(constraintAnnotation: AllowedContentTypes) {
         this.allowed = Arrays.stream(constraintAnnotation.value)
             .map { mediaType: String? -> MediaType.parseMediaType(mediaType) }
             .collect(Collectors.toList())

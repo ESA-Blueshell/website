@@ -38,10 +38,10 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @EntityListeners(JpaListener::class)
-open class EventSignUpAnswer(
+class EventSignUpAnswer(
     @EmbeddedId
-    override var id: EventSignUpAnswerId = EventSignUpAnswerId()
-) : AuditedSoftDeleteEntity(), Identifiable<EventSignUpAnswerId> {
+    override var id: Id = Id()
+) : AuditedSoftDeleteEntity(), Identifiable<EventSignUpAnswer.Id> {
 
     @get:Transient
     @set:Transient
@@ -96,10 +96,12 @@ open class EventSignUpAnswer(
     }
 
     override fun hashCode(): Int = id.hashCode()
-}
 
-@Embeddable
-data class EventSignUpAnswerId(
-    var eventSignUpId: Long? = null,
-    var answerId: Long? = null
-) : java.io.Serializable
+
+    @Embeddable
+    data class Id(
+        var eventSignUpId: Long? = null,
+        var answerId: Long? = null
+    ) : java.io.Serializable
+
+}

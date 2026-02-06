@@ -1,17 +1,7 @@
 package net.blueshell.api.common.jpa
 
-import jakarta.persistence.PostPersist
-import jakarta.persistence.PostRemove
-import jakarta.persistence.PostUpdate
-import jakarta.persistence.PrePersist
-import jakarta.persistence.PreRemove
-import jakarta.persistence.PreUpdate
-import net.blueshell.api.common.event.jpa.PostPersistEvent
-import net.blueshell.api.common.event.jpa.PostRemoveEvent
-import net.blueshell.api.common.event.jpa.PostUpdateEvent
-import net.blueshell.api.common.event.jpa.PrePersistEvent
-import net.blueshell.api.common.event.jpa.PreRemoveEvent
-import net.blueshell.api.common.event.jpa.PreUpdateEvent
+import jakarta.persistence.*
+import net.blueshell.api.common.event.jpa.*
 import org.springframework.context.ApplicationEventPublisher
 
 class JpaListener {

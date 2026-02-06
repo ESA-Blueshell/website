@@ -170,7 +170,7 @@ abstract class ModelFactoryTestSupport {
         val committee = persistCommittee()
         val event = eventFactory.createBasic()
         event.committee = committee
-        event.committeeId = committee.id
+        event.committeeId = committee.id!!
         event.signUp = false
         return persist(event)
     }

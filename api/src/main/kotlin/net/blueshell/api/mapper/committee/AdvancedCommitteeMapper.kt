@@ -1,10 +1,12 @@
 package net.blueshell.api.mapper.committee
 
-import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.dto.committee.AdvancedCommitteeDTO
+import net.blueshell.api.mapper.base.BaseMapper
 import net.blueshell.api.model.committee.Committee
-import org.mapstruct.*
-import org.slf4j.LoggerFactory
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.MappingTarget
 
 @Mapper(componentModel = "spring", uses = [CommitteeMemberMapper::class])
 abstract class AdvancedCommitteeMapper : BaseMapper<Committee, AdvancedCommitteeDTO>() {

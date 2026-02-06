@@ -17,7 +17,7 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE redirects SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-open class Redirect() : AuditedAutoIdEntity() {
+class Redirect() : AuditedAutoIdEntity() {
     @field:ToString.Include
     @field:JoinColumn(name = "telemetry_id", nullable = false)
     @field:ManyToOne(fetch = FetchType.LAZY)

@@ -13,7 +13,7 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_join_columns() {
+        fun `persists event relation when setting entity`() {
             val event = persistEvent()
             val file: File = persist(fileWithUploader(fileFactory.createImage()))
 
@@ -24,7 +24,52 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(banner, EventBanner::class.java) { it.id }
 
             assertEquals(event.id, found.eventId)
+            assertEquals(event.id, found.event.id)
+        }
+
+        @Test
+        fun `persists event relation when setting id`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val banner = eventBannerFactory.createBasic()
+            banner.eventId = event.id ?: 0
+            banner.file = file
+
+            val found = persistAndReload(banner, EventBanner::class.java) { it.id }
+
+            assertEquals(event.id, found.eventId)
+            assertEquals(event.id, found.event.id)
+        }
+
+        @Test
+        fun `persists file relation when setting entity`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val banner = eventBannerFactory.createBasic()
+            banner.event = event
+            banner.file = file
+
+            val found = persistAndReload(banner, EventBanner::class.java) { it.id }
+
             assertEquals(file.id, found.fileId)
+            assertEquals(file.id, found.file.id)
+        }
+
+        @Test
+        fun `persists file relation when setting id`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val banner = eventBannerFactory.createBasic()
+            banner.event = event
+            banner.fileId = file.id ?: 0
+
+            val found = persistAndReload(banner, EventBanner::class.java) { it.id }
+
+            assertEquals(file.id, found.fileId)
+            assertEquals(file.id, found.file.id)
         }
     }
 }

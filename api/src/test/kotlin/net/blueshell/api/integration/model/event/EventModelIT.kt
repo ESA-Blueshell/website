@@ -12,7 +12,7 @@ class EventModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_columns_and_committee_relation() {
+        fun `persists column fields`() {
             val committee = persistCommittee()
             val event = eventFactory.createBasic()
             event.committee = committee
@@ -31,7 +31,6 @@ class EventModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(event, Event::class.java) { it.id }
 
-            assertEquals(committee.id, found.committeeId)
             assertEquals(event.title, found.title)
             assertEquals(event.description, found.description)
             assertEquals(event.location, found.location)
@@ -43,6 +42,38 @@ class EventModelIT : ModelPersistenceTestSupport() {
             assertEquals(event.approved, found.approved)
             assertEquals(event.membersOnly, found.membersOnly)
             assertEquals(event.signUp, found.signUp)
+        }
+
+        @Test
+        fun `persists committee relation when setting entity`() {
+            val committee = persistCommittee()
+            val event = eventFactory.createBasic()
+            event.committee = committee
+            event.title = unique("event")
+            event.startTime = timestamp().plusSeconds(3600)
+            event.endTime = timestamp().plusSeconds(7200)
+            event.signUp = false
+
+            val found = persistAndReload(event, Event::class.java) { it.id }
+
+            assertEquals(committee.id, found.committeeId)
+            assertEquals(committee.id, found.committee.id)
+        }
+
+        @Test
+        fun `persists committee relation when setting id`() {
+            val committee = persistCommittee()
+            val event = eventFactory.createBasic()
+            event.committeeId = committee.id
+            event.title = unique("event")
+            event.startTime = timestamp().plusSeconds(3600)
+            event.endTime = timestamp().plusSeconds(7200)
+            event.signUp = false
+
+            val found = persistAndReload(event, Event::class.java) { it.id }
+
+            assertEquals(committee.id, found.committeeId)
+            assertEquals(committee.id, found.committee.id)
         }
     }
 }

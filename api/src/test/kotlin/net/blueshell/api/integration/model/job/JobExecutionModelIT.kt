@@ -13,7 +13,7 @@ class JobExecutionModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields() {
+        fun `persists column fields`() {
             val job = JobExecution(
                 jobType = "nightly",
                 status = JobExecutionStatus.RUNNING,

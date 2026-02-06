@@ -11,7 +11,7 @@ class BlogModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields() {
+        fun `persists column fields`() {
             val blog = blogFactory.createBasic()
             blog.title = unique("blog")
             blog.html = "<p>${unique("html")}</p>"

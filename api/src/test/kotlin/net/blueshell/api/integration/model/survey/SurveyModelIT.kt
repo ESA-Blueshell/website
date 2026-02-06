@@ -14,22 +14,47 @@ class SurveyModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_questions_relation() {
+        fun `persists questions relation when setting entity`() {
             val survey = persistSurvey()
-            val question = questionFactory.createBasic()
-            question.type = QuestionType.OPEN
-            question.label = "Survey question"
-            question.survey = survey
-            question.surveyId = survey.id ?: 0
-            persist(question)
+            val questionOne = questionFactory.createBasic()
+            questionOne.type = QuestionType.OPEN
+            questionOne.label = "Survey question 1"
+            questionOne.survey = survey
+            persist(questionOne)
+            val questionTwo = questionFactory.createBasic()
+            questionTwo.type = QuestionType.OPEN
+            questionTwo.label = "Survey question 2"
+            questionTwo.survey = survey
+            persist(questionTwo)
             entityManager.flush()
             entityManager.clear()
 
             val found = entityManager.find(Survey::class.java, survey.id)
             assertNotNull(found)
 
-            assertEquals(1, found!!.questions.size)
-            assertEquals("Survey question", found.questions.first().label)
+            assertEquals(2, found!!.questions.size)
+        }
+
+        @Test
+        fun `persists questions relation when setting id`() {
+            val survey = persistSurvey()
+            val questionOne = questionFactory.createBasic()
+            questionOne.type = QuestionType.OPEN
+            questionOne.label = "Survey question 1"
+            questionOne.surveyId = survey.id ?: 0
+            persist(questionOne)
+            val questionTwo = questionFactory.createBasic()
+            questionTwo.type = QuestionType.OPEN
+            questionTwo.label = "Survey question 2"
+            questionTwo.surveyId = survey.id ?: 0
+            persist(questionTwo)
+            entityManager.flush()
+            entityManager.clear()
+
+            val found = entityManager.find(Survey::class.java, survey.id)
+            assertNotNull(found)
+
+            assertEquals(2, found!!.questions.size)
         }
     }
 }

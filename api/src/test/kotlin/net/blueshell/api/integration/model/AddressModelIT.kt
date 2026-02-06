@@ -11,7 +11,7 @@ class AddressModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields() {
+        fun `persists column fields`() {
             val address = addressFactory.createBasic()
             address.country = "NL"
             address.city = "Amsterdam"

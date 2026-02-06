@@ -13,13 +13,12 @@ class BoardModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_columns_and_picture_relation() {
+        fun `persists column fields`() {
             val board = boardFactory.createBasic()
             board.name = unique("board")
             board.candidate = "Candidate"
             board.startDate = LocalDate.of(2023, 1, 1)
             board.endDate = LocalDate.of(2023, 12, 31)
-            board.picture = persist(fileWithUploader(fileFactory.createImage()))
 
             val found = persistAndReload(board, Board::class.java) { it.id }
 
@@ -27,7 +26,36 @@ class BoardModelIT : ModelPersistenceTestSupport() {
             assertEquals(board.candidate, found.candidate)
             assertEquals(board.startDate, found.startDate)
             assertEquals(board.endDate, found.endDate)
-            assertEquals(board.picture?.id, found.picture?.id)
+        }
+
+        @Test
+        fun `persists picture relation when setting entity`() {
+            val board = boardFactory.createBasic()
+            board.name = unique("board")
+            board.candidate = "Candidate"
+            board.startDate = LocalDate.of(2023, 1, 1)
+            board.endDate = LocalDate.of(2023, 12, 31)
+            val picture = persist(fileWithUploader(fileFactory.createImage()))
+            board.picture = picture
+
+            val found = persistAndReload(board, Board::class.java) { it.id }
+
+            assertEquals(picture.id, found.picture?.id)
+        }
+
+        @Test
+        fun `persists picture relation when setting id`() {
+            val board = boardFactory.createBasic()
+            board.name = unique("board")
+            board.candidate = "Candidate"
+            board.startDate = LocalDate.of(2023, 1, 1)
+            board.endDate = LocalDate.of(2023, 12, 31)
+            val picture = persist(fileWithUploader(fileFactory.createImage()))
+            board.picture = entityManager.getReference(net.blueshell.api.model.File::class.java, picture.id)
+
+            val found = persistAndReload(board, Board::class.java) { it.id }
+
+            assertEquals(picture.id, found.picture?.id)
         }
     }
 }

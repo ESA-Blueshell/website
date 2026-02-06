@@ -13,11 +13,10 @@ class QuestionModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields_and_survey_relation() {
+        fun `persists column fields`() {
             val survey = persistSurvey()
             val question = questionFactory.createBasic()
             question.idx = 3
-            question.survey = survey
             question.surveyId = survey.id ?: 0
             question.type = QuestionType.RADIO
             question.label = "Question?"
@@ -26,10 +25,41 @@ class QuestionModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(question, Question::class.java) { it.id }
 
             assertEquals(question.idx, found.idx)
-            assertEquals(survey.id, found.surveyId)
             assertEquals(question.type, found.type)
             assertEquals(question.label, found.label)
             assertEquals(question.choiceLabels, found.choiceLabels)
+        }
+
+        @Test
+        fun `persists survey relation when setting entity`() {
+            val survey = persistSurvey()
+            val question = questionFactory.createBasic()
+            question.idx = 3
+            question.survey = survey
+            question.type = QuestionType.RADIO
+            question.label = "Question?"
+            question.choiceLabels = mutableListOf("A", "B", "C")
+
+            val found = persistAndReload(question, Question::class.java) { it.id }
+
+            assertEquals(survey.id, found.surveyId)
+            assertEquals(survey.id, found.survey.id)
+        }
+
+        @Test
+        fun `persists survey relation when setting id`() {
+            val survey = persistSurvey()
+            val question = questionFactory.createBasic()
+            question.idx = 3
+            question.surveyId = survey.id ?: 0
+            question.type = QuestionType.RADIO
+            question.label = "Question?"
+            question.choiceLabels = mutableListOf("A", "B", "C")
+
+            val found = persistAndReload(question, Question::class.java) { it.id }
+
+            assertEquals(survey.id, found.surveyId)
+            assertEquals(survey.id, found.survey.id)
         }
     }
 }

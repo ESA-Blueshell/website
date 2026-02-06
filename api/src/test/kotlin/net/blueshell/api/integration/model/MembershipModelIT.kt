@@ -13,7 +13,7 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_columns_and_user_relation() {
+        fun `persists column fields`() {
             val user = persist(userFactory.createBasic())
             val membership = membershipFactory.createBasic(user)
             membership.startDate = LocalDate.of(2022, 5, 1)
@@ -23,11 +23,34 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(membership, Membership::class.java) { it.id }
 
-            assertEquals(user.id, found.userId)
             assertEquals(membership.startDate, found.startDate)
             assertEquals(membership.endDate, found.endDate)
             assertEquals(membership.memberType, found.memberType)
             assertEquals(membership.incasso, found.incasso)
+        }
+
+        @Test
+        fun `persists user relation when setting entity`() {
+            val user = persist(userFactory.createBasic())
+            val membership = membershipFactory.createBasic(user)
+
+            val found = persistAndReload(membership, Membership::class.java) { it.id }
+
+            assertEquals(user.id, found.userId)
+            assertEquals(user.id, found.user?.id)
+        }
+
+        @Test
+        fun `persists user relation when setting id`() {
+            val user = persist(userFactory.createBasic())
+            val membership = membershipFactory.createBasic(user)
+            membership.user = null
+            membership.userId = user.id ?: 0
+
+            val found = persistAndReload(membership, Membership::class.java) { it.id }
+
+            assertEquals(user.id, found.userId)
+            assertEquals(user.id, found.user?.id)
         }
     }
 }

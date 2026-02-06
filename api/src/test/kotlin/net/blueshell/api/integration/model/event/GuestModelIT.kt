@@ -12,7 +12,7 @@ class GuestModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields() {
+        fun `persists column fields`() {
             val guest = guestFactory.createBasic()
             guest.name = "Guest"
             guest.discord = "guest#1234"

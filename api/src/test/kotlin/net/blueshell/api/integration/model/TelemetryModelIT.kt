@@ -12,22 +12,56 @@ class TelemetryModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_columns_and_redirect_relation() {
+        fun `persists column fields`() {
             val telemetry = telemetryFactory.createBasic()
             telemetry.platform = PlatformType.FACEBOOK
             telemetry.url = unique("url")
+            val saved = persistAndReload(telemetry, Telemetry::class.java) { it.id }
 
-            val redirect = redirectFactory.createBasic()
-            redirect.telemetry = persist(telemetry)
+            assertEquals(telemetry.platform, saved.platform)
+            assertEquals(telemetry.url, saved.url)
+        }
 
-            persist(redirect)
+        @Test
+        fun `persists redirects relation when setting entity`() {
+            val telemetry = telemetryFactory.createBasic()
+            telemetry.platform = PlatformType.FACEBOOK
+            telemetry.url = unique("url")
+            val saved = persist(telemetry)
+
+            val redirectOne = redirectFactory.createBasic()
+            redirectOne.telemetry = saved
+            val redirectTwo = redirectFactory.createBasic()
+            redirectTwo.telemetry = saved
+
+            persist(redirectOne)
+            persist(redirectTwo)
             entityManager.flush()
             entityManager.clear()
 
-            val found = requireNotNull(entityManager.find(Telemetry::class.java, redirect.telemetry.id))
-            assertEquals(telemetry.platform, found.platform)
-            assertEquals(telemetry.url, found.url)
-            assertEquals(1, found.redirects.size)
+            val found = requireNotNull(entityManager.find(Telemetry::class.java, saved.id))
+            assertEquals(2, found.redirects.size)
+        }
+
+        @Test
+        fun `persists redirects relation when setting id`() {
+            val telemetry = telemetryFactory.createBasic()
+            telemetry.platform = PlatformType.FACEBOOK
+            telemetry.url = unique("url")
+            val saved = persist(telemetry)
+
+            val redirectOne = redirectFactory.createBasic()
+            redirectOne.telemetry = entityManager.getReference(Telemetry::class.java, saved.id)
+            val redirectTwo = redirectFactory.createBasic()
+            redirectTwo.telemetry = entityManager.getReference(Telemetry::class.java, saved.id)
+
+            persist(redirectOne)
+            persist(redirectTwo)
+            entityManager.flush()
+            entityManager.clear()
+
+            val found = requireNotNull(entityManager.find(Telemetry::class.java, saved.id))
+            assertEquals(2, found.redirects.size)
         }
     }
 }

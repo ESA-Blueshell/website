@@ -11,7 +11,20 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_columns_and_picture_relation() {
+        fun `persists column fields`() {
+            val sponsor = sponsorFactory.createBasic()
+            sponsor.name = unique("sponsor")
+            sponsor.description = "Sponsor description"
+            sponsor.pictureId = persist(fileWithUploader(fileFactory.createImage())).id ?: 0
+
+            val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
+
+            assertEquals(sponsor.name, found.name)
+            assertEquals(sponsor.description, found.description)
+        }
+
+        @Test
+        fun `persists picture relation when setting entity`() {
             val picture = persist(fileWithUploader(fileFactory.createImage()))
             val sponsor = sponsorFactory.createBasic()
             sponsor.name = unique("sponsor")
@@ -20,9 +33,22 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
 
-            assertEquals(sponsor.name, found.name)
-            assertEquals(sponsor.description, found.description)
             assertEquals(picture.id, found.pictureId)
+            assertEquals(picture.id, found.picture.id)
+        }
+
+        @Test
+        fun `persists picture relation when setting id`() {
+            val picture = persist(fileWithUploader(fileFactory.createImage()))
+            val sponsor = sponsorFactory.createBasic()
+            sponsor.name = unique("sponsor")
+            sponsor.description = "Sponsor description"
+            sponsor.pictureId = picture.id ?: 0
+
+            val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
+
+            assertEquals(picture.id, found.pictureId)
+            assertEquals(picture.id, found.picture.id)
         }
     }
 }

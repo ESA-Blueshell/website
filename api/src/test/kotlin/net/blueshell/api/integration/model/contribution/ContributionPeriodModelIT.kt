@@ -13,7 +13,7 @@ class ContributionPeriodModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields() {
+        fun `persists column fields`() {
             val period = contributionPeriodFactory.createBasic()
             period.startDate = LocalDate.of(2023, 1, 1)
             period.endDate = LocalDate.of(2023, 12, 31)

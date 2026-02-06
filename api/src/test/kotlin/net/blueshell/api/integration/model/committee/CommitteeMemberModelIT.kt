@@ -12,7 +12,7 @@ class CommitteeMemberModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_join_columns_and_role() {
+        fun `persists column fields`() {
             val committee = persistCommittee()
             val user = persist(userFactory.createBasic())
 
@@ -21,9 +21,63 @@ class CommitteeMemberModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
 
-            assertEquals(committee.id, found.committeeId)
-            assertEquals(user.id, found.userId)
             assertEquals("Chair", found.role)
+        }
+
+        @Test
+        fun `persists committee relation when setting entity`() {
+            val committee = persistCommittee()
+            val user = persist(userFactory.createBasic())
+
+            val member = committeeMemberFactory.createBasic(user, committee)
+
+            val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
+
+            assertEquals(committee.id, found.committeeId)
+            assertEquals(committee.id, found.committee.id)
+        }
+
+        @Test
+        fun `persists committee relation when setting id`() {
+            val committee = persistCommittee()
+            val user = persist(userFactory.createBasic())
+
+            val member = CommitteeMember()
+            member.user = user
+            member.committeeId = committee.id ?: 0
+
+            val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
+
+            assertEquals(committee.id, found.committeeId)
+            assertEquals(committee.id, found.committee.id)
+        }
+
+        @Test
+        fun `persists user relation when setting entity`() {
+            val committee = persistCommittee()
+            val user = persist(userFactory.createBasic())
+
+            val member = committeeMemberFactory.createBasic(user, committee)
+
+            val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
+
+            assertEquals(user.id, found.userId)
+            assertEquals(user.id, found.user.id)
+        }
+
+        @Test
+        fun `persists user relation when setting id`() {
+            val committee = persistCommittee()
+            val user = persist(userFactory.createBasic())
+
+            val member = CommitteeMember()
+            member.committee = committee
+            member.userId = user.id ?: 0
+
+            val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
+
+            assertEquals(user.id, found.userId)
+            assertEquals(user.id, found.user.id)
         }
     }
 }

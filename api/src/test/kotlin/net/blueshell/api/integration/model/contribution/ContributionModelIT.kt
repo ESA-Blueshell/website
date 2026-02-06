@@ -12,7 +12,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_join_columns() {
+        fun `persists user relation when setting entity`() {
             val user = persist(userFactory.createBasic())
             val period = persist(contributionPeriodFactory.createBasic())
 
@@ -23,7 +23,52 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(contribution, Contribution::class.java) { it.id }
 
             assertEquals(user.id, found.userId)
+            assertEquals(user.id, found.user.id)
+        }
+
+        @Test
+        fun `persists user relation when setting id`() {
+            val user = persist(userFactory.createBasic())
+            val period = persist(contributionPeriodFactory.createBasic())
+
+            val contribution = contributionFactory.createBasic()
+            contribution.userId = user.id ?: 0
+            contribution.contributionPeriod = period
+
+            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+
+            assertEquals(user.id, found.userId)
+            assertEquals(user.id, found.user.id)
+        }
+
+        @Test
+        fun `persists contribution period relation when setting entity`() {
+            val user = persist(userFactory.createBasic())
+            val period = persist(contributionPeriodFactory.createBasic())
+
+            val contribution = contributionFactory.createBasic()
+            contribution.user = user
+            contribution.contributionPeriod = period
+
+            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+
             assertEquals(period.id, found.contributionPeriodId)
+            assertEquals(period.id, found.contributionPeriod.id)
+        }
+
+        @Test
+        fun `persists contribution period relation when setting id`() {
+            val user = persist(userFactory.createBasic())
+            val period = persist(contributionPeriodFactory.createBasic())
+
+            val contribution = contributionFactory.createBasic()
+            contribution.user = user
+            contribution.contributionPeriodId = period.id ?: 0
+
+            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+
+            assertEquals(period.id, found.contributionPeriodId)
+            assertEquals(period.id, found.contributionPeriod.id)
         }
     }
 }

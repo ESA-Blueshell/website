@@ -14,7 +14,7 @@ class UserModelIT : ModelPersistenceTestSupport() {
     inner class Persistence {
 
         @Test
-        fun persists_column_fields_and_roles() {
+        fun `persists column fields and roles`() {
             val user = userFactory.createBasic()
             user.setUsername(unique("user"))
             user.setPassword("secret")

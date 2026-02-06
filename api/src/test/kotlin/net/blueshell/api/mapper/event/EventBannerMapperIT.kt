@@ -1,0 +1,48 @@
+package net.blueshell.api.mapper.event
+
+import net.blueshell.api.factory.dto.FileDTOFactory
+import net.blueshell.api.factory.dto.event.EventBannerDTOFactory
+import net.blueshell.api.factory.model.EventBannerFactory
+import net.blueshell.api.factory.model.FileFactory
+import net.blueshell.api.mapper.MapperTestSupport
+import net.blueshell.api.model.event.EventBanner
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+
+@SpringBootTest
+class EventBannerMapperIT @Autowired constructor(
+    private val eventBannerMapper: EventBannerMapper,
+    private val eventBannerDTOFactory: EventBannerDTOFactory,
+    private val fileDTOFactory: FileDTOFactory,
+    private val eventBannerFactory: EventBannerFactory,
+    private val fileFactory: FileFactory
+) : MapperTestSupport() {
+    @Test
+    fun `persists mapped banner`() {
+        val event = persistEvent()
+        val file = persist(fileWithUploader(fileFactory.createImage()))
+        val dto = eventBannerDTOFactory.createBasic().apply {
+            this.file = fileDTOFactory.createBasic().also { it.id = file.id }
+        }
+        val banner = eventBannerFactory.createBasic().apply {
+            this.event = event
+            this.file = file
+        }
+
+        val mapped = eventBannerMapper.fromDTO(dto, banner)
+        mapped.event = event
+        mapped.file = file
+
+        val saved = persist(mapped)
+        flushAndClear()
+
+        val reloaded = reload(EventBanner::class.java, saved.id)
+        val mappedDto = eventBannerMapper.toDTO(reloaded)
+
+        assertThat(reloaded.eventId).isEqualTo(event.id)
+        assertThat(reloaded.fileId).isEqualTo(file.id)
+        assertThat(mappedDto.file?.id).isEqualTo(file.id)
+    }
+}

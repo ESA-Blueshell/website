@@ -1,12 +1,15 @@
 package net.blueshell.api.factory.model;
 
+import net.blueshell.api.model.committee.CommitteeMember;
 import net.blueshell.api.testutil.ModelTestUtils;
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import net.blueshell.api.model.committee.Committee;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -23,7 +26,7 @@ public class CommitteeFactory {
         Committee committee = new Committee();
         committee.setName(faker.company().name() + " Committee");
         committee.setDescription(faker.lorem().paragraph(3));
-        committee.setMembers(new HashSet<>());
+        committee.setMembers(new ArrayList<>());
         return committee;
     }
 

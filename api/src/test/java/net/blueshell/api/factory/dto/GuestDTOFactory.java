@@ -27,7 +27,6 @@ public class GuestDTOFactory extends BaseDtoFactory<GuestDTO> {
         dto.setDiscord("guest");
         dto.setEmail(email("guest"));
         dto.setPhoneNumber("+31651319571");
-        dto.setAccessToken(unique("acct"));
         return dto;
     }
 }

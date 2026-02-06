@@ -1,0 +1,41 @@
+package net.blueshell.api.mapper
+
+import net.blueshell.api.common.enums.Role
+import net.blueshell.api.factory.dto.MembershipDTOFactory
+import net.blueshell.api.factory.model.MembershipFactory
+import net.blueshell.api.model.Membership
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+
+@SpringBootTest
+class MembershipMapperIT @Autowired constructor(
+    private val membershipMapper: MembershipMapper,
+    private val membershipDTOFactory: MembershipDTOFactory,
+    private val membershipFactory: MembershipFactory
+) : MapperTestSupport() {
+    @Test
+    fun `persists board updates`() {
+        authenticateAs(Role.BOARD)
+        val user = persistUser()
+        val membership = membershipFactory.createBasic(user)
+        val dto = membershipDTOFactory.createBasic().apply {
+            userId = user.id
+        }
+
+        val mapped = membershipMapper.fromDTO(dto, membership)
+        val saved = persist(mapped)
+        flushAndClear()
+
+        val reloaded = reload(Membership::class.java, saved.id!!)
+        val mappedDto = membershipMapper.toDTO(reloaded)
+
+        assertThat(reloaded.userId).isEqualTo(user.id)
+        assertThat(reloaded.memberType).isEqualTo(dto.memberType)
+        assertThat(reloaded.startDate).isEqualTo(dto.startDate)
+        assertThat(reloaded.endDate).isEqualTo(dto.endDate)
+        assertThat(reloaded.incasso).isEqualTo(dto.incasso)
+        assertThat(mappedDto.userId).isEqualTo(user.id)
+    }
+}

@@ -1,0 +1,29 @@
+package net.blueshell.api.mapper
+
+import net.blueshell.api.common.enums.PlatformType
+import net.blueshell.api.factory.model.BlogFactory
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+
+@SpringBootTest
+class SocialMapperIT @Autowired constructor(
+    private val socialMapper: SocialMapper,
+    private val blogFactory: BlogFactory
+) : MapperTestSupport() {
+    @Test
+    fun `builds social dto from blog`() {
+        val blog = persist(blogFactory.createBasic())
+        val dto = socialMapper.toSocialDTO(blog)
+
+        assertThat(dto.url).contains("/blogs")
+        assertThat(dto.title).isEqualTo(blog.title)
+        assertThat(dto.platforms).contains(
+            PlatformType.FACEBOOK,
+            PlatformType.TWITTER,
+            PlatformType.INSTAGRAM,
+            PlatformType.LINKEDIN
+        )
+    }
+}

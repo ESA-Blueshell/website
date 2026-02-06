@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper
 
 import net.blueshell.api.factory.dto.SponsorDTOFactory
 import net.blueshell.api.factory.model.SponsorFactory
+import net.blueshell.api.mapper.SponsorMapper
 import net.blueshell.api.model.Sponsor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -14,7 +15,7 @@ class SponsorMapperIT @Autowired constructor(
     private val sponsorMapper: SponsorMapper,
     private val sponsorDTOFactory: SponsorDTOFactory,
     private val sponsorFactory: SponsorFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

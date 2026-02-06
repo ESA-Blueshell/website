@@ -1,13 +1,14 @@
 package net.blueshell.api.integration.model
 
 import net.blueshell.api.common.enums.Role
+import net.blueshell.api.model.User
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.sql.Date
 import java.time.LocalDate
 
-class UserModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class UserModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

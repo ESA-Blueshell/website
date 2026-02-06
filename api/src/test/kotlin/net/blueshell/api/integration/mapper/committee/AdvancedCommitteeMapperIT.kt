@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper.committee
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.committee.AdvancedCommitteeMapper
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.service.CommitteeService
 import org.assertj.core.api.Assertions.assertThat
@@ -17,7 +18,7 @@ class AdvancedCommitteeMapperIT @Autowired constructor(
     private val advancedCommitteeDTOFactory: AdvancedCommitteeDTOFactory,
     private val committeeMemberFactory: CommitteeMemberFactory,
     private val committeeService: CommitteeService
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

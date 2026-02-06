@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper
 
 import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.factory.model.FileFactory
+import net.blueshell.api.mapper.FileMapper
 import net.blueshell.api.model.File
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -14,7 +15,7 @@ class FileMapperIT @Autowired constructor(
     private val fileMapper: FileMapper,
     private val fileDTOFactory: FileDTOFactory,
     private val fileFactory: FileFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

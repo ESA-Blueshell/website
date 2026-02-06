@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper
 
 import net.blueshell.api.common.enums.PlatformType
 import net.blueshell.api.factory.model.BlogFactory
+import net.blueshell.api.mapper.SocialMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -12,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class SocialMapperIT @Autowired constructor(
     private val socialMapper: SocialMapper,
     private val blogFactory: BlogFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

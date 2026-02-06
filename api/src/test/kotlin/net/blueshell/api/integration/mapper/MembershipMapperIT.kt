@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.factory.dto.MembershipDTOFactory
 import net.blueshell.api.factory.model.MembershipFactory
+import net.blueshell.api.mapper.MembershipMapper
 import net.blueshell.api.model.Membership
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -15,7 +16,7 @@ class MembershipMapperIT @Autowired constructor(
     private val membershipMapper: MembershipMapper,
     private val membershipDTOFactory: MembershipDTOFactory,
     private val membershipFactory: MembershipFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

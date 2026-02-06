@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper
 
 import net.blueshell.api.factory.dto.TelemetryDTOFactory
 import net.blueshell.api.factory.model.TelemetryFactory
+import net.blueshell.api.mapper.TelemetryMapper
 import net.blueshell.api.model.Telemetry
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -14,7 +15,7 @@ class TelemetryMapperIT @Autowired constructor(
     private val telemetryMapper: TelemetryMapper,
     private val telemetryDTOFactory: TelemetryDTOFactory,
     private val telemetryFactory: TelemetryFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

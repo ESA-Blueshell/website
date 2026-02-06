@@ -1,10 +1,11 @@
 package net.blueshell.api.integration.model
 
+import net.blueshell.api.model.Sponsor
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class SponsorModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class SponsorModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

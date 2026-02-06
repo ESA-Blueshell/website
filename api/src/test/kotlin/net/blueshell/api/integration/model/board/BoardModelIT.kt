@@ -1,12 +1,13 @@
 package net.blueshell.api.integration.model.board
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.board.Board
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-class BoardModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class BoardModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

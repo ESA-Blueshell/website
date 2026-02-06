@@ -1,11 +1,12 @@
 package net.blueshell.api.integration.model
 
 import net.blueshell.api.common.enums.ResetType
+import net.blueshell.api.model.RecoveryToken
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class RecoveryTokenModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class RecoveryTokenModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

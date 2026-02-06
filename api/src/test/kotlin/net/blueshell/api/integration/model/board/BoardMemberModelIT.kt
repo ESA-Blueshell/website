@@ -1,11 +1,13 @@
 package net.blueshell.api.integration.model.board
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.File
+import net.blueshell.api.model.board.BoardMember
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class BoardMemberModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class BoardMemberModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {
@@ -14,7 +16,7 @@ class BoardMemberModelIT : net.blueshell.api.integration.model.ModelPersistenceT
         fun persists_join_columns_and_picture_relation() {
             val board = persist(boardFactory.createBasic())
             val user = persist(userFactory.createBasic())
-            val picture = persist(fileWithUploader(fileFactory.createImage()))
+            val picture: File = persist(fileWithUploader(fileFactory.createImage()))
 
             val member = boardMemberFactory.createBasic(board, user)
             member.picture = picture

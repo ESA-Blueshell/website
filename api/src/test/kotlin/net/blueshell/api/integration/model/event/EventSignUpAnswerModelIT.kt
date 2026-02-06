@@ -1,12 +1,13 @@
 package net.blueshell.api.integration.model.event
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.event.EventSignUpAnswer
 import net.blueshell.api.model.survey.Answer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class EventSignUpAnswerModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class EventSignUpAnswerModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

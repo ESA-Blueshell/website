@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper.contribution
 import net.blueshell.api.factory.dto.contribution.ContributionDTOFactory
 import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.contribution.ContributionMapper
 import net.blueshell.api.model.contribution.Contribution
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -15,7 +16,7 @@ class ContributionMapperIT @Autowired constructor(
     private val contributionMapper: ContributionMapper,
     private val contributionDTOFactory: ContributionDTOFactory,
     private val contributionFactory: ContributionFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper.event
 import net.blueshell.api.common.enums.PlatformType
 import net.blueshell.api.factory.dto.event.EventDTOFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.event.EventSocialMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,7 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class EventSocialMapperIT @Autowired constructor(
     private val eventSocialMapper: EventSocialMapper,
     private val eventDTOFactory: EventDTOFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

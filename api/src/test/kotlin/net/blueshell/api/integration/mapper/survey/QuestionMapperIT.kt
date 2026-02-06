@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper.survey
 import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.survey.QuestionMapper
 import net.blueshell.api.model.survey.Question
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -14,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class QuestionMapperIT @Autowired constructor(
     private val questionMapper: QuestionMapper,
     private val questionDTOFactory: QuestionDTOFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

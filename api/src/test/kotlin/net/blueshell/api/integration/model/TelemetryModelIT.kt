@@ -1,11 +1,12 @@
 package net.blueshell.api.integration.model
 
 import net.blueshell.api.common.enums.PlatformType
+import net.blueshell.api.model.Telemetry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class TelemetryModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class TelemetryModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

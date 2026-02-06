@@ -5,6 +5,7 @@ import net.blueshell.api.factory.dto.event.EventBannerDTOFactory
 import net.blueshell.api.factory.model.event.EventBannerFactory
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.event.EventBannerMapper
 import net.blueshell.api.model.event.EventBanner
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -19,7 +20,7 @@ class EventBannerMapperIT @Autowired constructor(
     private val fileDTOFactory: FileDTOFactory,
     private val eventBannerFactory: EventBannerFactory,
     private val fileFactory: FileFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

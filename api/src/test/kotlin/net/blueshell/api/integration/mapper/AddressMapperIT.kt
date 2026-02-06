@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper
 
 import net.blueshell.api.factory.dto.AddressDTOFactory
 import net.blueshell.api.factory.model.AddressFactory
+import net.blueshell.api.mapper.AddressMapper
 import net.blueshell.api.model.Address
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -14,7 +15,7 @@ class AddressMapperIT @Autowired constructor(
     private val addressMapper: AddressMapper,
     private val addressDTOFactory: AddressDTOFactory,
     private val addressFactory: AddressFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

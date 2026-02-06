@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper.contribution
 import net.blueshell.api.factory.dto.contribution.ContributionPeriodDTOFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.contribution.ContributionPeriodMapper
 import net.blueshell.api.model.contribution.ContributionPeriod
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -14,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionPeriodMapperIT @Autowired constructor(
     private val contributionPeriodMapper: ContributionPeriodMapper,
     private val contributionPeriodDTOFactory: ContributionPeriodDTOFactory,
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

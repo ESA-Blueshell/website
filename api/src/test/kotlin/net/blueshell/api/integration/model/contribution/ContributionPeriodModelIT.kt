@@ -1,12 +1,13 @@
 package net.blueshell.api.integration.model.contribution
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.contribution.ContributionPeriod
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-class ContributionPeriodModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class ContributionPeriodModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

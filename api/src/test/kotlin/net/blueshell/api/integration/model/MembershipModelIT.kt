@@ -1,12 +1,13 @@
 package net.blueshell.api.integration.model
 
 import net.blueshell.api.common.enums.MemberType
+import net.blueshell.api.model.Membership
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-class MembershipModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class MembershipModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

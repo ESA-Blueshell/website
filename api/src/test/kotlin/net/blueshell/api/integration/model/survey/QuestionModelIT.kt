@@ -2,11 +2,12 @@ package net.blueshell.api.integration.model.survey
 
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.survey.Question
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class QuestionModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class QuestionModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

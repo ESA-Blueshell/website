@@ -4,6 +4,7 @@ import net.blueshell.api.common.enums.Role
 import net.blueshell.api.factory.dto.user.AdvancedUserDTOFactory
 import net.blueshell.api.factory.model.AddressFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.user.AdvancedUserMapper
 import net.blueshell.api.model.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -18,7 +19,7 @@ class AdvancedUserMapperIT @Autowired constructor(
     private val advancedUserDTOFactory: AdvancedUserDTOFactory,
     private val addressFactory: AddressFactory,
     private val passwordEncoder: PasswordEncoder
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

@@ -1,11 +1,12 @@
 package net.blueshell.api.integration.model
 
 import net.blueshell.api.common.enums.FileType
+import net.blueshell.api.model.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class FileModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class FileModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

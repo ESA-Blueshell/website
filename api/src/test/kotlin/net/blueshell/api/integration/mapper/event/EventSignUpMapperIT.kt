@@ -6,6 +6,7 @@ import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.event.EventSignUpFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.event.EventSignUpMapper
 import net.blueshell.api.model.event.EventSignUp
 import net.blueshell.api.model.survey.Answer
 import org.assertj.core.api.Assertions.assertThat
@@ -22,7 +23,7 @@ class EventSignUpMapperIT @Autowired constructor(
     private val answerDTOFactory: AnswerDTOFactory,
     private val answerFactory: AnswerFactory,
     private val eventSignUpFactory: EventSignUpFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

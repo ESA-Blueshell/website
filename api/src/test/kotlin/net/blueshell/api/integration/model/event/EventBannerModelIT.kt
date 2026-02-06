@@ -1,11 +1,13 @@
 package net.blueshell.api.integration.model.event
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.File
+import net.blueshell.api.model.event.EventBanner
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class EventBannerModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class EventBannerModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {
@@ -13,7 +15,7 @@ class EventBannerModelIT : net.blueshell.api.integration.model.ModelPersistenceT
         @Test
         fun persists_join_columns() {
             val event = persistEvent()
-            val file = persist(fileWithUploader(fileFactory.createImage()))
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
 
             val banner = eventBannerFactory.createBasic()
             banner.event = event

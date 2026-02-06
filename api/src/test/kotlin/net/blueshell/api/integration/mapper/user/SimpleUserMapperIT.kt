@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper.user
 
 import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.user.SimpleUserMapper
 import net.blueshell.api.model.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -13,7 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class SimpleUserMapperIT @Autowired constructor(
     private val simpleUserMapper: SimpleUserMapper,
     private val simpleUserDTOFactory: SimpleUserDTOFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

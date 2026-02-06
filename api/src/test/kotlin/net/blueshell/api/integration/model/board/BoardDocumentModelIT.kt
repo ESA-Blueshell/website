@@ -1,11 +1,13 @@
 package net.blueshell.api.integration.model.board
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.File
+import net.blueshell.api.model.board.BoardDocument
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class BoardDocumentModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class BoardDocumentModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {
@@ -13,7 +15,7 @@ class BoardDocumentModelIT : net.blueshell.api.integration.model.ModelPersistenc
         @Test
         fun persists_columns_and_relations() {
             val board = persist(boardFactory.createBasic())
-            val documentFile = persist(fileWithUploader(fileFactory.createDocument()))
+            val documentFile: File = persist(fileWithUploader(fileFactory.createDocument()))
 
             val document = boardDocumentFactory.createBasic()
             document.board = board

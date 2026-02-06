@@ -30,6 +30,7 @@ import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
+import net.blueshell.api.model.File
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.model.event.Event
 import net.blueshell.api.model.survey.Answer

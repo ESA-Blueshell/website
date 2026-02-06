@@ -1,11 +1,12 @@
 package net.blueshell.api.integration.model.contribution
 
 import net.blueshell.api.integration.model.ModelPersistenceTestSupport
+import net.blueshell.api.model.contribution.Contribution
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class ContributionModelIT : net.blueshell.api.integration.model.ModelPersistenceTestSupport() {
+class ContributionModelIT : ModelPersistenceTestSupport() {
 
     @Nested
     inner class Persistence {

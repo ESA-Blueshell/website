@@ -3,6 +3,7 @@ package net.blueshell.api.integration.mapper.event
 import net.blueshell.api.factory.dto.GuestDTOFactory
 import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.event.GuestMapper
 import net.blueshell.api.model.event.Guest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -15,7 +16,7 @@ class GuestMapperIT @Autowired constructor(
     private val guestMapper: GuestMapper,
     private val guestDTOFactory: GuestDTOFactory,
     private val guestFactory: GuestFactory
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

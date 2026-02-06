@@ -2,6 +2,7 @@ package net.blueshell.api.integration.mapper.committee
 
 import net.blueshell.api.factory.dto.committee.SimpleCommitteeDTOFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
+import net.blueshell.api.mapper.committee.SimpleCommitteeMapper
 import net.blueshell.api.model.committee.Committee
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -12,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class SimpleCommitteeMapperIT @Autowired constructor(
     private val simpleCommitteeMapper: SimpleCommitteeMapper
-) : net.blueshell.api.integration.mapper.MapperTestSupport() {
+) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
         @Test

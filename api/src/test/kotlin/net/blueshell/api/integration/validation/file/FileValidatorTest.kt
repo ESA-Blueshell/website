@@ -1,4 +1,4 @@
-package net.blueshell.api.integration.validation
+package net.blueshell.api.integration.validation.file
 
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator

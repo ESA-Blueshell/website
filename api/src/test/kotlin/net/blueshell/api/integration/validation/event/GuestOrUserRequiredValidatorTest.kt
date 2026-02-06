@@ -1,4 +1,4 @@
-package net.blueshell.api.integration.validation
+package net.blueshell.api.integration.validation.event
 
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.dto.event.EventSignUpDTO

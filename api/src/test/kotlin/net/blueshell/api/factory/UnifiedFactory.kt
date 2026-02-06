@@ -62,7 +62,7 @@ class UnifiedFactory(
                 val createWith = tryGet(beanClass, "createWithCustomizations", Consumer::class.java)
 
                 val productType = createBasic.returnType
-                modelCreators[productType] = Creator(factoryBean, createBasic, createFull, createWith)
+                modelCreators[productType] = Creator<Any>(factoryBean, createBasic, createFull, createWith)
             } catch (_: ReflectiveOperationException) {
                 // keep indexing resilient
             }
@@ -84,7 +84,7 @@ class UnifiedFactory(
 
         return try {
             val dtoFactory = dtoRegistry.get(type)
-            Creator(
+            Creator<T>(
                 dtoFactory,
                 BaseDtoFactory::class.java.getMethod("createBasic"),
                 BaseDtoFactory::class.java.getMethod("createFull"),

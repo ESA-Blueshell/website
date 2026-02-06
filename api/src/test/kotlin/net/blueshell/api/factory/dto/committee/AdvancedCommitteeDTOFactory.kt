@@ -35,7 +35,7 @@ class AdvancedCommitteeDTOFactory(
             member
         }
 
-        dto.members = members
+        dto.members = members.toMutableList()
         return dto
     }
 
@@ -51,7 +51,7 @@ class AdvancedCommitteeDTOFactory(
             member
         }
 
-        dto.members = members
+        dto.members = members.toMutableList()
         return dto
     }
 
@@ -76,7 +76,7 @@ class AdvancedCommitteeDTOFactory(
         val dto = AdvancedCommitteeDTO()
         dto.name = unique("Committee")
         dto.description = "Test committee description"
-        dto.members = customMembers
+        dto.members = customMembers.toMutableList()
         return dto
     }
 }

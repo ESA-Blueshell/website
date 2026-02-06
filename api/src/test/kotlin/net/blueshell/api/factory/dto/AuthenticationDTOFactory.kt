@@ -18,6 +18,6 @@ class AuthenticationDTOFactory : BaseDtoFactory<AuthenticationDTO>() {
         val userId = nextId()
         val username = unique("user")
         val exp = System.currentTimeMillis() + 3_600_000
-        return AuthenticationDTO(token, userId, username, exp, setOf(Role.MEMBER), null)
+        return AuthenticationDTO(token, userId, username, exp, mutableSetOf(Role.MEMBER), null)
     }
 }

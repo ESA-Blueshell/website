@@ -28,8 +28,6 @@ class EventSignUpFactory(
         signUp.userId = user.id
         signUp.guest = null
 
-        signUp.answers.add(answerFactory.createBasic())
-
         return signUp
     }
 

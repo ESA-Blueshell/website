@@ -80,9 +80,9 @@ class DtoFactoryValidationTest {
     fun dtoFactoriesProduceValidDtos(): List<DynamicTest> {
         return factories.sortedBy { it.targetType().simpleName }.flatMap { factory ->
             listOf(DynamicTest.dynamicTest("${factory.targetType().simpleName} createBasic") {
-                assertNoViolations(factory.createBasic())
+                assertNoViolations(factory.createBasic() as Any)
             }, DynamicTest.dynamicTest("${factory.targetType().simpleName} createFull") {
-                assertNoViolations(factory.createFull())
+                assertNoViolations(factory.createFull() as Any)
             })
         }
     }

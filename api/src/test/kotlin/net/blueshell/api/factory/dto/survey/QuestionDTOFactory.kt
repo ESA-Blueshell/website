@@ -28,11 +28,11 @@ class QuestionDTOFactory : BaseDtoFactory<QuestionDTO>() {
             }
             QuestionType.RADIO -> {
                 dto.label = "Please select one option:"
-                dto.choiceLabels = listOf("Option A", "Option B", "Option C", "Option D")
+                dto.choiceLabels = mutableListOf<String?>("Option A", "Option B", "Option C", "Option D")
             }
             QuestionType.CHECKBOX -> {
                 dto.label = "Select all that apply:"
-                dto.choiceLabels = listOf("Choice 1", "Choice 2", "Choice 3", "Choice 4", "Choice 5")
+                dto.choiceLabels = mutableListOf<String?>("Choice 1", "Choice 2", "Choice 3", "Choice 4", "Choice 5")
             }
             QuestionType.DESCRIPTION -> {
                 dto.label = "Important information:"

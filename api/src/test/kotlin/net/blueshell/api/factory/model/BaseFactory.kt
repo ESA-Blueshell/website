@@ -32,18 +32,18 @@ abstract class BaseFactory<T>(
     protected fun generateId(): Long = ID_COUNTER.incrementAndGet()
 
     protected fun futureInstant(): Instant {
-        return LocalDateTime.now().plusDays(faker.number().numberBetween(1, 365))
+        return LocalDateTime.now().plusDays(faker.number().numberBetween(1, 365).toLong())
             .atZone(ZoneId.systemDefault()).toInstant()
     }
 
     protected fun pastInstant(): Instant {
-        return LocalDateTime.now().minusDays(faker.number().numberBetween(1, 365))
+        return LocalDateTime.now().minusDays(faker.number().numberBetween(1, 365).toLong())
             .atZone(ZoneId.systemDefault()).toInstant()
     }
 
-    protected fun futureDate(): LocalDate = LocalDate.now().plusDays(faker.number().numberBetween(1, 365))
+    protected fun futureDate(): LocalDate = LocalDate.now().plusDays(faker.number().numberBetween(1, 365).toLong())
 
-    protected fun pastDate(): LocalDate = LocalDate.now().minusDays(faker.number().numberBetween(1, 365))
+    protected fun pastDate(): LocalDate = LocalDate.now().minusDays(faker.number().numberBetween(1, 365).toLong())
 
     /** Hook to set base entity fields if needed (usually set by JPA). */
     protected fun <M : BaseModel> setBaseFields(entity: M) {

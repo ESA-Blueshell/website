@@ -28,7 +28,7 @@ class QuestionFactory(
     fun createFull(): Question {
         val question = createBasic()
         if (question.type == QuestionType.CHECKBOX || question.type == QuestionType.RADIO) {
-            question.choiceLabels = generateChoiceLabels()
+            question.choiceLabels = generateChoiceLabels().toMutableList()
         }
         return question
     }
@@ -42,14 +42,14 @@ class QuestionFactory(
     fun createForSurvey(survey: Survey): Question {
         return createWithCustomizations { question ->
             question.survey = survey
-            question.surveyId = survey.id
+            question.surveyId = survey.id ?: 0L
         }
     }
 
     fun createMultipleChoice(): Question {
         return createWithCustomizations { question ->
             question.type = QuestionType.RADIO
-            question.choiceLabels = listOf("Option A", "Option B", "Option C", "Option D")
+            question.choiceLabels = mutableListOf("Option A", "Option B", "Option C", "Option D")
         }
     }
 

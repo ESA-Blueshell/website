@@ -1,7 +1,6 @@
 package net.blueshell.api.config
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -17,9 +16,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 @AutoConfigureMockMvc
 class OpenApiErrorConfigIT : UserTestSupport() {
-
-    @Autowired
-    private lateinit var mapper: ObjectMapper
 
     @Test
     fun openapi_contains_global_error_responses_and_error_schemas() {

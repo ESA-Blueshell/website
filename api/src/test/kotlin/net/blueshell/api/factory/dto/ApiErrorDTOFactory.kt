@@ -1,6 +1,7 @@
 package net.blueshell.api.factory.dto
 
 import net.blueshell.api.dto.error.ApiErrorDTO
+import net.blueshell.api.dto.error.FieldValidationErrorDTO
 import org.springframework.stereotype.Component
 import java.net.URI
 
@@ -21,7 +22,7 @@ class ApiErrorDTOFactory(
         dto.status = 400
         dto.detail = "Validation failed"
         dto.instance = URI.create("/api/v1/test")
-        dto.errors = listOf(fieldFactory.createBasic())
+        dto.errors = mutableListOf<FieldValidationErrorDTO?>(fieldFactory.createBasic())
         dto.traceId = unique("trace")
         return dto
     }

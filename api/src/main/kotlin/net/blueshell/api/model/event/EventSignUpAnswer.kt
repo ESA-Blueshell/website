@@ -77,7 +77,7 @@ open class EventSignUpAnswer(
         }
 
     @field:MapsId("answerId")
-    @field:OneToOne(fetch = FetchType.LAZY, optional = false, cascade = [CascadeType.ALL])
+    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "answer_id", nullable = false)
     private var _answer: Answer? = null
     var answer: Answer

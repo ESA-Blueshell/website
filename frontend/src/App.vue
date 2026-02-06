@@ -167,7 +167,7 @@
           Log In
         </v-btn>
         <v-menu
-          v-if="isBoard"
+          v-if="isBoard || isAdmin"
           :offset="3"
         >
           <template #activator="{ props }">
@@ -212,6 +212,12 @@
               to="/members/manage"
             >
               Manage members
+            </v-list-item>
+            <v-list-item
+              v-if="isAdmin"
+              to="/management/jobs"
+            >
+              Manage jobs
             </v-list-item>
           </v-list>
         </v-menu>
@@ -492,6 +498,7 @@ const statusSnackbarMessage = computed({
 
 const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
 const isBoard = computed((): boolean => store.getters.isBoard)
+const isAdmin = computed((): boolean => store.getters.isAdmin)
 const login = computed(() => store.getters.getLogin)
 
 const isDarkMode = computed((): boolean => theme.global.current.value.dark)

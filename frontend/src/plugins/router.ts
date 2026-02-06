@@ -38,6 +38,7 @@ import ForgotPassword from "@/pages/login/ForgotPassword.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 import RecoveryManager from "@/pages/management/RecoveryManager.vue"
 import AddressManager from "@/pages/management/AddressManager.vue"
+import JobManager from "@/pages/management/JobManager.vue"
 
 const routes: RouteRecordRaw[] = [
   {
@@ -268,6 +269,12 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true},
   },
   {
+    path: "/management/jobs",
+    name: "jobManager",
+    component: JobManager,
+    meta: {requiresAuth: true, requiresAdmin: true},
+  },
+  {
     path: "/blogs",
     name: "BlogList",
     component: BlogsView,
@@ -303,6 +310,8 @@ router.beforeEach((to, from, next) => {
       path: "/login",
       query: {redirect: to.fullPath},
     })
+  } else if (to.meta.requiresAdmin && !store.getters.isAdmin) {
+    next({path: "/"})
   } else {
     next()
   }

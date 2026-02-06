@@ -76,6 +76,12 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -89,6 +95,10 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
+  jobs:
+    queue-name: ${JOB_QUEUE_NAME:jobs.queue}
+    exchange-name: ${JOB_EXCHANGE_NAME:jobs.exchange}
+    routing-key: ${JOB_ROUTING_KEY:jobs.routing}
 
 frontend:
   url: ${FRONTEND_URL}

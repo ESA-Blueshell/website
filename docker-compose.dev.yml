@@ -22,6 +22,25 @@ services:
       retries: 5
       start_period: 30s
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - global_network
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   frontend:
     image: frontend:dev
     pull_policy: never
@@ -74,6 +93,7 @@ services:
       - FRONTEND_URL=http://localhost:3000
     depends_on:
       - db
+      - rabbitmq
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s

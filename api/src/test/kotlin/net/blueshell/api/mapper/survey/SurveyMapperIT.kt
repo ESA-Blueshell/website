@@ -2,7 +2,7 @@ package net.blueshell.api.mapper.survey
 
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
-import net.blueshell.api.factory.model.SurveyFactory
+import net.blueshell.api.factory.model.survey.SurveyFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.survey.Survey
 import org.assertj.core.api.Assertions.assertThat

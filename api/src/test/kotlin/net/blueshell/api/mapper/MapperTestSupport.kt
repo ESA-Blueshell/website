@@ -3,11 +3,11 @@ package net.blueshell.api.mapper
 import jakarta.persistence.EntityManager
 import net.blueshell.api.common.enums.Role
 import net.blueshell.api.config.TruncateTestDatabaseListener
-import net.blueshell.api.factory.model.CommitteeFactory
-import net.blueshell.api.factory.model.ContributionPeriodFactory
-import net.blueshell.api.factory.model.EventFactory
-import net.blueshell.api.factory.model.QuestionFactory
-import net.blueshell.api.factory.model.SurveyFactory
+import net.blueshell.api.factory.model.committee.CommitteeFactory
+import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
+import net.blueshell.api.factory.model.event.EventFactory
+import net.blueshell.api.factory.model.survey.QuestionFactory
+import net.blueshell.api.factory.model.survey.SurveyFactory
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.model.File
 import net.blueshell.api.model.User

@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.contribution
 
 import net.blueshell.api.factory.dto.contribution.ContributionPeriodDTOFactory
-import net.blueshell.api.factory.model.ContributionPeriodFactory
+import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.contribution.ContributionPeriod
 import org.assertj.core.api.Assertions.assertThat

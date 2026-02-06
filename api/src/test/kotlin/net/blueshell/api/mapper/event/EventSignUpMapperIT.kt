@@ -3,8 +3,8 @@ package net.blueshell.api.mapper.event
 import net.blueshell.api.factory.dto.event.EventSignUpDTOFactory
 import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
 import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
-import net.blueshell.api.factory.model.AnswerFactory
-import net.blueshell.api.factory.model.EventSignUpFactory
+import net.blueshell.api.factory.model.survey.AnswerFactory
+import net.blueshell.api.factory.model.event.EventSignUpFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.event.EventSignUp
 import net.blueshell.api.model.survey.Answer

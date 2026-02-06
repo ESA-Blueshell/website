@@ -25,9 +25,7 @@ class DtoFactoryRegistry(private val factories: List<BaseDtoFactory<*>>) {
     @Suppress("UNCHECKED_CAST")
     fun <T> get(dtoClass: Class<T>): BaseDtoFactory<T> {
         val factory = index()[dtoClass] as BaseDtoFactory<T>?
-        if (factory == null) {
-            throw IllegalArgumentException("No DTO factory registered for ${dtoClass.name}")
-        }
+            ?: throw IllegalArgumentException("No DTO factory registered for ${dtoClass.name}")
         return factory
     }
 }

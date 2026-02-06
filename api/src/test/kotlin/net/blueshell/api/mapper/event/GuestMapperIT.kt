@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.event
 
 import net.blueshell.api.factory.dto.GuestDTOFactory
-import net.blueshell.api.factory.model.GuestFactory
+import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.event.Guest
 import org.assertj.core.api.Assertions.assertThat

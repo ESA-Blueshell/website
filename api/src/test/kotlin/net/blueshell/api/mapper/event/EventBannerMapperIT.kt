@@ -2,7 +2,7 @@ package net.blueshell.api.mapper.event
 
 import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.factory.dto.event.EventBannerDTOFactory
-import net.blueshell.api.factory.model.EventBannerFactory
+import net.blueshell.api.factory.model.event.EventBannerFactory
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.event.EventBanner

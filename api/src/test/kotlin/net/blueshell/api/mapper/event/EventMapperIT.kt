@@ -4,7 +4,7 @@ import net.blueshell.api.common.enums.Role
 import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.factory.dto.event.EventBannerDTOFactory
 import net.blueshell.api.factory.dto.event.EventDTOFactory
-import net.blueshell.api.factory.model.EventFactory
+import net.blueshell.api.factory.model.event.EventFactory
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.event.Event

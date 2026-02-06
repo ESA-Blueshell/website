@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.committee
 
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
-import net.blueshell.api.factory.model.CommitteeMemberFactory
+import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.service.CommitteeService

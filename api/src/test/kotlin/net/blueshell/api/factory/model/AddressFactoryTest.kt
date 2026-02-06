@@ -1,5 +1,6 @@
 package net.blueshell.api.factory.model
 
+import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.model.Address

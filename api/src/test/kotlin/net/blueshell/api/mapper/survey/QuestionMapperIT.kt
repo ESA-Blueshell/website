@@ -1,7 +1,7 @@
 package net.blueshell.api.mapper.survey
 
 import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
-import net.blueshell.api.factory.model.QuestionFactory
+import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.survey.Question
 import org.assertj.core.api.Assertions.assertThat

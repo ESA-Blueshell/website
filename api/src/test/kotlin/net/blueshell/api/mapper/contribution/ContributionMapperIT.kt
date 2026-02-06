@@ -20,8 +20,8 @@ class ContributionMapperIT @Autowired constructor(
         val user = persistUser()
         val period = persistContributionPeriod()
         val dto = contributionDTOFactory.createBasic().apply {
-            userId = user.id
-            contributionPeriodId = period.id
+            userId = user.id!!
+            contributionPeriodId = period.id!!
         }
         val contribution = contributionFactory.createBasic().apply {
             this.user = user

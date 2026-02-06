@@ -18,14 +18,13 @@ class TelemetryModelIT : ModelPersistenceTestSupport() {
             telemetry.url = unique("url")
 
             val redirect = redirectFactory.createBasic()
-            redirect.telemetry = telemetry
+            redirect.telemetry = persist(telemetry)
 
-            val savedTelemetry = persist(telemetry)
             persist(redirect)
             entityManager.flush()
             entityManager.clear()
 
-            val found = requireNotNull(entityManager.find(Telemetry::class.java, savedTelemetry.id))
+            val found = requireNotNull(entityManager.find(Telemetry::class.java, redirect.telemetry.id))
             assertEquals(telemetry.platform, found.platform)
             assertEquals(telemetry.url, found.url)
             assertEquals(1, found.redirects.size)

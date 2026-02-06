@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CommitteeRepository : BaseRepository<Committee, Long> {
-    @Query("""select distinct c from Committee c join c._members m join m.user u where u.id = :userId """)
+    @Query("""select distinct c from Committee c join c._members m join m._user u where u.id = :userId """)
     fun findAllByUserId(@Param("userId") userId: Long): List<Committee>
 }

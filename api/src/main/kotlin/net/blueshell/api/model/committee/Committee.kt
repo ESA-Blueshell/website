@@ -26,7 +26,7 @@ open class Committee : AuditedAutoIdEntity() {
     @Column(name = "description", nullable = false, length = 4095)
     lateinit var description: String
 
-    @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "_committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _members: MutableList<CommitteeMember> = mutableListOf()
     var members: List<CommitteeMember>
         get() = _members

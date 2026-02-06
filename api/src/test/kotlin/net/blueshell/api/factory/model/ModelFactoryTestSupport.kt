@@ -1,0 +1,176 @@
+package net.blueshell.api.factory.model
+
+import jakarta.persistence.EntityManager
+import net.blueshell.api.common.enums.QuestionType
+import net.blueshell.api.config.TruncateTestDatabaseListener
+import net.blueshell.api.model.File
+import net.blueshell.api.model.User
+import net.blueshell.api.model.committee.Committee
+import net.blueshell.api.model.contribution.ContributionPeriod
+import net.blueshell.api.model.event.Event
+import net.blueshell.api.model.survey.Answer
+import net.blueshell.api.model.survey.Question
+import net.blueshell.api.model.survey.Survey
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestExecutionListeners
+import org.springframework.transaction.annotation.Transactional
+
+@SpringBootTest
+@ActiveProfiles("test")
+@TestExecutionListeners(
+    listeners = [TruncateTestDatabaseListener::class],
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
+)
+@Transactional
+abstract class ModelFactoryTestSupport {
+
+    @Autowired
+    protected lateinit var entityManager: EntityManager
+
+    @Autowired
+    protected lateinit var addressFactory: AddressFactory
+
+    @Autowired
+    protected lateinit var answerFactory: AnswerFactory
+
+    @Autowired
+    protected lateinit var blogFactory: BlogFactory
+
+    @Autowired
+    protected lateinit var boardDocumentFactory: BoardDocumentFactory
+
+    @Autowired
+    protected lateinit var boardFactory: BoardFactory
+
+    @Autowired
+    protected lateinit var boardMemberFactory: BoardMemberFactory
+
+    @Autowired
+    protected lateinit var committeeFactory: CommitteeFactory
+
+    @Autowired
+    protected lateinit var committeeMemberFactory: CommitteeMemberFactory
+
+    @Autowired
+    protected lateinit var contributionFactory: ContributionFactory
+
+    @Autowired
+    protected lateinit var contributionPeriodFactory: ContributionPeriodFactory
+
+    @Autowired
+    protected lateinit var contributionReminderFactory: ContributionReminderFactory
+
+    @Autowired
+    protected lateinit var eventBannerFactory: EventBannerFactory
+
+    @Autowired
+    protected lateinit var eventFactory: EventFactory
+
+    @Autowired
+    protected lateinit var eventFeedbackFactory: EventFeedbackFactory
+
+    @Autowired
+    protected lateinit var eventPictureFactory: EventPictureFactory
+
+    @Autowired
+    protected lateinit var eventSignUpAnswerFactory: EventSignUpAnswerFactory
+
+    @Autowired
+    protected lateinit var eventSignUpFactory: EventSignUpFactory
+
+    @Autowired
+    protected lateinit var fileFactory: FileFactory
+
+    @Autowired
+    protected lateinit var guestFactory: GuestFactory
+
+    @Autowired
+    protected lateinit var membershipFactory: MembershipFactory
+
+    @Autowired
+    protected lateinit var questionFactory: QuestionFactory
+
+    @Autowired
+    protected lateinit var recoveryTokenFactory: RecoveryTokenFactory
+
+    @Autowired
+    protected lateinit var redirectFactory: RedirectFactory
+
+    @Autowired
+    protected lateinit var sponsorFactory: SponsorFactory
+
+    @Autowired
+    protected lateinit var surveyFactory: SurveyFactory
+
+    @Autowired
+    protected lateinit var telemetryFactory: TelemetryFactory
+
+    @Autowired
+    protected lateinit var userFactory: UserFactory
+
+    protected fun <T> persist(entity: T): T = entityManager.merge(entity)
+
+    protected fun <T> assertPersisted(type: Class<T>, id: Any?) {
+        entityManager.flush()
+        entityManager.clear()
+        assertNotNull(id, "Expected id for ${type.simpleName}")
+        val found = entityManager.find(type, id)
+        assertNotNull(found, "Expected ${type.simpleName} to be persisted")
+    }
+
+    protected fun persistUser(): User {
+        val user = userFactory.createBasic()
+        return persist(user)
+    }
+
+    protected fun persistCommittee(): Committee {
+        val committee = committeeFactory.createBasic()
+        return persist(committee)
+    }
+
+    protected fun persistContributionPeriod(): ContributionPeriod {
+        val period = contributionPeriodFactory.createBasic()
+        return persist(period)
+    }
+
+    protected fun persistSurvey(): Survey {
+        val survey = surveyFactory.createBasic()
+        return persist(survey)
+    }
+
+    protected fun fileWithUploader(file: File): File {
+        val uploader = persistUser()
+        file.uploader = uploader
+        return file
+    }
+
+    protected fun persistEvent(): Event {
+        val committee = persistCommittee()
+        val event = eventFactory.createBasic()
+        event.committee = committee
+        event.committeeId = committee.id
+        event.signUp = false
+        return persist(event)
+    }
+
+    protected fun persistQuestionWithSurvey(survey: Survey): Question {
+        val question = questionFactory.createWithCustomizations {
+            it.type = QuestionType.OPEN
+            it.choiceLabels = null
+            it.survey = survey
+        }
+        return persist(question)
+    }
+
+    protected fun persistTextAnswer(question: Question): Answer {
+        val answer = answerFactory.createWithCustomizations {
+            it.question = question
+            it.optionSelections = null
+            it.textResponse = "Test answer"
+        }
+        return persist(answer)
+    }
+}

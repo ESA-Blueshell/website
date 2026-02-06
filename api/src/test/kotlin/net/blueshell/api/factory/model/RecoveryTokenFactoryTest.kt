@@ -1,0 +1,16 @@
+package net.blueshell.api.factory.model
+
+import org.junit.jupiter.api.Test
+
+class RecoveryTokenFactoryTest : ModelFactoryTestSupport() {
+
+    @Test
+    fun `creates persistable recovery token`() {
+        val user = persistUser()
+        val token = recoveryTokenFactory.createBasic()
+        token.user = user
+
+        val saved = persist(token)
+        assertPersisted(net.blueshell.api.model.RecoveryToken::class.java, saved.id)
+    }
+}

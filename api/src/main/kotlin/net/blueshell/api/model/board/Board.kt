@@ -42,7 +42,6 @@ class Board : AuditedAutoIdEntity() {
         }
 
     @field:Column(name = "picture_id", updatable = false, insertable = false)
-    @field:Transient
     var pictureId: Long? = null
         get() = _picture?.id
         set(value) {

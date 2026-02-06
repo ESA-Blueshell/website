@@ -52,7 +52,7 @@ class BoardMember(
             value.id?.let { boardId = it }
         }
 
-    @field:Transient
+
     @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
     var boardId: Long = 0
         get() = requireNotNull(id.boardId) { "boardId is required" }
@@ -75,8 +75,11 @@ class BoardMember(
             value.id?.let { userId = it }
         }
 
+    @field:JoinColumn(name = "picture_id")
+    @field:OneToOne(fetch = FetchType.LAZY)
+    private var _picture: File? = null
+
     @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var userId: Long = 0
         get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
@@ -86,10 +89,6 @@ class BoardMember(
                 _user = User::class.asRef(value)
             }
         }
-
-    @field:JoinColumn(name = "picture_id")
-    @field:OneToOne(fetch = FetchType.LAZY)
-    private var _picture: File? = null
     var picture: File?
         get() = _picture
         set(value) {
@@ -98,7 +97,6 @@ class BoardMember(
         }
 
     @field:Column(name = "picture_id", updatable = false, insertable = false)
-    @field:Transient
     var pictureId: Long? = null
         get() = _picture?.id
         set(value) {

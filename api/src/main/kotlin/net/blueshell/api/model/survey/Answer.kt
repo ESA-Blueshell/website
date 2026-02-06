@@ -22,7 +22,6 @@ import org.hibernate.annotations.SQLRestriction
 @EntityListeners(JpaListener::class)
 class Answer : AuditedAutoIdEntity() {
     @field:Column(name = "question_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var questionId: Long = 0
         get() = requireNotNull(_question?.id) { "Question ID is required" }
         set(value) {

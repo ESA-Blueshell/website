@@ -47,7 +47,6 @@ class CommitteeMember(
         }
 
     @Column(name = "committee_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var committeeId: Long = 0
         get() = requireNotNull(id.committeeId) { "committeeId is required" }
         set(value) {
@@ -69,7 +68,6 @@ class CommitteeMember(
             value.id?.let { id.userId = it }
         }
 
-    @field:Transient
     @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
     var userId: Long = 0
         get() = requireNotNull(id.userId) { "userId is required" }

@@ -38,7 +38,6 @@ class Sponsor : AuditedAutoIdEntity() {
         }
 
     @field:Column(name = "logo_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var pictureId: Long = 0
         get() = requireNotNull(_picture?.id) { "Picture ID is required" }
         set(value) {

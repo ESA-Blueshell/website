@@ -36,7 +36,6 @@ class Question : DirtyAwareModel() {
     var idx: Long = 0
 
     @field:Column(name = "survey_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var surveyId: Long = 0
         get() = requireNotNull(_survey?.id) { "Survey ID is required" }
         set(value) {

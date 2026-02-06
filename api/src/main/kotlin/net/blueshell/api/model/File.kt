@@ -46,7 +46,6 @@ class File : AuditedAutoIdEntity() {
         }
 
     @field:Column(name = "uploader_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var uploaderId: Long = 0
         get() = requireNotNull(_uploader?.id) { "Uploader ID is required" }
         set(value) {

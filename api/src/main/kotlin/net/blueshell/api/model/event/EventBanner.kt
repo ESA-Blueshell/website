@@ -36,7 +36,6 @@ class EventBanner(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventBanner.Id> {
 
-    @field:Transient
     @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
     var eventId: Long = 0
         get() = requireNotNull(id.eventId) { "eventId is required" }
@@ -48,7 +47,6 @@ class EventBanner(
             }
         }
 
-    @field:Transient
     @field:Column(name = "file_id", nullable = false, updatable = false, insertable = false)
     var fileId: Long = 0
         get() = requireNotNull(id.fileId) { "fileId is required" }

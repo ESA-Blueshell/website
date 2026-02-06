@@ -52,7 +52,6 @@ class BoardDocument(
         }
 
     @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var boardId: Long = 0
         get() = requireNotNull(id.boardId) { "Board ID is required" }
         set(value) {
@@ -75,7 +74,6 @@ class BoardDocument(
         }
 
     @field:Column(name = "file_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var fileId: Long = 0
         get() = requireNotNull(id.fileId) { "File ID is required" }
         set(value) {

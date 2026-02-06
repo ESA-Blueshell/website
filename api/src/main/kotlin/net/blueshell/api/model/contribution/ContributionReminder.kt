@@ -41,7 +41,6 @@ class ContributionReminder(
     override var id: Id = Id(),
 ) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
 
-    @field:Transient
     @Column(name = "user_id", nullable = false, updatable = false, insertable = false)
     var userId: Long = 0
         get() = requireNotNull(id.userId) { "userId is required" }
@@ -53,7 +52,6 @@ class ContributionReminder(
             }
         }
 
-    @field:Transient
     @Column(name = "contribution_period_id", nullable = false, insertable = false, updatable = false)
     var contributionPeriodId: Long = 0
         get() = requireNotNull(id.contributionPeriodId) { "contributionPeriodId is required" }

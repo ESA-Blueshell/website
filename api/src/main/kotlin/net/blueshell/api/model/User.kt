@@ -130,7 +130,6 @@ class User(
         }
 
     @field:Column(name = "address_id", updatable = false, insertable = false)
-    @field:Transient
     var addressId: Long? = null
         get() = _address?.id
         set(value) {
@@ -161,7 +160,6 @@ class User(
         }
 
     @field:Column(name = "profile_picture_id", updatable = false, insertable = false)
-    @field:Transient
     var profilePictureId: Long? = null
         get() = _profilePicture?.id
         set(value) {

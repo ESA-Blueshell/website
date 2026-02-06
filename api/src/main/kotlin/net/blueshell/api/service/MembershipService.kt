@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 class MembershipService @Autowired constructor(repository: MemberRepository, events: ApplicationEventPublisher) :
     BaseModelService<Membership, Long, MemberRepository>(repository) {
     fun existsByUserId(userId: Long): Boolean {
-        return repository!!.existsByUserId(userId)
+        return repository.existsByUserId(userId)
     }
 
     fun findByFilter(filter: MembershipFilter): MutableList<Membership> {

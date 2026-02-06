@@ -43,7 +43,6 @@ class EventSignUpAnswer(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventSignUpAnswer.Id> {
 
-    @field:Transient
     @field:Column(name = "event_sign_up_id", nullable = false, updatable = false, insertable = false)
     var eventSignUpId: Long = 0
         get() = requireNotNull(id.eventSignUpId) { "Event sign-up id is required" }
@@ -55,7 +54,6 @@ class EventSignUpAnswer(
             }
         }
 
-    @field:Transient
     @field:Column(name = "answer_id", nullable = false, updatable = false, insertable = false)
     var answerId: Long = 0
         get() = requireNotNull(id.answerId) { "Answer id is required" }

@@ -36,7 +36,6 @@ class Membership : AuditedAutoIdEntity() {
         }
 
     @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
-    @field:Transient
     var userId: Long = 0
         get() = requireNotNull(_user?.id) { "User ID is required" }
         set(value) {

@@ -38,7 +38,6 @@ class EventPicture(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventPicture.Id> {
 
-    @field:Transient
     @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
     var eventId: Long = 0
         get() = requireNotNull(id.eventId) { "eventId is required" }
@@ -50,7 +49,6 @@ class EventPicture(
             }
         }
 
-    @field:Transient
     @field:Column(name = "picture_id", nullable = false, updatable = false, insertable = false)
     var pictureId: Long = 0
         get() = requireNotNull(id.pictureId) { "pictureId is required" }

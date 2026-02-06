@@ -138,7 +138,7 @@ dependencies {
 }
 
 springBoot {
-    mainClass.set("net.blueshell.api.ApiApplication")
+    mainClass.set("net.blueshell.api.ApiApplicationKt")
 }
 
 allOpen {

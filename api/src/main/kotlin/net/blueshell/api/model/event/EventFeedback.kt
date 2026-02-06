@@ -20,11 +20,21 @@ open class EventFeedback : AuditedAutoIdEntity() {
     lateinit var feedback: String
 
     @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "event_id", nullable = false)
+    @field:JoinColumn(name = "event_id", nullable = false, insertable = false, updatable = false)
     private var _event: Event? = null
     var event: Event
         get() = requireNotNull(_event) { "Event is required" }
         set(value) {
             _event = value
+            eventId = value.id ?: eventId
+        }
+
+    @Column(name = "event_id", nullable = false)
+    var eventId: Long = 0
+        set(value) {
+            field = value
+            if (_event?.id != value) {
+                _event = null
+            }
         }
 }

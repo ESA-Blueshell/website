@@ -36,6 +36,12 @@ open class Question : DirtyAwareModel() {
 
     @Column(name = "survey_id", nullable = false)
     var surveyId: Long = 0
+        set(value) {
+            field = value
+            if (_survey?.id != value) {
+                _survey = null
+            }
+        }
 
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "survey_id", insertable = false, updatable = false)

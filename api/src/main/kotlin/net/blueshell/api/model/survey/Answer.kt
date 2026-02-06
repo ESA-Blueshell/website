@@ -22,6 +22,12 @@ import org.hibernate.annotations.SQLRestriction
 open class Answer : AuditedAutoIdEntity() {
     @Column(name = "question_id", nullable = false)
     var questionId: Long = 0
+        set(value) {
+            field = value
+            if (_question?.id != value) {
+                _question = null
+            }
+        }
 
     @field:ManyToOne(fetch = FetchType.LAZY)
     @field:JoinColumn(name = "question_id", insertable = false, updatable = false)

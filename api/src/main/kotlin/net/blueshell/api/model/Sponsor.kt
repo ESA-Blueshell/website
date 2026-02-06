@@ -38,4 +38,10 @@ open class Sponsor : AuditedAutoIdEntity() {
 
     @Column(name = "logo_id", nullable = false)
     var pictureId: Long = 0
+        set(value) {
+            field = value
+            if (_picture?.id != value) {
+                _picture = null
+            }
+        }
 }

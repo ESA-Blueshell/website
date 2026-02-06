@@ -45,6 +45,9 @@ open class Contribution(
         get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
             id.userId = value
+            if (_user?.id != value) {
+                _user = null
+            }
         }
 
     @get:Transient
@@ -53,6 +56,9 @@ open class Contribution(
         get() = requireNotNull(id.contributionPeriodId) { "contributionPeriodId is required" }
         set(value) {
             id.contributionPeriodId = value
+            if (_contributionPeriod?.id != value) {
+                _contributionPeriod = null
+            }
         }
 
     @field:MapsId("userId")

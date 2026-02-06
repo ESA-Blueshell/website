@@ -43,6 +43,9 @@ open class EventPicture(
         get() = requireNotNull(id.eventId) { "eventId is required" }
         set(value) {
             id.eventId = value
+            if (_event?.id != value) {
+                _event = null
+            }
         }
 
     @get:Transient
@@ -51,6 +54,9 @@ open class EventPicture(
         get() = requireNotNull(id.pictureId) { "pictureId is required" }
         set(value) {
             id.pictureId = value
+            if (_picture?.id != value) {
+                _picture = null
+            }
         }
 
     @field:MapsId("pictureId")

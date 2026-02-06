@@ -48,6 +48,9 @@ open class EventSignUpAnswer(
         get() = requireNotNull(id.eventSignUpId) { "Event sign-up id is required" }
         set(value) {
             id.eventSignUpId = value
+            if (_eventSignUp?.id != value) {
+                _eventSignUp = null
+            }
         }
 
     @get:Transient
@@ -56,6 +59,9 @@ open class EventSignUpAnswer(
         get() = requireNotNull(id.answerId) { "Answer id is required" }
         set(value) {
             id.answerId = value
+            if (_answer?.id != value) {
+                _answer = null
+            }
         }
 
     @field:MapsId("eventSignUpId")

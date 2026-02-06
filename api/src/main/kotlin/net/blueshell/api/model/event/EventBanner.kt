@@ -41,6 +41,9 @@ open class EventBanner(
         get() = requireNotNull(id.eventId) { "eventId is required" }
         set(value) {
             id.eventId = value
+            if (_event?.id != value) {
+                _event = null
+            }
         }
 
     @get:Transient
@@ -49,6 +52,9 @@ open class EventBanner(
         get() = requireNotNull(id.fileId) { "fileId is required" }
         set(value) {
             id.fileId = value
+            if (_file?.id != value) {
+                _file = null
+            }
         }
 
     @field:MapsId("eventId")

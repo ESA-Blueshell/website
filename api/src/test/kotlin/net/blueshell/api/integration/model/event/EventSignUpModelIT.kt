@@ -75,6 +75,25 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
         }
 
         @Test
+        fun `clears user relation when setting id to null`() {
+            val event = persistEvent()
+            val user = persist(userFactory.createBasic())
+            val guest = persist(guestFactory.createBasic())
+
+            val signUp = EventSignUp()
+            signUp.event = event
+            signUp.user = user
+            signUp.userId = null
+            signUp.guest = guest
+
+            val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
+
+            assertEquals(null, found.userId)
+            assertEquals(null, found.user)
+            assertEquals(guest.id, found.guest?.id)
+        }
+
+        @Test
         fun `persists guest relation when setting entity`() {
             val event = persistEvent()
             val user = persist(userFactory.createBasic())

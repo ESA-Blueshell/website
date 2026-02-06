@@ -36,6 +36,12 @@ open class Membership : AuditedAutoIdEntity() {
 
     @Column(name = "user_id", nullable = false)
     var userId: Long = 0
+        set(value) {
+            field = value
+            if (_user?.id != value) {
+                _user = null
+            }
+        }
 
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate = LocalDate.now()

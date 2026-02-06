@@ -48,12 +48,6 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         for (i in answers.indices) {
             val a = answers[i]
 
-            if (a == null) {
-                violationAtAnswer(ctx, i)
-                valid = false
-                continue
-            }
-
             val qid = a.questionId
             if (qid == null) {
                 violationAtQuestionId(ctx, i, "questionId is required.")
@@ -106,13 +100,6 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
             .addPropertyNode(property)
             .addConstraintViolation()
         return false
-    }
-
-    private fun violationAtAnswer(ctx: ConstraintValidatorContext, index: Int) {
-        ctx.buildConstraintViolationWithTemplate("Answer must not be null.")
-            .addPropertyNode("answers")
-            .inIterable().atIndex(index)
-            .addConstraintViolation()
     }
 
     private fun violationAtQuestionId(ctx: ConstraintValidatorContext, index: Int, message: String?) {

@@ -53,6 +53,12 @@ open class Event : AuditedAutoIdEntity() {
 
     @Column(name = "committee_id")
     var committeeId: Long? = null
+        set(value) {
+            field = value
+            if (value == null || _committee?.id != value) {
+                _committee = null
+            }
+        }
 
     @Column(name = "title", nullable = false)
     lateinit var title: String

@@ -40,6 +40,9 @@ class CommitteeMember(
         get() = requireNotNull(id.committeeId) { "committeeId is required" }
         set(value) {
             id.committeeId = value
+            if (_committee?.id != value) {
+                _committee = null
+            }
         }
 
     @get:Transient
@@ -47,17 +50,32 @@ class CommitteeMember(
         get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
             id.userId = value
+            if (_user?.id != value) {
+                _user = null
+            }
         }
 
     @field:MapsId("userId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "user_id", nullable = false)
-    lateinit var user: User
+    private var _user: User? = null
+    var user: User
+        get() = requireNotNull(_user) { "User is required" }
+        set(value) {
+            _user = value
+            value.id?.let { id.userId = it }
+        }
 
     @field:MapsId("committeeId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "committee_id", nullable = false)
-    lateinit var committee: Committee
+    private var _committee: Committee? = null
+    var committee: Committee
+        get() = requireNotNull(_committee) { "Committee is required" }
+        set(value) {
+            _committee = value
+            value.id?.let { id.committeeId = it }
+        }
 
     @Column(name = "role", length = 255)
     var role: String? = null

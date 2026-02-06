@@ -46,6 +46,12 @@ open class File : AuditedAutoIdEntity() {
 
     @Column(name = "uploader_id", nullable = false)
     var uploaderId: Long = 0
+        set(value) {
+            field = value
+            if (_uploader?.id != value) {
+                _uploader = null
+            }
+        }
 
     @Column(name = "media_type", nullable = false)
     lateinit var mediaType: String

@@ -70,5 +70,29 @@ class UserModelIT : ModelPersistenceTestSupport() {
             assertEquals(user.startStudyYear, found.startStudyYear)
             assertEquals("test@example.com", found.email)
         }
+
+        @Test
+        fun `persists address relation when setting entity`() {
+            val address = persist(addressFactory.createBasic())
+            val user = userFactory.createBasic()
+            user.address = address
+
+            val found = persistAndReload(user, User::class.java) { it.id }
+
+            assertEquals(address.id, found.addressId)
+            assertEquals(address.id, found.address?.id)
+        }
+
+        @Test
+        fun `persists address relation when setting id`() {
+            val address = persist(addressFactory.createBasic())
+            val user = userFactory.createBasic()
+            user.addressId = address.id
+
+            val found = persistAndReload(user, User::class.java) { it.id }
+
+            assertEquals(address.id, found.addressId)
+            assertEquals(address.id, found.address?.id)
+        }
     }
 }

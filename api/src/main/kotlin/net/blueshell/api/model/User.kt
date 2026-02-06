@@ -60,13 +60,6 @@ open class User(
     @Column
     var initials: String? = null,
 
-    @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-    @field:JoinColumn(name = "address_id", insertable = false, updatable = false)
-    private var _address: Address? = null,
-
-    @Column(name = "address_id", updatable = false, insertable = false)
-    var addressId: Long? = null,
-
     @Column(name = "phone_number")
     var phoneNumber: String? = null,
 
@@ -125,12 +118,24 @@ open class User(
     var startStudyYear: Long? = null,
 
     ) : AuditedAutoIdEntity(), UserDetails {
+    @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+    @field:JoinColumn(name = "address_id", insertable = false, updatable = false)
+    private var _address: Address? = null
+
+    @Column(name = "address_id")
+    var addressId: Long? = null
+        set(value) {
+            field = value
+            if (value == null || _address?.id != value) {
+                _address = null
+            }
+        }
 
     var address: Address?
         get() = _address
         set(value) {
             _address = value
-            addressId = value?.id ?: addressId
+            addressId = value?.id
         }
 
     @Column(nullable = false)

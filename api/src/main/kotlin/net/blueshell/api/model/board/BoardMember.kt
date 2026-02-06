@@ -47,6 +47,9 @@ open class BoardMember(
         get() = requireNotNull(id.boardId) { "boardId is required" }
         set(value) {
             id.boardId = value
+            if (_board?.id != value) {
+                _board = null
+            }
         }
 
     @get:Transient
@@ -55,6 +58,9 @@ open class BoardMember(
         get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
             id.userId = value
+            if (_user?.id != value) {
+                _user = null
+            }
         }
 
     @field:MapsId("boardId")

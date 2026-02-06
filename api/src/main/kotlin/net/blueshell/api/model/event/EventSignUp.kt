@@ -54,6 +54,12 @@ open class EventSignUp : AuditedAutoIdEntity() {
 
     @Column(name = "event_id", nullable = false)
     var eventId: Long = 0
+        set(value) {
+            field = value
+            if (_event?.id != value) {
+                _event = null
+            }
+        }
 
     @field:ManyToOne(fetch = FetchType.LAZY)
     @field:JoinColumn(name = "user_id", insertable = false, updatable = false)
@@ -62,11 +68,17 @@ open class EventSignUp : AuditedAutoIdEntity() {
         get() = _user
         set(value) {
             _user = value
-            userId = value?.id ?: userId
+            userId = value?.id
         }
 
     @Column(name = "user_id")
     var userId: Long? = null
+        set(value) {
+            field = value
+            if (value == null || _user?.id != value) {
+                _user = null
+            }
+        }
 
     @field:ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
     @field:JoinColumn(name = "guest_id")

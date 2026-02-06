@@ -62,7 +62,7 @@ class BlogControllerIT @Autowired constructor(
             .andExpect(jsonPath("$.id").isNotEmpty())
             .andExpect(
                 jsonPath("$.publishedAt")
-                    .value(payload.publishedAt.truncatedTo(ChronoUnit.SECONDS).toString())
+                    .value(payload.publishedAt?.truncatedTo(ChronoUnit.SECONDS).toString())
             )
             .andExpect(jsonPath("$.title").value(payload.title))
     }

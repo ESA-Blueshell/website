@@ -15,7 +15,7 @@ class RecoveryTokenModelIT : ModelPersistenceTestSupport() {
             val user = persist(userFactory.createBasic())
             val token = recoveryTokenFactory.createBasic()
             token.user = user
-            token.type = ResetType.PASSWORD
+            token.type = ResetType.PASSWORD_RESET
             token.selector = unique("selector").replace("-", "").take(32)
             token.verifierHash = unique("hash")
             token.expiresAt = timestamp().plusSeconds(3600)

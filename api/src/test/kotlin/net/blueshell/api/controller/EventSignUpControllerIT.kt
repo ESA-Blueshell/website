@@ -14,11 +14,7 @@ import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
 import net.blueshell.api.model.User
 import net.blueshell.api.testsupport.UserTestSupport
-import org.hamcrest.Matchers.empty
-import org.hamcrest.Matchers.everyItem
-import org.hamcrest.Matchers.hasSize
-import org.hamcrest.Matchers.`is`
-import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -29,14 +25,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.EnumMap
+import java.util.*
 import kotlin.math.min
 
 @SpringBootTest
@@ -125,8 +117,8 @@ class EventSignUpControllerIT @Autowired constructor(
         return mapper.readValue(result.response.contentAsByteArray, EventDTO::class.java)
     }
 
-    private fun answersFor(event: EventDTO, variant: String): List<AnswerDTO> {
-        val questions = event.signUpForm?.questions ?: return emptyList()
+    private fun answersFor(event: EventDTO, variant: String): MutableList<AnswerDTO> {
+        val questions = event.signUpForm?.questions ?: return mutableListOf()
 
         val answers = mutableListOf<AnswerDTO>()
         for (question in questions) {
@@ -139,12 +131,14 @@ class EventSignUpControllerIT @Autowired constructor(
                         QuestionType.OPEN -> {
                             answer.textResponse = if (variant == "create") "Initial response" else "Updated response"
                         }
+
                         QuestionType.CHECKBOX -> {
                             val n = question.choiceLabels?.size ?: 0
-                            answer.optionSelections = List(n) { idx ->
+                            answer.optionSelections = MutableList(n) { idx ->
                                 (variant == "create") == (idx % 2 == 0)
                             }
                         }
+
                         QuestionType.RADIO -> {
                             val n = question.choiceLabels?.size ?: 0
                             val picks = MutableList(n) { false }
@@ -154,6 +148,7 @@ class EventSignUpControllerIT @Autowired constructor(
                             }
                             answer.optionSelections = picks
                         }
+
                         else -> {}
                     }
                 }
@@ -187,7 +182,7 @@ class EventSignUpControllerIT @Autowired constructor(
         )
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").isNotEmpty())
-            .andExpect(jsonPath("$.answers", not(empty())))
+            .andExpect(jsonPath("$.answers", not(empty<Any>())))
             .andReturn()
 
         eventSignUpDTO = mapper.readValue(createdRes.response.contentAsByteArray, EventSignUpDTO::class.java)
@@ -239,7 +234,6 @@ class EventSignUpControllerIT @Autowired constructor(
                 g.name = "Guesty McGuestface"
                 g.discord = "Discord"
                 g.phoneNumber = "0611111111"
-                g.accessToken = null
             }
             es.user = null
             es.userId = null
@@ -408,7 +402,6 @@ class EventSignUpControllerIT @Autowired constructor(
                     g.name = "Guesty McGuestface"
                     g.discord = "Discord"
                     g.phoneNumber = "0611111111"
-                    g.accessToken = null
                 }
                 es.user = null
                 es.userId = null
@@ -446,7 +439,6 @@ class EventSignUpControllerIT @Autowired constructor(
                     g.name = "Guesty"
                     g.discord = "Discord"
                     g.phoneNumber = "0611111111"
-                    g.accessToken = null
                 }
                 es.user = null
                 es.userId = null
@@ -489,7 +481,6 @@ class EventSignUpControllerIT @Autowired constructor(
                     g.name = "Guesty McGuestface"
                     g.discord = "Discord"
                     g.phoneNumber = "0611111111"
-                    g.accessToken = null
                 }
             }
 

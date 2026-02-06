@@ -13,7 +13,7 @@ class TelemetryModelIT : ModelPersistenceTestSupport() {
         @Test
         fun persists_columns_and_redirect_relation() {
             val telemetry = telemetryFactory.createBasic()
-            telemetry.platform = PlatformType.WEB
+            telemetry.platform = PlatformType.FACEBOOK
             telemetry.url = unique("url")
 
             val redirect = redirectFactory.createBasic()

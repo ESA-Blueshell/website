@@ -1,7 +1,8 @@
-import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
+import sun.jvmstat.monitor.MonitoredVmUtil.commandLine
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
@@ -122,6 +123,7 @@ dependencies {
     testImplementation("org.testcontainers:mariadb")
     testImplementation("io.rest-assured:spring-mock-mvc:5.5.6")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+    testImplementation("io.github.classgraph:classgraph:4.8.179")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("io.mockk:mockk:1.13.13")
 
@@ -229,6 +231,24 @@ tasks.register<GenerateTask>("generateBrevoClient") {
         overridesDestDir.mkdirs()
         overridesSrc.copyTo(overridesDestFile, overwrite = true)
     }
+}
+
+val classDependencyOutputDir = layout.buildDirectory.dir("reports/class-dependencies")
+
+tasks.register<JavaExec>("classDependencyGraph") {
+    description = "Generates a Graphviz dot file (and SVG if Graphviz is installed) for internal Blueshell API class dependencies."
+    group = "reporting"
+    dependsOn(tasks.named("testClasses"))
+    mainClass.set("net.blueshell.tools.ClassDependencyGraphKt")
+    classpath = sourceSets["test"].runtimeClasspath
+    args(
+        "--dot-output",
+        classDependencyOutputDir.get().file("blueshell-api.dot").asFile.absolutePath,
+        "--svg-output",
+        classDependencyOutputDir.get().file("blueshell-api.svg").asFile.absolutePath,
+        "--base-package",
+        "net.blueshell.api",
+    )
 }
 
 tasks.named<JavaCompile>("compileJava") {

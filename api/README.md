@@ -12,6 +12,7 @@
 8. [Testing Strategy](#testing-strategy)
 9. [API Documentation](#api-documentation)
 10. [Development Guidelines](#development-guidelines)
+11. [Dependency Graph](#dependency-graph)
 
 ---
 
@@ -981,3 +982,18 @@ This generates:
 @RequestMapping("/api/events")
 @Tag(name = "Events", description = "Event management API")
 ```
+
+---
+
+## 🔗 Dependency Graph
+
+Generate a Graphviz visualization for internal Blueshell API class dependencies:
+
+```shell script
+./gradlew :api:classDependencyGraph
+```
+
+Artifacts:
+
+- Dot file: `api/build/reports/class-dependencies/blueshell-api.dot`
+- SVG file (generated when Graphviz `dot` is available): `api/build/reports/class-dependencies/blueshell-api.svg`

@@ -90,7 +90,7 @@ class DtoFactoryValidationTest {
     @Test
     fun advancedCommitteeFactoryAssignsStandardBoardRoles() {
         val dto = advancedCommitteeDTOFactory.createWithMemberCount(3)
-        val roles = dto.members.mapNotNull { it?.role }
+        val roles = dto.members.mapNotNull { it.role }
         assertEquals(listOf("Chair", "Secretary", "Treasurer"), roles)
         assertNoViolations(dto)
     }
@@ -129,7 +129,7 @@ class DtoFactoryValidationTest {
         val survey = surveyDTOFactory.createWithQuestionTypes(
             QuestionType.OPEN, QuestionType.RADIO, QuestionType.CHECKBOX
         )
-        val indexes = survey.questions?.mapNotNull { it?.idx } ?: emptyList()
+        val indexes = survey.questions.mapNotNull { it.idx }
         assertEquals(listOf(1L, 2L, 3L), indexes)
         assertNoViolations(survey)
     }
@@ -213,7 +213,7 @@ class DtoFactoryValidationTest {
         val eventId = dto.eventId ?: return
         val survey = Survey()
         ModelTestUtils.setId(survey, 1000L)
-        val surveyQuestions = survey.questions as MutableSet<Question>
+        val surveyQuestions = survey.questions
         questions.values.forEach { question ->
             question.survey = survey
             surveyQuestions.add(question)
@@ -232,7 +232,7 @@ class DtoFactoryValidationTest {
         }
         val selections = answer.optionSelections
         if (selections != null) {
-            val trueCount = selections.count { it == true }
+            val trueCount = selections.count { it }
             return if (trueCount == 1) QuestionType.RADIO else QuestionType.CHECKBOX
         }
         return QuestionType.DESCRIPTION

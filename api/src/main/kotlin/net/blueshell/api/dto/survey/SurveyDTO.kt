@@ -12,21 +12,20 @@ import java.util.function.Function
 @Schema(name = "Survey")
 data class SurveyDTO(
     @field:NotEmpty
-    @field:net.blueshell.api.validation.survey.ValidQuestionList
+    @field:ValidQuestionList
     @field:Valid
-    var questions: MutableList<QuestionDTO?>? = null,
+    var questions: MutableList<QuestionDTO> = mutableListOf(),
     var responseCount: Long? = null
 ) : AuditedAutoIdDTO() {
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionDTO?>
         get() {
-            if (questions == null) return mutableListOf()
-            return questions!!.stream()
+            return questions.stream()
                 .sorted(
                     Comparator
                         .comparing<QuestionDTO?, @NotNull Long?>(
                             Function { obj: QuestionDTO? -> obj!!.idx },
-                            Comparator.nullsLast<@NotNull Long?>(Comparator.naturalOrder<@NotNull Long?>())
+                            Comparator.nullsLast(Comparator.naturalOrder<@NotNull Long>())
                         )
                 ).toList()
         }

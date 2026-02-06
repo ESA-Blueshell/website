@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.AnswerFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.survey.Answer
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,25 +16,45 @@ class AnswerMapperIT @Autowired constructor(
     private val answerDTOFactory: AnswerDTOFactory,
     private val answerFactory: AnswerFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists question relation`() {
-        val survey = persistSurvey()
-        val question = persistQuestionWithSurvey(survey)
-        val dto = answerDTOFactory.createBasic().apply {
-            questionId = question.id
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted answer`() {
+            val survey = persistSurvey()
+            val question = persistQuestionWithSurvey(survey)
+            val answer = persist(answerFactory.createBasic().apply {
+                this.question = question
+            })
+
+            val dto = answerMapper.toDTO(answer)
+
+            assertThat(dto.id).isEqualTo(answer.id)
+            assertThat(dto.questionId).isEqualTo(answer.questionId)
+            assertThat(dto.optionSelections).isEqualTo(answer.optionSelections)
+            assertThat(dto.textResponse).isEqualTo(answer.textResponse)
         }
-        val answer = answerFactory.createBasic().apply {
-            this.question = question
+    }
+
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists question relation`() {
+            val survey = persistSurvey()
+            val question = persistQuestionWithSurvey(survey)
+            val dto = answerDTOFactory.createBasic().apply {
+                questionId = question.id
+            }
+            val answer = answerFactory.createBasic().apply {
+                this.question = question
+            }
+
+            val mapped = answerMapper.fromDTO(dto, answer)
+            val saved = persist(mapped)
+            flushAndClear()
+
+            val reloaded = reload(Answer::class.java, saved.id!!)
+
+            assertThat(reloaded.questionId).isEqualTo(question.id)
         }
-
-        val mapped = answerMapper.fromDTO(dto, answer)
-        val saved = persist(mapped)
-        flushAndClear()
-
-        val reloaded = reload(Answer::class.java, saved.id!!)
-        val mappedDto = answerMapper.toDTO(reloaded)
-
-        assertThat(reloaded.questionId).isEqualTo(question.id)
-        assertThat(mappedDto.questionId).isEqualTo(question.id)
     }
 }

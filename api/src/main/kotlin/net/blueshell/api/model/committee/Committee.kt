@@ -1,8 +1,8 @@
 package net.blueshell.api.model.committee
 
 import jakarta.persistence.*
-import net.blueshell.api.model.base.AuditedAutoIdEntity
 import net.blueshell.api.model.User
+import net.blueshell.api.model.base.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -27,29 +27,16 @@ open class Committee : AuditedAutoIdEntity() {
     lateinit var description: String
 
     @OneToMany(mappedBy = "_committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    private val _members: MutableSet<CommitteeMember> = linkedSetOf()
-    var members: Set<CommitteeMember>
+    private val _members: MutableList<CommitteeMember> = mutableListOf()
+    var members: List<CommitteeMember>
         get() = _members
         set(newMembers) {
             _members.clear()
             _members.addAll(newMembers)
             _members.forEach { it.committee = this }
-            val committeeId = id
-            if (committeeId != null) {
-                _members.forEach { it.committeeId = committeeId }
-            }
         }
 
     fun hasMember(user: User?): Boolean {
         return user != null && _members.any { cm -> cm.user.id == user.id }
-    }
-
-    fun addMember(member: CommitteeMember) {
-        member.committee = this
-        val committeeId = id
-        if (committeeId != null) {
-            member.committeeId = committeeId
-        }
-        _members.add(member)
     }
 }

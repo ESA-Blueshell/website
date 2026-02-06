@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.ContributionReminderFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.contribution.ContributionReminder
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,28 +16,47 @@ class ContributionReminderMapperIT @Autowired constructor(
     private val contributionReminderDTOFactory: ContributionReminderDTOFactory,
     private val contributionReminderFactory: ContributionReminderFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists composite ids`() {
-        val user = persistUser()
-        val period = persistContributionPeriod()
-        val dto = contributionReminderDTOFactory.createBasic().apply {
-            userId = user.id!!
-            contributionPeriodId = period.id!!
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted reminder`() {
+            val user = persistUser()
+            val period = persistContributionPeriod()
+            val reminder = persist(contributionReminderFactory.createBasic().apply {
+                this.user = user
+                this.contributionPeriod = period
+            })
+
+            val dto = contributionReminderMapper.toDTO(reminder)
+
+            assertThat(dto.userId).isEqualTo(reminder.userId)
+            assertThat(dto.contributionPeriodId).isEqualTo(reminder.contributionPeriodId)
         }
-        val reminder = contributionReminderFactory.createBasic().apply {
-            this.user = user
-            this.contributionPeriod = period
+    }
+
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists composite ids`() {
+            val user = persistUser()
+            val period = persistContributionPeriod()
+            val dto = contributionReminderDTOFactory.createBasic().apply {
+                userId = user.id
+                contributionPeriodId = period.id
+            }
+            val reminder = contributionReminderFactory.createBasic().apply {
+                this.user = user
+                this.contributionPeriod = period
+            }
+
+            val mapped = contributionReminderMapper.fromDTO(dto, reminder)
+            val saved = persist(mapped)
+            flushAndClear()
+
+            val reloaded = reload(ContributionReminder::class.java, saved.id)
+
+            assertThat(reloaded.userId).isEqualTo(user.id)
+            assertThat(reloaded.contributionPeriodId).isEqualTo(period.id)
         }
-
-        val mapped = contributionReminderMapper.fromDTO(dto, reminder)
-        val saved = persist(mapped)
-        flushAndClear()
-
-        val reloaded = reload(ContributionReminder::class.java, saved.id)
-        val mappedDto = contributionReminderMapper.toDTO(reloaded)
-
-        assertThat(reloaded.userId).isEqualTo(user.id)
-        assertThat(reloaded.contributionPeriodId).isEqualTo(period.id)
-        assertThat(mappedDto.userId).isEqualTo(user.id)
     }
 }

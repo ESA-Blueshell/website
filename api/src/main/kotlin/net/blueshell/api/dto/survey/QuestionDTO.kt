@@ -4,9 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import net.blueshell.api.dto.base.AuditedAutoIdDTO
 import net.blueshell.api.common.enums.QuestionType
-import net.blueshell.api.validation.survey.ValidQuestion
+import net.blueshell.api.dto.base.AuditedAutoIdDTO
 
 @Schema(name = "Question")
 @net.blueshell.api.validation.survey.ValidQuestion

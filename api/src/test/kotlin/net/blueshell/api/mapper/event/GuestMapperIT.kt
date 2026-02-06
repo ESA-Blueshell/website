@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.GuestFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.event.Guest
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,20 +16,38 @@ class GuestMapperIT @Autowired constructor(
     private val guestDTOFactory: GuestDTOFactory,
     private val guestFactory: GuestFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists generated access token`() {
-        val dto = guestDTOFactory.createBasic()
-        val guest = guestFactory.createBasic()
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted guest`() {
+            val guest = persist(guestFactory.createBasic())
 
-        guestMapper.fromDTO(dto, guest)
-        val saved = persist(guest)
-        flushAndClear()
+            val dto = guestMapper.toDTO(guest)
 
-        val reloaded = reload(Guest::class.java, saved.id!!)
-        val mappedDto = guestMapper.toDTO(reloaded)
+            assertThat(dto.id).isEqualTo(guest.id)
+            assertThat(dto.name).isEqualTo(guest.name)
+            assertThat(dto.email).isEqualTo(guest.email)
+            assertThat(dto.accessToken).isEqualTo(guest.accessToken)
+        }
+    }
 
-        assertThat(reloaded.name).isEqualTo(dto.name)
-        assertThat(reloaded.accessToken).isNotBlank
-        assertThat(mappedDto.accessToken).isNotBlank
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists generated access token`() {
+            val dto = guestDTOFactory.createBasic().apply {
+                accessToken = null
+            }
+            val guest = guestFactory.createBasic()
+
+            guestMapper.fromDTO(dto, guest)
+            val saved = persist(guest)
+            flushAndClear()
+
+            val reloaded = reload(Guest::class.java, saved.id!!)
+
+            assertThat(reloaded.name).isEqualTo(dto.name)
+            assertThat(reloaded.accessToken).isNotBlank
+        }
     }
 }

@@ -34,7 +34,6 @@ import java.time.LocalDate
 class RecoveryControllerIT @Autowired constructor(
     private val recoveryService: RecoveryService,
     private val userFactory: UserFactory,
-    private val passwordEncoder: PasswordEncoder,
     private val passwordResetRequestFactory: PasswordResetRequestFactory,
     private val userActivationRequestFactory: UserActivationRequestFactory,
     private val memberActivationRequestFactory: MemberActivationRequestFactory

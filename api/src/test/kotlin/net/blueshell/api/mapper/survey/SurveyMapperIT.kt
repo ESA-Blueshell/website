@@ -2,9 +2,11 @@ package net.blueshell.api.mapper.survey
 
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
+import net.blueshell.api.factory.model.SurveyFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.survey.Survey
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -12,21 +14,50 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class SurveyMapperIT @Autowired constructor(
     private val surveyMapper: SurveyMapper,
-    private val surveyDTOFactory: SurveyDTOFactory
+    private val surveyDTOFactory: SurveyDTOFactory,
+    private val surveyFactory: SurveyFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists mapped survey questions`() {
-        val dto = surveyDTOFactory.createWithQuestionTypes(QuestionType.OPEN, QuestionType.RADIO)
-        val survey = surveyMapper.fromDTO(dto)
-        survey.questions.forEach { it.survey = survey }
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted survey`() {
+            val survey = persist(surveyFactory.createBasic())
+            entityManager.flush()
+            persistQuestionWithSurvey(survey)
+            persistQuestionWithSurvey(survey)
+            flushAndClear()
 
-        val saved = persist(survey)
-        flushAndClear()
+            val reloaded = reload(Survey::class.java, survey.id!!)
+            val dto = surveyMapper.toDTO(reloaded)
 
-        val reloaded = reload(Survey::class.java, saved.id!!)
-        val mappedDto = surveyMapper.toDTO(reloaded)
+            assertThat(dto.id).isEqualTo(reloaded.id)
+            assertThat(dto.questions).hasSize(2)
+            assertThat(dto.responseCount).isEqualTo(reloaded.responseCount)
+        }
+    }
 
-        assertThat(reloaded.questions).hasSize(dto.questions.size)
-        assertThat(mappedDto.questions).hasSize(dto.questions.size)
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists mapped survey questions`() {
+            val dto = surveyDTOFactory.createWithQuestionTypes(QuestionType.OPEN, QuestionType.RADIO)
+            val survey = surveyMapper.fromDTO(dto)
+            val questions = survey.questions.toList()
+            survey.questions.clear()
+
+            val saved = persist(survey)
+            entityManager.flush()
+
+            questions.forEach { question ->
+                question.survey = saved
+                persist(question)
+            }
+
+            flushAndClear()
+
+            val reloaded = reload(Survey::class.java, saved.id!!)
+
+            assertThat(reloaded.questions).hasSize(dto.questions.size)
+        }
     }
 }

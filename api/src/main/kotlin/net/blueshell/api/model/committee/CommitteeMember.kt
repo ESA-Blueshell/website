@@ -8,6 +8,7 @@ import net.blueshell.api.model.base.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.io.Serializable
 
 @Entity
 @Table(
@@ -28,17 +29,13 @@ import org.hibernate.annotations.SQLRestriction
     """
 )
 @EntityListeners(JpaListener::class)
-open class CommitteeMember(
+class CommitteeMember(
     @EmbeddedId
-    @AttributeOverrides(
-        AttributeOverride(name = "committeeId", column = Column(name = "committee_id", nullable = false)),
-        AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)),
-    )
-    override var id: CommitteeMemberId = CommitteeMemberId()
-) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMemberId> {
+    @AttributeOverrides(AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)))
+    override var id: Id = Id(),
+) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMember.Id> {
 
     @get:Transient
-    @set:Transient
     var committeeId: Long
         get() = requireNotNull(id.committeeId) { "committeeId is required" }
         set(value) {
@@ -46,32 +43,21 @@ open class CommitteeMember(
         }
 
     @get:Transient
-    @set:Transient
     var userId: Long
         get() = requireNotNull(id.userId) { "userId is required" }
         set(value) {
             id.userId = value
         }
 
+    @field:MapsId("userId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
-    private var _user: User? = null
-    var user: User
-        get() = requireNotNull(_user) { "User is required" }
-        set(value) {
-            _user = value
-            value.id?.let { userId = it }
-        }
+    @field:JoinColumn(name = "user_id", nullable = false)
+    lateinit var user: User
 
+    @field:MapsId("committeeId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "committee_id", nullable = false, insertable = false, updatable = false)
-    private var _committee: Committee? = null
-    var committee: Committee
-        get() = requireNotNull(_committee) { "Committee is required" }
-        set(value) {
-            _committee = value
-            value.id?.let { committeeId = it }
-        }
+    @field:JoinColumn(name = "committee_id", nullable = false)
+    lateinit var committee: Committee
 
     @Column(name = "role", length = 255)
     var role: String? = null
@@ -81,14 +67,21 @@ open class CommitteeMember(
         if (other == null) return false
         if (Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as CommitteeMember
-        return id == other.id
+
+        if (!this.id.isComplete || !other.id.isComplete) return false
+        return this.id == other.id
     }
 
-    override fun hashCode(): Int = id.hashCode()
-}
+    override fun hashCode(): Int =
+        if (id.isComplete) id.hashCode() else System.identityHashCode(this)
 
-@Embeddable
-data class CommitteeMemberId(
-    var committeeId: Long? = null,
-    var userId: Long? = null
-) : java.io.Serializable
+    @Embeddable
+    data class Id(
+        var committeeId: Long? = null,
+        var userId: Long? = null
+    ) : Serializable {
+        @get:Transient
+        val isComplete: Boolean
+            get() = committeeId != null && userId != null
+    }
+}

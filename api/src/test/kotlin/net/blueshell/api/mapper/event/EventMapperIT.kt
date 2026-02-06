@@ -9,6 +9,7 @@ import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.event.Event
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -19,36 +20,68 @@ class EventMapperIT @Autowired constructor(
     private val eventDTOFactory: EventDTOFactory,
     private val eventBannerDTOFactory: EventBannerDTOFactory,
     private val fileDTOFactory: FileDTOFactory,
+    private val eventFactory: EventFactory,
     private val fileFactory: FileFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists banner and survey`() {
-        authenticateAs(Role.BOARD)
-        val committee = persistCommittee()
-        val file = persist(fileWithUploader(fileFactory.createImage()))
-        val dto = eventDTOFactory.createBasic().apply {
-            committeeId = committee.id!!
-            approved = true
-            banner = eventBannerDTOFactory.createBasic().also {
-                it.file = fileDTOFactory.createBasic().also { fileDto -> fileDto.id = file.id }
-            }
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted event`() {
+            val committee = persistCommittee()
+            val event = persist(eventFactory.createBasic().apply {
+                this.committee = committee
+                this.committeeId = committee.id
+            })
+
+            val dto = eventMapper.toDTO(event)
+
+            assertThat(dto.id).isEqualTo(event.id)
+            assertThat(dto.committeeId).isEqualTo(event.committeeId)
+            assertThat(dto.title).isEqualTo(event.title)
+            assertThat(dto.description).isEqualTo(event.description)
+            assertThat(dto.approved).isEqualTo(event.approved)
         }
-        val event = eventFactory.createBasic()
+    }
 
-        val mapped = eventMapper.fromDTO(dto, event)
-        mapped.banner?.file = file
-        mapped.signUpForm?.questions?.forEach { it.survey = mapped.signUpForm!! }
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists banner and survey`() {
+            authenticateAs(Role.BOARD)
+            val committee = persistCommittee()
+            val file = persist(fileWithUploader(fileFactory.createImage()))
+            val dto = eventDTOFactory.createBasic().apply {
+                committeeId = committee.id!!
+                approved = true
+                banner = eventBannerDTOFactory.createBasic().also {
+                    it.file = fileDTOFactory.createBasic().also { fileDto -> fileDto.id = file.id }
+                }
+            }
+            val event = eventFactory.createBasic()
 
-        val saved = persist(mapped)
-        flushAndClear()
+            val mapped = eventMapper.fromDTO(dto, event)
+            mapped.banner?.file = file
 
-        val reloaded = reload(Event::class.java, saved.id!!)
-        val mappedDto = eventMapper.toDTO(reloaded)
+            val signUpForm = mapped.signUpForm
+            val questions = signUpForm?.questions?.toList().orEmpty()
+            signUpForm?.questions?.clear()
 
-        assertThat(reloaded.committeeId).isEqualTo(committee.id)
-        assertThat(reloaded.banner).isNotNull
-        assertThat(reloaded.banner!!.fileId).isEqualTo(file.id)
-        assertThat(reloaded.approved).isTrue
-        assertThat(mappedDto.id).isEqualTo(saved.id)
+            val saved = persist(mapped)
+            entityManager.flush()
+
+            questions.forEach { question ->
+                question.survey = signUpForm!!
+                persist(question)
+            }
+
+            flushAndClear()
+
+            val reloaded = reload(Event::class.java, saved.id!!)
+
+            assertThat(reloaded.committeeId).isEqualTo(committee.id)
+            assertThat(reloaded.banner).isNotNull
+            assertThat(reloaded.banner!!.fileId).isEqualTo(file.id)
+            assertThat(reloaded.approved).isTrue
+        }
     }
 }

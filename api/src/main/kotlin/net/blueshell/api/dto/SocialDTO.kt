@@ -1,8 +1,8 @@
 package net.blueshell.api.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.dto.base.BaseDTO
 import net.blueshell.api.common.enums.PlatformType
+import net.blueshell.api.dto.base.BaseDTO
 
 @Schema(name = "Social")
 data class SocialDTO(

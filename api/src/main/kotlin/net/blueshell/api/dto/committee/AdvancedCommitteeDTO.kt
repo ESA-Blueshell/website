@@ -1,6 +1,5 @@
 package net.blueshell.api.dto.committee
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
@@ -11,7 +10,6 @@ import net.blueshell.api.dto.base.AuditedAutoIdDTO
 data class AdvancedCommitteeDTO(
     @field:NotBlank(message = "Committee name cannot be blank.")
     @field:Size(max = 255, message = "Committee name cannot exceed 255 characters.")
-    @field:JsonProperty("name")
     var name: String? = null,
 
     @field:NotBlank(message = "Committee description cannot be empty.")
@@ -19,5 +17,5 @@ data class AdvancedCommitteeDTO(
     var description: String? = null,
 
     @field:NotEmpty
-    var members: MutableList<CommitteeMemberDTO?> = mutableListOf()
+    var members: MutableList<CommitteeMemberDTO> = mutableListOf()
 ) : AuditedAutoIdDTO()

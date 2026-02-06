@@ -539,7 +539,7 @@ class DatabaseSeeder(
         val committee = Committee().apply {
             this.name = name
             this.description = description
-            members = mutableSetOf()
+            members = mutableListOf()
         }
         return requireNotNull(committeeService.create(committee)) { "Committee create returned null" }
     }

@@ -9,15 +9,15 @@ import net.blueshell.api.validation.user.ValidMobilePhoneNumber
 
 @Schema(name = "PersonalInfo")
 @MappedSuperclass
-open class PersonalInfoDTO(
+class PersonalInfoDTO(
     @field:NotBlank
-    open var discord: String? = null,
+    var discord: String? = null,
 
     @field:NotBlank
     @field:Email
-    open var email: String? = null,
+    var email: String? = null,
 
     @field:NotBlank
-    @field:net.blueshell.api.validation.user.ValidMobilePhoneNumber
-    open var phoneNumber: String? = null
+    @field:ValidMobilePhoneNumber
+    var phoneNumber: String? = null
 ) : AuditedAutoIdDTO()

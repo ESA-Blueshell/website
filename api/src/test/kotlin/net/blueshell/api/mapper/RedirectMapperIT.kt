@@ -4,6 +4,7 @@ import net.blueshell.api.factory.dto.TelemetryDTOFactory
 import net.blueshell.api.factory.model.TelemetryFactory
 import net.blueshell.api.model.Telemetry
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -14,20 +15,35 @@ class RedirectMapperIT @Autowired constructor(
     private val telemetryDTOFactory: TelemetryDTOFactory,
     private val telemetryFactory: TelemetryFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists telemetry mapping`() {
-        val dto = telemetryDTOFactory.createBasic()
-        val telemetry = telemetryFactory.createBasic()
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted telemetry`() {
+            val telemetry = persist(telemetryFactory.createBasic())
 
-        val mapped = redirectMapper.fromDTO(dto, telemetry)
-        val saved = persist(mapped)
-        flushAndClear()
+            val dto = redirectMapper.toDTO(telemetry)
 
-        val reloaded = reload(Telemetry::class.java, saved.id!!)
-        val mappedDto = redirectMapper.toDTO(reloaded)
+            assertThat(dto.id).isEqualTo(telemetry.id)
+            assertThat(dto.url).isEqualTo(telemetry.url)
+            assertThat(dto.platform).isEqualTo(telemetry.platform)
+        }
+    }
 
-        assertThat(reloaded.platform).isEqualTo(dto.platform)
-        assertThat(reloaded.url).isEqualTo(dto.url)
-        assertThat(mappedDto.url).isEqualTo(dto.url)
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists telemetry mapping`() {
+            val dto = telemetryDTOFactory.createBasic()
+            val telemetry = telemetryFactory.createBasic()
+
+            val mapped = redirectMapper.fromDTO(dto, telemetry)
+            val saved = persist(mapped)
+            flushAndClear()
+
+            val reloaded = reload(Telemetry::class.java, saved.id!!)
+
+            assertThat(reloaded.platform).isEqualTo(dto.platform)
+            assertThat(reloaded.url).isEqualTo(dto.url)
+        }
     }
 }

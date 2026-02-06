@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.ContributionPeriodFactory
 import net.blueshell.api.mapper.MapperTestSupport
 import net.blueshell.api.model.contribution.ContributionPeriod
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -13,24 +14,43 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionPeriodMapperIT @Autowired constructor(
     private val contributionPeriodMapper: ContributionPeriodMapper,
     private val contributionPeriodDTOFactory: ContributionPeriodDTOFactory,
+    private val contributionPeriodFactory: ContributionPeriodFactory
 ) : MapperTestSupport() {
-    @Test
-    fun `persists fees`() {
-        val dto = contributionPeriodDTOFactory.createBasic()
-        val period = contributionPeriodFactory.createBasic()
+    @Nested
+    inner class ToDTO {
+        @Test
+        fun `maps persisted period`() {
+            val period = persist(contributionPeriodFactory.createBasic())
 
-        val mapped = contributionPeriodMapper.fromDTO(dto, period)
-        val saved = persist(mapped)
-        flushAndClear()
+            val dto = contributionPeriodMapper.toDTO(period)
 
-        val reloaded = reload(ContributionPeriod::class.java, saved.id!!)
-        val mappedDto = contributionPeriodMapper.toDTO(reloaded)
+            assertThat(dto.id).isEqualTo(period.id)
+            assertThat(dto.startDate).isEqualTo(period.startDate)
+            assertThat(dto.endDate).isEqualTo(period.endDate)
+            assertThat(dto.halfYearFee).isEqualTo(period.halfYearFee)
+            assertThat(dto.fullYearFee).isEqualTo(period.fullYearFee)
+            assertThat(dto.alumniFee).isEqualTo(period.alumniFee)
+        }
+    }
 
-        assertThat(reloaded.startDate).isEqualTo(dto.startDate)
-        assertThat(reloaded.endDate).isEqualTo(dto.endDate)
-        assertThat(reloaded.halfYearFee).isEqualTo(dto.halfYearFee)
-        assertThat(reloaded.fullYearFee).isEqualTo(dto.fullYearFee)
-        assertThat(reloaded.alumniFee).isEqualTo(dto.alumniFee)
-        assertThat(mappedDto.id).isEqualTo(saved.id)
+    @Nested
+    inner class FromDTO {
+        @Test
+        fun `persists fees`() {
+            val dto = contributionPeriodDTOFactory.createBasic()
+            val period = contributionPeriodFactory.createBasic()
+
+            val mapped = contributionPeriodMapper.fromDTO(dto, period)
+            val saved = persist(mapped)
+            flushAndClear()
+
+            val reloaded = reload(ContributionPeriod::class.java, saved.id!!)
+
+            assertThat(reloaded.startDate).isEqualTo(dto.startDate)
+            assertThat(reloaded.endDate).isEqualTo(dto.endDate)
+            assertThat(reloaded.halfYearFee).isEqualTo(dto.halfYearFee)
+            assertThat(reloaded.fullYearFee).isEqualTo(dto.fullYearFee)
+            assertThat(reloaded.alumniFee).isEqualTo(dto.alumniFee)
+        }
     }
 }

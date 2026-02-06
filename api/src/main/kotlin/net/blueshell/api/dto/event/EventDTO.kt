@@ -1,6 +1,5 @@
 package net.blueshell.api.dto.event
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -23,7 +22,6 @@ data class EventDTO(
     @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
     var description: String,
 
-    @field:JsonProperty("location")
     var location: String? = null,
 
     @field:NotNull

@@ -1,6 +1,5 @@
 package net.blueshell.api.dto.recovery
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
@@ -14,10 +13,9 @@ data class MemberActivationRequest(
     var token: String? = null,
 
     @field:NotBlank
-    @field:net.blueshell.api.validation.user.UniqueUsername
+    @field:UniqueUsername
     var username: String? = null,
 
-    @field:JsonProperty
     @field:Size(min = 8, max = 100, message = "Password must be at least 8 characters")
     @field:Pattern(
         regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",

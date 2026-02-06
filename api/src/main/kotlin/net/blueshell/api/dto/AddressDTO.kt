@@ -3,7 +3,6 @@ package net.blueshell.api.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import net.blueshell.api.dto.base.AuditedAutoIdDTO
-import net.blueshell.api.validation.address.ValidCountryCode
 
 @Schema(name = "Address")
 data class AddressDTO(

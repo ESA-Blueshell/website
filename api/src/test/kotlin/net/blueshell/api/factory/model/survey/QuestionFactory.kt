@@ -42,7 +42,6 @@ class QuestionFactory(
     fun createForSurvey(survey: Survey): Question {
         return createWithCustomizations { question ->
             question.survey = survey
-            question.surveyId = survey.id ?: 0L
         }
     }
 

@@ -16,4 +16,26 @@ class EventFactoryTest : ModelFactoryTestSupport() {
         val saved = persist(event)
         assertPersisted(Event::class.java, saved.id)
     }
+
+    @Test
+    fun `creates persistable approved event`() {
+        val committee = persistCommittee()
+        val event = eventFactory.createApproved()
+        event.committee = committee
+        event.committeeId = committee.id
+
+        val saved = persist(event)
+        assertPersisted(Event::class.java, saved.id)
+    }
+
+    @Test
+    fun `creates persistable event with signup form`() {
+        val committee = persistCommittee()
+        val event = eventFactory.createWithSignUp()
+        event.committee = committee
+        event.committeeId = committee.id
+
+        val saved = persist(event)
+        assertPersisted(Event::class.java, saved.id)
+    }
 }

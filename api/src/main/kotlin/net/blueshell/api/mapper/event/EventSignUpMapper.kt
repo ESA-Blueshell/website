@@ -24,6 +24,7 @@ abstract class EventSignUpMapper : BaseMapper<EventSignUp, EventSignUpDTO>() {
     @Mapping(target = "eventId")
     @Mapping(target = "guest")
     @Mapping(target = "user")
+    @Mapping(target = "userId")
     @Mapping(target = "answers")
     @Mapping(target = "version")
     @BeanMapping(ignoreByDefault = true)

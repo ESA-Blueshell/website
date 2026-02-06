@@ -15,4 +15,24 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         val saved = persist(membership)
         assertPersisted(Membership::class.java, saved.id)
     }
+
+    @Test
+    fun `creates persistable active membership`() {
+        val user = persistUser()
+        val membership = membershipFactory.createActive(user)
+        membership.user = user
+
+        val saved = persist(membership)
+        assertPersisted(Membership::class.java, saved.id)
+    }
+
+    @Test
+    fun `creates persistable expired membership`() {
+        val user = persistUser()
+        val membership = membershipFactory.createExpired(user)
+        membership.user = user
+
+        val saved = persist(membership)
+        assertPersisted(Membership::class.java, saved.id)
+    }
 }

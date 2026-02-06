@@ -24,6 +24,7 @@ abstract class GuestMapper : BaseMapper<Guest, GuestDTO>() {
         guest.accessToken = randomCapitalString(30)
     }
 
+    @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "discord")
     @Mapping(target = "email")

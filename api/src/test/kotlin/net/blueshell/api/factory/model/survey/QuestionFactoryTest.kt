@@ -15,4 +15,26 @@ class QuestionFactoryTest : ModelFactoryTestSupport() {
         val saved = persist(question)
         assertPersisted(Question::class.java, saved.id)
     }
+
+    @Test
+    fun `creates persistable multiple choice question`() {
+        val survey = persistSurvey()
+        val question = questionFactory.createMultipleChoice()
+        question.survey = survey
+        question.surveyId = survey.id ?: 0L
+
+        val saved = persist(question)
+        assertPersisted(Question::class.java, saved.id)
+    }
+
+    @Test
+    fun `creates persistable text question`() {
+        val survey = persistSurvey()
+        val question = questionFactory.createText()
+        question.survey = survey
+        question.surveyId = survey.id ?: 0L
+
+        val saved = persist(question)
+        assertPersisted(Question::class.java, saved.id)
+    }
 }

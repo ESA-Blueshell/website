@@ -40,7 +40,7 @@ abstract class BlogMapper : BaseMapper<Blog, BlogDTO>() {
     abstract override fun toDTO(blog: Blog): BlogDTO
 
     @AfterMapping
-    protected fun afterToDTO(dto: BlogDTO, @MappingTarget blog: Blog) {
+    protected fun afterToDTO(blog: Blog, @MappingTarget dto: BlogDTO) {
         dto.url = "$frontendUrl/blogs/${blog.id}"
     }
 

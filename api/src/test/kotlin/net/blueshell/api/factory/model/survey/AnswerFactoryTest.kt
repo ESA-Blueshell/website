@@ -13,4 +13,14 @@ class AnswerFactoryTest : ModelFactoryTestSupport() {
         val answer = persistTextAnswer(question)
         assertPersisted(Answer::class.java, answer.id)
     }
+
+    @Test
+    fun `creates persistable answer for question`() {
+        val survey = persistSurvey()
+        val question = persistQuestionWithSurvey(survey)
+        val answer = answerFactory.createForQuestion(question)
+
+        val saved = persist(answer)
+        assertPersisted(Answer::class.java, saved.id)
+    }
 }

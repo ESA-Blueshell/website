@@ -61,18 +61,8 @@ class EventMapperIT @Autowired constructor(
 
             val mapped = eventMapper.fromDTO(dto, event)
             mapped.banner?.file = file
-
-            val signUpForm = mapped.signUpForm
-            val questions = signUpForm?.questions?.toList().orEmpty()
-            signUpForm?.questions?.clear()
-
             val saved = persist(mapped)
             entityManager.flush()
-
-            questions.forEach { question ->
-                question.survey = signUpForm!!
-                persist(question)
-            }
 
             flushAndClear()
 

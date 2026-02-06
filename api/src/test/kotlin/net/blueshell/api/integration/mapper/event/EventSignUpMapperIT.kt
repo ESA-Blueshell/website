@@ -7,6 +7,7 @@ import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.event.EventSignUpFactory
 import net.blueshell.api.integration.mapper.MapperTestSupport
 import net.blueshell.api.mapper.event.EventSignUpMapper
+import net.blueshell.api.model.event.Event
 import net.blueshell.api.model.event.EventSignUp
 import net.blueshell.api.model.survey.Answer
 import org.assertj.core.api.Assertions.assertThat
@@ -28,21 +29,20 @@ class EventSignUpMapperIT @Autowired constructor(
     inner class ToDTO {
         @Test
         fun `maps persisted sign up`() {
-            val event = persistEvent()
+            var event = persistEvent()
+            event.signUpForm = persist(surveyFactory.createFull())
+            event = persist(event)
+
             val user = persistUser()
-            val question = persistQuestionWithSurvey(persistSurvey())
-            val signUp = persist(eventSignUpFactory.createBasic().apply {
-                this.event = event
-                this.user = user
-                this.userId = user.id
-            })
+            val signUp = persist(eventSignUpFactory.createForEventAndUser(event, user))
+            assertThat(signUp.answers.size).isGreaterThan(0)
 
             val dto = eventSignUpMapper.toDTO(signUp)
 
             assertThat(dto.id).isEqualTo(signUp.id)
             assertThat(dto.eventId).isEqualTo(signUp.eventId)
             assertThat(dto.userId).isEqualTo(signUp.userId)
-            assertThat(dto.answers).hasSize(1)
+            assertThat(dto.answers.size).isEqualTo(signUp.answers.size)
         }
     }
 

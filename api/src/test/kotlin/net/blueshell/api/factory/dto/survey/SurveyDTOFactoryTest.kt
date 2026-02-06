@@ -25,4 +25,23 @@ class SurveyDTOFactoryTest : DtoFactoryTestSupport() {
         assertEquals(listOf(1L, 2L, 3L), indexes)
         assertNoViolations(survey)
     }
+
+    @Test
+    fun `creates survey with open questions`() {
+        val survey = surveyDTOFactory.createWithOpenQuestions(3)
+        assertEquals(3, survey.questions.size)
+        assertNoViolations(survey)
+    }
+
+    @Test
+    fun `creates survey with mixed questions`() {
+        val survey = surveyDTOFactory.createWithMixedQuestions()
+        assertNoViolations(survey)
+    }
+
+    @Test
+    fun `creates survey with multiple choice questions only`() {
+        val survey = surveyDTOFactory.createWithMultipleChoiceOnly()
+        assertNoViolations(survey)
+    }
 }

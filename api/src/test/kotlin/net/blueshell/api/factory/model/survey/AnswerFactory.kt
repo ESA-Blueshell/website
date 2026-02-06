@@ -3,6 +3,8 @@ package net.blueshell.api.factory.model.survey
 import com.github.javafaker.Faker
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.model.survey.Answer
+import net.blueshell.api.model.survey.Question
+import net.blueshell.api.model.survey.Survey
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
@@ -43,6 +45,43 @@ class AnswerFactory(
         val answer = createFull()
         customizer.accept(answer)
         return answer
+    }
+
+    fun createForQuestion(question: Question): Answer {
+        val answer = Answer()
+        answer.question = question
+
+        when (question.type) {
+            QuestionType.OPEN -> {
+                answer.textResponse = faker.lorem().sentence()
+                answer.optionSelections = null
+            }
+            QuestionType.RADIO -> {
+                answer.textResponse = null
+                val choices = question.choiceLabels.orEmpty()
+                if (choices.isNotEmpty()) {
+                    val selectedIndex = faker.number().numberBetween(0, choices.size)
+                    answer.optionSelections = MutableList(choices.size) { index -> index == selectedIndex }
+                } else {
+                    answer.optionSelections = mutableListOf()
+                }
+            }
+            QuestionType.CHECKBOX -> {
+                answer.textResponse = null
+                val choices = question.choiceLabels.orEmpty()
+                answer.optionSelections = MutableList(choices.size) { faker.bool().bool() }
+            }
+            QuestionType.DESCRIPTION -> {
+                answer.textResponse = null
+                answer.optionSelections = null
+            }
+        }
+
+        return answer
+    }
+
+    fun createForSurvey(survey: Survey): List<Answer> {
+        return survey.questions.map { question -> createForQuestion(question) }
     }
 
     private fun generateId(): Long = COUNTER.incrementAndGet()

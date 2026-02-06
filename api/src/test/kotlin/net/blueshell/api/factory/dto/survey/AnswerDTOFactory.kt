@@ -3,6 +3,7 @@ package net.blueshell.api.factory.dto.survey
 import net.blueshell.api.common.enums.QuestionType
 import net.blueshell.api.dto.survey.AnswerDTO
 import net.blueshell.api.dto.survey.QuestionDTO
+import net.blueshell.api.dto.survey.SurveyDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 
@@ -85,5 +86,9 @@ class AnswerDTOFactory : BaseDtoFactory<AnswerDTO>() {
         val selections = MutableList(optionCount) { index -> selectedIndices.contains(index) }
         dto.optionSelections = selections
         return dto
+    }
+
+    fun createForSurvey(survey: SurveyDTO): MutableList<AnswerDTO> {
+        return survey.questions.map { question -> createForQuestion(question) }.toMutableList()
     }
 }

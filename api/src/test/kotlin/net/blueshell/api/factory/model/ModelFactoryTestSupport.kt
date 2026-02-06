@@ -161,6 +161,7 @@ abstract class ModelFactoryTestSupport {
 
     protected fun fileWithUploader(file: File): File {
         val uploader = persistUser()
+        entityManager.flush()
         file.uploader = uploader
         return file
     }

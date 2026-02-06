@@ -14,4 +14,20 @@ class BoardFactoryTest : ModelFactoryTestSupport() {
         val saved = persist(board)
         assertPersisted(Board::class.java, saved.id)
     }
+
+    @Test
+    fun `creates persistable current board`() {
+        val board = boardFactory.createCurrent()
+        board.picture = board.picture?.let { fileWithUploader(it) }
+        val saved = persist(board)
+        assertPersisted(Board::class.java, saved.id)
+    }
+
+    @Test
+    fun `creates persistable past board`() {
+        val board = boardFactory.createPast()
+        board.picture = board.picture?.let { fileWithUploader(it) }
+        val saved = persist(board)
+        assertPersisted(Board::class.java, saved.id)
+    }
 }

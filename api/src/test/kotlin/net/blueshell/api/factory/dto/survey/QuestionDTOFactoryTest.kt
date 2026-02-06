@@ -13,4 +13,28 @@ class QuestionDTOFactoryTest : DtoFactoryTestSupport() {
     fun `createBasic and createFull produce valid dto`() {
         assertFactoryProducesValidDtos(questionDTOFactory)
     }
+
+    @Test
+    fun `creates question by type`() {
+        val open = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.OPEN)
+        val radio = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.RADIO)
+        val checkbox = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.CHECKBOX)
+        val description = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.DESCRIPTION)
+        assertNoViolations(open)
+        assertNoViolations(radio)
+        assertNoViolations(checkbox)
+        assertNoViolations(description)
+    }
+
+    @Test
+    fun `creates question helpers`() {
+        val open = questionDTOFactory.createOpen()
+        val radio = questionDTOFactory.createRadio()
+        val checkbox = questionDTOFactory.createCheckbox()
+        val description = questionDTOFactory.createDescription()
+        assertNoViolations(open)
+        assertNoViolations(radio)
+        assertNoViolations(checkbox)
+        assertNoViolations(description)
+    }
 }

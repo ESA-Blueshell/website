@@ -3,6 +3,8 @@ package net.blueshell.api.factory.model.event
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
+import net.blueshell.api.model.User
+import net.blueshell.api.model.event.Event
 import net.blueshell.api.model.event.EventSignUp
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
@@ -38,6 +40,15 @@ class EventSignUpFactory(
     fun createWithCustomizations(customizer: Consumer<EventSignUp>): EventSignUp {
         val signUp = createFull()
         customizer.accept(signUp)
+        return signUp
+    }
+
+    fun createForEventAndUser(event: Event, user: User): EventSignUp {
+        val signUp = EventSignUp()
+        signUp.event = event
+        signUp.user = user
+        signUp.userId = user.id
+        signUp.guest = null
         return signUp
     }
 

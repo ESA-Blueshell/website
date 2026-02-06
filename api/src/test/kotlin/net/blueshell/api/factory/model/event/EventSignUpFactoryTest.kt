@@ -25,4 +25,14 @@ class EventSignUpFactoryTest : ModelFactoryTestSupport() {
         val saved = persist(signUp)
         assertPersisted(EventSignUp::class.java, saved.id)
     }
+
+    @Test
+    fun `creates persistable event sign up for event and user`() {
+        val event = persistEvent()
+        val user = persistUser()
+        val signUp = eventSignUpFactory.createForEventAndUser(event, user)
+
+        val saved = persist(signUp)
+        assertPersisted(EventSignUp::class.java, saved.id)
+    }
 }

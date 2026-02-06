@@ -159,6 +159,7 @@ abstract class ModelPersistenceTestSupport {
 
     protected fun fileWithUploader(file: File): File {
         val uploader = persist(userFactory.createBasic())
+        entityManager.flush()
         file.uploader = uploader
         return file
     }

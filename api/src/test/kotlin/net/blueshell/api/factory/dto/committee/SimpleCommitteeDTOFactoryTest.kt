@@ -13,4 +13,16 @@ class SimpleCommitteeDTOFactoryTest : DtoFactoryTestSupport() {
     fun `createBasic and createFull produce valid dto`() {
         assertFactoryProducesValidDtos(simpleCommitteeDTOFactory)
     }
+
+    @Test
+    fun `creates committee with custom name`() {
+        val dto = simpleCommitteeDTOFactory.createWithName("Test Committee")
+        assertNoViolations(dto)
+    }
+
+    @Test
+    fun `creates committee with custom details`() {
+        val dto = simpleCommitteeDTOFactory.createWithDetails("Custom Committee", "Custom description")
+        assertNoViolations(dto)
+    }
 }

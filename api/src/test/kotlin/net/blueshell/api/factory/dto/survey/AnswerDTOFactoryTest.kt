@@ -10,6 +10,9 @@ class AnswerDTOFactoryTest : DtoFactoryTestSupport() {
     @Autowired
     private lateinit var answerDTOFactory: AnswerDTOFactory
 
+    @Autowired
+    private lateinit var questionDTOFactory: QuestionDTOFactory
+
     @Test
     fun `createBasic and createFull produce valid dto`() {
         assertFactoryProducesValidDtos(answerDTOFactory)
@@ -27,6 +30,19 @@ class AnswerDTOFactoryTest : DtoFactoryTestSupport() {
     fun `creates valid checkbox selections`() {
         val answer = answerDTOFactory.createForCheckboxQuestion(5, listOf(1, 3))
         assertEquals(5, answer.optionSelections?.size)
+        assertNoViolations(answer)
+    }
+
+    @Test
+    fun `creates valid answer for question`() {
+        val question = questionDTOFactory.createRadio()
+        val answer = answerDTOFactory.createForQuestion(question)
+        assertNoViolations(answer)
+    }
+
+    @Test
+    fun `creates valid answer for open question`() {
+        val answer = answerDTOFactory.createForOpenQuestion()
         assertNoViolations(answer)
     }
 }

@@ -1,14 +1,14 @@
 package net.blueshell.api.auth.service
 
+import net.blueshell.api.auth.model.RecoveryToken
+import net.blueshell.api.auth.repository.RecoveryTokenRepository
+import net.blueshell.api.platform.integration.event.job.RecoveryEmailEvent
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.platform.integration.event.job.RecoveryEmailEvent
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
-import net.blueshell.api.auth.model.RecoveryToken
-import net.blueshell.api.user.model.User
-import net.blueshell.api.auth.repository.RecoveryTokenRepository
-import net.blueshell.api.user.service.UserService
 import net.blueshell.api.shared.service.BaseModelService
+import net.blueshell.api.user.model.User
+import net.blueshell.api.user.service.UserService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -168,13 +168,12 @@ class RecoveryService(
         if (user.enabled) return
 
         val recoveryTokens = repository.findAllUnconsumedByUserId(userId)
-        if (recoveryTokens.stream().anyMatch { r: RecoveryToken -> r.type == ResetType.MEMBER_ACTIVATION }) {
+        if (recoveryTokens.any { it.type == ResetType.MEMBER_ACTIVATION }) {
             val rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
             eventPublisher.publishEvent(
                 RecoveryEmailEvent(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
             )
-        } else if (recoveryTokens.stream()
-                .anyMatch { r: RecoveryToken -> r.type == ResetType.USER_ACTIVATION }
+        } else if (recoveryTokens.any { it.type == ResetType.USER_ACTIVATION }
         ) {
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
             eventPublisher.publishEvent(RecoveryEmailEvent(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION))

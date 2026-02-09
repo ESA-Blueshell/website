@@ -3,9 +3,9 @@ package net.blueshell.api.factory.model.board
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.user.model.User
-import net.blueshell.api.board.model.Board
-import net.blueshell.api.board.model.BoardMember
+import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.board.domain.model.Board
+import net.blueshell.api.board.domain.model.BoardMember
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

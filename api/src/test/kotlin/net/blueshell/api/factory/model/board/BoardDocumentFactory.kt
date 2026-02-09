@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model.board
 
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.FileFactory
-import net.blueshell.api.board.model.BoardDocument
+import net.blueshell.api.board.domain.model.BoardDocument
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

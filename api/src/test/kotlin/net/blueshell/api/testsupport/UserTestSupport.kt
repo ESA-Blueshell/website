@@ -3,10 +3,10 @@ package net.blueshell.api.testsupport
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.platform.config.TruncateTestDatabaseListener
-import net.blueshell.api.auth.dto.request.JwtRequest
-import net.blueshell.api.auth.dto.response.AuthenticationDTO
-import net.blueshell.api.user.model.User
-import net.blueshell.api.user.repository.UserRepository
+import net.blueshell.api.auth.api.dto.request.JwtRequest
+import net.blueshell.api.auth.api.dto.response.AuthenticationDTO
+import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.user.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken

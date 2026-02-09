@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.email.model.base
 
-import net.blueshell.api.user.model.User
+import net.blueshell.api.user.domain.model.User
 
 abstract class BaseEmail(
     protected val recipient: User,

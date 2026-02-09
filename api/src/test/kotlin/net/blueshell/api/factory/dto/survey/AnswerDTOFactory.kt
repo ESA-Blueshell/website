@@ -1,9 +1,9 @@
 package net.blueshell.api.factory.dto.survey
 
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.dto.AnswerDTO
-import net.blueshell.api.survey.dto.QuestionDTO
-import net.blueshell.api.survey.dto.SurveyDTO
+import net.blueshell.api.survey.api.dto.AnswerDTO
+import net.blueshell.api.survey.api.dto.QuestionDTO
+import net.blueshell.api.survey.api.dto.SurveyDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

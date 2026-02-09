@@ -2,9 +2,9 @@ package net.blueshell.api.factory.model.committee
 
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.user.model.User
-import net.blueshell.api.committee.model.Committee
-import net.blueshell.api.committee.model.CommitteeMember
+import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.committee.domain.model.Committee
+import net.blueshell.api.committee.domain.model.CommitteeMember
 import org.springframework.stereotype.Component
 import java.util.function.Consumer
 

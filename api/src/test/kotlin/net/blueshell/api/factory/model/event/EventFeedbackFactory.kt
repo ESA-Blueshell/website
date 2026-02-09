@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
-import net.blueshell.api.event.model.EventFeedback
+import net.blueshell.api.event.domain.model.EventFeedback
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

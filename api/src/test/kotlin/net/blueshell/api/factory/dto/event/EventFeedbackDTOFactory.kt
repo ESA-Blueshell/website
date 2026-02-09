@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.event
 
-import net.blueshell.api.event.dto.EventFeedbackDTO
+import net.blueshell.api.event.api.dto.EventFeedbackDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

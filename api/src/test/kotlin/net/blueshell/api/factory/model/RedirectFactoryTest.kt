@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.telemetry.model.Redirect
+import net.blueshell.api.telemetry.domain.model.Redirect
 import org.junit.jupiter.api.Test
 
 class RedirectFactoryTest : ModelFactoryTestSupport() {

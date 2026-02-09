@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.request
 
-import net.blueshell.api.auth.dto.recovery.UserActivationRequest
+import net.blueshell.api.auth.api.dto.recovery.UserActivationRequest
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

@@ -1,0 +1,32 @@
+package net.blueshell.api.user.domain.model
+
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
+import net.blueshell.api.user.domain.model.Address
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+
+class AddressModelIT : ModelPersistenceTestSupport() {
+
+    @Nested
+    inner class Persistence {
+
+        @Test
+        fun `persists column fields`() {
+            val address = addressFactory.createBasic()
+            address.country = "NL"
+            address.city = "Amsterdam"
+            address.street = "Damrak"
+            address.houseNumber = "1A"
+            address.zipCode = "1012LG"
+
+            val found = persistAndReload(address, Address::class.java) { it.id }
+
+            assertEquals(address.country, found.country)
+            assertEquals(address.city, found.city)
+            assertEquals(address.street, found.street)
+            assertEquals(address.houseNumber, found.houseNumber)
+            assertEquals(address.zipCode, found.zipCode)
+        }
+    }
+}

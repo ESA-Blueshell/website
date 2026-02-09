@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto
 
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.file.dto.FileDTO
+import net.blueshell.api.file.api.dto.FileDTO
 import org.springframework.stereotype.Component
 
 /**

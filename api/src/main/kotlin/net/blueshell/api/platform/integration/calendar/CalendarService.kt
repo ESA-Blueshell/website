@@ -16,7 +16,7 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
 import jakarta.annotation.PostConstruct
-import net.blueshell.api.event.model.Event
+import net.blueshell.api.event.domain.model.Event
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

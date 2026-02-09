@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.contribution
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.contribution.model.ContributionReminder
+import net.blueshell.api.contribution.domain.model.ContributionReminder
 import org.junit.jupiter.api.Test
 
 class ContributionReminderFactoryTest : ModelFactoryTestSupport() {

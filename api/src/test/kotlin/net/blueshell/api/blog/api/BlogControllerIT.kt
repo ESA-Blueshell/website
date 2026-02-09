@@ -3,7 +3,7 @@ package net.blueshell.api.blog.api
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.blog.api.dto.BlogDTO
 import net.blueshell.api.factory.UnifiedFactory
-import net.blueshell.api.user.model.User
+import net.blueshell.api.user.domain.model.User
 import net.blueshell.api.testsupport.UserTestSupport
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.BeforeEach

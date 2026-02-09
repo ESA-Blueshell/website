@@ -2,7 +2,7 @@ package net.blueshell.api.blog.api.mapper
 
 import net.blueshell.api.blog.api.dto.BlogDTO
 import net.blueshell.api.blog.domain.model.Blog
-import net.blueshell.api.file.dto.FileDTO
+import net.blueshell.api.file.api.dto.FileDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

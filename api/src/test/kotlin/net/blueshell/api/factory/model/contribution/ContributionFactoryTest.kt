@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.contribution
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.contribution.model.Contribution
+import net.blueshell.api.contribution.domain.model.Contribution
 import org.junit.jupiter.api.Test
 
 class ContributionFactoryTest : ModelFactoryTestSupport() {

@@ -1,7 +1,6 @@
 package net.blueshell.api.event.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.shared.jpa.JpaListener
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
@@ -30,7 +29,6 @@ import org.hibernate.annotations.SQLRestriction
     """
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@EntityListeners(JpaListener::class)
 class EventBanner(
     @EmbeddedId
     override var id: Id = Id()

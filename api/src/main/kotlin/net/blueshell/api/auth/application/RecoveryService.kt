@@ -5,7 +5,7 @@ import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.platform.integration.event.job.RecoveryEmailEvent
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.event.jpa.PostPersistEvent
+import net.blueshell.api.user.application.event.UserCreatedEvent
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.application.UserService
@@ -16,8 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.event.TransactionPhase
-import org.springframework.transaction.event.TransactionalEventListener
+import org.springframework.context.event.EventListener
 import org.springframework.web.server.ResponseStatusException
 import java.security.SecureRandom
 import java.time.Duration
@@ -38,12 +37,12 @@ class RecoveryService(
     /**
      * React to user creation: issue appropriate token and send mail.
      */
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @jakarta.transaction.Transactional
-    fun onUserCreated(event: PostPersistEvent<User>) {
+    fun onUserCreated(event: UserCreatedEvent) {
         val rawToken: String
-        val user = event.source
+        val user = users.findById(event.userId)
         if (hasAuthority(Role.BOARD)) {
             rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
             eventPublisher.publishEvent(RecoveryEmailEvent(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION))

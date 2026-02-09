@@ -3,7 +3,6 @@ package net.blueshell.api.user.persistence
 import jakarta.persistence.*
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.jpa.JpaListener
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.committee.persistence.CommitteeMember
@@ -43,7 +42,6 @@ import java.sql.Date
 )
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@EntityListeners(JpaListener::class)
 class User(
 
     @Column(nullable = false, unique = false)

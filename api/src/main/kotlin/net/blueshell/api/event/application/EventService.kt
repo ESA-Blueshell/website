@@ -1,18 +1,51 @@
 package net.blueshell.api.event.application
 
+import net.blueshell.api.event.application.event.EventChangeType
+import net.blueshell.api.event.application.event.EventChangedEvent
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.filter.EventFilter
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.spec.EventSpecifications
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
-class EventService @Autowired constructor(repository: EventRepository) :
-    BaseModelService<Event, Long, EventRepository>(repository) {
+class EventService @Autowired constructor(
+    repository: EventRepository,
+    private val events: AfterCommitEventPublisher
+) : BaseModelService<Event, Long, EventRepository>(repository) {
+    @Transactional
+    override fun create(entity: Event): Event {
+        val saved = super.create(entity)
+        events.publish(EventChangedEvent(saved.id!!, EventChangeType.CREATED))
+        return saved
+    }
+
+    @Transactional
+    override fun update(entity: Event): Event {
+        val saved = super.update(entity)
+        events.publish(EventChangedEvent(saved.id!!, EventChangeType.UPDATED))
+        return saved
+    }
+
+    @Transactional
+    override fun delete(entity: Event) {
+        val eventId = entity.id!!
+        super.delete(entity)
+        events.publish(EventChangedEvent(eventId, EventChangeType.DELETED))
+    }
+
+    @Transactional
+    override fun deleteById(id: Long) {
+        super.deleteById(id)
+        events.publish(EventChangedEvent(id, EventChangeType.DELETED))
+    }
+
     fun findByFilter(pageable: Pageable, filter: EventFilter): Page<Event> {
         val spec = EventSpecifications.fromFilter(filter, principal)
         return repository.findAll(spec, pageable)

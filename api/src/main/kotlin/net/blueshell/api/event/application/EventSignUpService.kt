@@ -1,9 +1,11 @@
 package net.blueshell.api.event.application
 
+import net.blueshell.api.event.application.event.EventSignUpCreatedEvent
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.event.persistence.spec.EventSignUpSpecifications
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -13,8 +15,17 @@ import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
 @Service
-class EventSignUpService @Autowired constructor(repository: EventSignUpRepository) :
-    BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
+class EventSignUpService @Autowired constructor(
+    repository: EventSignUpRepository,
+    private val events: AfterCommitEventPublisher
+) : BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
+    @Transactional
+    override fun create(entity: EventSignUp): EventSignUp {
+        val saved = super.create(entity)
+        events.publish(EventSignUpCreatedEvent(saved.id!!))
+        return saved
+    }
+
     @Transactional(readOnly = true)
     fun findByUserIdAndEventId(userId: Long, eventId: Long): EventSignUp {
         return repository.findByUserIdAndEventId(userId, eventId)

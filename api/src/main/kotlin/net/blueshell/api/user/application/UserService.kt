@@ -1,11 +1,14 @@
 package net.blueshell.api.user.application
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.persistence.UserRepository
 import net.blueshell.api.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.service.BaseModelService
+import net.blueshell.api.user.application.event.UserCreatedEvent
+import net.blueshell.api.user.application.event.UserUpdatedEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -19,11 +22,28 @@ import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
 @Service
-class UserService @Autowired constructor(repository: UserRepository, private val passwordEncoder: PasswordEncoder) :
-    BaseModelService<User, Long, UserRepository>(repository), UserDetailsService {
+class UserService @Autowired constructor(
+    repository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val events: AfterCommitEventPublisher
+) : BaseModelService<User, Long, UserRepository>(repository), UserDetailsService {
     @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): User {
         return findByUsername(username)
+    }
+
+    @Transactional
+    override fun create(entity: User): User {
+        val saved = super.create(entity)
+        events.publish(UserCreatedEvent(saved.id!!))
+        return saved
+    }
+
+    @Transactional
+    override fun update(entity: User): User {
+        val saved = super.update(entity)
+        events.publish(UserUpdatedEvent(saved.id!!))
+        return saved
     }
 
     fun findByUsername(username: String): User {

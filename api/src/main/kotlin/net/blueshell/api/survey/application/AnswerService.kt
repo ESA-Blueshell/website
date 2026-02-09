@@ -12,4 +12,8 @@ class AnswerService @Autowired constructor(repository: AnswerRepository) :
     fun findBySurveyId(surveyId: Long): MutableSet<Answer> {
         return repository.findBy_questionSurveyId(surveyId)
     }
+
+    fun findByQuestionId(questionId: Long): MutableSet<Answer> {
+        return repository.findBy_questionId(questionId)
+    }
 }

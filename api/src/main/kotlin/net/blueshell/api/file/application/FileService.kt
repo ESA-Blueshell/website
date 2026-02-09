@@ -3,8 +3,10 @@ package net.blueshell.api.file.application
 import jakarta.annotation.PostConstruct
 import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.file.application.event.FileDeletedEvent
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +31,8 @@ import java.util.function.Supplier
 @Service
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
-    @Value($$"${storage.location}") storageLocation: String
+    @Value($$"${storage.location}") storageLocation: String,
+    private val events: AfterCommitEventPublisher
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
     private val rootLocation: Path = Paths.get(storageLocation)
     private val assetsLocation: Path = Paths.get("assets")
@@ -112,6 +115,19 @@ class FileService @Autowired constructor(
         } catch (e: NoSuchAlgorithmException) {
             throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "SHA-256 not available", e)
         }
+    }
+
+    @Transactional
+    override fun delete(entity: File) {
+        val event = FileDeletedEvent(entity.id!!, entity.path)
+        super.delete(entity)
+        events.publish(event)
+    }
+
+    @Transactional
+    override fun deleteById(id: Long) {
+        val file = findById(id)
+        delete(file)
     }
 
     private fun loadAsResource(file: File): Resource {
@@ -246,8 +262,8 @@ class FileService @Autowired constructor(
         })
     }
 
-    fun deleteFromStorage(file: File) {
-        val fullPath = rootLocation.resolve(file.path).normalize()
+    fun deleteFromStoragePath(path: String) {
+        val fullPath = rootLocation.resolve(path).normalize()
 
         try {
             if (Files.exists(fullPath)) {
@@ -256,6 +272,10 @@ class FileService @Autowired constructor(
         } catch (e: IOException) {
             log.error("Failed to delete file {}", fullPath, e)
         }
+    }
+
+    fun deleteFromStorage(file: File) {
+        deleteFromStoragePath(file.path)
     }
 
     companion object {

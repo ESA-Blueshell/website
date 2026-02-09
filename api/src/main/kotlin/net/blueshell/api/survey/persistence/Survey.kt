@@ -1,7 +1,6 @@
 package net.blueshell.api.survey.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.shared.jpa.JpaListener
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -17,7 +16,6 @@ import org.hibernate.annotations.SQLRestriction
 @NamedEntityGraph(name = "Survey.withQuestions", attributeNodes = [NamedAttributeNode("_questions")])
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE surveys SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@EntityListeners(JpaListener::class)
 class Survey : AuditedAutoIdEntity() {
     @OneToMany(mappedBy = "_survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _questions: MutableSet<Question> = linkedSetOf()

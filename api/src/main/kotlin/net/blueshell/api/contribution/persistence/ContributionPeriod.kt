@@ -1,7 +1,6 @@
 package net.blueshell.api.contribution.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.shared.jpa.JpaListener
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -25,7 +24,6 @@ import java.time.LocalDate
 )
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@EntityListeners(JpaListener::class)
 class ContributionPeriod : AuditedAutoIdEntity() {
     @OneToMany(mappedBy = "_contributionPeriod", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _contributions: MutableSet<Contribution> = linkedSetOf()

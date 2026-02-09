@@ -121,7 +121,13 @@ class CalendarService {
 
     @Throws(IOException::class)
     fun sync(event: Event) {
-        if (event.googleId != null) update(event)
+        if (event.googleId != null) {
+            if (event.approved) {
+                update(event)
+            } else {
+                remove(event)
+            }
+        }
         else add(event)
     }
 

@@ -1,32 +1,23 @@
 package net.blueshell.api.contribution.application.listener
 
+import net.blueshell.api.contribution.application.event.ContributionPeriodChangedEvent
+import net.blueshell.api.contribution.application.ContributionPeriodService
 import net.blueshell.api.platform.integration.event.job.CreateContributionPeriodListEvent
-import net.blueshell.api.shared.event.jpa.PostPersistEvent
-import net.blueshell.api.shared.event.jpa.PostUpdateEvent
-import net.blueshell.api.contribution.persistence.ContributionPeriod
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.event.TransactionPhase
-import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
 class ContributionPeriodEventListener(
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val periods: ContributionPeriodService
 ) {
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun onUpdate(evt: PostUpdateEvent<ContributionPeriod>) {
-        val c = evt.source
-        if (c.listId != null) return
-        eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.id))
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun onCreate(evt: PostPersistEvent<ContributionPeriod>) {
-        val c = evt.source
+    fun onChange(evt: ContributionPeriodChangedEvent) {
+        val c = periods.findById(evt.periodId)
         if (c.listId != null) return
         eventPublisher.publishEvent(CreateContributionPeriodListEvent(c.id))
     }

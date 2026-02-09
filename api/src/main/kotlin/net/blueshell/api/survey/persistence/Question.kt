@@ -4,7 +4,6 @@ import jakarta.persistence.*
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
-import net.blueshell.api.shared.jpa.JpaListener
 import net.blueshell.api.shared.model.DirtyAwareModel
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.model.converter.StringListConverter
@@ -29,7 +28,6 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@EntityListeners(JpaListener::class)
 @DirtyModel
 class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)

@@ -1,7 +1,6 @@
 package net.blueshell.api.committee.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.shared.jpa.JpaListener
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
@@ -29,7 +28,6 @@ import java.io.Serializable
       WHERE committee_id = ? AND user_id = ? AND version = ?
     """
 )
-@EntityListeners(JpaListener::class)
 class CommitteeMember(
     @EmbeddedId
     @AttributeOverrides(AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)))

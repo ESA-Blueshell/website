@@ -1,12 +1,12 @@
-package net.blueshell.api.blog.web
+package net.blueshell.api.blog.api
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.blog.api.dto.BlogDTO
+import net.blueshell.api.blog.api.mapper.BlogMapper
+import net.blueshell.api.blog.application.BlogService
 import net.blueshell.api.shared.web.BaseController
-import net.blueshell.api.blog.dto.BlogDTO
-import net.blueshell.api.blog.mapper.BlogMapper
-import net.blueshell.api.blog.service.BlogService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*

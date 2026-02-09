@@ -1,8 +1,8 @@
-package net.blueshell.api.blog.mapper
+package net.blueshell.api.blog.api.mapper
 
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.factory.model.BlogFactory
-import net.blueshell.api.blog.mapper.SocialMapper
+import net.blueshell.api.blog.api.mapper.SocialMapper
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

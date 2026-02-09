@@ -1,7 +1,7 @@
-package net.blueshell.api.blog.web
+package net.blueshell.api.blog.api
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.blog.dto.BlogDTO
+import net.blueshell.api.blog.api.dto.BlogDTO
 import net.blueshell.api.factory.UnifiedFactory
 import net.blueshell.api.user.model.User
 import net.blueshell.api.testsupport.UserTestSupport

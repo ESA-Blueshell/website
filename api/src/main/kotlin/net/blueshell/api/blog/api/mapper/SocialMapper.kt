@@ -1,8 +1,8 @@
-package net.blueshell.api.blog.mapper
+package net.blueshell.api.blog.api.mapper
 
 import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.blog.dto.SocialDTO
-import net.blueshell.api.blog.model.Blog
+import net.blueshell.api.blog.api.dto.SocialDTO
+import net.blueshell.api.blog.domain.model.Blog
 import org.mapstruct.AfterMapping
 import org.mapstruct.BeanMapping
 import org.mapstruct.Mapper

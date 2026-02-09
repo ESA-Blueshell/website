@@ -1,7 +1,7 @@
-package net.blueshell.api.blog.service
+package net.blueshell.api.blog.application
 
-import net.blueshell.api.blog.model.Blog
-import net.blueshell.api.blog.repository.BlogRepository
+import net.blueshell.api.blog.domain.model.Blog
+import net.blueshell.api.blog.persistence.BlogRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher

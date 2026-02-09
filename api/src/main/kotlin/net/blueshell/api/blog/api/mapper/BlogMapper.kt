@@ -1,9 +1,9 @@
-package net.blueshell.api.blog.mapper
+package net.blueshell.api.blog.api.mapper
 
-import net.blueshell.api.blog.dto.BlogDTO
+import net.blueshell.api.blog.api.dto.BlogDTO
+import net.blueshell.api.blog.domain.model.Blog
 import net.blueshell.api.file.dto.FileDTO
 import net.blueshell.api.shared.mapper.BaseMapper
-import net.blueshell.api.blog.model.Blog
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.mapstruct.*

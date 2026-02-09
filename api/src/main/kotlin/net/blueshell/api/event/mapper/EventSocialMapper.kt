@@ -1,7 +1,7 @@
 package net.blueshell.api.event.mapper
 
 import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.blog.dto.SocialDTO
+import net.blueshell.api.blog.api.dto.SocialDTO
 import net.blueshell.api.event.dto.EventDTO
 import org.mapstruct.*
 

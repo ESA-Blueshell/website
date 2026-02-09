@@ -20,6 +20,7 @@ abstract class ArchJUnitTestBase(
     vararg packages: String,
     private val importOptions: List<ImportOption> = listOf(
         ImportOption.DoNotIncludeTests(),
+        DoNotIncludeTestSources(),
         DoNotIncludeTestSupport(),
         DoNotIncludeFactory()
     )

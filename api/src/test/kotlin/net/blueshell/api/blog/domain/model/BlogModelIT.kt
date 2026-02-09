@@ -1,6 +1,6 @@
-package net.blueshell.api.blog.model
+package net.blueshell.api.blog.domain.model
 
-import net.blueshell.api.blog.model.Blog
+import net.blueshell.api.blog.domain.model.Blog
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested

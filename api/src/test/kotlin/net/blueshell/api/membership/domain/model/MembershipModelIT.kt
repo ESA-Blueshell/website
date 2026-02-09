@@ -3,6 +3,7 @@ package net.blueshell.api.membership.persistence
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
+import net.blueshell.api.membership.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -51,6 +52,24 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(user.id, found.userId)
             assertEquals(user.id, found.user.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted membership`() {
+            val user = persist(userFactory.createBasic())
+            val membership = persist(membershipFactory.createBasic(user))
+
+            val dto = membership.asDto()
+
+            assertEquals(membership.id, dto.id)
+            assertEquals(membership.userId, dto.userId)
+            assertEquals(membership.memberType, dto.memberType)
+            assertEquals(membership.startDate, dto.startDate)
+            assertEquals(membership.endDate, dto.endDate)
+            assertEquals(membership.incasso, dto.incasso)
         }
     }
 }

@@ -4,10 +4,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.membership.web.dto.MembershipDTO
-import net.blueshell.api.membership.web.mapper.MembershipMapper
 import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.membership.persistence.asDto
 import net.blueshell.api.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.membership.application.MembershipService
+import net.blueshell.api.membership.web.dto.asEntity
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
@@ -18,12 +19,11 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping
 @Tag(name = "Memberships")
-class MembershipController(service: MembershipService, mapper: MembershipMapper) :
-    BaseController<MembershipService, MembershipMapper>(service, mapper) {
+class MembershipController(service: MembershipService) : BaseController<MembershipService>(service) {
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject filter: MembershipFilter): MutableList<MembershipDTO> {
-        return mapper.toDTOs(service.findByFilter(filter))
+        return service.findByFilter(filter).map { it.asDto() }.toMutableList()
     }
 
     @PreAuthorize("hasAuthority('GUEST')")
@@ -39,7 +39,7 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
         val membership = Membership()
         membership.userId = principal!!.id!!
         service.create(membership)
-        return mapper.toDTO(membership)
+        return membership.asDto()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
@@ -48,23 +48,23 @@ class MembershipController(service: MembershipService, mapper: MembershipMapper)
     fun boardCreateMembership(
         @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody dto: MembershipDTO
     ): MembershipDTO? {
-        var membership = mapper.fromDTO(dto)
+        var membership = dto.asEntity()
         membership = service.create(membership)
-        return mapper.toDTO(membership)
+        return membership.asDto()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody dto: MembershipDTO): MembershipDTO? {
         var membership = service.findById(id)
-        mapper.fromDTO(dto, membership)
+        dto.asEntity(membership)
         membership = service.update(membership)
-        return mapper.toDTO(membership)
+        return membership.asDto()
     }
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/{id}"])
     fun findMembershipById(@PathVariable id: Long): MembershipDTO {
-        return mapper.toDTO(service.findById(id))
+        return service.findById(id).asDto()
     }
 }

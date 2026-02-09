@@ -3,6 +3,7 @@ package net.blueshell.api.telemetry.persistence
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.telemetry.persistence.Telemetry
+import net.blueshell.api.telemetry.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -63,6 +64,31 @@ class TelemetryModelIT : ModelPersistenceTestSupport() {
 
             val found = requireNotNull(entityManager.find(Telemetry::class.java, saved.id))
             assertEquals(2, found.redirects.size)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted telemetry`() {
+            val telemetry = persist(telemetryFactory.createBasic())
+
+            val dto = telemetry.asDto()
+
+            assertEquals(telemetry.id, dto.id)
+            assertEquals(telemetry.url, dto.url)
+            assertEquals(telemetry.platform, dto.platform)
+        }
+
+        @Test
+        fun `maps persisted telemetry for redirect`() {
+            val telemetry = persist(telemetryFactory.createBasic())
+
+            val dto = telemetry.asDto()
+
+            assertEquals(telemetry.id, dto.id)
+            assertEquals(telemetry.url, dto.url)
+            assertEquals(telemetry.platform, dto.platform)
         }
     }
 }

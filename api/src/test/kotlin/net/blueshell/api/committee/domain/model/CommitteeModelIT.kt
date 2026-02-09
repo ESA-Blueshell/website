@@ -3,6 +3,8 @@ package net.blueshell.api.committee.persistence
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.persistence.asAdvancedDto
+import net.blueshell.api.committee.persistence.asSimpleDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -64,6 +66,39 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
 
             val found = entityManager.find(Committee::class.java, savedCommittee.id)
             assertEquals(2, found.members.size)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps committee with members to advanced dto`() {
+            val committee = persist(committeeFactory.createBasic())
+            val user = persist(userFactory.createBasic())
+            val member = committeeMemberFactory.createWithCustomizations({ it.role = "Chair" }, user, committee)
+            persist(member)
+            entityManager.flush()
+            entityManager.clear()
+
+            val reloaded = entityManager.find(Committee::class.java, committee.id)
+            val dto = reloaded.asAdvancedDto()
+
+            assertEquals(reloaded.id, dto.id)
+            assertEquals(reloaded.name, dto.name)
+            assertEquals(reloaded.description, dto.description)
+            assertEquals(1, dto.members.size)
+            assertEquals(user.id, dto.members.first().userId)
+            assertEquals("Chair", dto.members.first().role)
+        }
+
+        @Test
+        fun `maps core fields to simple dto`() {
+            val committee = persistCommittee()
+
+            val dto = committee.asSimpleDto()
+
+            assertEquals(committee.name, dto.name)
+            assertEquals(committee.description, dto.description)
         }
     }
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -69,6 +70,24 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(period.id, found.contributionPeriodId)
             assertEquals(period.id, found.contributionPeriod.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted contribution`() {
+            val user = persist(userFactory.createBasic())
+            val period = persist(contributionPeriodFactory.createBasic())
+            val contribution = persist(contributionFactory.createBasic().apply {
+                this.user = user
+                this.contributionPeriod = period
+            })
+
+            val dto = contribution.asDto()
+
+            assertEquals(contribution.userId, dto.userId)
+            assertEquals(contribution.contributionPeriodId, dto.contributionPeriodId)
         }
     }
 }

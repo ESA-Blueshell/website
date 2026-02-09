@@ -9,7 +9,6 @@ import net.blueshell.api.architecture.ArchitecturePackages.DTO
 import net.blueshell.api.architecture.ArchitecturePackages.JOB
 import net.blueshell.api.architecture.ArchitecturePackages.LISTENER
 import net.blueshell.api.architecture.ArchitecturePackages.LISTENER_JPA
-import net.blueshell.api.architecture.ArchitecturePackages.MAPPER
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.REPOSITORY
 import net.blueshell.api.architecture.ArchitecturePackages.SECURITY
@@ -25,17 +24,8 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         arch("DTOs only accessed at API border") {
             classes()
                 .that().resideInAnyPackage(DTO)
-                .should().onlyBeAccessed().byAnyPackage(CONTROLLER, MAPPER, DTO, VALIDATION)
+                .should().onlyBeAccessed().byAnyPackage(CONTROLLER, DTO, MODEL, VALIDATION)
                 .because("DTOs should not leak into services/repositories; keep them at the API boundary.")
-        }
-
-    @Test
-    fun `models not accessed in dtos`(): Unit =
-        arch("DTOs must not depend on model entities") {
-            noClasses()
-                .that().resideInAnyPackage(DTO)
-                .should().accessClassesThat().resideInAnyPackage(MODEL)
-                .because("DTOs must not depend on model entities.")
         }
 
     @Test
@@ -97,7 +87,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         arch("Repositories must not depend on mappers/DTO") {
             noClasses()
                 .that().resideInAnyPackage(REPOSITORY)
-                .should().dependOnClassesThat().resideInAnyPackage(MAPPER, DTO)
+                .should().dependOnClassesThat().resideInAnyPackage(DTO)
                 .because("Persistence layer should not know about mapping/DTO concerns.")
         }
 

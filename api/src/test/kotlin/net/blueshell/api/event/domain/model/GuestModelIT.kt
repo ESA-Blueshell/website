@@ -2,6 +2,7 @@ package net.blueshell.api.event.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.event.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -27,6 +28,21 @@ class GuestModelIT : ModelPersistenceTestSupport() {
             assertEquals(guest.email, found.email)
             assertEquals(guest.phoneNumber, found.phoneNumber)
             assertEquals(guest.accessToken, found.accessToken)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted guest`() {
+            val guest = persist(guestFactory.createBasic())
+
+            val dto = guest.asDto()
+
+            assertEquals(guest.id, dto.id)
+            assertEquals(guest.name, dto.name)
+            assertEquals(guest.email, dto.email)
+            assertEquals(guest.accessToken, dto.accessToken)
         }
     }
 }

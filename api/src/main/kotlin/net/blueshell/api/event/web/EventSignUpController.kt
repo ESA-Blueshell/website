@@ -4,9 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.event.web.dto.EventSignUpDTO
-import net.blueshell.api.event.web.mapper.EventSignUpMapper
+import net.blueshell.api.event.persistence.asDto
 import net.blueshell.api.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.event.application.EventSignUpService
+import net.blueshell.api.event.web.dto.asEntity
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -15,8 +16,8 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "EventSignUps")
-class EventSignUpController @Autowired constructor(service: EventSignUpService, mapper: EventSignUpMapper) :
-    BaseController<EventSignUpService, EventSignUpMapper>(service, mapper) {
+class EventSignUpController @Autowired constructor(service: EventSignUpService) :
+    BaseController<EventSignUpService>(service) {
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
         "hasAuthority('BOARD') " +
@@ -25,21 +26,21 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     )
     fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByFilter(filter)
-        return mapper.toDTOs(eventSignUps.stream()).toList()
+        return eventSignUps.map { it.asDto() }.toMutableList()
     }
 
     @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
     fun findEventSignUpsByAccessToken(@PathVariable accessToken: String): MutableList<EventSignUpDTO> {
         val signUps = service.findByGuestAccessToken(accessToken)
-        return mapper.toDTOs(signUps)
+        return signUps.map { it.asDto() }.toMutableList()
     }
 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
     fun findEventSignUpsByEventId(@PathVariable eventId: Long): MutableList<EventSignUpDTO> {
         val eventSignUps = service.findByEventId(eventId)
-        return mapper.toDTOs(eventSignUps)
+        return eventSignUps.map { it.asDto() }.toMutableList()
     }
 
 
@@ -48,9 +49,9 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
     @ResponseStatus(HttpStatus.CREATED)
     fun createEventSignup(@Valid @RequestBody dto: EventSignUpDTO): EventSignUpDTO {
         principal?.id?.let { dto.userId = principal!!.id }
-        var eventSignUp = mapper.fromDTO(dto)
+        var eventSignUp = dto.asEntity()
         eventSignUp = service.create(eventSignUp)
-        return mapper.toDTO(eventSignUp)
+        return eventSignUp.asDto()
     }
 
     @PutMapping("/events/{eventId}/signups")
@@ -70,9 +71,9 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService, 
         } else {
             service.findByGuestAccessTokenAndEventId(accessToken, eventId)
         }
-        mapper.fromDTO(dto, signUp)
+        dto.asEntity(signUp)
         val updated = service.update(signUp)
-        return mapper.toDTO(updated)
+        return updated.asDto()
     }
 
 

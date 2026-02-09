@@ -8,16 +8,18 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
 import net.blueshell.api.user.web.dto.AdvancedUserDTO
 import net.blueshell.api.user.web.dto.SimpleUserDTO
-import net.blueshell.api.user.web.mapper.AdvancedUserMapper
-import net.blueshell.api.user.web.mapper.SimpleUserMapper
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.asAdvancedDto
 import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.application.UserService
+import net.blueshell.api.user.persistence.asSimpleDto
+import net.blueshell.api.user.web.dto.asEntity
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
@@ -26,13 +28,10 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Users")
 class UserController(
     service: UserService,
-    advancedUserMapper: AdvancedUserMapper,
-    simpleUserMapper: SimpleUserMapper,
-    private val validator: Validator
-) : AdvancedController<UserService, AdvancedUserMapper, SimpleUserMapper>(
-    service,
-    advancedUserMapper,
-    simpleUserMapper
+    private val validator: Validator,
+    private val passwordEncoder: PasswordEncoder
+) : AdvancedController<UserService>(
+    service
 ) {
     @PostMapping("/users")
     @PermitAll
@@ -48,19 +47,19 @@ class UserController(
             throw ConstraintViolationException(violations)
         }
 
-        var user = advancedMapper.fromDTO(dto, User())
+        var user = dto.asEntity(User(), passwordEncoder)
 
         user = service.create(user)
-        return advancedMapper.toDTO(user)
+        return user.asAdvancedDto()
     }
 
     @PostMapping("/users/guest")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
     fun createGuestUser(@Validated(net.blueshell.api.shared.validation.group.Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
-        var user = simpleMapper.fromDTO(dto, User())
+        var user = dto.asEntity(User(), passwordEncoder)
         user = service.create(user)
-        return simpleMapper.toDTO(user)
+        return user.asSimpleDto()
     }
 
     @PutMapping("/users/guest/{id}")
@@ -70,9 +69,9 @@ class UserController(
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody dto: SimpleUserDTO
     ): SimpleUserDTO {
         var user = service.findById(id)
-        simpleMapper.fromDTO(dto, user)
+        dto.asEntity(user, passwordEncoder)
         user = service.update(user)
-        return simpleMapper.toDTO(user)
+        return user.asSimpleDto()
     }
 
     @PutMapping(value = ["/users/{id}"])
@@ -82,9 +81,9 @@ class UserController(
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody dto: AdvancedUserDTO
     ): AdvancedUserDTO {
         var user = service.findById(id)
-        advancedMapper.fromDTO(dto, user)
+        dto.asEntity(user, passwordEncoder)
         user = service.update(user)
-        return advancedMapper.toDTO(user)
+        return user.asAdvancedDto()
     }
 
     @GetMapping("/users")
@@ -94,14 +93,14 @@ class UserController(
         @ParameterObject pageable: Pageable = Pageable.unpaged()
     ): Page<AdvancedUserDTO> {
         val users = service.findByFilter(filter, pageable)
-        return advancedMapper.toDTOs(users)
+        return users.map { it.asAdvancedDto() }
     }
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
     fun findUserById(@PathVariable userId: Long): AdvancedUserDTO {
         val user = service.findById(userId)
-        return advancedMapper.toDTO(user)
+        return user.asAdvancedDto()
     }
 
     @DeleteMapping(value = ["/users/{userId}"])
@@ -118,6 +117,6 @@ class UserController(
         @RequestParam(value = "role") role: Role
     ): AdvancedUserDTO {
         val user = service.toggleRole(userId, role)
-        return advancedMapper.toDTO(user)
+        return user.asAdvancedDto()
     }
 }

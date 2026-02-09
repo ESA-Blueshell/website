@@ -4,45 +4,49 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.blog.web.dto.BlogDTO
-import net.blueshell.api.blog.web.mapper.BlogMapper
+import net.blueshell.api.blog.web.dto.asEntity
+import net.blueshell.api.blog.web.dto.asDto
 import net.blueshell.api.blog.application.BlogService
 import net.blueshell.api.shared.web.BaseController
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Blogs")
-class BlogController(blogService: BlogService, blogMapper: BlogMapper) :
-    BaseController<BlogService, BlogMapper>(blogService, blogMapper) {
+class BlogController(blogService: BlogService) : BaseController<BlogService>(blogService) {
+    @Value($$"${frontend.url}")
+    private lateinit var frontendUrl: String
+
     @PostMapping("/blogs")
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBlog(@Valid @RequestBody dto: BlogDTO): BlogDTO {
-        var blog = mapper.fromDTO(dto)
+        var blog = dto.asEntity()
         blog = service.create(blog)
-        return mapper.toDTO(blog)
+        return blog.asDto(frontendUrl)
     }
 
     @PostMapping("/blogs/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     fun updateBlog(@PathVariable id: Long, @Valid @RequestBody dto: BlogDTO): BlogDTO {
         var blog = service.findById(id)
-        mapper.fromDTO(dto, blog)
+        dto.asEntity(blog)
         blog = service.update(blog)
-        return mapper.toDTO(blog)
+        return blog.asDto(frontendUrl)
     }
 
     @GetMapping("/blogs")
     @PermitAll
     fun findBlogs(): MutableList<BlogDTO> {
-        return mapper.toDTOs(service.findAll())
+        return service.findAll().map { it.asDto(frontendUrl) }.toMutableList()
     }
 
     @GetMapping("/blogs/{id}")
     @PermitAll
     fun findBlogById(@PathVariable id: Long): BlogDTO {
-        return mapper.toDTO(service.findById(id))
+        return service.findById(id).asDto(frontendUrl)
     }
 
     @DeleteMapping("/blogs/{id}")

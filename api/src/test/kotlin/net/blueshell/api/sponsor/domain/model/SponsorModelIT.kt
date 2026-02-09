@@ -2,6 +2,7 @@ package net.blueshell.api.sponsor.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -50,6 +51,26 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(picture.id, found.pictureId)
             assertEquals(picture.id, found.picture.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted sponsor`() {
+            val sponsor = sponsorFactory.createBasic().apply {
+                picture = persist(fileWithUploader(picture))
+            }
+            val saved = persist(sponsor)
+            entityManager.flush()
+            entityManager.clear()
+
+            val reloaded = entityManager.find(Sponsor::class.java, saved.id)
+            val dto = reloaded.asDto()
+
+            assertEquals(reloaded.id, dto.id)
+            assertEquals(reloaded.name, dto.name)
+            assertEquals(reloaded.description, dto.description)
         }
     }
 }

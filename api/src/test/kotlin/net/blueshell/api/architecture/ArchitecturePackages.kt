@@ -12,7 +12,6 @@ object ArchitecturePackages {
     const val MODEL_CONVERTER = "$ROOT..model.converter.."
 
     const val CONTROLLER = "$ROOT..web.."
-    const val MAPPER = "$ROOT..mapper.."
     const val VALIDATION = "$ROOT..validation.."
 
     const val SERVICE = "$ROOT..service.."

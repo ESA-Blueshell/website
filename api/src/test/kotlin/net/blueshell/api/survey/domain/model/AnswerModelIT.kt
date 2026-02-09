@@ -2,6 +2,7 @@ package net.blueshell.api.survey.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.survey.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -54,6 +55,25 @@ class AnswerModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(question.id, found.questionId)
             assertEquals(question.id, found.question?.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted answer`() {
+            val survey = persistSurvey()
+            val question = persistQuestionWithSurvey(survey)
+            val answer = persist(answerFactory.createBasic().apply {
+                this.question = question
+            })
+
+            val dto = answer.asDto()
+
+            assertEquals(answer.id, dto.id)
+            assertEquals(answer.questionId, dto.questionId)
+            assertEquals(answer.optionSelections, dto.optionSelections)
+            assertEquals(answer.textResponse, dto.textResponse)
         }
     }
 }

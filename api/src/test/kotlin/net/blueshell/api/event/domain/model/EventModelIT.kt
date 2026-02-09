@@ -2,6 +2,7 @@ package net.blueshell.api.event.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -74,6 +75,26 @@ class EventModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(committee.id, found.committeeId)
             assertEquals(committee.id, found.committee.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted event`() {
+            val committee = persistCommittee()
+            val event = persist(eventFactory.createBasic().apply {
+                this.committee = committee
+                this.committeeId = committee.id!!
+            })
+
+            val dto = event.asDto()
+
+            assertEquals(event.id, dto.id)
+            assertEquals(event.committeeId, dto.committeeId)
+            assertEquals(event.title, dto.title)
+            assertEquals(event.description, dto.description)
+            assertEquals(event.approved, dto.approved)
         }
     }
 }

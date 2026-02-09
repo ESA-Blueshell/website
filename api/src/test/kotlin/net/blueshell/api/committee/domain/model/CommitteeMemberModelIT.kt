@@ -2,6 +2,7 @@ package net.blueshell.api.committee.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -78,6 +79,22 @@ class CommitteeMemberModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(user.id, found.userId)
             assertEquals(user.id, found.user.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted member`() {
+            val committee = persistCommittee()
+            val user = persist(userFactory.createBasic())
+            val member = persist(committeeMemberFactory.createBasic(user, committee))
+
+            val dto = member.asDto()
+
+            assertEquals(member.committeeId, dto.committeeId)
+            assertEquals(member.userId, dto.userId)
+            assertEquals(member.role, dto.role)
         }
     }
 }

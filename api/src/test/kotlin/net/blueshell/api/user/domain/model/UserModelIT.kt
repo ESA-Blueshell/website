@@ -3,6 +3,8 @@ package net.blueshell.api.user.persistence
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.asAdvancedDto
+import net.blueshell.api.user.persistence.asSimpleDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -94,6 +96,34 @@ class UserModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(address.id, found.addressId)
             assertEquals(address.id, found.address?.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted user to simple dto`() {
+            val user = persist(userFactory.createBasic())
+
+            val dto = user.asSimpleDto()
+
+            assertEquals(user.id, dto.id)
+            assertEquals(user.username, dto.username)
+            assertEquals(user.email, dto.email)
+            assertEquals(user.fullName, dto.fullName)
+        }
+
+        @Test
+        fun `maps persisted user to advanced dto`() {
+            val user = persist(userFactory.createFull())
+
+            val dto = user.asAdvancedDto()
+
+            assertEquals(user.id, dto.id)
+            assertEquals(user.username, dto.username)
+            assertEquals(user.email, dto.email)
+            assertEquals(user.fullName, dto.fullName)
+            assertEquals(user.inheritedRoles, dto.roles.toSet())
         }
     }
 }

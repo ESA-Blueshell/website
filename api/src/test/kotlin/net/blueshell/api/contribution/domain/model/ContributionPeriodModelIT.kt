@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -30,6 +31,23 @@ class ContributionPeriodModelIT : ModelPersistenceTestSupport() {
             assertEquals(period.fullYearFee, found.fullYearFee)
             assertEquals(period.alumniFee, found.alumniFee)
             assertEquals(period.listId, found.listId)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted period`() {
+            val period = persist(contributionPeriodFactory.createBasic())
+
+            val dto = period.asDto()
+
+            assertEquals(period.id, dto.id)
+            assertEquals(period.startDate, dto.startDate)
+            assertEquals(period.endDate, dto.endDate)
+            assertEquals(period.halfYearFee, dto.halfYearFee)
+            assertEquals(period.fullYearFee, dto.fullYearFee)
+            assertEquals(period.alumniFee, dto.alumniFee)
         }
     }
 }

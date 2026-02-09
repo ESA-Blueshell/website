@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -69,6 +70,24 @@ class ContributionReminderModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(period.id, found.contributionPeriodId)
             assertEquals(period.id, found.contributionPeriod.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted reminder`() {
+            val user = persist(userFactory.createBasic())
+            val period = persist(contributionPeriodFactory.createBasic())
+            val reminder = persist(contributionReminderFactory.createBasic().apply {
+                this.user = user
+                this.contributionPeriod = period
+            })
+
+            val dto = reminder.asDto()
+
+            assertEquals(reminder.userId, dto.userId)
+            assertEquals(reminder.contributionPeriodId, dto.contributionPeriodId)
         }
     }
 }

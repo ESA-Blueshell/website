@@ -3,6 +3,7 @@ package net.blueshell.api.event.persistence
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.event.persistence.EventBanner
+import net.blueshell.api.event.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -70,6 +71,23 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(file.id, found.fileId)
             assertEquals(file.id, found.file.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted banner`() {
+            val event = persistEvent()
+            val file = persist(fileWithUploader(fileFactory.createImage()))
+            val banner = persist(eventBannerFactory.createBasic().apply {
+                this.event = event
+                this.file = file
+            })
+
+            val dto = banner.asDto()
+
+            assertEquals(file.id, dto.file?.id)
         }
     }
 }

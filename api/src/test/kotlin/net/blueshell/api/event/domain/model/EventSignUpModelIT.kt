@@ -4,6 +4,7 @@ import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.event.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -167,6 +168,26 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
 
             assertEquals(2, found.answers.size)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted sign up`() {
+            var event = persistEvent()
+            event.signUpForm = persist(surveyFactory.createFull())
+            event = persist(event)
+
+            val user = persist(userFactory.createBasic())
+            val signUp = persist(eventSignUpFactory.createForEventAndUser(event, user))
+
+            val dto = signUp.asDto()
+
+            assertEquals(signUp.id, dto.id)
+            assertEquals(signUp.eventId, dto.eventId)
+            assertEquals(signUp.userId, dto.userId)
+            assertEquals(signUp.answers.size, dto.answers.size)
         }
     }
 }

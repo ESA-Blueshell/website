@@ -5,8 +5,7 @@ import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.file.web.dto.FileDTO
-import net.blueshell.api.file.web.mapper.FileMapper
-import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.file.persistence.asDto
 import net.blueshell.api.file.application.FileService
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpStatus
@@ -18,8 +17,7 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @Tag(name = "Files")
-class FileController(service: FileService, repository: FileRepository, private val fileMapper: FileMapper) :
-    BaseController<FileService, FileRepository>(service, repository) {
+class FileController(service: FileService) : BaseController<FileService>(service) {
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
@@ -42,6 +40,6 @@ class FileController(service: FileService, repository: FileRepository, private v
         ) file: @NotNull(message = "File is required") MultipartFile
     ): FileDTO {
         val stored = service.storeMultipart(file, FileType.EVENT_BANNER)
-        return fileMapper.toDTO(stored)
+        return stored.asDto()
     }
 }

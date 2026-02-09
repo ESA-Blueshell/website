@@ -5,8 +5,9 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.contribution.web.dto.ContributionPeriodDTO
-import net.blueshell.api.contribution.web.mapper.ContributionPeriodMapper
+import net.blueshell.api.contribution.persistence.asDto
 import net.blueshell.api.contribution.application.ContributionPeriodService
+import net.blueshell.api.contribution.web.dto.asEntity
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -15,29 +16,28 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "ContributionPeriods")
 class ContributionPeriodController @Autowired constructor(
-    service: ContributionPeriodService,
-    mapper: ContributionPeriodMapper
-) : BaseController<ContributionPeriodService, ContributionPeriodMapper>(service, mapper) {
+    service: ContributionPeriodService
+) : BaseController<ContributionPeriodService>(service) {
     @GetMapping("/contributionPeriods")
     @PermitAll
     fun findContributionPeriods(): MutableList<ContributionPeriodDTO> {
-        return mapper.toDTOs(service.findAll())
+        return service.findAll().map { it.asDto() }.toMutableList()
     }
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
     fun findCurrentContributionPeriod(): ContributionPeriodDTO {
         val contributionPeriod = service.findLatest()
-        return mapper.toDTO(contributionPeriod)
+        return contributionPeriod.asDto()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody dto: ContributionPeriodDTO): ContributionPeriodDTO {
-        var contributionPeriod = mapper.fromDTO(dto)
+        var contributionPeriod = dto.asEntity()
         contributionPeriod = service.create(contributionPeriod)
-        return mapper.toDTO(contributionPeriod)
+        return contributionPeriod.asDto()
     }
 
     @PreAuthorize("hasAuthority('BOARD') && #dto.id == #id")
@@ -47,9 +47,9 @@ class ContributionPeriodController @Autowired constructor(
         @Valid @RequestBody dto: ContributionPeriodDTO
     ): ContributionPeriodDTO {
         var contributionPeriod = service.findById(id)
-        mapper.fromDTO(dto, contributionPeriod)
+        dto.asEntity(contributionPeriod)
         contributionPeriod = service.update(contributionPeriod)
-        return mapper.toDTO(contributionPeriod)
+        return contributionPeriod.asDto()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

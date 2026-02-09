@@ -3,6 +3,7 @@ package net.blueshell.api.file.persistence
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
+import net.blueshell.api.file.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -79,6 +80,26 @@ class FileModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(uploaderTwo.id, found.uploaderId)
             assertEquals(uploaderTwo.id, found.uploader.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted file`() {
+            val file = fileWithUploader(fileFactory.createBasic())
+            val saved = persist(file)
+            entityManager.flush()
+            entityManager.clear()
+
+            val reloaded = entityManager.find(File::class.java, saved.id)
+            val dto = reloaded.asDto()
+
+            assertEquals(reloaded.id, dto.id)
+            assertEquals(reloaded.name, dto.name)
+            assertEquals(reloaded.mediaType, dto.mediaType)
+            assertEquals(reloaded.size, dto.size)
+            assertEquals(reloaded.type, dto.type)
         }
     }
 }

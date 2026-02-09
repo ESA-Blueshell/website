@@ -42,7 +42,8 @@ class EventBanner(
         set(value) {
             field = value
             id.eventId = value
-            if (_event?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _event?.id) {
                 _event = Event::class.asRef(value)
             }
         }
@@ -53,7 +54,8 @@ class EventBanner(
         set(value) {
             field = value
             id.fileId = value
-            if (_file?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _file?.id) {
                 _file = File::class.asRef(value)
             }
         }

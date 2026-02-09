@@ -34,15 +34,17 @@ class Sponsor : AuditedAutoIdEntity() {
         get() = requireNotNull(_picture) { "Picture is required" }
         set(value) {
             _picture = value
-            pictureId = value.id ?: pictureId
+            pictureId = _picture?.id ?: pictureId
         }
 
     @field:Column(name = "logo_id", nullable = false, updatable = false, insertable = false)
     var pictureId: Long = 0
-        get() = requireNotNull(_picture?.id) { "Picture ID is required" }
+        get() = _picture?.id ?: field
         set(value) {
             field = value
-            if (_picture?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _picture?.id) {
+                println("Setting picture reference for Sponsor(id=$id) to File(id=$value)")
                 _picture = File::class.asRef(value)
             }
         }

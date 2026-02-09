@@ -44,7 +44,8 @@ class EventPicture(
         set(value) {
             field = value
             id.eventId = value
-            if (_event?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _event?.id) {
                 _event = Event::class.asRef(value)
             }
         }
@@ -55,7 +56,8 @@ class EventPicture(
         set(value) {
             field = value
             id.pictureId = value
-            if (_picture?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _picture?.id) {
                 _picture = File::class.asRef(value)
             }
         }

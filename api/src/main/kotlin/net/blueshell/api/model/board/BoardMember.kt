@@ -49,20 +49,26 @@ class BoardMember(
         get() = requireNotNull(_board) { "Board is required" }
         set(value) {
             _board = value
-            value.id?.let { boardId = it }
+            boardId = _board?.id ?: boardId
         }
 
 
     @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
     var boardId: Long = 0
-        get() = requireNotNull(id.boardId) { "boardId is required" }
+        get() = id.boardId ?: field
         set(value) {
             field = value
             id.boardId = value
-            if (_board?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _board?.id) {
                 _board = Board::class.asRef(value)
             }
         }
+
+
+    @field:JoinColumn(name = "picture_id")
+    @field:OneToOne(fetch = FetchType.LAZY)
+    private var _picture: File? = null
 
     @field:MapsId("userId")
     @field:JoinColumn(name = "user_id", nullable = false)
@@ -72,33 +78,31 @@ class BoardMember(
         get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
-            value.id?.let { userId = it }
+            userId = _user?.id ?: userId
         }
-
-    @field:JoinColumn(name = "picture_id")
-    @field:OneToOne(fetch = FetchType.LAZY)
-    private var _picture: File? = null
 
     @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
     var userId: Long = 0
-        get() = requireNotNull(id.userId) { "userId is required" }
+        get() = id.userId ?: field
         set(value) {
             field = value
             id.userId = value
-            if (_user?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _user?.id) {
                 _user = User::class.asRef(value)
             }
         }
+
     var picture: File?
         get() = _picture
         set(value) {
             _picture = value
-            pictureId = value?.id
+            pictureId = _picture?.id ?: pictureId
         }
 
     @field:Column(name = "picture_id", updatable = false, insertable = false)
     var pictureId: Long? = null
-        get() = _picture?.id
+        get() = _picture?.id ?: field
         set(value) {
             field = value
             if (value == null) {

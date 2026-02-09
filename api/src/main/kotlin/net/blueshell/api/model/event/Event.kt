@@ -49,15 +49,16 @@ class Event : AuditedAutoIdEntity() {
         get() = requireNotNull(_committee) { "Committee is required" }
         set(value) {
             _committee = value
-            committeeId = value.id ?: committeeId
+            committeeId = _committee?.id ?: committeeId
         }
 
     @field:Column(name = "committee_id", nullable = false, updatable = false, insertable = false)
     var committeeId: Long = 0
-        get() = requireNotNull(_committee?.id) { "Committee ID is required" }
+        get() = _committee?.id ?: field
         set(value) {
             field = value
-            if (_committee?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _committee?.id) {
                 _committee = Committee::class.asRef(value)
             }
         }

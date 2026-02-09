@@ -12,8 +12,7 @@ import java.util.function.Consumer
  */
 @Component
 class FileFactory(
-    private val faker: Faker,
-    private val userFactory: UserFactory
+    private val faker: Faker
 ) {
 
     fun createBasic(): File {
@@ -23,8 +22,6 @@ class FileFactory(
         file.mediaType = faker.options().option("image/jpeg", "image/png", "application/pdf")
         file.size = faker.number().numberBetween(1024L, 10485760L)
         file.type = faker.options().option(FileType::class.java)
-
-        userFactory.createBasic()
 
         return file
     }

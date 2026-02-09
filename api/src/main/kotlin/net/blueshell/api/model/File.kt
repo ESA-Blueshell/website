@@ -42,15 +42,16 @@ class File : AuditedAutoIdEntity() {
         get() = requireNotNull(_uploader) { "Uploader is required" }
         set(value) {
             _uploader = value
-            uploaderId = value.id ?: uploaderId
+            uploaderId = _uploader?.id ?: uploaderId
         }
 
     @field:Column(name = "uploader_id", nullable = false, updatable = false, insertable = false)
     var uploaderId: Long = 0
-        get() = requireNotNull(_uploader?.id) { "Uploader ID is required" }
+        get() = _uploader?.id ?: field
         set(value) {
             field = value
-            if (_uploader?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _uploader?.id) {
                 _uploader = User::class.asRef(value)
             }
         }

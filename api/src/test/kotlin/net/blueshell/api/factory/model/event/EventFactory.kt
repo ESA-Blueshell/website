@@ -33,8 +33,6 @@ class EventFactory(
 
         val committee = committeeFactory.createBasic()
         event.committee = committee
-        event.committeeId = committee.id!!
-
         return event
     }
 

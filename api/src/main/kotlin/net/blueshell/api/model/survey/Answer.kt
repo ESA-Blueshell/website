@@ -26,7 +26,8 @@ class Answer : AuditedAutoIdEntity() {
         get() = requireNotNull(_question?.id) { "Question ID is required" }
         set(value) {
             field = value
-            if (_question?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _question?.id) {
                 _question = Question::class.asRef(value)
             }
         }

@@ -27,15 +27,16 @@ class EventFeedback : AuditedAutoIdEntity() {
         get() = requireNotNull(_event) { "Event is required" }
         set(value) {
             _event = value
-            eventId = value.id ?: eventId
+            eventId = _event?.id ?: eventId
         }
 
     @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
     var eventId: Long = 0
-        get() = requireNotNull(_event?.id) { "Event ID is required" }
+        get() = _event?.id ?: field
         set(value) {
             field = value
-            if (_event?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _event?.id) {
                 _event = Event::class.asRef(value)
             }
         }

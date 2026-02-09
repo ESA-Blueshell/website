@@ -48,16 +48,17 @@ class BoardDocument(
         get() = requireNotNull(_board) { "Board is required" }
         set(value) {
             _board = value
-            value.id?.let { boardId = it }
+            boardId = _board?.id ?: boardId
         }
 
     @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
     var boardId: Long = 0
-        get() = requireNotNull(id.boardId) { "Board ID is required" }
+        get() = id.boardId ?: field
         set(value) {
             field = value
             id.boardId = value
-            if (_board?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _board?.id) {
                 _board = Board::class.asRef(value)
             }
         }
@@ -70,16 +71,17 @@ class BoardDocument(
         get() = requireNotNull(_file) { "File is required" }
         set(value) {
             _file = value
-            value.id?.let { fileId = it }
+            fileId = _file?.id ?: fileId
         }
 
     @field:Column(name = "file_id", nullable = false, updatable = false, insertable = false)
     var fileId: Long = 0
-        get() = requireNotNull(id.fileId) { "File ID is required" }
+        get() = id.fileId ?: field
         set(value) {
             field = value
             id.fileId = value
-            if (_file?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _file?.id) {
                 _file = File::class.asRef(value)
             }
         }

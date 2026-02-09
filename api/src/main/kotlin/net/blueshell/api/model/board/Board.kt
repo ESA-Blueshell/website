@@ -48,7 +48,7 @@ class Board : AuditedAutoIdEntity() {
             field = value
             if (value == null) {
                 _picture = null
-            } else if (_picture?.id != value) {
+            } else if (value != _picture?.id) {
                 _picture = File::class.asRef(value)
             }
         }

@@ -40,7 +40,8 @@ class Question : DirtyAwareModel() {
         get() = requireNotNull(_survey?.id) { "Survey ID is required" }
         set(value) {
             field = value
-            if (_survey?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _survey?.id) {
                 _survey = Survey::class.asRef(value)
             }
         }

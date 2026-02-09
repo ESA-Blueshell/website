@@ -31,6 +31,7 @@ import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
 import net.blueshell.api.model.File
+import net.blueshell.api.model.User
 import net.blueshell.api.model.committee.Committee
 import net.blueshell.api.model.event.Event
 import net.blueshell.api.model.survey.Answer
@@ -158,8 +159,7 @@ abstract class ModelPersistenceTestSupport {
     protected fun timestamp(): Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
 
     protected fun fileWithUploader(file: File): File {
-        val uploader = persist(userFactory.createBasic())
-        entityManager.flush()
+        val uploader = persistAndReload(userFactory.createBasic(), User::class.java) { it.id }
         file.uploader = uploader
         return file
     }

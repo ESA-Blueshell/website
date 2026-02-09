@@ -136,7 +136,7 @@ class User(
             field = value
             if (value == null) {
                 _address = null
-            } else if (_address?.id != value) {
+            } else if (value != _address?.id) {
                 _address = Address::class.asRef(value)
             }
         }
@@ -166,7 +166,7 @@ class User(
             field = value
             if (value == null) {
                 _profilePicture = null
-            } else if (_profilePicture?.id != value) {
+            } else if (value != _profilePicture?.id) {
                 _profilePicture = File::class.asRef(value)
             }
         }

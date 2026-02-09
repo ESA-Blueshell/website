@@ -1,6 +1,7 @@
 package net.blueshell.api.model.event
 
 import jakarta.persistence.*
+import lombok.`val`
 import net.blueshell.api.common.jpa.JpaListener
 import net.blueshell.api.model.base.AuditedSoftDeleteEntity
 import net.blueshell.api.model.base.Identifiable
@@ -43,28 +44,6 @@ class EventSignUpAnswer(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventSignUpAnswer.Id> {
 
-    @field:Column(name = "event_sign_up_id", nullable = false, updatable = false, insertable = false)
-    var eventSignUpId: Long = 0
-        get() = requireNotNull(id.eventSignUpId) { "Event sign-up id is required" }
-        set(value) {
-            field = value
-            id.eventSignUpId = value
-            if (_eventSignUp?.id != value) {
-                _eventSignUp = EventSignUp::class.asRef(value)
-            }
-        }
-
-    @field:Column(name = "answer_id", nullable = false, updatable = false, insertable = false)
-    var answerId: Long = 0
-        get() = requireNotNull(id.answerId) { "Answer id is required" }
-        set(value) {
-            field = value
-            id.answerId = value
-            if (_answer?.id != value) {
-                _answer = Answer::class.asRef(value)
-            }
-        }
-
     @field:MapsId("eventSignUpId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "event_sign_up_id", nullable = false)
@@ -73,7 +52,19 @@ class EventSignUpAnswer(
         get() = requireNotNull(_eventSignUp) { "Event sign-up is required" }
         set(value) {
             _eventSignUp = value
-            value.id?.let { eventSignUpId = it }
+            eventSignUpId = _eventSignUp?.id ?: eventSignUpId
+        }
+
+    @field:Column(name = "event_sign_up_id", nullable = false, updatable = false, insertable = false)
+    var eventSignUpId: Long = 0
+        get() = id.eventSignUpId ?: field
+        set(value) {
+            field = value
+            id.eventSignUpId = value
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _eventSignUp?.id) {
+                _eventSignUp = EventSignUp::class.asRef(value)
+            }
         }
 
     @field:MapsId("answerId")
@@ -84,7 +75,19 @@ class EventSignUpAnswer(
         get() = requireNotNull(_answer) { "Answer is required" }
         set(value) {
             _answer = value
-            value.id?.let { answerId = it }
+            answerId = _answer?.id ?: answerId
+        }
+
+    @field:Column(name = "answer_id", nullable = false, updatable = false, insertable = false)
+    var answerId: Long = 0
+        get() = id.answerId ?: field
+        set(value) {
+            field = value
+            id.answerId = value
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _answer?.id) {
+                _answer = Answer::class.asRef(value)
+            }
         }
 
     override fun equals(other: Any?): Boolean {
@@ -97,11 +100,9 @@ class EventSignUpAnswer(
 
     override fun hashCode(): Int = id.hashCode()
 
-
     @Embeddable
     data class Id(
         var eventSignUpId: Long? = null,
         var answerId: Long? = null
     ) : java.io.Serializable
-
 }

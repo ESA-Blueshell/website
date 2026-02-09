@@ -46,7 +46,8 @@ class Contribution(
         set(value) {
             field = value
             id.userId = value
-            if (_user?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _user?.id) {
                 _user = User::class.asRef(value)
             }
         }
@@ -55,9 +56,10 @@ class Contribution(
     var contributionPeriodId: Long = 0
         get() = requireNotNull(id.contributionPeriodId) { "contributionPeriodId is required" }
         set(value) {
-            field = 0
+            field = value
             id.contributionPeriodId = value
-            if (_contributionPeriod?.id != value) {
+            // Only override the reference, if the ref exists and is different from current
+            if (value != 0L && value != _contributionPeriod?.id) {
                 _contributionPeriod = ContributionPeriod::class.asRef(value)
             }
         }

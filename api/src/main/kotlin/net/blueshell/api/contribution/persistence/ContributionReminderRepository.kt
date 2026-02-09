@@ -1,6 +1,6 @@
 package net.blueshell.api.contribution.persistence
 
-import net.blueshell.api.contribution.domain.model.ContributionReminder
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 

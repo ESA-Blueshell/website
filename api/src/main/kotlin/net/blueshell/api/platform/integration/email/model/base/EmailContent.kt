@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.email.model.base
 
-import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.user.persistence.User
 
 data class EmailContent(
     val recipient: User,

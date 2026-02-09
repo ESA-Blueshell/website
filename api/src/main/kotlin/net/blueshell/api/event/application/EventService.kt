@@ -1,7 +1,7 @@
 package net.blueshell.api.event.application
 
-import net.blueshell.api.event.domain.model.Event
-import net.blueshell.api.event.domain.model.filter.EventFilter
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.filter.EventFilter
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.spec.EventSpecifications
 import net.blueshell.api.shared.service.BaseModelService

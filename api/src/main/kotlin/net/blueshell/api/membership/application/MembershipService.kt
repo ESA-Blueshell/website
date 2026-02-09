@@ -1,7 +1,7 @@
 package net.blueshell.api.membership.application
 
-import net.blueshell.api.membership.domain.model.Membership
-import net.blueshell.api.membership.domain.model.filter.MembershipFilter
+import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.membership.persistence.MemberRepository
 import net.blueshell.api.membership.persistence.spec.MembershipSpecifications
 import net.blueshell.api.shared.service.BaseModelService

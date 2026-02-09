@@ -4,8 +4,8 @@ import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
 import net.blueshell.api.shared.event.jpa.PostRemoveEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
-import net.blueshell.api.survey.domain.model.Answer
-import net.blueshell.api.survey.domain.model.Question
+import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.event.application.EventSignUpService
 import net.blueshell.api.survey.application.AnswerService
 import org.slf4j.LoggerFactory

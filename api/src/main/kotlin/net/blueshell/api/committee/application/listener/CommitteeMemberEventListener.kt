@@ -4,7 +4,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
 import net.blueshell.api.shared.event.jpa.PostRemoveEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
-import net.blueshell.api.committee.domain.model.CommitteeMember
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.user.application.UserService
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
 import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.telemetry.domain.model.Telemetry
+import net.blueshell.api.telemetry.persistence.Telemetry
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

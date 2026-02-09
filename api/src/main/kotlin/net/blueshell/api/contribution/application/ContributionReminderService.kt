@@ -1,7 +1,7 @@
 package net.blueshell.api.contribution.application
 
 import net.blueshell.api.platform.integration.event.job.ContributionReminderEmailEvent
-import net.blueshell.api.contribution.domain.model.ContributionReminder
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired

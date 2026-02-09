@@ -1,7 +1,7 @@
-package net.blueshell.api.user.domain.model
+package net.blueshell.api.user.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.user.domain.model.Address
+import net.blueshell.api.user.persistence.Address
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

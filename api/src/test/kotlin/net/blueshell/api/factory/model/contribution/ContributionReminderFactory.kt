@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model.contribution
 
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.contribution.domain.model.ContributionReminder
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

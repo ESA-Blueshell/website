@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.user.domain.model.User
-import net.blueshell.api.contribution.domain.model.ContributionPeriod
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.platform.integration.contact.ContactService
 import net.blueshell.api.user.application.UserService
 import org.slf4j.LoggerFactory

@@ -1,6 +1,6 @@
 package net.blueshell.api.contribution.persistence
 
-import net.blueshell.api.contribution.domain.model.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository

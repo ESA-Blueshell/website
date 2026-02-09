@@ -1,7 +1,7 @@
-package net.blueshell.api.board.domain.model
+package net.blueshell.api.board.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.board.domain.model.Board
+import net.blueshell.api.board.persistence.Board
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -51,7 +51,7 @@ class BoardModelIT : ModelPersistenceTestSupport() {
             board.startDate = LocalDate.of(2023, 1, 1)
             board.endDate = LocalDate.of(2023, 12, 31)
             val picture = persist(fileWithUploader(fileFactory.createImage()))
-            board.picture = entityManager.getReference(net.blueshell.api.file.domain.model.File::class.java, picture.id)
+            board.picture = entityManager.getReference(net.blueshell.api.file.persistence.File::class.java, picture.id)
 
             val found = persistAndReload(board, Board::class.java) { it.id }
 

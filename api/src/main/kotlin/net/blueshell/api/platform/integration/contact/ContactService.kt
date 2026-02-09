@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.contact
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.domain.model.User
-import net.blueshell.api.contribution.domain.model.ContributionPeriod
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.application.UserService
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.*

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto
 
 import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.telemetry.api.dto.TelemetryDTO
+import net.blueshell.api.telemetry.web.dto.TelemetryDTO
 import org.springframework.stereotype.Component
 
 /**

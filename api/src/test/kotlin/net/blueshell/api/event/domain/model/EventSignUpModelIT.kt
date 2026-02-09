@@ -1,9 +1,9 @@
-package net.blueshell.api.event.domain.model
+package net.blueshell.api.event.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.event.domain.model.EventSignUp
-import net.blueshell.api.event.domain.model.Guest
-import net.blueshell.api.survey.domain.model.Answer
+import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.survey.persistence.Answer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

@@ -2,9 +2,9 @@ package net.blueshell.api.factory.model.survey
 
 import com.github.javafaker.Faker
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.domain.model.Answer
-import net.blueshell.api.survey.domain.model.Question
-import net.blueshell.api.survey.domain.model.Survey
+import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.survey.persistence.Survey
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

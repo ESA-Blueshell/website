@@ -1,13 +1,13 @@
 package net.blueshell.api.auth.application
 
-import net.blueshell.api.auth.domain.model.RecoveryToken
+import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.platform.integration.event.job.RecoveryEmailEvent
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
 import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.application.UserService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus

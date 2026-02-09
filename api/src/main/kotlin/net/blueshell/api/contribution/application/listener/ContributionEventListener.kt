@@ -5,7 +5,7 @@ import net.blueshell.api.platform.integration.event.job.RemoveContactFromListEve
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
 import net.blueshell.api.shared.event.jpa.PostRemoveEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
-import net.blueshell.api.contribution.domain.model.Contribution
+import net.blueshell.api.contribution.persistence.Contribution
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

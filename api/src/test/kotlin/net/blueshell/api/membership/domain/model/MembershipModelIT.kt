@@ -1,7 +1,7 @@
-package net.blueshell.api.membership.domain.model
+package net.blueshell.api.membership.persistence
 
 import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.membership.domain.model.Membership
+import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested

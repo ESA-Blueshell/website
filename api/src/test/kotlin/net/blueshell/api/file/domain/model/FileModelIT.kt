@@ -1,7 +1,7 @@
-package net.blueshell.api.file.domain.model
+package net.blueshell.api.file.persistence
 
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.file.domain.model.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested

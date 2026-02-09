@@ -1,8 +1,8 @@
-package net.blueshell.api.survey.domain.model
+package net.blueshell.api.survey.persistence
 
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.survey.domain.model.Question
+import net.blueshell.api.survey.persistence.Question
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

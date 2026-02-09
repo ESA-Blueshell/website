@@ -6,7 +6,7 @@ import net.blueshell.api.platform.integration.event.job.SyncEventToCalendarEvent
 import net.blueshell.api.shared.event.jpa.PostRemoveEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
 import net.blueshell.api.shared.event.jpa.PrePersistEvent
-import net.blueshell.api.event.domain.model.Event
+import net.blueshell.api.event.persistence.Event
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

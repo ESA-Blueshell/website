@@ -1,6 +1,6 @@
 package net.blueshell.api.event.persistence
 
-import net.blueshell.api.event.domain.model.Event
+import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

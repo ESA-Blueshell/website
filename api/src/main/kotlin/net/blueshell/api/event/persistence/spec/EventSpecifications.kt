@@ -4,10 +4,10 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.domain.model.User
-import net.blueshell.api.committee.domain.model.CommitteeMember
-import net.blueshell.api.event.domain.model.Event
-import net.blueshell.api.event.domain.model.filter.EventFilter
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.filter.EventFilter
 import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime

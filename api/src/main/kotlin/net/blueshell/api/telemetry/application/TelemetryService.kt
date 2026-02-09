@@ -1,7 +1,7 @@
 package net.blueshell.api.telemetry.application
 
 import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.telemetry.domain.model.Telemetry
+import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.telemetry.persistence.TelemetryRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.contribution
 
-import net.blueshell.api.contribution.api.dto.ContributionPeriodDTO
+import net.blueshell.api.contribution.web.dto.ContributionPeriodDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

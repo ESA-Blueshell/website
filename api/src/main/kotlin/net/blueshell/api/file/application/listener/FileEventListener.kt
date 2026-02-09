@@ -1,7 +1,7 @@
 package net.blueshell.api.file.application.listener
 
 import net.blueshell.api.shared.event.jpa.PostRemoveEvent
-import net.blueshell.api.file.domain.model.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.application.FileService
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

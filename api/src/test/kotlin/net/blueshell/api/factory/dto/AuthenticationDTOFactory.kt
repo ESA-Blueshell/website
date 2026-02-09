@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.auth.api.dto.response.AuthenticationDTO
+import net.blueshell.api.auth.web.dto.response.AuthenticationDTO
 import org.springframework.stereotype.Component
 import java.util.Base64
 

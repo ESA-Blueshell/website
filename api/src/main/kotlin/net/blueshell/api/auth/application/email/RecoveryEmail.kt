@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.application.email
 
 import net.blueshell.api.platform.integration.email.model.base.BaseEmail
-import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.user.persistence.User
 
 abstract class RecoveryEmail(
     recipient: User,

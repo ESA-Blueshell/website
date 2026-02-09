@@ -1,6 +1,6 @@
 package net.blueshell.api.committee.persistence
 
-import net.blueshell.api.committee.domain.model.Committee
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param

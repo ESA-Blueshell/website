@@ -1,7 +1,7 @@
-package net.blueshell.api.event.domain.model
+package net.blueshell.api.event.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.event.domain.model.Event
+import net.blueshell.api.event.persistence.Event
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

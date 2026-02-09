@@ -3,7 +3,7 @@ package net.blueshell.api.contribution.application.listener
 import net.blueshell.api.platform.integration.event.job.CreateContributionPeriodListEvent
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
-import net.blueshell.api.contribution.domain.model.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

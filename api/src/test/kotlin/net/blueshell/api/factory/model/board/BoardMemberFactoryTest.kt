@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.board
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.board.domain.model.BoardMember
+import net.blueshell.api.board.persistence.BoardMember
 import org.junit.jupiter.api.Test
 
 class BoardMemberFactoryTest : ModelFactoryTestSupport() {

@@ -1,8 +1,8 @@
-package net.blueshell.api.board.domain.model
+package net.blueshell.api.board.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.file.domain.model.File
-import net.blueshell.api.board.domain.model.BoardMember
+import net.blueshell.api.file.persistence.File
+import net.blueshell.api.board.persistence.BoardMember
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

@@ -1,7 +1,7 @@
 package net.blueshell.api.event.application
 
-import net.blueshell.api.event.domain.model.EventSignUp
-import net.blueshell.api.event.domain.model.filter.EventSignUpFilter
+import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.event.persistence.spec.EventSignUpSpecifications
 import net.blueshell.api.shared.service.BaseModelService

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.membership.domain.model.Membership
+import net.blueshell.api.membership.persistence.Membership
 import org.junit.jupiter.api.Test
 
 class MembershipFactoryTest : ModelFactoryTestSupport() {

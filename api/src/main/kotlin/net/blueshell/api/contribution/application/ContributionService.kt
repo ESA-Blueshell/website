@@ -1,6 +1,6 @@
 package net.blueshell.api.contribution.application
 
-import net.blueshell.api.contribution.domain.model.Contribution
+import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired

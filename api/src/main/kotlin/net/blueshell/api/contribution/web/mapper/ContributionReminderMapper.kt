@@ -1,0 +1,27 @@
+package net.blueshell.api.contribution.web.mapper
+
+import net.blueshell.api.contribution.web.dto.ContributionReminderDTO
+import net.blueshell.api.shared.mapper.BaseMapper
+import net.blueshell.api.contribution.persistence.ContributionReminder
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.MappingTarget
+
+@Mapper(componentModel = "spring")
+abstract class ContributionReminderMapper : BaseMapper<ContributionReminder, ContributionReminderDTO>() {
+    @Mapping(target = "userId")
+    @Mapping(target = "contributionPeriodId")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
+    abstract fun fromDTO(
+        dto: ContributionReminderDTO,
+        @MappingTarget reminder: ContributionReminder
+    ): ContributionReminder
+
+    @Mapping(target = "userId")
+    @Mapping(target = "contributionPeriodId")
+    @Mapping(target = "version")
+    @BeanMapping(ignoreByDefault = true)
+    abstract override fun toDTO(reminder: ContributionReminder): ContributionReminderDTO
+}

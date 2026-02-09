@@ -1,8 +1,8 @@
 package net.blueshell.api.user.application
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.domain.model.User
-import net.blueshell.api.user.domain.model.filter.UserFilter
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.persistence.UserRepository
 import net.blueshell.api.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.service.BaseModelService

@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.event
 
-import net.blueshell.api.event.api.dto.EventBannerDTO
+import net.blueshell.api.event.web.dto.EventBannerDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import net.blueshell.api.factory.dto.FileDTOFactory
 import org.springframework.stereotype.Component

@@ -4,7 +4,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.platform.integration.event.job.SyncContactEvent
 import net.blueshell.api.shared.event.jpa.PostPersistEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
-import net.blueshell.api.user.domain.model.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.committee.application.CommitteeMemberService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component

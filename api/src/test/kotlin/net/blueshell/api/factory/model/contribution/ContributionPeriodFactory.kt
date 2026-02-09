@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.contribution
 
 import com.github.javafaker.Faker
-import net.blueshell.api.contribution.domain.model.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicLong

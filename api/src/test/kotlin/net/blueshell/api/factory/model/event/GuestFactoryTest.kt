@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.event
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.event.domain.model.Guest
+import net.blueshell.api.event.persistence.Guest
 import org.junit.jupiter.api.Test
 import kotlin.jvm.java
 

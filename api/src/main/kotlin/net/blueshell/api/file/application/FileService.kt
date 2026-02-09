@@ -3,7 +3,7 @@ package net.blueshell.api.file.application
 import jakarta.annotation.PostConstruct
 import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.file.domain.model.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.slf4j.LoggerFactory

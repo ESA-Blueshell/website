@@ -4,7 +4,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.jpa.PostRemoveEvent
 import net.blueshell.api.shared.event.jpa.PostUpdateEvent
 import net.blueshell.api.shared.event.jpa.PrePersistEvent
-import net.blueshell.api.membership.domain.model.Membership
+import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.user.application.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component

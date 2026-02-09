@@ -2,7 +2,7 @@ package net.blueshell.api.event.application.listener
 
 import net.blueshell.api.platform.integration.event.job.EventSignupEmailEvent
 import net.blueshell.api.shared.event.jpa.PrePersistEvent
-import net.blueshell.api.event.domain.model.EventSignUp
+import net.blueshell.api.event.persistence.EventSignUp
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

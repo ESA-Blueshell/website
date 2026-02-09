@@ -5,10 +5,10 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.membership.web.dto.MembershipDTO
 import net.blueshell.api.membership.persistence.Membership
-import net.blueshell.api.membership.persistence.asDto
+import net.blueshell.api.membership.web.mapping.asDto
 import net.blueshell.api.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.membership.application.MembershipService
-import net.blueshell.api.membership.web.dto.asEntity
+import net.blueshell.api.membership.web.mapping.asEntity
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException

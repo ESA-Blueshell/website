@@ -1,4 +1,4 @@
-package net.blueshell.api.survey.web.dto
+package net.blueshell.api.survey.web.mapping
 
 import io.mcarle.konvert.api.Konvert
 import io.mcarle.konvert.api.Konverter
@@ -6,10 +6,12 @@ import io.mcarle.konvert.api.Mapping
 import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
+import net.blueshell.api.survey.web.dto.AnswerDTO
+import net.blueshell.api.survey.web.dto.QuestionDTO
+import net.blueshell.api.survey.web.dto.SurveyDTO
 
 @Konverter
 interface SurveyKonverter {
-    @Konvert(mappings = [Mapping(target = "questions", ignore = true)])
     fun toDTO(survey: Survey): SurveyDTO
 
     @Konvert(
@@ -41,19 +43,16 @@ private val answerKonverter = Konverter.get<AnswerKonverter>()
 
 fun SurveyDTO.asEntity(): Survey {
     val survey = surveyKonverter.fromDTO(this)
-    val mappedQuestions = questions.map { it.asEntity() }
-    survey.questions.addAll(mappedQuestions)
-    version?.let { survey.version = it }
+    survey.questions.addAll(questions.map { it.asEntity() })
     return survey
 }
 
 fun QuestionDTO.asEntity(): Question = questionKonverter.fromDTO(this)
 
-fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
-    val mapped = answerKonverter.fromDTO(this)
-    answer.questionId = mapped.questionId
-    answer.optionSelections = mapped.optionSelections?.toMutableList()
-    answer.textResponse = mapped.textResponse
-    answer.version = version
-    return answer
-}
+fun AnswerDTO.asEntity(): Answer = answerKonverter.fromDTO(this)
+
+fun Survey.asDto(): SurveyDTO = surveyKonverter.toDTO(this)
+
+fun Question.asDto(): QuestionDTO = questionKonverter.toDTO(this)
+
+fun Answer.asDto(): AnswerDTO = answerKonverter.toDTO(this)

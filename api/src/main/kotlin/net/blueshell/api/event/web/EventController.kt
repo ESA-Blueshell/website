@@ -6,10 +6,10 @@ import jakarta.validation.Valid
 import jakarta.ws.rs.QueryParam
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.event.web.dto.EventDTO
-import net.blueshell.api.event.persistence.asDto
+import net.blueshell.api.event.web.mapping.asDto
 import net.blueshell.api.event.persistence.filter.EventFilter
 import net.blueshell.api.event.application.EventService
-import net.blueshell.api.event.web.dto.asEntity
+import net.blueshell.api.event.web.mapping.asEntity
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page

@@ -6,7 +6,7 @@ import jakarta.ws.rs.PathParam
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.telemetry.web.dto.TelemetryDTO
-import net.blueshell.api.telemetry.persistence.asDto
+import net.blueshell.api.telemetry.web.mapping.asDto
 import net.blueshell.api.telemetry.application.TelemetryService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize

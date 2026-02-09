@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.sponsor.web.dto.SponsorDTO
-import net.blueshell.api.sponsor.persistence.asDto
-import net.blueshell.api.sponsor.web.dto.asEntity
+import net.blueshell.api.sponsor.web.mapping.asDto
+import net.blueshell.api.sponsor.web.mapping.asEntity
 import net.blueshell.api.sponsor.application.SponsorService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -34,7 +34,7 @@ class SponsorController(service: SponsorService) : BaseController<SponsorService
     @PutMapping(value = ["/sponsors/{id}"])
     fun updateSponsor(@PathVariable id: Long, @RequestBody dto: SponsorDTO): SponsorDTO {
         var sponsor = service.findById(id)
-        dto.asEntity(sponsor)
+        sponsor = dto.asEntity(sponsor)
         sponsor = service.update(sponsor)
         return sponsor.asDto()
     }

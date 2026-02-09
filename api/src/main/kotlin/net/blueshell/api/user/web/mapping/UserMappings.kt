@@ -1,4 +1,4 @@
-package net.blueshell.api.user.web.dto
+package net.blueshell.api.user.web.mapping
 
 import io.mcarle.konvert.api.Konvert
 import io.mcarle.konvert.api.Konverter
@@ -6,6 +6,8 @@ import io.mcarle.konvert.api.Mapping
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.util.MappingUtil
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.web.dto.AdvancedUserDTO
+import net.blueshell.api.user.web.dto.SimpleUserDTO
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -132,3 +134,7 @@ private fun hasAuthority(role: Role): Boolean {
         a?.authority == role.toString()
     }
 }
+
+fun User.asAdvancedDto(): AdvancedUserDTO = advancedUserKonverter.toDTO(this)
+
+fun User.asSimpleDto(): SimpleUserDTO = simpleUserKonverter.toDTO(this)

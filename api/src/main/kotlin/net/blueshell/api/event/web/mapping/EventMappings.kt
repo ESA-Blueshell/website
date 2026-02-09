@@ -1,4 +1,4 @@
-package net.blueshell.api.event.web.dto
+package net.blueshell.api.event.web.mapping
 
 import io.mcarle.konvert.api.Konvert
 import io.mcarle.konvert.api.Konverter
@@ -11,20 +11,18 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.file.web.dto.asEntity
-import net.blueshell.api.survey.web.dto.asEntity
-import net.blueshell.api.user.persistence.asSimpleDto
+import net.blueshell.api.event.web.dto.EventBannerDTO
+import net.blueshell.api.event.web.dto.EventDTO
+import net.blueshell.api.event.web.dto.EventSignUpDTO
+import net.blueshell.api.event.web.dto.GuestDTO
+import net.blueshell.api.file.web.mapping.asEntity
+import net.blueshell.api.survey.web.mapping.asEntity
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.beans.BeanUtils
 
 @Konverter
 interface EventKonverter {
-    @Konvert(
-        mappings = [
-            Mapping(target = "banner", ignore = true),
-            Mapping(target = "signUpForm", ignore = true),
-        ]
-    )
     fun toDTO(event: Event): EventDTO
 
     @Konvert(
@@ -38,7 +36,6 @@ interface EventKonverter {
 
 @Konverter
 interface EventBannerKonverter {
-    @Konvert(mappings = [Mapping(target = "file", ignore = true)])
     fun toDTO(banner: EventBanner): EventBannerDTO
 
     @Konvert(mappings = [Mapping(target = "file", ignore = true)])
@@ -54,20 +51,12 @@ interface GuestKonverter {
 
 @Konverter
 interface EventSignUpKonverter {
-    @Konvert(
-        mappings = [
-            Mapping(target = "answers", ignore = true),
-            Mapping(target = "guest", ignore = true),
-            Mapping(target = "user", ignore = true),
-        ]
-    )
     fun toDTO(signUp: EventSignUp): EventSignUpDTO
 
     @Konvert(
         mappings = [
             Mapping(target = "answers", ignore = true),
             Mapping(target = "guest", ignore = true),
-            Mapping(target = "user", ignore = true),
         ]
     )
     fun fromDTO(dto: EventSignUpDTO): EventSignUp
@@ -84,39 +73,42 @@ private val guestKonverter = Konverter.get<GuestKonverter>()
 private val eventSignUpKonverter = Konverter.get<EventSignUpKonverter>()
 private val eventSocialKonverter = Konverter.get<EventSocialKonverter>()
 
-fun EventDTO.asEntity(event: Event = Event()): Event {
+fun EventDTO.asEntity(existing: Event = Event()): Event {
+    requireNotNull(startTime) { "startTime is required" }
+    requireNotNull(endTime) { "endTime is required" }
     val mapped = eventKonverter.fromDTO(this)
-    event.committeeId = mapped.committeeId
-    event.title = mapped.title
-    event.description = mapped.description
-    event.location = mapped.location
-    event.startTime = requireNotNull(startTime)
-    event.endTime = requireNotNull(endTime)
-    event.memberPrice = mapped.memberPrice
-    event.publicPrice = mapped.publicPrice
-    event.membersOnly = mapped.membersOnly
-    event.banner = banner?.asEntity()
-    event.signUpForm = signUpForm?.asEntity()
-    event.signUp = mapped.signUp
-    signUpCount?.let { event.signUpCount = it }
-    version?.let { event.version = it }
-    event.approved = if (hasAuthority(Role.BOARD)) approved else false
-    return event
+    BeanUtils.copyProperties(
+        mapped,
+        existing,
+        "approved",
+        "banner",
+        "googleId",
+        "pictures",
+        "signUpCount",
+        "signUpForm"
+    )
+    existing.banner = banner?.asEntity()
+    existing.signUpForm = signUpForm?.asEntity()
+    signUpCount?.let { existing.signUpCount = it }
+    existing.version = mapped.version
+    existing.approved = if (hasAuthority(Role.BOARD)) approved else false
+    return existing
 }
 
 fun EventBannerDTO.asEntity(banner: EventBanner = EventBanner()): EventBanner {
+    val mapped = eventBannerKonverter.fromDTO(this)
     banner.file = requireNotNull(file).asEntity()
-    version?.let { banner.version = it }
+    banner.version = mapped.version
     return banner
 }
 
 fun GuestDTO.asEntity(guest: Guest = Guest()): Guest {
     val mapped = guestKonverter.fromDTO(this)
-    mapped.name?.let { guest.name = it }
-    mapped.discord?.let { guest.discord = it }
-    mapped.email?.let { guest.email = it }
-    mapped.phoneNumber?.let { guest.phoneNumber = it }
-    version?.let { guest.version = it }
+    guest.name = mapped.name
+    guest.discord = mapped.discord
+    guest.email = mapped.email
+    guest.phoneNumber = mapped.phoneNumber
+    guest.version = mapped.version
 
     if (guest.accessToken == null) {
         guest.accessToken = randomCapitalString(30)
@@ -129,6 +121,7 @@ fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
     val mapped = eventSignUpKonverter.fromDTO(this)
     mapped.eventId?.let { signUp.eventId = it }
     mapped.userId?.let { signUp.userId = it }
+    mapped.user?.let { signUp.user = it }
     signUp.guest = guest?.asEntity()
 
     val mappedAnswers = answers.map { it.asEntity() }
@@ -153,3 +146,11 @@ private fun hasAuthority(role: Role): Boolean {
         a?.authority == role.toString()
     }
 }
+
+fun Event.asDto(): EventDTO = eventKonverter.toDTO(this)
+
+fun EventBanner.asDto(): EventBannerDTO = eventBannerKonverter.toDTO(this)
+
+fun Guest.asDto(): GuestDTO = guestKonverter.toDTO(this)
+
+fun EventSignUp.asDto(): EventSignUpDTO = eventSignUpKonverter.toDTO(this)

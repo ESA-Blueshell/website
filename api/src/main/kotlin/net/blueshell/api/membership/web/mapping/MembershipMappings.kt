@@ -1,8 +1,9 @@
-package net.blueshell.api.membership.web.dto
+package net.blueshell.api.membership.web.mapping
 
 import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.membership.web.dto.MembershipDTO
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 
@@ -36,3 +37,5 @@ private fun hasAuthority(role: Role): Boolean {
         a?.authority == role.toString()
     }
 }
+
+fun Membership.asDto(): MembershipDTO = membershipKonverter.toDTO(this)

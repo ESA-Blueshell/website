@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.blog.web.dto.BlogDTO
-import net.blueshell.api.blog.web.dto.asEntity
-import net.blueshell.api.blog.web.dto.asDto
+import net.blueshell.api.blog.web.mapping.asEntity
+import net.blueshell.api.blog.web.mapping.asDto
 import net.blueshell.api.blog.application.BlogService
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Value

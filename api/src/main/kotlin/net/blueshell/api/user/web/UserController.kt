@@ -9,11 +9,11 @@ import net.blueshell.api.shared.web.AdvancedController
 import net.blueshell.api.user.web.dto.AdvancedUserDTO
 import net.blueshell.api.user.web.dto.SimpleUserDTO
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.asAdvancedDto
+import net.blueshell.api.user.web.mapping.asAdvancedDto
 import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.application.UserService
-import net.blueshell.api.user.persistence.asSimpleDto
-import net.blueshell.api.user.web.dto.asEntity
+import net.blueshell.api.user.web.mapping.asEntity
+import net.blueshell.api.user.web.mapping.asSimpleDto
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

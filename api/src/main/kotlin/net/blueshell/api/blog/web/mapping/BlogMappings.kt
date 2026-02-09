@@ -1,8 +1,10 @@
-package net.blueshell.api.blog.web.dto
+package net.blueshell.api.blog.web.mapping
 
 import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.blog.persistence.Blog
+import net.blueshell.api.blog.web.dto.BlogDTO
+import net.blueshell.api.blog.web.dto.SocialDTO
 import org.jsoup.Jsoup
 import java.time.Instant
 
@@ -43,7 +45,7 @@ fun BlogDTO.asEntity(blog: Blog = Blog()): Blog {
     val mapped = blogKonverter.fromDTO(this)
     blog.title = mapped.title
     blog.publishedAt = mapped.publishedAt ?: Instant.now()
-    version?.let { blog.version = it }
+    blog.version = mapped.version
     sanitizeHtml(this, blog)
     return blog
 }

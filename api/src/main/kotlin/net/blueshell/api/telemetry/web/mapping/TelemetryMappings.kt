@@ -1,7 +1,8 @@
-package net.blueshell.api.telemetry.web.dto
+package net.blueshell.api.telemetry.web.mapping
 
 import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.telemetry.persistence.Telemetry
+import net.blueshell.api.telemetry.web.dto.TelemetryDTO
 
 @Konverter
 interface TelemetryKonverter {
@@ -12,10 +13,10 @@ interface TelemetryKonverter {
 
 private val telemetryKonverter = Konverter.get<TelemetryKonverter>()
 
-fun TelemetryDTO.asEntity(telemetry: Telemetry = Telemetry()): Telemetry {
+fun TelemetryDTO.asEntity(existing: Telemetry? = null): Telemetry {
     val mapped = telemetryKonverter.fromDTO(this)
-    telemetry.url = mapped.url
-    telemetry.platform = mapped.platform
-    version?.let { telemetry.version = it }
-    return telemetry
+    existing?.id?.let { mapped.assignIdForRef(it) }
+    return mapped
 }
+
+fun Telemetry.asDto(): TelemetryDTO = telemetryKonverter.toDTO(this)

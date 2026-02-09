@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.user.web.dto.AddressDTO
-import net.blueshell.api.user.persistence.asDto
-import net.blueshell.api.user.web.dto.asEntity
+import net.blueshell.api.user.web.mapping.asDto
+import net.blueshell.api.user.web.mapping.asEntity
 import net.blueshell.api.user.application.AddressService
 import net.blueshell.api.user.application.UserService
 import org.springframework.http.HttpStatus
@@ -33,7 +33,7 @@ class AddressController(service: AddressService, private val users: UserService)
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Address', 'write'))")
     fun updateAddress(@PathVariable id: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
         var address = service.findById(id)
-        dto.asEntity(address)
+        address = dto.asEntity(address)
         address = service.update(address)
         return address.asDto()
     }

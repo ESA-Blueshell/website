@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.file.web.dto.FileDTO
-import net.blueshell.api.file.persistence.asDto
+import net.blueshell.api.file.web.mapping.asDto
 import net.blueshell.api.file.application.FileService
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpStatus

@@ -1,7 +1,8 @@
-package net.blueshell.api.user.web.dto
+package net.blueshell.api.user.web.mapping
 
 import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.web.dto.AddressDTO
 
 @Konverter
 interface AddressKonverter {
@@ -12,14 +13,10 @@ interface AddressKonverter {
 
 private val addressKonverter = Konverter.get<AddressKonverter>()
 
-fun AddressDTO.asEntity(address: Address = Address()): Address {
+fun AddressDTO.asEntity(existing: Address? = null): Address {
     val mapped = addressKonverter.fromDTO(this)
-    return address.apply {
-        country = mapped.country
-        city = mapped.city
-        street = mapped.street
-        houseNumber = mapped.houseNumber
-        zipCode = mapped.zipCode
-        version = mapped.version
-    }
+    existing?.id?.let { mapped.assignIdForRef(it) }
+    return mapped
 }
+
+fun Address.asDto(): AddressDTO = addressKonverter.toDTO(this)

@@ -8,9 +8,9 @@ import net.blueshell.api.shared.web.AdvancedController
 import net.blueshell.api.shared.dto.BaseDTO
 import net.blueshell.api.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.committee.application.CommitteeService
-import net.blueshell.api.committee.persistence.asAdvancedDto
-import net.blueshell.api.committee.persistence.asSimpleDto
-import net.blueshell.api.committee.web.dto.asEntity
+import net.blueshell.api.committee.web.mapping.asAdvancedDto
+import net.blueshell.api.committee.web.mapping.asEntity
+import net.blueshell.api.committee.web.mapping.asSimpleDto
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -73,7 +73,7 @@ class CommitteeController(
         @Valid @RequestBody dto: @Valid AdvancedCommitteeDTO
     ): AdvancedCommitteeDTO {
         var committee = service.findById(id)
-        dto.asEntity(committee)
+        committee = dto.asEntity(committee)
         committee = service.update(committee)
         return committee.asAdvancedDto()
     }

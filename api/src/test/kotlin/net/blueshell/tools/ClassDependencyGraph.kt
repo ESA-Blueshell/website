@@ -11,12 +11,27 @@ fun main(args: Array<String>) {
 
     val scanResult = ClassGraph()
         .enableClassInfo()
+        .enableInterClassDependencies()
         .acceptPackages(basePackage)
         .scan()
 
     scanResult.use {
-        val internalClasses = it.allClasses
-        val internalNames = internalClasses.names.toSet()
+        fun isTestClass(fqcn: String): Boolean {
+            val simple = fqcn.substringAfterLast('.')
+            // Adjust these rules to match your conventions
+            return simple.contains("Test") ||
+                    simple.contains("IT") ||
+                    simple.contains("Spec") ||
+                    fqcn.contains("test")
+        }
+
+        val allInternalClasses = it.allClasses
+
+        // Filter out test classes so they won't appear as nodes or endpoints of edges
+        val internalClasses = allInternalClasses
+            .filterNot { ci -> isTestClass(ci.name) }
+
+        val internalNames = internalClasses.map { it.name }.toSet()
         val edges = linkedSetOf<Pair<String, String>>()
 
         for (classInfo in internalClasses) {
@@ -67,14 +82,17 @@ private fun parseArgs(args: Array<String>): ParsedArgs {
                 dotOutputPath = Path.of(args.getOrNull(i + 1) ?: "")
                 i += 2
             }
+
             "--svg-output" -> {
                 svgOutputPath = Path.of(args.getOrNull(i + 1) ?: "")
                 i += 2
             }
+
             "--base-package" -> {
                 basePackage = args.getOrNull(i + 1)
                 i += 2
             }
+
             else -> error("Unknown argument: ${args[i]}")
         }
     }

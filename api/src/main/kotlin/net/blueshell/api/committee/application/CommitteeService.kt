@@ -5,12 +5,29 @@ import net.blueshell.api.committee.persistence.CommitteeRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CommitteeService @Autowired constructor(
     repository: CommitteeRepository
 ) : BaseModelService<Committee, Long, CommitteeRepository>(repository) {
+    @Transactional
+    override fun create(entity: Committee): Committee {
+        mergeMembers(entity)
+        return super.create(entity)
+    }
+
+    @Transactional
+    override fun update(entity: Committee): Committee {
+        mergeMembers(entity)
+        return super.update(entity)
+    }
+
     fun findAllByUserId(id: Long): MutableList<Committee> {
         return repository.findAllByUserId(id) as MutableList<Committee>
+    }
+
+    private fun mergeMembers(committee: Committee) {
+        committee.members.forEach { it.committee = committee }
     }
 }

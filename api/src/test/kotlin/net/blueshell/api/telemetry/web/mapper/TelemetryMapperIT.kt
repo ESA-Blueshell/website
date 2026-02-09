@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.TelemetryFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.telemetry.web.mapper.TelemetryMapper
 import net.blueshell.api.telemetry.persistence.Telemetry
+import net.blueshell.api.telemetry.application.TelemetryService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class TelemetryMapperIT @Autowired constructor(
     private val telemetryMapper: TelemetryMapper,
     private val telemetryDTOFactory: TelemetryDTOFactory,
-    private val telemetryFactory: TelemetryFactory
+    private val telemetryFactory: TelemetryFactory,
+    private val telemetryService: TelemetryService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -39,7 +41,7 @@ class TelemetryMapperIT @Autowired constructor(
             val telemetry = telemetryFactory.createBasic()
 
             val mapped = telemetryMapper.fromDTO(dto, telemetry)
-            val saved = persist(mapped)
+            val saved = telemetryService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(Telemetry::class.java, saved.id!!)

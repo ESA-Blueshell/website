@@ -3,21 +3,31 @@ package net.blueshell.api.survey.web.mapper
 import net.blueshell.api.survey.web.dto.SurveyDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.survey.persistence.Survey
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring", uses = [QuestionMapper::class])
-abstract class SurveyMapper : BaseMapper<Survey, SurveyDTO>() {
-    @Mapping(target = "questions")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun fromDTO(dto: SurveyDTO): Survey
+@Component
+class SurveyMapper(
+    private val questionMapper: QuestionMapper
+) : BaseMapper<Survey, SurveyDTO>() {
+    override fun fromDTO(dto: SurveyDTO): Survey {
+        val survey = Survey()
+        val mappedQuestions = dto.questions.map { questionMapper.fromDTO(it) }
+        survey.questions.addAll(mappedQuestions)
+        dto.version?.let { survey.version = it }
+        return survey
+    }
 
-    @Mapping(target = "id")
-    @Mapping(target = "questions")
-    @Mapping(target = "responseCount")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(survey: Survey): SurveyDTO
+    override fun toDTO(survey: Survey): SurveyDTO {
+        return SurveyDTO(
+            questions = survey.questions.map { questionMapper.toDTO(it) }.toMutableList(),
+            responseCount = survey.responseCount
+        ).also { dto ->
+            dto.id = survey.id
+            dto.version = survey.version
+        }
+    }
 }
+
+fun Survey.asDTO(mapper: SurveyMapper): SurveyDTO = mapper.toDTO(this)
+
+fun SurveyDTO.asEntity(mapper: SurveyMapper): Survey = mapper.fromDTO(this)

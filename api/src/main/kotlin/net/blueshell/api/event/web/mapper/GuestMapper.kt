@@ -4,33 +4,40 @@ import net.blueshell.api.shared.util.MappingUtil.randomCapitalString
 import net.blueshell.api.event.web.dto.GuestDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.event.persistence.Guest
-import org.mapstruct.*
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class GuestMapper : BaseMapper<Guest, GuestDTO>() {
-    @Mapping(target = "name")
-    @Mapping(target = "discord")
-    @Mapping(target = "email")
-    @Mapping(target = "phoneNumber")
-    @Mapping(target = "accessToken", ignore = true)
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: GuestDTO, @MappingTarget entity: Guest)
+@Component
+class GuestMapper : BaseMapper<Guest, GuestDTO>() {
+    override fun fromDTO(dto: GuestDTO): Guest = fromDTO(dto, Guest())
 
-    @AfterMapping
-    protected fun afterFromDTO(dto: GuestDTO, @MappingTarget entity: Guest) {
-        if (entity.accessToken != null) return
+    fun fromDTO(dto: GuestDTO, entity: Guest): Guest {
+        dto.name?.let { entity.name = it }
+        dto.discord?.let { entity.discord = it }
+        dto.email?.let { entity.email = it }
+        dto.phoneNumber?.let { entity.phoneNumber = it }
+        dto.version?.let { entity.version = it }
 
-        entity.accessToken = randomCapitalString(30)
+        if (entity.accessToken == null) {
+            entity.accessToken = randomCapitalString(30)
+        }
+
+        return entity
     }
 
-    @Mapping(target = "id")
-    @Mapping(target = "name")
-    @Mapping(target = "discord")
-    @Mapping(target = "email")
-    @Mapping(target = "phoneNumber")
-    @Mapping(target = "accessToken")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(entity: Guest): GuestDTO
+    override fun toDTO(entity: Guest): GuestDTO {
+        return GuestDTO(
+            name = entity.name,
+            discord = entity.discord,
+            email = entity.email,
+            phoneNumber = entity.phoneNumber,
+            accessToken = entity.accessToken
+        ).also { dto ->
+            dto.id = entity.id
+            dto.version = entity.version
+        }
+    }
 }
+
+fun Guest.asDTO(mapper: GuestMapper): GuestDTO = mapper.toDTO(this)
+
+fun GuestDTO.asEntity(mapper: GuestMapper): Guest = mapper.fromDTO(this)

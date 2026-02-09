@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.committee.web.mapper.CommitteeMemberMapper
 import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.application.CommitteeMemberService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class CommitteeMemberMapperIT @Autowired constructor(
     private val committeeMemberMapper: CommitteeMemberMapper,
     private val committeeMemberDTOFactory: CommitteeMemberDTOFactory,
-    private val committeeMemberFactory: CommitteeMemberFactory
+    private val committeeMemberFactory: CommitteeMemberFactory,
+    private val committeeMemberService: CommitteeMemberService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -47,7 +49,7 @@ class CommitteeMemberMapperIT @Autowired constructor(
             }
 
             val mapped = committeeMemberMapper.fromDTO(dto, member)
-            val saved = persist(mapped)
+            val saved = committeeMemberService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(CommitteeMember::class.java, saved.id)

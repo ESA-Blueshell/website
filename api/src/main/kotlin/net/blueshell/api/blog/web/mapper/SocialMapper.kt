@@ -3,22 +3,21 @@ package net.blueshell.api.blog.web.mapper
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.blog.web.dto.SocialDTO
 import net.blueshell.api.blog.persistence.Blog
-import org.mapstruct.AfterMapping
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.MappingTarget
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class SocialMapper {
+@Component
+class SocialMapper {
     @Value($$"${frontend.url}")
     private lateinit var frontendUrl: String
 
-    @BeanMapping(ignoreByDefault = true)
-    abstract fun toSocialDTO(blog: Blog): SocialDTO
+    fun toSocialDTO(blog: Blog): SocialDTO {
+        return SocialDTO().also { dto ->
+            afterToSocialDTO(blog, dto)
+        }
+    }
 
-    @AfterMapping
-    protected fun afterToSocialDTO(blog: Blog, @MappingTarget dto: SocialDTO) {
+    private fun afterToSocialDTO(blog: Blog, dto: SocialDTO) {
         dto.url = frontendUrl + "/blogs" + blog.id
         dto.title = blog.title
         dto.text = dto.text
@@ -31,3 +30,5 @@ abstract class SocialMapper {
         dto.platforms = platforms
     }
 }
+
+fun Blog.asDTO(mapper: SocialMapper): SocialDTO = mapper.toSocialDTO(this)

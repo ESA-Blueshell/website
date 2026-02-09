@@ -3,23 +3,30 @@ package net.blueshell.api.sponsor.web.mapper
 import net.blueshell.api.sponsor.web.dto.SponsorDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.sponsor.persistence.Sponsor
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingTarget
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class SponsorMapper : BaseMapper<Sponsor, SponsorDTO>() {
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "name")
-    @Mapping(target = "description")
-    @Mapping(target = "version")
-    abstract fun fromDTO(dto: SponsorDTO, @MappingTarget sponsor: Sponsor): Sponsor
+@Component
+class SponsorMapper : BaseMapper<Sponsor, SponsorDTO>() {
+    override fun fromDTO(dto: SponsorDTO): Sponsor = fromDTO(dto, Sponsor())
 
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "name")
-    @Mapping(target = "description")
-    @Mapping(target = "version")
-    abstract override fun toDTO(sponsor: Sponsor): SponsorDTO
+    fun fromDTO(dto: SponsorDTO, sponsor: Sponsor): Sponsor {
+        sponsor.name = requireNotNull(dto.name)
+        sponsor.description = requireNotNull(dto.description)
+        dto.version?.let { sponsor.version = it }
+        return sponsor
+    }
+
+    override fun toDTO(sponsor: Sponsor): SponsorDTO {
+        return SponsorDTO(
+            name = sponsor.name,
+            description = sponsor.description
+        ).also { dto ->
+            dto.id = sponsor.id
+            dto.version = sponsor.version
+        }
+    }
 }
+
+fun Sponsor.asDTO(mapper: SponsorMapper): SponsorDTO = mapper.toDTO(this)
+
+fun SponsorDTO.asEntity(mapper: SponsorMapper): Sponsor = mapper.fromDTO(this)

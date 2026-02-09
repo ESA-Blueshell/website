@@ -3,25 +3,29 @@ package net.blueshell.api.contribution.web.mapper
 import net.blueshell.api.contribution.web.dto.ContributionReminderDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.contribution.persistence.ContributionReminder
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingTarget
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class ContributionReminderMapper : BaseMapper<ContributionReminder, ContributionReminderDTO>() {
-    @Mapping(target = "userId")
-    @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(
-        dto: ContributionReminderDTO,
-        @MappingTarget reminder: ContributionReminder
-    ): ContributionReminder
+@Component
+class ContributionReminderMapper : BaseMapper<ContributionReminder, ContributionReminderDTO>() {
+    override fun fromDTO(dto: ContributionReminderDTO): ContributionReminder = fromDTO(dto, ContributionReminder())
 
-    @Mapping(target = "userId")
-    @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(reminder: ContributionReminder): ContributionReminderDTO
+    fun fromDTO(dto: ContributionReminderDTO, reminder: ContributionReminder): ContributionReminder {
+        reminder.userId = requireNotNull(dto.userId)
+        reminder.contributionPeriodId = requireNotNull(dto.contributionPeriodId)
+        dto.version?.let { reminder.version = it }
+        return reminder
+    }
+
+    override fun toDTO(reminder: ContributionReminder): ContributionReminderDTO {
+        return ContributionReminderDTO(
+            userId = reminder.userId,
+            contributionPeriodId = reminder.contributionPeriodId
+        ).also { dto ->
+            dto.version = reminder.version
+        }
+    }
 }
+
+fun ContributionReminder.asDTO(mapper: ContributionReminderMapper): ContributionReminderDTO = mapper.toDTO(this)
+
+fun ContributionReminderDTO.asEntity(mapper: ContributionReminderMapper): ContributionReminder = mapper.fromDTO(this)

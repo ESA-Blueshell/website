@@ -10,6 +10,7 @@ import net.blueshell.api.event.web.mapper.EventSignUpMapper
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.event.application.EventSignUpService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -23,7 +24,8 @@ class EventSignUpMapperIT @Autowired constructor(
     private val questionDTOFactory: QuestionDTOFactory,
     private val answerDTOFactory: AnswerDTOFactory,
     private val answerFactory: AnswerFactory,
-    private val eventSignUpFactory: EventSignUpFactory
+    private val eventSignUpFactory: EventSignUpFactory,
+    private val eventSignUpService: EventSignUpService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -71,7 +73,7 @@ class EventSignUpMapperIT @Autowired constructor(
             val mapped = eventSignUpMapper.fromDTO(dto, signUp)
             mapped.event = event
 
-            val saved = persist(mapped)
+            val saved = eventSignUpService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(EventSignUp::class.java, saved.id!!)

@@ -73,10 +73,8 @@ dependencies {
     implementation("com.google.apis:google-api-services-calendar:v3-rev20250404-2.0.0")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.39.1")
 
-    implementation("org.mapstruct:mapstruct:1.6.3")
-    annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
-    kapt("org.mapstruct:mapstruct-processor:1.6.3")
     implementation("io.mcarle:konvert-api:4.4.0")
+    implementation("io.mcarle:konvert-annotations:4.4.0")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
@@ -84,9 +82,6 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok:1.18.42")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
     kaptTest("org.projectlombok:lombok:1.18.42")
-    compileOnly("org.projectlombok:lombok-mapstruct-binding:0.2.0")
-    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
-    kapt("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     implementation("org.flywaydb:flyway-core")
 

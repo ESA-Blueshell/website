@@ -2,26 +2,32 @@ package net.blueshell.api.committee.web.mapper
 
 import net.blueshell.api.committee.web.dto.CommitteeMemberDTO
 import net.blueshell.api.shared.mapper.BaseMapper
-import net.blueshell.api.user.web.mapper.SimpleUserMapper
 import net.blueshell.api.committee.persistence.CommitteeMember
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingTarget
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring", uses = [SimpleUserMapper::class])
-abstract class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemberDTO>() {
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "role")
-    @Mapping(target = "committeeId")
-    @Mapping(target = "userId")
-    @Mapping(target = "version")
-    abstract fun fromDTO(dto: CommitteeMemberDTO, @MappingTarget member: CommitteeMember): CommitteeMember
+@Component
+class CommitteeMemberMapper : BaseMapper<CommitteeMember, CommitteeMemberDTO>() {
+    override fun fromDTO(dto: CommitteeMemberDTO): CommitteeMember = fromDTO(dto, CommitteeMember())
 
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "role")
-    @Mapping(target = "committeeId")
-    @Mapping(target = "userId")
-    @Mapping(target = "version")
-    abstract override fun toDTO(member: CommitteeMember): CommitteeMemberDTO
+    fun fromDTO(dto: CommitteeMemberDTO, member: CommitteeMember): CommitteeMember {
+        member.committeeId = requireNotNull(dto.committeeId)
+        member.userId = requireNotNull(dto.userId)
+        member.role = dto.role
+        dto.version?.let { member.version = it }
+        return member
+    }
+
+    override fun toDTO(member: CommitteeMember): CommitteeMemberDTO {
+        return CommitteeMemberDTO(
+            userId = member.userId,
+            committeeId = member.committeeId,
+            role = member.role
+        ).also { dto ->
+            dto.version = member.version
+        }
+    }
 }
+
+fun CommitteeMember.asDTO(mapper: CommitteeMemberMapper): CommitteeMemberDTO = mapper.toDTO(this)
+
+fun CommitteeMemberDTO.asEntity(mapper: CommitteeMemberMapper): CommitteeMember = mapper.fromDTO(this)

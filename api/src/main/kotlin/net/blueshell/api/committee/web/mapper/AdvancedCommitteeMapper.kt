@@ -3,25 +3,34 @@ package net.blueshell.api.committee.web.mapper
 import net.blueshell.api.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.committee.persistence.Committee
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingTarget
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring", uses = [CommitteeMemberMapper::class])
-abstract class AdvancedCommitteeMapper : BaseMapper<Committee, AdvancedCommitteeDTO>() {
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "name")
-    @Mapping(target = "description")
-    @Mapping(target = "members")
-    @Mapping(target = "version")
-    abstract fun fromDTO(dto: AdvancedCommitteeDTO, @MappingTarget committee: Committee): Committee
+@Component
+class AdvancedCommitteeMapper(
+    private val committeeMemberMapper: CommitteeMemberMapper
+) : BaseMapper<Committee, AdvancedCommitteeDTO>() {
+    override fun fromDTO(dto: AdvancedCommitteeDTO): Committee = fromDTO(dto, Committee())
 
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "name")
-    @Mapping(target = "description")
-    @Mapping(target = "members")
-    @Mapping(target = "version")
-    abstract override fun toDTO(committee: Committee): AdvancedCommitteeDTO
+    fun fromDTO(dto: AdvancedCommitteeDTO, committee: Committee): Committee {
+        committee.name = requireNotNull(dto.name)
+        committee.description = requireNotNull(dto.description)
+        committee.members = dto.members.map { committeeMemberMapper.fromDTO(it) }
+        dto.version?.let { committee.version = it }
+        return committee
+    }
+
+    override fun toDTO(committee: Committee): AdvancedCommitteeDTO {
+        return AdvancedCommitteeDTO(
+            name = committee.name,
+            description = committee.description,
+            members = committee.members.map { committeeMemberMapper.toDTO(it) }.toMutableList()
+        ).also { dto ->
+            dto.id = committee.id
+            dto.version = committee.version
+        }
+    }
 }
+
+fun Committee.asDTO(mapper: AdvancedCommitteeMapper): AdvancedCommitteeDTO = mapper.toDTO(this)
+
+fun AdvancedCommitteeDTO.asEntity(mapper: AdvancedCommitteeMapper): Committee = mapper.fromDTO(this)

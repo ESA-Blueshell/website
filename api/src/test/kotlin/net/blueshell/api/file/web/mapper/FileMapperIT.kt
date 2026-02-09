@@ -4,6 +4,7 @@ import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.file.web.mapper.FileMapper
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.file.application.FileService
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class FileMapperIT @Autowired constructor(
     private val fileMapper: FileMapper,
     private val fileDTOFactory: FileDTOFactory,
-    private val fileFactory: FileFactory
+    private val fileFactory: FileFactory,
+    private val fileService: FileService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -46,7 +48,7 @@ class FileMapperIT @Autowired constructor(
             mapped.path = "/uploads/mapped-file"
             mapped.uploader = persistUser()
 
-            val saved = persist(mapped)
+            val saved = fileService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(File::class.java, saved.id!!)

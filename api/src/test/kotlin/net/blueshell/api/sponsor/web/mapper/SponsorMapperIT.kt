@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.SponsorFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.sponsor.web.mapper.SponsorMapper
 import net.blueshell.api.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.application.SponsorService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class SponsorMapperIT @Autowired constructor(
     private val sponsorMapper: SponsorMapper,
     private val sponsorDTOFactory: SponsorDTOFactory,
-    private val sponsorFactory: SponsorFactory
+    private val sponsorFactory: SponsorFactory,
+    private val sponsorService: SponsorService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -46,7 +48,7 @@ class SponsorMapperIT @Autowired constructor(
             val dto = sponsorDTOFactory.createBasic()
 
             val mapped = sponsorMapper.fromDTO(dto, sponsor)
-            val saved = persist(mapped)
+            val saved = sponsorService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(Sponsor::class.java, saved.id!!)

@@ -3,50 +3,56 @@ package net.blueshell.api.user.web.mapper
 import net.blueshell.api.user.web.dto.SimpleUserDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.user.persistence.User
-import org.mapstruct.*
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class SimpleUserMapper : BaseMapper<User, SimpleUserDTO>() {
-    @Autowired
-    private lateinit var passwordEncoder: PasswordEncoder
+@Component
+class SimpleUserMapper(
+    private val passwordEncoder: PasswordEncoder
+) : BaseMapper<User, SimpleUserDTO>() {
+    override fun fromDTO(dto: SimpleUserDTO): User = fromDTO(dto, User())
 
-    @Mapping(target = "initials", conditionExpression = "java(user.getId() == null)")
-    @Mapping(target = "firstName", conditionExpression = "java(user.getId() == null)")
-    @Mapping(target = "prefix", conditionExpression = "java(user.getId() == null)")
-    @Mapping(target = "lastName", conditionExpression = "java(user.getId() == null)")
-    @Mapping(target = "username", conditionExpression = "java(user.getId() == null)")
-    @Mapping(target = "email", conditionExpression = "java(user.getId() == null)")
-    @Mapping(target = "discord")
-    @Mapping(target = "phoneNumber")
-    @Mapping(target = "newsletter")
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    abstract fun fromDTO(dto: SimpleUserDTO, @MappingTarget user: User): User
+    fun fromDTO(dto: SimpleUserDTO, user: User): User {
+        if (user.id == null) {
+            dto.initials?.let { user.initials = it }
+            dto.firstName?.let { user.firstName = it }
+            dto.prefix?.let { user.prefix = it }
+            dto.lastName?.let { user.lastName = it }
+            dto.username?.let { user.setUsername(it) }
+            dto.email?.let { user.email = it }
+        }
 
-    @Mapping(target = "id")
-    @Mapping(target = "initials")
-    @Mapping(target = "firstName")
-    @Mapping(target = "prefix")
-    @Mapping(target = "lastName")
-    @Mapping(target = "username")
-    @Mapping(target = "discord")
-    @Mapping(target = "email")
-    @Mapping(target = "phoneNumber")
-    @Mapping(target = "newsletter")
-    @Mapping(target = "fullName", expression = "java(user.getFullName())")
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "version")
-    @Mapping(target = "addressId")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(user: User): SimpleUserDTO
+        dto.discord?.let { user.discord = it }
+        dto.phoneNumber?.let { user.phoneNumber = it }
+        user.newsletter = dto.newsletter
+        dto.version?.let { user.version = it }
 
-    @AfterMapping
-    protected fun afterFromDTO(dto: SimpleUserDTO, @MappingTarget user: User) {
-        if (user.id != null) return
+        if (user.id == null) {
+            user.setPassword(passwordEncoder.encode(dto.password))
+        }
 
-        user.password = passwordEncoder.encode(dto.password)
+        return user
+    }
+
+    override fun toDTO(user: User): SimpleUserDTO {
+        return SimpleUserDTO().also { dto ->
+            dto.id = user.id
+            dto.initials = user.initials
+            dto.firstName = user.firstName
+            dto.prefix = user.prefix
+            dto.lastName = user.lastName
+            dto.username = user.username
+            dto.discord = user.discord
+            dto.email = user.email
+            dto.phoneNumber = user.phoneNumber
+            dto.newsletter = user.newsletter
+            dto.fullName = user.fullName
+            dto.version = user.version
+            dto.addressId = user.addressId
+        }
     }
 }
+
+fun User.asDTO(mapper: SimpleUserMapper): SimpleUserDTO = mapper.toDTO(this)
+
+fun SimpleUserDTO.asEntity(mapper: SimpleUserMapper): User = mapper.fromDTO(this)

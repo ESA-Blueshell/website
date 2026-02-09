@@ -3,23 +3,30 @@ package net.blueshell.api.telemetry.web.mapper
 import net.blueshell.api.telemetry.web.dto.TelemetryDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.telemetry.persistence.Telemetry
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingTarget
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class TelemetryMapper : BaseMapper<Telemetry, TelemetryDTO>() {
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "url")
-    @Mapping(target = "platform")
-    @Mapping(target = "version")
-    abstract fun fromDTO(dto: TelemetryDTO, @MappingTarget telemetry: Telemetry): Telemetry
+@Component
+class TelemetryMapper : BaseMapper<Telemetry, TelemetryDTO>() {
+    override fun fromDTO(dto: TelemetryDTO): Telemetry = fromDTO(dto, Telemetry())
 
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "url")
-    @Mapping(target = "platform")
-    @Mapping(target = "version")
-    abstract override fun toDTO(telemetry: Telemetry): TelemetryDTO
+    fun fromDTO(dto: TelemetryDTO, telemetry: Telemetry): Telemetry {
+        telemetry.url = requireNotNull(dto.url)
+        telemetry.platform = requireNotNull(dto.platform)
+        dto.version?.let { telemetry.version = it }
+        return telemetry
+    }
+
+    override fun toDTO(telemetry: Telemetry): TelemetryDTO {
+        return TelemetryDTO(
+            url = telemetry.url,
+            platform = telemetry.platform
+        ).also { dto ->
+            dto.id = telemetry.id
+            dto.version = telemetry.version
+        }
+    }
 }
+
+fun Telemetry.asDTO(mapper: TelemetryMapper): TelemetryDTO = mapper.toDTO(this)
+
+fun TelemetryDTO.asEntity(mapper: TelemetryMapper): Telemetry = mapper.fromDTO(this)

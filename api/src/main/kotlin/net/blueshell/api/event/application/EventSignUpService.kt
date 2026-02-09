@@ -5,8 +5,11 @@ import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.event.persistence.spec.EventSignUpSpecifications
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
+import net.blueshell.api.user.persistence.User
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -21,9 +24,16 @@ class EventSignUpService @Autowired constructor(
 ) : BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
     @Transactional
     override fun create(entity: EventSignUp): EventSignUp {
+        mergeAssociations(entity)
         val saved = super.create(entity)
         events.publish(EventSignUpCreated(saved.id!!))
         return saved
+    }
+
+    @Transactional
+    override fun update(entity: EventSignUp): EventSignUp {
+        mergeAssociations(entity)
+        return super.update(entity)
     }
 
     @Transactional(readOnly = true)
@@ -63,5 +73,12 @@ class EventSignUpService @Autowired constructor(
                     "EventSignUp not found for accessToken: $accessToken and event: $eventId"
                 )
             })
+    }
+
+    private fun mergeAssociations(signUp: EventSignUp) {
+        if (signUp.eventId != 0L) {
+            signUp.event = Event::class.asRef(signUp.eventId)
+        }
+        signUp.userId?.let { signUp.user = User::class.asRef(it) }
     }
 }

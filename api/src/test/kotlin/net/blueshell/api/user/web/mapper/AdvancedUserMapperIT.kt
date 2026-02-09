@@ -6,6 +6,7 @@ import net.blueshell.api.factory.model.AddressFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.user.web.mapper.AdvancedUserMapper
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.application.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -18,7 +19,8 @@ class AdvancedUserMapperIT @Autowired constructor(
     private val advancedUserMapper: AdvancedUserMapper,
     private val advancedUserDTOFactory: AdvancedUserDTOFactory,
     private val addressFactory: AddressFactory,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val userService: UserService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -52,7 +54,7 @@ class AdvancedUserMapperIT @Autowired constructor(
             assertThat(mapped.email).isEqualTo(dto.email)
             assertThat(mapped.addressId).isEqualTo(address.id)
 
-            val saved = persist(mapped)
+            val saved = userService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(User::class.java, saved.id!!)

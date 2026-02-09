@@ -4,6 +4,7 @@ import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.user.web.mapper.SimpleUserMapper
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.application.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,7 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class SimpleUserMapperIT @Autowired constructor(
     private val simpleUserMapper: SimpleUserMapper,
-    private val simpleUserDTOFactory: SimpleUserDTOFactory
+    private val simpleUserDTOFactory: SimpleUserDTOFactory,
+    private val userService: UserService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -38,7 +40,7 @@ class SimpleUserMapperIT @Autowired constructor(
             val user = userFactory.createBasic()
 
             val mapped = simpleUserMapper.fromDTO(dto, user)
-            val saved = persist(mapped)
+            val saved = userService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(User::class.java, saved.id!!)

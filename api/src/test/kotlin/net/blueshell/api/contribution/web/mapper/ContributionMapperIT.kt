@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.contribution.web.mapper.ContributionMapper
 import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.application.ContributionService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionMapperIT @Autowired constructor(
     private val contributionMapper: ContributionMapper,
     private val contributionDTOFactory: ContributionDTOFactory,
-    private val contributionFactory: ContributionFactory
+    private val contributionFactory: ContributionFactory,
+    private val contributionService: ContributionService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -51,7 +53,7 @@ class ContributionMapperIT @Autowired constructor(
             }
 
             val mapped = contributionMapper.fromDTO(dto, contribution)
-            val saved = persist(mapped)
+            val saved = contributionService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(Contribution::class.java, saved.id)

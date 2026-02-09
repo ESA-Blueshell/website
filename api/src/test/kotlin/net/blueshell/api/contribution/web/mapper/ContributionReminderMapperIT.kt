@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.contribution.ContributionReminderFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.contribution.web.mapper.ContributionReminderMapper
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.application.ContributionReminderService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionReminderMapperIT @Autowired constructor(
     private val contributionReminderMapper: ContributionReminderMapper,
     private val contributionReminderDTOFactory: ContributionReminderDTOFactory,
-    private val contributionReminderFactory: ContributionReminderFactory
+    private val contributionReminderFactory: ContributionReminderFactory,
+    private val contributionReminderService: ContributionReminderService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -51,7 +53,7 @@ class ContributionReminderMapperIT @Autowired constructor(
             }
 
             val mapped = contributionReminderMapper.fromDTO(dto, reminder)
-            val saved = persist(mapped)
+            val saved = contributionReminderService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(ContributionReminder::class.java, saved.id)

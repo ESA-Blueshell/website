@@ -4,6 +4,7 @@ import net.blueshell.api.factory.dto.BlogDTOFactory
 import net.blueshell.api.factory.model.BlogFactory
 import net.blueshell.api.blog.web.mapper.BlogMapper
 import net.blueshell.api.blog.persistence.Blog
+import net.blueshell.api.blog.application.BlogService
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class BlogMapperIT @Autowired constructor(
     private val blogMapper: BlogMapper,
     private val blogDTOFactory: BlogDTOFactory,
-    private val blogFactory: BlogFactory
+    private val blogFactory: BlogFactory,
+    private val blogService: BlogService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -43,7 +45,7 @@ class BlogMapperIT @Autowired constructor(
             val blog = blogFactory.createBasic()
 
             val mapped = blogMapper.fromDTO(dto, blog)
-            val saved = persist(mapped)
+            val saved = blogService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(Blog::class.java, saved.id!!)

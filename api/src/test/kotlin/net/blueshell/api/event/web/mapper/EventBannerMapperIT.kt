@@ -7,6 +7,7 @@ import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.event.web.mapper.EventBannerMapper
 import net.blueshell.api.event.persistence.EventBanner
+import net.blueshell.api.event.application.EventBannerService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -19,7 +20,8 @@ class EventBannerMapperIT @Autowired constructor(
     private val eventBannerDTOFactory: EventBannerDTOFactory,
     private val fileDTOFactory: FileDTOFactory,
     private val eventBannerFactory: EventBannerFactory,
-    private val fileFactory: FileFactory
+    private val fileFactory: FileFactory,
+    private val eventBannerService: EventBannerService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -56,7 +58,7 @@ class EventBannerMapperIT @Autowired constructor(
             mapped.event = event
             mapped.file = file
 
-            val saved = persist(mapped)
+            val saved = eventBannerService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(EventBanner::class.java, saved.id)

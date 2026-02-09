@@ -3,8 +3,11 @@ package net.blueshell.api.committee.application
 import net.blueshell.api.committee.application.event.CommitteeMembershipChanged
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.persistence.CommitteeMemberRepository
+import net.blueshell.api.shared.model.asRef
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
+import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -15,6 +18,7 @@ class CommitteeMemberService(
 ) : BaseModelService<CommitteeMember, CommitteeMember.Id, CommitteeMemberRepository>(repository) {
     @Transactional
     override fun create(entity: CommitteeMember): CommitteeMember {
+        mergeRefs(entity)
         val saved = super.create(entity)
         publishChange(saved)
         return saved
@@ -22,6 +26,7 @@ class CommitteeMemberService(
 
     @Transactional
     override fun update(entity: CommitteeMember): CommitteeMember {
+        mergeRefs(entity)
         val saved = super.update(entity)
         publishChange(saved)
         return saved
@@ -44,5 +49,14 @@ class CommitteeMemberService(
 
     private fun publishChange(member: CommitteeMember) {
         events.publish(CommitteeMembershipChanged(member.userId, member.committeeId))
+    }
+
+    private fun mergeRefs(member: CommitteeMember) {
+        if (member.userId != 0L) {
+            member.user = User::class.asRef(member.userId)
+        }
+        if (member.committeeId != 0L) {
+            member.committee = Committee::class.asRef(member.committeeId)
+        }
     }
 }

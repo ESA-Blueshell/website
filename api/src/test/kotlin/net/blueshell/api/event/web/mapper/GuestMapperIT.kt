@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.event.web.mapper.GuestMapper
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.event.application.GuestService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class GuestMapperIT @Autowired constructor(
     private val guestMapper: GuestMapper,
     private val guestDTOFactory: GuestDTOFactory,
-    private val guestFactory: GuestFactory
+    private val guestFactory: GuestFactory,
+    private val guestService: GuestService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -40,7 +42,7 @@ class GuestMapperIT @Autowired constructor(
             val guest = guestFactory.createBasic()
 
             guestMapper.fromDTO(dto, guest)
-            val saved = persist(guest)
+            val saved = guestService.create(guest)
             flushAndClear()
 
             val reloaded = reload(Guest::class.java, saved.id!!)

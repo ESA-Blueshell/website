@@ -4,33 +4,42 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.membership.web.dto.MembershipDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.membership.persistence.Membership
-import org.mapstruct.*
+import org.springframework.stereotype.Component
 
+@Component
+class MembershipMapper : BaseMapper<Membership, MembershipDTO>() {
+    override fun fromDTO(dto: MembershipDTO): Membership = fromDTO(dto, Membership())
 
-@Mapper(componentModel = "spring")
-abstract class MembershipMapper : BaseMapper<Membership, MembershipDTO>() {
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "userId")
-    @Mapping(target = "memberType")
-    @Mapping(target = "startDate")
-    @Mapping(target = "endDate")
-    @Mapping(target = "incasso")
-    @Mapping(target = "version")
-    abstract override fun toDTO(membership: Membership): MembershipDTO
+    fun fromDTO(dto: MembershipDTO, membership: Membership): Membership {
+        dto.userId?.let { membership.userId = it }
+        dto.version?.let { membership.version = it }
 
-    @Mapping(target = "userId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: MembershipDTO, @MappingTarget membership: Membership): Membership
+        if (hasAuthority(Role.BOARD)) {
+            dto.startDate?.let { membership.startDate = it }
+            membership.endDate = dto.endDate
+            dto.memberType?.let { membership.memberType = it }
+            membership.incasso = dto.incasso
+        }
 
-    @AfterMapping
-    protected fun afterFromDTO(dto: MembershipDTO, @MappingTarget membership: Membership) {
-        if (!hasAuthority(Role.BOARD)) return
+        return membership
+    }
 
-        dto.startDate?.let { membership.startDate = it }
-        membership.endDate = dto.endDate // Must be applied, in order to be able to resume memberships
-        dto.memberType?.let { membership.memberType = it }
-        dto.incasso.let { membership.incasso = it }
+    override fun toDTO(membership: Membership): MembershipDTO {
+        return MembershipDTO(
+            userId = membership.userId,
+            memberType = membership.memberType,
+            city = null,
+            country = null,
+            startDate = membership.startDate,
+            endDate = membership.endDate,
+            incasso = membership.incasso
+        ).also { dto ->
+            dto.id = membership.id
+            dto.version = membership.version
+        }
     }
 }
+
+fun Membership.asDTO(mapper: MembershipMapper): MembershipDTO = mapper.toDTO(this)
+
+fun MembershipDTO.asEntity(mapper: MembershipMapper): Membership = mapper.fromDTO(this)

@@ -6,7 +6,9 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.filter.EventFilter
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.spec.EventSpecifications
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -21,6 +23,7 @@ class EventService @Autowired constructor(
 ) : BaseModelService<Event, Long, EventRepository>(repository) {
     @Transactional
     override fun create(entity: Event): Event {
+        mergeAssociations(entity)
         val saved = super.create(entity)
         events.publish(EventChanged(saved.id!!, EventChange.CREATED))
         return saved
@@ -28,6 +31,7 @@ class EventService @Autowired constructor(
 
     @Transactional
     override fun update(entity: Event): Event {
+        mergeAssociations(entity)
         val saved = super.update(entity)
         events.publish(EventChanged(saved.id!!, EventChange.UPDATED))
         return saved
@@ -49,5 +53,17 @@ class EventService @Autowired constructor(
     fun findByFilter(pageable: Pageable, filter: EventFilter): Page<Event> {
         val spec = EventSpecifications.fromFilter(filter, principal)
         return repository.findAll(spec, pageable)
+    }
+
+    private fun mergeAssociations(event: Event) {
+        event.banner?.let { banner ->
+            banner.event = event
+            banner.file.id?.let { fileId ->
+                banner.file = File::class.asRef(fileId)
+            }
+        }
+        event.signUpForm?.let { survey ->
+            survey.questions.forEach { question -> question.survey = survey }
+        }
     }
 }

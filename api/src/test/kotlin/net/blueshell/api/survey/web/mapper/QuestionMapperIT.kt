@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.survey.web.mapper.QuestionMapper
 import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.survey.application.QuestionService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -14,7 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class QuestionMapperIT @Autowired constructor(
     private val questionMapper: QuestionMapper,
-    private val questionDTOFactory: QuestionDTOFactory
+    private val questionDTOFactory: QuestionDTOFactory,
+    private val questionService: QuestionService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -43,7 +45,7 @@ class QuestionMapperIT @Autowired constructor(
             val question = questionFactory.createForSurvey(survey)
 
             val mapped = questionMapper.fromDTO(dto, question)
-            val saved = persist(mapped)
+            val saved = questionService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(Question::class.java, saved.id!!)

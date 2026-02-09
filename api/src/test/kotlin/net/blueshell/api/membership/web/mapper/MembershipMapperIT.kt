@@ -5,6 +5,7 @@ import net.blueshell.api.factory.dto.MembershipDTOFactory
 import net.blueshell.api.factory.model.MembershipFactory
 import net.blueshell.api.membership.web.mapper.MembershipMapper
 import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.membership.application.MembershipService
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -16,7 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest
 class MembershipMapperIT @Autowired constructor(
     private val membershipMapper: MembershipMapper,
     private val membershipDTOFactory: MembershipDTOFactory,
-    private val membershipFactory: MembershipFactory
+    private val membershipFactory: MembershipFactory,
+    private val membershipService: MembershipService
 ) : MapperTestSupport() {
     @Nested
     inner class ToDTO {
@@ -48,7 +50,7 @@ class MembershipMapperIT @Autowired constructor(
             }
 
             val mapped = membershipMapper.fromDTO(dto, membership)
-            val saved = persist(mapped)
+            val saved = membershipService.create(mapped)
             flushAndClear()
 
             val reloaded = reload(Membership::class.java, saved.id!!)

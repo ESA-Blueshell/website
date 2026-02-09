@@ -3,22 +3,29 @@ package net.blueshell.api.contribution.web.mapper
 import net.blueshell.api.contribution.web.dto.ContributionDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.contribution.persistence.Contribution
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingTarget
+import org.springframework.stereotype.Component
 
-@Mapper(componentModel = "spring")
-abstract class ContributionMapper : BaseMapper<Contribution, ContributionDTO>() {
-    @Mapping(target = "userId")
-    @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract fun fromDTO(dto: ContributionDTO, @MappingTarget contribution: Contribution): Contribution
+@Component
+class ContributionMapper : BaseMapper<Contribution, ContributionDTO>() {
+    override fun fromDTO(dto: ContributionDTO): Contribution = fromDTO(dto, Contribution())
 
-    @Mapping(target = "userId")
-    @Mapping(target = "contributionPeriodId")
-    @Mapping(target = "version")
-    @BeanMapping(ignoreByDefault = true)
-    abstract override fun toDTO(contribution: Contribution): ContributionDTO
+    fun fromDTO(dto: ContributionDTO, contribution: Contribution): Contribution {
+        contribution.userId = requireNotNull(dto.userId)
+        contribution.contributionPeriodId = requireNotNull(dto.contributionPeriodId)
+        dto.version?.let { contribution.version = it }
+        return contribution
+    }
+
+    override fun toDTO(contribution: Contribution): ContributionDTO {
+        return ContributionDTO(
+            userId = contribution.userId,
+            contributionPeriodId = contribution.contributionPeriodId
+        ).also { dto ->
+            dto.version = contribution.version
+        }
+    }
 }
+
+fun Contribution.asDTO(mapper: ContributionMapper): ContributionDTO = mapper.toDTO(this)
+
+fun ContributionDTO.asEntity(mapper: ContributionMapper): Contribution = mapper.fromDTO(this)

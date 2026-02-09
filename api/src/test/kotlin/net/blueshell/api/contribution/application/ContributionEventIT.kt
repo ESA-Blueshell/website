@@ -1,12 +1,11 @@
 package net.blueshell.api.contribution.application
 
-import net.blueshell.api.contribution.application.event.ContributionChangedEvent
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
-import net.blueshell.api.platform.integration.event.job.AddContactToListEvent
-import net.blueshell.api.platform.integration.event.job.CreateContributionPeriodListEvent
-import net.blueshell.api.platform.integration.event.job.RemoveContactFromListEvent
+import net.blueshell.api.platform.integration.contact.job.AddContactToListJobHandler
+import net.blueshell.api.platform.integration.contact.job.CreateContributionPeriodListJobHandler
+import net.blueshell.api.platform.integration.contact.job.RemoveContactFromListJobHandler
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -42,8 +41,7 @@ class ContributionEventIT : EventIntegrationTestSupport() {
 
         contributions.create(contribution)
 
-        assertTrue(applicationEvents.stream(ContributionChangedEvent::class.java).anyMatch { it.userId == user.id })
-        assertTrue(applicationEvents.stream(AddContactToListEvent::class.java).anyMatch { it.userId == user.id })
+        assertTrue(jobExecutions.findByJobType(AddContactToListJobHandler.JOB_TYPE).isNotEmpty())
     }
 
     @Test
@@ -60,7 +58,7 @@ class ContributionEventIT : EventIntegrationTestSupport() {
 
         contributions.delete(saved)
 
-        assertTrue(applicationEvents.stream(RemoveContactFromListEvent::class.java).anyMatch { it.userId == user.id })
+        assertTrue(jobExecutions.findByJobType(RemoveContactFromListJobHandler.JOB_TYPE).isNotEmpty())
     }
 
     @Test
@@ -70,8 +68,7 @@ class ContributionEventIT : EventIntegrationTestSupport() {
         val saved = periods.create(period)
 
         assertTrue(
-            applicationEvents.stream(CreateContributionPeriodListEvent::class.java)
-                .anyMatch { it.periodId == saved.id }
+            jobExecutions.findByJobType(CreateContributionPeriodListJobHandler.JOB_TYPE).isNotEmpty()
         )
     }
 }

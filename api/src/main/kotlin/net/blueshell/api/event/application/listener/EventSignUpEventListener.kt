@@ -2,8 +2,9 @@ package net.blueshell.api.event.application.listener
 
 import net.blueshell.api.event.application.EventSignUpService
 import net.blueshell.api.event.application.event.EventSignUpCreatedEvent
-import net.blueshell.api.platform.integration.event.job.EventSignupEmailEvent
-import org.springframework.context.ApplicationEventPublisher
+import net.blueshell.api.platform.integration.email.job.EventSignupEmailJobHandler
+import net.blueshell.api.platform.integration.email.job.EventSignupEmailPayload
+import net.blueshell.api.platform.integration.queue.JobDispatcher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class EventSignUpEventListener(
-    private val eventPublisher: ApplicationEventPublisher,
+    private val jobDispatcher: JobDispatcher,
     private val signUps: EventSignUpService
 ) {
     /**
@@ -22,7 +23,10 @@ class EventSignUpEventListener(
     fun onPersist(evt: EventSignUpCreatedEvent) {
         val e = signUps.findById(evt.signUpId)
         if (e.guest != null) {
-            eventPublisher.publishEvent(EventSignupEmailEvent(e.id))
+            jobDispatcher.enqueue(
+                EventSignupEmailJobHandler.JOB_TYPE,
+                EventSignupEmailPayload(e.id!!)
+            )
         }
     }
 }

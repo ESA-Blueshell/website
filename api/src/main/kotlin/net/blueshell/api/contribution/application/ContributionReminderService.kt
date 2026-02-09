@@ -1,11 +1,12 @@
 package net.blueshell.api.contribution.application
 
-import net.blueshell.api.platform.integration.event.job.ContributionReminderEmailEvent
+import net.blueshell.api.platform.integration.email.job.ContributionReminderEmailJobHandler
+import net.blueshell.api.platform.integration.email.job.ContributionReminderEmailPayload
+import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -13,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionReminderService @Autowired constructor(
     repository: ContributionReminderRepository,
     private val periodService: ContributionPeriodService,
-    private val eventPublisher: ApplicationEventPublisher
+    private val jobDispatcher: JobDispatcher
 ) : BaseModelService<ContributionReminder, ContributionReminder.Id, ContributionReminderRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
@@ -23,11 +24,9 @@ class ContributionReminderService @Autowired constructor(
 
     fun sendReminder(reminder: ContributionReminder) {
         val reminderId = reminder.id
-        eventPublisher.publishEvent(
-            ContributionReminderEmailEvent(
-                reminderId.userId,
-                reminderId.contributionPeriodId
-            )
+        jobDispatcher.enqueue(
+            ContributionReminderEmailJobHandler.JOB_TYPE,
+            ContributionReminderEmailPayload(reminderId.userId, reminderId.contributionPeriodId)
         )
     }
 

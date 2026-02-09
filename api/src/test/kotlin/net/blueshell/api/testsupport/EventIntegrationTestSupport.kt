@@ -2,11 +2,14 @@ package net.blueshell.api.testsupport
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.platform.config.TruncateTestDatabaseListener
+import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.boot.test.context.event.RecordApplicationEvents
 import org.springframework.boot.test.context.event.ApplicationEvents
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
 import org.springframework.transaction.PlatformTransactionManager
@@ -28,6 +31,12 @@ abstract class EventIntegrationTestSupport {
 
     @Autowired
     protected lateinit var applicationEvents: ApplicationEvents
+
+    @Autowired
+    protected lateinit var jobExecutions: JobExecutionRepository
+
+    @MockBean
+    protected lateinit var rabbitTemplate: RabbitTemplate
 
     protected val transactionTemplate: TransactionTemplate by lazy {
         TransactionTemplate(transactionManager)

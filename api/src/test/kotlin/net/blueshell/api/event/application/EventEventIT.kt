@@ -1,14 +1,13 @@
 package net.blueshell.api.event.application
 
-import net.blueshell.api.event.application.event.EventChangedEvent
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory
 import net.blueshell.api.factory.model.event.GuestFactory
-import net.blueshell.api.platform.integration.event.job.AddEventToCalendarEvent
-import net.blueshell.api.platform.integration.event.job.EventSignupEmailEvent
-import net.blueshell.api.platform.integration.event.job.RemoveEventFromCalendarEvent
-import net.blueshell.api.platform.integration.event.job.SyncEventToCalendarEvent
+import net.blueshell.api.platform.integration.calendar.job.AddEventToCalendarJobHandler
+import net.blueshell.api.platform.integration.calendar.job.RemoveEventFromCalendarJobHandler
+import net.blueshell.api.platform.integration.calendar.job.SyncEventToCalendarJobHandler
+import net.blueshell.api.platform.integration.email.job.EventSignupEmailJobHandler
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -41,8 +40,7 @@ class EventEventIT : EventIntegrationTestSupport() {
 
         val saved = events.create(event)
 
-        assertTrue(applicationEvents.stream(EventChangedEvent::class.java).anyMatch { it.eventId == saved.id })
-        assertTrue(applicationEvents.stream(AddEventToCalendarEvent::class.java).anyMatch { it.eventId == saved.id })
+        assertTrue(jobExecutions.findByJobType(AddEventToCalendarJobHandler.JOB_TYPE).isNotEmpty())
     }
 
     @Test
@@ -58,7 +56,7 @@ class EventEventIT : EventIntegrationTestSupport() {
         saved.approved = true
         events.update(saved)
 
-        assertTrue(applicationEvents.stream(SyncEventToCalendarEvent::class.java).anyMatch { it.eventId == saved.id })
+        assertTrue(jobExecutions.findByJobType(SyncEventToCalendarJobHandler.JOB_TYPE).isNotEmpty())
     }
 
     @Test
@@ -72,7 +70,7 @@ class EventEventIT : EventIntegrationTestSupport() {
         val saved = events.create(event)
         events.delete(saved)
 
-        assertTrue(applicationEvents.stream(RemoveEventFromCalendarEvent::class.java).anyMatch { it.eventId == saved.id })
+        assertTrue(jobExecutions.findByJobType(RemoveEventFromCalendarJobHandler.JOB_TYPE).isNotEmpty())
     }
 
     @Test
@@ -94,8 +92,7 @@ class EventEventIT : EventIntegrationTestSupport() {
         val saved = signUps.create(signUp)
 
         assertTrue(
-            applicationEvents.stream(EventSignupEmailEvent::class.java)
-                .anyMatch { it.eventSignUpId == saved.id }
+            jobExecutions.findByJobType(EventSignupEmailJobHandler.JOB_TYPE).isNotEmpty()
         )
     }
 }

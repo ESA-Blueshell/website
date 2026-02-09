@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface JobExecutionRepository : JpaRepository<JobExecution, Long> {
     fun findTop200ByOrderByCreatedAtDesc(): List<JobExecution>
+    fun findByJobType(jobType: String): List<JobExecution>
 }

@@ -1,6 +1,7 @@
 package net.blueshell.api.shared.mapper
 
 import net.blueshell.api.auth.security.IdentityProvider
+import io.mcarle.konvert.api.Konverter
 import org.springframework.data.domain.Page
 import java.util.stream.Stream
 
@@ -8,6 +9,8 @@ abstract class BaseMapper<T, DTO> : IdentityProvider() {
     abstract fun toDTO(entity: T): DTO
 
     abstract fun fromDTO(dto: DTO): T
+
+    protected inline fun <reified K> konverter(): K = Konverter.get()
 
     fun toDTOs(stream: Stream<T>): Stream<DTO> {
         return stream.map { this.toDTO(it) }

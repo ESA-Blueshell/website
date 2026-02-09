@@ -1,8 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
-import sun.jvmstat.monitor.MonitoredVmUtil.commandLine
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
@@ -16,6 +14,7 @@ plugins {
     kotlin("plugin.noarg") version "2.3.0"
     kotlin("kapt") version "2.3.0"
     kotlin("plugin.lombok") version "2.3.0"
+    id("com.google.devtools.ksp").version("2.3.0")
 
     java
 }
@@ -54,7 +53,7 @@ configurations.configureEach {
 repositories {
     mavenCentral()
 }
-
+val konvertVersion = "4.4.0"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -73,8 +72,9 @@ dependencies {
     implementation("com.google.apis:google-api-services-calendar:v3-rev20250404-2.0.0")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.39.1")
 
-    implementation("io.mcarle:konvert-api:4.4.0")
-    implementation("io.mcarle:konvert-annotations:4.4.0")
+    implementation("io.mcarle:konvert-api:$konvertVersion")
+    implementation("io.mcarle:konvert-annotations:$konvertVersion")
+    ksp("io.mcarle:konvert:$konvertVersion")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
@@ -259,7 +259,9 @@ tasks.named<JavaCompile>("compileTestJava") {
     }
 }
 
-tasks.withType<KaptGenerateStubsTask>().configureEach {
-    dependsOn("generateBrevoClient")
+tasks.matching { it.name.startsWith("ksp") && it.name.contains("Kotlin") }.configureEach {
+    dependsOn(tasks.named("generateBrevoClient"))
+    inputs.dir(brevoOutputDir)
 }
+
 val compileKotlin: KotlinCompile by tasks

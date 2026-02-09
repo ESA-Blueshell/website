@@ -1,30 +1,56 @@
 package net.blueshell.api.user.web.mapper
 
+import io.mcarle.konvert.api.Konvert
+import io.mcarle.konvert.api.Konverter
+import io.mcarle.konvert.api.Mapping
 import net.blueshell.api.user.web.dto.SimpleUserDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 
+@Konverter
+interface SimpleUserKonverter {
+    @Konvert(mappings = [Mapping(target = "password", ignore = true)])
+    fun toDTO(user: User): SimpleUserDTO
+
+    @Konvert(
+        mappings = [
+            Mapping(target = "addressId", ignore = true),
+            Mapping(target = "createdAt", ignore = true),
+            Mapping(target = "deletedAt", ignore = true),
+            Mapping(target = "fullName", ignore = true),
+            Mapping(target = "id", ignore = true),
+            Mapping(target = "password", ignore = true),
+            Mapping(target = "updatedAt", ignore = true),
+        ]
+    )
+    fun fromDTO(dto: SimpleUserDTO): User
+}
+
 @Component
 class SimpleUserMapper(
     private val passwordEncoder: PasswordEncoder
 ) : BaseMapper<User, SimpleUserDTO>() {
+    private val konverter = konverter<SimpleUserKonverter>()
+
     override fun fromDTO(dto: SimpleUserDTO): User = fromDTO(dto, User())
 
     fun fromDTO(dto: SimpleUserDTO, user: User): User {
+        val mapped = konverter.fromDTO(dto)
+
         if (user.id == null) {
-            dto.initials?.let { user.initials = it }
-            dto.firstName?.let { user.firstName = it }
-            dto.prefix?.let { user.prefix = it }
-            dto.lastName?.let { user.lastName = it }
-            dto.username?.let { user.setUsername(it) }
-            dto.email?.let { user.email = it }
+            mapped.initials?.let { user.initials = it }
+            mapped.firstName?.let { user.firstName = it }
+            mapped.prefix?.let { user.prefix = it }
+            mapped.lastName?.let { user.lastName = it }
+            mapped.username?.let { user.setUsername(it) }
+            mapped.email?.let { user.email = it }
         }
 
-        dto.discord?.let { user.discord = it }
-        dto.phoneNumber?.let { user.phoneNumber = it }
-        user.newsletter = dto.newsletter
+        mapped.discord?.let { user.discord = it }
+        mapped.phoneNumber?.let { user.phoneNumber = it }
+        user.newsletter = mapped.newsletter
         dto.version?.let { user.version = it }
 
         if (user.id == null) {
@@ -34,23 +60,7 @@ class SimpleUserMapper(
         return user
     }
 
-    override fun toDTO(user: User): SimpleUserDTO {
-        return SimpleUserDTO().also { dto ->
-            dto.id = user.id
-            dto.initials = user.initials
-            dto.firstName = user.firstName
-            dto.prefix = user.prefix
-            dto.lastName = user.lastName
-            dto.username = user.username
-            dto.discord = user.discord
-            dto.email = user.email
-            dto.phoneNumber = user.phoneNumber
-            dto.newsletter = user.newsletter
-            dto.fullName = user.fullName
-            dto.version = user.version
-            dto.addressId = user.addressId
-        }
-    }
+    override fun toDTO(user: User): SimpleUserDTO = konverter.toDTO(user)
 }
 
 fun User.asDTO(mapper: SimpleUserMapper): SimpleUserDTO = mapper.toDTO(this)

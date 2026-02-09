@@ -1,37 +1,36 @@
 package net.blueshell.api.contribution.web.mapper
 
+import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.contribution.web.dto.ContributionPeriodDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import org.springframework.stereotype.Component
 
+@Konverter
+interface ContributionPeriodKonverter {
+    fun toDTO(period: ContributionPeriod): ContributionPeriodDTO
+
+    fun fromDTO(dto: ContributionPeriodDTO): ContributionPeriod
+}
+
 @Component
 class ContributionPeriodMapper : BaseMapper<ContributionPeriod, ContributionPeriodDTO>() {
-    override fun fromDTO(dto: ContributionPeriodDTO): ContributionPeriod = fromDTO(dto, ContributionPeriod())
+    private val konverter = konverter<ContributionPeriodKonverter>()
+
+    override fun fromDTO(dto: ContributionPeriodDTO): ContributionPeriod = konverter.fromDTO(dto)
 
     fun fromDTO(dto: ContributionPeriodDTO, contributionPeriod: ContributionPeriod): ContributionPeriod {
-        contributionPeriod.startDate = dto.startDate
-        contributionPeriod.endDate = dto.endDate
-        contributionPeriod.halfYearFee = dto.halfYearFee
-        contributionPeriod.fullYearFee = dto.fullYearFee
-        contributionPeriod.alumniFee = dto.alumniFee
+        val mapped = konverter.fromDTO(dto)
+        contributionPeriod.startDate = mapped.startDate
+        contributionPeriod.endDate = mapped.endDate
+        contributionPeriod.halfYearFee = mapped.halfYearFee
+        contributionPeriod.fullYearFee = mapped.fullYearFee
+        contributionPeriod.alumniFee = mapped.alumniFee
         dto.version?.let { contributionPeriod.version = it }
         return contributionPeriod
     }
 
-    override fun toDTO(contributionPeriod: ContributionPeriod): ContributionPeriodDTO {
-        return ContributionPeriodDTO(
-            startDate = contributionPeriod.startDate,
-            endDate = contributionPeriod.endDate,
-            halfYearFee = contributionPeriod.halfYearFee,
-            fullYearFee = contributionPeriod.fullYearFee,
-            alumniFee = contributionPeriod.alumniFee,
-            listId = contributionPeriod.listId
-        ).also { dto ->
-            dto.id = contributionPeriod.id
-            dto.version = contributionPeriod.version
-        }
-    }
+    override fun toDTO(contributionPeriod: ContributionPeriod): ContributionPeriodDTO = konverter.toDTO(contributionPeriod)
 }
 
 fun ContributionPeriod.asDTO(mapper: ContributionPeriodMapper): ContributionPeriodDTO = mapper.toDTO(this)

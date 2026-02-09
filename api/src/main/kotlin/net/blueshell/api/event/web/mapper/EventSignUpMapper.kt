@@ -1,5 +1,8 @@
 package net.blueshell.api.event.web.mapper
 
+import io.mcarle.konvert.api.Konvert
+import io.mcarle.konvert.api.Konverter
+import io.mcarle.konvert.api.Mapping
 import net.blueshell.api.event.web.dto.EventSignUpDTO
 import net.blueshell.api.shared.mapper.BaseMapper
 import net.blueshell.api.survey.web.mapper.AnswerMapper
@@ -8,17 +11,41 @@ import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.user.web.mapper.SimpleUserMapper
 import org.springframework.stereotype.Component
 
+@Konverter
+interface EventSignUpKonverter {
+    @Konvert(
+        mappings = [
+            Mapping(target = "answers", ignore = true),
+            Mapping(target = "guest", ignore = true),
+            Mapping(target = "user", ignore = true),
+        ]
+    )
+    fun toDTO(signUp: EventSignUp): EventSignUpDTO
+
+    @Konvert(
+        mappings = [
+            Mapping(target = "answers", ignore = true),
+            Mapping(target = "guest", ignore = true),
+            Mapping(target = "user", ignore = true),
+        ]
+    )
+    fun fromDTO(dto: EventSignUpDTO): EventSignUp
+}
+
 @Component
 class EventSignUpMapper(
     private val guestMapper: GuestMapper,
     private val answerMapper: AnswerMapper,
     private val simpleUserMapper: SimpleUserMapper
 ) : BaseMapper<EventSignUp, EventSignUpDTO>() {
+    private val konverter = konverter<EventSignUpKonverter>()
+
     override fun fromDTO(dto: EventSignUpDTO): EventSignUp = fromDTO(dto, EventSignUp())
 
     fun fromDTO(dto: EventSignUpDTO, signUp: EventSignUp): EventSignUp {
-        dto.eventId?.let { signUp.eventId = it }
-        dto.userId?.let { signUp.userId = it }
+        val mapped = konverter.fromDTO(dto)
+        mapped.eventId?.let { signUp.eventId = it }
+        mapped.userId?.let { signUp.userId = it }
         signUp.guest = dto.guest?.let { guestMapper.fromDTO(it) }
 
         val mappedAnswers = dto.answers.map { answerMapper.fromDTO(it) }
@@ -31,16 +58,11 @@ class EventSignUpMapper(
     }
 
     override fun toDTO(signUp: EventSignUp): EventSignUpDTO {
-        return EventSignUpDTO(
-            eventId = signUp.eventId,
-            answers = signUp.answers.map { answerMapper.toDTO(it) }.toMutableList(),
-            guest = signUp.guest?.let { guestMapper.toDTO(it) },
-            user = signUp.user?.let { simpleUserMapper.toDTO(it) },
-            userId = signUp.userId
-        ).also { dto ->
-            dto.id = signUp.id
-            dto.version = signUp.version
-        }
+        val dto = konverter.toDTO(signUp)
+        dto.answers = signUp.answers.map { answerMapper.toDTO(it) }.toMutableList()
+        dto.guest = signUp.guest?.let { guestMapper.toDTO(it) }
+        dto.user = signUp.user?.let { simpleUserMapper.toDTO(it) }
+        return dto
     }
 }
 

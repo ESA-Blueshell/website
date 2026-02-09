@@ -1,5 +1,6 @@
 package net.blueshell.api.blog.web.mapper
 
+import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.blog.web.dto.BlogDTO
 import net.blueshell.api.blog.persistence.Blog
 import net.blueshell.api.shared.mapper.BaseMapper
@@ -7,17 +8,27 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.time.Instant
+
+@Konverter
+interface BlogKonverter {
+    fun toDTO(blog: Blog): BlogDTO
+
+    fun fromDTO(dto: BlogDTO): Blog
+}
 
 @Component
 class BlogMapper : BaseMapper<Blog, BlogDTO>() {
     @Value($$"${frontend.url}")
     private lateinit var frontendUrl: String
+    private val konverter = konverter<BlogKonverter>()
 
     override fun fromDTO(dto: BlogDTO): Blog = fromDTO(dto, Blog())
 
     fun fromDTO(dto: BlogDTO, blog: Blog): Blog {
-        blog.title = requireNotNull(dto.title)
-        blog.publishedAt = dto.publishedAt
+        val mapped = konverter.fromDTO(dto)
+        blog.title = mapped.title
+        blog.publishedAt = mapped.publishedAt ?: Instant.now()
         dto.version?.let { blog.version = it }
         afterFromDTO(dto, blog)
         return blog
@@ -34,15 +45,9 @@ class BlogMapper : BaseMapper<Blog, BlogDTO>() {
     }
 
     override fun toDTO(blog: Blog): BlogDTO {
-        return BlogDTO(
-            title = blog.title,
-            html = blog.html,
-            publishedAt = blog.publishedAt
-        ).also { dto ->
-            dto.id = blog.id
-            dto.version = blog.version
-            afterToDTO(blog, dto)
-        }
+        val dto = konverter.toDTO(blog)
+        afterToDTO(blog, dto)
+        return dto
     }
 
     private fun afterToDTO(blog: Blog, dto: BlogDTO) {

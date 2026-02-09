@@ -8,10 +8,10 @@ import net.blueshell.api.shared.dto.AuditedSoftDeleteDTO
 @Schema(name = "CommitteeMember")
 data class CommitteeMemberDTO(
     @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
     @field:NotNull
-    var committeeId: Long? = null,
+    var committeeId: Long,
 
     @field:NotBlank
     var role: String? = null

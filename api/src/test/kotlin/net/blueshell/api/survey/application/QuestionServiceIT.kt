@@ -105,4 +105,70 @@ class QuestionServiceIT : EventIntegrationTestSupport() {
             assertEquals(0, answers.findByQuestionId(savedQuestion.id!!).size)
         }
     }
+
+    @Nested
+    inner class Update {
+
+        @Test
+        fun `updating question label removes answers`() {
+            val survey = persist(surveyFactory.createBasic())
+            val question = questionFactory.createWithCustomizations {
+                it.survey = survey
+                it.type = QuestionType.OPEN
+            }
+            val savedQuestion = questions.create(question)
+
+            val answer = answerFactory.createForQuestion(savedQuestion)
+            val savedAnswer = answers.create(answer)
+
+            assertTrue(answers.findByQuestionId(savedQuestion.id!!).any { it.id == savedAnswer.id })
+
+            savedQuestion.label = "${savedQuestion.label} updated"
+            questions.update(savedQuestion)
+
+            assertEquals(0, answers.findByQuestionId(savedQuestion.id!!).size)
+        }
+
+        @Test
+        fun `updating question type removes answers`() {
+            val survey = persist(surveyFactory.createBasic())
+            val question = questionFactory.createWithCustomizations {
+                it.survey = survey
+                it.type = QuestionType.OPEN
+            }
+            val savedQuestion = questions.create(question)
+
+            val answer = answerFactory.createForQuestion(savedQuestion)
+            val savedAnswer = answers.create(answer)
+
+            assertTrue(answers.findByQuestionId(savedQuestion.id!!).any { it.id == savedAnswer.id })
+
+            savedQuestion.type = QuestionType.RADIO
+            savedQuestion.choiceLabels = mutableListOf("Option A", "Option B")
+            questions.update(savedQuestion)
+
+            assertEquals(0, answers.findByQuestionId(savedQuestion.id!!).size)
+        }
+
+        @Test
+        fun `updating question choice labels removes answers`() {
+            val survey = persist(surveyFactory.createBasic())
+            val question = questionFactory.createWithCustomizations {
+                it.survey = survey
+                it.type = QuestionType.RADIO
+                it.choiceLabels = mutableListOf("Option A", "Option B")
+            }
+            val savedQuestion = questions.create(question)
+
+            val answer = answerFactory.createForQuestion(savedQuestion)
+            val savedAnswer = answers.create(answer)
+
+            assertTrue(answers.findByQuestionId(savedQuestion.id!!).any { it.id == savedAnswer.id })
+
+            savedQuestion.choiceLabels = mutableListOf("Option A", "Option B", "Option C")
+            questions.update(savedQuestion)
+
+            assertEquals(0, answers.findByQuestionId(savedQuestion.id!!).size)
+        }
+    }
 }

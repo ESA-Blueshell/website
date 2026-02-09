@@ -1,7 +1,10 @@
 package net.blueshell.api.event.application
 
+ import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory
+import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.platform.integration.queue.CalendarJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -15,10 +18,19 @@ class EventServiceIT : ServiceTestSupport() {
     private lateinit var events: EventService
 
     @Autowired
+    private lateinit var signUps: EventSignUpService
+
+    @Autowired
     private lateinit var committeeFactory: CommitteeFactory
 
     @Autowired
     private lateinit var eventFactory: EventFactory
+
+    @Autowired
+    private lateinit var guestFactory: GuestFactory
+
+    @Autowired
+    private lateinit var userFactory: UserFactory
 
     @Nested
     inner class Create {
@@ -72,6 +84,34 @@ class EventServiceIT : ServiceTestSupport() {
             events.delete(saved)
 
             assertTrue(jobExecutions.findByJobType(CalendarJobs.RemoveEvent.type).isNotEmpty())
+        }
+
+        @Test
+        fun `deletes signups when event is deleted`() {
+            val committee = persist(committeeFactory.createBasic())
+            val event = events.create(
+                eventFactory.createWithCustomizations {
+                    it.committee = committee
+                    it.approved = true
+                    it.signUp = true
+                }
+            )
+            val guest = persist(guestFactory.createBasic())
+            val user = persist(userFactory.createBasic())
+
+            val guestSignUp = EventSignUp()
+            guestSignUp.event = event
+            guestSignUp.guest = guest
+            signUps.create(guestSignUp)
+
+            val userSignUp = EventSignUp()
+            userSignUp.event = event
+            userSignUp.user = user
+            signUps.create(userSignUp)
+
+            events.delete(event)
+
+            assertTrue(signUps.findByEventId(event.id!!).isEmpty())
         }
     }
 }

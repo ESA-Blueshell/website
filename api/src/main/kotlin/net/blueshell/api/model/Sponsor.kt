@@ -27,7 +27,7 @@ class Sponsor : AuditedAutoIdEntity() {
     @Column(nullable = false, length = 4095)
     lateinit var description: String
 
-    @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @field:OneToOne(fetch = FetchType.LAZY)
     @field:JoinColumn(name = "logo_id", nullable = false)
     private var _picture: File? = null
     var picture: File
@@ -44,7 +44,6 @@ class Sponsor : AuditedAutoIdEntity() {
             field = value
             // Only override the reference, if the ref exists and is different from current
             if (value != 0L && value != _picture?.id) {
-                println("Setting picture reference for Sponsor(id=$id) to File(id=$value)")
                 _picture = File::class.asRef(value)
             }
         }

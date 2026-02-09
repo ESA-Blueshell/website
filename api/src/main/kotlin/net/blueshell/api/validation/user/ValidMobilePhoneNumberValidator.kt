@@ -25,8 +25,6 @@ class ValidMobilePhoneNumberValidator @Autowired constructor(private val phoneNu
             val isMobile = phoneNumberUtil.getNumberType(parsedNumber) == PhoneNumberUtil.PhoneNumberType.MOBILE
                     || phoneNumberUtil.getNumberType(parsedNumber) == PhoneNumberUtil.PhoneNumberType.FIXED_LINE_OR_MOBILE
 
-            print("is valid? $isValid, is mobile? $isMobile")
-
             return isValid && isMobile
         } catch (e: NumberParseException) {
             return false

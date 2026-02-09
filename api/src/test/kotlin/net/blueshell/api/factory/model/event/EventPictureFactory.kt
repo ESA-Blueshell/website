@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.FileFactory
-import net.blueshell.api.model.event.EventPicture
+import net.blueshell.api.feature.event.model.EventPicture
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

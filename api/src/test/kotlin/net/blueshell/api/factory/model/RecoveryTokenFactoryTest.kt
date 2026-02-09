@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.model.RecoveryToken
+import net.blueshell.api.feature.auth.model.RecoveryToken
 import org.junit.jupiter.api.Test
 
 class RecoveryTokenFactoryTest : ModelFactoryTestSupport() {

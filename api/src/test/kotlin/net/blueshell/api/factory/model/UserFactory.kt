@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.common.enums.Role
-import net.blueshell.api.model.User
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.feature.user.model.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import java.sql.Date

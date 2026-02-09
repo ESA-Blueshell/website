@@ -1,6 +1,6 @@
 package net.blueshell.api
 
-import net.blueshell.api.config.StorageConfig
+import net.blueshell.api.platform.config.StorageConfig
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing

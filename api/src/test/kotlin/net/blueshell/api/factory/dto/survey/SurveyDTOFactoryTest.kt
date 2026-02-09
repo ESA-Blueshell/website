@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.survey
 
-import net.blueshell.api.common.enums.QuestionType
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.factory.dto.DtoFactoryTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

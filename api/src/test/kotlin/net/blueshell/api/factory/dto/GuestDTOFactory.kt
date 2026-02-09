@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.dto.GuestDTO
+import net.blueshell.api.feature.event.dto.GuestDTO
 import org.springframework.stereotype.Component
 
 /**

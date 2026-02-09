@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.dto.error.ApiErrorDTO
-import net.blueshell.api.dto.error.FieldValidationErrorDTO
+import net.blueshell.api.shared.dto.error.ApiErrorDTO
+import net.blueshell.api.shared.dto.error.FieldValidationErrorDTO
 import org.springframework.stereotype.Component
 import java.net.URI
 

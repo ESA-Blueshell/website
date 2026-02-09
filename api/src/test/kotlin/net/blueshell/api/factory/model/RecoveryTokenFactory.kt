@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.common.enums.ResetType
-import net.blueshell.api.model.RecoveryToken
+import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.feature.auth.model.RecoveryToken
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.temporal.ChronoUnit

@@ -9,7 +9,7 @@ import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL_CONVERTER
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.architecture.support.SignatureConditions
-import net.blueshell.api.model.base.Identifiable
+import net.blueshell.api.shared.model.Identifiable
 import org.junit.jupiter.api.Test
 
 class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {

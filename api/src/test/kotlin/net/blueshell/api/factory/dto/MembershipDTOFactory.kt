@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.common.enums.MemberType
-import net.blueshell.api.dto.MembershipDTO
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.feature.membership.dto.MembershipDTO
 import org.springframework.stereotype.Component
 
 /**

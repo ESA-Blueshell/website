@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.model.Telemetry
+import net.blueshell.api.feature.telemetry.model.Telemetry
 import org.junit.jupiter.api.Test
 
 class TelemetryFactoryTest : ModelFactoryTestSupport() {

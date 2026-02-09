@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.model.Sponsor
+import net.blueshell.api.feature.sponsor.model.Sponsor
 import org.junit.jupiter.api.Test
 
 class SponsorFactoryTest : ModelFactoryTestSupport() {

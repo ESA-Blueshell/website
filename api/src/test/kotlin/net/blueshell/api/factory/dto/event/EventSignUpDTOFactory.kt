@@ -1,10 +1,10 @@
 package net.blueshell.api.factory.dto.event
 
-import net.blueshell.api.common.enums.QuestionType
-import net.blueshell.api.dto.event.EventSignUpDTO
-import net.blueshell.api.dto.survey.AnswerDTO
-import net.blueshell.api.dto.survey.SurveyDTO
-import net.blueshell.api.dto.user.SimpleUserDTO
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.feature.event.dto.EventSignUpDTO
+import net.blueshell.api.feature.survey.dto.AnswerDTO
+import net.blueshell.api.feature.survey.dto.SurveyDTO
+import net.blueshell.api.feature.user.dto.SimpleUserDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory

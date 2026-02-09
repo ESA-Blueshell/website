@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model
 
 import jakarta.persistence.EntityManager
-import net.blueshell.api.common.enums.QuestionType
-import net.blueshell.api.config.TruncateTestDatabaseListener
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.platform.config.TruncateTestDatabaseListener
 import net.blueshell.api.factory.model.board.BoardDocumentFactory
 import net.blueshell.api.factory.model.board.BoardFactory
 import net.blueshell.api.factory.model.board.BoardMemberFactory
@@ -21,14 +21,14 @@ import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
-import net.blueshell.api.model.File
-import net.blueshell.api.model.User
-import net.blueshell.api.model.committee.Committee
-import net.blueshell.api.model.contribution.ContributionPeriod
-import net.blueshell.api.model.event.Event
-import net.blueshell.api.model.survey.Answer
-import net.blueshell.api.model.survey.Question
-import net.blueshell.api.model.survey.Survey
+import net.blueshell.api.feature.file.model.File
+import net.blueshell.api.feature.user.model.User
+import net.blueshell.api.feature.committee.model.Committee
+import net.blueshell.api.feature.contribution.model.ContributionPeriod
+import net.blueshell.api.feature.event.model.Event
+import net.blueshell.api.feature.survey.model.Answer
+import net.blueshell.api.feature.survey.model.Question
+import net.blueshell.api.feature.survey.model.Survey
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.common.enums.FileType
-import net.blueshell.api.model.File
+import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.feature.file.model.File
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

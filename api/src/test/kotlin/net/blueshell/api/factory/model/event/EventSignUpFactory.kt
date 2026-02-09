@@ -3,9 +3,9 @@ package net.blueshell.api.factory.model.event
 import com.github.javafaker.Faker
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
-import net.blueshell.api.model.User
-import net.blueshell.api.model.event.Event
-import net.blueshell.api.model.event.EventSignUp
+import net.blueshell.api.feature.user.model.User
+import net.blueshell.api.feature.event.model.Event
+import net.blueshell.api.feature.event.model.EventSignUp
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

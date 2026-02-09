@@ -1,0 +1,15 @@
+package net.blueshell.api.feature.user.validation
+
+import jakarta.validation.Constraint
+import jakarta.validation.Payload
+import kotlin.reflect.KClass
+
+@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+@Constraint(validatedBy = [CountryCodeValidator::class])
+annotation class ValidCountryCode(
+    val message: String = "Country must be a valid ISO 3166-1 alpha-2 code",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload>> = []
+)

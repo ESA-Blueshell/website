@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.committee
 
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.model.committee.CommitteeMember
+import net.blueshell.api.feature.committee.model.CommitteeMember
 import org.junit.jupiter.api.Test
 
 class CommitteeMemberFactoryTest : ModelFactoryTestSupport() {

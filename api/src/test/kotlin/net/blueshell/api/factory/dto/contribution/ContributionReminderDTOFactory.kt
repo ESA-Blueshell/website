@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.contribution
 
-import net.blueshell.api.dto.contribution.ContributionReminderDTO
+import net.blueshell.api.feature.contribution.dto.ContributionReminderDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 import java.sql.Timestamp

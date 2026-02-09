@@ -1,4 +1,4 @@
-package net.blueshell.api.config
+package net.blueshell.api.platform.config
 
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order

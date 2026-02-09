@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.base
 
 import com.github.javafaker.Faker
-import net.blueshell.api.model.base.BaseModel
+import net.blueshell.api.shared.model.BaseModel
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.Instant
 import java.time.LocalDate

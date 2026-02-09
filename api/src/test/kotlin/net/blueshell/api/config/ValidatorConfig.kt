@@ -1,4 +1,4 @@
-package net.blueshell.api.config
+package net.blueshell.api.platform.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

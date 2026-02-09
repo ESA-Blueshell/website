@@ -1,0 +1,21 @@
+package net.blueshell.api.feature.event.repository
+
+import net.blueshell.api.feature.event.model.Event
+import net.blueshell.api.shared.repository.BaseRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.jpa.repository.EntityGraph
+import org.springframework.stereotype.Repository
+
+@Repository
+interface EventRepository : BaseRepository<Event, Long> {
+    @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
+    override fun findAll(spec: Specification<Event>?, pageable: Pageable): Page<Event>
+
+    @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
+    override fun findAll(pageable: Pageable): Page<Event>
+
+    @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
+    override fun findAll(): MutableList<Event>
+}

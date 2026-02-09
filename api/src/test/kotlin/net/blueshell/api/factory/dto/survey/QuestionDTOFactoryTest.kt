@@ -16,10 +16,10 @@ class QuestionDTOFactoryTest : DtoFactoryTestSupport() {
 
     @Test
     fun `creates question by type`() {
-        val open = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.OPEN)
-        val radio = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.RADIO)
-        val checkbox = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.CHECKBOX)
-        val description = questionDTOFactory.createByType(net.blueshell.api.common.enums.QuestionType.DESCRIPTION)
+        val open = questionDTOFactory.createByType(net.blueshell.api.shared.enums.QuestionType.OPEN)
+        val radio = questionDTOFactory.createByType(net.blueshell.api.shared.enums.QuestionType.RADIO)
+        val checkbox = questionDTOFactory.createByType(net.blueshell.api.shared.enums.QuestionType.CHECKBOX)
+        val description = questionDTOFactory.createByType(net.blueshell.api.shared.enums.QuestionType.DESCRIPTION)
         assertNoViolations(open)
         assertNoViolations(radio)
         assertNoViolations(checkbox)

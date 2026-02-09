@@ -1,8 +1,8 @@
 package net.blueshell.api.testsupport
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import net.blueshell.api.dto.request.JwtRequest
-import net.blueshell.api.dto.response.AuthenticationDTO
+import net.blueshell.api.feature.auth.dto.request.JwtRequest
+import net.blueshell.api.feature.auth.dto.response.AuthenticationDTO
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component

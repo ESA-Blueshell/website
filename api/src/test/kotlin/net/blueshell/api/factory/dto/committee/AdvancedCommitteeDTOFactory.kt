@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto.committee
 
-import net.blueshell.api.dto.committee.AdvancedCommitteeDTO
-import net.blueshell.api.dto.committee.CommitteeMemberDTO
+import net.blueshell.api.feature.committee.dto.AdvancedCommitteeDTO
+import net.blueshell.api.feature.committee.dto.CommitteeMemberDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

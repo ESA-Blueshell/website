@@ -76,6 +76,7 @@ dependencies {
     implementation("org.mapstruct:mapstruct:1.6.3")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
     kapt("org.mapstruct:mapstruct-processor:1.6.3")
+    implementation("io.mcarle:konvert-api:4.4.0")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")

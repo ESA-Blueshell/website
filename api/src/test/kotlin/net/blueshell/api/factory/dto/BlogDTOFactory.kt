@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.dto.BlogDTO
+import net.blueshell.api.feature.blog.dto.BlogDTO
 import org.springframework.stereotype.Component
 
 /**

@@ -7,7 +7,7 @@ object ArchitecturePackages {
     const val ROOT = "net.blueshell.api"
 
     const val DTO = "$ROOT..dto.."
-    const val MODEL_BASE = "$ROOT..model.."
+    const val MODEL_BASE = ROOT
     const val MODEL = "$ROOT..model.."
     const val MODEL_CONVERTER = "$ROOT..model.converter.."
 
@@ -19,7 +19,7 @@ object ArchitecturePackages {
     const val REPOSITORY = "$ROOT..repository.."
 
     const val LISTENER = "$ROOT..listener.."
-    const val LISTENER_JPA = "$ROOT.feature..listener.."
+    const val LISTENER_JPA = "$ROOT..shared.jpa.."
     const val JOB = "$ROOT..job.."
 
     const val CONFIG = "$ROOT.platform.config.."

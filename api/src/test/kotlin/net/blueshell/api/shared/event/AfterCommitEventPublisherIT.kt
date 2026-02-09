@@ -1,11 +1,11 @@
 package net.blueshell.api.shared.event
 
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class AfterCommitEventPublisherIT : EventIntegrationTestSupport() {
+class AfterCommitEventPublisherIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var publisher: AfterCommitEventPublisher

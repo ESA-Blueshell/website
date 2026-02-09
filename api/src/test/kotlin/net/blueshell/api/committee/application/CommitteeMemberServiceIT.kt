@@ -6,7 +6,7 @@ import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.user.application.UserService
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class CommitteeMemberServiceIT : EventIntegrationTestSupport() {
+class CommitteeMemberServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var committeeMemberService: CommitteeMemberService

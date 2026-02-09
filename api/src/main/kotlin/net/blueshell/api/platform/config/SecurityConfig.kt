@@ -26,12 +26,11 @@ import java.util.*
 @Configuration
 @EnableMethodSecurity
 class SecurityConfig(
-    private val authenticationEntryPoint: JwtAuthenticationEntryPoint?,
+    private val authenticationEntryPoint: JwtAuthenticationEntryPoint,
     private val jwtAuthFilter: JwtAuthFilter
 ) {
     @Bean
-    @Throws(Exception::class)
-    fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager? {
+    fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager {
         return cfg.authenticationManager
     }
 
@@ -48,14 +47,14 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val cfg = CorsConfiguration()
-        cfg.allowedOriginPatterns = mutableListOf<String?>(
+        cfg.allowedOriginPatterns = mutableListOf(
             "http://localhost:*",
             "http://127.0.0.1:*",
             "https://localhost",
             "https://esa-blueshell.nl"
         )
-        cfg.allowedMethods = mutableListOf<String?>("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        cfg.allowedHeaders = mutableListOf<String?>("Authorization", "Content-Type")
+        cfg.allowedMethods = mutableListOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+        cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type")
         cfg.allowCredentials = true
 
         val src = UrlBasedCorsConfigurationSource()
@@ -65,8 +64,7 @@ class SecurityConfig(
 
 
     @Bean
-    @Throws(Exception::class)
-    fun authChain(http: HttpSecurity): SecurityFilterChain? {
+    fun authChain(http: HttpSecurity): SecurityFilterChain {
         http.securityMatcher("/**")
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
@@ -100,7 +98,7 @@ class SecurityConfig(
 
     @Bean
     fun methodSecurityExpressionHandler(
-        evaluator: CompositePermissionEvaluator?
+        evaluator: CompositePermissionEvaluator
     ): MethodSecurityExpressionHandler {
         val h = DefaultMethodSecurityExpressionHandler()
         h.setPermissionEvaluator(evaluator)

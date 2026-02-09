@@ -10,14 +10,14 @@ import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class QuestionServiceIT : EventIntegrationTestSupport() {
+class QuestionServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var questions: QuestionService

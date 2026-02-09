@@ -3,13 +3,13 @@ package net.blueshell.api.event.application
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory
 import net.blueshell.api.platform.integration.queue.CalendarJobs
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class EventServiceIT : EventIntegrationTestSupport() {
+class EventServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var events: EventService
@@ -49,7 +49,7 @@ class EventServiceIT : EventIntegrationTestSupport() {
             }
 
             val saved = events.create(event)
-            saved.title = saved.title + " updated"
+            saved.title += " updated"
             saved.approved = true
             events.update(saved)
 

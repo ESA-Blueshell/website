@@ -3,16 +3,14 @@ package net.blueshell.api.contribution.application
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
-import net.blueshell.api.platform.integration.contact.job.AddContactToListJob
-import net.blueshell.api.platform.integration.contact.job.RemoveContactFromListJob
 import net.blueshell.api.platform.integration.queue.ContactJobs
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class ContributionServiceIT : EventIntegrationTestSupport() {
+class ContributionServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var contributions: ContributionService

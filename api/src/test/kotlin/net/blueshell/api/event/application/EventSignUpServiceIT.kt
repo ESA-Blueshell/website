@@ -4,15 +4,14 @@ import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory
 import net.blueshell.api.factory.model.event.GuestFactory
-import net.blueshell.api.platform.integration.email.job.EventSignupEmailJob
 import net.blueshell.api.platform.integration.queue.EmailJobs
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class EventSignUpServiceIT : EventIntegrationTestSupport() {
+class EventSignUpServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var events: EventService

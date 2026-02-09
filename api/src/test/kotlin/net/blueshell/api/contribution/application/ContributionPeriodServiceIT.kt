@@ -1,15 +1,14 @@
 package net.blueshell.api.contribution.application
 
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
-import net.blueshell.api.platform.integration.contact.job.CreateContributionPeriodListJob
 import net.blueshell.api.platform.integration.queue.ContactJobs
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-class ContributionPeriodServiceIT : EventIntegrationTestSupport() {
+class ContributionPeriodServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var periods: ContributionPeriodService

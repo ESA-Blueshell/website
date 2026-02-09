@@ -4,7 +4,7 @@ import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.file.application.event.FileDeleted
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.testsupport.EventIntegrationTestSupport
+import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -16,7 +16,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 @TestPropertySource(properties = ["storage.location=/tmp/blueshell-test-storage"])
-class FileServiceIT : EventIntegrationTestSupport() {
+class FileServiceIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var files: FileService

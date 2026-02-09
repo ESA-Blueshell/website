@@ -1,18 +1,20 @@
-CREATE TABLE job_executions (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    job_type VARCHAR(255) NOT NULL,
-    status VARCHAR(32) NOT NULL,
-    payload LONGTEXT NULL,
-    error_message LONGTEXT NULL,
-    attempts INT NOT NULL DEFAULT 0,
-    queued_at DATETIME NULL,
-    started_at DATETIME NULL,
-    finished_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by_id BIGINT NULL,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by_id BIGINT NULL,
-    version BIGINT NOT NULL DEFAULT 0
+CREATE TABLE job_executions
+(
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    deleted_at    datetime              DEFAULT '9999-12-31 23:59:59' NOT NULL,
+    job_type      VARCHAR(255) NOT NULL,
+    status        VARCHAR(32)  NOT NULL,
+    payload       LONGTEXT     NULL,
+    error_message LONGTEXT     NULL,
+    attempts      INT          NOT NULL DEFAULT 0,
+    queued_at     DATETIME     NULL,
+    started_at    DATETIME     NULL,
+    finished_at   DATETIME     NULL,
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by_id BIGINT       NULL,
+    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by_id BIGINT       NULL,
+    version       BIGINT       NOT NULL DEFAULT 0
 );
 
 ALTER TABLE job_executions

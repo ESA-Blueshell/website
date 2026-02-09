@@ -1,4 +1,4 @@
-package net.blueshell.api.event.web
+package net.blueshell.api.event.web.permission
 
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.application.EventBannerService

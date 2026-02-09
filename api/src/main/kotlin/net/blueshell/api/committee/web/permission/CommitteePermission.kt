@@ -1,4 +1,4 @@
-package net.blueshell.api.committee.web
+package net.blueshell.api.committee.web.permission
 
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.application.CommitteeService

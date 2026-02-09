@@ -1,22 +1,22 @@
-package net.blueshell.api.contribution.web
+package net.blueshell.api.user.web.permission
 
-import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.contribution.application.ContributionService
+import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.application.AddressService
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class ContributionPermission @Autowired constructor(service: ContributionService) :
-    BasePermissionEvaluator<Contribution, Contribution.Id, ContributionService>(service) {
+class AddressPermission @Autowired constructor(service: AddressService) :
+    BasePermissionEvaluator<Address, Long, AddressService>(service) {
     override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
         if (authentication == null || `object` == null || permission == null) {
             return false
         }
-        val contribution = `object` as Contribution
+        val target = `object` as Address
         return when (permission) {
-            "read" -> (principal?.id == contribution.userId)
+            "read", "write" -> (principal?.addressId == target.id)
             else -> false
         }
     }
@@ -26,7 +26,7 @@ class ContributionPermission @Autowired constructor(service: ContributionService
             return false
         }
 
-        val targetContribution = service.findById(targetId as Contribution.Id)
-        return targetContribution != null && hasPermission(authentication, targetContribution, permission)
+        val target = service.findById(targetId as Long)
+        return target != null && hasPermission(authentication, target, permission)
     }
 }

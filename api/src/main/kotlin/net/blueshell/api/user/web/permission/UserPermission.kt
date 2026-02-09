@@ -1,4 +1,4 @@
-package net.blueshell.api.user.web
+package net.blueshell.api.user.web.permission
 
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.application.UserService

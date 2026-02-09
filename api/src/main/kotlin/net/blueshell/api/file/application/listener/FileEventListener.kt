@@ -1,6 +1,6 @@
 package net.blueshell.api.file.application.listener
 
-import net.blueshell.api.file.application.event.FileDeletedEvent
+import net.blueshell.api.file.application.event.FileDeleted
 import net.blueshell.api.file.application.FileService
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -13,7 +13,7 @@ class FileEventListener(
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun onDelete(evt: FileDeletedEvent) {
+    fun onDelete(evt: FileDeleted) {
         files.deleteFromStoragePath(evt.path)
     }
 }

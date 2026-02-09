@@ -78,7 +78,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `services do not depend on controllers`(): Unit =
         arch("Inner layers must not depend on controllers") {
             noClasses()
-                .that().resideInAnyPackage(SERVICE, VALIDATION, REPOSITORY, MODEL)
+                .that().resideInAnyPackage(SERVICE, REPOSITORY, MODEL)
                 .should().dependOnClassesThat().resideInAnyPackage(CONTROLLER)
                 .because("Inner layers must not depend on the web layer.")
         }

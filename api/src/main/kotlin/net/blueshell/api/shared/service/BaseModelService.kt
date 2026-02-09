@@ -75,7 +75,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
      */
     @Transactional
     open fun createAll(entities: MutableList<T>): MutableList<T> {
-        return entities.map { this.create(it) }.toMutableList()
+        return entities.map { create(it) }.toMutableList()
     }
 
 

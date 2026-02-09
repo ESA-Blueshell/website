@@ -1,6 +1,6 @@
 package net.blueshell.api.membership.application
 
-import net.blueshell.api.membership.application.event.MembershipChangedEvent
+import net.blueshell.api.membership.application.event.MembershipChanged
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import net.blueshell.api.factory.model.MembershipFactory
@@ -35,7 +35,7 @@ class MembershipEventIT : EventIntegrationTestSupport() {
 
         val updatedUser = users.findById(user.id!!)
         assertTrue(updatedUser.hasRole(Role.MEMBER))
-        assertTrue(applicationEvents.stream(MembershipChangedEvent::class.java).anyMatch { it.userId == user.id })
+        assertTrue(applicationEvents.stream(MembershipChanged::class.java).anyMatch { it.userId == user.id })
     }
 
     @Test

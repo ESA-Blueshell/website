@@ -93,4 +93,5 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
             return guestUser
         }
     }
+
 }

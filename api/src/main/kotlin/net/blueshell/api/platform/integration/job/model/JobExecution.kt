@@ -1,7 +1,10 @@
 package net.blueshell.api.platform.integration.job.model
 
 import jakarta.persistence.*
+import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.AuditedVersionedEntity
+import net.blueshell.api.shared.model.Identifiable
 import java.time.Instant
 
 @Entity
@@ -40,9 +43,4 @@ class JobExecution(
 
     @Column(name = "finished_at")
     var finishedAt: Instant? = null
-) : AuditedVersionedEntity() {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
-        protected set
-}
+) : AuditedAutoIdEntity()

@@ -2,12 +2,11 @@ package net.blueshell.api.auth.application
 
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
-import net.blueshell.api.platform.integration.email.job.RecoveryEmailJobHandler
-import net.blueshell.api.platform.integration.email.job.RecoveryEmailPayload
+import net.blueshell.api.platform.integration.email.job.RecoveryEmailJob
 import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.application.event.UserCreatedEvent
+import net.blueshell.api.user.application.event.UserCreated
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.application.UserService
@@ -41,20 +40,20 @@ class RecoveryService(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @jakarta.transaction.Transactional
-    fun onUserCreated(event: UserCreatedEvent) {
+    fun onUserCreated(event: UserCreated) {
         val rawToken: String
         val user = users.findById(event.userId)
         if (hasAuthority(Role.BOARD)) {
             rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
-            jobDispatcher.enqueue(
-                RecoveryEmailJobHandler.JOB_TYPE,
-                RecoveryEmailPayload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
+            jobDispatcher.enqueueEmail(
+                RecoveryEmailJob.TYPE,
+                RecoveryEmailJob.Payload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
             )
         } else {
             rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
-            jobDispatcher.enqueue(
-                RecoveryEmailJobHandler.JOB_TYPE,
-                RecoveryEmailPayload(user.id!!, rawToken, ResetType.USER_ACTIVATION)
+            jobDispatcher.enqueueEmail(
+                RecoveryEmailJob.TYPE,
+                RecoveryEmailJob.Payload(user.id!!, rawToken, ResetType.USER_ACTIVATION)
             )
         }
     }
@@ -67,9 +66,9 @@ class RecoveryService(
         try {
             val user = users.findByUsername(username)
             val rawToken = issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
-            jobDispatcher.enqueue(
-                RecoveryEmailJobHandler.JOB_TYPE,
-                RecoveryEmailPayload(user.id!!, rawToken, ResetType.PASSWORD_RESET)
+            jobDispatcher.enqueueEmail(
+                RecoveryEmailJob.TYPE,
+                RecoveryEmailJob.Payload(user.id!!, rawToken, ResetType.PASSWORD_RESET)
             )
         } catch (notFound: ResponseStatusException) {
             // swallow 404
@@ -164,9 +163,9 @@ class RecoveryService(
             val user = users.findByUsername(username)
             if (user.enabled) return
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
-            jobDispatcher.enqueue(
-                RecoveryEmailJobHandler.JOB_TYPE,
-                RecoveryEmailPayload(user.id!!, rawToken, ResetType.USER_ACTIVATION)
+            jobDispatcher.enqueueEmail(
+                RecoveryEmailJob.TYPE,
+                RecoveryEmailJob.Payload(user.id!!, rawToken, ResetType.USER_ACTIVATION)
             )
         } catch (ignored: ResponseStatusException) {
             // swallow 404 to avoid enumeration
@@ -182,16 +181,16 @@ class RecoveryService(
         val recoveryTokens = repository.findAllUnconsumedByUserId(userId)
         if (recoveryTokens.any { it.type == ResetType.MEMBER_ACTIVATION }) {
             val rawToken = issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
-            jobDispatcher.enqueue(
-                RecoveryEmailJobHandler.JOB_TYPE,
-                RecoveryEmailPayload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
+            jobDispatcher.enqueueEmail(
+                RecoveryEmailJob.TYPE,
+                RecoveryEmailJob.Payload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
             )
         } else if (recoveryTokens.any { it.type == ResetType.USER_ACTIVATION }
         ) {
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
-            jobDispatcher.enqueue(
-                RecoveryEmailJobHandler.JOB_TYPE,
-                RecoveryEmailPayload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
+            jobDispatcher.enqueueEmail(
+                RecoveryEmailJob.TYPE,
+                RecoveryEmailJob.Payload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
             )
         }
     }

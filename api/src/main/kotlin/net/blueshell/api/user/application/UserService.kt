@@ -7,8 +7,8 @@ import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.persistence.UserRepository
 import net.blueshell.api.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.user.application.event.UserCreatedEvent
-import net.blueshell.api.user.application.event.UserUpdatedEvent
+import net.blueshell.api.user.application.event.UserCreated
+import net.blueshell.api.user.application.event.UserUpdated
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -35,19 +35,19 @@ class UserService @Autowired constructor(
     @Transactional
     override fun create(entity: User): User {
         val saved = super.create(entity)
-        events.publish(UserCreatedEvent(saved.id!!))
+        events.publish(UserCreated(saved.id!!))
         return saved
     }
 
     @Transactional
     override fun update(entity: User): User {
         val saved = super.update(entity)
-        events.publish(UserUpdatedEvent(saved.id!!))
+        events.publish(UserUpdated(saved.id!!))
         return saved
     }
 
     fun findByUsername(username: String): User {
-        return repository!!.findByUsername(username).orElseThrow(Supplier {
+        return repository.findByUsername(username).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "User not found with username: $username"
             )
@@ -55,15 +55,15 @@ class UserService @Autowired constructor(
     }
 
     fun existsByUsername(username: String): Boolean {
-        return repository!!.existsByUsername(username)
+        return repository.existsByUsername(username)
     }
 
     fun existsByEmail(email: String): Boolean {
-        return repository!!.existsByEmail(email)
+        return repository.existsByEmail(email)
     }
 
     fun existsByPhoneNumber(phoneNumber: String): Boolean {
-        return repository!!.existsByPhoneNumber(phoneNumber)
+        return repository.existsByPhoneNumber(phoneNumber)
     }
 
 

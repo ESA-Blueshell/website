@@ -3,7 +3,7 @@ package net.blueshell.api.file.application
 import jakarta.annotation.PostConstruct
 import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.file.application.event.FileDeletedEvent
+import net.blueshell.api.file.application.event.FileDeleted
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
@@ -119,7 +119,7 @@ class FileService @Autowired constructor(
 
     @Transactional
     override fun delete(entity: File) {
-        val event = FileDeletedEvent(entity.id!!, entity.path)
+        val event = FileDeleted(entity.id!!, entity.path)
         super.delete(entity)
         events.publish(event)
     }

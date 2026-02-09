@@ -3,9 +3,9 @@ package net.blueshell.api.contribution.application
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
-import net.blueshell.api.platform.integration.contact.job.AddContactToListJobHandler
-import net.blueshell.api.platform.integration.contact.job.CreateContributionPeriodListJobHandler
-import net.blueshell.api.platform.integration.contact.job.RemoveContactFromListJobHandler
+import net.blueshell.api.platform.integration.contact.job.AddContactToListJob
+import net.blueshell.api.platform.integration.contact.job.CreateContributionPeriodListJob
+import net.blueshell.api.platform.integration.contact.job.RemoveContactFromListJob
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -41,7 +41,7 @@ class ContributionEventIT : EventIntegrationTestSupport() {
 
         contributions.create(contribution)
 
-        assertTrue(jobExecutions.findByJobType(AddContactToListJobHandler.JOB_TYPE).isNotEmpty())
+        assertTrue(jobExecutions.findByJobType(AddContactToListJob.TYPE).isNotEmpty())
     }
 
     @Test
@@ -58,7 +58,7 @@ class ContributionEventIT : EventIntegrationTestSupport() {
 
         contributions.delete(saved)
 
-        assertTrue(jobExecutions.findByJobType(RemoveContactFromListJobHandler.JOB_TYPE).isNotEmpty())
+        assertTrue(jobExecutions.findByJobType(RemoveContactFromListJob.TYPE).isNotEmpty())
     }
 
     @Test
@@ -68,7 +68,7 @@ class ContributionEventIT : EventIntegrationTestSupport() {
         val saved = periods.create(period)
 
         assertTrue(
-            jobExecutions.findByJobType(CreateContributionPeriodListJobHandler.JOB_TYPE).isNotEmpty()
+            jobExecutions.findByJobType(CreateContributionPeriodListJob.TYPE).isNotEmpty()
         )
     }
 }

@@ -1,7 +1,7 @@
 package net.blueshell.api.contribution.application
 
-import net.blueshell.api.contribution.application.event.ContributionChangeType
-import net.blueshell.api.contribution.application.event.ContributionChangedEvent
+import net.blueshell.api.contribution.application.event.ContributionChange
+import net.blueshell.api.contribution.application.event.ContributionChanged
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
@@ -19,14 +19,14 @@ class ContributionService @Autowired constructor(
     @Transactional
     override fun create(entity: Contribution): Contribution {
         val saved = super.create(entity)
-        publishChange(saved, ContributionChangeType.CREATED)
+        publishChange(saved, ContributionChange.CREATED)
         return saved
     }
 
     @Transactional
     override fun update(entity: Contribution): Contribution {
         val saved = super.update(entity)
-        publishChange(saved, ContributionChangeType.UPDATED)
+        publishChange(saved, ContributionChange.UPDATED)
         return saved
     }
 
@@ -35,14 +35,14 @@ class ContributionService @Autowired constructor(
         val userId = entity.userId
         val periodId = entity.contributionPeriodId
         super.delete(entity)
-        events.publish(ContributionChangedEvent(userId, periodId, ContributionChangeType.DELETED))
+        events.publish(ContributionChanged(userId, periodId, ContributionChange.DELETED))
     }
 
     @Transactional
     override fun deleteById(id: Contribution.Id) {
         val contribution = findById(id)
         super.deleteById(id)
-        publishChange(contribution, ContributionChangeType.DELETED)
+        publishChange(contribution, ContributionChange.DELETED)
     }
 
     @Transactional(readOnly = true)
@@ -51,9 +51,9 @@ class ContributionService @Autowired constructor(
         return repository.findById_ContributionPeriodId(contributionPeriodId)
     }
 
-    private fun publishChange(contribution: Contribution, changeType: ContributionChangeType) {
+    private fun publishChange(contribution: Contribution, changeType: ContributionChange) {
         events.publish(
-            ContributionChangedEvent(
+            ContributionChanged(
                 contribution.userId,
                 contribution.contributionPeriodId,
                 changeType

@@ -1,6 +1,6 @@
 package net.blueshell.api.contribution.application
 
-import net.blueshell.api.contribution.application.event.ContributionPeriodChangedEvent
+import net.blueshell.api.contribution.application.event.ContributionPeriodChanged
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
@@ -17,14 +17,14 @@ class ContributionPeriodService @Autowired constructor(
     @Transactional
     override fun create(entity: ContributionPeriod): ContributionPeriod {
         val saved = super.create(entity)
-        events.publish(ContributionPeriodChangedEvent(saved.id!!))
+        events.publish(ContributionPeriodChanged(saved.id!!))
         return saved
     }
 
     @Transactional
     override fun update(entity: ContributionPeriod): ContributionPeriod {
         val saved = super.update(entity)
-        events.publish(ContributionPeriodChangedEvent(saved.id!!))
+        events.publish(ContributionPeriodChanged(saved.id!!))
         return saved
     }
 

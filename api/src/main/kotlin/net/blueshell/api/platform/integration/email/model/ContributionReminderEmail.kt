@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.email.model
 
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.platform.integration.email.model.base.BaseEmail
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.contribution.persistence.ContributionPeriod
 
 class ContributionReminderEmail(
     recipient: User,
@@ -47,4 +47,5 @@ class ContributionReminderEmail(
 
     override val replyTo: String
         get() = "board@blueshell.utwente.nl"
+
 }

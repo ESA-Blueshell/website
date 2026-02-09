@@ -1,8 +1,8 @@
 package net.blueshell.api.survey.application
 
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
-import net.blueshell.api.survey.application.event.QuestionChangeType
-import net.blueshell.api.survey.application.event.QuestionChangedEvent
+import net.blueshell.api.survey.application.event.QuestionChange
+import net.blueshell.api.survey.application.event.QuestionChanged
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.QuestionRepository
 import net.blueshell.api.shared.service.BaseModelService
@@ -19,11 +19,11 @@ class QuestionService @Autowired constructor(
     override fun create(entity: Question): Question {
         val saved = super.create(entity)
         events.publish(
-            QuestionChangedEvent(
+            QuestionChanged(
                 questionId = saved.id!!,
                 surveyId = saved.surveyId,
                 type = saved.type,
-                changeType = QuestionChangeType.CREATED
+                changeType = QuestionChange.CREATED
             )
         )
         return saved
@@ -33,11 +33,11 @@ class QuestionService @Autowired constructor(
     override fun update(entity: Question): Question {
         val saved = super.update(entity)
         events.publish(
-            QuestionChangedEvent(
+            QuestionChanged(
                 questionId = saved.id!!,
                 surveyId = saved.surveyId,
                 type = saved.type,
-                changeType = QuestionChangeType.UPDATED,
+                changeType = QuestionChange.UPDATED,
                 dirty = saved.dirty,
                 dirtyFields = saved.dirtyFields,
                 hasAnswers = saved.answers.isNotEmpty()
@@ -49,11 +49,11 @@ class QuestionService @Autowired constructor(
     @Transactional
     override fun delete(entity: Question) {
         val questionId = entity.id!!
-        val event = QuestionChangedEvent(
+        val event = QuestionChanged(
             questionId = questionId,
             surveyId = entity.surveyId,
             type = entity.type,
-            changeType = QuestionChangeType.DELETED,
+            changeType = QuestionChange.DELETED,
             hasAnswers = entity.answers.isNotEmpty()
         )
         super.delete(entity)

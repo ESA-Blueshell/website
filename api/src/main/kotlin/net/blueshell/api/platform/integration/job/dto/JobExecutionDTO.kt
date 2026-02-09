@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.job.dto
 
-import net.blueshell.api.platform.integration.job.model.JobExecutionStatus
+import net.blueshell.api.shared.enums.JobExecutionStatus
 import java.time.Instant
 
 data class JobExecutionDTO(

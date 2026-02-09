@@ -1,7 +1,7 @@
 package net.blueshell.api.membership.application
 
-import net.blueshell.api.membership.application.event.MembershipChangeType
-import net.blueshell.api.membership.application.event.MembershipChangedEvent
+import net.blueshell.api.membership.application.event.MembershipChange
+import net.blueshell.api.membership.application.event.MembershipChanged
 import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.membership.persistence.MemberRepository
@@ -21,10 +21,10 @@ class MembershipService @Autowired constructor(
     override fun create(entity: Membership): Membership {
         val saved = super.create(entity)
         events.publish(
-            MembershipChangedEvent(
+            MembershipChanged(
                 saved.userId,
                 saved.endDate == null,
-                MembershipChangeType.CREATED
+                MembershipChange.CREATED
             )
         )
         return saved
@@ -34,10 +34,10 @@ class MembershipService @Autowired constructor(
     override fun update(entity: Membership): Membership {
         val saved = super.update(entity)
         events.publish(
-            MembershipChangedEvent(
+            MembershipChanged(
                 saved.userId,
                 saved.endDate == null,
-                MembershipChangeType.UPDATED
+                MembershipChange.UPDATED
             )
         )
         return saved
@@ -48,10 +48,10 @@ class MembershipService @Autowired constructor(
         val userId = entity.userId
         super.delete(entity)
         events.publish(
-            MembershipChangedEvent(
+            MembershipChanged(
                 userId,
                 active = false,
-                changeType = MembershipChangeType.DELETED
+                changeType = MembershipChange.DELETED
             )
         )
     }
@@ -61,10 +61,10 @@ class MembershipService @Autowired constructor(
         val membership = findById(id)
         super.deleteById(id)
         events.publish(
-            MembershipChangedEvent(
+            MembershipChanged(
                 membership.userId,
                 active = false,
-                changeType = MembershipChangeType.DELETED
+                changeType = MembershipChange.DELETED
             )
         )
     }

@@ -1,10 +1,9 @@
 package net.blueshell.api.contribution.application
 
-import net.blueshell.api.platform.integration.email.job.ContributionReminderEmailJobHandler
-import net.blueshell.api.platform.integration.email.job.ContributionReminderEmailPayload
-import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
+import net.blueshell.api.platform.integration.email.job.ContributionReminderEmailJob
+import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -24,9 +23,9 @@ class ContributionReminderService @Autowired constructor(
 
     fun sendReminder(reminder: ContributionReminder) {
         val reminderId = reminder.id
-        jobDispatcher.enqueue(
-            ContributionReminderEmailJobHandler.JOB_TYPE,
-            ContributionReminderEmailPayload(reminderId.userId, reminderId.contributionPeriodId)
+        jobDispatcher.enqueueEmail(
+            ContributionReminderEmailJob.TYPE,
+            ContributionReminderEmailJob.Payload(reminderId.userId!!, reminderId.contributionPeriodId!!)
         )
     }
 

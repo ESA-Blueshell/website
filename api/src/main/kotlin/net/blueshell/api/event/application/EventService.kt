@@ -1,7 +1,7 @@
 package net.blueshell.api.event.application
 
-import net.blueshell.api.event.application.event.EventChangeType
-import net.blueshell.api.event.application.event.EventChangedEvent
+import net.blueshell.api.event.application.event.EventChange
+import net.blueshell.api.event.application.event.EventChanged
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.filter.EventFilter
 import net.blueshell.api.event.persistence.EventRepository
@@ -22,14 +22,14 @@ class EventService @Autowired constructor(
     @Transactional
     override fun create(entity: Event): Event {
         val saved = super.create(entity)
-        events.publish(EventChangedEvent(saved.id!!, EventChangeType.CREATED))
+        events.publish(EventChanged(saved.id!!, EventChange.CREATED))
         return saved
     }
 
     @Transactional
     override fun update(entity: Event): Event {
         val saved = super.update(entity)
-        events.publish(EventChangedEvent(saved.id!!, EventChangeType.UPDATED))
+        events.publish(EventChanged(saved.id!!, EventChange.UPDATED))
         return saved
     }
 
@@ -37,13 +37,13 @@ class EventService @Autowired constructor(
     override fun delete(entity: Event) {
         val eventId = entity.id!!
         super.delete(entity)
-        events.publish(EventChangedEvent(eventId, EventChangeType.DELETED))
+        events.publish(EventChanged(eventId, EventChange.DELETED))
     }
 
     @Transactional
     override fun deleteById(id: Long) {
         super.deleteById(id)
-        events.publish(EventChangedEvent(id, EventChangeType.DELETED))
+        events.publish(EventChanged(id, EventChange.DELETED))
     }
 
     fun findByFilter(pageable: Pageable, filter: EventFilter): Page<Event> {

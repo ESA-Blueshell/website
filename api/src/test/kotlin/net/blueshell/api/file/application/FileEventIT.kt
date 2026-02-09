@@ -1,8 +1,8 @@
 package net.blueshell.api.file.application
 
-import net.blueshell.api.file.application.event.FileDeletedEvent
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.factory.model.UserFactory
+import net.blueshell.api.file.application.event.FileDeleted
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -47,7 +47,7 @@ class FileEventIT : EventIntegrationTestSupport() {
 
         files.delete(saved)
 
-        assertTrue(applicationEvents.stream(FileDeletedEvent::class.java).anyMatch { it.fileId == saved.id })
+        assertTrue(applicationEvents.stream(FileDeleted::class.java).anyMatch { it.fileId == saved.id })
         assertFalse(Files.exists(path))
     }
 }

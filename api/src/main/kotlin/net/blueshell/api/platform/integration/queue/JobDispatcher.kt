@@ -21,6 +21,10 @@ class JobDispatcher(
         return execution
     }
 
+    fun enqueueEmail(jobType: String, payload: Any): JobExecution {
+        return enqueue(jobType, payload)
+    }
+
     fun requeue(execution: JobExecution) {
         sendMessage(execution)
     }

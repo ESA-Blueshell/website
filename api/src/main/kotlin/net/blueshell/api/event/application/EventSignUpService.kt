@@ -1,6 +1,6 @@
 package net.blueshell.api.event.application
 
-import net.blueshell.api.event.application.event.EventSignUpCreatedEvent
+import net.blueshell.api.event.application.event.EventSignUpCreated
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.event.persistence.EventSignUpRepository
@@ -22,7 +22,7 @@ class EventSignUpService @Autowired constructor(
     @Transactional
     override fun create(entity: EventSignUp): EventSignUp {
         val saved = super.create(entity)
-        events.publish(EventSignUpCreatedEvent(saved.id!!))
+        events.publish(EventSignUpCreated(saved.id!!))
         return saved
     }
 

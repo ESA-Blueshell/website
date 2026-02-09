@@ -3,8 +3,8 @@ package net.blueshell.api.survey.application.listener
 import net.blueshell.api.event.application.EventSignUpService
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.application.AnswerService
-import net.blueshell.api.survey.application.event.QuestionChangeType
-import net.blueshell.api.survey.application.event.QuestionChangedEvent
+import net.blueshell.api.survey.application.event.QuestionChange
+import net.blueshell.api.survey.application.event.QuestionChanged
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -18,21 +18,21 @@ class QuestionEventListener(
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun onChange(evt: QuestionChangedEvent) {
+    fun onChange(evt: QuestionChanged) {
         when (evt.changeType) {
-            QuestionChangeType.CREATED -> {
+            QuestionChange.CREATED -> {
                 log.info("On persist question {}", evt.questionId)
                 if (evt.type != QuestionType.DESCRIPTION) {
                     signUps.deleteAll(signUps.findBySurveyId(evt.surveyId))
                 }
             }
-            QuestionChangeType.UPDATED -> {
+            QuestionChange.UPDATED -> {
                 log.info("Question update dirty fields: {}", evt.dirtyFields)
                 if (evt.hasAnswers && evt.dirty) {
                     signUps.deleteAll(signUps.findBySurveyId(evt.surveyId))
                 }
             }
-            QuestionChangeType.DELETED -> {
+            QuestionChange.DELETED -> {
                 if (evt.hasAnswers) {
                     answers.deleteAll(answers.findByQuestionId(evt.questionId))
                 }

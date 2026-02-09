@@ -1,7 +1,7 @@
 package net.blueshell.api.membership.application.listener
 
-import net.blueshell.api.membership.application.event.MembershipChangeType
-import net.blueshell.api.membership.application.event.MembershipChangedEvent
+import net.blueshell.api.membership.application.event.MembershipChange
+import net.blueshell.api.membership.application.event.MembershipChanged
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.application.UserService
 import org.slf4j.LoggerFactory
@@ -16,10 +16,10 @@ class MembershipEventListener(
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun onChange(evt: MembershipChangedEvent) {
+    fun onChange(evt: MembershipChanged) {
         when (evt.changeType) {
-            MembershipChangeType.CREATED,
-            MembershipChangeType.UPDATED -> {
+            MembershipChange.CREATED,
+            MembershipChange.UPDATED -> {
                 if (evt.active) {
                     log.info("Updating membership for user {} adding role {}", evt.userId, Role.MEMBER)
                     users.addRole(evt.userId, Role.MEMBER)
@@ -28,7 +28,7 @@ class MembershipEventListener(
                     users.removeRole(evt.userId, Role.MEMBER)
                 }
             }
-            MembershipChangeType.DELETED -> {
+            MembershipChange.DELETED -> {
                 log.info("Deleting membership for user {} removing role {}", evt.userId, Role.MEMBER)
                 users.removeRole(evt.userId, Role.MEMBER)
             }

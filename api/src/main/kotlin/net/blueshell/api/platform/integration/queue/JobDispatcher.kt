@@ -14,6 +14,10 @@ class JobDispatcher(
     private val jobQueueProperties: JobQueueProperties,
     private val jobExecutionService: JobExecutionService
 ) {
+    fun <T : Any> enqueue(job: JobDefinition<T>, payload: T): JobExecution {
+        return enqueue(job.type, payload)
+    }
+
     fun enqueue(jobType: String, payload: Any? = null): JobExecution {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val execution = jobExecutionService.createQueued(jobType, payloadJson)

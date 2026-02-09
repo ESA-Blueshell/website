@@ -4,9 +4,7 @@ import net.blueshell.api.contribution.application.ContributionPeriodService
 import net.blueshell.api.contribution.application.event.ContributionChange
 import net.blueshell.api.contribution.application.event.ContributionChanged
 import net.blueshell.api.contribution.application.event.ContributionPeriodChanged
-import net.blueshell.api.platform.integration.contact.job.AddContactToListJob
-import net.blueshell.api.platform.integration.contact.job.CreateContributionPeriodListJob
-import net.blueshell.api.platform.integration.contact.job.RemoveContactFromListJob
+import net.blueshell.api.platform.integration.queue.ContactJobs
 import net.blueshell.api.platform.integration.queue.JobDispatcher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -24,12 +22,13 @@ class ContributionContactListener(
         when (evt.changeType) {
             ContributionChange.CREATED,
             ContributionChange.UPDATED -> jobDispatcher.enqueue(
-                AddContactToListJob.TYPE,
-                AddContactToListJob.Payload(evt.userId, evt.periodId)
+                ContactJobs.AddToList,
+                ContactJobs.AddToListPayload(evt.userId, evt.periodId)
             )
+
             ContributionChange.DELETED -> jobDispatcher.enqueue(
-                RemoveContactFromListJob.TYPE,
-                RemoveContactFromListJob.Payload(evt.userId, evt.periodId)
+                ContactJobs.RemoveFromList,
+                ContactJobs.RemoveFromListPayload(evt.userId, evt.periodId)
             )
         }
     }
@@ -40,8 +39,8 @@ class ContributionContactListener(
         val period = periods.findById(evt.periodId)
         if (period.listId != null) return
         jobDispatcher.enqueue(
-            CreateContributionPeriodListJob.TYPE,
-            CreateContributionPeriodListJob.Payload(period.id!!)
+            ContactJobs.CreateContributionPeriodList,
+            ContactJobs.CreateContributionPeriodListPayload(period.id!!)
         )
     }
 }

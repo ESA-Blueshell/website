@@ -2,6 +2,7 @@ package net.blueshell.api.user.application
 
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.platform.integration.contact.job.SyncContactJob
+import net.blueshell.api.platform.integration.queue.ContactJobs
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import net.blueshell.api.user.application.event.UserCreated
@@ -27,7 +28,7 @@ class UserServiceIT : EventIntegrationTestSupport() {
             val user = users.create(userFactory.createBasic())
 
             assertTrue(applicationEvents.stream(UserCreated::class.java).anyMatch { it.userId == user.id })
-            assertTrue(jobExecutions.findByJobType(SyncContactJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(ContactJobs.SyncContact.type).isNotEmpty())
         }
     }
 
@@ -43,7 +44,7 @@ class UserServiceIT : EventIntegrationTestSupport() {
             users.update(user)
 
             assertTrue(applicationEvents.stream(UserUpdated::class.java).anyMatch { it.userId == user.id })
-            assertTrue(jobExecutions.findByJobType(SyncContactJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(ContactJobs.SyncContact.type).isNotEmpty())
         }
     }
 }

@@ -3,24 +3,21 @@ package net.blueshell.api.platform.integration.email.job
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.integration.email.service.EmailService
 import net.blueshell.api.platform.integration.queue.AbstractMailJobHandler
+import net.blueshell.api.platform.integration.queue.EmailJobs
 import org.springframework.stereotype.Component
 
 @Component
 class EventSignupEmailJob(
     objectMapper: ObjectMapper,
     emails: EmailService
-) : AbstractMailJobHandler<EventSignupEmailJob.Payload>(objectMapper, Payload::class.java, emails) {
-    override val jobType: String = TYPE
+) : AbstractMailJobHandler<EmailJobs.EventSignupPayload>(
+    objectMapper,
+    EmailJobs.EventSignup.payloadType,
+    emails
+) {
+    override val jobType: String = EmailJobs.EventSignup.type
 
-    override fun handlePayload(payload: Payload) {
+    override fun handlePayload(payload: EmailJobs.EventSignupPayload) {
         emails.sendEventSignupEmail(payload.eventSignUpId)
     }
-
-    companion object {
-        const val TYPE = "email.event-signup"
-    }
-
-    data class Payload(
-        val eventSignUpId: Long
-    )
 }

@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory
 import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.platform.integration.email.job.EventSignupEmailJob
+import net.blueshell.api.platform.integration.queue.EmailJobs
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -50,7 +51,7 @@ class EventSignUpServiceIT : EventIntegrationTestSupport() {
             signUps.create(signUp)
 
             assertTrue(
-                jobExecutions.findByJobType(EventSignupEmailJob.TYPE).isNotEmpty()
+                jobExecutions.findByJobType(EmailJobs.EventSignup.type).isNotEmpty()
             )
         }
     }

@@ -5,11 +5,9 @@ import net.blueshell.api.event.application.EventSignUpService
 import net.blueshell.api.event.application.event.EventChange
 import net.blueshell.api.event.application.event.EventChanged
 import net.blueshell.api.event.application.event.EventSignUpCreated
-import net.blueshell.api.platform.integration.calendar.job.AddEventToCalendarJob
 import net.blueshell.api.platform.integration.calendar.job.CalendarEventRef
-import net.blueshell.api.platform.integration.calendar.job.RemoveEventFromCalendarJob
-import net.blueshell.api.platform.integration.calendar.job.SyncEventToCalendarJob
-import net.blueshell.api.platform.integration.email.job.EventSignupEmailJob
+import net.blueshell.api.platform.integration.queue.CalendarJobs
+import net.blueshell.api.platform.integration.queue.EmailJobs
 import net.blueshell.api.platform.integration.queue.JobDispatcher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -33,7 +31,7 @@ class EventJobsListener(
                 val e = events.findById(evt.eventId)
                 if (e.approved) {
                     jobDispatcher.enqueue(
-                        AddEventToCalendarJob.TYPE,
+                        CalendarJobs.AddEvent,
                         CalendarEventRef(e.id!!)
                     )
                 }
@@ -42,18 +40,18 @@ class EventJobsListener(
                 val e = events.findById(evt.eventId)
                 if (e.approved) {
                     jobDispatcher.enqueue(
-                        SyncEventToCalendarJob.TYPE,
+                        CalendarJobs.SyncEvent,
                         CalendarEventRef(e.id!!)
                     )
                 } else {
                     jobDispatcher.enqueue(
-                        RemoveEventFromCalendarJob.TYPE,
+                        CalendarJobs.RemoveEvent,
                         CalendarEventRef(e.id!!)
                     )
                 }
             }
             EventChange.DELETED -> jobDispatcher.enqueue(
-                RemoveEventFromCalendarJob.TYPE,
+                CalendarJobs.RemoveEvent,
                 CalendarEventRef(evt.eventId)
             )
         }
@@ -67,9 +65,9 @@ class EventJobsListener(
     fun onPersist(evt: EventSignUpCreated) {
         val e = signUps.findById(evt.signUpId)
         if (e.guest != null) {
-            jobDispatcher.enqueueEmail(
-                EventSignupEmailJob.TYPE,
-                EventSignupEmailJob.Payload(e.id!!)
+            jobDispatcher.enqueue(
+                EmailJobs.EventSignup,
+                EmailJobs.EventSignupPayload(e.id!!)
             )
         }
     }

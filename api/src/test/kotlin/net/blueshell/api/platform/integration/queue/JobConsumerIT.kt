@@ -2,7 +2,6 @@ package net.blueshell.api.platform.integration.queue
 
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.platform.integration.contact.ContactService
-import net.blueshell.api.platform.integration.contact.job.SyncContactJob
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import net.blueshell.api.user.application.UserService
@@ -34,8 +33,8 @@ class JobConsumerIT : EventIntegrationTestSupport() {
     fun `dispatching sync contact job triggers handler`() {
         val user = users.create(userFactory.createBasic())
         val execution = dispatcher.enqueue(
-            SyncContactJob.TYPE,
-            SyncContactJob.Payload(user.id!!)
+            ContactJobs.SyncContact,
+            ContactJobs.SyncContactPayload(user.id!!)
         )
 
         consumer.handle(JobMessage(execution.id!!, execution.jobType, execution.payload))

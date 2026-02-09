@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.contribution.application.ContributionPeriodService
 import net.blueshell.api.platform.integration.contact.ContactService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.platform.integration.queue.ContactJobs
 import net.blueshell.api.user.application.UserService
 import org.springframework.stereotype.Component
 
@@ -13,10 +14,10 @@ class AddContactToListJob(
     private val contacts: ContactService,
     private val users: UserService,
     private val periods: ContributionPeriodService
-) : AbstractJsonJobHandler<AddContactToListJob.Payload>(objectMapper, Payload::class.java) {
-    override val jobType: String = TYPE
+) : AbstractJsonJobHandler<ContactJobs.AddToListPayload>(objectMapper, ContactJobs.AddToList.payloadType) {
+    override val jobType: String = ContactJobs.AddToList.type
 
-    override fun handlePayload(payload: Payload) {
+    override fun handlePayload(payload: ContactJobs.AddToListPayload) {
         val user = users.findById(payload.userId)
         val period = periods.findById(payload.periodId)
 
@@ -28,12 +29,4 @@ class AddContactToListJob(
         contacts.addToList(period, user)
     }
 
-    companion object {
-        const val TYPE = "contact.add-to-list"
-    }
-
-    data class Payload(
-        val userId: Long,
-        val periodId: Long
-    )
 }

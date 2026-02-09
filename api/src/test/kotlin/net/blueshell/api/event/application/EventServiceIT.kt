@@ -2,9 +2,7 @@ package net.blueshell.api.event.application
 
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory
-import net.blueshell.api.platform.integration.calendar.job.AddEventToCalendarJob
-import net.blueshell.api.platform.integration.calendar.job.RemoveEventFromCalendarJob
-import net.blueshell.api.platform.integration.calendar.job.SyncEventToCalendarJob
+import net.blueshell.api.platform.integration.queue.CalendarJobs
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -35,7 +33,7 @@ class EventServiceIT : EventIntegrationTestSupport() {
 
             events.create(event)
 
-            assertTrue(jobExecutions.findByJobType(AddEventToCalendarJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(CalendarJobs.AddEvent.type).isNotEmpty())
         }
     }
 
@@ -55,7 +53,7 @@ class EventServiceIT : EventIntegrationTestSupport() {
             saved.approved = true
             events.update(saved)
 
-            assertTrue(jobExecutions.findByJobType(SyncEventToCalendarJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(CalendarJobs.SyncEvent.type).isNotEmpty())
         }
     }
 
@@ -73,7 +71,7 @@ class EventServiceIT : EventIntegrationTestSupport() {
             val saved = events.create(event)
             events.delete(saved)
 
-            assertTrue(jobExecutions.findByJobType(RemoveEventFromCalendarJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(CalendarJobs.RemoveEvent.type).isNotEmpty())
         }
     }
 }

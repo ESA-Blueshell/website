@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.application
 
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
 import net.blueshell.api.platform.integration.contact.job.CreateContributionPeriodListJob
+import net.blueshell.api.platform.integration.queue.ContactJobs
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -25,7 +26,7 @@ class ContributionPeriodServiceIT : EventIntegrationTestSupport() {
 
             periods.create(period)
 
-            assertTrue(jobExecutions.findByJobType(CreateContributionPeriodListJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(ContactJobs.CreateContributionPeriodList.type).isNotEmpty())
         }
     }
 }

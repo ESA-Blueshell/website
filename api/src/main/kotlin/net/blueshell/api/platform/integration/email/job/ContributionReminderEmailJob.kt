@@ -3,29 +3,21 @@ package net.blueshell.api.platform.integration.email.job
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.integration.email.service.EmailService
 import net.blueshell.api.platform.integration.queue.AbstractMailJobHandler
+import net.blueshell.api.platform.integration.queue.EmailJobs
 import org.springframework.stereotype.Component
 
 @Component
 class ContributionReminderEmailJob(
     objectMapper: ObjectMapper,
     emails: EmailService
-) : AbstractMailJobHandler<ContributionReminderEmailJob.Payload>(
+) : AbstractMailJobHandler<EmailJobs.ContributionReminderPayload>(
     objectMapper,
-    Payload::class.java,
+    EmailJobs.ContributionReminder.payloadType,
     emails
 ) {
-    override val jobType: String = TYPE
+    override val jobType: String = EmailJobs.ContributionReminder.type
 
-    override fun handlePayload(payload: Payload) {
+    override fun handlePayload(payload: EmailJobs.ContributionReminderPayload) {
         emails.sendContributionReminderEmail(payload.userId, payload.contributionPeriodId)
     }
-
-    companion object {
-        const val TYPE = "email.contribution-reminder"
-    }
-
-    data class Payload(
-        val userId: Long,
-        val contributionPeriodId: Long
-    )
 }

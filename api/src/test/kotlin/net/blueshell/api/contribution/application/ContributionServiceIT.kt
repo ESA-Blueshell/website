@@ -5,6 +5,7 @@ import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
 import net.blueshell.api.platform.integration.contact.job.AddContactToListJob
 import net.blueshell.api.platform.integration.contact.job.RemoveContactFromListJob
+import net.blueshell.api.platform.integration.queue.ContactJobs
 import net.blueshell.api.testsupport.EventIntegrationTestSupport
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -44,7 +45,7 @@ class ContributionServiceIT : EventIntegrationTestSupport() {
 
             contributions.create(contribution)
 
-            assertTrue(jobExecutions.findByJobType(AddContactToListJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(ContactJobs.AddToList.type).isNotEmpty())
         }
     }
 
@@ -65,7 +66,7 @@ class ContributionServiceIT : EventIntegrationTestSupport() {
 
             contributions.delete(saved)
 
-            assertTrue(jobExecutions.findByJobType(RemoveContactFromListJob.TYPE).isNotEmpty())
+            assertTrue(jobExecutions.findByJobType(ContactJobs.RemoveFromList.type).isNotEmpty())
         }
     }
 }

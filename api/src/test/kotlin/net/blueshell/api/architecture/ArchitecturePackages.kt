@@ -10,6 +10,7 @@ object ArchitecturePackages {
     const val MODEL_BASE = ROOT
     const val MODEL = "$ROOT..model.."
     const val MODEL_CONVERTER = "$ROOT..model.converter.."
+    const val PERSISTENCE = "$ROOT..persistence.."
 
     const val CONTROLLER = "$ROOT..web.."
     const val VALIDATION = "$ROOT..validation.."

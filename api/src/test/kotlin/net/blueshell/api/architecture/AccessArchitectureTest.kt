@@ -10,6 +10,7 @@ import net.blueshell.api.architecture.ArchitecturePackages.JOB
 import net.blueshell.api.architecture.ArchitecturePackages.LISTENER
 import net.blueshell.api.architecture.ArchitecturePackages.LISTENER_JPA
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL
+import net.blueshell.api.architecture.ArchitecturePackages.PERSISTENCE
 import net.blueshell.api.architecture.ArchitecturePackages.REPOSITORY
 import net.blueshell.api.architecture.ArchitecturePackages.SECURITY
 import net.blueshell.api.architecture.ArchitecturePackages.SERVICE
@@ -24,7 +25,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         arch("DTOs only accessed at API border") {
             classes()
                 .that().resideInAnyPackage(DTO)
-                .should().onlyBeAccessed().byAnyPackage(CONTROLLER, DTO, MODEL, VALIDATION)
+                .should().onlyBeAccessed().byAnyPackage(CONTROLLER, DTO, MODEL, PERSISTENCE, VALIDATION)
                 .because("DTOs should not leak into services/repositories; keep them at the API boundary.")
         }
 
@@ -68,7 +69,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `services do not depend on controllers`(): Unit =
         arch("Inner layers must not depend on controllers") {
             noClasses()
-                .that().resideInAnyPackage(SERVICE, REPOSITORY, MODEL)
+                .that().resideInAnyPackage(SERVICE, REPOSITORY, MODEL, PERSISTENCE)
                 .should().dependOnClassesThat().resideInAnyPackage(CONTROLLER)
                 .because("Inner layers must not depend on the web layer.")
         }

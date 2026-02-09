@@ -16,7 +16,7 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .layer("Validation").definedBy(ArchitecturePackages.VALIDATION)
                 .layer("Services").definedBy(ArchitecturePackages.SERVICE)
                 .layer("Repositories").definedBy(ArchitecturePackages.REPOSITORY)
-                .layer("Model").definedBy(ArchitecturePackages.MODEL)
+                .layer("Model").definedBy(ArchitecturePackages.MODEL, ArchitecturePackages.PERSISTENCE)
                 .layer("DTO").definedBy(ArchitecturePackages.DTO)
                 .layer("Common").definedBy(ArchitecturePackages.COMMON)
 

@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.job
 
-import net.blueshell.api.feature.shared.model.ModelPersistenceTestSupport
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.platform.integration.job.model.JobExecutionStatus
 import org.junit.jupiter.api.Assertions.assertEquals

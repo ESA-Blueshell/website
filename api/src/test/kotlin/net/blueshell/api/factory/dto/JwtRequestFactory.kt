@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.feature.auth.dto.request.JwtRequest
+import net.blueshell.api.auth.dto.request.JwtRequest
 import org.springframework.stereotype.Component
 
 /**

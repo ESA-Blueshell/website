@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.calendar.job
 
 import net.blueshell.api.platform.integration.calendar.CalendarService
-import net.blueshell.api.feature.event.service.EventService
+import net.blueshell.api.event.service.EventService
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto.user
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.feature.user.dto.AdvancedUserDTO
+import net.blueshell.api.user.dto.AdvancedUserDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 import java.sql.Date

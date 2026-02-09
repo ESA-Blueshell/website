@@ -2,7 +2,7 @@ package net.blueshell.api.platform.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
-import net.blueshell.api.feature.auth.security.IdentityProvider
+import net.blueshell.api.auth.security.IdentityProvider
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 

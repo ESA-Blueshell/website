@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.contact.job
 
 import net.blueshell.api.platform.integration.contact.ContactService
-import net.blueshell.api.feature.user.service.UserService
+import net.blueshell.api.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover

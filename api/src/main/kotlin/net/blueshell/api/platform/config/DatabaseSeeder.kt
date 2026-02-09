@@ -4,30 +4,30 @@ import com.github.javafaker.Faker
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.feature.user.model.Address
-import net.blueshell.api.feature.membership.model.Membership
-import net.blueshell.api.feature.auth.model.RecoveryToken
-import net.blueshell.api.feature.auth.service.RecoveryService
-import net.blueshell.api.feature.user.model.User
-import net.blueshell.api.feature.committee.model.Committee
-import net.blueshell.api.feature.committee.model.CommitteeMember
-import net.blueshell.api.feature.committee.service.CommitteeMemberService
-import net.blueshell.api.feature.committee.service.CommitteeService
-import net.blueshell.api.feature.contribution.model.Contribution
-import net.blueshell.api.feature.contribution.model.ContributionPeriod
-import net.blueshell.api.feature.event.model.Event
-import net.blueshell.api.feature.event.model.EventSignUp
-import net.blueshell.api.feature.event.model.Guest
-import net.blueshell.api.feature.survey.model.Answer
-import net.blueshell.api.feature.survey.model.Question
-import net.blueshell.api.feature.survey.model.Survey
-import net.blueshell.api.feature.contribution.service.ContributionPeriodService
-import net.blueshell.api.feature.contribution.service.ContributionService
-import net.blueshell.api.feature.event.service.EventService
-import net.blueshell.api.feature.event.service.EventSignUpService
-import net.blueshell.api.feature.membership.service.MembershipService
-import net.blueshell.api.feature.user.service.AddressService
-import net.blueshell.api.feature.user.service.UserService
+import net.blueshell.api.user.model.Address
+import net.blueshell.api.membership.model.Membership
+import net.blueshell.api.auth.model.RecoveryToken
+import net.blueshell.api.auth.service.RecoveryService
+import net.blueshell.api.user.model.User
+import net.blueshell.api.committee.model.Committee
+import net.blueshell.api.committee.model.CommitteeMember
+import net.blueshell.api.committee.service.CommitteeMemberService
+import net.blueshell.api.committee.service.CommitteeService
+import net.blueshell.api.contribution.model.Contribution
+import net.blueshell.api.contribution.model.ContributionPeriod
+import net.blueshell.api.event.model.Event
+import net.blueshell.api.event.model.EventSignUp
+import net.blueshell.api.event.model.Guest
+import net.blueshell.api.survey.model.Answer
+import net.blueshell.api.survey.model.Question
+import net.blueshell.api.survey.model.Survey
+import net.blueshell.api.contribution.service.ContributionPeriodService
+import net.blueshell.api.contribution.service.ContributionService
+import net.blueshell.api.event.service.EventService
+import net.blueshell.api.event.service.EventSignUpService
+import net.blueshell.api.membership.service.MembershipService
+import net.blueshell.api.user.service.AddressService
+import net.blueshell.api.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
@@ -55,7 +55,7 @@ class DatabaseSeeder(
     private val contributionPeriodService: ContributionPeriodService,
     private val contributionService: ContributionService,
     private val recoveryService: RecoveryService,
-    private val surveyService: net.blueshell.api.feature.survey.service.SurveyService,
+    private val surveyService: net.blueshell.api.survey.service.SurveyService,
     private val passwordEncoder: PasswordEncoder
 ) : CommandLineRunner {
 

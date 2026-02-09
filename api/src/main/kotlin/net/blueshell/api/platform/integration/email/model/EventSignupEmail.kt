@@ -1,9 +1,9 @@
 package net.blueshell.api.platform.integration.email.model
 
 import net.blueshell.api.platform.integration.email.model.base.BaseEmail
-import net.blueshell.api.feature.user.model.User
-import net.blueshell.api.feature.event.model.Event
-import net.blueshell.api.feature.event.model.EventSignUp
+import net.blueshell.api.user.model.User
+import net.blueshell.api.event.model.Event
+import net.blueshell.api.event.model.EventSignUp
 
 class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String, appUrl: String) : BaseEmail(
     createRecipientFromSignUp(

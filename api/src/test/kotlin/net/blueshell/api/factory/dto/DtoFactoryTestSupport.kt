@@ -10,15 +10,15 @@ import jakarta.validation.Validator
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.platform.config.FactoryConfig
 import net.blueshell.api.platform.config.PhoneNumberConfig
-import net.blueshell.api.feature.event.dto.EventSignUpDTO
-import net.blueshell.api.feature.survey.dto.AnswerDTO
-import net.blueshell.api.feature.event.model.Event
-import net.blueshell.api.feature.survey.model.Question
-import net.blueshell.api.feature.survey.model.Survey
-import net.blueshell.api.feature.user.repository.UserRepository
-import net.blueshell.api.feature.survey.repository.QuestionRepository
-import net.blueshell.api.feature.membership.service.MembershipService
-import net.blueshell.api.feature.event.service.EventService
+import net.blueshell.api.event.dto.EventSignUpDTO
+import net.blueshell.api.survey.dto.AnswerDTO
+import net.blueshell.api.event.model.Event
+import net.blueshell.api.survey.model.Question
+import net.blueshell.api.survey.model.Survey
+import net.blueshell.api.user.repository.UserRepository
+import net.blueshell.api.survey.repository.QuestionRepository
+import net.blueshell.api.membership.service.MembershipService
+import net.blueshell.api.event.service.EventService
 import net.blueshell.api.testutil.ModelTestUtils
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.extension.ExtendWith
@@ -163,7 +163,7 @@ class DtoFactoryTestConfig {
     fun userRepository(): UserRepository = mockk(relaxed = true)
 
     @Bean
-    fun userService(): net.blueshell.api.feature.user.service.UserService = mockk(relaxed = true)
+    fun userService(): net.blueshell.api.user.service.UserService = mockk(relaxed = true)
 
     @Bean
     fun membershipService(): MembershipService = mockk(relaxed = true)

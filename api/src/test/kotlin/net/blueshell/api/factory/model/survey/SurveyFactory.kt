@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.survey
 
 import com.github.javafaker.Faker
-import net.blueshell.api.feature.survey.model.Survey
+import net.blueshell.api.survey.model.Survey
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

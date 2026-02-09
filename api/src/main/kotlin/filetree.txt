@@ -1,0 +1,537 @@
+.
+.-- db
+.   `-- migration
+.       |-- V16__Migrate_Signatures.kt
+.       `-- V17__Migrate_BHV_EHBO.kt
+.-- net
+.   `-- blueshell
+.       |-- api
+.       |   |-- feature
+.       |   |   |-- auth
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- recovery
+.       |   |   |   |   |   |-- MemberActivationRequest.kt
+.       |   |   |   |   |   |-- PasswordResetRequest.kt
+.       |   |   |   |   |   `-- UserActivationRequest.kt
+.       |   |   |   |   |-- request
+.       |   |   |   |   |   `-- JwtRequest.kt
+.       |   |   |   |   `-- response
+.       |   |   |   |       `-- AuthenticationDTO.kt
+.       |   |   |   |-- email
+.       |   |   |   |   |-- MemberActivationEmail.kt
+.       |   |   |   |   |-- PasswordResetEmail.kt
+.       |   |   |   |   |-- RecoveryEmail.kt
+.       |   |   |   |   `-- UserActivationEmail.kt
+.       |   |   |   |-- model
+.       |   |   |   |   `-- RecoveryToken.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   `-- RecoveryTokenRepository.kt
+.       |   |   |   |-- security
+.       |   |   |   |   |-- IdentityProvider.kt
+.       |   |   |   |   |-- JWTAuthBase.kt
+.       |   |   |   |   |-- JwtAuthFilter.kt
+.       |   |   |   |   |-- JwtAuthenticationEntryPoint.kt
+.       |   |   |   |   `-- JwtTokenUtil.kt
+.       |   |   |   |-- service
+.       |   |   |   |   `-- RecoveryService.kt
+.       |   |   |   `-- web
+.       |   |   |       |-- AuthenticationController.kt
+.       |   |   |       `-- RecoveryController.kt
+.       |   |   |-- blog
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- BlogDTO.kt
+.       |   |   |   |   `-- SocialDTO.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   |-- BlogMapper.kt
+.       |   |   |   |   `-- SocialMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   `-- Blog.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   `-- BlogRepository.kt
+.       |   |   |   |-- service
+.       |   |   |   |   `-- BlogService.kt
+.       |   |   |   `-- web
+.       |   |   |       `-- BlogController.kt
+.       |   |   |-- board
+.       |   |   |   `-- model
+.       |   |   |       |-- Board.kt
+.       |   |   |       |-- BoardDocument.kt
+.       |   |   |       `-- BoardMember.kt
+.       |   |   |-- committee
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- AdvancedCommitteeDTO.kt
+.       |   |   |   |   |-- CommitteeMemberDTO.kt
+.       |   |   |   |   `-- SimpleCommitteeDTO.kt
+.       |   |   |   |-- listener
+.       |   |   |   |   `-- CommitteeMemberEventListener.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   |-- AdvancedCommitteeMapper.kt
+.       |   |   |   |   |-- CommitteeMemberMapper.kt
+.       |   |   |   |   `-- SimpleCommitteeMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   |-- Committee.kt
+.       |   |   |   |   `-- CommitteeMember.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   |-- CommitteeMemberRepository.kt
+.       |   |   |   |   `-- CommitteeRepository.kt
+.       |   |   |   |-- security
+.       |   |   |   |   `-- CommitteePermission.kt
+.       |   |   |   |-- service
+.       |   |   |   |   |-- CommitteeMemberService.kt
+.       |   |   |   |   `-- CommitteeService.kt
+.       |   |   |   `-- web
+.       |   |   |       `-- CommitteeController.kt
+.       |   |   |-- contribution
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- ContributionDTO.kt
+.       |   |   |   |   |-- ContributionPeriodDTO.kt
+.       |   |   |   |   `-- ContributionReminderDTO.kt
+.       |   |   |   |-- event
+.       |   |   |   |   |-- ContributionPeriodCreated.kt
+.       |   |   |   |   `-- ContributionReminderRequested.kt
+.       |   |   |   |-- listener
+.       |   |   |   |   |-- ContributionEventListener.kt
+.       |   |   |   |   `-- ContributionPeriodEventListener.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   |-- ContributionMapper.kt
+.       |   |   |   |   |-- ContributionPeriodMapper.kt
+.       |   |   |   |   `-- ContributionReminderMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   |-- Contribution.kt
+.       |   |   |   |   |-- ContributionPeriod.kt
+.       |   |   |   |   `-- ContributionReminder.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   |-- ContributionPeriodRepository.kt
+.       |   |   |   |   |-- ContributionReminderRepository.kt
+.       |   |   |   |   `-- ContributionRepository.kt
+.       |   |   |   |-- security
+.       |   |   |   |   `-- ContributionPermission.kt
+.       |   |   |   |-- service
+.       |   |   |   |   |-- ContributionPeriodService.kt
+.       |   |   |   |   |-- ContributionReminderService.kt
+.       |   |   |   |   `-- ContributionService.kt
+.       |   |   |   `-- web
+.       |   |   |       |-- ContributionController.kt
+.       |   |   |       |-- ContributionPeriodController.kt
+.       |   |   |       `-- ContributionReminderController.kt
+.       |   |   |-- event
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- EventBannerDTO.kt
+.       |   |   |   |   |-- EventDTO.kt
+.       |   |   |   |   |-- EventFeedbackDTO.kt
+.       |   |   |   |   |-- EventSignUpDTO.kt
+.       |   |   |   |   `-- GuestDTO.kt
+.       |   |   |   |-- event
+.       |   |   |   |   |-- EventApproved.kt
+.       |   |   |   |   |-- EventCreated.kt
+.       |   |   |   |   |-- EventDeleted.kt
+.       |   |   |   |   |-- EventSignUpCancelled.kt
+.       |   |   |   |   |-- EventSignUpCreated.kt
+.       |   |   |   |   |-- EventUnapproved.kt
+.       |   |   |   |   `-- EventUpdated.kt
+.       |   |   |   |-- listener
+.       |   |   |   |   |-- EventEventListener.kt
+.       |   |   |   |   `-- EventSignUpEventListener.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   |-- EventBannerMapper.kt
+.       |   |   |   |   |-- EventMapper.kt
+.       |   |   |   |   |-- EventSignUpMapper.kt
+.       |   |   |   |   |-- EventSocialMapper.kt
+.       |   |   |   |   `-- GuestMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   |-- filter
+.       |   |   |   |   |   |-- EventFilter.kt
+.       |   |   |   |   |   `-- EventSignUpFilter.kt
+.       |   |   |   |   |-- Event.kt
+.       |   |   |   |   |-- EventBanner.kt
+.       |   |   |   |   |-- EventFeedback.kt
+.       |   |   |   |   |-- EventPicture.kt
+.       |   |   |   |   |-- EventSignUp.kt
+.       |   |   |   |   |-- EventSignUpAnswer.kt
+.       |   |   |   |   `-- Guest.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   |-- spec
+.       |   |   |   |   |   |-- EventSignUpSpecifications.kt
+.       |   |   |   |   |   `-- EventSpecifications.kt
+.       |   |   |   |   |-- EventBannerRepository.kt
+.       |   |   |   |   |-- EventFeedbackRepository.kt
+.       |   |   |   |   |-- EventPictureRepository.kt
+.       |   |   |   |   |-- EventRepository.kt
+.       |   |   |   |   |-- EventSignUpRepository.kt
+.       |   |   |   |   `-- GuestRepository.kt
+.       |   |   |   |-- security
+.       |   |   |   |   |-- EventBannerPermission.kt
+.       |   |   |   |   |-- EventPermission.kt
+.       |   |   |   |   |-- EventSignUpPermission.kt
+.       |   |   |   |   `-- GuestPermission.kt
+.       |   |   |   |-- service
+.       |   |   |   |   |-- EventBannerService.kt
+.       |   |   |   |   |-- EventPictureService.kt
+.       |   |   |   |   |-- EventService.kt
+.       |   |   |   |   |-- EventSignUpService.kt
+.       |   |   |   |   `-- GuestService.kt
+.       |   |   |   |-- validation
+.       |   |   |   |   |-- GuestOrUserRequired.kt
+.       |   |   |   |   |-- GuestOrUserRequiredValidator.kt
+.       |   |   |   |   |-- ValidEventSignUp.kt
+.       |   |   |   |   `-- ValidEventSignUpValidator.kt
+.       |   |   |   `-- web
+.       |   |   |       |-- EventController.kt
+.       |   |   |       `-- EventSignUpController.kt
+.       |   |   |-- file
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- FileDTO.kt
+.       |   |   |   |   `-- PictureDTO.kt
+.       |   |   |   |-- event
+.       |   |   |   |   `-- FileUploaded.kt
+.       |   |   |   |-- listener
+.       |   |   |   |   `-- FileEventListener.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   `-- FileMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   `-- File.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   `-- FileRepository.kt
+.       |   |   |   |-- service
+.       |   |   |   |   `-- FileService.kt
+.       |   |   |   |-- validation
+.       |   |   |   |   |-- AllowedContentTypes.kt
+.       |   |   |   |   |-- AllowedContentTypesValidator.kt
+.       |   |   |   |   |-- FileSize.kt
+.       |   |   |   |   `-- FileSizeValidator.kt
+.       |   |   |   `-- web
+.       |   |   |       `-- FileController.kt
+.       |   |   |-- membership
+.       |   |   |   |-- dto
+.       |   |   |   |   `-- MembershipDTO.kt
+.       |   |   |   |-- event
+.       |   |   |   |   |-- MembershipCreated.kt
+.       |   |   |   |   `-- MembershipEnded.kt
+.       |   |   |   |-- listener
+.       |   |   |   |   `-- MembershipEventListener.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   `-- MembershipMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   |-- filter
+.       |   |   |   |   |   `-- MembershipFilter.kt
+.       |   |   |   |   `-- Membership.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   |-- spec
+.       |   |   |   |   |   `-- MembershipSpecifications.kt
+.       |   |   |   |   `-- MemberRepository.kt
+.       |   |   |   |-- service
+.       |   |   |   |   `-- MembershipService.kt
+.       |   |   |   |-- validation
+.       |   |   |   |   |-- NoExistingMembershipForUserId.kt
+.       |   |   |   |   `-- NoExistingMembershipForUserIdValidator.kt
+.       |   |   |   `-- web
+.       |   |   |       `-- MembershipController.kt
+.       |   |   |-- sponsor
+.       |   |   |   |-- dto
+.       |   |   |   |   `-- SponsorDTO.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   `-- SponsorMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   `-- Sponsor.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   `-- SponsorRepository.kt
+.       |   |   |   |-- service
+.       |   |   |   |   `-- SponsorService.kt
+.       |   |   |   `-- web
+.       |   |   |       `-- SponsorController.kt
+.       |   |   |-- survey
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- AnswerDTO.kt
+.       |   |   |   |   |-- QuestionDTO.kt
+.       |   |   |   |   `-- SurveyDTO.kt
+.       |   |   |   |-- event
+.       |   |   |   |   `-- SurveyUpdated.kt
+.       |   |   |   |-- listener
+.       |   |   |   |   `-- QuestionEventListener.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   |-- AnswerMapper.kt
+.       |   |   |   |   |-- QuestionMapper.kt
+.       |   |   |   |   `-- SurveyMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   |-- Answer.kt
+.       |   |   |   |   |-- Question.kt
+.       |   |   |   |   `-- Survey.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   |-- AnswerRepository.kt
+.       |   |   |   |   |-- QuestionRepository.kt
+.       |   |   |   |   `-- SurveyRepository.kt
+.       |   |   |   |-- service
+.       |   |   |   |   |-- AnswerService.kt
+.       |   |   |   |   |-- QuestionService.kt
+.       |   |   |   |   `-- SurveyService.kt
+.       |   |   |   `-- validation
+.       |   |   |       |-- ValidAnswer.kt
+.       |   |   |       |-- ValidAnswerList.kt
+.       |   |   |       |-- ValidAnswerListValidator.kt
+.       |   |   |       |-- ValidAnswerValidator.kt
+.       |   |   |       |-- ValidQuestion.kt
+.       |   |   |       |-- ValidQuestionList.kt
+.       |   |   |       |-- ValidQuestionListValidator.kt
+.       |   |   |       `-- ValidQuestionValidator.kt
+.       |   |   |-- telemetry
+.       |   |   |   |-- dto
+.       |   |   |   |   |-- RedirectDTO.kt
+.       |   |   |   |   |-- RedirectResponseDTO.kt
+.       |   |   |   |   `-- TelemetryDTO.kt
+.       |   |   |   |-- mapper
+.       |   |   |   |   |-- RedirectMapper.kt
+.       |   |   |   |   `-- TelemetryMapper.kt
+.       |   |   |   |-- model
+.       |   |   |   |   |-- Redirect.kt
+.       |   |   |   |   `-- Telemetry.kt
+.       |   |   |   |-- repository
+.       |   |   |   |   |-- RedirectRepository.kt
+.       |   |   |   |   `-- TelemetryRepository.kt
+.       |   |   |   |-- service
+.       |   |   |   |   `-- TelemetryService.kt
+.       |   |   |   `-- web
+.       |   |   |       `-- TelemetryController.kt
+.       |   |   `-- user
+.       |   |       |-- dto
+.       |   |       |   |-- AddressDTO.kt
+.       |   |       |   |-- AdvancedUserDTO.kt
+.       |   |       |   |-- PersonalInfoDTO.kt
+.       |   |       |   `-- SimpleUserDTO.kt
+.       |   |       |-- event
+.       |   |       |   |-- UserCreated.kt
+.       |   |       |   |-- UserDeleted.kt
+.       |   |       |   `-- UserUpdated.kt
+.       |   |       |-- listener
+.       |   |       |   `-- UserEventListener.kt
+.       |   |       |-- mapper
+.       |   |       |   |-- AddressMapper.kt
+.       |   |       |   |-- AdvancedUserMapper.kt
+.       |   |       |   `-- SimpleUserMapper.kt
+.       |   |       |-- model
+.       |   |       |   |-- filter
+.       |   |       |   |   `-- UserFilter.kt
+.       |   |       |   |-- Address.kt
+.       |   |       |   `-- User.kt
+.       |   |       |-- repository
+.       |   |       |   |-- spec
+.       |   |       |   |   `-- UserSpecifications.kt
+.       |   |       |   |-- AddressRepository.kt
+.       |   |       |   `-- UserRepository.kt
+.       |   |       |-- security
+.       |   |       |   |-- AddressPermission.kt
+.       |   |       |   `-- UserPermission.kt
+.       |   |       |-- service
+.       |   |       |   |-- AddressService.kt
+.       |   |       |   `-- UserService.kt
+.       |   |       |-- validation
+.       |   |       |   |-- CountryCodeValidator.kt
+.       |   |       |   |-- ExistingUsername.kt
+.       |   |       |   |-- ExistingUsernameValidator.kt
+.       |   |       |   |-- UniqueEmail.kt
+.       |   |       |   |-- UniqueEmailValidator.kt
+.       |   |       |   |-- UniquePhoneNumber.kt
+.       |   |       |   |-- UniquePhoneNumberValidator.kt
+.       |   |       |   |-- UniqueUser.kt
+.       |   |       |   |-- UniqueUserValidator.kt
+.       |   |       |   |-- UniqueUsername.kt
+.       |   |       |   |-- UniqueUsernameValidator.kt
+.       |   |       |   |-- ValidCountryCode.kt
+.       |   |       |   |-- ValidMobilePhoneNumber.kt
+.       |   |       |   `-- ValidMobilePhoneNumberValidator.kt
+.       |   |       `-- web
+.       |   |           |-- AddressController.kt
+.       |   |           `-- UserController.kt
+.       |   |-- platform
+.       |   |   |-- config
+.       |   |   |   |-- advice
+.       |   |   |   |   |-- OptimisticLockingProblemDetailsAdvice.kt
+.       |   |   |   |   `-- ValidationProblemDetailsAdvice.kt
+.       |   |   |   |-- permission
+.       |   |   |   |   |-- BasePermissionEvaluator.kt
+.       |   |   |   |   `-- CompositePermissionEvaluator.kt
+.       |   |   |   |-- AopConfig.kt
+.       |   |   |   |-- AsyncConfig.kt
+.       |   |   |   |-- DatabaseSeeder.kt
+.       |   |   |   |-- EncoderConfig.kt
+.       |   |   |   |-- HibernateDirtyTrackingConfig.kt
+.       |   |   |   |-- JacksonConfig.kt
+.       |   |   |   |-- JobQueueProperties.kt
+.       |   |   |   |-- JpaConfig.kt
+.       |   |   |   |-- JpaEntityListenerBridgeConfig.kt
+.       |   |   |   |-- OpenApiErrorConfig.kt
+.       |   |   |   |-- OpenApiSchemasCustomizer.kt
+.       |   |   |   |-- PagingConfig.kt
+.       |   |   |   |-- PhoneNumberConfig.kt
+.       |   |   |   |-- RabbitMqConfig.kt
+.       |   |   |   |-- RestClientConfig.kt
+.       |   |   |   |-- RetryConfig.kt
+.       |   |   |   |-- SecurityConfig.kt
+.       |   |   |   |-- SpringDataWebConfig.kt
+.       |   |   |   `-- StorageConfig.kt
+.       |   |   |-- integration
+.       |   |   |   |-- calendar
+.       |   |   |   |   |-- job
+.       |   |   |   |   |   |-- AddEventToCalendarJob.kt
+.       |   |   |   |   |   |-- RemoveEventFromCalendarJob.kt
+.       |   |   |   |   |   |-- SyncEventToCalendarJob.kt
+.       |   |   |   |   |   `-- UpdateEventInCalendarJob.kt
+.       |   |   |   |   |-- listener
+.       |   |   |   |   |   |-- AddEventToCalendarEventListener.kt
+.       |   |   |   |   |   |-- RemoveEventFromCalendarEventListener.kt
+.       |   |   |   |   |   |-- SyncEventToCalendarEventListener.kt
+.       |   |   |   |   |   `-- UpdateEventInCalendarEventListener.kt
+.       |   |   |   |   `-- CalendarService.kt
+.       |   |   |   |-- contact
+.       |   |   |   |   |-- job
+.       |   |   |   |   |   |-- AddContactToListJob.kt
+.       |   |   |   |   |   |-- CreateContributionPeriodListJob.kt
+.       |   |   |   |   |   |-- RemoveContactFromListJob.kt
+.       |   |   |   |   |   `-- SyncContactJob.kt
+.       |   |   |   |   |-- listener
+.       |   |   |   |   |   |-- AddContactToListEventListener.kt
+.       |   |   |   |   |   |-- CreateContributionPeriodListEventListener.kt
+.       |   |   |   |   |   |-- RemoveContactFromListEventListener.kt
+.       |   |   |   |   |   `-- SyncContactEventListener.kt
+.       |   |   |   |   `-- ContactService.kt
+.       |   |   |   |-- email
+.       |   |   |   |   |-- job
+.       |   |   |   |   |   |-- ContributionReminderEmailJob.kt
+.       |   |   |   |   |   |-- EventSignupEmailJob.kt
+.       |   |   |   |   |   `-- RecoveryEmailJob.kt
+.       |   |   |   |   |-- listener
+.       |   |   |   |   |   |-- ContributionReminderEmailEventListener.kt
+.       |   |   |   |   |   |-- EventSignupEmailEventListener.kt
+.       |   |   |   |   |   `-- RecoveryEmailEventListener.kt
+.       |   |   |   |   |-- model
+.       |   |   |   |   |   |-- base
+.       |   |   |   |   |   |-- ContributionReminderEmail.kt
+.       |   |   |   |   |   `-- EventSignupEmail.kt
+.       |   |   |   |   `-- service
+.       |   |   |   |       |-- EmailDeliveryService.kt
+.       |   |   |   |       |-- EmailService.kt
+.       |   |   |   |       `-- EmailTemplateService.kt
+.       |   |   |   |-- event
+.       |   |   |   |   `-- job
+.       |   |   |   |       |-- AddContactToListEvent.kt
+.       |   |   |   |       |-- AddEventToCalendarEvent.kt
+.       |   |   |   |       |-- ContributionReminderEmailEvent.kt
+.       |   |   |   |       |-- CreateContributionPeriodListEvent.kt
+.       |   |   |   |       |-- EventSignupEmailEvent.kt
+.       |   |   |   |       |-- RecoveryEmailEvent.kt
+.       |   |   |   |       |-- RemoveContactFromListEvent.kt
+.       |   |   |   |       |-- RemoveEventFromCalendarEvent.kt
+.       |   |   |   |       |-- SyncContactEvent.kt
+.       |   |   |   |       |-- SyncEventToCalendarEvent.kt
+.       |   |   |   |       `-- UpdateEventInCalendarEvent.kt
+.       |   |   |   |-- job
+.       |   |   |   |   |-- base
+.       |   |   |   |   |   `-- Job.kt
+.       |   |   |   |   |-- dto
+.       |   |   |   |   |   `-- JobExecutionDTO.kt
+.       |   |   |   |   |-- model
+.       |   |   |   |   |   |-- JobExecution.kt
+.       |   |   |   |   |   `-- JobExecutionStatus.kt
+.       |   |   |   |   |-- repository
+.       |   |   |   |   |   `-- JobExecutionRepository.kt
+.       |   |   |   |   |-- service
+.       |   |   |   |   |   `-- JobExecutionService.kt
+.       |   |   |   |   `-- web
+.       |   |   |   |       `-- JobManagementController.kt
+.       |   |   |   |-- mock
+.       |   |   |   |   |-- MockCalendarService.kt
+.       |   |   |   |   |-- MockContactService.kt
+.       |   |   |   |   `-- MockJavaMailSender.kt
+.       |   |   |   `-- queue
+.       |   |   |       |-- JobConsumer.kt
+.       |   |   |       |-- JobDispatcher.kt
+.       |   |   |       |-- JobHandler.kt
+.       |   |   |       |-- JobHandlerRegistry.kt
+.       |   |   |       `-- JobMessage.kt
+.       |   |   `-- web
+.       |   |       `-- MainController.kt
+.       |   |-- shared
+.       |   |   |-- dto
+.       |   |   |   |-- error
+.       |   |   |   |   |-- ApiErrorDTO.kt
+.       |   |   |   |   `-- FieldValidationErrorDTO.kt
+.       |   |   |   |-- AuditedAutoIdDTO.kt
+.       |   |   |   |-- AuditedCustomIdDTO.kt
+.       |   |   |   |-- AuditedDTO.kt
+.       |   |   |   |-- AuditedSoftDeleteDTO.kt
+.       |   |   |   |-- AuditedVersionedDTO.kt
+.       |   |   |   |-- AutoIdDTO.kt
+.       |   |   |   |-- BaseDTO.kt
+.       |   |   |   |-- CustomIdDTO.kt
+.       |   |   |   |-- IdentifiableDTO.kt
+.       |   |   |   |-- SoftDeleteDTO.kt
+.       |   |   |   `-- VersionedDTO.kt
+.       |   |   |-- enums
+.       |   |   |   |-- FileType.kt
+.       |   |   |   |-- MemberType.kt
+.       |   |   |   |-- PlatformType.kt
+.       |   |   |   |-- QuestionType.kt
+.       |   |   |   |-- ResetType.kt
+.       |   |   |   `-- Role.kt
+.       |   |   |-- event
+.       |   |   |   |-- jpa
+.       |   |   |   |   |-- PostPersistEvent.kt
+.       |   |   |   |   |-- PostRemoveEvent.kt
+.       |   |   |   |   |-- PostUpdateEvent.kt
+.       |   |   |   |   |-- PrePersistEvent.kt
+.       |   |   |   |   |-- PreRemoveEvent.kt
+.       |   |   |   |   `-- PreUpdateEvent.kt
+.       |   |   |   |-- DomainEvent.kt
+.       |   |   |   |-- DomainEventListener.kt
+.       |   |   |   `-- DomainEventPublisher.kt
+.       |   |   |-- hibernate
+.       |   |   |   |-- DirtyField.kt
+.       |   |   |   `-- DirtyModel.kt
+.       |   |   |-- jpa
+.       |   |   |   |-- EntityReferenceHelper.kt
+.       |   |   |   `-- JpaListener.kt
+.       |   |   |-- mapper
+.       |   |   |   `-- BaseMapper.kt
+.       |   |   |-- model
+.       |   |   |   |-- converter
+.       |   |   |   |   |-- BooleanListConverter.kt
+.       |   |   |   |   `-- StringListConverter.kt
+.       |   |   |   |-- hibernate
+.       |   |   |   |   `-- DirtyTrackingInterceptor.kt
+.       |   |   |   |-- AuditedAutoIdEntity.kt
+.       |   |   |   |-- AuditedCustomIdEntity.kt
+.       |   |   |   |-- AuditedEntity.kt
+.       |   |   |   |-- AuditedSoftDeleteEntity.kt
+.       |   |   |   |-- AuditedVersionedEntity.kt
+.       |   |   |   |-- AutoIdEntity.kt
+.       |   |   |   |-- BaseModel.kt
+.       |   |   |   |-- CustomIdEntity.kt
+.       |   |   |   |-- DirtyAwareModel.kt
+.       |   |   |   |-- Identifiable.kt
+.       |   |   |   |-- SoftDeleteEntity.kt
+.       |   |   |   `-- VersionedEntity.kt
+.       |   |   |-- repository
+.       |   |   |   `-- BaseRepository.kt
+.       |   |   |-- service
+.       |   |   |   `-- BaseModelService.kt
+.       |   |   |-- util
+.       |   |   |   `-- MappingUtil.kt
+.       |   |   |-- validation
+.       |   |   |   |-- date
+.       |   |   |   |   |-- Today.kt
+.       |   |   |   |   `-- TodayValidator.kt
+.       |   |   |   `-- group
+.       |   |   |       |-- Administration.kt
+.       |   |   |       |-- Creation.kt
+.       |   |   |       |-- Member.kt
+.       |   |   |       |-- Update.kt
+.       |   |   |       `-- User.kt
+.       |   |   `-- web
+.       |   |       |-- AdvancedController.kt
+.       |   |       `-- BaseController.kt
+.       |   `-- ApiApplication.kt
+.       `-- clients
+.           `-- brevo
+.               `-- api
+.                   `-- ContactsApiDefaults.kt
+.-- filetree.sh
+.-- filetree.txt

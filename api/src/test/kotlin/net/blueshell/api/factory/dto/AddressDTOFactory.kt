@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.feature.user.dto.AddressDTO
+import net.blueshell.api.user.dto.AddressDTO
 import org.springframework.stereotype.Component
 
 /**

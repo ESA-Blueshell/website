@@ -1,6 +1,6 @@
 package net.blueshell.api.shared.mapper
 
-import net.blueshell.api.feature.auth.security.IdentityProvider
+import net.blueshell.api.auth.security.IdentityProvider
 import org.springframework.data.domain.Page
 import java.util.stream.Stream
 

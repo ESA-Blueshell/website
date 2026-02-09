@@ -2,8 +2,8 @@ package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
 import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.feature.membership.model.Membership
-import net.blueshell.api.feature.user.model.User
+import net.blueshell.api.membership.model.Membership
+import net.blueshell.api.user.model.User
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicLong

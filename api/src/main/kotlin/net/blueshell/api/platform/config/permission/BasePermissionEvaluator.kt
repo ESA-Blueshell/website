@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.config.permission
 
-import net.blueshell.api.feature.auth.security.IdentityProvider
+import net.blueshell.api.auth.security.IdentityProvider
 import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.core.GenericTypeResolver

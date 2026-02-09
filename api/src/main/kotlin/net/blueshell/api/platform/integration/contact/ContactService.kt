@@ -1,9 +1,9 @@
 package net.blueshell.api.platform.integration.contact
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.feature.user.model.User
-import net.blueshell.api.feature.contribution.model.ContributionPeriod
-import net.blueshell.api.feature.user.service.UserService
+import net.blueshell.api.user.model.User
+import net.blueshell.api.contribution.model.ContributionPeriod
+import net.blueshell.api.user.service.UserService
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.*
 import org.slf4j.LoggerFactory

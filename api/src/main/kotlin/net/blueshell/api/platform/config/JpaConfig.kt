@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.config
 
-import net.blueshell.api.feature.user.model.User
+import net.blueshell.api.user.model.User
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.AuditorAware

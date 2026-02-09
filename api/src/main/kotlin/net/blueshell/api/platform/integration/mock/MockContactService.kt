@@ -1,9 +1,9 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.feature.user.model.User
-import net.blueshell.api.feature.contribution.model.ContributionPeriod
+import net.blueshell.api.user.model.User
+import net.blueshell.api.contribution.model.ContributionPeriod
 import net.blueshell.api.platform.integration.contact.ContactService
-import net.blueshell.api.feature.user.service.UserService
+import net.blueshell.api.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Primary

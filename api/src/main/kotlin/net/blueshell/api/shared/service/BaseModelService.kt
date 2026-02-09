@@ -2,7 +2,7 @@ package net.blueshell.api.shared.service
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import net.blueshell.api.feature.auth.security.IdentityProvider
+import net.blueshell.api.auth.security.IdentityProvider
 import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.core.ResolvableType

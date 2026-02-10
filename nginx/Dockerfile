@@ -1,5 +1,8 @@
 FROM nginx:alpine
 
+# Install certbot for SSL certificate management
+RUN apk add --no-cache certbot
+
 # Copy nginx configurations (both HTTP-only and SSL versions)
 COPY nginx.conf /tmp/nginx/nginx.conf
 COPY nginx-ssl.conf /tmp/nginx/nginx-ssl.conf

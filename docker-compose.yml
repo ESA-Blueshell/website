@@ -71,7 +71,6 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    image: ghcr.io/esa-blueshell/nginx:latest
     restart: always
     ports:
       - "80:80"
@@ -89,7 +88,6 @@ services:
     build:
       context: ./certbot
       dockerfile: Dockerfile
-    image: ghcr.io/esa-blueshell/certbot:latest
     container_name: certbot
     restart: unless-stopped
     depends_on:

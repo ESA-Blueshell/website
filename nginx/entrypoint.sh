@@ -13,11 +13,11 @@ mkdir -p /etc/nginx/conf.d
 # Determine which config to use based on cert existence
 if [ -f "$CERT_DIR/fullchain.pem" ] && [ -f "$CERT_DIR/privkey.pem" ]; then
   echo "✓ SSL certificates found. Starting nginx with HTTPS enabled..."
-  cp /etc/nginx/nginx-ssl.conf "$SSL_CONF"
+  cp /tmp/nginx/nginx-ssl.conf "$SSL_CONF"
 else
   echo "⚠ No SSL certificates found. Starting nginx in HTTP-only mode..."
   echo "→ Certbot will obtain certificates, then nginx will reload with HTTPS."
-  cp /etc/nginx/nginx.conf "$HTTP_ONLY_CONF"
+  cp /tmp/nginx/nginx.conf "$HTTP_ONLY_CONF"
 fi
 
 # Remove default nginx config to avoid conflicts

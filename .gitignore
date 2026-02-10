@@ -60,3 +60,5 @@ private
 .playwright
 .playwright-mcp
 backups
+.kotlin
+.idea

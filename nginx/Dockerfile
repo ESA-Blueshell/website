@@ -1,19 +1,15 @@
 FROM nginx:alpine
 
-# 1) install openssl
-RUN apk update && apk add --no-cache openssl
+# Copy nginx configurations (both HTTP-only and SSL versions)
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx-ssl.conf /etc/nginx/nginx-ssl.conf
 
-# 2) copy our tiny `service` shim script
-COPY service.sh /usr/local/bin/service
-RUN chmod +x /usr/local/bin/service
-
-# 3) copy the startup script (entrypoint)
+# Copy the startup script (entrypoint)
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 4) mount SSL certs and expose ports
-VOLUME ["/etc/nginx/ssl"]
+# Expose HTTP and HTTPS ports
 EXPOSE 80 443
 
-# 5) use our script as the container entrypoint
+# Use our script as the container entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

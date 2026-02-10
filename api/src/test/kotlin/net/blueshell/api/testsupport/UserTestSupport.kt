@@ -80,7 +80,7 @@ abstract class UserTestSupport {
             .andExpect(jsonPath("$.token").isNotEmpty)
             .andReturn()
         val response = mapper.readValue(result.response.contentAsByteArray, AuthenticationDTO::class.java)
-        return response.token
+        return response.token!!
     }
 
     /**

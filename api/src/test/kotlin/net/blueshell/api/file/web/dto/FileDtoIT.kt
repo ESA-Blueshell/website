@@ -3,6 +3,7 @@ package net.blueshell.api.file.web.dto
 import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.file.application.FileService
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.file.web.mapping.asEntity
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

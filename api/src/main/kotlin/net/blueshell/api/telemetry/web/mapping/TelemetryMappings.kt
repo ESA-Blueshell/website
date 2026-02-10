@@ -7,9 +7,9 @@ import tech.mappie.api.ObjectMappie
 object TelemetryToTelemetryDTOMapper : ObjectMappie<Telemetry, TelemetryDTO>()
 
 fun TelemetryDTO.asEntity(telemetry: Telemetry = Telemetry()): Telemetry {
-    telemetry.platform = platform
-    telemetry.url = url
-    telemetry.version = version
+    telemetry.platform = platform!!
+    telemetry.url = url!!
+    telemetry.version = version!!
     return telemetry
 }
 

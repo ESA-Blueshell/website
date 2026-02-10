@@ -1,6 +1,6 @@
 package net.blueshell.api.file.persistence
 
-import net.blueshell.api.file.persistence.asDto
+import net.blueshell.api.file.web.mapping.asDto
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals

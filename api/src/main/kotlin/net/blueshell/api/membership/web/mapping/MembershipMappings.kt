@@ -10,14 +10,14 @@ import tech.mappie.api.ObjectMappie
 object MembershipToMembershipDTOMapper : ObjectMappie<Membership, MembershipDTO>()
 
 fun MembershipDTO.asEntity(membership: Membership = Membership()): Membership {
-    membership.userId = userId
-    membership.version = version
+    membership.userId = userId!!
+    membership.version = version!!
 
     if (hasAuthority(Role.BOARD)) {
-        membership.startDate = startDate
+        membership.startDate = startDate!!
         membership.endDate = endDate
-        membership.memberType = memberType
-        membership.incasso = incasso
+        membership.memberType = memberType!!
+        membership.incasso = incasso!!
     }
 
     return membership

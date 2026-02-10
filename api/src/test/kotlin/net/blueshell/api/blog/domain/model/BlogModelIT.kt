@@ -61,7 +61,7 @@ class BlogModelIT : ModelPersistenceTestSupport() {
                     PlatformType.INSTAGRAM,
                     PlatformType.LINKEDIN
                 ),
-                dto.platforms.toSet()
+                dto.platforms!!.toSet()
             )
         }
     }

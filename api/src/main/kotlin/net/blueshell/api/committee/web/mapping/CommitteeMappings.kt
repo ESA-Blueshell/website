@@ -14,25 +14,25 @@ object CommitteeToAdvancedCommitteeDTOMapper : ObjectMappie<Committee, AdvancedC
 object CommitteeToSimpleCommitteeDTOMapper : ObjectMappie<Committee, SimpleCommitteeDTO>()
 
 fun CommitteeMemberDTO.asEntity(member: CommitteeMember = CommitteeMember()): CommitteeMember {
-    member.userId = userId
-    member.committeeId = committeeId
+    member.userId = userId!!
+    member.committeeId = committeeId!!
     member.role = role
-    member.version = version
+    member.version = version!!
     return member
 }
 
 fun AdvancedCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
-    committee.name = name
-    committee.description = description
-    committee.members = members.map { it.asEntity() }
-    committee.version = version
+    committee.name = name!!
+    committee.description = description!!
+    committee.members = members!!.map { it.asEntity() }
+    committee.version = version!!
     return committee
 }
 
 fun SimpleCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
-    committee.name = name
-    committee.description = description
-    committee.version = version
+    committee.name = name!!
+    committee.description = description!!
+    committee.version = version!!
     return committee
 }
 

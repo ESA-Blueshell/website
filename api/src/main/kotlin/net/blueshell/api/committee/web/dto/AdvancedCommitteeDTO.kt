@@ -3,6 +3,7 @@ package net.blueshell.api.committee.web.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
@@ -16,6 +17,7 @@ data class AdvancedCommitteeDTO(
     @field:Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
     var description: String? = null,
 
+    @field:NotNull
     @field:NotEmpty
-    var members: MutableList<CommitteeMemberDTO>? = null
+    var members: MutableList<CommitteeMemberDTO>? = mutableListOf()
 ) : AuditedAutoIdDTO()

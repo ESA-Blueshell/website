@@ -31,14 +31,14 @@ fun AdvancedUserDTO.asEntity(
     dateOfBirth?.let { user.dateOfBirth = it }
     phoneNumber?.let { user.phoneNumber = it }
     nationality?.let { user.nationality = it }
-    user.photoConsent = photoConsent
-    user.bhv = bhv
-    user.ehbo = ehbo
-    user.newsletter = newsletter
+    user.photoConsent = photoConsent!!
+    user.bhv = bhv!!
+    user.ehbo = ehbo!!
+    user.newsletter = newsletter!!
     gender?.let { user.gender = it }
     studentNumber?.let { user.studentNumber = it }
     addressId?.let { user.addressId = it }
-    user.version = version
+    user.version = version!!
 
     val canEditIdentityFields = user.id == null || hasAuthority(Role.BOARD)
 
@@ -66,8 +66,8 @@ fun SimpleUserDTO.asEntity(
 
     discord?.let { user.discord = it }
     phoneNumber?.let { user.phoneNumber = it }
-    user.newsletter = newsletter
-    user.version = version
+    user.newsletter = newsletter!!
+    user.version = version!!
 
     if (user.id == null) {
         user.password = passwordEncoder.encode(password)

@@ -39,27 +39,27 @@ fun EventDTO.asEntity(existing: Event = Event()): Event {
     existing.endTime = endTime!!
     existing.memberPrice = memberPrice
     existing.publicPrice = publicPrice
-    existing.membersOnly = membersOnly
-    existing.signUp = signUp
+    existing.membersOnly = membersOnly!!
+    existing.signUp = signUp!!
     existing.banner = banner?.asEntity()
     existing.signUpForm = signUpForm?.asEntity()
-    existing.version = version
-    existing.approved = hasAuthority(Role.BOARD) && approved
+    existing.version = version!!
+    existing.approved = hasAuthority(Role.BOARD) && approved!!
     return existing
 }
 
 fun EventBannerDTO.asEntity(banner: EventBanner = EventBanner()): EventBanner {
-    banner.file = file.asEntity()
-    banner.version = version
+    banner.file = file!!.asEntity()
+    banner.version = version!!
     return banner
 }
 
 fun GuestDTO.asEntity(guest: Guest = Guest()): Guest {
-    guest.name = name
+    guest.name = name!!
     guest.discord = requireNotNull(discord)
     guest.email = requireNotNull(email)
     guest.phoneNumber = phoneNumber
-    guest.version = version
+    guest.version = version!!
 
     if (guest.accessToken == null) {
         guest.accessToken = randomCapitalString(30)
@@ -69,7 +69,7 @@ fun GuestDTO.asEntity(guest: Guest = Guest()): Guest {
 }
 
 fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
-    signUp.eventId = eventId
+    signUp.eventId = eventId!!
     userId?.let { signUp.userId = it }
     signUp.guest = guest?.asEntity()
 
@@ -78,7 +78,7 @@ fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
     answers.clear()
     answers.addAll(mappedAnswers)
 
-    signUp.version = version
+    signUp.version = version!!
     return signUp
 }
 
@@ -107,9 +107,9 @@ private fun SimpleUserDTO.asUserEntityForSignUp(): User {
     prefix?.let { user.prefix = it }
     discord?.let { user.discord = it }
     phoneNumber?.let { user.phoneNumber = it }
-    user.newsletter = newsletter
+    user.newsletter = newsletter!!
     addressId?.let { user.addressId = it }
-    user.version = version
+    user.version = version!!
     return user
 }
 

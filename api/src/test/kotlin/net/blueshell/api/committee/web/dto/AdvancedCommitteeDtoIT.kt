@@ -25,8 +25,8 @@ class AdvancedCommitteeDtoIT @Autowired constructor(
             val dto = advancedCommitteeDTOFactory.createWithMemberRoles("Chair", "Member").also {
                 it.name = "Mapper Committee"
                 it.description = "Committee mapped from DTO factory"
-                it.members[0].userId = chair.id!!
-                it.members[1].userId = member.id!!
+                it.members!![0].userId = chair.id!!
+                it.members!![1].userId = member.id!!
             }
             val committee = committeeFactory.createBasic()
 

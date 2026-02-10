@@ -32,7 +32,7 @@ class EventSignUpDTOFactory(
         dto.guest = null
 
         val survey: SurveyDTO = surveyFactory.createBasic()
-        val answers: List<AnswerDTO> = survey.questions.map { answerFactory.createForQuestion(it) }
+        val answers: List<AnswerDTO> = survey.questions!!.map { answerFactory.createForQuestion(it) }
         dto.answers = answers.toMutableList()
 
         return dto
@@ -46,7 +46,7 @@ class EventSignUpDTOFactory(
         dto.userId = user.id
         dto.guest = null
 
-        val answers: List<AnswerDTO> = survey.questions.map { answerFactory.createForQuestion(it) }
+        val answers: List<AnswerDTO> = survey.questions!!.map { answerFactory.createForQuestion(it) }
         dto.answers = answers.toMutableList()
 
         return dto

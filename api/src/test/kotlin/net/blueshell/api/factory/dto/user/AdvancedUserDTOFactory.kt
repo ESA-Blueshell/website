@@ -26,7 +26,7 @@ class AdvancedUserDTOFactory : BaseDtoFactory<AdvancedUserDTO>() {
         dto.email = email("user")
         dto.phoneNumber = "+31612345678"
         dto.password = "Password123!"
-        dto.roles = mutableSetOf<Role?>(Role.MEMBER)
+        dto.roles = mutableSetOf(Role.MEMBER)
         dto.dateOfBirth = Date.valueOf(LocalDate.of(1990, 1, 1))
         dto.nationality = "Dutch"
         dto.photoConsent = true

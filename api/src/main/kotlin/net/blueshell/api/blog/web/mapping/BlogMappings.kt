@@ -30,15 +30,15 @@ fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
 }
 
 fun BlogDTO.asEntity(blog: Blog = Blog()): Blog {
-    blog.title = title
-    blog.publishedAt = publishedAt
-    blog.version = version
+    blog.title = title!!
+    blog.publishedAt = publishedAt!!
+    blog.version = version!!
     sanitizeHtml(this, blog)
     return blog
 }
 
 private fun sanitizeHtml(dto: BlogDTO, blog: Blog) {
-    val content = dto.html
+    val content = dto.html!!
     if (content.trim { it <= ' ' }.isNotEmpty()) {
         val doc = Jsoup.parse(content)
         doc.select("div:has(a:contains(Unsubscribe))").remove()

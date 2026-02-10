@@ -54,8 +54,8 @@ class EventSignUpControllerIT @Autowired constructor(
         val advancedCommitteeDTO = committeeDTOFactory.createWithMemberRoles("Chair", "Member")
         advancedCommitteeDTO.name = "SignUp Committee"
         advancedCommitteeDTO.description = "Committee for signup testing"
-        advancedCommitteeDTO.members[0].userId = board.id!!
-        advancedCommitteeDTO.members[1].userId = member.id!!
+        advancedCommitteeDTO.members!![0].userId = board.id!!
+        advancedCommitteeDTO.members!![1].userId = member.id!!
 
         val result = mvc.perform(
             post("/committees")
@@ -283,7 +283,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val event = givenEventWithForm(committeeId)
             assertNotNull(event.id)
             assertNotNull(event.signUpForm)
-            assertFalse(event.signUpForm!!.questions.isEmpty())
+            assertFalse(event.signUpForm!!.questions!!.isEmpty())
         }
     }
 

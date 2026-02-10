@@ -82,10 +82,10 @@ class CommitteeControllerIT @Autowired constructor(
         val member = createUserWithRole(Role.MEMBER)
         val created = createCommittee(board, member)
 
-        created.members.removeAt(1)
+        created.members!!.removeAt(1)
         created.name = "Updated Committee Name"
         created.description = "Updated description text"
-        created.members.firstOrNull()?.role = "No longer chair"
+        created.members!!.firstOrNull()?.role = "No longer chair"
 
         mvc.perform(
             put("/committees/{id}", created.id)
@@ -113,8 +113,8 @@ class CommitteeControllerIT @Autowired constructor(
 
         created.name = "Updated Committee Name"
         created.description = "Updated description text"
-        created.members[0].role = "No longer chair"
-        created.members[1].role = "No longer member"
+        created.members!![0].role = "No longer chair"
+        created.members!![1].role = "No longer member"
 
         mvc.perform(
             put("/committees/{id}", created.id)
@@ -167,8 +167,8 @@ class CommitteeControllerIT @Autowired constructor(
         val dto = committeeDTOFactory.createWithMemberRoles("Chair", "Member")
         dto.name = "Test Committee"
         dto.description = "A test committee for integration tests"
-        dto.members[0].userId = board.id!!
-        dto.members[1].userId = member.id!!
+        dto.members!![0].userId = board.id!!
+        dto.members!![1].userId = member.id!!
         return dto
     }
 }

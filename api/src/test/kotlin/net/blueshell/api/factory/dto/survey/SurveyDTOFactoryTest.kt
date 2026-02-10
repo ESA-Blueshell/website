@@ -21,7 +21,7 @@ class SurveyDTOFactoryTest : DtoFactoryTestSupport() {
         val survey = surveyDTOFactory.createWithQuestionTypes(
             QuestionType.OPEN, QuestionType.RADIO, QuestionType.CHECKBOX
         )
-        val indexes = survey.questions.mapNotNull { it.idx }
+        val indexes = survey.questions!!.mapNotNull { it.idx }
         assertEquals(listOf(1L, 2L, 3L), indexes)
         assertNoViolations(survey)
     }
@@ -29,7 +29,7 @@ class SurveyDTOFactoryTest : DtoFactoryTestSupport() {
     @Test
     fun `creates survey with open questions`() {
         val survey = surveyDTOFactory.createWithOpenQuestions(3)
-        assertEquals(3, survey.questions.size)
+        assertEquals(3, survey.questions!!.size)
         assertNoViolations(survey)
     }
 

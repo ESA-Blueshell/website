@@ -1,6 +1,6 @@
 package net.blueshell.api.membership.persistence
 
-import net.blueshell.api.membership.persistence.asDto
+import net.blueshell.api.membership.web.mapping.asDto
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals

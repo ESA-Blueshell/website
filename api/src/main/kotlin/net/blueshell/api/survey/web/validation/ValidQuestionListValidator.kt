@@ -14,7 +14,7 @@ class ValidQuestionListValidator :
 
         val seenIdx: MutableSet<Long> = HashSet()
         for (q in questions) {
-            if (!seenIdx.add(q.idx)) {
+            if (!seenIdx.add(q.idx!!)) {
                 context.disableDefaultConstraintViolation()
                 context.buildConstraintViolationWithTemplate("Duplicate question index: " + q.idx)
                     .addConstraintViolation()

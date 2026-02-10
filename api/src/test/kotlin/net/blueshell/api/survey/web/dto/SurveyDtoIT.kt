@@ -5,6 +5,7 @@ import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.survey.application.SurveyService
 import net.blueshell.api.survey.persistence.Survey
+import net.blueshell.api.survey.web.mapping.asEntity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -37,7 +38,7 @@ class SurveyDtoIT @Autowired constructor(
 
             val reloaded = reload(Survey::class.java, saved.id!!)
 
-            assertThat(reloaded.questions).hasSize(dto.questions.size)
+            assertThat(reloaded.questions).hasSize(dto.questions!!.size)
         }
     }
 }

@@ -15,27 +15,27 @@ object QuestionToQuestionDTOMapper : ObjectMappie<Question, QuestionDTO>()
 object AnswerToAnswerDTOMapper : ObjectMappie<Answer, AnswerDTO>()
 
 fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
-    survey.version = version
-    survey.questions.addAll(questions.map { it.asEntity() })
+    survey.version = version!!
+    survey.questions.addAll(questions!!.map { it.asEntity() })
     survey.questions.forEach { it.survey = survey }
     return survey
 }
 
 fun QuestionDTO.asEntity(question: Question = Question()): Question {
-    question.idx = idx
-    question.surveyId = surveyId
-    question.type = type
-    question.label = label
+    question.idx = idx!!
+    question.surveyId = surveyId!!
+    question.type = type!!
+    question.label = label!!
     question.choiceLabels = choiceLabels
-    question.version = version
+    question.version = version!!
     return question
 }
 
 fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
-    answer.questionId = questionId
+    answer.questionId = questionId!!
     answer.optionSelections = optionSelections
     answer.textResponse = textResponse
-    answer.version = version
+    answer.version = version!!
     return answer
 }
 

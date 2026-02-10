@@ -47,8 +47,8 @@ class EventControllerIT @Autowired constructor(
         val committee = committeeDTOFactory.createWithMemberRoles("Chair", "Member")
         committee.name = "VakanCie"
         committee.description = "Committee for events and drinks"
-        committee.members[0].userId = board.id!!
-        committee.members[1].userId = member.id!!
+        committee.members!![0].userId = board.id!!
+        committee.members!![1].userId = member.id!!
 
         val result = mvc.perform(
             post("/committees")

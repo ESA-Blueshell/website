@@ -4,6 +4,7 @@ import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.survey.application.QuestionService
 import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.survey.web.mapping.asEntity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

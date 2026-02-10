@@ -62,7 +62,7 @@ class AuthenticationControllerIT @Autowired constructor(
         val expectedMax = System.currentTimeMillis() + expiration + 1_000
 
         assertAll(
-            { assertTrue(response.token.isNotBlank()) },
+            { assertTrue(response.token!!.isNotBlank()) },
             { assertEquals(refreshed.id, response.userId) },
             { assertEquals(refreshed.username, response.username) },
             { assertEquals(expectedRoles, response.rolesSorted) },

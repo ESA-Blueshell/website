@@ -7,9 +7,9 @@ import tech.mappie.api.ObjectMappie
 object SponsorToSponsorDTOMapper : ObjectMappie<Sponsor, SponsorDTO>()
 
 fun SponsorDTO.asEntity(sponsor: Sponsor = Sponsor()): Sponsor {
-    sponsor.name = name
-    sponsor.description = description
-    sponsor.version = version
+    sponsor.name = name!!
+    sponsor.description = description!!
+    sponsor.version = version!!
     return sponsor
 }
 

@@ -12,6 +12,7 @@ import java.util.function.Function
 @Schema(name = "Survey")
 data class SurveyDTO(
     @field:NotEmpty
+    @field:NotNull
     @field:ValidQuestionList
     @field:Valid
     var questions: MutableList<QuestionDTO>? = null,

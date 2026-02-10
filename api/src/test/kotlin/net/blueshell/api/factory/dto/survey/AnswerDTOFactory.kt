@@ -93,6 +93,6 @@ class AnswerDTOFactory : BaseDtoFactory<AnswerDTO>() {
     }
 
     fun createForSurvey(survey: SurveyDTO): MutableList<AnswerDTO> {
-        return survey.questions.map { question -> createForQuestion(question) }.toMutableList()
+        return survey.questions!!.map { question -> createForQuestion(question) }.toMutableList()
     }
 }

@@ -4,6 +4,7 @@ import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.user.application.UserService
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.web.mapping.asEntity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

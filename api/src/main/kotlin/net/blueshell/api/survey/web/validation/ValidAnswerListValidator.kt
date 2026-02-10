@@ -12,7 +12,7 @@ class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, MutableLis
 
         val seenQuestionIds: MutableSet<Long> = HashSet()
         for (a in answers) {
-            if (!seenQuestionIds.add(a.questionId)) {
+            if (!seenQuestionIds.add(a.questionId!!)) {
                 context.disableDefaultConstraintViolation()
                 context.buildConstraintViolationWithTemplate("Duplicate answers for question ID: " + a.questionId)
                     .addConstraintViolation()

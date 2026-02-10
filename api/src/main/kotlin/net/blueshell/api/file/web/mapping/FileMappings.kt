@@ -7,11 +7,11 @@ import tech.mappie.api.ObjectMappie
 object FileToFileDTOMapper : ObjectMappie<File, FileDTO>()
 
 fun FileDTO.asEntity(file: File = File()): File {
-    file.name = name
-    file.mediaType = mediaType
+    file.name = name!!
+    file.mediaType = mediaType!!
     file.size = size
-    file.type = type
-    file.version = version
+    file.type = type!!
+    file.version = version!!
     return file
 }
 

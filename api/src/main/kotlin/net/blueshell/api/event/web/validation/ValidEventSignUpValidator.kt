@@ -17,7 +17,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
     ConstraintValidator<ValidEventSignUp, EventSignUpDTO> {
     override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
-        val eventId = dto.eventId
+        val eventId = dto.eventId!!
 
         ctx.disableDefaultConstraintViolation()
 
@@ -49,7 +49,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         for (i in answers.indices) {
             val a = answers[i]
 
-            val qid = a.questionId
+            val qid = a.questionId!!
 
             if (!formQuestionIds.contains(qid)) {
                 violationAtQuestionId(

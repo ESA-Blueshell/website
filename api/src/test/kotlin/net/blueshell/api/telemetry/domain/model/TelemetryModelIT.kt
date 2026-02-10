@@ -2,7 +2,7 @@ package net.blueshell.api.telemetry.persistence
 
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.telemetry.persistence.asDto
+import net.blueshell.api.telemetry.web.mapping.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

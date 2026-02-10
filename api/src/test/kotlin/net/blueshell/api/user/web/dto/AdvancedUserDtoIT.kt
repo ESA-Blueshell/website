@@ -6,6 +6,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.user.application.UserService
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.web.mapping.asEntity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -94,7 +95,7 @@ class AdvancedUserDtoIT @Autowired constructor(
         fun `does not update restricted fields for member`() {
             authenticateAs(Role.MEMBER)
             val existing = persist(userFactory.createBasic().apply {
-                setUsername("oldmember")
+                username = "oldmember"
                 email = "oldmember@example.org"
                 firstName = "Old"
                 lastName = "Member"
@@ -121,7 +122,7 @@ class AdvancedUserDtoIT @Autowired constructor(
         fun `updates restricted fields for admin`() {
             authenticateAs(Role.ADMIN)
             val existing = persist(userFactory.createBasic().apply {
-                setUsername("oldadmin")
+                username = "oldadmin"
                 email = "oldadmin@example.org"
                 firstName = "Old"
                 lastName = "Admin"

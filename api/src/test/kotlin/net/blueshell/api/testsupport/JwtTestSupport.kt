@@ -44,7 +44,7 @@ abstract class JwtTestSupport {
 
         val response = mapper.readValue(result.response.contentAsByteArray, AuthenticationDTO::class.java)
         cachedAdminToken = response.token
-        return response.token
+        return response.token!!
     }
 
     /**

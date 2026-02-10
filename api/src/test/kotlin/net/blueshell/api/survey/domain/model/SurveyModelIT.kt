@@ -2,7 +2,7 @@ package net.blueshell.api.survey.persistence
 
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.survey.persistence.asDto
+import net.blueshell.api.survey.web.mapping.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Nested
@@ -73,7 +73,7 @@ class SurveyModelIT : ModelPersistenceTestSupport() {
             val dto = reloaded.asDto()
 
             assertEquals(reloaded.id, dto.id)
-            assertEquals(2, dto.questions.size)
+            assertEquals(2, dto.questions!!.size)
             assertEquals(reloaded.responseCount, dto.responseCount)
         }
     }

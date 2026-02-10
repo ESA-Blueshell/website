@@ -2,8 +2,8 @@ package net.blueshell.api.user.persistence
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.user.persistence.asAdvancedDto
-import net.blueshell.api.user.persistence.asSimpleDto
+import net.blueshell.api.user.web.mapping.asAdvancedDto
+import net.blueshell.api.user.web.mapping.asSimpleDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -18,8 +18,8 @@ class UserModelIT : ModelPersistenceTestSupport() {
         @Test
         fun `persists column fields and roles`() {
             val user = userFactory.createBasic()
-            user.setUsername(unique("user"))
-            user.setPassword("secret")
+            user.username = unique("user")
+            user.password = "secret"
             user.firstName = "Ada"
             user.lastName = "Lovelace"
             user.prefix = "Dr."
@@ -46,8 +46,8 @@ class UserModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(user, User::class.java) { it.id }
 
-            assertEquals(user.getUsername(), found.getUsername())
-            assertEquals(user.getPassword(), found.getPassword())
+            assertEquals(user.username, found.username)
+            assertEquals(user.password, found.password)
             assertEquals(user.firstName, found.firstName)
             assertEquals(user.lastName, found.lastName)
             assertEquals(user.prefix, found.prefix)
@@ -122,7 +122,7 @@ class UserModelIT : ModelPersistenceTestSupport() {
             assertEquals(user.username, dto.username)
             assertEquals(user.email, dto.email)
             assertEquals(user.fullName, dto.fullName)
-            assertEquals(user.inheritedRoles, dto.roles.toSet())
+            assertEquals(user.inheritedRoles, dto.roles!!.toSet())
         }
     }
 }

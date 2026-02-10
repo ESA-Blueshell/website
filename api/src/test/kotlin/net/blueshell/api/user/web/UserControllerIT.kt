@@ -60,7 +60,7 @@ class UserControllerIT @Autowired constructor(
             initials = created.initials
             firstName = created.firstName
             lastName = created.lastName
-            newsletter = !created.newsletter
+            newsletter = !created.newsletter!!
             discord = "${created.username}-updated"
             phoneNumber = "+31612345679"
         }

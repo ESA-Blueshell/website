@@ -84,9 +84,9 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             assertEquals(reloaded.id, dto.id)
             assertEquals(reloaded.name, dto.name)
             assertEquals(reloaded.description, dto.description)
-            assertEquals(1, dto.members.size)
-            assertEquals(user.id, dto.members.first().userId)
-            assertEquals("Chair", dto.members.first().role)
+            assertEquals(1, dto.members!!.size)
+            assertEquals(user.id, dto.members!!.first().userId)
+            assertEquals("Chair", dto.members!!.first().role)
         }
 
         @Test

@@ -7,7 +7,8 @@ import net.blueshell.api.user.web.dto.PersonalInfoDTO
 @Schema(name = "Guest")
 data class GuestDTO(
     @field:NotNull
-    var name: String? = null,
-) : PersonalInfoDTO() {
-    lateinit var accessToken: String
+    var name: String,
+    override var email: String,
+) : PersonalInfoDTO(email) {
+    var accessToken: String? = null
 }

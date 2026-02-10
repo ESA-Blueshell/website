@@ -17,7 +17,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
     ConstraintValidator<ValidEventSignUp, EventSignUpDTO> {
     override fun isValid(dto: EventSignUpDTO?, ctx: ConstraintValidatorContext): Boolean {
         if (dto == null) return true
-        val eventId = dto.eventId ?: return violation(ctx, "eventId", "eventId is required.")
+        val eventId = dto.eventId
 
         ctx.disableDefaultConstraintViolation()
 
@@ -31,11 +31,12 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         val answers = dto.answers
 
         // Collect all question IDs on the form (keep insertion order for stable error messages)
-        val formQuestionIds: MutableSet<Long?> = form.questions
+        val formQuestionIds: MutableSet<Long> = form.questions
             .stream()
             .filter { q: Question? -> q!!.type != QuestionType.DESCRIPTION }
-            .map<Long?> { obj: Question? -> obj!!.id }
+            .map { obj: Question? -> obj!!.id }
             .filter { obj: Long? -> Objects.nonNull(obj) }
+            .map { obj: Long? -> obj as Long }
             .collect(Collectors.toCollection(Supplier { LinkedHashSet() }))
 
         if (formQuestionIds.isEmpty()) {
@@ -43,17 +44,12 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         }
 
         var valid = true
-        val provided: MutableSet<Long?> = LinkedHashSet<Long?>()
+        val provided: MutableSet<Long> = LinkedHashSet()
 
         for (i in answers.indices) {
             val a = answers[i]
 
             val qid = a.questionId
-            if (qid == null) {
-                violationAtQuestionId(ctx, i, "questionId is required.")
-                valid = false
-                continue
-            }
 
             if (!formQuestionIds.contains(qid)) {
                 violationAtQuestionId(
@@ -74,7 +70,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         }
 
         // Must answer all questions exactly once
-        val missing: MutableSet<Long?> = LinkedHashSet<Long?>(formQuestionIds)
+        val missing: MutableSet<Long> = LinkedHashSet(formQuestionIds)
         missing.removeAll(provided)
         if (!missing.isEmpty()) {
             ctx.buildConstraintViolationWithTemplate("Missing answers for questionIds: $missing")

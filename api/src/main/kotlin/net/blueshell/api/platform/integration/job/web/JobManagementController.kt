@@ -31,7 +31,7 @@ class JobManagementController(
     }
 
     private fun JobExecution.toDto(): JobExecutionDTO = JobExecutionDTO(
-        id = id ?: 0L,
+        id = id,
         jobType = jobType,
         status = status,
         payload = payload,

@@ -12,14 +12,12 @@ import net.blueshell.api.shared.validation.group.Update
 @Schema(name = "SimpleUser")
 @net.blueshell.api.user.web.validation.UniqueUser(groups = [Update::class, Creation::class, Administration::class])
 class SimpleUserDTO(
-    discord: String,
     email: String,
-    phoneNumber: String,
 
     var fullName: String? = null,
 
     @field:NotBlank
-    var initials: String,
+    var initials: String? = null,
 
     @field:NotBlank
     var firstName: String,
@@ -50,4 +48,4 @@ class SimpleUserDTO(
     var password: String? = null,
 
     var addressId: Long? = null,
-) : PersonalInfoDTO(discord, email, phoneNumber)
+) : PersonalInfoDTO(email)

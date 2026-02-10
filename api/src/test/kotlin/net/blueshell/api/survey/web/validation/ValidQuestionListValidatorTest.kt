@@ -52,18 +52,6 @@ class ValidQuestionListValidatorTest {
     }
 
     @Test
-    fun `question with null index is invalid`() {
-        val q1 = QuestionDTO()
-        q1.idx = 1L
-
-        val q2 = QuestionDTO()
-        q2.idx = null
-
-        val questions = mutableListOf(q1, q2)
-        assertFalse(validator.isValid(questions, context))
-    }
-
-    @Test
     fun `null question list is valid`() {
         assertTrue(validator.isValid(null, context))
     }

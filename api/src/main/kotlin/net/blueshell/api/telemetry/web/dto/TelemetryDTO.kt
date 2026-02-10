@@ -6,6 +6,6 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "Telemetry")
 data class TelemetryDTO(
-    var url: String? = null,
-    var platform: PlatformType? = null
+    var url: String,
+    var platform: PlatformType
 ) : AuditedAutoIdDTO()

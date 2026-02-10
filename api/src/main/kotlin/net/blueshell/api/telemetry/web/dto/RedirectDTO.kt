@@ -5,5 +5,5 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "Redirect")
 data class RedirectDTO(
-    var telemetry: TelemetryDTO? = null
+    var telemetry: TelemetryDTO
 ) : AuditedAutoIdDTO()

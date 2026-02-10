@@ -5,6 +5,6 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "EventFeedback")
 data class EventFeedbackDTO(
-    var feedback: String? = null,
+    var feedback: String,
     var eventId: Long = 0
 ) : AuditedAutoIdDTO()

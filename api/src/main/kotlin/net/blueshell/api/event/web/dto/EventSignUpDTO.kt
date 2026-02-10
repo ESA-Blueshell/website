@@ -11,7 +11,7 @@ import net.blueshell.api.user.web.dto.SimpleUserDTO
 @net.blueshell.api.event.web.validation.ValidEventSignUp
 @net.blueshell.api.event.web.validation.GuestOrUserRequired
 data class EventSignUpDTO(
-    var eventId: Long? = null,
+    var eventId: Long,
 
     @field:Valid
     var answers: MutableList<AnswerDTO> = mutableListOf(),

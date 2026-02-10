@@ -4,7 +4,7 @@ import net.blueshell.api.shared.enums.JobExecutionStatus
 import java.time.Instant
 
 data class JobExecutionDTO(
-    val id: Long,
+    val id: Long?,
     val jobType: String,
     val status: JobExecutionStatus,
     val payload: String?,

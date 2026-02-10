@@ -33,7 +33,7 @@ class UserValidatorTest @Autowired constructor(
 
     @Test
     fun `simple user dto without password fails creation validation`() {
-        val dto = simpleUserFactory.createWithCustomizations { it.password = null }
+        val dto = simpleUserFactory.createWithCustomizations { it.password = "" }
         val violations: Set<ConstraintViolation<SimpleUserDTO>> = validator.validate(dto, Creation::class.java)
         assertFalse(violations.isEmpty())
         assertTrue(violations.any { it.propertyPath.toString() == "password" })

@@ -15,7 +15,7 @@ data class SurveyDTO(
     @field:ValidQuestionList
     @field:Valid
     var questions: MutableList<QuestionDTO> = mutableListOf(),
-    var responseCount: Long? = null
+    var responseCount: Long = 0
 ) : AuditedAutoIdDTO() {
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionDTO?>

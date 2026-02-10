@@ -12,9 +12,8 @@ class ValidQuestionListValidator :
             return true
         }
 
-        val seenIdx: MutableSet<Long?> = HashSet()
+        val seenIdx: MutableSet<Long> = HashSet()
         for (q in questions) {
-            if (q.idx == null) return false
             if (!seenIdx.add(q.idx)) {
                 context.disableDefaultConstraintViolation()
                 context.buildConstraintViolationWithTemplate("Duplicate question index: " + q.idx)
@@ -26,4 +25,3 @@ class ValidQuestionListValidator :
         return true
     }
 }
-

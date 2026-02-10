@@ -16,10 +16,10 @@ import java.time.LocalDate
 data class MembershipDTO(
     @field:NotNull
     @field:NoExistingMembershipForUserId
-    var userId: Long? = null,
+    var userId: Long,
 
     @field:NotNull(groups = [Administration::class])
-    var memberType: MemberType? = null,
+    var memberType: MemberType,
 
     @field:NotNull(groups = [Creation::class])
     var city: String? = null,
@@ -30,7 +30,7 @@ data class MembershipDTO(
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @field:PastOrPresent(groups = [Administration::class])
     @field:Today(groups = [Creation::class])
-    var startDate: LocalDate? = null,
+    var startDate: LocalDate,
 
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var endDate: LocalDate? = null,

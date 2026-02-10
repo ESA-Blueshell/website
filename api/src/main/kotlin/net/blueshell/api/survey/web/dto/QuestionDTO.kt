@@ -11,14 +11,14 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 @net.blueshell.api.survey.web.validation.ValidQuestion
 data class QuestionDTO(
     @field:NotNull
-    var idx: Long? = null,
-    var surveyId: Long? = null,
+    var idx: Long,
+    var surveyId: Long,
 
     @field:NotNull
-    var type: QuestionType? = null,
+    var type: QuestionType,
 
     @field:NotBlank(message = "Label cannot be empty.")
     @field:Size(max = 2055, message = "Label cannot exceed 2055 characters.")
-    var label: String? = null,
-    var choiceLabels: MutableList<String?>? = null
+    var label: String,
+    var choiceLabels: MutableList<String>? = null
 ) : AuditedAutoIdDTO()

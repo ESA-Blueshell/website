@@ -87,11 +87,4 @@ class ValidQuestionValidatorTest {
     fun `null question is valid`() {
         assertTrue(validator.isValid(null, context))
     }
-
-    @Test
-    fun `null question type is valid`() {
-        val dto = QuestionDTO()
-        dto.type = null
-        assertTrue(validator.isValid(dto, context))
-    }
 }

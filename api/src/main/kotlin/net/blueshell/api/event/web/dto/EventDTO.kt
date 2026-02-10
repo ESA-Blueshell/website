@@ -20,15 +20,15 @@ data class EventDTO(
 
     @field:NotBlank(message = "Event description cannot be empty.")
     @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
-    var description: String,
+    var description: String?,
 
     var location: String? = null,
 
     @field:NotNull
-    var startTime: Instant? = null,
+    var startTime: Instant,
 
     @field:NotNull
-    var endTime: Instant? = null,
+    var endTime: Instant,
 
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,
@@ -36,7 +36,7 @@ data class EventDTO(
     var membersOnly: Boolean = false,
     var signUp: Boolean = false,
     var banner: EventBannerDTO? = null,
-    var signUpCount: Long? = null,
+    var signUpCount: Long = 0,
 
     @field:Valid
     var signUpForm: SurveyDTO? = null

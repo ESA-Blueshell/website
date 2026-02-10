@@ -30,22 +30,6 @@ class MembershipValidatorTest @Autowired constructor(
     }
 
     @Test
-    fun `membership dto without user id fails validation`() {
-        val dto = membershipFactory.createWithCustomizations { it.userId = null }
-        val violations = validator.validate(dto)
-        assertFalse(violations.isEmpty())
-        assertTrue(violations.any { it.propertyPath.toString() == "userId" })
-    }
-
-    @Test
-    fun `membership dto without member type fails validation`() {
-        val dto = membershipFactory.createWithCustomizations { it.memberType = null }
-        val violations = validator.validate(dto, Administration::class.java)
-        assertFalse(violations.isEmpty())
-        assertTrue(violations.any { it.propertyPath.toString() == "memberType" })
-    }
-
-    @Test
     fun `membership dto with future start date fails validation`() {
         val dto = membershipFactory.createWithCustomizations { it.startDate = LocalDate.now().plusDays(1) }
         val violations = validator.validate(dto, Administration::class.java)

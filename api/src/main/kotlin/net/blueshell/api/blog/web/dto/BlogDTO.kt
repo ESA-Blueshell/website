@@ -10,10 +10,10 @@ data class BlogDTO(
     var url: String? = null,
 
     @field:NotBlank
-    var title: String? = null,
+    var title: String,
 
     @field:NotBlank
-    var html: String? = null,
+    var html: String,
 
-    var publishedAt: Instant? = null
+    var publishedAt: Instant
 ) : AuditedAutoIdDTO()

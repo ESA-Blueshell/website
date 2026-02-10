@@ -114,10 +114,12 @@ class SurveyValidatorTest @Autowired constructor(
     }
 
     @Test
-    fun `answer dto without question id fails validation`() {
-        val dto = answerFactory.createWithCustomizations { it.questionId = null }
+    fun `answer dto with missing text for open question fails validation`() {
+        val dto = answerFactory.createBasic()
+        dto.textResponse = ""
+        whenever(questionRepository.findById(dto.questionId)).thenReturn(Optional.of(mkQuestion(QuestionType.OPEN)))
+
         val violations: Set<ConstraintViolation<AnswerDTO>> = validator.validate(dto)
         assertFalse(violations.isEmpty())
-        assertTrue(violations.any { it.propertyPath.toString() == "questionId" })
     }
 }

@@ -59,17 +59,6 @@ class ValidAnswerListValidatorTest {
     }
 
     @Test
-    fun `answer with null question id is invalid`() {
-        val a1 = AnswerDTO()
-        a1.questionId = 1L
-        val a2 = AnswerDTO()
-        a2.questionId = null
-
-        val answers = mutableListOf(a1, a2)
-        assertFalse(validator.isValid(answers, context))
-    }
-
-    @Test
     fun `null answer list is valid`() {
         assertTrue(validator.isValid(null, context))
     }

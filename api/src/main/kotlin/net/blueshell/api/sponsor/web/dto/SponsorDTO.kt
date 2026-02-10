@@ -9,9 +9,9 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 data class SponsorDTO(
     @field:NotBlank(message = "Sponsor name cannot be blank.")
     @field:Size(max = 255, message = "Sponsor name cannot exceed 255 characters.")
-    var name: String? = null,
+    var name: String,
 
     @field:NotBlank(message = "Sponsor description cannot be empty.")
     @field:Size(max = 4095, message = "Sponsor description cannot exceed 4095 characters.")
-    var description: String? = null
+    var description: String
 ) : AuditedAutoIdDTO()

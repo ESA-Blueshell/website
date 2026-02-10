@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 class ValidQuestionValidator @Autowired constructor() :
     ConstraintValidator<ValidQuestion?, QuestionDTO?> {
     override fun isValid(dto: QuestionDTO?, context: ConstraintValidatorContext?): Boolean {
-        if (dto == null || dto.type == null) {
+        if (dto == null) {
             return true // Let @NotNull handle this
         }
 
@@ -20,9 +20,9 @@ class ValidQuestionValidator @Autowired constructor() :
         }
     }
 
-    private fun hasValidChoiceLabels(choiceLabels: MutableList<String?>?): Boolean {
+    private fun hasValidChoiceLabels(choiceLabels: MutableList<String>?): Boolean {
         return !choiceLabels.isNullOrEmpty() &&
                 choiceLabels.stream()
-                    .noneMatch { label: String? -> label == null || label.trim { it <= ' ' }.isEmpty() }
+                    .noneMatch { label: String -> label.trim { it <= ' ' }.isEmpty() }
     }
 }

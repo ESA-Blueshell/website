@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository) :
     ConstraintValidator<ValidAnswer, AnswerDTO> {
     override fun isValid(dto: AnswerDTO?, context: ConstraintValidatorContext?): Boolean {
-        if (dto == null || dto.questionId == null) {
+        if (dto == null) {
             return true // Let @NotNull handle this
         }
 

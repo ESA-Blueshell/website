@@ -11,7 +11,7 @@ data class FileDTO(
     @field:NotBlank(message = "File name cannot be blank.")
     @field:Size(max = 255, message = "File name cannot exceed 255 characters.")
     var name: String,
-    var mediaType: String? = null,
+    var mediaType: String,
     var size: Long? = null,
-    var type: FileType? = null
+    var type: FileType
 ) : AuditedAutoIdDTO()

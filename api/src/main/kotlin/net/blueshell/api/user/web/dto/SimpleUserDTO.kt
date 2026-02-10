@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.user.web.dto.PersonalInfoDTO
 import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.validation.group.Creation
 import net.blueshell.api.shared.validation.group.Update
@@ -13,21 +12,25 @@ import net.blueshell.api.shared.validation.group.Update
 @Schema(name = "SimpleUser")
 @net.blueshell.api.user.web.validation.UniqueUser(groups = [Update::class, Creation::class, Administration::class])
 class SimpleUserDTO(
+    discord: String,
+    email: String,
+    phoneNumber: String,
+
     var fullName: String? = null,
 
     @field:NotBlank
-    var initials: String? = null,
+    var initials: String,
 
     @field:NotBlank
-    var firstName: String? = null,
+    var firstName: String,
 
     var prefix: String? = null,
 
     @field:NotBlank
-    var lastName: String? = null,
+    var lastName: String,
 
     @field:NotBlank
-    var username: String? = null,
+    var username: String,
 
     @field:NotNull
     var newsletter: Boolean = false,
@@ -46,5 +49,5 @@ class SimpleUserDTO(
     )
     var password: String? = null,
 
-    var addressId: Long? = null
-) : PersonalInfoDTO()
+    var addressId: Long? = null,
+) : PersonalInfoDTO(discord, email, phoneNumber)

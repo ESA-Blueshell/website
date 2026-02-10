@@ -11,13 +11,13 @@ import net.blueshell.api.user.web.validation.ValidMobilePhoneNumber
 @MappedSuperclass
 class PersonalInfoDTO(
     @field:NotBlank
-    var discord: String? = null,
+    var discord: String,
 
     @field:NotBlank
     @field:Email
-    var email: String? = null,
+    var email: String,
 
     @field:NotBlank
     @field:ValidMobilePhoneNumber
-    var phoneNumber: String? = null
+    var phoneNumber: String
 ) : AuditedAutoIdDTO()

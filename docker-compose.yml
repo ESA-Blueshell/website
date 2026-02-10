@@ -68,7 +68,10 @@ services:
       start_period: 30s
 
   nginx:
-    image: nginx:latest
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: ghcr.io/esa-blueshell/nginx:latest
     restart: always
     ports:
       - "80:80"
@@ -81,12 +84,12 @@ services:
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
-    configs:
-      - source: nginx_default_conf
-        target: /etc/nginx/conf.d/default.conf
 
   certbot:
-    image: certbot/certbot:latest
+    build:
+      context: ./certbot
+      dockerfile: Dockerfile
+    image: ghcr.io/esa-blueshell/certbot:latest
     container_name: certbot
     restart: unless-stopped
     depends_on:
@@ -94,33 +97,6 @@ services:
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: >
-      sh -euxc '
-        # Ensure docker CLI is available for reload hook
-        if ! command -v docker >/dev/null 2>&1; then
-          apt-get update &&
-          apt-get install -y docker.io &&
-          rm -rf /var/lib/apt/lists/*;
-        fi
-
-        # First-time issuance if cert is missing
-        if [ ! -f /etc/letsencrypt/live/esa-blueshell.nl/fullchain.pem ]; then
-          echo "No certificate found; obtaining initial certificate...";
-          certbot certonly --webroot -w /var/www/certbot \
-            -d esa-blueshell.nl -d www.esa-blueshell.nl \
-            --email board@blueshell.utwente.nl --agree-tos --non-interactive || true;
-          # Try clean reload; fall back to HUP
-          docker exec nginx nginx -s reload || docker kill -s HUP nginx || true;
-        fi
-
-        # Renew forever; reload nginx after successful renewals
-        while :; do
-          certbot renew --webroot -w /var/www/certbot --quiet \
-            --deploy-hook "docker exec nginx nginx -s reload || docker kill -s HUP nginx" || true;
-          sleep 12h;
-        done
-      '
 
 networks:
   frontback:
@@ -130,7 +106,3 @@ volumes:
   letsencrypt:
   certbot-www:
   db_data:
-
-configs:
-  nginx_default_conf:
-    file: ./nginx/nginx.conf

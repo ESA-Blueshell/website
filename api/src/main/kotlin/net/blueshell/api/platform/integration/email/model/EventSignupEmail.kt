@@ -67,13 +67,10 @@ class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String
         get() = "Blueshell Events"
 
     private fun formatEventDate(event: Event): String {
-        if (event.startTime != null) {
-            if (event.endTime != null && event.startTime != event.endTime) {
-                return String.format("%s - %s", event.startTime, event.endTime)
-            }
-            return event.startTime.toString()
+        if (event.startTime != event.endTime) {
+            return String.format("%s - %s", event.startTime, event.endTime)
         }
-        return "TBA"
+        return event.startTime.toString()
     }
 
     private fun formatEventLocation(event: Event): String {

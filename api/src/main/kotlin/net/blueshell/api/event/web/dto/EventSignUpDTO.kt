@@ -15,7 +15,7 @@ data class EventSignUpDTO(
     var eventId: Long? = null,
 
     @field:Valid
-    var answers: MutableList<AnswerDTO> = mutableListOf(),
+    var answers: MutableList<AnswerDTO>? = mutableListOf(),
 
     var guest: GuestDTO? = null,
     var user: SimpleUserDTO? = null,

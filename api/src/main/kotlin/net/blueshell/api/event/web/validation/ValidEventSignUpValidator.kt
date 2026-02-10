@@ -46,7 +46,7 @@ class ValidEventSignUpValidator @Autowired constructor(private val events: Event
         var valid = true
         val provided: MutableSet<Long> = LinkedHashSet()
 
-        for (i in answers.indices) {
+        for (i in answers!!.indices) {
             val a = answers[i]
 
             val qid = a.questionId!!

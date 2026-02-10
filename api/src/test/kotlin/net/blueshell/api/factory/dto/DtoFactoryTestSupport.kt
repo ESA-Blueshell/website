@@ -75,7 +75,7 @@ abstract class DtoFactoryTestSupport {
             }
 
             is EventSignUpDTO -> {
-                val questions = stubQuestionsForAnswers(dto.answers)
+                val questions = stubQuestionsForAnswers(dto.answers!!)
                 stubEventForSignup(dto, questions)
             }
 
@@ -86,7 +86,7 @@ abstract class DtoFactoryTestSupport {
     }
 
     private fun stubQuestionsForAnswers(answers: List<AnswerDTO>): Map<Long, Question> {
-        val questions = answers.mapNotNull { answer ->
+        val questions = answers.map { answer ->
             val questionId = answer.questionId!!
             val question = Question()
             ModelTestUtils.setId(question, questionId)

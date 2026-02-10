@@ -185,7 +185,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
             assertEquals(signUp.id, dto.id)
             assertEquals(signUp.eventId, dto.eventId)
             assertEquals(signUp.userId, dto.userId)
-            assertEquals(signUp.answers.size, dto.answers.size)
+            assertEquals(signUp.answers.size, dto.answers!!.size)
         }
     }
 }

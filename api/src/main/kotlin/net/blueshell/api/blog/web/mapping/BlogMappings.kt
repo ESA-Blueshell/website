@@ -1,36 +1,27 @@
 package net.blueshell.api.blog.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.blog.persistence.Blog
 import net.blueshell.api.blog.web.dto.BlogDTO
 import net.blueshell.api.blog.web.dto.SocialDTO
 import org.jsoup.Jsoup
+import tech.mappie.api.ObjectMappie
 import java.time.Instant
 
-@Konverter
-interface BlogKonverter {
-    fun toDTO(blog: Blog): BlogDTO
+object BlogToBlogDTOMapper : ObjectMappie<Blog, BlogDTO>()
 
-    fun fromDTO(dto: BlogDTO): Blog
-}
+object BlogDTOToBlogMapper : ObjectMappie<BlogDTO, Blog>()
 
-@Konverter
-interface SocialKonverter {
-    fun toSocialDTO(blog: Blog): SocialDTO
-}
-
-private val blogKonverter = Konverter.get<BlogKonverter>()
-private val socialKonverter = Konverter.get<SocialKonverter>()
+object BlogToSocialDTOMapper : ObjectMappie<Blog, SocialDTO>()
 
 fun Blog.asDto(frontendUrl: String): BlogDTO {
-    val dto = blogKonverter.toDTO(this)
+    val dto = BlogToBlogDTOMapper.map(this)
     dto.url = "$frontendUrl/blogs/${id}"
     return dto
 }
 
 fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
-    val dto = socialKonverter.toSocialDTO(this)
+    val dto = BlogToSocialDTOMapper.map(this)
     dto.url = "$frontendUrl/blogs$id"
     dto.platforms = arrayOf(
         PlatformType.FACEBOOK,
@@ -42,7 +33,7 @@ fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
 }
 
 fun BlogDTO.asEntity(blog: Blog = Blog()): Blog {
-    val mapped = blogKonverter.fromDTO(this)
+    val mapped = BlogDTOToBlogMapper.map(this)
     blog.title = mapped.title
     blog.publishedAt = mapped.publishedAt ?: Instant.now()
     blog.version = mapped.version

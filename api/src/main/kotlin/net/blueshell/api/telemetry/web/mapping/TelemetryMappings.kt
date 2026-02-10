@@ -1,22 +1,17 @@
 package net.blueshell.api.telemetry.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.telemetry.web.dto.TelemetryDTO
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface TelemetryKonverter {
-    fun toDTO(telemetry: Telemetry): TelemetryDTO
+object TelemetryToTelemetryDTOMapper : ObjectMappie<Telemetry, TelemetryDTO>()
 
-    fun fromDTO(dto: TelemetryDTO): Telemetry
-}
-
-private val telemetryKonverter = Konverter.get<TelemetryKonverter>()
+object TelemetryDTOToTelemetryMapper : ObjectMappie<TelemetryDTO, Telemetry>()
 
 fun TelemetryDTO.asEntity(existing: Telemetry? = null): Telemetry {
-    val mapped = telemetryKonverter.fromDTO(this)
+    val mapped = TelemetryDTOToTelemetryMapper.map(this)
     existing?.id?.let { mapped.assignIdForRef(it) }
     return mapped
 }
 
-fun Telemetry.asDto(): TelemetryDTO = telemetryKonverter.toDTO(this)
+fun Telemetry.asDto(): TelemetryDTO = TelemetryToTelemetryDTOMapper.map(this)

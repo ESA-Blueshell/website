@@ -1,22 +1,17 @@
 package net.blueshell.api.file.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.web.dto.FileDTO
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface FileKonverter {
-    fun toDTO(file: File): FileDTO
+object FileToFileDTOMapper : ObjectMappie<File, FileDTO>()
 
-    fun fromDTO(dto: FileDTO): File
-}
-
-private val fileKonverter = Konverter.get<FileKonverter>()
+object FileDTOToFileMapper : ObjectMappie<FileDTO, File>()
 
 fun FileDTO.asEntity(): File {
-    val mapped = fileKonverter.fromDTO(this)
+    val mapped = FileDTOToFileMapper.map(this)
     id?.let { mapped.assignIdForRef(it) }
     return mapped
 }
 
-fun File.asDto(): FileDTO = fileKonverter.toDTO(this)
+fun File.asDto(): FileDTO = FileToFileDTOMapper.map(this)

@@ -7,14 +7,15 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     id("org.openapi.generator") version "7.15.0"
 
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.spring") version "2.3.0"
-    kotlin("plugin.jpa") version "2.3.0"
-    kotlin("plugin.allopen") version "2.3.0"
-    kotlin("plugin.noarg") version "2.3.0"
-    kotlin("kapt") version "2.3.0"
-    kotlin("plugin.lombok") version "2.3.0"
-    id("com.google.devtools.ksp").version("2.3.0")
+    val kotlinVersion = "2.3.10"
+    kotlin("jvm") version kotlinVersion
+    kotlin("plugin.spring") version kotlinVersion
+    kotlin("plugin.jpa") version kotlinVersion
+    kotlin("plugin.allopen") version kotlinVersion
+    kotlin("plugin.noarg") version kotlinVersion
+    kotlin("kapt") version kotlinVersion
+    kotlin("plugin.lombok") version kotlinVersion
+    id("tech.mappie.plugin") version "2.3.10-2.3.1"
 
     java
 }
@@ -53,7 +54,6 @@ configurations.configureEach {
 repositories {
     mavenCentral()
 }
-val konvertVersion = "4.4.0"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -71,10 +71,6 @@ dependencies {
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20250404-2.0.0")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.39.1")
-
-    implementation("io.mcarle:konvert-api:$konvertVersion")
-    implementation("io.mcarle:konvert-annotations:$konvertVersion")
-    ksp("io.mcarle:konvert:$konvertVersion")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
@@ -259,7 +255,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     }
 }
 
-tasks.matching { it.name.startsWith("ksp") && it.name.contains("Kotlin") }.configureEach {
+tasks.matching { it.name.contains("Kotlin") }.configureEach {
     dependsOn(tasks.named("generateBrevoClient"))
     inputs.dir(brevoOutputDir)
 }

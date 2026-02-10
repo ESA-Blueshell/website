@@ -1,23 +1,18 @@
 package net.blueshell.api.membership.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.membership.web.dto.MembershipDTO
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface MembershipKonverter {
-    fun toDTO(membership: Membership): MembershipDTO
+object MembershipToMembershipDTOMapper : ObjectMappie<Membership, MembershipDTO>()
 
-    fun fromDTO(dto: MembershipDTO): Membership
-}
-
-private val membershipKonverter = Konverter.get<MembershipKonverter>()
+object MembershipDTOToMembershipMapper : ObjectMappie<MembershipDTO, Membership>()
 
 fun MembershipDTO.asEntity(membership: Membership = Membership()): Membership {
-    val mapped = membershipKonverter.fromDTO(this)
+    val mapped = MembershipDTOToMembershipMapper.map(this)
     mapped.userId?.let { membership.userId = it }
     version?.let { membership.version = it }
 
@@ -38,4 +33,4 @@ private fun hasAuthority(role: Role): Boolean {
     }
 }
 
-fun Membership.asDto(): MembershipDTO = membershipKonverter.toDTO(this)
+fun Membership.asDto(): MembershipDTO = MembershipToMembershipDTOMapper.map(this)

@@ -1,49 +1,36 @@
 package net.blueshell.api.committee.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.committee.web.dto.CommitteeMemberDTO
 import net.blueshell.api.committee.web.dto.SimpleCommitteeDTO
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface CommitteeMemberKonverter {
-    fun toDTO(member: CommitteeMember): CommitteeMemberDTO
+object CommitteeMemberToCommitteeMemberDTOMapper : ObjectMappie<CommitteeMember, CommitteeMemberDTO>()
 
-    fun fromDTO(dto: CommitteeMemberDTO): CommitteeMember
-}
+object CommitteeMemberDTOToCommitteeMemberMapper : ObjectMappie<CommitteeMemberDTO, CommitteeMember>()
 
-@Konverter
-interface AdvancedCommitteeKonverter {
-    fun toDTO(committee: Committee): AdvancedCommitteeDTO
+object CommitteeToAdvancedCommitteeDTOMapper : ObjectMappie<Committee, AdvancedCommitteeDTO>()
 
-    fun fromDTO(dto: AdvancedCommitteeDTO): Committee
-}
+object AdvancedCommitteeDTOToCommitteeMapper : ObjectMappie<AdvancedCommitteeDTO, Committee>()
 
-@Konverter
-interface SimpleCommitteeKonverter {
-    fun toDTO(committee: Committee): SimpleCommitteeDTO
+object CommitteeToSimpleCommitteeDTOMapper : ObjectMappie<Committee, SimpleCommitteeDTO>()
 
-    fun fromDTO(dto: SimpleCommitteeDTO): Committee
-}
+object SimpleCommitteeDTOToCommitteeMapper : ObjectMappie<SimpleCommitteeDTO, Committee>()
 
-private val committeeMemberKonverter = Konverter.get<CommitteeMemberKonverter>()
-private val advancedCommitteeKonverter = Konverter.get<AdvancedCommitteeKonverter>()
-private val simpleCommitteeKonverter = Konverter.get<SimpleCommitteeKonverter>()
-
-fun CommitteeMemberDTO.asEntity(): CommitteeMember = committeeMemberKonverter.fromDTO(this)
+fun CommitteeMemberDTO.asEntity(): CommitteeMember = CommitteeMemberDTOToCommitteeMemberMapper.map(this)
 
 fun AdvancedCommitteeDTO.asEntity(existing: Committee? = null): Committee {
-    val mapped = advancedCommitteeKonverter.fromDTO(this)
+    val mapped = AdvancedCommitteeDTOToCommitteeMapper.map(this)
     existing?.id?.let { mapped.assignIdForRef(it) }
     return mapped
 }
 
-fun SimpleCommitteeDTO.asEntity(): Committee = simpleCommitteeKonverter.fromDTO(this)
+fun SimpleCommitteeDTO.asEntity(): Committee = SimpleCommitteeDTOToCommitteeMapper.map(this)
 
-fun CommitteeMember.asDto(): CommitteeMemberDTO = committeeMemberKonverter.toDTO(this)
+fun CommitteeMember.asDto(): CommitteeMemberDTO = CommitteeMemberToCommitteeMemberDTOMapper.map(this)
 
-fun Committee.asAdvancedDto(): AdvancedCommitteeDTO = advancedCommitteeKonverter.toDTO(this)
+fun Committee.asAdvancedDto(): AdvancedCommitteeDTO = CommitteeToAdvancedCommitteeDTOMapper.map(this)
 
-fun Committee.asSimpleDto(): SimpleCommitteeDTO = simpleCommitteeKonverter.toDTO(this)
+fun Committee.asSimpleDto(): SimpleCommitteeDTO = CommitteeToSimpleCommitteeDTOMapper.map(this)

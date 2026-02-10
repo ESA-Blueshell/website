@@ -1,22 +1,17 @@
 package net.blueshell.api.user.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.web.dto.AddressDTO
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface AddressKonverter {
-    fun toDTO(address: Address): AddressDTO
+object AddressToAddressDTOMapper : ObjectMappie<Address, AddressDTO>()
 
-    fun fromDTO(dto: AddressDTO): Address
-}
-
-private val addressKonverter = Konverter.get<AddressKonverter>()
+object AddressDTOToAddressMapper : ObjectMappie<AddressDTO, Address>()
 
 fun AddressDTO.asEntity(existing: Address? = null): Address {
-    val mapped = addressKonverter.fromDTO(this)
+    val mapped = AddressDTOToAddressMapper.map(this)
     existing?.id?.let { mapped.assignIdForRef(it) }
     return mapped
 }
 
-fun Address.asDto(): AddressDTO = addressKonverter.toDTO(this)
+fun Address.asDto(): AddressDTO = AddressToAddressDTOMapper.map(this)

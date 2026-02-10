@@ -29,8 +29,9 @@ class AdvancedUserDTO(
 
     var enabled: Boolean = false,
     var gender: String? = null,
-    var studentNumber: String? = null
-) : SimpleUserDTO() {
+    var studentNumber: String? = null,
+    email: String
+) : SimpleUserDTO(email) {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role?>
         get() {

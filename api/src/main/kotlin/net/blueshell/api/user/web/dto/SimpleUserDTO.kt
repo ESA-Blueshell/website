@@ -19,13 +19,7 @@ class SimpleUserDTO(
     @field:NotBlank
     var initials: String? = null,
 
-    @field:NotBlank
-    var firstName: String,
-
     var prefix: String? = null,
-
-    @field:NotBlank
-    var lastName: String,
 
     @field:NotBlank
     var username: String,

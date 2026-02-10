@@ -1,6 +1,5 @@
 package net.blueshell.api.contribution.web.mapping
 
-import io.mcarle.konvert.api.Konverter
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
@@ -8,36 +7,24 @@ import net.blueshell.api.contribution.web.dto.ContributionDTO
 import net.blueshell.api.contribution.web.dto.ContributionPeriodDTO
 import net.blueshell.api.contribution.web.dto.ContributionReminderDTO
 import org.springframework.beans.BeanUtils
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface ContributionKonverter {
-    fun toDTO(contribution: Contribution): ContributionDTO
+object ContributionToContributionDTOMapper : ObjectMappie<Contribution, ContributionDTO>()
 
-    fun fromDTO(dto: ContributionDTO): Contribution
-}
+object ContributionDTOToContributionMapper : ObjectMappie<ContributionDTO, Contribution>()
 
-@Konverter
-interface ContributionPeriodKonverter {
-    fun toDTO(period: ContributionPeriod): ContributionPeriodDTO
+object ContributionPeriodToContributionPeriodDTOMapper : ObjectMappie<ContributionPeriod, ContributionPeriodDTO>()
 
-    fun fromDTO(dto: ContributionPeriodDTO): ContributionPeriod
-}
+object ContributionPeriodDTOToContributionPeriodMapper : ObjectMappie<ContributionPeriodDTO, ContributionPeriod>()
 
-@Konverter
-interface ContributionReminderKonverter {
-    fun toDTO(reminder: ContributionReminder): ContributionReminderDTO
+object ContributionReminderToContributionReminderDTOMapper : ObjectMappie<ContributionReminder, ContributionReminderDTO>()
 
-    fun fromDTO(dto: ContributionReminderDTO): ContributionReminder
-}
+object ContributionReminderDTOToContributionReminderMapper : ObjectMappie<ContributionReminderDTO, ContributionReminder>()
 
-private val contributionKonverter = Konverter.get<ContributionKonverter>()
-private val contributionPeriodKonverter = Konverter.get<ContributionPeriodKonverter>()
-private val contributionReminderKonverter = Konverter.get<ContributionReminderKonverter>()
-
-fun ContributionDTO.asEntity(): Contribution = contributionKonverter.fromDTO(this)
+fun ContributionDTO.asEntity(): Contribution = ContributionDTOToContributionMapper.map(this)
 
 fun ContributionPeriodDTO.asEntity(existing: ContributionPeriod? = null): ContributionPeriod {
-    val mapped = contributionPeriodKonverter.fromDTO(this)
+    val mapped = ContributionPeriodDTOToContributionPeriodMapper.map(this)
     if (existing == null) {
         return mapped
     }
@@ -45,10 +32,10 @@ fun ContributionPeriodDTO.asEntity(existing: ContributionPeriod? = null): Contri
     return existing
 }
 
-fun ContributionReminderDTO.asEntity(): ContributionReminder = contributionReminderKonverter.fromDTO(this)
+fun ContributionReminderDTO.asEntity(): ContributionReminder = ContributionReminderDTOToContributionReminderMapper.map(this)
 
-fun Contribution.asDto(): ContributionDTO = contributionKonverter.toDTO(this)
+fun Contribution.asDto(): ContributionDTO = ContributionToContributionDTOMapper.map(this)
 
-fun ContributionPeriod.asDto(): ContributionPeriodDTO = contributionPeriodKonverter.toDTO(this)
+fun ContributionPeriod.asDto(): ContributionPeriodDTO = ContributionPeriodToContributionPeriodDTOMapper.map(this)
 
-fun ContributionReminder.asDto(): ContributionReminderDTO = contributionReminderKonverter.toDTO(this)
+fun ContributionReminder.asDto(): ContributionReminderDTO = ContributionReminderToContributionReminderDTOMapper.map(this)

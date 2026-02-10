@@ -1,8 +1,5 @@
 package net.blueshell.api.user.web.mapping
 
-import io.mcarle.konvert.api.Konvert
-import io.mcarle.konvert.api.Konverter
-import io.mcarle.konvert.api.Mapping
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.util.MappingUtil
 import net.blueshell.api.user.persistence.User
@@ -11,59 +8,30 @@ import net.blueshell.api.user.web.dto.SimpleUserDTO
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
+import tech.mappie.api.ObjectMappie
 
-@Konverter
-interface AdvancedUserKonverter {
-    @Konvert(
-        mappings = [
-            Mapping(target = "password", ignore = true),
-            Mapping(target = "roles", source = "inheritedRoles"),
-        ]
-    )
-    fun toDTO(user: User): AdvancedUserDTO
-
-    @Konvert(
-        mappings = [
-            Mapping(target = "createdAt", ignore = true),
-            Mapping(target = "deletedAt", ignore = true),
-            Mapping(target = "enabled", ignore = true),
-            Mapping(target = "fullName", ignore = true),
-            Mapping(target = "id", ignore = true),
-            Mapping(target = "password", ignore = true),
-            Mapping(target = "roles", ignore = true),
-            Mapping(target = "updatedAt", ignore = true),
-        ]
-    )
-    fun fromDTO(dto: AdvancedUserDTO): User
+object UserToAdvancedUserDTOMapper : ObjectMappie<User, AdvancedUserDTO>() {
+    override fun map(from: User) = mapping {
+        AdvancedUserDTO::password fromValue ""
+        AdvancedUserDTO::roles fromProperty from::inheritedRoles
+    }
 }
 
-@Konverter
-interface SimpleUserKonverter {
-    @Konvert(mappings = [Mapping(target = "password", ignore = true)])
-    fun toDTO(user: User): SimpleUserDTO
+object AdvancedUserDTOToUserMapper : ObjectMappie<AdvancedUserDTO, User>()
 
-    @Konvert(
-        mappings = [
-            Mapping(target = "addressId", ignore = true),
-            Mapping(target = "createdAt", ignore = true),
-            Mapping(target = "deletedAt", ignore = true),
-            Mapping(target = "fullName", ignore = true),
-            Mapping(target = "id", ignore = true),
-            Mapping(target = "password", ignore = true),
-            Mapping(target = "updatedAt", ignore = true),
-        ]
-    )
-    fun fromDTO(dto: SimpleUserDTO): User
+object UserToSimpleUserDTOMapper : ObjectMappie<User, SimpleUserDTO>() {
+    override fun map(from: User) = mapping {
+        SimpleUserDTO::password fromValue ""
+    }
 }
 
-private val advancedUserKonverter = Konverter.get<AdvancedUserKonverter>()
-private val simpleUserKonverter = Konverter.get<SimpleUserKonverter>()
+object SimpleUserDTOToUserMapper : ObjectMappie<SimpleUserDTO, User>()
 
 fun AdvancedUserDTO.asEntity(
     user: User = User(),
     passwordEncoder: PasswordEncoder
 ): User {
-    val mapped = advancedUserKonverter.fromDTO(this)
+    val mapped = AdvancedUserDTOToUserMapper.map(this)
 
     mapped.discord?.let { user.discord = it }
     mapped.dateOfBirth?.let { user.dateOfBirth = it }
@@ -96,7 +64,7 @@ fun SimpleUserDTO.asEntity(
     user: User = User(),
     passwordEncoder: PasswordEncoder
 ): User {
-    val mapped = simpleUserKonverter.fromDTO(this)
+    val mapped = SimpleUserDTOToUserMapper.map(this)
 
     if (user.id == null) {
         mapped.initials?.let { user.initials = it }
@@ -135,6 +103,6 @@ private fun hasAuthority(role: Role): Boolean {
     }
 }
 
-fun User.asAdvancedDto(): AdvancedUserDTO = advancedUserKonverter.toDTO(this)
+fun User.asAdvancedDto(): AdvancedUserDTO = UserToAdvancedUserDTOMapper.map(this)
 
-fun User.asSimpleDto(): SimpleUserDTO = simpleUserKonverter.toDTO(this)
+fun User.asSimpleDto(): SimpleUserDTO = UserToSimpleUserDTOMapper.map(this)

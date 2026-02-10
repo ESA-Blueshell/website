@@ -12,20 +12,36 @@ import tech.mappie.api.ObjectMappie
 
 object UserToAdvancedUserDTOMapper : ObjectMappie<User, AdvancedUserDTO>() {
     override fun map(from: User) = mapping {
-        AdvancedUserDTO::password fromValue ""
+        AdvancedUserDTO::password fromValue "" // Never expose the password in the DTO
         AdvancedUserDTO::roles fromProperty from::inheritedRoles
     }
 }
 
-object AdvancedUserDTOToUserMapper : ObjectMappie<AdvancedUserDTO, User>()
-
-object UserToSimpleUserDTOMapper : ObjectMappie<User, SimpleUserDTO>() {
-    override fun map(from: User) = mapping {
-        SimpleUserDTO::password fromValue ""
+object AdvancedUserDTOToUserMapper : ObjectMappie<AdvancedUserDTO, User>() {
+    override fun map(from: AdvancedUserDTO) = mapping {
+        User::username fromValue from.username!!
+        User::password fromValue from.password!!
+        User::firstName fromValue from.firstName!!
+        User::lastName fromValue from.lastName!!
+        User::email fromValue from.email!!
     }
 }
 
-object SimpleUserDTOToUserMapper : ObjectMappie<SimpleUserDTO, User>()
+object UserToSimpleUserDTOMapper : ObjectMappie<User, SimpleUserDTO>() {
+    override fun map(from: User) = mapping {
+        SimpleUserDTO::password fromValue "" // Never expose the password in the DTO
+    }
+}
+
+object SimpleUserDTOToUserMapper : ObjectMappie<SimpleUserDTO, User>() {
+    override fun map(from: SimpleUserDTO) = mapping {
+        User::username fromValue from.username!!
+        User::password fromValue from.password!!
+        User::firstName fromValue from.firstName!!
+        User::lastName fromValue from.lastName!!
+        User::email fromValue from.email!!
+    }
+}
 
 fun AdvancedUserDTO.asEntity(
     user: User = User(),
@@ -46,15 +62,17 @@ fun AdvancedUserDTO.asEntity(
     mapped.addressId?.let { user.addressId = it }
     version?.let { user.version = it }
 
+    val canEditIdentityFields = user.id == null || hasAuthority(Role.BOARD)
+
     if (user.id == null) {
         if (hasAuthority(Role.BOARD)) {
-            user.setPassword(passwordEncoder.encode(MappingUtil.generateRandomString()))
+            user.password = passwordEncoder.encode(MappingUtil.generateRandomString())
         } else {
-            user.setPassword(passwordEncoder.encode(password))
+            user.password = passwordEncoder.encode(password)
         }
-        applyRestrictedFields(this, user)
-    } else if (hasAuthority(Role.BOARD)) {
-        applyRestrictedFields(this, user)
+    }
+    if (canEditIdentityFields) {
+        applyUserIdentityFields(this, user)
     }
 
     return user
@@ -67,12 +85,7 @@ fun SimpleUserDTO.asEntity(
     val mapped = SimpleUserDTOToUserMapper.map(this)
 
     if (user.id == null) {
-        mapped.initials?.let { user.initials = it }
-        mapped.firstName?.let { user.firstName = it }
-        mapped.prefix?.let { user.prefix = it }
-        mapped.lastName?.let { user.lastName = it }
-        mapped.username?.let { user.setUsername(it) }
-        mapped.email?.let { user.email = it }
+        applyUserIdentityFields(this, user)
     }
 
     mapped.discord?.let { user.discord = it }
@@ -81,19 +94,28 @@ fun SimpleUserDTO.asEntity(
     version?.let { user.version = it }
 
     if (user.id == null) {
-        user.setPassword(passwordEncoder.encode(password))
+        user.password = passwordEncoder.encode(password)
     }
 
     return user
 }
 
-private fun applyRestrictedFields(dto: AdvancedUserDTO, user: User) {
+private fun applyUserIdentityFields(dto: AdvancedUserDTO, user: User) {
+    dto.username?.let { user.username = it }
+    dto.email?.let { user.email = it }
     dto.initials?.let { user.initials = it }
     dto.firstName?.let { user.firstName = it }
     dto.prefix?.let { user.prefix = it }
     dto.lastName?.let { user.lastName = it }
+}
+
+private fun applyUserIdentityFields(dto: SimpleUserDTO, user: User) {
+    dto.username?.let { user.username = it }
     dto.email?.let { user.email = it }
-    dto.username?.let { user.setUsername(it) }
+    dto.initials?.let { user.initials = it }
+    dto.firstName?.let { user.firstName = it }
+    dto.prefix?.let { user.prefix = it }
+    dto.lastName?.let { user.lastName = it }
 }
 
 private fun hasAuthority(role: Role): Boolean {

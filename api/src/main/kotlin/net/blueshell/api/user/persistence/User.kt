@@ -45,10 +45,10 @@ import java.sql.Date
 class User(
 
     @Column(nullable = false, unique = false)
-    private var username: String = "",
+    var username: String = "",
 
     @Column(nullable = false)
-    private var password: String = "",
+    var password: String = "",
 
     @Column(name = "first_name", nullable = false)
     var firstName: String = "",
@@ -119,7 +119,7 @@ class User(
     @Column(name = "start_study_year")
     var startStudyYear: Long? = null,
 
-    ) : AuditedAutoIdEntity(), UserDetails {
+    ) : AuditedAutoIdEntity() {
     @field:OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @field:JoinColumn(name = "address_id")
     private var _address: Address? = null
@@ -203,8 +203,8 @@ class User(
 
     fun hasAuthority(role: Role): Boolean = inheritedRoles.any { it.matchesRole(role) }
 
-    override fun getAuthorities(): MutableCollection<out GrantedAuthority> =
-        inheritedRoles
+    val authorities: Collection<GrantedAuthority>
+        get() = inheritedRoles
             .map { SimpleGrantedAuthority(it.reprString) }
             .toMutableSet()
 
@@ -219,18 +219,18 @@ class User(
     val fullName: String
         get() = listOfNotNull(firstName, prefix?.takeIf { it.isNotBlank() }, lastName).joinToString(" ")
 
-    override fun getUsername(): String = username
-    fun setUsername(value: String) {
-        username = value
-    }
+//    override fun getUsername(): String = username
+//    fun setUsername(value: String) {
+//        username = value
+//    }
 
-    override fun getPassword(): String = password
-    fun setPassword(value: String) {
-        password = value
-    }
+//    override fun getPassword(): String = password
+//    fun setPassword(value: String) {
+//        password = value
+//    }
 
-    override fun isAccountNonExpired(): Boolean = true
-    override fun isAccountNonLocked(): Boolean = true
-    override fun isCredentialsNonExpired(): Boolean = true
-    override fun isEnabled(): Boolean = enabled
+    fun isAccountNonExpired(): Boolean = true
+    fun isAccountNonLocked(): Boolean = true
+    fun isCredentialsNonExpired(): Boolean = true
+    fun isEnabled(): Boolean = enabled
 }

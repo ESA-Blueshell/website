@@ -10,7 +10,7 @@ import java.util.function.ToIntFunction
 
 @Schema(name = "AdvancedUser")
 class AdvancedUserDTO(
-    var roles: MutableSet<Role> = mutableSetOf(),
+    var roles: Set<Role> = setOf(),
 
     @field:NotNull
     var dateOfBirth: Date? = null,
@@ -30,8 +30,7 @@ class AdvancedUserDTO(
     var enabled: Boolean = false,
     var gender: String? = null,
     var studentNumber: String? = null,
-    email: String
-) : SimpleUserDTO(email) {
+) : SimpleUserDTO() {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role?>
         get() {

@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
+import net.blueshell.api.user.persistence.User
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
@@ -45,7 +46,7 @@ class JwtTokenUtil {
         return tokenExpiration.before(Date())
     }
 
-    fun generateToken(userDetails: UserDetails): String {
+    fun generateToken(userDetails: User): String {
         val claims: MutableMap<String, Any> = HashMap<String, Any>()
         return doGenerateToken(claims, userDetails.username)
     }
@@ -69,9 +70,9 @@ class JwtTokenUtil {
         }
     }
 
-    fun validateToken(token: String?, userDetails: UserDetails): Boolean {
+    fun validateToken(token: String?, user: User): Boolean {
         val username = getUsernameFromToken(token)
-        return username == userDetails.username && !isTokenExpired(token)
+        return username == user.username && !isTokenExpired(token)
     }
 
     private val signingKey: SecretKey

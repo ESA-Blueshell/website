@@ -26,9 +26,9 @@ class UserService @Autowired constructor(
     repository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val events: AfterCommitEventPublisher
-) : BaseModelService<User, Long, UserRepository>(repository), UserDetailsService {
+) : BaseModelService<User, Long, UserRepository>(repository) {
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String): User {
+    fun loadUserByUsername(username: String): User {
         return findByUsername(username)
     }
 

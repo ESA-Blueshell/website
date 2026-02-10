@@ -29,7 +29,12 @@ object EventBannerDTOToEventBannerMapper : ObjectMappie<EventBannerDTO, EventBan
 
 object GuestToGuestDTOMapper : ObjectMappie<Guest, GuestDTO>()
 
-object GuestDTOToGuestMapper : ObjectMappie<GuestDTO, Guest>()
+object GuestDTOToGuestMapper : ObjectMappie<GuestDTO, Guest>() {
+    override fun map(from: GuestDTO) = mapping {
+        Guest::discord fromValue from.discord!!
+        Guest::email fromValue from.email!!
+    }
+}
 
 object EventSignUpToEventSignUpDTOMapper : ObjectMappie<EventSignUp, EventSignUpDTO>()
 
@@ -38,8 +43,6 @@ object EventSignUpDTOToEventSignUpMapper : ObjectMappie<EventSignUpDTO, EventSig
 object EventDTOToSocialDTOMapper : ObjectMappie<EventDTO, SocialDTO>()
 
 fun EventDTO.asEntity(existing: Event = Event()): Event {
-    requireNotNull(startTime) { "startTime is required" }
-    requireNotNull(endTime) { "endTime is required" }
     val mapped = EventDTOToEventMapper.map(this)
     BeanUtils.copyProperties(
         mapped,

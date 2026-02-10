@@ -4,9 +4,11 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.user.application.UserService
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
@@ -14,7 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
 @Component
-class JwtAuthFilter(private val jwtTokenUtil: JwtTokenUtil, private val userDetailsService: UserDetailsService) :
+class JwtAuthFilter(private val jwtTokenUtil: JwtTokenUtil, private val userService: UserService) :
     OncePerRequestFilter() {
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(
@@ -35,10 +37,10 @@ class JwtAuthFilter(private val jwtTokenUtil: JwtTokenUtil, private val userDeta
         }
 
         val username = jwtTokenUtil.getUsernameFromToken(token)
-        val userDetails = userDetailsService.loadUserByUsername(username) as User
-        if (jwtTokenUtil.validateToken(token, userDetails)) {
+        val user = userService.loadUserByUsername(username)
+        if (jwtTokenUtil.validateToken(token, user)) {
             val auth = UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.authorities
+                user, null, user.authorities
             )
             auth.details = WebAuthenticationDetailsSource().buildDetails(request)
             SecurityContextHolder.getContext().authentication = auth

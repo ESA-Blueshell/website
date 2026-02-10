@@ -8,7 +8,6 @@ import net.blueshell.api.user.web.dto.PersonalInfoDTO
 data class GuestDTO(
     @field:NotNull
     var name: String,
-    override var email: String,
-) : PersonalInfoDTO(email) {
+) : PersonalInfoDTO() {
     var accessToken: String? = null
 }

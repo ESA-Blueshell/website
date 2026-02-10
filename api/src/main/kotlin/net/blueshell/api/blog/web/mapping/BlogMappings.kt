@@ -43,7 +43,7 @@ fun BlogDTO.asEntity(blog: Blog = Blog()): Blog {
 
 private fun sanitizeHtml(dto: BlogDTO, blog: Blog) {
     val content = dto.html
-    if (content != null && content.trim { it <= ' ' }.isNotEmpty()) {
+    if (content.trim { it <= ' ' }.isNotEmpty()) {
         val doc = Jsoup.parse(content)
         doc.select("div:has(a:contains(Unsubscribe))").remove()
         blog.html = doc.html().replace(">\\s+<".toRegex(), "><").trim { it <= ' ' }

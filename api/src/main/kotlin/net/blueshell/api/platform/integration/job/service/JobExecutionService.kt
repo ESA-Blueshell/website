@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.job.service
 
 import net.blueshell.api.platform.integration.job.model.JobExecution
-import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
+import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springframework.stereotype.Service
 import java.time.Instant
 

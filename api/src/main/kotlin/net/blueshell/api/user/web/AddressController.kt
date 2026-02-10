@@ -3,11 +3,11 @@ package net.blueshell.api.user.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
+import net.blueshell.api.user.application.AddressService
+import net.blueshell.api.user.application.UserService
 import net.blueshell.api.user.web.dto.AddressDTO
 import net.blueshell.api.user.web.mapping.asDto
 import net.blueshell.api.user.web.mapping.asEntity
-import net.blueshell.api.user.application.AddressService
-import net.blueshell.api.user.application.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*

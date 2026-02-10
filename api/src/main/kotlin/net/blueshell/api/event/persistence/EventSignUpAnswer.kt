@@ -1,7 +1,6 @@
 package net.blueshell.api.event.persistence
 
 import jakarta.persistence.*
-import lombok.`val`
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.model.asRef

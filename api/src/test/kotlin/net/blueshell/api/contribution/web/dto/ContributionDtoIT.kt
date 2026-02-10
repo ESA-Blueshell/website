@@ -1,10 +1,11 @@
 package net.blueshell.api.contribution.web.dto
 
+import net.blueshell.api.contribution.application.ContributionService
+import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.web.mapping.asEntity
 import net.blueshell.api.factory.dto.contribution.ContributionDTOFactory
 import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.contribution.application.ContributionService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

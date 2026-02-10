@@ -7,7 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Random
+import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
@@ -30,10 +30,10 @@ abstract class BaseDtoFactory<T>(
     abstract fun createBasic(): T
 
     /** Fully populated instance (defaults to basic). */
-    open fun createFull(): T = createBasic()
+    fun createFull(): T = createBasic()
 
     /** Instance with inline tweaks. */
-    open fun createWithCustomizations(customizer: Consumer<T>?): T {
+    fun createWithCustomizations(customizer: Consumer<T>?): T {
         val t = createFull()
         customizer?.accept(t)
         return t

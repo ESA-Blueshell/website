@@ -3,8 +3,8 @@ package net.blueshell.api.telemetry.web.dto
 import net.blueshell.api.factory.dto.TelemetryDTOFactory
 import net.blueshell.api.factory.model.TelemetryFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.telemetry.application.TelemetryService
+import net.blueshell.api.telemetry.persistence.Telemetry
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

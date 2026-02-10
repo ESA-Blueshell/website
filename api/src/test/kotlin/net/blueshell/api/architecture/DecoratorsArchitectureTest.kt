@@ -114,8 +114,16 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
 
 
     private fun <A : Annotation> JavaMethod.getAnnotationOfTypeOrNull(annotationType: Class<A>): A? =
-        try { getAnnotationOfType(annotationType) } catch (_: IllegalArgumentException) { null }
+        try {
+            getAnnotationOfType(annotationType)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
 
     private fun <A : Annotation> JavaClass.getAnnotationOfTypeOrNull(annotationType: Class<A>): A? =
-        try { getAnnotationOfType(annotationType) } catch (_: IllegalArgumentException) { null }
+        try {
+            getAnnotationOfType(annotationType)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
 }

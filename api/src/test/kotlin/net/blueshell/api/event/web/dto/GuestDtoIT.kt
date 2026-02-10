@@ -1,10 +1,11 @@
 package net.blueshell.api.event.web.dto
 
+import net.blueshell.api.event.application.GuestService
+import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.event.web.mapping.asEntity
 import net.blueshell.api.factory.dto.GuestDTOFactory
 import net.blueshell.api.factory.model.event.GuestFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.event.application.GuestService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

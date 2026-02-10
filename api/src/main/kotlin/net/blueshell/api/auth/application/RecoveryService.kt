@@ -2,21 +2,21 @@ package net.blueshell.api.auth.application
 
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
-import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.platform.integration.queue.EmailJobs
+import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.application.event.UserCreated
 import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.application.UserService
+import net.blueshell.api.user.application.event.UserCreated
+import net.blueshell.api.user.persistence.User
+import org.springframework.context.event.EventListener
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.context.event.EventListener
 import org.springframework.web.server.ResponseStatusException
 import java.security.SecureRandom
 import java.time.Duration

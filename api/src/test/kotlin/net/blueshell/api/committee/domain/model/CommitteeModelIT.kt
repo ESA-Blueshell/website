@@ -1,10 +1,8 @@
 package net.blueshell.api.committee.persistence
 
+import net.blueshell.api.committee.web.mapping.asAdvancedDto
+import net.blueshell.api.committee.web.mapping.asSimpleDto
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.committee.persistence.CommitteeMember
-import net.blueshell.api.committee.persistence.asAdvancedDto
-import net.blueshell.api.committee.persistence.asSimpleDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

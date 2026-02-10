@@ -2,14 +2,14 @@ package net.blueshell.api.event.web.validation
 
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.event.web.dto.EventSignUpDTO
-import net.blueshell.api.survey.web.dto.AnswerDTO
-import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.survey.persistence.QuestionRepository
 import net.blueshell.api.event.application.EventService
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.web.dto.EventSignUpDTO
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.survey.persistence.QuestionRepository
+import net.blueshell.api.survey.persistence.Survey
+import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.testutil.ModelTestUtils
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -19,7 +19,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.bean.override.mockito.MockitoBean
-import java.util.Optional
+import java.util.*
 
 /**
  * Unit tests for composite EventSignUpDTO validator using mocked survey metadata.
@@ -159,34 +159,38 @@ class ValidEventSignUpValidatorTest @Autowired constructor(
     }
 
     private fun dtoWithAnswers(answers: MutableList<AnswerDTO>): EventSignUpDTO {
-        val dto = EventSignUpDTO()
-        dto.eventId = 1L
-        dto.userId = 42L
-        dto.answers = answers
+        val dto = EventSignUpDTO(
+            eventId = 1L,
+            userId = 42L,
+            answers = answers
+        )
         return dto
     }
 
     private fun openAnswer(questionId: Long, text: String): AnswerDTO {
-        val answer = AnswerDTO()
-        answer.questionId = questionId
-        answer.textResponse = text
-        answer.optionSelections = null
+        val answer = AnswerDTO(
+            questionId = questionId,
+            textResponse = text,
+            optionSelections = null
+        )
         return answer
     }
 
     private fun radioAnswer(selections: MutableList<Boolean>): AnswerDTO {
-        val answer = AnswerDTO()
-        answer.questionId = Q_RADIO
-        answer.textResponse = null
-        answer.optionSelections = selections
+        val answer = AnswerDTO(
+            questionId = Q_RADIO,
+            textResponse = null,
+            optionSelections = selections
+        )
         return answer
     }
 
     private fun checkboxAnswer(selections: MutableList<Boolean>): AnswerDTO {
-        val answer = AnswerDTO()
-        answer.questionId = Q_CHECK
-        answer.textResponse = null
-        answer.optionSelections = selections
+        val answer = AnswerDTO(
+            questionId = Q_CHECK,
+            textResponse = null,
+            optionSelections = selections
+        )
         return answer
     }
 

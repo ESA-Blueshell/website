@@ -1,10 +1,9 @@
 package net.blueshell.api.blog.persistence
 
-import net.blueshell.api.blog.persistence.Blog
-import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.blog.web.dto.asDto
-import net.blueshell.api.blog.web.dto.asSocialDto
+import net.blueshell.api.blog.web.mapping.asDto
+import net.blueshell.api.blog.web.mapping.asSocialDto
 import net.blueshell.api.shared.enums.PlatformType
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -44,7 +43,7 @@ class BlogModelIT : ModelPersistenceTestSupport() {
             assertEquals(blog.title, dto.title)
             assertEquals(blog.html, dto.html)
             assertEquals(blog.publishedAt, dto.publishedAt)
-            assertEquals(true, dto.url.contains("/blogs/${blog.id}"))
+            assertEquals(true, dto.url!!.contains("/blogs/${blog.id}"))
         }
 
         @Test
@@ -53,7 +52,7 @@ class BlogModelIT : ModelPersistenceTestSupport() {
 
             val dto = blog.asSocialDto(frontendUrl)
 
-            assertEquals(true, dto.url.contains("/blogs"))
+            assertEquals(true, dto.url!!.contains("/blogs"))
             assertEquals(blog.title, dto.title)
             assertEquals(
                 setOf(

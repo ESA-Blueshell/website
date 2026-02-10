@@ -1,10 +1,10 @@
 package net.blueshell.api.blog.web
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.blog.web.dto.BlogDTO
 import net.blueshell.api.factory.UnifiedFactory
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -12,13 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.temporal.ChronoUnit
-import java.util.EnumMap
+import java.util.*
 
 @SpringBootTest
 @AutoConfigureMockMvc

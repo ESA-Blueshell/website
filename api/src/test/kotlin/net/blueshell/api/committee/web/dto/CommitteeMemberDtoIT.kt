@@ -1,10 +1,11 @@
 package net.blueshell.api.committee.web.dto
 
+import net.blueshell.api.committee.application.CommitteeMemberService
+import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.web.mapping.asEntity
 import net.blueshell.api.factory.dto.committee.CommitteeMemberDTOFactory
 import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.committee.persistence.CommitteeMember
-import net.blueshell.api.committee.application.CommitteeMemberService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -25,8 +26,8 @@ class CommitteeMemberDtoIT @Autowired constructor(
             val user = persistUser()
             val member = committeeMemberFactory.createBasic(user, committee)
             val dto = committeeMemberDTOFactory.createBasic().apply {
-                committeeId = committee.id
-                userId = user.id
+                committeeId = committee.id!!
+                userId = user.id!!
                 role = "Chair"
             }
 

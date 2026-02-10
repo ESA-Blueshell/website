@@ -3,9 +3,9 @@ package net.blueshell.api.contribution.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.auth.security.IdentityProvider
+import net.blueshell.api.contribution.application.ContributionReminderService
 import net.blueshell.api.contribution.web.dto.ContributionReminderDTO
 import net.blueshell.api.contribution.web.mapping.asDto
-import net.blueshell.api.contribution.application.ContributionReminderService
 import net.blueshell.api.contribution.web.mapping.asEntity
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus

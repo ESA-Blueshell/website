@@ -1,11 +1,11 @@
 package net.blueshell.api.user.web.dto
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.factory.dto.user.AdvancedUserDTOFactory
 import net.blueshell.api.factory.model.AddressFactory
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.application.UserService
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

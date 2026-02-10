@@ -1,7 +1,7 @@
 package net.blueshell.api.shared.event
 
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 interface DomainEvent {
     val domainEventId: UUID

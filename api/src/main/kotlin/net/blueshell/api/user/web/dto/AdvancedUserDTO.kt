@@ -10,7 +10,8 @@ import java.util.function.ToIntFunction
 
 @Schema(name = "AdvancedUser")
 class AdvancedUserDTO(
-    var roles: Set<Role> = setOf(),
+    @field:NotNull
+    var roles: Set<Role>? = null,
 
     @field:NotNull
     var dateOfBirth: Date? = null,
@@ -19,24 +20,26 @@ class AdvancedUserDTO(
     var nationality: String? = null,
 
     @field:NotNull
-    var photoConsent: Boolean = false,
+    var photoConsent: Boolean? = null,
 
     @field:NotNull
-    var ehbo: Boolean = false,
+    var ehbo: Boolean? = null,
 
     @field:NotNull
-    var bhv: Boolean = false,
+    var bhv: Boolean? = null,
 
-    var enabled: Boolean = false,
+    @field:NotNull
+    var enabled: Boolean? = null,
+
     var gender: String? = null,
     var studentNumber: String? = null,
 ) : SimpleUserDTO() {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role?>
         get() {
-            if (roles.isEmpty()) return mutableListOf()
+            if (roles == null || roles!!.isEmpty()) return mutableListOf()
 
-            return roles.stream()
+            return roles!!.stream()
                 .sorted(
                     Comparator.comparingInt(ToIntFunction { obj: Role? -> obj!!.ordinal })
                 )

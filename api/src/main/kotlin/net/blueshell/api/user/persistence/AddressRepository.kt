@@ -1,6 +1,5 @@
 package net.blueshell.api.user.persistence
 
-import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 

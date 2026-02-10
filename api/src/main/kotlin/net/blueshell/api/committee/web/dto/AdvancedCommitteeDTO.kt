@@ -10,12 +10,12 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 data class AdvancedCommitteeDTO(
     @field:NotBlank(message = "Committee name cannot be blank.")
     @field:Size(max = 255, message = "Committee name cannot exceed 255 characters.")
-    var name: String,
+    var name: String? = null,
 
     @field:NotBlank(message = "Committee description cannot be empty.")
     @field:Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
-    var description: String,
+    var description: String? = null,
 
     @field:NotEmpty
-    var members: MutableList<CommitteeMemberDTO> = mutableListOf()
+    var members: MutableList<CommitteeMemberDTO>? = null
 ) : AuditedAutoIdDTO()

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.event
 
-import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import net.blueshell.api.event.persistence.EventBanner
+import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import org.junit.jupiter.api.Test
 
 class EventBannerFactoryTest : ModelFactoryTestSupport() {

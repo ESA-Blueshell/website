@@ -1,7 +1,6 @@
 package net.blueshell.api.sponsor.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.sponsor.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested

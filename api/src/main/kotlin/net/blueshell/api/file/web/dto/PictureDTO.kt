@@ -1,12 +1,17 @@
 package net.blueshell.api.file.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "Picture")
 data class PictureDTO(
     var name: String? = null,
     var url: String? = null,
-    var uploaderId: Long = 0,
-    var eventId: Long = 0
+
+    @field:NotNull
+    var uploaderId: Long? = null,
+
+    @field:NotNull
+    var eventId: Long? = null
 ) : AuditedAutoIdDTO()

@@ -1,19 +1,19 @@
 package net.blueshell.api.event.web
 
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.file.web.dto.FileDTO
-import net.blueshell.api.event.web.dto.GuestDTO
 import net.blueshell.api.event.web.dto.EventBannerDTO
 import net.blueshell.api.event.web.dto.EventDTO
 import net.blueshell.api.event.web.dto.EventSignUpDTO
-import net.blueshell.api.survey.web.dto.AnswerDTO
-import net.blueshell.api.user.web.dto.SimpleUserDTO
+import net.blueshell.api.event.web.dto.GuestDTO
 import net.blueshell.api.factory.UnifiedFactory
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.file.web.dto.FileDTO
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.web.dto.SimpleUserDTO
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -54,8 +54,8 @@ class EventSignUpControllerIT @Autowired constructor(
         val advancedCommitteeDTO = committeeDTOFactory.createWithMemberRoles("Chair", "Member")
         advancedCommitteeDTO.name = "SignUp Committee"
         advancedCommitteeDTO.description = "Committee for signup testing"
-        advancedCommitteeDTO.members[0].userId = board.id
-        advancedCommitteeDTO.members[1].userId = member.id
+        advancedCommitteeDTO.members[0].userId = board.id!!
+        advancedCommitteeDTO.members[1].userId = member.id!!
 
         val result = mvc.perform(
             post("/committees")
@@ -126,7 +126,7 @@ class EventSignUpControllerIT @Autowired constructor(
 
             answers.add(
                 uf.with(AnswerDTO::class.java) { answer ->
-                    answer.questionId = question.id
+                    answer.questionId = question.id!!
                     when (question.type) {
                         QuestionType.OPEN -> {
                             answer.textResponse = if (variant == "create") "Initial response" else "Updated response"
@@ -165,7 +165,7 @@ class EventSignUpControllerIT @Autowired constructor(
 
         val member = users[Role.MEMBER]!!
         var eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-            es.eventId = event.id
+            es.eventId = event.id!!
             es.userId = member.id
             es.user = uf.with(SimpleUserDTO::class.java) { u ->
                 u.id = member.id
@@ -227,7 +227,7 @@ class EventSignUpControllerIT @Autowired constructor(
         val board = users[Role.BOARD]!!
 
         var eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-            es.eventId = event.id
+            es.eventId = event.id!!
             es.answers = answersFor(event, "create")
             es.guest = uf.with(GuestDTO::class.java) { g ->
                 g.email = "guest.name@example.com"
@@ -296,7 +296,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val member = users[Role.MEMBER]!!
 
             val eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.user = uf.with(SimpleUserDTO::class.java) { u ->
                     u.id = member.id
                     u.version = member.version
@@ -321,7 +321,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val member = users[Role.MEMBER]!!
 
             var eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.user = uf.with(SimpleUserDTO::class.java) { u ->
                     u.id = member.id
                     u.version = member.version
@@ -359,7 +359,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val board = users[Role.BOARD]!!
 
             val eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.user = uf.with(SimpleUserDTO::class.java) { u ->
                     u.id = member.id
                     u.version = member.version
@@ -395,7 +395,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val board = users[Role.BOARD]!!
 
             var eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.answers = answersFor(event, "create")
                 es.guest = uf.with(GuestDTO::class.java) { g ->
                     g.email = "guest.name@example.com"
@@ -432,7 +432,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val board = users[Role.BOARD]!!
 
             var eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.answers = answersFor(event, "create")
                 es.guest = uf.with(GuestDTO::class.java) { g ->
                     g.email = "guest.name@example.com"
@@ -474,7 +474,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val committeeId = givenCommitteeId()
             val event = givenEventWithForm(committeeId)
             val eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.answers = answersFor(event, "update")
                 es.guest = uf.with(GuestDTO::class.java) { g ->
                     g.email = "guest.name@example.com"
@@ -503,7 +503,7 @@ class EventSignUpControllerIT @Autowired constructor(
             val board = users[Role.BOARD]!!
 
             val eventSignUpDTO = uf.with(EventSignUpDTO::class.java) { es ->
-                es.eventId = event.id
+                es.eventId = event.id!!
                 es.answers = answersFor(event, "update")
                 es.guest = null
                 es.user = null

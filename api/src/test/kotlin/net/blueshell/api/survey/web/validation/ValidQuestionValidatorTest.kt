@@ -3,7 +3,6 @@ package net.blueshell.api.survey.web.validation
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.web.dto.QuestionDTO
-import net.blueshell.api.survey.web.validation.ValidQuestionValidator
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach

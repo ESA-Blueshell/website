@@ -6,12 +6,11 @@ import tech.mappie.api.ObjectMappie
 
 object TelemetryToTelemetryDTOMapper : ObjectMappie<Telemetry, TelemetryDTO>()
 
-object TelemetryDTOToTelemetryMapper : ObjectMappie<TelemetryDTO, Telemetry>()
-
-fun TelemetryDTO.asEntity(existing: Telemetry? = null): Telemetry {
-    val mapped = TelemetryDTOToTelemetryMapper.map(this)
-    existing?.id?.let { mapped.assignIdForRef(it) }
-    return mapped
+fun TelemetryDTO.asEntity(telemetry: Telemetry = Telemetry()): Telemetry {
+    telemetry.platform = platform
+    telemetry.url = url
+    telemetry.version = version
+    return telemetry
 }
 
 fun Telemetry.asDto(): TelemetryDTO = TelemetryToTelemetryDTOMapper.map(this)

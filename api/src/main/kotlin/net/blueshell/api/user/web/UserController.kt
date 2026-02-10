@@ -6,12 +6,12 @@ import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
+import net.blueshell.api.user.application.UserService
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.web.dto.AdvancedUserDTO
 import net.blueshell.api.user.web.dto.SimpleUserDTO
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.web.mapping.asAdvancedDto
-import net.blueshell.api.user.persistence.filter.UserFilter
-import net.blueshell.api.user.application.UserService
 import net.blueshell.api.user.web.mapping.asEntity
 import net.blueshell.api.user.web.mapping.asSimpleDto
 import org.springdoc.core.annotations.ParameterObject

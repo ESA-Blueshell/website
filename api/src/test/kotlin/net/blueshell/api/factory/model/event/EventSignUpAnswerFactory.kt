@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
-import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.event.persistence.EventSignUpAnswer
+import net.blueshell.api.factory.model.survey.AnswerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

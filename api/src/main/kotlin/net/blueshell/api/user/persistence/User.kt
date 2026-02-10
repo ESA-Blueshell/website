@@ -2,19 +2,18 @@ package net.blueshell.api.user.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.auth.persistence.RecoveryToken
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.model.AuditedAutoIdEntity
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.asRef
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.userdetails.UserDetails
 import java.sql.Date
 
 @Entity

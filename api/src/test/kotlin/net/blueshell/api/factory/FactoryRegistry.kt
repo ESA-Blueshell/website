@@ -1,14 +1,6 @@
 package net.blueshell.api.factory
 
-import net.blueshell.api.factory.model.AddressFactory
-import net.blueshell.api.factory.model.BlogFactory
-import net.blueshell.api.factory.model.FileFactory
-import net.blueshell.api.factory.model.MembershipFactory
-import net.blueshell.api.factory.model.RecoveryTokenFactory
-import net.blueshell.api.factory.model.RedirectFactory
-import net.blueshell.api.factory.model.SponsorFactory
-import net.blueshell.api.factory.model.TelemetryFactory
-import net.blueshell.api.factory.model.UserFactory
+import net.blueshell.api.factory.model.*
 import net.blueshell.api.factory.model.board.BoardDocumentFactory
 import net.blueshell.api.factory.model.board.BoardFactory
 import net.blueshell.api.factory.model.board.BoardMemberFactory
@@ -17,13 +9,7 @@ import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.factory.model.contribution.ContributionFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
 import net.blueshell.api.factory.model.contribution.ContributionReminderFactory
-import net.blueshell.api.factory.model.event.EventBannerFactory
-import net.blueshell.api.factory.model.event.EventFactory
-import net.blueshell.api.factory.model.event.EventFeedbackFactory
-import net.blueshell.api.factory.model.event.EventPictureFactory
-import net.blueshell.api.factory.model.event.EventSignUpAnswerFactory
-import net.blueshell.api.factory.model.event.EventSignUpFactory
-import net.blueshell.api.factory.model.event.GuestFactory
+import net.blueshell.api.factory.model.event.*
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory

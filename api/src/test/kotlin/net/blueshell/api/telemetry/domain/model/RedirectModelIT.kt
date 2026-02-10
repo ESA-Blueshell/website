@@ -1,8 +1,6 @@
 package net.blueshell.api.telemetry.persistence
 
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.telemetry.persistence.Redirect
-import net.blueshell.api.telemetry.persistence.Telemetry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

@@ -1,6 +1,6 @@
 package net.blueshell.api.event.application
 
- import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.event.EventFactory

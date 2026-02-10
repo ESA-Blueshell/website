@@ -5,10 +5,10 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.auth.security.IdentityProvider
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.filter.EventSignUpFilter
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.persistence.User
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 

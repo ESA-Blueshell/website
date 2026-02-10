@@ -1,11 +1,16 @@
 package net.blueshell.api.telemetry.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.enums.PlatformType
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
+import net.blueshell.api.shared.enums.PlatformType
 
 @Schema(name = "Telemetry")
 data class TelemetryDTO(
-    var url: String,
-    var platform: PlatformType
+    @field:NotBlank
+    var url: String? = null,
+
+    @field:NotNull
+    var platform: PlatformType? = null
 ) : AuditedAutoIdDTO()

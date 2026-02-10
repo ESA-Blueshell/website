@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.blog.web.dto.SocialDTO
+import net.blueshell.api.shared.enums.PlatformType
 import org.springframework.stereotype.Component
 
 /**

@@ -1,12 +1,13 @@
 package net.blueshell.api.event.web.dto
 
+import net.blueshell.api.event.application.EventBannerService
+import net.blueshell.api.event.persistence.EventBanner
+import net.blueshell.api.event.web.mapping.asEntity
 import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.factory.dto.event.EventBannerDTOFactory
-import net.blueshell.api.factory.model.event.EventBannerFactory
 import net.blueshell.api.factory.model.FileFactory
+import net.blueshell.api.factory.model.event.EventBannerFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.event.persistence.EventBanner
-import net.blueshell.api.event.application.EventBannerService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

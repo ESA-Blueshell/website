@@ -1,10 +1,10 @@
 package net.blueshell.api.file.persistence
 
 import jakarta.persistence.*
+import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction

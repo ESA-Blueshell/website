@@ -44,7 +44,8 @@ class CommitteeMemberServiceIT : ServiceTestSupport() {
 
             val updatedUser = userService.findById(user.id!!)
             assertTrue(updatedUser.hasRole(Role.COMMITTEE))
-            assertTrue(applicationEvents.stream(CommitteeMembershipChanged::class.java).anyMatch { it.userId == user.id })
+            assertTrue(
+                applicationEvents.stream(CommitteeMembershipChanged::class.java).anyMatch { it.userId == user.id })
         }
     }
 

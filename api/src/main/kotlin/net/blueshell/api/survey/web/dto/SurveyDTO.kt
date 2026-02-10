@@ -14,13 +14,16 @@ data class SurveyDTO(
     @field:NotEmpty
     @field:ValidQuestionList
     @field:Valid
-    var questions: MutableList<QuestionDTO> = mutableListOf(),
-    var responseCount: Long = 0
+    var questions: MutableList<QuestionDTO>? = null,
+
+    @field:NotNull
+    var responseCount: Long? = null
 ) : AuditedAutoIdDTO() {
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionDTO?>
         get() {
-            return questions.stream()
+            if (questions == null) return mutableListOf()
+            return questions!!.stream()
                 .sorted(
                     Comparator
                         .comparing<QuestionDTO?, @NotNull Long?>(

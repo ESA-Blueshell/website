@@ -6,5 +6,5 @@ import jakarta.validation.constraints.NotNull
 @Schema(name = "RedirectResponse")
 data class RedirectResponseDTO(
     @field:NotNull
-    var path: String?
+    var path: String? = null
 )

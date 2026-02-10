@@ -1,6 +1,5 @@
 package net.blueshell.api.contribution.persistence
 
-import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query

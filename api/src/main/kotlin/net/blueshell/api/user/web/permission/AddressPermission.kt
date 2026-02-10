@@ -1,8 +1,8 @@
 package net.blueshell.api.user.web.permission
 
-import net.blueshell.api.user.persistence.Address
-import net.blueshell.api.user.application.AddressService
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
+import net.blueshell.api.user.application.AddressService
+import net.blueshell.api.user.persistence.Address
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component

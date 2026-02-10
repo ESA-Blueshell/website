@@ -3,12 +3,12 @@ package net.blueshell.api.auth.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.auth.application.RecoveryService
 import net.blueshell.api.auth.security.JWTAuthBase
 import net.blueshell.api.auth.web.dto.recovery.MemberActivationRequest
 import net.blueshell.api.auth.web.dto.recovery.PasswordResetRequest
 import net.blueshell.api.auth.web.dto.recovery.UserActivationRequest
 import net.blueshell.api.telemetry.web.dto.RedirectResponseDTO
-import net.blueshell.api.auth.application.RecoveryService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*

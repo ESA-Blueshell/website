@@ -1,15 +1,15 @@
 package net.blueshell.api.event.web
 
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.file.web.dto.FileDTO
 import net.blueshell.api.event.web.dto.EventBannerDTO
 import net.blueshell.api.event.web.dto.EventDTO
 import net.blueshell.api.factory.UnifiedFactory
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.file.web.dto.FileDTO
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -19,14 +19,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.EnumMap
+import java.util.*
 
 @SpringBootTest
 @AutoConfigureMockMvc

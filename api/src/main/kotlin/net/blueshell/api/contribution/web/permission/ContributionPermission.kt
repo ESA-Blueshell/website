@@ -1,7 +1,7 @@
 package net.blueshell.api.contribution.web.permission
 
-import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.application.ContributionService
+import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

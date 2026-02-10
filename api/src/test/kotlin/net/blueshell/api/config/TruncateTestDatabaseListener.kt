@@ -5,7 +5,6 @@ import org.springframework.core.annotation.Order
 import org.springframework.jdbc.datasource.DataSourceUtils
 import org.springframework.test.context.TestContext
 import org.springframework.test.context.TestExecutionListener
-import java.sql.PreparedStatement
 import javax.sql.DataSource
 
 /**
@@ -32,9 +31,9 @@ class TruncateTestDatabaseListener : TestExecutionListener {
 
                 val tables = conn.prepareStatement(
                     "SELECT TABLE_NAME " +
-                        "FROM INFORMATION_SCHEMA.TABLES " +
-                        "WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' " +
-                        "AND TABLE_NAME NOT IN (?, ?)"
+                            "FROM INFORMATION_SCHEMA.TABLES " +
+                            "WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' " +
+                            "AND TABLE_NAME NOT IN (?, ?)"
                 ).use { ps ->
                     ps.setString(1, TEST_SCHEMA)
                     ps.setString(2, FLYWAY_V5_TABLE)

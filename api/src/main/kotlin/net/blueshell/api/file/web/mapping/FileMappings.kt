@@ -6,12 +6,13 @@ import tech.mappie.api.ObjectMappie
 
 object FileToFileDTOMapper : ObjectMappie<File, FileDTO>()
 
-object FileDTOToFileMapper : ObjectMappie<FileDTO, File>()
-
-fun FileDTO.asEntity(): File {
-    val mapped = FileDTOToFileMapper.map(this)
-    id?.let { mapped.assignIdForRef(it) }
-    return mapped
+fun FileDTO.asEntity(file: File = File()): File {
+    file.name = name
+    file.mediaType = mediaType
+    file.size = size
+    file.type = type
+    file.version = version
+    return file
 }
 
 fun File.asDto(): FileDTO = FileToFileDTOMapper.map(this)

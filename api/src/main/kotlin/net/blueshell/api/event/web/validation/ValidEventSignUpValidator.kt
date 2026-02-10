@@ -2,11 +2,11 @@ package net.blueshell.api.event.web.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.event.web.dto.EventSignUpDTO
-import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.event.application.EventService
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.web.dto.EventSignUpDTO
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.survey.persistence.Question
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.util.CollectionUtils
 import java.util.*

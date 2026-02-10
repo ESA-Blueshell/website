@@ -1,9 +1,9 @@
 package net.blueshell.api.event.persistence
 
 import jakarta.persistence.*
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.survey.persistence.Survey
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

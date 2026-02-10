@@ -1,10 +1,10 @@
 package net.blueshell.api.testsupport
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.platform.config.TruncateTestDatabaseListener
 import net.blueshell.api.auth.web.dto.request.JwtRequest
 import net.blueshell.api.auth.web.dto.response.AuthenticationDTO
+import net.blueshell.api.platform.config.TruncateTestDatabaseListener
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.UUID
+import java.util.*
 
 /**
  * Test utilities for creating users with specific roles and issuing their JWT tokens.

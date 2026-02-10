@@ -1,24 +1,18 @@
 package net.blueshell.api.user.web
 
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.user.web.dto.SimpleUserDTO
 import net.blueshell.api.factory.dto.user.AdvancedUserDTOFactory
 import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
-import org.junit.jupiter.api.Assertions.assertAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
+import net.blueshell.api.user.web.dto.AdvancedUserDTO
+import net.blueshell.api.user.web.dto.SimpleUserDTO
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 

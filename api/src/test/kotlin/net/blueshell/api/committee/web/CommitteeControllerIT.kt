@@ -1,10 +1,10 @@
 package net.blueshell.api.committee.web
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
@@ -167,8 +167,8 @@ class CommitteeControllerIT @Autowired constructor(
         val dto = committeeDTOFactory.createWithMemberRoles("Chair", "Member")
         dto.name = "Test Committee"
         dto.description = "A test committee for integration tests"
-        dto.members[0].userId = board.id
-        dto.members[1].userId = member.id
+        dto.members[0].userId = board.id!!
+        dto.members[1].userId = member.id!!
         return dto
     }
 }

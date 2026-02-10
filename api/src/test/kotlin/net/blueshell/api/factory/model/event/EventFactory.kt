@@ -1,9 +1,9 @@
 package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
+import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
-import net.blueshell.api.event.persistence.Event
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.temporal.ChronoUnit

@@ -2,12 +2,12 @@ package net.blueshell.api.event.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.shared.web.BaseController
+import net.blueshell.api.event.application.EventSignUpService
+import net.blueshell.api.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.event.web.dto.EventSignUpDTO
 import net.blueshell.api.event.web.mapping.asDto
-import net.blueshell.api.event.persistence.filter.EventSignUpFilter
-import net.blueshell.api.event.application.EventSignUpService
 import net.blueshell.api.event.web.mapping.asEntity
+import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus

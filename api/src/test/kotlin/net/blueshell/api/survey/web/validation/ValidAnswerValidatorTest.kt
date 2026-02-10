@@ -2,10 +2,9 @@ package net.blueshell.api.survey.web.validation
 
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.QuestionRepository
-import net.blueshell.api.survey.web.validation.ValidAnswerValidator
+import net.blueshell.api.survey.web.dto.AnswerDTO
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -13,7 +12,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.context.SpringBootTest
-import java.util.Optional
+import java.util.*
 
 /**
  * Unit tests for ValidAnswerValidator (per-question validation rules).

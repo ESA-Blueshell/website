@@ -1,9 +1,9 @@
 package net.blueshell.api.event.web.permission
 
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.application.EventService
+import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component

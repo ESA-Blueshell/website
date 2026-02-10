@@ -1,14 +1,16 @@
 package net.blueshell.api.event.web.dto
 
-import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.event.application.EventService
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.web.mapping.asEntity
+import net.blueshell.api.event.web.mapping.asSocialDto
 import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.factory.dto.event.EventBannerDTOFactory
 import net.blueshell.api.factory.dto.event.EventDTOFactory
 import net.blueshell.api.factory.model.FileFactory
+import net.blueshell.api.shared.enums.PlatformType
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.event.application.EventService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

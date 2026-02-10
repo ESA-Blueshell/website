@@ -2,15 +2,15 @@ package net.blueshell.api.survey.web.validation
 
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.web.dto.AnswerDTO
-import net.blueshell.api.survey.web.dto.QuestionDTO
-import net.blueshell.api.survey.web.dto.SurveyDTO
 import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
 import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.QuestionRepository
+import net.blueshell.api.survey.web.dto.AnswerDTO
+import net.blueshell.api.survey.web.dto.QuestionDTO
+import net.blueshell.api.survey.web.dto.SurveyDTO
 import net.blueshell.api.testutil.ModelTestUtils
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -19,7 +19,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.bean.override.mockito.MockitoBean
-import java.util.Optional
+import java.util.*
 
 /**
  * Unit tests for Survey, Question, and Answer DTO validations.

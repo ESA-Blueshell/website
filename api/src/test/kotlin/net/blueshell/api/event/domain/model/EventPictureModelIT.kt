@@ -1,8 +1,7 @@
 package net.blueshell.api.event.persistence
 
-import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.event.persistence.EventPicture
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

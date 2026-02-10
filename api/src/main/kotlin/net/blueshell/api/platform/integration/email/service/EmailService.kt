@@ -1,16 +1,16 @@
 package net.blueshell.api.platform.integration.email.service
 
-import net.blueshell.api.shared.enums.ResetType
-import net.blueshell.api.platform.integration.email.model.ContributionReminderEmail
-import net.blueshell.api.platform.integration.email.model.EventSignupEmail
-import net.blueshell.api.platform.integration.email.model.base.BaseEmail
 import net.blueshell.api.auth.application.email.MemberActivationEmail
 import net.blueshell.api.auth.application.email.PasswordResetEmail
 import net.blueshell.api.auth.application.email.UserActivationEmail
-import net.blueshell.api.contribution.persistence.ContributionReminder
-import net.blueshell.api.user.application.UserService
 import net.blueshell.api.contribution.application.ContributionReminderService
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.event.application.EventSignUpService
+import net.blueshell.api.platform.integration.email.model.ContributionReminderEmail
+import net.blueshell.api.platform.integration.email.model.EventSignupEmail
+import net.blueshell.api.platform.integration.email.model.base.BaseEmail
+import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.user.application.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

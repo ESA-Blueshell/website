@@ -1,9 +1,8 @@
 package net.blueshell.api.factory.model.event
 
-import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import org.junit.jupiter.api.Test
-import kotlin.jvm.java
 
 class GuestFactoryTest : ModelFactoryTestSupport() {
 

@@ -10,30 +10,34 @@ import tech.mappie.api.ObjectMappie
 
 object SurveyToSurveyDTOMapper : ObjectMappie<Survey, SurveyDTO>()
 
-object SurveyDTOToSurveyMapper : ObjectMappie<SurveyDTO, Survey>() {
-    override fun map(from: SurveyDTO) = mapping {
-        Survey::questions fromValue mutableListOf()
-        Survey::responseCount fromValue 0
-    }
-}
-
 object QuestionToQuestionDTOMapper : ObjectMappie<Question, QuestionDTO>()
-
-object QuestionDTOToQuestionMapper : ObjectMappie<QuestionDTO, Question>()
 
 object AnswerToAnswerDTOMapper : ObjectMappie<Answer, AnswerDTO>()
 
-object AnswerDTOToAnswerMapper : ObjectMappie<AnswerDTO, Answer>()
-
-fun SurveyDTO.asEntity(): Survey {
-    val survey = SurveyDTOToSurveyMapper.map(this)
+fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
+    survey.version = version
     survey.questions.addAll(questions.map { it.asEntity() })
+    survey.questions.forEach { it.survey = survey }
     return survey
 }
 
-fun QuestionDTO.asEntity(): Question = QuestionDTOToQuestionMapper.map(this)
+fun QuestionDTO.asEntity(question: Question = Question()): Question {
+    question.idx = idx
+    question.surveyId = surveyId
+    question.type = type
+    question.label = label
+    question.choiceLabels = choiceLabels
+    question.version = version
+    return question
+}
 
-fun AnswerDTO.asEntity(): Answer = AnswerDTOToAnswerMapper.map(this)
+fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
+    answer.questionId = questionId
+    answer.optionSelections = optionSelections
+    answer.textResponse = textResponse
+    answer.version = version
+    return answer
+}
 
 fun Survey.asDto(): SurveyDTO = SurveyToSurveyDTOMapper.map(this)
 

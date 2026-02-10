@@ -127,8 +127,7 @@ class CalendarService {
             } else {
                 remove(event)
             }
-        }
-        else add(event)
+        } else add(event)
     }
 
     private fun toGoogleEvent(event: Event): com.google.api.services.calendar.model.Event {

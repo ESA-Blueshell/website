@@ -1,10 +1,10 @@
 package net.blueshell.api.survey.persistence
 
 import jakarta.persistence.*
+import net.blueshell.api.event.persistence.EventSignUpAnswer
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.model.converter.BooleanListConverter
-import net.blueshell.api.event.persistence.EventSignUpAnswer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 

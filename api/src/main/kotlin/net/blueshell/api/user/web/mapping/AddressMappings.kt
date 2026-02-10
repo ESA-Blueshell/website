@@ -6,12 +6,14 @@ import tech.mappie.api.ObjectMappie
 
 object AddressToAddressDTOMapper : ObjectMappie<Address, AddressDTO>()
 
-object AddressDTOToAddressMapper : ObjectMappie<AddressDTO, Address>()
-
-fun AddressDTO.asEntity(existing: Address? = null): Address {
-    val mapped = AddressDTOToAddressMapper.map(this)
-    existing?.id?.let { mapped.assignIdForRef(it) }
-    return mapped
+fun AddressDTO.asEntity(address: Address = Address()): Address {
+    address.country = country
+    address.city = city
+    address.street = street
+    address.houseNumber = houseNumber
+    address.zipCode = zipCode
+    address.version = version
+    return address
 }
 
 fun Address.asDto(): AddressDTO = AddressToAddressDTOMapper.map(this)

@@ -1,9 +1,8 @@
 package net.blueshell.api.survey.web.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.survey.application.SurveyService
-import net.blueshell.api.survey.web.validation.ValidAnswerListValidator
+import net.blueshell.api.survey.web.dto.AnswerDTO
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -12,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.context.SpringBootTest
-import kotlin.collections.emptyList
 
 /**
  * Unit tests for ValidAnswerListValidator (duplicate question IDs, presence).

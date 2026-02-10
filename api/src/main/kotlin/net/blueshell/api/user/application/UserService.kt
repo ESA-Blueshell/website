@@ -2,18 +2,17 @@ package net.blueshell.api.user.application
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
-import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.filter.UserFilter
-import net.blueshell.api.user.persistence.UserRepository
-import net.blueshell.api.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.application.event.UserCreated
 import net.blueshell.api.user.application.event.UserUpdated
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.UserRepository
+import net.blueshell.api.user.persistence.filter.UserFilter
+import net.blueshell.api.user.persistence.spec.UserSpecifications
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
-import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service

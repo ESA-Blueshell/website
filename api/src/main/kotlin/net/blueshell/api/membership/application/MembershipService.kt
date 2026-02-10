@@ -2,9 +2,9 @@ package net.blueshell.api.membership.application
 
 import net.blueshell.api.membership.application.event.MembershipChange
 import net.blueshell.api.membership.application.event.MembershipChanged
+import net.blueshell.api.membership.persistence.MemberRepository
 import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.membership.persistence.filter.MembershipFilter
-import net.blueshell.api.membership.persistence.MemberRepository
 import net.blueshell.api.membership.persistence.spec.MembershipSpecifications
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService

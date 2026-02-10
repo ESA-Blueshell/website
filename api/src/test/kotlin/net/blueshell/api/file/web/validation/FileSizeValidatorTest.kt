@@ -1,8 +1,6 @@
 package net.blueshell.api.file.web.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.file.web.validation.FileSize
-import net.blueshell.api.file.web.validation.FileSizeValidator
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach

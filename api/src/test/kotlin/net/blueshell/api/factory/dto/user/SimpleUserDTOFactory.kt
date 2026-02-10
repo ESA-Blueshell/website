@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto.user
 
-import net.blueshell.api.user.web.dto.SimpleUserDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
+import net.blueshell.api.user.web.dto.SimpleUserDTO
 import org.springframework.stereotype.Component
 
 /**

@@ -26,6 +26,7 @@ class QuestionEventListener(
                     signUps.deleteAll(signUps.findBySurveyId(evt.surveyId))
                 }
             }
+
             QuestionChange.UPDATED -> {
                 log.info("Question update dirty fields: {}", evt.dirtyFields)
                 if (evt.hasAnswers && evt.dirty) {
@@ -33,6 +34,7 @@ class QuestionEventListener(
                     answers.deleteAll(answers.findByQuestionId(evt.questionId))
                 }
             }
+
             QuestionChange.DELETED -> {
                 if (evt.hasAnswers) {
                     answers.deleteAll(answers.findByQuestionId(evt.questionId))

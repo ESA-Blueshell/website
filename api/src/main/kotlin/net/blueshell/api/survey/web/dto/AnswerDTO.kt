@@ -9,7 +9,7 @@ import net.blueshell.api.survey.web.validation.ValidAnswer
 @ValidAnswer
 data class AnswerDTO(
     @field:NotNull
-    var questionId: Long,
+    var questionId: Long? = null,
 
     var optionSelections: MutableList<Boolean>? = null,
 

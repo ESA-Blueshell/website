@@ -3,8 +3,8 @@ package net.blueshell.api.user.web.dto
 import net.blueshell.api.factory.dto.AddressDTOFactory
 import net.blueshell.api.factory.model.AddressFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.application.AddressService
+import net.blueshell.api.user.persistence.Address
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

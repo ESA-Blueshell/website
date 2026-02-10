@@ -1,6 +1,5 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.user.persistence.Address
@@ -18,7 +17,7 @@ class AddressFactoryTest : ModelFactoryTestSupport() {
 
     @Test
     fun `applies customizer`() {
-        val customizer = mockk<Consumer<net.blueshell.api.user.persistence.Address>>(relaxed = true)
+        val customizer = mockk<Consumer<Address>>(relaxed = true)
         addressFactory.createWithCustomizations(customizer)
         verify(exactly = 1) { customizer.accept(any()) }
     }

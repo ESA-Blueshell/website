@@ -1,10 +1,8 @@
 package net.blueshell.api.event.persistence
 
+import net.blueshell.api.event.web.mapping.asDto
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.event.persistence.EventSignUp
-import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.survey.persistence.Answer
-import net.blueshell.api.event.persistence.asDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

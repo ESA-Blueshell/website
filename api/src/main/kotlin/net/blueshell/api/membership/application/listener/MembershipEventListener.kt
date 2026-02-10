@@ -28,6 +28,7 @@ class MembershipEventListener(
                     users.removeRole(evt.userId, Role.MEMBER)
                 }
             }
+
             MembershipChange.DELETED -> {
                 log.info("Deleting membership for user {} removing role {}", evt.userId, Role.MEMBER)
                 users.removeRole(evt.userId, Role.MEMBER)

@@ -56,6 +56,7 @@ class AnswerFactory(
                 answer.textResponse = faker.lorem().sentence()
                 answer.optionSelections = null
             }
+
             QuestionType.RADIO -> {
                 answer.textResponse = null
                 val choices = question.choiceLabels.orEmpty()
@@ -66,11 +67,13 @@ class AnswerFactory(
                     answer.optionSelections = mutableListOf()
                 }
             }
+
             QuestionType.CHECKBOX -> {
                 answer.textResponse = null
                 val choices = question.choiceLabels.orEmpty()
                 answer.optionSelections = MutableList(choices.size) { faker.bool().bool() }
             }
+
             QuestionType.DESCRIPTION -> {
                 answer.textResponse = null
                 answer.optionSelections = null

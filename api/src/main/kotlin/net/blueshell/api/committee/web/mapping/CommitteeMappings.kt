@@ -9,25 +9,32 @@ import tech.mappie.api.ObjectMappie
 
 object CommitteeMemberToCommitteeMemberDTOMapper : ObjectMappie<CommitteeMember, CommitteeMemberDTO>()
 
-object CommitteeMemberDTOToCommitteeMemberMapper : ObjectMappie<CommitteeMemberDTO, CommitteeMember>()
-
 object CommitteeToAdvancedCommitteeDTOMapper : ObjectMappie<Committee, AdvancedCommitteeDTO>()
-
-object AdvancedCommitteeDTOToCommitteeMapper : ObjectMappie<AdvancedCommitteeDTO, Committee>()
 
 object CommitteeToSimpleCommitteeDTOMapper : ObjectMappie<Committee, SimpleCommitteeDTO>()
 
-object SimpleCommitteeDTOToCommitteeMapper : ObjectMappie<SimpleCommitteeDTO, Committee>()
-
-fun CommitteeMemberDTO.asEntity(): CommitteeMember = CommitteeMemberDTOToCommitteeMemberMapper.map(this)
-
-fun AdvancedCommitteeDTO.asEntity(existing: Committee? = null): Committee {
-    val mapped = AdvancedCommitteeDTOToCommitteeMapper.map(this)
-    existing?.id?.let { mapped.assignIdForRef(it) }
-    return mapped
+fun CommitteeMemberDTO.asEntity(member: CommitteeMember = CommitteeMember()): CommitteeMember {
+    member.userId = userId
+    member.committeeId = committeeId
+    member.role = role
+    member.version = version
+    return member
 }
 
-fun SimpleCommitteeDTO.asEntity(): Committee = SimpleCommitteeDTOToCommitteeMapper.map(this)
+fun AdvancedCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
+    committee.name = name
+    committee.description = description
+    committee.members = members.map { it.asEntity() }
+    committee.version = version
+    return committee
+}
+
+fun SimpleCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
+    committee.name = name
+    committee.description = description
+    committee.version = version
+    return committee
+}
 
 fun CommitteeMember.asDto(): CommitteeMemberDTO = CommitteeMemberToCommitteeMemberDTOMapper.map(this)
 

@@ -36,6 +36,7 @@ class EventJobsListener(
                     )
                 }
             }
+
             EventChange.UPDATED -> {
                 val e = events.findById(evt.eventId)
                 if (e.approved) {
@@ -50,6 +51,7 @@ class EventJobsListener(
                     )
                 }
             }
+
             EventChange.DELETED -> jobDispatcher.enqueue(
                 CalendarJobs.RemoveEvent,
                 CalendarEventRef(evt.eventId)

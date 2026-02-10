@@ -1,7 +1,7 @@
 package net.blueshell.api.event.web.permission
 
-import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.application.EventBannerService
+import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

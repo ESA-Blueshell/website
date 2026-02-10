@@ -260,4 +260,10 @@ tasks.matching { it.name.contains("Kotlin") }.configureEach {
     inputs.dir(brevoOutputDir)
 }
 
+mappie {
+    strictness {
+        visibility = true
+    }
+}
+
 val compileKotlin: KotlinCompile by tasks

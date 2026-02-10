@@ -1,16 +1,13 @@
 package net.blueshell.api.blog.web.mapping
 
-import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.blog.persistence.Blog
 import net.blueshell.api.blog.web.dto.BlogDTO
 import net.blueshell.api.blog.web.dto.SocialDTO
+import net.blueshell.api.shared.enums.PlatformType
 import org.jsoup.Jsoup
 import tech.mappie.api.ObjectMappie
-import java.time.Instant
 
 object BlogToBlogDTOMapper : ObjectMappie<Blog, BlogDTO>()
-
-object BlogDTOToBlogMapper : ObjectMappie<BlogDTO, Blog>()
 
 object BlogToSocialDTOMapper : ObjectMappie<Blog, SocialDTO>()
 
@@ -33,10 +30,9 @@ fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
 }
 
 fun BlogDTO.asEntity(blog: Blog = Blog()): Blog {
-    val mapped = BlogDTOToBlogMapper.map(this)
-    blog.title = mapped.title
-    blog.publishedAt = mapped.publishedAt ?: Instant.now()
-    blog.version = mapped.version
+    blog.title = title
+    blog.publishedAt = publishedAt
+    blog.version = version
     sanitizeHtml(this, blog)
     return blog
 }

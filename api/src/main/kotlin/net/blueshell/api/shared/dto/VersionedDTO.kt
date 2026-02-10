@@ -1,5 +1,8 @@
 package net.blueshell.api.shared.dto
 
+import jakarta.validation.constraints.NotNull
+
 abstract class VersionedDTO : BaseDTO() {
-    var version: Long = 0L
+    @field:NotNull
+    var version: Long? = null
 }

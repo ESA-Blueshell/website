@@ -5,7 +5,6 @@ import net.blueshell.api.event.web.dto.EventSignUpDTO
 import net.blueshell.api.factory.dto.GuestDTOFactory
 import net.blueshell.api.factory.dto.event.EventSignUpDTOFactory
 import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
-import net.blueshell.api.event.web.validation.GuestOrUserRequiredValidator
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

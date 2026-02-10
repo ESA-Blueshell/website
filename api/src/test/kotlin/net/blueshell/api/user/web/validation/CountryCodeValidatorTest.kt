@@ -1,7 +1,6 @@
 package net.blueshell.api.user.web.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.user.web.validation.CountryCodeValidator
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach

@@ -12,11 +12,12 @@ class BlogDTOFactory : BaseDtoFactory<BlogDTO>() {
     override fun targetType(): Class<BlogDTO> = BlogDTO::class.java
 
     override fun createBasic(): BlogDTO {
-        val dto = BlogDTO()
-        dto.title = unique("Blog Title")
-        dto.html = "<p>Test content</p>"
-        dto.publishedAt = now()
-        dto.url = "https://example.com/blog/${nextId()}"
+        val dto = BlogDTO(
+            title = unique("Blog Title"),
+            html = "<p>Test content</p>",
+            publishedAt = now(),
+            url = "https://example.com/blog/${nextId()}"
+        )
         return dto
     }
 }

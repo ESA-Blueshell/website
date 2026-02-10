@@ -1,10 +1,10 @@
 package net.blueshell.api.factory.model.committee
 
 import com.github.javafaker.Faker
-import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.factory.model.UserFactory
+import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Component
 import java.util.function.Consumer
 
@@ -28,7 +28,11 @@ class CommitteeMemberFactory(
 
     fun createFull(user: User, committee: Committee): CommitteeMember = createBasic(user, committee)
 
-    fun createWithCustomizations(customizer: Consumer<CommitteeMember>, user: User, committee: Committee): CommitteeMember {
+    fun createWithCustomizations(
+        customizer: Consumer<CommitteeMember>,
+        user: User,
+        committee: Committee
+    ): CommitteeMember {
         val member = createFull(user, committee)
         customizer.accept(member)
         return member

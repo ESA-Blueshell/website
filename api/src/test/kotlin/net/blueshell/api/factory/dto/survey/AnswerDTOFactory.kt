@@ -1,10 +1,10 @@
 package net.blueshell.api.factory.dto.survey
 
+import net.blueshell.api.factory.dto.BaseDtoFactory
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.survey.web.dto.QuestionDTO
 import net.blueshell.api.survey.web.dto.SurveyDTO
-import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 
 /**
@@ -32,6 +32,7 @@ class AnswerDTOFactory : BaseDtoFactory<AnswerDTO>() {
                 dto.textResponse = "This is a text response for the open question"
                 dto.optionSelections = null
             }
+
             QuestionType.RADIO -> {
                 dto.textResponse = null
                 val choices = question.choiceLabels
@@ -40,6 +41,7 @@ class AnswerDTOFactory : BaseDtoFactory<AnswerDTO>() {
                     dto.optionSelections = selections
                 }
             }
+
             QuestionType.CHECKBOX -> {
                 dto.textResponse = null
                 val choices = question.choiceLabels
@@ -48,10 +50,12 @@ class AnswerDTOFactory : BaseDtoFactory<AnswerDTO>() {
                     dto.optionSelections = selections
                 }
             }
+
             QuestionType.DESCRIPTION -> {
                 dto.textResponse = null
                 dto.optionSelections = null
             }
+
             else -> {
                 dto.textResponse = "Default response"
                 dto.optionSelections = null

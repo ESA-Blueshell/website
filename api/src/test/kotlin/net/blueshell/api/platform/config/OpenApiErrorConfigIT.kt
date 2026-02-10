@@ -26,11 +26,11 @@ class OpenApiErrorConfigIT : UserTestSupport() {
 
         val hasApiErrorSchema =
             root.at("/components/schemas/ApiError").isObject ||
-                root.at("/components/schemas/ApiErrorDTO").isObject
+                    root.at("/components/schemas/ApiErrorDTO").isObject
 
         val hasFieldErrorSchema =
             root.at("/components/schemas/FieldValidationError").isObject ||
-                root.at("/components/schemas/FieldValidationErrorDTO").isObject
+                    root.at("/components/schemas/FieldValidationErrorDTO").isObject
 
         Assertions.assertTrue(hasApiErrorSchema, "Expected ApiError* schema present in OpenAPI components.")
         Assertions.assertTrue(

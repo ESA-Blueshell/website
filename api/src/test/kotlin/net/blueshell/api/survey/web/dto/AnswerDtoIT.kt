@@ -3,8 +3,8 @@ package net.blueshell.api.survey.web.dto
 import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.survey.application.AnswerService
+import net.blueshell.api.survey.persistence.Answer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

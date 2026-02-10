@@ -12,7 +12,7 @@ import net.blueshell.api.user.web.validation.ValidMobilePhoneNumber
 class PersonalInfoDTO(
     @field:NotBlank
     @field:Email
-    var email: String ?= null,
+    var email: String? = null,
 
     @field:NotBlank
     var discord: String? = null,

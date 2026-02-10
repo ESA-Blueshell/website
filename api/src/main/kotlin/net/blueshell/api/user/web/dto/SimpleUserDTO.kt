@@ -30,7 +30,7 @@ class SimpleUserDTO(
     var fullName: String? = null,
 
     @field:NotNull
-    var newsletter: Boolean = false,
+    var newsletter: Boolean? = null,
 
     @field:NotBlank(groups = [Creation::class])
     @field:Size(

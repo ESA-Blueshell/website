@@ -1,10 +1,11 @@
 package net.blueshell.api.contribution.web.dto
 
+import net.blueshell.api.contribution.application.ContributionReminderService
+import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.web.mapping.asEntity
 import net.blueshell.api.factory.dto.contribution.ContributionReminderDTOFactory
 import net.blueshell.api.factory.model.contribution.ContributionReminderFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.contribution.persistence.ContributionReminder
-import net.blueshell.api.contribution.application.ContributionReminderService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

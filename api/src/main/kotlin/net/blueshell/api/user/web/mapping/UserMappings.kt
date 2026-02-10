@@ -17,29 +17,9 @@ object UserToAdvancedUserDTOMapper : ObjectMappie<User, AdvancedUserDTO>() {
     }
 }
 
-object AdvancedUserDTOToUserMapper : ObjectMappie<AdvancedUserDTO, User>() {
-    override fun map(from: AdvancedUserDTO) = mapping {
-        User::username fromValue from.username!!
-        User::password fromValue from.password!!
-        User::firstName fromValue from.firstName!!
-        User::lastName fromValue from.lastName!!
-        User::email fromValue from.email!!
-    }
-}
-
 object UserToSimpleUserDTOMapper : ObjectMappie<User, SimpleUserDTO>() {
     override fun map(from: User) = mapping {
         SimpleUserDTO::password fromValue "" // Never expose the password in the DTO
-    }
-}
-
-object SimpleUserDTOToUserMapper : ObjectMappie<SimpleUserDTO, User>() {
-    override fun map(from: SimpleUserDTO) = mapping {
-        User::username fromValue from.username!!
-        User::password fromValue from.password!!
-        User::firstName fromValue from.firstName!!
-        User::lastName fromValue from.lastName!!
-        User::email fromValue from.email!!
     }
 }
 
@@ -47,20 +27,18 @@ fun AdvancedUserDTO.asEntity(
     user: User = User(),
     passwordEncoder: PasswordEncoder
 ): User {
-    val mapped = AdvancedUserDTOToUserMapper.map(this)
-
-    mapped.discord?.let { user.discord = it }
-    mapped.dateOfBirth?.let { user.dateOfBirth = it }
-    mapped.phoneNumber?.let { user.phoneNumber = it }
-    mapped.nationality?.let { user.nationality = it }
-    user.photoConsent = mapped.photoConsent
-    user.bhv = mapped.bhv
-    user.ehbo = mapped.ehbo
-    user.newsletter = mapped.newsletter
-    mapped.gender?.let { user.gender = it }
-    mapped.studentNumber?.let { user.studentNumber = it }
-    mapped.addressId?.let { user.addressId = it }
-    version?.let { user.version = it }
+    discord?.let { user.discord = it }
+    dateOfBirth?.let { user.dateOfBirth = it }
+    phoneNumber?.let { user.phoneNumber = it }
+    nationality?.let { user.nationality = it }
+    user.photoConsent = photoConsent
+    user.bhv = bhv
+    user.ehbo = ehbo
+    user.newsletter = newsletter
+    gender?.let { user.gender = it }
+    studentNumber?.let { user.studentNumber = it }
+    addressId?.let { user.addressId = it }
+    user.version = version
 
     val canEditIdentityFields = user.id == null || hasAuthority(Role.BOARD)
 
@@ -82,16 +60,14 @@ fun SimpleUserDTO.asEntity(
     user: User = User(),
     passwordEncoder: PasswordEncoder
 ): User {
-    val mapped = SimpleUserDTOToUserMapper.map(this)
-
     if (user.id == null) {
         applyUserIdentityFields(this, user)
     }
 
-    mapped.discord?.let { user.discord = it }
-    mapped.phoneNumber?.let { user.phoneNumber = it }
-    user.newsletter = mapped.newsletter
-    version?.let { user.version = it }
+    discord?.let { user.discord = it }
+    phoneNumber?.let { user.phoneNumber = it }
+    user.newsletter = newsletter
+    user.version = version
 
     if (user.id == null) {
         user.password = passwordEncoder.encode(password)

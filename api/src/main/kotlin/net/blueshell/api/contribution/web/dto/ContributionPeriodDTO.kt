@@ -8,19 +8,19 @@ import java.time.LocalDate
 @Schema(name = "ContributionPeriod")
 data class ContributionPeriodDTO(
     @field:NotNull
-    var startDate: LocalDate,
+    var startDate: LocalDate? = null,
 
     @field:NotNull
-    var endDate: LocalDate,
+    var endDate: LocalDate? = null,
 
     @field:NotNull
-    var halfYearFee: Double = 0.0,
+    var halfYearFee: Double? = null,
 
     @field:NotNull
-    var fullYearFee: Double = 0.0,
+    var fullYearFee: Double? = null,
 
     @field:NotNull
-    var alumniFee: Double = 0.0,
+    var alumniFee: Double? = null,
 
     var listId: Long? = null
 ) : AuditedAutoIdDTO()

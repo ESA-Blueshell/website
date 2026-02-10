@@ -8,10 +8,10 @@ import java.sql.Timestamp
 @Schema(name = "Contribution")
 data class ContributionDTO(
     @field:NotNull
-    var userId: Long,
+    var userId: Long? = null,
 
     @field:NotNull
-    var contributionPeriodId: Long,
+    var contributionPeriodId: Long? = null,
 
     var remindedAt: Timestamp? = null
 ) : AuditedSoftDeleteDTO()

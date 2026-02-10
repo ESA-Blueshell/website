@@ -5,8 +5,8 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.membership.persistence.Membership
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.membership.persistence.filter.MembershipFilter
+import net.blueshell.api.user.persistence.User
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 

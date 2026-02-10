@@ -1,6 +1,5 @@
 package net.blueshell.api.membership.persistence
 
-import net.blueshell.api.membership.persistence.Membership
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 

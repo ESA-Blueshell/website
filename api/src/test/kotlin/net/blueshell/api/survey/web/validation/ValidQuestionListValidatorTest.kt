@@ -2,7 +2,6 @@ package net.blueshell.api.survey.web.validation
 
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.survey.web.dto.QuestionDTO
-import net.blueshell.api.survey.web.validation.ValidQuestionListValidator
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.springframework.boot.test.context.SpringBootTest
-import kotlin.collections.emptyList
 
 /**
  * Unit tests for ValidQuestionListValidator (unique, non-null indices).

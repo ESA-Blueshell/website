@@ -1,6 +1,5 @@
 package net.blueshell.api.committee.persistence
 
-import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 

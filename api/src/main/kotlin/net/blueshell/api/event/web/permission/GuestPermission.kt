@@ -12,25 +12,25 @@ class GuestPermission @Autowired constructor(service: GuestService) :
     BasePermissionEvaluator<Guest, Long, GuestService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
-        targetDomainObject: Any?,
+        entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || targetDomainObject == null || permission == null) {
+        if (authentication == null || entity == null || permission == null) {
             return false
         }
 
-        targetDomainObject as Guest
+        entity as Guest
         return when (permission) {
             "read", "write" -> true
             else -> false
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, accessToken: Any?, permission: String?): Boolean {
-        if (authentication == null || accessToken == null || permission == null) {
+    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
-        val guest = service.findByAccessToken(accessToken as String)
+        val guest = service.findByAccessToken(id as String)
         return hasPermission(authentication, guest, permission)
     }
 }

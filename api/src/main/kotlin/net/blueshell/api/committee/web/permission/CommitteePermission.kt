@@ -12,13 +12,13 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
     BasePermissionEvaluator<Committee, Long, CommitteeService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
-        targetDomainObject: Any?,
+        entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || targetDomainObject == null || permission == null) {
+        if (authentication == null || entity == null || permission == null) {
             return false
         }
-        val committee = targetDomainObject as Committee
+        val committee = entity as Committee
         return when (permission) {
             "read" -> true
             "events" -> committee.hasMember(principal)
@@ -26,11 +26,11 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
-        if (authentication == null || targetId == null || permission == null) {
+    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
-        val committee = service.findById(targetId as Long)
-        return committee != null && hasPermission(authentication, committee, permission)
+        val committee = service.findById(id as Long)
+        return hasPermission(authentication, committee, permission)
     }
 }

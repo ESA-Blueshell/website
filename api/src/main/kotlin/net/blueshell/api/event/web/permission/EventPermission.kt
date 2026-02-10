@@ -13,13 +13,13 @@ class EventPermission @Autowired constructor(service: EventService) :
     BasePermissionEvaluator<Event, Long, EventService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
-        targetDomainObject: Any?,
+        entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || targetDomainObject == null || permission == null) {
+        if (authentication == null || entity == null || permission == null) {
             return false
         }
-        val event = targetDomainObject as Event
+        val event = entity as Event
         val principal = principal
         return when (permission) {
             "read" -> event.approved || event.committee.hasMember(principal)
@@ -29,11 +29,11 @@ class EventPermission @Autowired constructor(service: EventService) :
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
-        if (authentication == null || targetId == null || permission == null) {
+    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
-        val event = service.findById(targetId as Long)
-        return event != null && hasPermission(authentication, event, permission)
+        val event = service.findById(id as Long)
+        return hasPermission(authentication, event, permission)
     }
 }

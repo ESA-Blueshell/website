@@ -14,14 +14,14 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
     BasePermissionEvaluator<EventSignUp, Long, EventSignUpService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
-        targetDomainObject: Any?,
+        entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || targetDomainObject == null || permission == null) {
+        if (authentication == null || entity == null || permission == null) {
             return false
         }
 
-        val signUp = targetDomainObject as EventSignUp
+        val signUp = entity as EventSignUp
         val event = events.findById(signUp.eventId)
         val user = principal
 
@@ -33,11 +33,11 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
-        if (authentication == null || targetId == null || permission == null) {
+    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
 
-        return hasPermission(authentication, service.findById(targetId as Long), permission)
+        return hasPermission(authentication, service.findById(id as Long), permission)
     }
 }

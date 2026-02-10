@@ -24,7 +24,7 @@ abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID, S : BaseModelSe
         return domainType.isAssignableFrom(domainClass)
     }
 
-    abstract fun hasPermission(authentication: Authentication?, targetDomainObject: Any?, string: String?): Boolean
+    abstract fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean
 
-    abstract fun hasPermissionId(authentication: Authentication?, targetId: Any?, string: String?): Boolean
+    abstract fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean
 }

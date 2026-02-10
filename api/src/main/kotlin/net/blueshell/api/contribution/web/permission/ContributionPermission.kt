@@ -10,23 +10,23 @@ import org.springframework.stereotype.Component
 @Component
 class ContributionPermission @Autowired constructor(service: ContributionService) :
     BasePermissionEvaluator<Contribution, Contribution.Id, ContributionService>(service) {
-    override fun hasPermission(authentication: Authentication?, `object`: Any?, permission: String?): Boolean {
-        if (authentication == null || `object` == null || permission == null) {
+    override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
+        if (authentication == null || entity == null || permission == null) {
             return false
         }
-        val contribution = `object` as Contribution
+        val contribution = entity as Contribution
         return when (permission) {
             "read" -> (principal?.id == contribution.userId)
             else -> false
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
-        if (authentication == null || targetId == null || permission == null) {
+    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
 
-        val targetContribution = service.findById(targetId as Contribution.Id)
-        return targetContribution != null && hasPermission(authentication, targetContribution, permission)
+        val targetContribution = service.findById(id as Contribution.Id)
+        return hasPermission(authentication, targetContribution, permission)
     }
 }

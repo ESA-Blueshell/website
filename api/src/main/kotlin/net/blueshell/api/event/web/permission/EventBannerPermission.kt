@@ -14,24 +14,24 @@ class EventBannerPermission @Autowired constructor(
 ) : BasePermissionEvaluator<EventBanner, EventBanner.Id, EventBannerService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
-        targetDomainObject: Any?,
+        entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || targetDomainObject == null || permission == null) {
+        if (authentication == null || entity == null || permission == null) {
             return false
         }
-        val target = targetDomainObject as EventBanner
+        val target = entity as EventBanner
         return when (permission) {
             "read" -> eventPermission.hasPermission(authentication, target.event, "read")
             else -> false
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, targetId: Any?, permission: String?): Boolean {
-        if (authentication == null || targetId == null || permission == null) {
+    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
-        val target = service.findById(targetId as EventBanner.Id)
-        return target != null && hasPermission(authentication, target, permission)
+        val target = service.findById(id as EventBanner.Id)
+        return hasPermission(authentication, target, permission)
     }
 }

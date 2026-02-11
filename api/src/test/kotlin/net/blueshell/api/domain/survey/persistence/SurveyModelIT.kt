@@ -48,7 +48,7 @@ class SurveyModelIT : ModelPersistenceTestSupport() {
             val dto = reloaded.asDto()
 
             assertEquals(reloaded.id, dto.id)
-            assertEquals(2, dto.questions!!.size)
+            assertEquals(3, dto.questions!!.size)
             assertEquals(reloaded.responseCount, dto.responseCount)
         }
     }

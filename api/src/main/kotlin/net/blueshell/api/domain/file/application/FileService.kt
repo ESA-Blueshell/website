@@ -80,7 +80,7 @@ class FileService @Autowired constructor(
             }
             val sha256 = HexFormat.of().formatHex(md.digest())
 
-            val hashedFilename = buildHashedFilename(sha256, multipart.originalFilename)
+            val hashedFilename = buildHashedFilename(sha256, multipart.originalFilename ?: "file")
             val path = type.directory + "/" + hashedFilename
             val fullPath = rootLocation.resolve(path).normalize()
 
@@ -96,13 +96,13 @@ class FileService @Autowired constructor(
                 }
             }
 
-            var entity = repository!!.findByPath(path).orElse(null)
+            var entity = repository.findByPath(path).orElse(null)
             if (entity == null) {
                 entity = File()
             }
 
-            val mediaType = resolveMediaType(hashedFilename, fullPath, multipart.contentType)
-            populateAfterStore(entity, multipart.originalFilename, fullPath, path, mediaType)
+            val mediaType = resolveMediaType(hashedFilename, fullPath, multipart.contentType ?: "")
+            populateAfterStore(entity, multipart.originalFilename ?: "file", fullPath, path, mediaType)
             entity.type = type
 
             return if (entity.id != null) {
@@ -255,7 +255,7 @@ class FileService @Autowired constructor(
     }
 
     fun findByBannerEventId(eventId: Long): File {
-        return repository.findFirstByEventBannersIdEventId(eventId).orElseThrow(Supplier {
+        return repository.findFirstBy_eventBannersIdEventId(eventId).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Event banner not found for event with id: $eventId"
             )

@@ -17,7 +17,7 @@ class CommitteeMembershipChangedListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onChange(event: CommitteeMembershipChanged) {
-        if (committeeMembers.countByUserId(event.userId) > 0) {
+        if (committeeMembers.countByUser_Id(event.userId) > 0) {
             users.addRole(event.userId, Role.COMMITTEE)
         } else {
             users.removeRole(event.userId, Role.COMMITTEE)

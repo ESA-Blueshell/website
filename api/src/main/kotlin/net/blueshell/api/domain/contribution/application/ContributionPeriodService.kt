@@ -2,7 +2,7 @@ package net.blueshell.api.domain.contribution.application
 
 import net.blueshell.api.domain.contribution.application.event.ContributionPeriodChanged
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriodRepository
+import net.blueshell.api.domain.contribution.persistence.repository.ContributionPeriodRepository
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired

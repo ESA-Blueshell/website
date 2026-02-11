@@ -12,9 +12,9 @@ import java.time.LocalDate
 
 object MembershipSpecifications {
     fun timeOverlap(from: LocalDate?, to: LocalDate?): Specification<Membership> {
-        return Specification { root: Root<Membership>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
+        return Specification { root, _, cb ->
             if (from == null && to == null) {
-                return@Specification cb!!.conjunction()
+                return@Specification cb.conjunction()
             }
             var f = from
             var t = to
@@ -24,25 +24,24 @@ object MembershipSpecifications {
                 t = tmp
             }
 
-            val start = root!!.get<LocalDate>("startDate")
+            val start = root.get<LocalDate>("startDate")
             val end = root.get<LocalDate>("endDate")
 
             val ands: MutableList<Predicate> = ArrayList(2)
 
             if (t != null) {
-                ands.add(cb!!.lessThanOrEqualTo(start, t))
+                ands.add(cb.lessThanOrEqualTo(start, t))
             }
 
             if (f != null) {
-                ands.add(cb!!.or(cb.isNull(end), cb.greaterThanOrEqualTo(end, f)))
+                ands.add(cb.or(cb.isNull(end), cb.greaterThanOrEqualTo(end, f)))
             }
-            cb!!.and(*ands.toTypedArray<Predicate>())
+            cb.and(*ands.toTypedArray<Predicate>())
         }
     }
 
     fun fromFilter(f: MembershipFilter, user: User?): Specification<Membership> {
-        var spec =
-            Specification { root: Root<Membership>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
+        var spec = Specification { _: Root<Membership>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
         if (f.from != null || f.to != null) {
             spec = spec.and(timeOverlap(f.from, f.to))

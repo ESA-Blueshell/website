@@ -15,37 +15,37 @@ import java.time.LocalDateTime
 object EventSignUpSpecifications : IdentityProvider() {
     private fun distinct(): Specification<EventSignUp> {
         return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            query!!.distinct(true)
-            cb!!.conjunction()
+            query.distinct(true)
+            cb.conjunction()
         }
     }
 
     @JvmOverloads
     fun approved(value: Boolean? = true): Specification<EventSignUp> {
-        if (value == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
+        if (value == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
             if (value)
-                cb!!.isTrue(root!!.join<Any, Any>("event", JoinType.INNER).get("approved"))
+                cb.isTrue(root.join<Any, Any>("event", JoinType.INNER).get("approved"))
             else
-                cb!!.isFalse(root!!.join<Any, Any>("event", JoinType.INNER).get("approved"))
+                cb.isFalse(root.join<Any, Any>("event", JoinType.INNER).get("approved"))
         }
     }
 
     fun startTimeFrom(from: LocalDateTime?): Specification<EventSignUp> {
-        if (from == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.greaterThanOrEqualTo(
-                root!!.join<Any, Any>("event", JoinType.INNER).get("startTime"),
+        if (from == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.greaterThanOrEqualTo(
+                root.join<Any, Any>("event", JoinType.INNER).get("startTime"),
                 from
             )
         }
     }
 
     fun startTimeTo(to: LocalDateTime?): Specification<EventSignUp> {
-        if (to == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.lessThanOrEqualTo(
-                root!!.join<Any, Any>("event", JoinType.INNER).get("startTime"),
+        if (to == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.lessThanOrEqualTo(
+                root.join<Any, Any>("event", JoinType.INNER).get("startTime"),
                 to
             )
         }
@@ -56,10 +56,10 @@ object EventSignUpSpecifications : IdentityProvider() {
     }
 
     fun committeeId(committeeId: Long?): Specification<EventSignUp> {
-        if (committeeId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.equal(
-                root!!.join<Any, Any>(
+        if (committeeId == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.equal(
+                root.join<Any, Any>(
                     "event",
                     JoinType.INNER
                 ).get<Any>("committeeId"), committeeId
@@ -68,10 +68,10 @@ object EventSignUpSpecifications : IdentityProvider() {
     }
 
     fun userId(userId: Long?): Specification<EventSignUp> {
-        if (userId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.equal(
-                root!!.get<Any>(
+        if (userId == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.equal(
+                root.get<Any>(
                     "userId"
                 ), userId
             )
@@ -79,10 +79,10 @@ object EventSignUpSpecifications : IdentityProvider() {
     }
 
     fun eventId(eventId: Long?): Specification<EventSignUp> {
-        if (eventId == null) return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<EventSignUp>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.equal(
-                root!!.get<Any>(
+        if (eventId == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.equal(
+                root.get<Any>(
                     "eventId"
                 ), eventId
             )

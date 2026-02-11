@@ -5,6 +5,7 @@ import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 
 @Repository
+@Suppress("FunctionName")
 interface MemberRepository : BaseRepository<Membership, Long> {
-    fun existsByUserId(userId: Long): Boolean
+    fun existsByUser_Id(userId: Long): Boolean
 }

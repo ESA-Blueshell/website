@@ -39,7 +39,7 @@ class AnswerModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(answer, Answer::class.java) { it.id }
 
             assertEquals(question.id, found.questionId)
-            Assertions.assertEquals(question.id, found.question?.id)
+            Assertions.assertEquals(question.id, found.question.id)
         }
 
         @Test
@@ -54,7 +54,7 @@ class AnswerModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(answer, Answer::class.java) { it.id }
 
             assertEquals(question.id, found.questionId)
-            Assertions.assertEquals(question.id, found.question?.id)
+            Assertions.assertEquals(question.id, found.question.id)
         }
     }
 

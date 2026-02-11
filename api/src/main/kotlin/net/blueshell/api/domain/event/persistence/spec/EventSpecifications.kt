@@ -17,9 +17,9 @@ object EventSpecifications {
     private val log = LoggerFactory.getLogger(EventSpecifications::class.java)
 
     fun approved(): Specification<Event> {
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.isTrue(
-                root!!.get(
+        return Specification { root, _, cb ->
+            cb.isTrue(
+                root.get(
                     "approved"
                 )
             )
@@ -27,29 +27,29 @@ object EventSpecifications {
     }
 
     fun approved(value: Boolean?): Specification<Event> {
-        if (value == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            if (value) cb!!.isTrue(
-                root!!.get("approved")
-            ) else cb!!.isFalse(root!!.get("approved"))
+        if (value == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            if (value) cb.isTrue(
+                root.get("approved")
+            ) else cb.isFalse(root.get("approved"))
         }
     }
 
     fun startTimeFrom(from: LocalDateTime?): Specification<Event> {
-        if (from == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.greaterThanOrEqualTo(
-                root!!.get("startTime"),
+        if (from == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.greaterThanOrEqualTo(
+                root.get("startTime"),
                 from
             )
         }
     }
 
     fun startTimeTo(to: LocalDateTime?): Specification<Event> {
-        if (to == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.lessThanOrEqualTo(
-                root!!.get("startTime"),
+        if (to == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.lessThanOrEqualTo(
+                root.get("startTime"),
                 to
             )
         }
@@ -60,34 +60,34 @@ object EventSpecifications {
     }
 
     val isPublicEvent: Specification<Event>
-        get() = Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.isFalse(
-                root!!.get("membersOnly")
+        get() = Specification { root, _, cb ->
+            cb.isFalse(
+                root.get("membersOnly")
             )
         }
 
     fun membersOnly(value: Boolean?): Specification<Event> {
-        if (value == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            if (value) cb!!.isTrue(
-                root!!.get("membersOnly")
-            ) else cb!!.isFalse(root!!.get("membersOnly"))
+        if (value == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            if (value) cb.isTrue(
+                root.get("membersOnly")
+            ) else cb.isFalse(root.get("membersOnly"))
         }
     }
 
     fun userIsCommitteeMember(user: User): Specification<Event> {
-        if (user == null || user.id == null) {
-            return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.disjunction() }
+        if (user.id == null) {
+            return Specification { _, _, cb -> cb.disjunction() }
         }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            q!!.distinct(true)
+        return Specification { root, q, cb ->
+            q.distinct(true)
             val sq = q.subquery(Long::class.java)
             val cm = sq.from(CommitteeMember::class.java)
-            sq.select(cb!!.literal(1L))
+            sq.select(cb.literal(1L))
                 .where(
                     cb.equal(
                         cm.get<Any>("committee").get<Any>("id"),
-                        root!!.get<Any>("committee").get<Any>("id")
+                        root.get<Any>("committee").get<Any>("id")
                     ),
                     cb.equal(cm.get<Any>("userId"), user.id)
                 )
@@ -96,10 +96,10 @@ object EventSpecifications {
     }
 
     fun committeeId(committeeId: Long?): Specification<Event> {
-        if (committeeId == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.equal(
-                root!!.get<Any>(
+        if (committeeId == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.equal(
+                root.get<Any>(
                     "committeeId"
                 ), committeeId
             )
@@ -107,10 +107,10 @@ object EventSpecifications {
     }
 
     fun titleContains(text: String?): Specification<Event> {
-        if (text == null) return Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.like(
-                cb.lower(root!!.get("title")), "%" + text.lowercase(
+        if (text == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, _, cb ->
+            cb.like(
+                cb.lower(root.get("title")), "%" + text.lowercase(
                     Locale.getDefault()
                 ) + "%"
             )
@@ -118,8 +118,7 @@ object EventSpecifications {
     }
 
     fun fromFilter(f: EventFilter, user: User?): Specification<Event> {
-        var spec =
-            Specification { root: Root<Event>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
+        var spec = Specification { _: Root<Event>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
         val from = f.from
         if (from != null) {

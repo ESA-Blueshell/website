@@ -13,9 +13,9 @@ import java.util.*
 
 object UserSpecifications {
     fun approved(): Specification<Event> {
-        return Specification { root: Root<Event>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            cb!!.isTrue(
-                root!!.get(
+        return Specification { root, _, cb ->
+            cb.isTrue(
+                root.get(
                     "approved"
                 )
             )
@@ -32,32 +32,31 @@ object UserSpecifications {
     fun hasAuthorityAtLeast(base: Role): Specification<User> {
         val allowed: MutableSet<Role> = Role.allThatInherit(base)
 
-        return Specification { root: Root<User>, query: CriteriaQuery<*>, cb: CriteriaBuilder ->
+        return Specification { root, query, _ ->
             // Avoid duplicates when joining element collections
-            query!!.distinct(true)
+            query.distinct(true)
 
             // Join the ElementCollection<ROLE>
-            val rolesJoin = root!!.join<User, Role>("roles", JoinType.INNER)
+            val rolesJoin = root.join<User, Role>("roles", JoinType.INNER)
             rolesJoin.`in`(allowed)
         }
     }
 
     fun hasMemberRole(hasMemberRole: Boolean): Specification<User> {
-        return Specification { root: Root<User>, q: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            q!!.distinct(true)
-            val rolesJoin = root!!.join<Any, Any>("roles", JoinType.INNER)
+        return Specification { root, q, cb ->
+            q.distinct(true)
+            val rolesJoin = root.join<Any, Any>("roles", JoinType.INNER)
             if (hasMemberRole) {
                 return@Specification rolesJoin.`in`(EnumSet.of(Role.MEMBER))
             } else {
-                return@Specification cb!!.not(rolesJoin.`in`(EnumSet.of(Role.MEMBER)))
+                return@Specification cb.not(rolesJoin.`in`(EnumSet.of(Role.MEMBER)))
             }
         }
     }
 
 
     fun fromFilter(f: UserFilter, user: User?): Specification<User> {
-        var spec =
-            Specification { root: Root<User>, query: CriteriaQuery<*>, cb: CriteriaBuilder -> cb!!.conjunction() }
+        var spec = Specification { _: Root<User>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
         val isMember = f.isMember
         if (isMember != null) {

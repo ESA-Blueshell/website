@@ -97,7 +97,7 @@ class MockContactService(
     override fun removeFromList(contributionPeriod: ContributionPeriod, contactId: Long) {
         val listId = contributionPeriod.listId ?: return
         listMembers.computeIfPresent(listId) { id: Long, set: MutableSet<Long> ->
-            set!!.remove(contactId)
+            set.remove(contactId)
             set
         }
         log.info("[brevo-mock] removed contactId={} from listId={}", contactId, listId)

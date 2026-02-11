@@ -14,7 +14,6 @@ plugins {
     kotlin("plugin.allopen") version kotlinVersion
     kotlin("plugin.noarg") version kotlinVersion
     kotlin("kapt") version kotlinVersion
-    kotlin("plugin.lombok") version kotlinVersion
     id("tech.mappie.plugin") version "2.3.10-2.3.1"
 
     java
@@ -71,13 +70,6 @@ dependencies {
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20250404-2.0.0")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.39.1")
-
-    compileOnly("org.projectlombok:lombok:1.18.42")
-    annotationProcessor("org.projectlombok:lombok:1.18.42")
-    kapt("org.projectlombok:lombok:1.18.42")
-    testCompileOnly("org.projectlombok:lombok:1.18.42")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
-    kaptTest("org.projectlombok:lombok:1.18.42")
 
     implementation("org.flywaydb:flyway-core")
 

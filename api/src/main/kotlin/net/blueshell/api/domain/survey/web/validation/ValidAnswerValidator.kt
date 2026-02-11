@@ -16,14 +16,13 @@ data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRe
             return true // Let @NotNull handle this
         }
 
-        val question = questions.findById(dto.questionId).orElse(null) ?: return false
+        val question = questions.findById(dto.questionId ?: return false).orElse(null) ?: return false
 
         return when (question.type) {
             QuestionType.OPEN -> dto.textResponse != null && !dto.textResponse!!.trim { it <= ' ' }.isEmpty()
             QuestionType.CHECKBOX -> isValidCheckboxAnswer(dto, question)
             QuestionType.RADIO -> isValidRadioAnswer(dto, question)
             QuestionType.DESCRIPTION -> true
-            else -> false
         }
     }
 

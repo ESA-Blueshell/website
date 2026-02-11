@@ -120,6 +120,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
      */
     @Transactional(readOnly = true)
     open fun findById(id: ID): T {
+        @Suppress("UNCHECKED_CAST")
         return repository.findById(id).orElseThrow(Supplier {
             ResponseStatusException(HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id")
         })
@@ -158,6 +159,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
      */
     @Transactional
     open fun deleteById(id: ID) {
+        @Suppress("UNCHECKED_CAST")
         if (!repository.existsById(id)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "$entityLabel not found with id: $id")
         }

@@ -5,6 +5,7 @@ import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 
 @Repository
+@Suppress("FunctionName")
 interface CommitteeMemberRepository : BaseRepository<CommitteeMember, CommitteeMember.Id> {
-    fun countByUserId(userId: Long): Long
+    fun countByUser_Id(userId: Long): Long
 }

@@ -304,7 +304,7 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.MODEL_BASE) {
             override fun check(item: JavaField, events: ConditionEvents) {
                 val ann = item.getAnnotationOfTypeOrNull(OneToOne::class.java) ?: return
 
-                val isInverse = ann.mappedBy?.isNotBlank() == true
+                val isInverse = ann.mappedBy.isNotBlank()
                 if (isInverse) return // owning-side-only rule
 
                 val fetch = ann.readEnumPropertyOrNull("fetch", FetchType::class.java) ?: FetchType.EAGER
@@ -325,7 +325,7 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.MODEL_BASE) {
             override fun check(item: JavaField, events: ConditionEvents) {
                 val ann = item.getAnnotationOfTypeOrNull(OneToOne::class.java) ?: return
 
-                val isInverse = ann.mappedBy?.isNotBlank() == true
+                val isInverse = ann.mappedBy.isNotBlank()
                 if (!isInverse) return
 
                 val fetch = ann.readEnumPropertyOrNull("fetch", FetchType::class.java) ?: FetchType.EAGER

@@ -35,7 +35,7 @@ class EventSignUpService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun findByUserIdAndEventId(userId: Long, eventId: Long): EventSignUp {
-        return repository.findByUserIdAndEventId(userId, eventId)
+        return repository.findByUser_IdAndEvent_Id(userId, eventId)
             .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
@@ -50,7 +50,7 @@ class EventSignUpService @Autowired constructor(
     }
 
     fun findByEventId(eventId: Long): MutableList<EventSignUp> {
-        return repository.findByEventId(eventId)
+        return repository.findByEvent_Id(eventId)
     }
 
     fun findByFilter(filter: EventSignUpFilter): MutableList<EventSignUp> {
@@ -59,11 +59,11 @@ class EventSignUpService @Autowired constructor(
     }
 
     fun findBySurveyId(surveyId: Long): MutableSet<EventSignUp> {
-        return repository.findAllByEventSignUpFormId(surveyId)
+        return repository.findAllByEventSignUpForm_Id(surveyId)
     }
 
     fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): EventSignUp {
-        return repository.findByGuestAccessTokenAndEventId(accessToken, eventId)
+        return repository.findByGuestAccessTokenAndEvent_Id(accessToken, eventId)
             .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,

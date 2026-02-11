@@ -208,7 +208,7 @@ class DatabaseSeeder(
         // ✅ Kotlin property access for recovery tokens
         createdUsers.values.forEach { u ->
             if (u.enabled) {
-                u.recoveryTokens?.forEach { rt: RecoveryToken ->
+                u.recoveryTokens.forEach { rt: RecoveryToken ->
                     rt.consumedAt = Instant.now()
                 }
             }
@@ -663,8 +663,8 @@ class DatabaseSeeder(
         }.toMutableList()
 
         val existingUserIds = eventSignUpService.findByEventId(event.id!!)
-            ?.mapNotNull { it.userId }
-            ?.toMutableSet() ?: mutableSetOf()
+            .mapNotNull { it.userId }
+            .toMutableSet()
 
         candidates.shuffle(rnd)
 

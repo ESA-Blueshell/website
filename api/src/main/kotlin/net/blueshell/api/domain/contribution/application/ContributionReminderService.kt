@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.contribution.application
 
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
-import net.blueshell.api.domain.contribution.persistence.ContributionReminderRepository
+import net.blueshell.api.domain.contribution.persistence.repository.ContributionReminderRepository
 import net.blueshell.api.platform.integration.queue.EmailJobs
 import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.shared.service.BaseModelService

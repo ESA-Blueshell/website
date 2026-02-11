@@ -21,18 +21,18 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     override fun findAll(spec: Specification<EventSignUp>?, pageable: Pageable): Page<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByUserIdAndEventId(userId: Long, eventId: Long): Optional<EventSignUp>
+    fun findByUser_IdAndEvent_Id(userId: Long, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessToken = :accessToken")
     fun findByGuestAccessToken(@Param("accessToken") accessToken: String): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByEventId(eventId: Long): MutableList<EventSignUp>
+    fun findByEvent_Id(eventId: Long): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): Optional<EventSignUp>
+    fun findByGuestAccessTokenAndEvent_Id(accessToken: String, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findAllByEventSignUpFormId(surveyId: Long): MutableSet<EventSignUp>
+    fun findAllByEventSignUpForm_Id(surveyId: Long): MutableSet<EventSignUp>
 }

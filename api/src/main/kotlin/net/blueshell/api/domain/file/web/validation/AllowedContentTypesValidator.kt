@@ -13,7 +13,7 @@ class AllowedContentTypesValidator :
 
     override fun initialize(constraintAnnotation: AllowedContentTypes) {
         this.allowed = Arrays.stream(constraintAnnotation.value)
-            .map { mediaType: String? -> MediaType.parseMediaType(mediaType) }
+            .map { mediaType: String -> MediaType.parseMediaType(mediaType) }
             .collect(Collectors.toList())
     }
 

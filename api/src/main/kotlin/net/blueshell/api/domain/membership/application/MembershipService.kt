@@ -70,7 +70,7 @@ class MembershipService @Autowired constructor(
     }
 
     fun existsByUserId(userId: Long): Boolean {
-        return repository.existsByUserId(userId)
+        return repository.existsByUser_Id(userId)
     }
 
     fun findByFilter(filter: MembershipFilter): MutableList<Membership> {

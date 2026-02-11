@@ -1,6 +1,9 @@
 package net.blueshell.api.domain.sponsor.persistence
 
+import junit.framework.TestCase.assertEquals
+import net.blueshell.api.domain.sponsor.web.mapping.asDto
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -32,8 +35,8 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
 
-            assertEquals(picture.id, found.pictureId)
-            assertEquals(picture.id, found.picture.id)
+            Assertions.assertEquals(picture.id, found.pictureId)
+            Assertions.assertEquals(picture.id, found.picture.id)
         }
 
         @Test
@@ -46,8 +49,8 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
 
             val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
 
-            assertEquals(picture.id, found.pictureId)
-            assertEquals(picture.id, found.picture.id)
+            Assertions.assertEquals(picture.id, found.pictureId)
+            Assertions.assertEquals(picture.id, found.picture.id)
         }
     }
 
@@ -65,9 +68,9 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
             val reloaded = entityManager.find(Sponsor::class.java, saved.id)
             val dto = reloaded.asDto()
 
-            assertEquals(reloaded.id, dto.id)
-            assertEquals(reloaded.name, dto.name)
-            assertEquals(reloaded.description, dto.description)
+            Assertions.assertEquals(reloaded.id, dto.id)
+            Assertions.assertEquals(reloaded.name, dto.name)
+            Assertions.assertEquals(reloaded.description, dto.description)
         }
     }
 }

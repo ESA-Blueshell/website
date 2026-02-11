@@ -38,7 +38,7 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
             val found = persistAndReload(membership, Membership::class.java) { it.id }
 
             Assertions.assertEquals(user.id, found.userId)
-            Assertions.assertEquals(user.id, found.user?.id)
+            Assertions.assertEquals(user.id, found.user.id)
         }
 
         @Test

@@ -16,7 +16,7 @@ class GuestService @Autowired constructor(repository: GuestRepository, events: A
     BaseModelService<Guest, Long, GuestRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByAccessToken(accessToken: String): Guest {
-        return repository!!.findByAccessToken(accessToken)
+        return repository.findByAccessToken(accessToken)
             .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,

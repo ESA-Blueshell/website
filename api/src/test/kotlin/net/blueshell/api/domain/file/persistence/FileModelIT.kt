@@ -1,8 +1,10 @@
 package net.blueshell.api.domain.file.persistence
 
+import net.blueshell.api.domain.file.web.mapping.asDto
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 

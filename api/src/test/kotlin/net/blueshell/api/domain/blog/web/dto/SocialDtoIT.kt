@@ -1,6 +1,5 @@
 package net.blueshell.api.domain.blog.web.dto
 
-import net.blueshell.api.domain.blog.web.dto.SocialDTO
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

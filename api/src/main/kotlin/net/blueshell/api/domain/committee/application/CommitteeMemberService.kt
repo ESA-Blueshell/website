@@ -18,7 +18,6 @@ class CommitteeMemberService(
 ) : BaseModelService<CommitteeMember, CommitteeMember.Id, CommitteeMemberRepository>(repository) {
     @Transactional
     override fun create(entity: CommitteeMember): CommitteeMember {
-        mergeRefs(entity)
         val saved = super.create(entity)
         publishChange(saved)
         return saved
@@ -26,7 +25,6 @@ class CommitteeMemberService(
 
     @Transactional
     override fun update(entity: CommitteeMember): CommitteeMember {
-        mergeRefs(entity)
         val saved = super.update(entity)
         publishChange(saved)
         return saved
@@ -59,14 +57,5 @@ class CommitteeMemberService(
                 member.committeeId
             )
         )
-    }
-
-    private fun mergeRefs(member: CommitteeMember) {
-        if (member.userId != 0L) {
-            member.user = User::class.asRef(member.userId)
-        }
-        if (member.committeeId != 0L) {
-            member.committee = Committee::class.asRef(member.committeeId)
-        }
     }
 }

@@ -34,38 +34,13 @@ class SurveyModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(2, found!!.questions.size)
         }
-
-        @Test
-        fun `persists questions relation when setting id`() {
-            val survey = persistSurvey()
-            val questionOne = questionFactory.createBasic()
-            questionOne.type = QuestionType.OPEN
-            questionOne.label = "Survey question 1"
-            questionOne.survey = survey
-            persist(questionOne)
-            val questionTwo = questionFactory.createBasic()
-            questionTwo.type = QuestionType.OPEN
-            questionTwo.label = "Survey question 2"
-            questionTwo.survey = survey
-            persist(questionTwo)
-            entityManager.flush()
-            entityManager.clear()
-
-            val found = entityManager.find(Survey::class.java, survey.id)
-            assertNotNull(found)
-
-            assertEquals(2, found!!.questions.size)
-        }
     }
 
     @Nested
     inner class AsDto {
         @Test
         fun `maps persisted survey`() {
-            val survey = persist(surveyFactory.createBasic())
-            entityManager.flush()
-            persistQuestionWithSurvey(survey)
-            persistQuestionWithSurvey(survey)
+            val survey = persist(surveyFactory.createWithQuestions(3))
             entityManager.flush()
             entityManager.clear()
 

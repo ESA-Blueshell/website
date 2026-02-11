@@ -47,20 +47,5 @@ class RecoveryTokenModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(user.id, found.user.id)
         }
-
-        @Test
-        fun `persists user relation when setting id`() {
-            val user = persist(userFactory.createBasic())
-            val token = recoveryTokenFactory.createBasic()
-            token.user = entityManager.getReference(User::class.java, user.id)
-            token.type = ResetType.PASSWORD_RESET
-            token.selector = unique("selector").replace("-", "").take(32)
-            token.verifierHash = unique("hash")
-            token.expiresAt = timestamp().plusSeconds(3600)
-
-            val found = persistAndReload(token, RecoveryToken::class.java) { it.id }
-
-            assertEquals(user.id, found.user.id)
-        }
     }
 }

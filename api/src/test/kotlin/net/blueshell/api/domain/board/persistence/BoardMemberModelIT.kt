@@ -25,21 +25,6 @@ class BoardMemberModelIT : ModelPersistenceTestSupport() {
         }
 
         @Test
-        fun `persists board relation when setting id`() {
-            val board = persist(boardFactory.createBasic())
-            val user = persist(userFactory.createBasic())
-
-            val member = BoardMember()
-            member.user = user
-            member.board = board
-
-            val found = persistAndReload(member, BoardMember::class.java) { it.id }
-
-            assertEquals(board.id, found.boardId)
-            assertEquals(board.id, found.board.id)
-        }
-
-        @Test
         fun `persists user relation when setting entity`() {
             val board = persist(boardFactory.createBasic())
             val user = persist(userFactory.createBasic())
@@ -75,20 +60,6 @@ class BoardMemberModelIT : ModelPersistenceTestSupport() {
 
             val member = boardMemberFactory.createBasic(board, user)
             member.picture = picture
-
-            val found = persistAndReload(member, BoardMember::class.java) { it.id }
-
-            assertEquals(picture.id, found.picture?.id)
-        }
-
-        @Test
-        fun `persists picture relation when setting id`() {
-            val board = persist(boardFactory.createBasic())
-            val user = persist(userFactory.createBasic())
-            val picture: File = persist(fileWithUploader(fileFactory.createImage()))
-
-            val member = boardMemberFactory.createBasic(board, user)
-            member.picture = entityManager.getReference(File::class.java, picture.id)
 
             val found = persistAndReload(member, BoardMember::class.java) { it.id }
 

@@ -38,41 +38,11 @@ class CommitteeMemberModelIT : ModelPersistenceTestSupport() {
         }
 
         @Test
-        fun `persists committee relation when setting id`() {
-            val committee = persistCommittee()
-            val user = persist(userFactory.createBasic())
-
-            val member = _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember()
-            member.user = user
-            member.committee = committee
-
-            val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
-
-            assertEquals(committee.id, found.committeeId)
-            assertEquals(committee.id, found.committee.id)
-        }
-
-        @Test
         fun `persists user relation when setting entity`() {
             val committee = persistCommittee()
             val user = persist(userFactory.createBasic())
 
             val member = committeeMemberFactory.createBasic(user, committee)
-
-            val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
-
-            assertEquals(user.id, found.userId)
-            assertEquals(user.id, found.user.id)
-        }
-
-        @Test
-        fun `persists user relation when setting id`() {
-            val committee = persistCommittee()
-            val user = persist(userFactory.createBasic())
-
-            val member = _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember()
-            member.committee = committee
-            member.user = user
 
             val found = persistAndReload(member, CommitteeMember::class.java) { it.id }
 

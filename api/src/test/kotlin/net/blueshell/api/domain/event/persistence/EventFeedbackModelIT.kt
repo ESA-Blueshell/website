@@ -35,18 +35,5 @@ class EventFeedbackModelIT : ModelPersistenceTestSupport() {
             assertEquals(event.id, found.eventId)
             Assertions.assertEquals(event.id, found.event.id)
         }
-
-        @Test
-        fun `persists event relation when setting id`() {
-            val event = persistEvent()
-            val feedback = eventFeedbackFactory.createBasic()
-            feedback.event = event
-            feedback.feedback = "Feedback"
-
-            val found = persistAndReload(feedback, EventFeedback::class.java) { it.id }
-
-            assertEquals(event.id, found.eventId)
-            Assertions.assertEquals(event.id, found.event.id)
-        }
     }
 }

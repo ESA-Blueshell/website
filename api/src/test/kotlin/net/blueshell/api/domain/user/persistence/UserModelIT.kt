@@ -85,18 +85,6 @@ class UserModelIT : ModelPersistenceTestSupport() {
             Assertions.assertEquals(address.id, found.addressId)
             Assertions.assertEquals(address.id, found.address?.id)
         }
-
-        @Test
-        fun `persists address relation when setting id`() {
-            val address = persist(addressFactory.createBasic())
-            val user = userFactory.createBasic()
-            user.address = address
-
-            val found = persistAndReload(user, User::class.java) { it.id }
-
-            Assertions.assertEquals(address.id, found.addressId)
-            Assertions.assertEquals(address.id, found.address?.id)
-        }
     }
 
     @Nested

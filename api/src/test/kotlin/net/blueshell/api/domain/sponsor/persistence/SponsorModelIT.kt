@@ -38,20 +38,6 @@ class SponsorModelIT : ModelPersistenceTestSupport() {
             Assertions.assertEquals(picture.id, found.pictureId)
             Assertions.assertEquals(picture.id, found.picture.id)
         }
-
-        @Test
-        fun `persists picture relation when setting id`() {
-            val picture = persist(fileWithUploader(fileFactory.createImage()))
-            val sponsor = sponsorFactory.createBasic()
-            sponsor.name = unique("sponsor")
-            sponsor.description = "Sponsor description"
-            sponsor.picture = picture
-
-            val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
-
-            Assertions.assertEquals(picture.id, found.pictureId)
-            Assertions.assertEquals(picture.id, found.picture.id)
-        }
     }
 
     @Nested

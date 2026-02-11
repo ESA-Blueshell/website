@@ -40,31 +40,6 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(2, found.members.size)
         }
-
-        @Test
-        fun `persists members relation when setting id`() {
-            val committee = committeeFactory.createBasic()
-            committee.name = unique("committee")
-            committee.description = "Description"
-            val savedCommittee = persist(committee)
-
-            val userOne = persist(userFactory.createBasic())
-            val userTwo = persist(userFactory.createBasic())
-            val memberOne = _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember()
-            memberOne.user = userOne
-            memberOne.committee = savedCommittee
-            val memberTwo = _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember()
-            memberTwo.user = userTwo
-            memberTwo.committee = savedCommittee
-            persist(memberOne)
-            persist(memberTwo)
-
-            entityManager.flush()
-            entityManager.clear()
-
-            val found = entityManager.find(Committee::class.java, savedCommittee.id)
-            assertEquals(2, found.members.size)
-        }
     }
 
     @Nested

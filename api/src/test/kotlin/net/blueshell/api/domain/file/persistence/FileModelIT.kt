@@ -49,22 +49,6 @@ class FileModelIT : ModelPersistenceTestSupport() {
         }
 
         @Test
-        fun `persists uploader relation when setting id`() {
-            val file = fileFactory.createBasic()
-            file.name = unique("file")
-            file.path = "/uploads/${unique("file")}.txt"
-            file.mediaType = "text/plain"
-            file.type = FileType.DOCUMENT
-            val uploader = persist(userFactory.createBasic())
-            file.uploader = uploader
-
-            val found = persistAndReload(file, File::class.java) { it.id }
-
-            Assertions.assertEquals(uploader.id, found.uploaderId)
-            Assertions.assertEquals(uploader.id, found.uploader.id)
-        }
-
-        @Test
         fun `last setter wins when switching uploader id`() {
             val file = fileFactory.createBasic()
             file.name = unique("file")

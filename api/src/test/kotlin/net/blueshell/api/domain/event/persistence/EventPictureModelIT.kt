@@ -28,37 +28,7 @@ class EventPictureModelIT : ModelPersistenceTestSupport() {
         }
 
         @Test
-        fun `persists event relation when setting id`() {
-            val event = persistEvent()
-            val file: File = persist(fileWithUploader(fileFactory.createImage()))
-
-            val picture = eventPictureFactory.createBasic()
-            picture.event = event
-            picture.picture = file
-
-            val found = persistAndReload(picture, EventPicture::class.java) { it.id }
-
-            assertEquals(event.id, found.eventId)
-            Assertions.assertEquals(event.id, found.event.id)
-        }
-
-        @Test
         fun `persists picture relation when setting entity`() {
-            val event = persistEvent()
-            val file: File = persist(fileWithUploader(fileFactory.createImage()))
-
-            val picture = eventPictureFactory.createBasic()
-            picture.event = event
-            picture.picture = file
-
-            val found = persistAndReload(picture, EventPicture::class.java) { it.id }
-
-            assertEquals(file.id, found.pictureId)
-            Assertions.assertEquals(file.id, found.picture.id)
-        }
-
-        @Test
-        fun `persists picture relation when setting id`() {
             val event = persistEvent()
             val file: File = persist(fileWithUploader(fileFactory.createImage()))
 

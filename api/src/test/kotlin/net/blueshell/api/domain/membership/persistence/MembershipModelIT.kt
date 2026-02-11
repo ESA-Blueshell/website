@@ -40,18 +40,6 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
             Assertions.assertEquals(user.id, found.userId)
             Assertions.assertEquals(user.id, found.user.id)
         }
-
-        @Test
-        fun `persists user relation when setting id`() {
-            val user = persist(userFactory.createBasic())
-            val membership = membershipFactory.createBasic(user)
-            membership.user = user
-
-            val found = persistAndReload(membership, Membership::class.java) { it.id }
-
-            Assertions.assertEquals(user.id, found.userId)
-            Assertions.assertEquals(user.id, found.user.id)
-        }
     }
 
     @Nested

@@ -20,16 +20,5 @@ class RedirectModelIT : ModelPersistenceTestSupport() {
 
             Assertions.assertEquals(telemetry.id, found.telemetry.id)
         }
-
-        @Test
-        fun `persists telemetry relation when setting id`() {
-            val telemetry = persist(telemetryFactory.createBasic())
-            val redirect = redirectFactory.createBasic()
-            redirect.telemetry = entityManager.getReference(Telemetry::class.java, telemetry.id)
-
-            val found = persistAndReload(redirect, Redirect::class.java) { it.id }
-
-            Assertions.assertEquals(telemetry.id, found.telemetry.id)
-        }
     }
 }

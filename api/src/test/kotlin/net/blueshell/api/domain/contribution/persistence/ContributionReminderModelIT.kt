@@ -27,37 +27,7 @@ class ContributionReminderModelIT : ModelPersistenceTestSupport() {
         }
 
         @Test
-        fun `persists user relation when setting id`() {
-            val user = persist(userFactory.createBasic())
-            val period = persist(contributionPeriodFactory.createBasic())
-
-            val reminder = contributionReminderFactory.createBasic()
-            reminder.user = user
-            reminder.contributionPeriod = period
-
-            val found = persistAndReload(reminder, ContributionReminder::class.java) { it.id }
-
-            assertEquals(user.id, found.userId)
-            assertEquals(user.id, found.user.id)
-        }
-
-        @Test
         fun `persists contribution period relation when setting entity`() {
-            val user = persist(userFactory.createBasic())
-            val period = persist(contributionPeriodFactory.createBasic())
-
-            val reminder = contributionReminderFactory.createBasic()
-            reminder.user = user
-            reminder.contributionPeriod = period
-
-            val found = persistAndReload(reminder, ContributionReminder::class.java) { it.id }
-
-            assertEquals(period.id, found.contributionPeriodId)
-            assertEquals(period.id, found.contributionPeriod.id)
-        }
-
-        @Test
-        fun `persists contribution period relation when setting id`() {
             val user = persist(userFactory.createBasic())
             val period = persist(contributionPeriodFactory.createBasic())
 

@@ -42,20 +42,5 @@ class BoardModelIT : ModelPersistenceTestSupport() {
 
             assertEquals(picture.id, found.picture?.id)
         }
-
-        @Test
-        fun `persists picture relation when setting id`() {
-            val board = boardFactory.createBasic()
-            board.name = unique("board")
-            board.candidate = "Candidate"
-            board.startDate = LocalDate.of(2023, 1, 1)
-            board.endDate = LocalDate.of(2023, 12, 31)
-            val picture = persist(fileWithUploader(fileFactory.createImage()))
-            board.picture = picture
-
-            val found = persistAndReload(board, Board::class.java) { it.id }
-
-            assertEquals(picture.id, found.picture?.id)
-        }
     }
 }

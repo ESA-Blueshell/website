@@ -41,21 +41,6 @@ class AnswerModelIT : ModelPersistenceTestSupport() {
             assertEquals(question.id, found.questionId)
             Assertions.assertEquals(question.id, found.question.id)
         }
-
-        @Test
-        fun `persists question relation when setting id`() {
-            val survey = persistSurvey()
-            val question = persistQuestionWithSurvey(survey)
-            val answer = answerFactory.createBasic()
-            answer.question = question
-            answer.optionSelections = mutableListOf(true, false, true)
-            answer.textResponse = "Response"
-
-            val found = persistAndReload(answer, Answer::class.java) { it.id }
-
-            assertEquals(question.id, found.questionId)
-            Assertions.assertEquals(question.id, found.question.id)
-        }
     }
 
     @Nested

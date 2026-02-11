@@ -59,22 +59,6 @@ class EventModelIT : ModelPersistenceTestSupport() {
             assertEquals(committee.id, found.committeeId)
             Assertions.assertEquals(committee.id, found.committee.id)
         }
-
-        @Test
-        fun `persists committee relation when setting id`() {
-            val committee = persistCommittee()
-            val event = eventFactory.createBasic()
-            event.committee = committee
-            event.title = unique("event")
-            event.startTime = timestamp().plusSeconds(3600)
-            event.endTime = timestamp().plusSeconds(7200)
-            event.signUp = false
-
-            val found = persistAndReload(event, Event::class.java) { it.id }
-
-            assertEquals(committee.id, found.committeeId)
-            Assertions.assertEquals(committee.id, found.committee.id)
-        }
     }
 
     @Nested

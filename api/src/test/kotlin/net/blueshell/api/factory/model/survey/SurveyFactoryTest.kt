@@ -16,16 +16,8 @@ class SurveyFactoryTest : ModelFactoryTestSupport() {
     @Test
     fun `creates persistable survey with questions`() {
         val survey = surveyFactory.createWithQuestions(2)
-        val questions = survey.questions.toList()
-        survey.questions.clear()
-
         val saved = persist(survey)
         entityManager.flush()
-
-        questions.forEach { question ->
-            question.survey = saved
-            persist(question)
-        }
 
         assertPersisted(Survey::class.java, saved.id)
     }

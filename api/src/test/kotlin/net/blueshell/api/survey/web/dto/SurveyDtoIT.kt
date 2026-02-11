@@ -23,18 +23,8 @@ class SurveyDtoIT @Autowired constructor(
         fun `persists mapped survey questions`() {
             val dto = surveyDTOFactory.createWithQuestionTypes(QuestionType.OPEN, QuestionType.RADIO)
             val survey = dto.asEntity()
-            val questions = survey.questions.toList()
-            survey.questions.clear()
-
             val saved = surveyService.create(survey)
             entityManager.flush()
-
-            questions.forEach { question ->
-                question.survey = saved
-                persist(question)
-            }
-
-            flushAndClear()
 
             val reloaded = reload(Survey::class.java, saved.id!!)
 

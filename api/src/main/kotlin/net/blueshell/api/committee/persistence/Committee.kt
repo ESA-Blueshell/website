@@ -34,4 +34,10 @@ class Committee : AuditedAutoIdEntity() {
     fun hasMember(user: User?): Boolean {
         return user != null && _members.any { cm -> cm.user.id == user.id }
     }
+
+    fun replaceMembers(members: List<CommitteeMember>) {
+        _members.clear()
+        _members.addAll(members)
+        _members.forEach { it.committee = this }
+    }
 }

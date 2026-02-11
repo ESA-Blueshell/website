@@ -26,8 +26,16 @@ fun CommitteeMemberDTO.asEntity(member: CommitteeMember = CommitteeMember()): Co
 fun AdvancedCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
     committee.name = name!!
     committee.description = description!!
-    val mappedMembers = members!!.map { it.asEntity() }
-    committee.members = mappedMembers
+
+    val existingByUserId = committee.members.associateBy { it.userId }
+
+    val updatedMembers = requireNotNull(members).map { dto ->
+        val member = existingByUserId[dto.userId] ?: CommitteeMember()
+        dto.asEntity(member)
+    }
+
+    committee.replaceMembers(updatedMembers)
+
     version?.let { committee.version = it }
     return committee
 }

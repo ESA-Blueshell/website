@@ -34,7 +34,7 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             val userTwo = persist(userFactory.createBasic())
             val memberOne = committeeMemberFactory.createBasic(userOne, committee)
             val memberTwo = committeeMemberFactory.createBasic(userTwo, committee)
-            committee.members = listOf(memberOne, memberTwo)
+            committee.replaceMembers(listOf(memberOne, memberTwo))
 
             val found = persistAndReload(committee, Committee::class.java) { it.id }
 

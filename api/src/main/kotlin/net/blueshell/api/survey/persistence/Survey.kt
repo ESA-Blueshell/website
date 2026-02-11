@@ -24,4 +24,15 @@ class Survey : AuditedAutoIdEntity() {
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)
     var responseCount: Long = 0
+
+    fun replaceQuestions(questions: List<Question>) {
+        questions.forEach { it.survey = this }
+        _questions.clear()
+        _questions.addAll(questions)
+    }
+
+    fun addQuestion(question: Question) {
+        question.survey = this
+        _questions.add(question)
+    }
 }

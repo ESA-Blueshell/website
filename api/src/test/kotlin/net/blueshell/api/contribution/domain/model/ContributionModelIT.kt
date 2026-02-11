@@ -32,7 +32,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
             val period = persist(contributionPeriodFactory.createBasic())
 
             val contribution = contributionFactory.createBasic()
-            contribution.userId = user.id!!
+            contribution.user = user
             contribution.contributionPeriod = period
 
             val found = persistAndReload(contribution, Contribution::class.java) { it.id }
@@ -63,7 +63,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
 
             val contribution = contributionFactory.createBasic()
             contribution.user = user
-            contribution.contributionPeriodId = period.id!!
+            contribution.contributionPeriod = period
 
             val found = persistAndReload(contribution, Contribution::class.java) { it.id }
 

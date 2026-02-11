@@ -31,7 +31,7 @@ class BoardMemberModelIT : ModelPersistenceTestSupport() {
 
             val member = BoardMember()
             member.user = user
-            member.boardId = board.id!!
+            member.board = board
 
             val found = persistAndReload(member, BoardMember::class.java) { it.id }
 
@@ -59,7 +59,7 @@ class BoardMemberModelIT : ModelPersistenceTestSupport() {
 
             val member = BoardMember()
             member.board = board
-            member.userId = user.id!!
+            member.user = user
 
             val found = persistAndReload(member, BoardMember::class.java) { it.id }
 

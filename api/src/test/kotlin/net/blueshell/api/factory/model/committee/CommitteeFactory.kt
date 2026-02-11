@@ -18,7 +18,7 @@ class CommitteeFactory(
         val committee = Committee()
         committee.name = faker.company().name() + " Committee"
         committee.description = faker.lorem().paragraph(3)
-        committee.members = mutableListOf()
+        committee.replaceMembers(listOf())
         return committee
     }
 

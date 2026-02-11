@@ -1,6 +1,7 @@
 package net.blueshell.api.factory.model.survey
 
 import com.github.javafaker.Faker
+import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
@@ -24,7 +25,7 @@ class SurveyFactory(
     fun createFull(): Survey {
         val survey = createBasic()
         repeat(faker.number().numberBetween(3, 8)) {
-            survey.questions.add(questionFactory.createForSurvey(survey))
+            survey.addQuestion(questionFactory.createForSurvey(survey))
         }
         return survey
     }
@@ -37,10 +38,11 @@ class SurveyFactory(
 
     fun createWithQuestions(count: Int): Survey {
         return createWithCustomizations { survey ->
-            survey.questions.clear()
+            val questions = mutableListOf<Question>()
             repeat(count) {
-                survey.questions.add(questionFactory.createForSurvey(survey))
+                questions.add(questionFactory.createFull())
             }
+            survey.replaceQuestions(questions)
         }
     }
 

@@ -46,7 +46,7 @@ class ValidEventSignUpValidatorTest @Autowired constructor(
         whenever(questionRepository.findById(Q_CHECK)).thenReturn(Optional.of(checkboxQuestion))
 
         val form = Survey()
-        form.questions.addAll(setOf(openQuestion, radioQuestion, checkboxQuestion))
+        form.replaceQuestions(listOf(openQuestion, radioQuestion, checkboxQuestion))
 
         val event = Event()
         ModelTestUtils.setId(event, 1L)

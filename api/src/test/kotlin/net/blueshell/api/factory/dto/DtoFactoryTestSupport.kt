@@ -114,11 +114,7 @@ abstract class DtoFactoryTestSupport {
         val eventId = dto.eventId!!
         val survey = Survey()
         ModelTestUtils.setId(survey, 1000L)
-        val surveyQuestions = survey.questions
-        questions.values.forEach { question ->
-            question.survey = survey
-            surveyQuestions.add(question)
-        }
+        survey.replaceQuestions(questions.values.toList())
 
         val event = Event()
         ModelTestUtils.setId(event, eventId)

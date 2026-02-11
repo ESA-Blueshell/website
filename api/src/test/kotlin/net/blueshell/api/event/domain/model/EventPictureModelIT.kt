@@ -32,7 +32,7 @@ class EventPictureModelIT : ModelPersistenceTestSupport() {
             val file: File = persist(fileWithUploader(fileFactory.createImage()))
 
             val picture = eventPictureFactory.createBasic()
-            picture.eventId = event.id!!
+            picture.event = event
             picture.picture = file
 
             val found = persistAndReload(picture, EventPicture::class.java) { it.id }
@@ -63,7 +63,7 @@ class EventPictureModelIT : ModelPersistenceTestSupport() {
 
             val picture = eventPictureFactory.createBasic()
             picture.event = event
-            picture.pictureId = file.id!!
+            picture.picture = file
 
             val found = persistAndReload(picture, EventPicture::class.java) { it.id }
 

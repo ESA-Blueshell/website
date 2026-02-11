@@ -39,7 +39,7 @@ class EventFeedbackModelIT : ModelPersistenceTestSupport() {
         fun `persists event relation when setting id`() {
             val event = persistEvent()
             val feedback = eventFeedbackFactory.createBasic()
-            feedback.eventId = event.id!!
+            feedback.event = event
             feedback.feedback = "Feedback"
 
             val found = persistAndReload(feedback, EventFeedback::class.java) { it.id }

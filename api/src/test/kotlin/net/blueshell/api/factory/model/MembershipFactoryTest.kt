@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.domain.membership.persistence.Membership
 import org.junit.jupiter.api.Test
 
 class MembershipFactoryTest : ModelFactoryTestSupport() {
@@ -12,7 +12,7 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         membership.user = user
 
         val saved = persist(membership)
-        assertPersisted(Membership::class.java, saved.id)
+        assertPersisted(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id)
     }
 
     @Test
@@ -22,7 +22,7 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         membership.user = user
 
         val saved = persist(membership)
-        assertPersisted(Membership::class.java, saved.id)
+        assertPersisted(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id)
     }
 
     @Test
@@ -32,6 +32,6 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         membership.user = user
 
         val saved = persist(membership)
-        assertPersisted(Membership::class.java, saved.id)
+        assertPersisted(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id)
     }
 }

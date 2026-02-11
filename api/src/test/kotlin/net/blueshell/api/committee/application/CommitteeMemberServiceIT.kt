@@ -1,7 +1,7 @@
 package net.blueshell.api.committee.application
 
-import net.blueshell.api.committee.application.event.CommitteeMembershipChanged
-import net.blueshell.api.committee.persistence.CommitteeMember
+import net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged
+import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 class CommitteeMemberServiceIT : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var committeeMemberService: CommitteeMemberService
+    private lateinit var committeeMemberService: net.blueshell.api.domain.committee.application.CommitteeMemberService
 
     @Autowired
     private lateinit var userService: UserService
@@ -45,7 +45,7 @@ class CommitteeMemberServiceIT : ServiceTestSupport() {
             val updatedUser = userService.findById(user.id!!)
             assertTrue(updatedUser.hasRole(Role.COMMITTEE))
             assertTrue(
-                applicationEvents.stream(CommitteeMembershipChanged::class.java).anyMatch { it.userId == user.id })
+                applicationEvents.stream(_root_ide_package_.net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged::class.java).anyMatch { it.userId == user.id })
         }
     }
 
@@ -62,7 +62,7 @@ class CommitteeMemberServiceIT : ServiceTestSupport() {
             assertTrue(userService.findById(user.id!!).hasRole(Role.COMMITTEE))
 
             committeeMemberService.deleteById(
-                CommitteeMember.Id(committeeId = committee.id!!, userId = user.id!!)
+                _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember.Id(committeeId = committee.id!!, userId = user.id!!)
             )
 
             val updatedUser = userService.findById(user.id!!)

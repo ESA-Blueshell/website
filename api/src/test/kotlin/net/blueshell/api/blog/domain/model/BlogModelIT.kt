@@ -1,7 +1,8 @@
 package net.blueshell.api.blog.persistence
 
-import net.blueshell.api.blog.web.mapping.asDto
-import net.blueshell.api.blog.web.mapping.asSocialDto
+import net.blueshell.api.domain.blog.persistence.Blog
+import net.blueshell.api.domain.blog.web.mapping.asDto
+import net.blueshell.api.domain.blog.web.mapping.asSocialDto
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals

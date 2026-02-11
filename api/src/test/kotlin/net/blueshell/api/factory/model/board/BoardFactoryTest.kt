@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model.board
 
-import net.blueshell.api.board.persistence.Board
+import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import org.junit.jupiter.api.Test
 

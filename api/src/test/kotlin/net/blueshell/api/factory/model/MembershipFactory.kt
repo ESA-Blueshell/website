@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.membership.persistence.Membership
+import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Component
@@ -18,8 +18,8 @@ class MembershipFactory(
     private val userFactory: UserFactory
 ) {
 
-    fun createBasic(user: User): Membership {
-        val membership = Membership()
+    fun createBasic(user: User): net.blueshell.api.domain.membership.persistence.Membership {
+        val membership = _root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership()
         membership.user = user
         membership.startDate = LocalDate.now().minusMonths(6)
         membership.memberType = faker.options().option(MemberType::class.java)
@@ -27,7 +27,7 @@ class MembershipFactory(
         return membership
     }
 
-    fun createFull(user: User): Membership {
+    fun createFull(user: User): net.blueshell.api.domain.membership.persistence.Membership {
         val membership = createBasic(user)
         if (faker.bool().bool()) {
             membership.endDate = LocalDate.now().plusMonths(6)
@@ -35,20 +35,20 @@ class MembershipFactory(
         return membership
     }
 
-    fun createWithCustomizations(user: User, customizer: Consumer<Membership>): Membership {
+    fun createWithCustomizations(user: User, customizer: Consumer<net.blueshell.api.domain.membership.persistence.Membership>): net.blueshell.api.domain.membership.persistence.Membership {
         val membership = createFull(user)
         customizer.accept(membership)
         return membership
     }
 
-    fun createActive(user: User): Membership {
+    fun createActive(user: User): net.blueshell.api.domain.membership.persistence.Membership {
         return createWithCustomizations(user) { membership ->
             membership.startDate = LocalDate.now().minusMonths(3)
             membership.endDate = null
         }
     }
 
-    fun createExpired(user: User): Membership {
+    fun createExpired(user: User): net.blueshell.api.domain.membership.persistence.Membership {
         return createWithCustomizations(user) { membership ->
             membership.startDate = LocalDate.now().minusYears(2)
             membership.endDate = LocalDate.now().minusYears(1)

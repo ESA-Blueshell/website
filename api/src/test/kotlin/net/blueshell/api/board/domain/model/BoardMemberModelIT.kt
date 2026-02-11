@@ -1,5 +1,6 @@
 package net.blueshell.api.board.persistence
 
+import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals

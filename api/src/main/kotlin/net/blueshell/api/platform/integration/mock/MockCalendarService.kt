@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.platform.integration.calendar.CalendarService
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary

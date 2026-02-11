@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.blog.persistence.Blog
+import net.blueshell.api.domain.blog.persistence.Blog
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong

@@ -1,6 +1,6 @@
 package net.blueshell.api.committee.web
 
-import net.blueshell.api.committee.web.dto.AdvancedCommitteeDTO
+import net.blueshell.api.domain.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
@@ -148,7 +148,7 @@ class CommitteeControllerIT @Autowired constructor(
             .andExpect(status().isNotFound())
     }
 
-    private fun createCommittee(board: User, member: User): AdvancedCommitteeDTO {
+    private fun createCommittee(board: User, member: User): net.blueshell.api.domain.committee.web.dto.AdvancedCommitteeDTO {
         val payload = committeePayload(board, member)
         val result = mvc.perform(
             post("/committees")

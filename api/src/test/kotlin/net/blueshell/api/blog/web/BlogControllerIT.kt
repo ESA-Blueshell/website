@@ -1,6 +1,6 @@
 package net.blueshell.api.blog.web
 
-import net.blueshell.api.blog.web.dto.BlogDTO
+import net.blueshell.api.domain.blog.web.dto.BlogDTO
 import net.blueshell.api.factory.UnifiedFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport

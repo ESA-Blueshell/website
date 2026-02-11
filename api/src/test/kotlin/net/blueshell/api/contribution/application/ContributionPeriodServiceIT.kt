@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 class ContributionPeriodServiceIT : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var periods: ContributionPeriodService
+    private lateinit var periods: net.blueshell.api.domain.contribution.application.ContributionPeriodService
 
     @Autowired
     private lateinit var periodFactory: ContributionPeriodFactory

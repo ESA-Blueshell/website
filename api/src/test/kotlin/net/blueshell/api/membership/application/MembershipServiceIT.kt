@@ -2,7 +2,7 @@ package net.blueshell.api.membership.application
 
 import net.blueshell.api.factory.model.MembershipFactory
 import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.membership.application.event.MembershipChanged
+import net.blueshell.api.domain.membership.application.event.MembershipChanged
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.user.application.UserService
@@ -16,7 +16,7 @@ import java.time.LocalDate
 class MembershipServiceIT : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var memberships: MembershipService
+    private lateinit var memberships: net.blueshell.api.domain.membership.application.MembershipService
 
     @Autowired
     private lateinit var users: UserService
@@ -39,7 +39,7 @@ class MembershipServiceIT : ServiceTestSupport() {
 
             val updatedUser = users.findById(user.id!!)
             assertTrue(updatedUser.hasRole(Role.MEMBER))
-            assertTrue(applicationEvents.stream(MembershipChanged::class.java).anyMatch { it.userId == user.id })
+            assertTrue(applicationEvents.stream(_root_ide_package_.net.blueshell.api.domain.membership.application.event.MembershipChanged::class.java).anyMatch { it.userId == user.id })
         }
     }
 

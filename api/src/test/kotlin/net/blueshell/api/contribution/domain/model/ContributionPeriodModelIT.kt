@@ -1,6 +1,6 @@
 package net.blueshell.api.contribution.persistence
 
-import net.blueshell.api.contribution.web.mapping.asDto
+import net.blueshell.api.domain.contribution.web.mapping.asDto
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
@@ -22,7 +22,7 @@ class ContributionPeriodModelIT : ModelPersistenceTestSupport() {
             period.alumniFee = 5.0
             period.listId = 99
 
-            val found = persistAndReload(period, ContributionPeriod::class.java) { it.id }
+            val found = persistAndReload(period, _root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionPeriod::class.java) { it.id }
 
             assertEquals(period.startDate, found.startDate)
             assertEquals(period.endDate, found.endDate)

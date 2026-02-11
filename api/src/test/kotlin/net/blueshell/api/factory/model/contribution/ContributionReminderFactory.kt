@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.contribution
 
 import com.github.javafaker.Faker
-import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.factory.model.UserFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
@@ -17,8 +17,8 @@ class ContributionReminderFactory(
     private val contributionPeriodFactory: ContributionPeriodFactory
 ) {
 
-    fun createBasic(): ContributionReminder {
-        val reminder = ContributionReminder()
+    fun createBasic(): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
+        val reminder = _root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionReminder()
         val user = userFactory.createBasic()
         val period = contributionPeriodFactory.createBasic()
         reminder.user = user
@@ -26,9 +26,9 @@ class ContributionReminderFactory(
         return reminder
     }
 
-    fun createFull(): ContributionReminder = createBasic()
+    fun createFull(): net.blueshell.api.domain.contribution.persistence.ContributionReminder = createBasic()
 
-    fun createWithCustomizations(customizer: Consumer<ContributionReminder>): ContributionReminder {
+    fun createWithCustomizations(customizer: Consumer<net.blueshell.api.domain.contribution.persistence.ContributionReminder>): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
         val reminder = createFull()
         customizer.accept(reminder)
         return reminder

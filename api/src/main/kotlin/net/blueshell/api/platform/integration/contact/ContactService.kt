@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact
 
-import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.application.UserService
 import net.blueshell.api.user.persistence.User

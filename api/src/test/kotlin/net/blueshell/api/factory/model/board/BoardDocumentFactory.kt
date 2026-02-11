@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.board
 
 import com.github.javafaker.Faker
-import net.blueshell.api.board.persistence.BoardDocument
+import net.blueshell.api.domain.board.persistence.BoardDocument
 import net.blueshell.api.factory.model.FileFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong

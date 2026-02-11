@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.contribution
 
 import com.github.javafaker.Faker
-import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.factory.model.UserFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
@@ -17,8 +17,8 @@ class ContributionFactory(
     private val contributionPeriodFactory: ContributionPeriodFactory
 ) {
 
-    fun createBasic(): Contribution {
-        val contribution = Contribution()
+    fun createBasic(): net.blueshell.api.domain.contribution.persistence.Contribution {
+        val contribution = _root_ide_package_.net.blueshell.api.domain.contribution.persistence.Contribution()
         val user = userFactory.createBasic()
         val period = contributionPeriodFactory.createBasic()
         contribution.user = user
@@ -26,9 +26,9 @@ class ContributionFactory(
         return contribution
     }
 
-    fun createFull(): Contribution = createBasic()
+    fun createFull(): net.blueshell.api.domain.contribution.persistence.Contribution = createBasic()
 
-    fun createWithCustomizations(customizer: Consumer<Contribution>): Contribution {
+    fun createWithCustomizations(customizer: Consumer<net.blueshell.api.domain.contribution.persistence.Contribution>): net.blueshell.api.domain.contribution.persistence.Contribution {
         val contribution = createFull()
         customizer.accept(contribution)
         return contribution

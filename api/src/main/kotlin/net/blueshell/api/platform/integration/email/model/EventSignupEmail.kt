@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.email.model
 
-import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.platform.integration.email.model.base.BaseEmail
 import net.blueshell.api.user.persistence.User
 

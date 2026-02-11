@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.factory.model.board.BoardDocumentFactory
 import net.blueshell.api.factory.model.board.BoardFactory
@@ -143,7 +143,7 @@ abstract class ModelFactoryTestSupport {
         return persist(committee)
     }
 
-    protected fun persistContributionPeriod(): ContributionPeriod {
+    protected fun persistContributionPeriod(): net.blueshell.api.domain.contribution.persistence.ContributionPeriod {
         val period = contributionPeriodFactory.createBasic()
         return persist(period)
     }

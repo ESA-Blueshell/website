@@ -3,7 +3,7 @@ package net.blueshell.api.platform.config
 import io.swagger.v3.core.converter.ModelConverters
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
-import net.blueshell.api.committee.web.dto.SimpleCommitteeDTO
+import net.blueshell.api.domain.committee.web.dto.SimpleCommitteeDTO
 import net.blueshell.api.user.web.dto.PersonalInfoDTO
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean

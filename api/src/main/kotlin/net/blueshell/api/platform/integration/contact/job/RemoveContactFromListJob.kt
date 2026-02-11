@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.contact.job
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import net.blueshell.api.contribution.application.ContributionPeriodService
+import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.platform.integration.contact.ContactService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.platform.integration.queue.ContactJobs

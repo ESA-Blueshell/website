@@ -2,7 +2,7 @@ package net.blueshell.api.shared.mapper
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
@@ -76,7 +76,7 @@ abstract class MapperTestSupport {
 
     protected fun persistCommittee(): Committee = persist(committeeFactory.createBasic())
 
-    protected fun persistContributionPeriod(): ContributionPeriod = persist(contributionPeriodFactory.createBasic())
+    protected fun persistContributionPeriod(): net.blueshell.api.domain.contribution.persistence.ContributionPeriod = persist(contributionPeriodFactory.createBasic())
 
     protected fun persistSurvey(): Survey = persist(surveyFactory.createBasic())
 

@@ -3,7 +3,7 @@ package net.blueshell.api.membership.web.validation
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator
 import net.blueshell.api.factory.dto.MembershipDTOFactory
-import net.blueshell.api.membership.web.dto.MembershipDTO
+import net.blueshell.api.domain.membership.web.dto.MembershipDTO
 import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.validation.group.Creation
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -40,12 +40,12 @@ class MembershipValidatorTest @Autowired constructor(
     @Test
     fun `membership dto with end date before start date fails validation`() {
         val startDate = LocalDate.now()
-        val dto: MembershipDTO = membershipFactory.createWithCustomizations {
+        val dto: net.blueshell.api.domain.membership.web.dto.MembershipDTO = membershipFactory.createWithCustomizations {
             it.startDate = startDate
             it.endDate = startDate.minusDays(1)
         }
 
-        val violations: Set<ConstraintViolation<MembershipDTO>> = validator.validate(dto)
+        val violations: Set<ConstraintViolation<net.blueshell.api.domain.membership.web.dto.MembershipDTO>> = validator.validate(dto)
         // No cross-field constraint asserted here.
         assertTrue(
             violations.none {

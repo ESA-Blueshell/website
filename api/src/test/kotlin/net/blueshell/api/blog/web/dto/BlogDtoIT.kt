@@ -1,8 +1,8 @@
 package net.blueshell.api.blog.web.dto
 
-import net.blueshell.api.blog.application.BlogService
-import net.blueshell.api.blog.persistence.Blog
-import net.blueshell.api.blog.web.mapping.asEntity
+import net.blueshell.api.domain.blog.application.BlogService
+import net.blueshell.api.domain.blog.persistence.Blog
+import net.blueshell.api.domain.blog.web.mapping.asEntity
 import net.blueshell.api.factory.dto.BlogDTOFactory
 import net.blueshell.api.factory.model.BlogFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport

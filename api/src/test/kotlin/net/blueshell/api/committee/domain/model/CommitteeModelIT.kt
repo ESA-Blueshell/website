@@ -1,7 +1,7 @@
 package net.blueshell.api.committee.persistence
 
-import net.blueshell.api.committee.web.mapping.asAdvancedDto
-import net.blueshell.api.committee.web.mapping.asSimpleDto
+import net.blueshell.api.domain.committee.web.mapping.asAdvancedDto
+import net.blueshell.api.domain.committee.web.mapping.asSimpleDto
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
@@ -18,7 +18,7 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             committee.name = unique("committee")
             committee.description = "Description"
 
-            val found = persistAndReload(committee, Committee::class.java) { it.id }
+            val found = persistAndReload(committee, _root_ide_package_.net.blueshell.api.domain.committee.persistence.Committee::class.java) { it.id }
 
             assertEquals(committee.name, found.name)
             assertEquals(committee.description, found.description)
@@ -36,7 +36,7 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             val memberTwo = committeeMemberFactory.createBasic(userTwo, committee)
             committee.replaceMembers(listOf(memberOne, memberTwo))
 
-            val found = persistAndReload(committee, Committee::class.java) { it.id }
+            val found = persistAndReload(committee, _root_ide_package_.net.blueshell.api.domain.committee.persistence.Committee::class.java) { it.id }
 
             assertEquals(2, found.members.size)
         }
@@ -50,10 +50,10 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
 
             val userOne = persist(userFactory.createBasic())
             val userTwo = persist(userFactory.createBasic())
-            val memberOne = CommitteeMember()
+            val memberOne = _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember()
             memberOne.user = userOne
             memberOne.committee = savedCommittee
-            val memberTwo = CommitteeMember()
+            val memberTwo = _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember()
             memberTwo.user = userTwo
             memberTwo.committee = savedCommittee
             persist(memberOne)
@@ -62,7 +62,7 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             entityManager.flush()
             entityManager.clear()
 
-            val found = entityManager.find(Committee::class.java, savedCommittee.id)
+            val found = entityManager.find(_root_ide_package_.net.blueshell.api.domain.committee.persistence.Committee::class.java, savedCommittee.id)
             assertEquals(2, found.members.size)
         }
     }
@@ -78,7 +78,7 @@ class CommitteeModelIT : ModelPersistenceTestSupport() {
             entityManager.flush()
             entityManager.clear()
 
-            val reloaded = entityManager.find(Committee::class.java, committee.id)
+            val reloaded = entityManager.find(_root_ide_package_.net.blueshell.api.domain.committee.persistence.Committee::class.java, committee.id)
             val dto = reloaded.asAdvancedDto()
 
             assertEquals(reloaded.id, dto.id)

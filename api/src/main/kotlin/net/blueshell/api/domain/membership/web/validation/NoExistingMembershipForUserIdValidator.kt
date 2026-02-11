@@ -1,0 +1,20 @@
+package net.blueshell.api.domain.membership.web.validation
+
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
+import net.blueshell.api.domain.membership.application.MembershipService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
+
+/**
+ * Validator to check if the username is unique.
+ */
+@Component
+class NoExistingMembershipForUserIdValidator @Autowired constructor(private val members: MembershipService) :
+    ConstraintValidator<NoExistingMembershipForUserId?, Long?> {
+    override fun isValid(userId: Long?, context: ConstraintValidatorContext?): Boolean {
+        if (userId == null) return true
+
+        return !members.existsByUserId(userId)
+    }
+}

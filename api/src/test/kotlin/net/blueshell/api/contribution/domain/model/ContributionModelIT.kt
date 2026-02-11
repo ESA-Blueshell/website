@@ -1,6 +1,6 @@
 package net.blueshell.api.contribution.persistence
 
-import net.blueshell.api.contribution.web.mapping.asDto
+import net.blueshell.api.domain.contribution.web.mapping.asDto
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
@@ -20,7 +20,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
             contribution.user = user
             contribution.contributionPeriod = period
 
-            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+            val found = persistAndReload(contribution, _root_ide_package_.net.blueshell.api.domain.contribution.persistence.Contribution::class.java) { it.id }
 
             assertEquals(user.id, found.userId)
             assertEquals(user.id, found.user.id)
@@ -35,7 +35,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
             contribution.user = user
             contribution.contributionPeriod = period
 
-            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+            val found = persistAndReload(contribution, _root_ide_package_.net.blueshell.api.domain.contribution.persistence.Contribution::class.java) { it.id }
 
             assertEquals(user.id, found.userId)
             assertEquals(user.id, found.user.id)
@@ -50,7 +50,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
             contribution.user = user
             contribution.contributionPeriod = period
 
-            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+            val found = persistAndReload(contribution, _root_ide_package_.net.blueshell.api.domain.contribution.persistence.Contribution::class.java) { it.id }
 
             assertEquals(period.id, found.contributionPeriodId)
             assertEquals(period.id, found.contributionPeriod.id)
@@ -65,7 +65,7 @@ class ContributionModelIT : ModelPersistenceTestSupport() {
             contribution.user = user
             contribution.contributionPeriod = period
 
-            val found = persistAndReload(contribution, Contribution::class.java) { it.id }
+            val found = persistAndReload(contribution, _root_ide_package_.net.blueshell.api.domain.contribution.persistence.Contribution::class.java) { it.id }
 
             assertEquals(period.id, found.contributionPeriodId)
             assertEquals(period.id, found.contributionPeriod.id)

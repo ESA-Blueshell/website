@@ -10,7 +10,7 @@ import jakarta.validation.Validator
 import net.blueshell.api.event.application.EventService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.web.dto.EventSignUpDTO
-import net.blueshell.api.membership.application.MembershipService
+import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.platform.config.FactoryConfig
 import net.blueshell.api.platform.config.PhoneNumberConfig
 import net.blueshell.api.shared.enums.QuestionType
@@ -162,7 +162,7 @@ class DtoFactoryTestConfig {
     fun userService(): net.blueshell.api.user.application.UserService = mockk(relaxed = true)
 
     @Bean
-    fun membershipService(): MembershipService = mockk(relaxed = true)
+    fun membershipService(): net.blueshell.api.domain.membership.application.MembershipService = mockk(relaxed = true)
 
     @Bean
     fun eventService(): EventService = mockk(relaxed = true)

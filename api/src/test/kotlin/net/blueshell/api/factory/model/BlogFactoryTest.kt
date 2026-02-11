@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.blog.persistence.Blog
+import net.blueshell.api.domain.blog.persistence.Blog
 import org.junit.jupiter.api.Test
 
 class BlogFactoryTest : ModelFactoryTestSupport() {

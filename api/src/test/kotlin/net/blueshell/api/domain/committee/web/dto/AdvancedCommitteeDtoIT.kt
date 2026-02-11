@@ -28,9 +28,7 @@ class AdvancedCommitteeDtoIT @Autowired constructor(
                 it.members!![0].userId = chair.id!!
                 it.members!![1].userId = member.id!!
             }
-            val committee = committeeFactory.createBasic()
-
-            val mapped = dto.asEntity(committee)
+            val mapped = dto.asEntity()
             val saved = committeeService.create(mapped)
             flushAndClear()
 

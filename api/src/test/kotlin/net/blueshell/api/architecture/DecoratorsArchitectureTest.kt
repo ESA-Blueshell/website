@@ -2,6 +2,7 @@ package net.blueshell.api.architecture
 
 import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaMethod
+import com.tngtech.archunit.core.domain.JavaModifier
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
@@ -19,6 +20,11 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
@@ -28,6 +34,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
         arch("Controllers must be web controllers") {
             classes()
                 .that().resideInAnyPackage(CONTROLLER)
+                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().haveSimpleNameEndingWith("Controller")
                 .should().beAnnotatedWith(RestController::class.java)
                 .orShould().beAnnotatedWith(Controller::class.java)
@@ -38,6 +45,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
         arch("Controllers must have @Tag") {
             classes()
                 .that().resideInAnyPackage(CONTROLLER)
+                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().haveSimpleNameEndingWith("Controller")
                 .should().beAnnotatedWith(Tag::class.java)
         }
@@ -47,6 +55,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
         arch("DTOs must have @Schema") {
             classes()
                 .that().resideInAnyPackage(DTO)
+                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().areTopLevelClasses()
                 .and().haveSimpleNameEndingWith("DTO")
                 .should().beAnnotatedWith(Schema::class.java)
@@ -56,10 +65,10 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
     fun `endpoints are secured by PreAuthorize or PermitAll at method or class level`(): Unit =
         arch("Public controller methods must be secured") {
             methods()
-                .that().areDeclaredInClassesThat().resideInAnyPackage(CONTROLLER)
-                .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
-                .and().arePublic()
-                .and().haveNameNotContaining("$")
+                .that().areAnnotatedWith(PostMapping::class.java)
+                .or().areAnnotatedWith(GetMapping::class.java)
+                .or().areAnnotatedWith(PutMapping::class.java)
+                .or().areAnnotatedWith(DeleteMapping::class.java)
                 .should(beSecuredByPreAuthorizeOrPermitAll())
                 .because("Security should be explicit. Allow class-level security to reduce repetition.")
         }

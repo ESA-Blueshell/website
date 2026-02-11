@@ -36,7 +36,7 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
         arch("Controllers must not depend on JPA/Hibernate") {
             noClasses()
                 .that().resideInAnyPackage(CONTROLLER)
-                .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..", "org.hibernate..")
+                .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..", "org.hibernate..", "..repository..")
         }
 
     @Test

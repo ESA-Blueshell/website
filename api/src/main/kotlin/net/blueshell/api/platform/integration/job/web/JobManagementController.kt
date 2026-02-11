@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.job.web
 
+import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.job.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
@@ -12,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException
 @RestController
 @RequestMapping("/management/jobs")
 @PreAuthorize("hasAuthority('ADMIN')")
+@Tag(name = "Job Management", description = "API for managing job executions")
 class JobManagementController(
     private val jobExecutionService: JobExecutionService,
     private val jobDispatcher: JobDispatcher

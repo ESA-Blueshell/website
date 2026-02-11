@@ -45,7 +45,6 @@ class EventFactory(
         if (event.signUp) {
             val survey = surveyFactory.createBasic()
             event.signUpForm = survey
-            event.signUpFormId = survey.id
         }
         return event
     }
@@ -65,7 +64,6 @@ class EventFactory(
             event.signUp = true
             val survey = surveyFactory.createBasic()
             event.signUpForm = survey
-            event.signUpFormId = survey.id
         }
     }
 

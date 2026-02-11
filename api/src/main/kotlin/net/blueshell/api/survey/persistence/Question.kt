@@ -33,17 +33,6 @@ class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
     var idx: Long = 0
 
-    @field:Column(name = "survey_id", nullable = false, updatable = false, insertable = false)
-    var surveyId: Long = 0
-        get() = requireNotNull(_survey?.id) { "Survey ID is required" }
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _survey?.id) {
-                _survey = Survey::class.asRef(value)
-            }
-        }
-
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "survey_id", nullable = false)
     private var _survey: Survey? = null
@@ -51,8 +40,9 @@ class Question : DirtyAwareModel() {
         get() = requireNotNull(_survey) { "Survey is required" }
         set(value) {
             _survey = value
-            surveyId = value.id ?: surveyId
         }
+
+    val surveyId: Long get() = requireNotNull(_survey?.id) { "Survey ID is required" }
 
     @OneToMany(mappedBy = "_question", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _answers: MutableSet<Answer> = linkedSetOf()

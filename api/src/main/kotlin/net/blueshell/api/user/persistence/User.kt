@@ -126,20 +126,9 @@ class User(
         get() = _address
         set(value) {
             _address = value
-            addressId = value?.id
         }
 
-    @field:Column(name = "address_id", updatable = false, insertable = false)
-    var addressId: Long? = null
-        get() = _address?.id
-        set(value) {
-            field = value
-            if (value == null) {
-                _address = null
-            } else if (value != _address?.id) {
-                _address = Address::class.asRef(value)
-            }
-        }
+    val addressId: Long? get() = _address?.id
 
     @Column(nullable = false)
     var email: String = ""
@@ -156,20 +145,9 @@ class User(
         get() = _profilePicture
         set(value) {
             _profilePicture = value
-            profilePictureId = value?.id
         }
 
-    @field:Column(name = "profile_picture_id", updatable = false, insertable = false)
-    var profilePictureId: Long? = null
-        get() = _profilePicture?.id
-        set(value) {
-            field = value
-            if (value == null) {
-                _profilePicture = null
-            } else if (value != _profilePicture?.id) {
-                _profilePicture = File::class.asRef(value)
-            }
-        }
+    val profilePictureId: Long? get() = _profilePicture?.id
 
 
     @OneToMany(mappedBy = "_user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)

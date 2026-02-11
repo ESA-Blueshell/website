@@ -56,14 +56,19 @@ class EventService @Autowired constructor(
     }
 
     private fun mergeAssociations(event: Event) {
+        // Set parent reference for one-to-one owned relationship
         event.banner?.let { banner ->
             banner.event = event
+            // Replace transient file entity with reference if it has an ID
             banner.file.id?.let { fileId ->
                 banner.file = File::class.asRef(fileId)
             }
         }
+        // Set parent references for one-to-many nested relationship
         event.signUpForm?.let { survey ->
-            survey.questions.forEach { question -> question.survey = survey }
+            survey.questions.forEach { question ->
+                question.survey = survey
+            }
         }
     }
 }

@@ -12,17 +12,20 @@ class SurveyService @Autowired constructor(repository: SurveyRepository) :
     BaseModelService<Survey, Long, SurveyRepository>(repository) {
     @Transactional
     override fun create(entity: Survey): Survey {
-        mergeQuestions(entity)
+        mergeAssociations(entity)
         return super.create(entity)
     }
 
     @Transactional
     override fun update(entity: Survey): Survey {
-        mergeQuestions(entity)
+        mergeAssociations(entity)
         return super.update(entity)
     }
 
-    private fun mergeQuestions(survey: Survey) {
-        survey.questions.forEach { question -> question.survey = survey }
+    private fun mergeAssociations(survey: Survey) {
+        // Set parent references for one-to-many relationship
+        survey.questions.forEach { question ->
+            question.survey = survey
+        }
     }
 }

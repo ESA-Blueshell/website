@@ -473,7 +473,7 @@ class DatabaseSeeder(
             startDate = period.startDate
             endDate = period.endDate
             memberType = MemberType.REGULAR
-            userId = user.id!!
+            this.user = user
         }
         return requireNotNull(membershipService.create(membership)) { "Membership create returned null" }
     }
@@ -562,8 +562,8 @@ class DatabaseSeeder(
         }
 
         val member = CommitteeMember().apply {
-            userId = user.id!!
-            this.committeeId = committee.id!!
+            this.user = user
+            this.committee = committee
             this.role = role
         }
 
@@ -610,7 +610,7 @@ class DatabaseSeeder(
             if (signUp && withForm) createSurveyWithAllQuestionTypes() else null
 
         val event = Event().apply {
-            committeeId = committee.id!!
+            this.committee = committee
             this.title = title
             description = "Description for $title"
             location = "Test Location"
@@ -635,8 +635,8 @@ class DatabaseSeeder(
         findExistingSignUp(event.id!!, user.id!!)?.let { return it }
 
         val signUp = EventSignUp().apply {
-            eventId = event.id!!
-            userId = user.id
+            this.event = event
+            this.user = user
 
             val form = event.signUpForm
             if (event.signUp && form?.questions != null) {
@@ -730,7 +730,7 @@ class DatabaseSeeder(
 
     private fun createAnswerForQuestion(q: Question): Answer {
         val a = Answer().apply {
-            questionId = q.id!!
+            this.question = q
         }
 
         when (q.type) {
@@ -766,8 +766,8 @@ class DatabaseSeeder(
 
     private fun createGuestEventSignUpWithAnswers(guest: Guest, event: Event): EventSignUp {
         val signUp = EventSignUp().apply {
-            eventId = event.id!!
-            userId = null
+            this.event = event
+            user = null
             this.guest = guest
 
             val form = event.signUpForm

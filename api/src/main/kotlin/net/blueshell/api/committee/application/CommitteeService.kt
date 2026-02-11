@@ -13,13 +13,13 @@ class CommitteeService @Autowired constructor(
 ) : BaseModelService<Committee, Long, CommitteeRepository>(repository) {
     @Transactional
     override fun create(entity: Committee): Committee {
-        mergeMembers(entity)
+        mergeAssociations(entity)
         return super.create(entity)
     }
 
     @Transactional
     override fun update(entity: Committee): Committee {
-        mergeMembers(entity)
+        mergeAssociations(entity)
         return super.update(entity)
     }
 
@@ -27,7 +27,10 @@ class CommitteeService @Autowired constructor(
         return repository.findAllByUserId(id) as MutableList<Committee>
     }
 
-    private fun mergeMembers(committee: Committee) {
-        committee.members.forEach { it.committee = committee }
+    private fun mergeAssociations(committee: Committee) {
+        // Set parent references for one-to-many relationship
+        committee.members.forEach { member ->
+            member.committee = committee
+        }
     }
 }

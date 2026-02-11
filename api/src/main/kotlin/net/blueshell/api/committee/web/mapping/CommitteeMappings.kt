@@ -5,6 +5,8 @@ import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.committee.web.dto.CommitteeMemberDTO
 import net.blueshell.api.committee.web.dto.SimpleCommitteeDTO
+import net.blueshell.api.shared.model.asRef
+import net.blueshell.api.user.persistence.User
 import tech.mappie.api.ObjectMappie
 
 object CommitteeMemberToCommitteeMemberDTOMapper : ObjectMappie<CommitteeMember, CommitteeMemberDTO>()
@@ -14,10 +16,10 @@ object CommitteeToAdvancedCommitteeDTOMapper : ObjectMappie<Committee, AdvancedC
 object CommitteeToSimpleCommitteeDTOMapper : ObjectMappie<Committee, SimpleCommitteeDTO>()
 
 fun CommitteeMemberDTO.asEntity(member: CommitteeMember = CommitteeMember()): CommitteeMember {
-    member.userId = userId!!
-    member.committeeId = committeeId!!
+    member.user = User::class.asRef(userId!!)
+    member.committee = Committee::class.asRef(committeeId!!)
     member.role = role
-    member.version = version!!
+    version?.let { member.version = it }
     return member
 }
 
@@ -25,14 +27,14 @@ fun AdvancedCommitteeDTO.asEntity(committee: Committee = Committee()): Committee
     committee.name = name!!
     committee.description = description!!
     committee.members = members!!.map { it.asEntity() }
-    committee.version = version!!
+    version?.let { committee.version = it }
     return committee
 }
 
 fun SimpleCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
     committee.name = name!!
     committee.description = description!!
-    committee.version = version!!
+    version?.let { committee.version = it }
     return committee
 }
 

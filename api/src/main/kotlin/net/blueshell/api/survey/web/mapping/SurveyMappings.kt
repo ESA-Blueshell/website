@@ -1,5 +1,6 @@
 package net.blueshell.api.survey.web.mapping
 
+import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
@@ -15,7 +16,7 @@ object QuestionToQuestionDTOMapper : ObjectMappie<Question, QuestionDTO>()
 object AnswerToAnswerDTOMapper : ObjectMappie<Answer, AnswerDTO>()
 
 fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
-    survey.version = version!!
+    version?.let { survey.version = it }
     survey.questions.addAll(questions!!.map { it.asEntity() })
     survey.questions.forEach { it.survey = survey }
     return survey
@@ -23,19 +24,19 @@ fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
 
 fun QuestionDTO.asEntity(question: Question = Question()): Question {
     question.idx = idx!!
-    question.surveyId = surveyId!!
+    question.survey = Survey::class.asRef(surveyId!!)
     question.type = type!!
     question.label = label!!
     question.choiceLabels = choiceLabels
-    question.version = version!!
+    version?.let { question.version = it }
     return question
 }
 
 fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
-    answer.questionId = questionId!!
+    answer.question = Question::class.asRef(questionId!!)
     answer.optionSelections = optionSelections
     answer.textResponse = textResponse
-    answer.version = version!!
+    version?.let { answer.version = it }
     return answer
 }
 

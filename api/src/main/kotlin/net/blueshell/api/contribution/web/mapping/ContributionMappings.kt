@@ -18,7 +18,7 @@ object ContributionReminderToContributionReminderDTOMapper :
 fun ContributionDTO.asEntity(contribution: Contribution = Contribution()): Contribution {
     contribution.userId = userId!!
     contribution.contributionPeriodId = contributionPeriodId!!
-    contribution.version = version!!
+    version?.let { contribution.version = it }
     return contribution
 }
 
@@ -29,14 +29,14 @@ fun ContributionPeriodDTO.asEntity(period: ContributionPeriod = ContributionPeri
     period.fullYearFee = fullYearFee!!
     period.alumniFee = alumniFee!!
     period.listId = listId!!
-    period.version = version!!
+    version?.let { period.version = it }
     return period
 }
 
 fun ContributionReminderDTO.asEntity(reminder: ContributionReminder = ContributionReminder()): ContributionReminder {
     reminder.userId = userId!!
     reminder.contributionPeriodId = contributionPeriodId!!
-    reminder.version = version!!
+    version?.let { reminder.version = it }
     return reminder
 }
 

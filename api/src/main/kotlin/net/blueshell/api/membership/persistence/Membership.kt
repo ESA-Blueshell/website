@@ -31,19 +31,9 @@ class Membership : AuditedAutoIdEntity() {
         get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
-            userId = _user?.id ?: userId
         }
 
-    @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
-    var userId: Long = 0
-        get() = _user?.id ?: field
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _user?.id) {
-                _user = User::class.asRef(value)
-            }
-        }
+    val userId: Long get() = requireNotNull(_user?.id) { "userId is required" }
 
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate = LocalDate.now()

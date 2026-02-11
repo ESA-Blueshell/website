@@ -33,7 +33,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
             val user = persist(userFactory.createBasic())
 
             val signUp = EventSignUp()
-            signUp.eventId = event.id!!
+            signUp.event = event
             signUp.user = user
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
@@ -65,7 +65,6 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
             val signUp = EventSignUp()
             signUp.event = event
             signUp.user = null
-            signUp.userId = user.id
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
 
@@ -82,7 +81,6 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
             val signUp = EventSignUp()
             signUp.event = event
             signUp.user = user
-            signUp.userId = null
             signUp.guest = guest
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }

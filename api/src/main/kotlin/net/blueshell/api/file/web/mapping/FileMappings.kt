@@ -11,7 +11,7 @@ fun FileDTO.asEntity(file: File = File()): File {
     file.mediaType = mediaType!!
     file.size = size
     file.type = type!!
-    file.version = version!!
+    version?.let { file.version = it }
     return file
 }
 

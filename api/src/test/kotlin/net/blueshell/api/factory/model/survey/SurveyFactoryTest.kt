@@ -24,7 +24,6 @@ class SurveyFactoryTest : ModelFactoryTestSupport() {
 
         questions.forEach { question ->
             question.survey = saved
-            question.surveyId = saved.id ?: 0L
             persist(question)
         }
 

@@ -18,7 +18,6 @@ class EventSignUpAnswerFactoryTest : ModelFactoryTestSupport() {
         val signUp = eventSignUpFactory.createBasic()
         signUp.event = event
         signUp.user = user
-        signUp.userId = user.id
         val signUpAnswers = signUp.answers as MutableSet<Answer>
         signUpAnswers.clear()
         val savedSignUp = persist(signUp)

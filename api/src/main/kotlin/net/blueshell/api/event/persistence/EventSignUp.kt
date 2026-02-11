@@ -48,19 +48,9 @@ class EventSignUp : AuditedAutoIdEntity() {
         get() = requireNotNull(_event) { "Event is required" }
         set(value) {
             _event = value
-            eventId = value.id ?: eventId
         }
 
-    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
-    var eventId: Long = 0
-        get() = _event?.id ?: field
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _event?.id) {
-                _event = Event::class.asRef(value)
-            }
-        }
+    val eventId: Long get() = requireNotNull(_event?.id) { "eventId is required" }
 
     @field:ManyToOne(fetch = FetchType.LAZY)
     @field:JoinColumn(name = "user_id")
@@ -69,20 +59,9 @@ class EventSignUp : AuditedAutoIdEntity() {
         get() = _user
         set(value) {
             _user = value
-            userId = value?.id
         }
 
-    @field:Column(name = "user_id", updatable = false, insertable = false)
-    var userId: Long? = null
-        get() = _user?.id
-        set(value) {
-            field = value
-            if (value == null) {
-                _user = null
-            } else if (_user?.id != value) {
-                _user = User::class.asRef(value)
-            }
-        }
+    val userId: Long? get() = _user?.id
 
     @field:ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
     @field:JoinColumn(name = "guest_id")
@@ -93,17 +72,7 @@ class EventSignUp : AuditedAutoIdEntity() {
             _guest = value
         }
 
-    @field:Column(name = "guest_id", updatable = false, insertable = false)
-    var guestId: Long? = null
-        get() = _guest?.id
-        set(value) {
-            field = value
-            if (value == null) {
-                _guest = null
-            } else if (_guest?.id != value) {
-                _guest = Guest::class.asRef(value)
-            }
-        }
+    val guestId: Long? get() = _guest?.id
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(

@@ -158,7 +158,6 @@ abstract class ModelPersistenceTestSupport {
         val committee = persistCommittee()
         val event = eventFactory.createBasic()
         event.committee = committee
-        event.committeeId = committee.id!!
         event.signUp = false
         event.startTime = Instant.now() + 1.hours.toJavaDuration()
         event.endTime = Instant.now() + 5.hours.toJavaDuration()
@@ -179,7 +178,6 @@ abstract class ModelPersistenceTestSupport {
     protected fun persistAnswer(question: Question): Answer {
         val answer = answerFactory.createWithCustomizations {
             it.question = question
-            it.questionId = question.id!!
             it.optionSelections = mutableListOf(true, false)
             it.textResponse = "Answer"
         }

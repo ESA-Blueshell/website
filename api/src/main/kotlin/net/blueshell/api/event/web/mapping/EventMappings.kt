@@ -1,6 +1,7 @@
 package net.blueshell.api.event.web.mapping
 
 import net.blueshell.api.blog.web.dto.SocialDTO
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
@@ -12,6 +13,7 @@ import net.blueshell.api.event.web.dto.GuestDTO
 import net.blueshell.api.file.web.mapping.asEntity
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil.randomCapitalString
 import net.blueshell.api.survey.web.mapping.asEntity
 import net.blueshell.api.user.persistence.User
@@ -30,27 +32,27 @@ object EventSignUpToEventSignUpDTOMapper : ObjectMappie<EventSignUp, EventSignUp
 
 object EventDTOToSocialDTOMapper : ObjectMappie<EventDTO, SocialDTO>()
 
-fun EventDTO.asEntity(existing: Event = Event()): Event {
-    existing.committeeId = committeeId!!
-    existing.title = title!!
-    existing.description = description
-    existing.location = location
-    existing.startTime = startTime!!
-    existing.endTime = endTime!!
-    existing.memberPrice = memberPrice
-    existing.publicPrice = publicPrice
-    existing.membersOnly = membersOnly!!
-    existing.signUp = signUp!!
-    existing.banner = banner?.asEntity()
-    existing.signUpForm = signUpForm?.asEntity()
-    existing.version = version!!
-    existing.approved = hasAuthority(Role.BOARD) && approved!!
-    return existing
+fun EventDTO.asEntity(event: Event = Event()): Event {
+    event.committee = Committee::class.asRef(committeeId!!)
+    event.title = title!!
+    event.description = description
+    event.location = location
+    event.startTime = startTime!!
+    event.endTime = endTime!!
+    event.memberPrice = memberPrice
+    event.publicPrice = publicPrice
+    event.membersOnly = membersOnly!!
+    event.signUp = signUp!!
+    event.banner = banner?.asEntity()
+    event.signUpForm = signUpForm?.asEntity()
+    version?.let { event.version = it }
+    event.approved = hasAuthority(Role.BOARD) && approved!!
+    return event
 }
 
 fun EventBannerDTO.asEntity(banner: EventBanner = EventBanner()): EventBanner {
     banner.file = file!!.asEntity()
-    banner.version = version!!
+    version?.let { banner.version = it }
     return banner
 }
 
@@ -59,7 +61,7 @@ fun GuestDTO.asEntity(guest: Guest = Guest()): Guest {
     guest.discord = requireNotNull(discord)
     guest.email = requireNotNull(email)
     guest.phoneNumber = phoneNumber
-    guest.version = version!!
+    version?.let { guest.version = it }
 
     if (guest.accessToken == null) {
         guest.accessToken = randomCapitalString(30)
@@ -69,8 +71,8 @@ fun GuestDTO.asEntity(guest: Guest = Guest()): Guest {
 }
 
 fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
-    signUp.eventId = eventId!!
-    userId?.let { signUp.userId = it }
+    signUp.event = Event::class.asRef(eventId!!)
+    userId?.let { signUp.user = User::class.asRef(it) }
     signUp.guest = guest?.asEntity()
 
     if (answers != null) {
@@ -80,7 +82,7 @@ fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
         answers.addAll(mappedAnswers)
     }
 
-    signUp.version = version!!
+    version?.let { signUp.version = it }
     return signUp
 }
 
@@ -96,23 +98,6 @@ private fun hasAuthority(role: Role): Boolean {
     return authentication != null && authentication.authorities.any { a: GrantedAuthority? ->
         a?.authority == role.toString()
     }
-}
-
-private fun SimpleUserDTO.asUserEntityForSignUp(): User {
-    val user = User()
-    user.username = requireNotNull(username)
-    user.password = requireNotNull(password)
-    user.firstName = requireNotNull(firstName)
-    user.lastName = requireNotNull(lastName)
-    user.email = requireNotNull(email)
-    initials?.let { user.initials = it }
-    prefix?.let { user.prefix = it }
-    discord?.let { user.discord = it }
-    phoneNumber?.let { user.phoneNumber = it }
-    user.newsletter = newsletter!!
-    addressId?.let { user.addressId = it }
-    user.version = version!!
-    return user
 }
 
 fun Event.asDto(): EventDTO = EventToEventDTOMapper.map(this)

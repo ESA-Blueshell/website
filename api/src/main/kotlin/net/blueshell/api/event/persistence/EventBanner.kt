@@ -34,30 +34,6 @@ class EventBanner(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventBanner.Id> {
 
-    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
-    var eventId: Long = 0
-        get() = requireNotNull(id.eventId) { "eventId is required" }
-        set(value) {
-            field = value
-            id.eventId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _event?.id) {
-                _event = Event::class.asRef(value)
-            }
-        }
-
-    @field:Column(name = "file_id", nullable = false, updatable = false, insertable = false)
-    var fileId: Long = 0
-        get() = requireNotNull(id.fileId) { "fileId is required" }
-        set(value) {
-            field = value
-            id.fileId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _file?.id) {
-                _file = File::class.asRef(value)
-            }
-        }
-
     @field:MapsId("eventId")
     @field:OneToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "event_id", nullable = false)
@@ -66,8 +42,10 @@ class EventBanner(
         get() = requireNotNull(_event) { "Event is required" }
         set(value) {
             _event = value
-            value.id?.let { eventId = it }
+            id.eventId = value.id
         }
+
+    val eventId: Long get() = requireNotNull(id.eventId) { "eventId is required" }
 
     @field:MapsId("fileId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -81,8 +59,10 @@ class EventBanner(
         get() = requireNotNull(_file) { "File is required" }
         set(value) {
             _file = value
-            value.id?.let { fileId = it }
+            id.fileId = value.id
         }
+
+    val fileId: Long get() = requireNotNull(id.fileId) { "fileId is required" }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

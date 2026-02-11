@@ -3,7 +3,6 @@ package net.blueshell.api.event.persistence
 import jakarta.persistence.*
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.survey.persistence.Survey
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -47,19 +46,9 @@ class Event : AuditedAutoIdEntity() {
         get() = requireNotNull(_committee) { "Committee is required" }
         set(value) {
             _committee = value
-            committeeId = _committee?.id ?: committeeId
         }
 
-    @field:Column(name = "committee_id", nullable = false, updatable = false, insertable = false)
-    var committeeId: Long = 0
-        get() = _committee?.id ?: field
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _committee?.id) {
-                _committee = Committee::class.asRef(value)
-            }
-        }
+    val committeeId: Long get() = requireNotNull(_committee?.id) { "committeeId is required" }
 
     @Column(name = "title", nullable = false)
     lateinit var title: String
@@ -119,21 +108,10 @@ class Event : AuditedAutoIdEntity() {
         get() = _signUpForm
         set(value) {
             _signUpForm = value
-            signUpFormId = value?.id
         }
 
-    @field:Column(name = "survey_id", updatable = false, insertable = false)
-    var signUpFormId: Long? = null
-        get() = _signUpForm?.id
-        set(value) {
-            field = value
-            if (value == null) {
-                _signUpForm = null
-            } else if (_signUpForm?.id != value) {
-                _signUpForm = Survey::class.asRef(value)
-            }
-        }
+    val signUpFormId: Long? get() = _signUpForm?.id
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
-    var signUpCount: Long = 0
+    val signUpCount: Long = 0
 }

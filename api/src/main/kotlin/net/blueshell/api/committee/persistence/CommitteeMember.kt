@@ -3,7 +3,6 @@ package net.blueshell.api.committee.persistence
 import jakarta.persistence.*
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.user.persistence.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
@@ -41,20 +40,10 @@ class CommitteeMember(
         get() = requireNotNull(_committee) { "Committee is required" }
         set(value) {
             _committee = value
-            committeeId = value.id ?: committeeId
+            id.committeeId = value.id
         }
 
-    @Column(name = "committee_id", nullable = false, updatable = false, insertable = false)
-    var committeeId: Long = 0
-        get() = id.committeeId ?: field
-        set(value) {
-            field = value
-            id.committeeId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _committee?.id) {
-                _committee = Committee::class.asRef(value)
-            }
-        }
+    val committeeId: Long get() = id.committeeId ?: 0
 
     @field:MapsId("userId")
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -64,20 +53,10 @@ class CommitteeMember(
         get() = requireNotNull(_user) { "User is required" }
         set(value) {
             _user = value
-            userId = _user?.id ?: userId
+            id.userId = value.id
         }
 
-    @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
-    var userId: Long = 0
-        get() = id.userId ?: field
-        set(value) {
-            field = value
-            id.userId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _user?.id) {
-                _user = User::class.asRef(value)
-            }
-        }
+    val userId: Long get() = id.userId ?: 0
 
     @Column(name = "role", length = 255)
     var role: String? = null

@@ -21,7 +21,6 @@ class QuestionFactoryTest : ModelFactoryTestSupport() {
         val survey = persistSurvey()
         val question = questionFactory.createMultipleChoice()
         question.survey = survey
-        question.surveyId = survey.id ?: 0L
 
         val saved = persist(question)
         assertPersisted(Question::class.java, saved.id)
@@ -32,7 +31,6 @@ class QuestionFactoryTest : ModelFactoryTestSupport() {
         val survey = persistSurvey()
         val question = questionFactory.createText()
         question.survey = survey
-        question.surveyId = survey.id ?: 0L
 
         val saved = persist(question)
         assertPersisted(Question::class.java, saved.id)

@@ -3,7 +3,6 @@ package net.blueshell.api.survey.persistence
 import jakarta.persistence.*
 import net.blueshell.api.event.persistence.EventSignUpAnswer
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.model.converter.BooleanListConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -19,17 +18,6 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class Answer : AuditedAutoIdEntity() {
-    @field:Column(name = "question_id", nullable = false, updatable = false, insertable = false)
-    var questionId: Long = 0
-        get() = requireNotNull(_question?.id) { "Question ID is required" }
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _question?.id) {
-                _question = Question::class.asRef(value)
-            }
-        }
-
     @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
     @field:JoinColumn(name = "question_id", nullable = false)
     private var _question: Question? = null
@@ -37,8 +25,9 @@ class Answer : AuditedAutoIdEntity() {
         get() = _question
         set(value) {
             _question = value
-            questionId = value?.id ?: questionId
         }
+
+    val questionId: Long get() = requireNotNull(_question?.id) { "Question ID is required" }
 
     @Column(name = "option_selections", columnDefinition = "JSON")
     @Convert(converter = BooleanListConverter::class)

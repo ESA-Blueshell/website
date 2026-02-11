@@ -1,7 +1,9 @@
 package net.blueshell.api.user.web.mapping
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil
+import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.web.dto.AdvancedUserDTO
 import net.blueshell.api.user.web.dto.SimpleUserDTO
@@ -37,8 +39,8 @@ fun AdvancedUserDTO.asEntity(
     user.newsletter = newsletter!!
     gender?.let { user.gender = it }
     studentNumber?.let { user.studentNumber = it }
-    addressId?.let { user.addressId = it }
-    user.version = version!!
+    addressId?.let { user.address = Address::class.asRef(it) }
+    version?.let { user.version = it }
 
     val canEditIdentityFields = user.id == null || hasAuthority(Role.BOARD)
 
@@ -67,7 +69,7 @@ fun SimpleUserDTO.asEntity(
     discord?.let { user.discord = it }
     phoneNumber?.let { user.phoneNumber = it }
     user.newsletter = newsletter!!
-    user.version = version!!
+    version?.let { user.version = it }
 
     if (user.id == null) {
         user.password = passwordEncoder.encode(password)

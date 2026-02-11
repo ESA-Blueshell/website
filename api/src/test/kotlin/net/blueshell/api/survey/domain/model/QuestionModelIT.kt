@@ -17,7 +17,7 @@ class QuestionModelIT : ModelPersistenceTestSupport() {
             val survey = persistSurvey()
             val question = questionFactory.createBasic()
             question.idx = 3
-            question.surveyId = survey.id!!
+            question.survey = survey
             question.type = QuestionType.RADIO
             question.label = "Question?"
             question.choiceLabels = mutableListOf("A", "B", "C")
@@ -51,7 +51,7 @@ class QuestionModelIT : ModelPersistenceTestSupport() {
             val survey = persistSurvey()
             val question = questionFactory.createBasic()
             question.idx = 3
-            question.surveyId = survey.id!!
+            question.survey = survey
             question.type = QuestionType.RADIO
             question.label = "Question?"
             question.choiceLabels = mutableListOf("A", "B", "C")

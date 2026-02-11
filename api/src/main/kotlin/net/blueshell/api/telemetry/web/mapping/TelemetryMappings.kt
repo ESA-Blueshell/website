@@ -9,7 +9,7 @@ object TelemetryToTelemetryDTOMapper : ObjectMappie<Telemetry, TelemetryDTO>()
 fun TelemetryDTO.asEntity(telemetry: Telemetry = Telemetry()): Telemetry {
     telemetry.platform = platform!!
     telemetry.url = url!!
-    telemetry.version = version!!
+    version?.let { telemetry.version = it }
     return telemetry
 }
 

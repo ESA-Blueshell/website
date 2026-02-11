@@ -29,7 +29,6 @@ class EventSignUpFactory(
 
         signUp.event = event
         signUp.user = user
-        signUp.userId = user.id
         signUp.guest = null
 
         return signUp
@@ -47,7 +46,6 @@ class EventSignUpFactory(
         val signUp = EventSignUp()
         signUp.event = event
         signUp.user = user
-        signUp.userId = user.id
         signUp.guest = null
         return signUp
     }

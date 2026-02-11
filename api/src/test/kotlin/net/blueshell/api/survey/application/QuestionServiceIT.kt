@@ -56,12 +56,15 @@ class QuestionServiceIT : ServiceTestSupport() {
         fun `creating non-description question clears signups for survey`() {
             val survey = persist(surveyFactory.createBasic())
             val committee = persist(committeeFactory.createBasic())
+            val nonPersistedEvent = eventFactory.createWithCustomizations {
+                it.committee = committee
+                it.signUp = true
+                it.signUpForm = survey
+            }
+            println("Non Persisted event survey.id: ${nonPersistedEvent.signUpForm?.id}")
+            println("Non Persisted event surveyId: ${nonPersistedEvent.signUpFormId}")
             val event = events.create(
-                eventFactory.createWithCustomizations {
-                    it.committee = committee
-                    it.signUp = true
-                    it.signUpForm = survey
-                }
+                nonPersistedEvent
             )
 
             val user = persist(userFactory.createBasic())

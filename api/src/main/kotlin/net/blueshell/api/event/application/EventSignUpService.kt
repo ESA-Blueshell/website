@@ -76,9 +76,7 @@ class EventSignUpService @Autowired constructor(
     }
 
     private fun mergeAssociations(signUp: EventSignUp) {
-        if (signUp.eventId != 0L) {
-            signUp.event = Event::class.asRef(signUp.eventId)
-        }
-        signUp.userId?.let { signUp.user = User::class.asRef(it) }
+        // No additional merging needed for many-to-one relationships
+        // They are already set as entity references in the mapper
     }
 }

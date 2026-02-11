@@ -12,7 +12,7 @@ fun AddressDTO.asEntity(address: Address = Address()): Address {
     address.street = street
     address.houseNumber = houseNumber
     address.zipCode = zipCode
-    address.version = version!!
+    version?.let { address.version = it }
     return address
 }
 

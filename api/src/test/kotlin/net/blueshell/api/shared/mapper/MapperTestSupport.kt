@@ -89,7 +89,6 @@ abstract class MapperTestSupport {
         val committee = persistCommittee()
         val event = eventFactory.createBasic().apply {
             this.committee = committee
-            this.committeeId = committee.id!!
             signUp = false
         }
         return persist(event)

@@ -89,7 +89,7 @@ class UserModelIT : ModelPersistenceTestSupport() {
         fun `persists address relation when setting id`() {
             val address = persist(addressFactory.createBasic())
             val user = userFactory.createBasic()
-            user.addressId = address.id
+            user.address = address
 
             val found = persistAndReload(user, User::class.java) { it.id }
 

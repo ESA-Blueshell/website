@@ -9,7 +9,7 @@ object SponsorToSponsorDTOMapper : ObjectMappie<Sponsor, SponsorDTO>()
 fun SponsorDTO.asEntity(sponsor: Sponsor = Sponsor()): Sponsor {
     sponsor.name = name!!
     sponsor.description = description!!
-    sponsor.version = version!!
+    version?.let { sponsor.version = it }
     return sponsor
 }
 

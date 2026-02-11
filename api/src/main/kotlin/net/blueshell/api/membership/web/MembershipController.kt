@@ -8,7 +8,9 @@ import net.blueshell.api.membership.web.dto.MembershipDTO
 import net.blueshell.api.membership.web.mapping.asDto
 import net.blueshell.api.membership.web.mapping.asEntity
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.web.BaseController
+import net.blueshell.api.user.persistence.User
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
@@ -37,7 +39,7 @@ class MembershipController(service: MembershipService) : BaseController<Membersh
         }
 
         val membership = Membership()
-        membership.userId = principal!!.id!!
+        membership.user = User::class.asRef(principal!!.id!!)
         service.create(membership)
         return membership.asDto()
     }

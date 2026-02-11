@@ -46,7 +46,7 @@ class ContributionService @Autowired constructor(
 
     @Transactional
     override fun deleteById(id: Contribution.Id) {
-        val contribution = BaseModelService.findById(id)
+        val contribution = findById(id)
         super.deleteById(id)
         publishChange(contribution, ContributionChange.DELETED)
     }

@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.sponsor.web.dto.SponsorDTO
+import net.blueshell.api.domain.sponsor.web.dto.SponsorDTO
 import org.springframework.stereotype.Component
 
 /**

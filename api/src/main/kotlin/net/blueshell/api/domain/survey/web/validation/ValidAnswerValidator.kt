@@ -3,9 +3,9 @@ package net.blueshell.api.domain.survey.web.validation
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.repository.QuestionRepository
-import net.blueshell.api.survey.web.dto.AnswerDTO
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
+import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import org.springframework.beans.factory.annotation.Autowired
 
 

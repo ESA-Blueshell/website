@@ -2,10 +2,10 @@ package net.blueshell.api.domain.survey.application
 
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.survey.application.event.QuestionChange
-import net.blueshell.api.survey.application.event.QuestionChanged
-import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.repository.QuestionRepository
+import net.blueshell.api.domain.survey.application.event.QuestionChange
+import net.blueshell.api.domain.survey.application.event.QuestionChanged
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

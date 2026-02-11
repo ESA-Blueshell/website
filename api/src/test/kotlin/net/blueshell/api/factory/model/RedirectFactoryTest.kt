@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.telemetry.persistence.Redirect
+import net.blueshell.api.domain.telemetry.persistence.Redirect
 import org.junit.jupiter.api.Test
 
 class RedirectFactoryTest : ModelFactoryTestSupport() {

@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
-import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.domain.user.persistence.User

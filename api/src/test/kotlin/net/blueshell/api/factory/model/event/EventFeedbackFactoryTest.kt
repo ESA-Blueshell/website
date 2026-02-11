@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model.event
 
-import net.blueshell.api.event.persistence.EventFeedback
+import net.blueshell.api.domain.event.persistence.EventFeedback
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import org.junit.jupiter.api.Test
 

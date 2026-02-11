@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
-import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
 import org.springframework.stereotype.Component

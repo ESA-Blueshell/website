@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
-import net.blueshell.api.survey.web.dto.SurveyDTO
+import net.blueshell.api.domain.survey.web.dto.SurveyDTO
 import java.time.Instant
 
 @Schema(name = "Event")

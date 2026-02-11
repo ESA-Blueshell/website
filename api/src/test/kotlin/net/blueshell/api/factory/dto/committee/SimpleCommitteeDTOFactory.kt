@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.committee
 
-import net.blueshell.api.committee.web.dto.SimpleCommitteeDTO
+import net.blueshell.api.domain.committee.web.dto.SimpleCommitteeDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

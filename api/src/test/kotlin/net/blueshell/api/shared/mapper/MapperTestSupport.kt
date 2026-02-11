@@ -1,20 +1,20 @@
 package net.blueshell.api.shared.mapper
 
 import jakarta.persistence.EntityManager
-import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.contribution.ContributionPeriodFactory
 import net.blueshell.api.factory.model.event.EventFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
-import net.blueshell.api.file.persistence.File
-import net.blueshell.api.platform.config.TruncateTestDatabaseListener
+import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.Survey
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import org.junit.jupiter.api.AfterEach

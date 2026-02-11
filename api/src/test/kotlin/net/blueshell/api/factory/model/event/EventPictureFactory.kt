@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.event
 
 import com.github.javafaker.Faker
-import net.blueshell.api.event.persistence.EventPicture
+import net.blueshell.api.domain.event.persistence.EventPicture
 import net.blueshell.api.factory.model.FileFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong

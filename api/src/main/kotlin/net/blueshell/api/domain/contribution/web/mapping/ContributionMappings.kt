@@ -20,7 +20,7 @@ object ContributionReminderToContributionReminderDTOMapper :
 fun ContributionDTO.asEntity(contribution: Contribution = Contribution()): Contribution {
     contribution.user = User::class.asRef(userId!!)
     contribution.contributionPeriod = ContributionPeriod::class.asRef(contributionPeriodId!!)
-    net.blueshell.api.shared.dto.VersionedDTO.version?.let { contribution.version = it }
+    version?.let { contribution.version = it }
     return contribution
 }
 
@@ -31,14 +31,14 @@ fun ContributionPeriodDTO.asEntity(period: ContributionPeriod = ContributionPeri
     period.fullYearFee = fullYearFee!!
     period.alumniFee = alumniFee!!
     period.listId = listId!!
-    net.blueshell.api.shared.dto.VersionedDTO.version?.let { period.version = it }
+    version?.let { period.version = it }
     return period
 }
 
 fun ContributionReminderDTO.asEntity(reminder: ContributionReminder = ContributionReminder()): ContributionReminder {
     reminder.user = User::class.asRef(userId!!)
     reminder.contributionPeriod = ContributionPeriod::class.asRef(contributionPeriodId!!)
-    net.blueshell.api.shared.dto.VersionedDTO.version?.let { reminder.version = it }
+    version?.let { reminder.version = it }
     return reminder
 }
 

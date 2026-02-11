@@ -1,7 +1,7 @@
 package net.blueshell.api.testsupport
 
 import jakarta.persistence.EntityManager
-import net.blueshell.api.platform.config.TruncateTestDatabaseListener
+import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.telemetry.persistence.Telemetry
+import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import org.junit.jupiter.api.Test
 
 class TelemetryFactoryTest : ModelFactoryTestSupport() {

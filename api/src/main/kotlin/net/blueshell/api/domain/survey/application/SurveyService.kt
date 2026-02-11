@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.survey.application
 
 import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.survey.persistence.repository.SurveyRepository
+import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.domain.survey.persistence.repository.SurveyRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

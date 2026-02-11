@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model.committee
 
-import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import org.junit.jupiter.api.Test
 

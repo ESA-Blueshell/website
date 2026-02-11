@@ -3,7 +3,7 @@ package net.blueshell.api.domain.survey.web.validation
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.web.dto.QuestionDTO
+import net.blueshell.api.domain.survey.web.dto.QuestionDTO
 import org.springframework.beans.factory.annotation.Autowired
 
 class ValidQuestionValidator @Autowired constructor() :

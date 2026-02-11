@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.file.web.dto.FileDTO
+import net.blueshell.api.domain.file.web.dto.FileDTO
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Component
 

@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.event
 
-import net.blueshell.api.event.web.dto.EventDTO
+import net.blueshell.api.domain.event.web.dto.EventDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
 import org.springframework.stereotype.Component

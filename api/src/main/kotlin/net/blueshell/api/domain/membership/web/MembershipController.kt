@@ -32,14 +32,14 @@ class MembershipController(service: MembershipService) : BaseController<Membersh
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(): MembershipDTO? {
-        if (net.blueshell.api.auth.security.IdentityProvider.hasAuthority(Role.MEMBER)) {
+        if (hasAuthority(Role.MEMBER)) {
             throw AccessDeniedException("User is already a member")
-        } else if (net.blueshell.api.auth.security.IdentityProvider.principal?.addressId == null) {
+        } else if (principal?.addressId == null) {
             throw AccessDeniedException("User must have an address")
         }
 
         val membership = Membership()
-        membership.user = User::class.asRef(net.blueshell.api.auth.security.IdentityProvider.principal!!.id!!)
+        membership.user = User::class.asRef(principal!!.id!!)
         service.create(membership)
         return membership.asDto()
     }

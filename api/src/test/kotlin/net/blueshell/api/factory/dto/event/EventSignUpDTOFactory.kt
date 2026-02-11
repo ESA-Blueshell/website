@@ -1,13 +1,13 @@
 package net.blueshell.api.factory.dto.event
 
-import net.blueshell.api.event.web.dto.EventSignUpDTO
+import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
 import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.web.dto.AnswerDTO
-import net.blueshell.api.survey.web.dto.SurveyDTO
+import net.blueshell.api.domain.survey.web.dto.AnswerDTO
+import net.blueshell.api.domain.survey.web.dto.SurveyDTO
 import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import org.springframework.stereotype.Component
 

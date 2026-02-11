@@ -1,0 +1,73 @@
+package net.blueshell.api.domain.sponsor.persistence
+
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+
+class SponsorModelIT : ModelPersistenceTestSupport() {
+
+    @Nested
+    inner class Persistence {
+
+        @Test
+        fun `persists column fields`() {
+            val sponsor = sponsorFactory.createBasic()
+            sponsor.name = unique("sponsor")
+            sponsor.description = "Sponsor description"
+            sponsor.picture = persist(fileWithUploader(fileFactory.createImage()))
+
+            val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
+
+            assertEquals(sponsor.name, found.name)
+            assertEquals(sponsor.description, found.description)
+        }
+
+        @Test
+        fun `persists picture relation when setting entity`() {
+            val picture = persist(fileWithUploader(fileFactory.createImage()))
+            val sponsor = sponsorFactory.createBasic()
+            sponsor.name = unique("sponsor")
+            sponsor.description = "Sponsor description"
+            sponsor.picture = picture
+
+            val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
+
+            assertEquals(picture.id, found.pictureId)
+            assertEquals(picture.id, found.picture.id)
+        }
+
+        @Test
+        fun `persists picture relation when setting id`() {
+            val picture = persist(fileWithUploader(fileFactory.createImage()))
+            val sponsor = sponsorFactory.createBasic()
+            sponsor.name = unique("sponsor")
+            sponsor.description = "Sponsor description"
+            sponsor.picture = picture
+
+            val found = persistAndReload(sponsor, Sponsor::class.java) { it.id }
+
+            assertEquals(picture.id, found.pictureId)
+            assertEquals(picture.id, found.picture.id)
+        }
+    }
+
+    @Nested
+    inner class AsDto {
+        @Test
+        fun `maps persisted sponsor`() {
+            val sponsor = sponsorFactory.createBasic().apply {
+                picture = persist(fileWithUploader(picture))
+            }
+            val saved = persist(sponsor)
+            entityManager.flush()
+            entityManager.clear()
+
+            val reloaded = entityManager.find(Sponsor::class.java, saved.id)
+            val dto = reloaded.asDto()
+
+            assertEquals(reloaded.id, dto.id)
+            assertEquals(reloaded.name, dto.name)
+            assertEquals(reloaded.description, dto.description)
+        }
+    }
+}

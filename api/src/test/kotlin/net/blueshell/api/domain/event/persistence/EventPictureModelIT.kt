@@ -1,0 +1,75 @@
+package net.blueshell.api.domain.event.persistence
+
+import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+
+class EventPictureModelIT : ModelPersistenceTestSupport() {
+
+    @Nested
+    inner class Persistence {
+
+        @Test
+        fun `persists event relation when setting entity`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val picture = eventPictureFactory.createBasic()
+            picture.event = event
+            picture.picture = file
+
+            val found = persistAndReload(picture, EventPicture::class.java) { it.id }
+
+            assertEquals(event.id, found.eventId)
+            Assertions.assertEquals(event.id, found.event.id)
+        }
+
+        @Test
+        fun `persists event relation when setting id`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val picture = eventPictureFactory.createBasic()
+            picture.event = event
+            picture.picture = file
+
+            val found = persistAndReload(picture, EventPicture::class.java) { it.id }
+
+            assertEquals(event.id, found.eventId)
+            Assertions.assertEquals(event.id, found.event.id)
+        }
+
+        @Test
+        fun `persists picture relation when setting entity`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val picture = eventPictureFactory.createBasic()
+            picture.event = event
+            picture.picture = file
+
+            val found = persistAndReload(picture, EventPicture::class.java) { it.id }
+
+            assertEquals(file.id, found.pictureId)
+            Assertions.assertEquals(file.id, found.picture.id)
+        }
+
+        @Test
+        fun `persists picture relation when setting id`() {
+            val event = persistEvent()
+            val file: File = persist(fileWithUploader(fileFactory.createImage()))
+
+            val picture = eventPictureFactory.createBasic()
+            picture.event = event
+            picture.picture = file
+
+            val found = persistAndReload(picture, EventPicture::class.java) { it.id }
+
+            assertEquals(file.id, found.pictureId)
+            Assertions.assertEquals(file.id, found.picture.id)
+        }
+    }
+}

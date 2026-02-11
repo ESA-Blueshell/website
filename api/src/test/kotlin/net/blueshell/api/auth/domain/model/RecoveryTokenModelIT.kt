@@ -1,5 +1,6 @@
-package net.blueshell.api.auth.persistence
+package net.blueshell.api.auth.domain.model
 
+import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.domain.user.persistence.User

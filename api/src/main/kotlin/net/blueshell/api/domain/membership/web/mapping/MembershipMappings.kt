@@ -13,7 +13,7 @@ object MembershipToMembershipDTOMapper : ObjectMappie<Membership, MembershipDTO>
 
 fun MembershipDTO.asEntity(membership: Membership = Membership()): Membership {
     membership.user = User::class.asRef(userId!!)
-    net.blueshell.api.shared.dto.VersionedDTO.version?.let { membership.version = it }
+    version?.let { membership.version = it }
 
     if (hasAuthority(Role.BOARD)) {
         membership.startDate = startDate!!

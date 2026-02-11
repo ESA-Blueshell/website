@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.telemetry.web.mapping
 
-import net.blueshell.api.telemetry.persistence.Telemetry
-import net.blueshell.api.telemetry.web.dto.TelemetryDTO
+import net.blueshell.api.domain.telemetry.persistence.Telemetry
+import net.blueshell.api.domain.telemetry.web.dto.TelemetryDTO
 import tech.mappie.api.ObjectMappie
 
 object TelemetryToTelemetryDTOMapper : ObjectMappie<Telemetry, TelemetryDTO>()

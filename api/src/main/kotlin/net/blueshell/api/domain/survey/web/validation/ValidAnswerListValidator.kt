@@ -2,7 +2,7 @@ package net.blueshell.api.domain.survey.web.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.survey.web.dto.AnswerDTO
+import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 
 class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, MutableList<AnswerDTO>> {
     override fun isValid(answers: MutableList<AnswerDTO>?, context: ConstraintValidatorContext): Boolean {

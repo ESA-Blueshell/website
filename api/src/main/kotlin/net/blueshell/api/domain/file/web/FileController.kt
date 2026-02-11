@@ -2,9 +2,11 @@ package net.blueshell.api.domain.file.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.file.application.FileService
-import net.blueshell.api.file.web.dto.FileDTO
-import net.blueshell.api.file.web.mapping.asDto
+import net.blueshell.api.domain.file.application.FileService
+import net.blueshell.api.domain.file.web.dto.FileDTO
+import net.blueshell.api.domain.file.web.mapping.asDto
+import net.blueshell.api.domain.file.web.validation.AllowedContentTypes
+import net.blueshell.api.domain.file.web.validation.FileSize
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.core.io.Resource
@@ -31,7 +33,7 @@ class FileController(service: FileService) : BaseController<FileService>(service
     )
     @PreAuthorize("hasAuthority('COMMITTEE')")
     fun uploadEventBanner(
-        @RequestPart("file") @NotNull(message = "File is required") @net.blueshell.api.file.web.validation.FileSize(max = 2 * 1024 * 1024) @net.blueshell.api.file.web.validation.AllowedContentTypes(
+        @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 2 * 1024 * 1024) @AllowedContentTypes(
             "image/png",
             "image/jpeg",
             "image/jpg",

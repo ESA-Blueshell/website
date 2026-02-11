@@ -2,7 +2,7 @@ package net.blueshell.api.domain.survey.web.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.survey.web.dto.QuestionDTO
+import net.blueshell.api.domain.survey.web.dto.QuestionDTO
 
 class ValidQuestionListValidator :
     ConstraintValidator<ValidQuestionList, MutableList<QuestionDTO>> {

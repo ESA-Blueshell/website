@@ -18,12 +18,13 @@ import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.survey.application.SurveyService
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.survey.persistence.Answer
-import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.Survey
+import net.blueshell.api.domain.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.Address
@@ -55,7 +56,7 @@ class DatabaseSeeder(
     private val contributionPeriodService: ContributionPeriodService,
     private val contributionService: ContributionService,
     private val recoveryService: RecoveryService,
-    private val surveyService: net.blueshell.api.survey.application.SurveyService,
+    private val surveyService: SurveyService,
     private val passwordEncoder: PasswordEncoder
 ) : CommandLineRunner {
 

@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.file.web.mapping
 
-import net.blueshell.api.file.persistence.File
-import net.blueshell.api.file.web.dto.FileDTO
+import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.domain.file.web.dto.FileDTO
 import tech.mappie.api.ObjectMappie
 
 object FileToFileDTOMapper : ObjectMappie<File, FileDTO>()

@@ -16,7 +16,7 @@ class ContributionPermission @Autowired constructor(service: ContributionService
         }
         val contribution = entity as Contribution
         return when (permission) {
-            "read" -> (net.blueshell.api.auth.security.IdentityProvider.principal?.id == contribution.userId)
+            "read" -> (principal?.id == contribution.userId)
             else -> false
         }
     }

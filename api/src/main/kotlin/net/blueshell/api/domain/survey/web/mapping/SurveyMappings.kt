@@ -1,12 +1,12 @@
 package net.blueshell.api.domain.survey.web.mapping
 
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.survey.persistence.Answer
-import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.survey.web.dto.AnswerDTO
-import net.blueshell.api.survey.web.dto.QuestionDTO
-import net.blueshell.api.survey.web.dto.SurveyDTO
+import net.blueshell.api.domain.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.domain.survey.web.dto.AnswerDTO
+import net.blueshell.api.domain.survey.web.dto.QuestionDTO
+import net.blueshell.api.domain.survey.web.dto.SurveyDTO
 import tech.mappie.api.ObjectMappie
 
 object SurveyToSurveyDTOMapper : ObjectMappie<Survey, SurveyDTO>()

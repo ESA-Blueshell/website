@@ -8,7 +8,7 @@ import net.blueshell.api.auth.security.JWTAuthBase
 import net.blueshell.api.auth.web.dto.recovery.MemberActivationRequest
 import net.blueshell.api.auth.web.dto.recovery.PasswordResetRequest
 import net.blueshell.api.auth.web.dto.recovery.UserActivationRequest
-import net.blueshell.api.telemetry.web.dto.RedirectResponseDTO
+import net.blueshell.api.domain.telemetry.web.dto.RedirectResponseDTO
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*

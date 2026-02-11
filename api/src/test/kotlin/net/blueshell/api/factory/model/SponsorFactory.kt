@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.sponsor.persistence.Sponsor
+import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

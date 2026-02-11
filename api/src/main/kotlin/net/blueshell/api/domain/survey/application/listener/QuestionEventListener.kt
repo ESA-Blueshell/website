@@ -1,10 +1,10 @@
 package net.blueshell.api.domain.survey.application.listener
 
-import net.blueshell.api.event.application.EventSignUpService
+import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.survey.application.AnswerService
-import net.blueshell.api.survey.application.event.QuestionChange
-import net.blueshell.api.survey.application.event.QuestionChanged
+import net.blueshell.api.domain.survey.application.AnswerService
+import net.blueshell.api.domain.survey.application.event.QuestionChange
+import net.blueshell.api.domain.survey.application.event.QuestionChanged
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

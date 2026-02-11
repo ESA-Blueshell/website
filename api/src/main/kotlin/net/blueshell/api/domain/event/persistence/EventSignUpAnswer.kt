@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.Answer
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

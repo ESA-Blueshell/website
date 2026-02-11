@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.config
+package net.blueshell.api.config
 
 import com.github.javafaker.Faker
 import org.springframework.context.annotation.Bean

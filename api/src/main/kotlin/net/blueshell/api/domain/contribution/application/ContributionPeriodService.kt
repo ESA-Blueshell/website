@@ -38,12 +38,12 @@ class ContributionPeriodService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun findLatest(): ContributionPeriod {
-        return repository!!.findCurrentOrLatestContributionPeriod()
+        return repository.findCurrentOrLatestContributionPeriod()
     }
 
     @Transactional
     fun updateListId(periodId: Long, listId: Long) {
-        val period = BaseModelService.findById(periodId)
+        val period = findById(periodId)
         period.listId = listId
         update(period)
     }

@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto
 
-import net.blueshell.api.file.web.dto.PictureDTO
+import net.blueshell.api.domain.file.web.dto.PictureDTO
 import org.springframework.stereotype.Component
 
 /**

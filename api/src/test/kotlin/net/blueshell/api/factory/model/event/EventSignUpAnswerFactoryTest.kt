@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model.event
 
-import net.blueshell.api.event.persistence.EventSignUpAnswer
+import net.blueshell.api.domain.event.persistence.EventSignUpAnswer
 import net.blueshell.api.factory.model.ModelFactoryTestSupport
-import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.Answer
 import org.junit.jupiter.api.Test
 
 class EventSignUpAnswerFactoryTest : ModelFactoryTestSupport() {

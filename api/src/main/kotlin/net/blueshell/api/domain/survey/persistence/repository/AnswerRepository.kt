@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.survey.persistence.repository
 
 import net.blueshell.api.shared.repository.BaseRepository
-import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.Answer
 import org.springframework.stereotype.Repository
 
 @Suppress("FunctionName")

@@ -4,11 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.domain.survey.web.validation.ValidQuestion
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.shared.enums.QuestionType
 
 @Schema(name = "Question")
-@net.blueshell.api.survey.web.validation.ValidQuestion
+@ValidQuestion
 data class QuestionDTO(
     @field:NotNull
     var idx: Long? = null,

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.committee
 
 import com.github.javafaker.Faker
-import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.domain.committee.persistence.Committee
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.file.persistence.File
+import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong

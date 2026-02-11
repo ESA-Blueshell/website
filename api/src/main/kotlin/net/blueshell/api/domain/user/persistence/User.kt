@@ -4,8 +4,8 @@ import jakarta.persistence.*
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.event.persistence.EventSignUp
-import net.blueshell.api.file.persistence.File
+import net.blueshell.api.domain.event.persistence.EventSignUp
+import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity

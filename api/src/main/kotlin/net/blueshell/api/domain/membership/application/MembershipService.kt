@@ -58,7 +58,7 @@ class MembershipService @Autowired constructor(
 
     @Transactional
     override fun deleteById(id: Long) {
-        val membership = BaseModelService.findById(id)
+        val membership = findById(id)
         super.deleteById(id)
         events.publish(
             MembershipChanged(
@@ -75,7 +75,7 @@ class MembershipService @Autowired constructor(
 
     fun findByFilter(filter: MembershipFilter): MutableList<Membership> {
         val spec = MembershipSpecifications.fromFilter(filter,
-            net.blueshell.api.auth.security.IdentityProvider.principal
+            principal
         )
         return repository.findAll(spec)
     }

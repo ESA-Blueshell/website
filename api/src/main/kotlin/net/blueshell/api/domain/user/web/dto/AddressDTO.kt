@@ -2,12 +2,13 @@ package net.blueshell.api.domain.user.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
+import net.blueshell.api.domain.user.web.validation.ValidCountryCode
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "Address")
 data class AddressDTO(
     @field:NotEmpty
-    @field:net.blueshell.api.user.web.validation.ValidCountryCode
+    @field:ValidCountryCode
     var country: String? = null,
 
     @field:NotEmpty

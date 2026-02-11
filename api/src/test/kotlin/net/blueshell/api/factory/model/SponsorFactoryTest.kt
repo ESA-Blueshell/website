@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.sponsor.persistence.Sponsor
+import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import org.junit.jupiter.api.Test
 
 class SponsorFactoryTest : ModelFactoryTestSupport() {

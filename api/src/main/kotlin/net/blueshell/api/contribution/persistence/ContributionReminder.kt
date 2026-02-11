@@ -39,51 +39,23 @@ class ContributionReminder(
     override var id: Id = Id(),
 ) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
 
-    @Column(name = "user_id", nullable = false, updatable = false, insertable = false)
-    var userId: Long = 0
-        get() = requireNotNull(id.userId) { "userId is required" }
-        set(value) {
-            field = value
-            id.userId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _user?.id) {
-                _user = User::class.asRef(value)
-            }
-        }
+    @MapsId("userId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    lateinit var user: User
+        internal set
 
-    @Column(name = "contribution_period_id", nullable = false, insertable = false, updatable = false)
-    var contributionPeriodId: Long = 0
-        get() = requireNotNull(id.contributionPeriodId) { "contributionPeriodId is required" }
-        set(value) {
-            field = value
-            id.contributionPeriodId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _contributionPeriod?.id) {
-                _contributionPeriod = ContributionPeriod::class.asRef(value)
-            }
-        }
+    val userId: Long
+        get() = id.userId ?: 0
 
-    @field:MapsId("userId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "user_id", nullable = false)
-    private var _user: User? = null
-    var user: User
-        get() = requireNotNull(_user) { "User is required" }
-        set(value) {
-            _user = value
-            value.id?.let { userId = it }
-        }
+    @MapsId("contributionPeriodId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "contribution_period_id", nullable = false)
+    lateinit var contributionPeriod: ContributionPeriod
+        internal set
 
-    @field:MapsId("contributionPeriodId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "contribution_period_id", nullable = false)
-    private var _contributionPeriod: ContributionPeriod? = null
-    var contributionPeriod: ContributionPeriod
-        get() = requireNotNull(_contributionPeriod) { "Contribution period is required" }
-        set(value) {
-            _contributionPeriod = value
-            value.id?.let { contributionPeriodId = it }
-        }
+    val contributionPeriodId: Long
+        get() = id.contributionPeriodId ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -77,9 +77,9 @@ fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
 
     if (answers != null) {
         val mappedAnswers = answers!!.map { it.asEntity() }
-        val answers = signUp.answers as MutableSet
-        answers.clear()
-        answers.addAll(mappedAnswers)
+        val answersSet = signUp.answers as MutableSet
+        answersSet.clear()
+        answersSet.addAll(mappedAnswers)
     }
 
     version?.let { signUp.version = it }

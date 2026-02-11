@@ -199,7 +199,7 @@ class FileService @Autowired constructor(
     private fun populateAfterStore(file: File, name: String, fullPath: Path, path: String, mediaType: String) {
         file.name = name
         file.mediaType = mediaType
-        file.uploaderId = principal!!.id!!
+        file.uploader = principal!!
         try {
             file.size = Files.size(fullPath)
         } catch (e: IOException) {
@@ -255,7 +255,7 @@ class FileService @Autowired constructor(
     }
 
     fun findByBannerEventId(eventId: Long): File {
-        return repository.findFirstBy_eventBanners_Id_EventId(eventId).orElseThrow(Supplier {
+        return repository.findFirstByEventBannersIdEventId(eventId).orElseThrow(Supplier {
             ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Event banner not found for event with id: $eventId"
             )

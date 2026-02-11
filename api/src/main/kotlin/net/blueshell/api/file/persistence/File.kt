@@ -34,26 +34,13 @@ class File : AuditedAutoIdEntity() {
     @Column(nullable = false)
     lateinit var path: String
 
-    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "uploader_id", nullable = false)
-    private var _uploader: User? = null
-    var uploader: User
-        get() = requireNotNull(_uploader) { "Uploader is required" }
-        set(value) {
-            _uploader = value
-            uploaderId = _uploader?.id ?: uploaderId
-        }
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "uploader_id", nullable = false)
+    lateinit var uploader: User
+        internal set
 
-    @field:Column(name = "uploader_id", nullable = false, updatable = false, insertable = false)
-    var uploaderId: Long = 0
-        get() = _uploader?.id ?: field
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _uploader?.id) {
-                _uploader = User::class.asRef(value)
-            }
-        }
+    val uploaderId: Long
+        get() = uploader.id ?: 0
 
     @Column(name = "media_type", nullable = false)
     lateinit var mediaType: String
@@ -65,7 +52,7 @@ class File : AuditedAutoIdEntity() {
     @Column(name = "type", nullable = false)
     lateinit var type: FileType
 
-    @OneToMany(mappedBy = "_file", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "file", fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private val _eventBanners: MutableSet<EventBanner> = linkedSetOf()
     val eventBanners: Set<EventBanner>

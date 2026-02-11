@@ -9,16 +9,16 @@ data class JobExecutionDTO(
     val id: Long?,
 
     @field:NotBlank
-    val jobType: String?,
+    var jobType: String?,
 
     @field:NotNull
-    val status: JobExecutionStatus?,
+    var status: JobExecutionStatus?,
 
     val payload: String?,
     val errorMessage: String?,
 
     @field:NotNull
-    val attempts: Int?,
+    var attempts: Int?,
 
     val queuedAt: Instant?,
     val startedAt: Instant?,

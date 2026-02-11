@@ -15,7 +15,7 @@ abstract class AuditedVersionedEntity : VersionedEntity() {
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     var createdAt: Instant? = null
-        protected set
+        internal set
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,7 +26,7 @@ abstract class AuditedVersionedEntity : VersionedEntity() {
     @Column(name = "updated_at", nullable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
     var updatedAt: Instant? = null
-        protected set
+        internal set
 
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)

@@ -18,16 +18,13 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class Answer : AuditedAutoIdEntity() {
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "question_id", nullable = false)
-    private var _question: Question? = null
-    var question: Question?
-        get() = _question
-        set(value) {
-            _question = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "question_id", nullable = false)
+    lateinit var question: Question
+        internal set
 
-    val questionId: Long get() = requireNotNull(_question?.id) { "Question ID is required" }
+    val questionId: Long
+        get() = question.id ?: 0
 
     @Column(name = "option_selections", columnDefinition = "JSON")
     @Convert(converter = BooleanListConverter::class)
@@ -36,8 +33,7 @@ class Answer : AuditedAutoIdEntity() {
     @Column(name = "text_response")
     var textResponse: String? = null
 
-    @field:OneToOne(mappedBy = "_answer", cascade = [CascadeType.ALL])
-    private var _eventSignUpAnswer: EventSignUpAnswer? = null
-    val eventSignUpAnswer: EventSignUpAnswer?
-        get() = _eventSignUpAnswer
+    @OneToOne(mappedBy = "answer", cascade = [CascadeType.ALL])
+    var eventSignUpAnswer: EventSignUpAnswer? = null
+        internal set
 }

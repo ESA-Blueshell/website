@@ -26,15 +26,10 @@ class Committee : AuditedAutoIdEntity() {
     @Column(name = "description", nullable = false, length = 4095)
     lateinit var description: String
 
-    @OneToMany(mappedBy = "_committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _members: MutableList<CommitteeMember> = mutableListOf()
-    var members: List<CommitteeMember>
+    val members: List<CommitteeMember>
         get() = _members
-        set(newMembers) {
-            _members.clear()
-            _members.addAll(newMembers)
-            _members.forEach { it.committee = this }
-        }
 
     fun hasMember(user: User?): Boolean {
         return user != null && _members.any { cm -> cm.user.id == user.id }

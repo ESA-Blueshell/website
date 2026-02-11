@@ -18,7 +18,7 @@ class ContributionReminderService @Autowired constructor(
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
         periodService.findById(contributionPeriodId)
-        return repository.findById_ContributionPeriodId(contributionPeriodId)
+        return repository.findByIdContributionPeriodId(contributionPeriodId)
     }
 
     fun sendReminder(reminder: ContributionReminder) {

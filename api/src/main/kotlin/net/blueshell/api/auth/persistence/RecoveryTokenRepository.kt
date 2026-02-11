@@ -10,8 +10,8 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
 
     @Query(
         """
-        select rt from RecoveryToken rt 
-        where rt._user.id = :userId 
+        select rt from RecoveryToken rt
+        where rt.user.id = :userId
         and rt.consumedAt is null
     """
     )
@@ -19,9 +19,9 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
 
     @Query(
         """
-        select rt from RecoveryToken rt 
-        where rt._user.id = :userId 
-        and rt.type = :type 
+        select rt from RecoveryToken rt
+        where rt.user.id = :userId
+        and rt.type = :type
         and rt.consumedAt is null
     """
     )

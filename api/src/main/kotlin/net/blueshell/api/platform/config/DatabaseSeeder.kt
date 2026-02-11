@@ -544,7 +544,6 @@ class DatabaseSeeder(
         val committee = Committee().apply {
             this.name = name
             this.description = description
-            members = mutableListOf()
         }
         return requireNotNull(committeeService.create(committee)) { "Committee create returned null" }
     }
@@ -587,8 +586,8 @@ class DatabaseSeeder(
 
     private fun createContribution(user: User, period: ContributionPeriod): Contribution {
         val c = Contribution().apply {
-            userId = user.id!!
-            contributionPeriodId = period.id!!
+            this.user = user
+            this.contributionPeriod = period
         }
         val created = requireNotNull(contributionService.create(c)) { "Contribution create returned null" }
 
@@ -628,8 +627,7 @@ class DatabaseSeeder(
     }
 
     private fun findExistingSignUp(eventId: Long, userId: Long): EventSignUp? =
-        eventSignUpService.findByEventId(eventId)
-            ?.firstOrNull { it.userId == userId }
+        eventSignUpService.findByEventId(eventId).firstOrNull { it.userId == userId }
 
     private fun createEventSignUpWithAnswers(user: User, event: Event): EventSignUp? {
         findExistingSignUp(event.id!!, user.id!!)?.let { return it }

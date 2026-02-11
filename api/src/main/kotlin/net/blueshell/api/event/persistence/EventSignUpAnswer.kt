@@ -41,51 +41,23 @@ class EventSignUpAnswer(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventSignUpAnswer.Id> {
 
-    @field:MapsId("eventSignUpId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "event_sign_up_id", nullable = false)
-    private var _eventSignUp: EventSignUp? = null
-    var eventSignUp: EventSignUp
-        get() = requireNotNull(_eventSignUp) { "Event sign-up is required" }
-        set(value) {
-            _eventSignUp = value
-            eventSignUpId = _eventSignUp?.id ?: eventSignUpId
-        }
+    @MapsId("eventSignUpId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_sign_up_id", nullable = false)
+    lateinit var eventSignUp: EventSignUp
+        internal set
 
-    @field:Column(name = "event_sign_up_id", nullable = false, updatable = false, insertable = false)
-    var eventSignUpId: Long = 0
-        get() = id.eventSignUpId ?: field
-        set(value) {
-            field = value
-            id.eventSignUpId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _eventSignUp?.id) {
-                _eventSignUp = EventSignUp::class.asRef(value)
-            }
-        }
+    val eventSignUpId: Long
+        get() = id.eventSignUpId ?: 0
 
-    @field:MapsId("answerId")
-    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "answer_id", nullable = false)
-    private var _answer: Answer? = null
-    var answer: Answer
-        get() = requireNotNull(_answer) { "Answer is required" }
-        set(value) {
-            _answer = value
-            answerId = _answer?.id ?: answerId
-        }
+    @MapsId("answerId")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "answer_id", nullable = false)
+    lateinit var answer: Answer
+        internal set
 
-    @field:Column(name = "answer_id", nullable = false, updatable = false, insertable = false)
-    var answerId: Long = 0
-        get() = id.answerId ?: field
-        set(value) {
-            field = value
-            id.answerId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _answer?.id) {
-                _answer = Answer::class.asRef(value)
-            }
-        }
+    val answerId: Long
+        get() = id.answerId ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -22,14 +22,13 @@ import java.time.Instant
 @SQLDelete(sql = "UPDATE recovery_tokens SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class RecoveryToken : AuditedAutoIdEntity() {
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "user_id", nullable = false)
-    private var _user: User? = null
-    var user: User
-        get() = requireNotNull(_user) { "User is required" }
-        set(value) {
-            _user = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    lateinit var user: User
+        internal set
+
+    val userId: Long
+        get() = user.id ?: 0
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)

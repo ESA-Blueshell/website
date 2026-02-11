@@ -32,31 +32,23 @@ class CommitteeMember(
     @AttributeOverrides(AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)))
     override var id: Id = Id(),
 ) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMember.Id> {
-    @field:MapsId("committeeId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "committee_id", nullable = false)
-    private var _committee: Committee? = null
-    var committee: Committee
-        get() = requireNotNull(_committee) { "Committee is required" }
-        set(value) {
-            _committee = value
-            id.committeeId = value.id
-        }
+    @MapsId("committeeId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "committee_id", nullable = false)
+    lateinit var committee: Committee
+        internal set
 
-    val committeeId: Long get() = id.committeeId ?: 0
+    val committeeId: Long
+        get() = id.committeeId ?: 0
 
-    @field:MapsId("userId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "user_id", nullable = false)
-    private var _user: User? = null
-    var user: User
-        get() = requireNotNull(_user) { "User is required" }
-        set(value) {
-            _user = value
-            id.userId = value.id
-        }
+    @MapsId("userId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    lateinit var user: User
+        internal set
 
-    val userId: Long get() = id.userId ?: 0
+    val userId: Long
+        get() = id.userId ?: 0
 
     @Column(name = "role", length = 255)
     var role: String? = null

@@ -24,16 +24,13 @@ import java.time.LocalDate
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Membership : AuditedAutoIdEntity() {
-    @field:JoinColumn(name = "user_id", nullable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private var _user: User? = null
-    var user: User
-        get() = requireNotNull(_user) { "User is required" }
-        set(value) {
-            _user = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    lateinit var user: User
+        internal set
 
-    val userId: Long get() = requireNotNull(_user?.id) { "userId is required" }
+    val userId: Long
+        get() = user.id ?: 0
 
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate = LocalDate.now()

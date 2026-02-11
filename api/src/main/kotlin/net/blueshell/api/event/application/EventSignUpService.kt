@@ -62,11 +62,11 @@ class EventSignUpService @Autowired constructor(
     }
 
     fun findBySurveyId(surveyId: Long): MutableSet<EventSignUp> {
-        return repository.findAllBy_eventSignUpFormId(surveyId)
+        return repository.findAllByEventSignUpFormId(surveyId)
     }
 
     fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): EventSignUp {
-        return repository.findBy_guestAccessTokenAndEventId(accessToken, eventId)
+        return repository.findByGuestAccessTokenAndEventId(accessToken, eventId)
             .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,

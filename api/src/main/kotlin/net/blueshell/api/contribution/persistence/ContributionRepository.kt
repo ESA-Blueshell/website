@@ -12,5 +12,5 @@ interface ContributionRepository : BaseRepository<Contribution, Contribution.Id>
     @Query("DELETE FROM Contribution c WHERE c.id.contributionPeriodId = :contributionPeriodId")
     fun deleteByContributionPeriodId(@Param("contributionPeriodId") contributionPeriodId: Long)
 
-    fun findById_ContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution>
+    fun findByIdContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution>
 }

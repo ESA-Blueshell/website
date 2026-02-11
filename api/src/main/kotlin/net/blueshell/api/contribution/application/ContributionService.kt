@@ -48,7 +48,7 @@ class ContributionService @Autowired constructor(
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution> {
         periodService.findById(contributionPeriodId)
-        return repository.findById_ContributionPeriodId(contributionPeriodId)
+        return repository.findByIdContributionPeriodId(contributionPeriodId)
     }
 
     private fun publishChange(contribution: Contribution, changeType: ContributionChange) {

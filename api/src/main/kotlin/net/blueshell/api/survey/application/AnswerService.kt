@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service
 class AnswerService @Autowired constructor(repository: AnswerRepository) :
     BaseModelService<Answer, Long, AnswerRepository>(repository) {
     fun findBySurveyId(surveyId: Long): MutableSet<Answer> {
-        return repository.findBy_questionSurveyId(surveyId)
+        return repository.findByQuestionSurveyId(surveyId)
     }
 
     fun findByQuestionId(questionId: Long): MutableSet<Answer> {
-        return repository.findBy_questionId(questionId)
+        return repository.findByQuestionId(questionId)
     }
 }

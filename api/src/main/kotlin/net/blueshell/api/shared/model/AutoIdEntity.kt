@@ -11,7 +11,7 @@ abstract class AutoIdEntity : Identifiable<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Long? = null
-        protected set
+        internal set
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -41,76 +41,31 @@ class BoardMember(
     @EmbeddedId
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<BoardMember.Id> {
-    @field:MapsId("boardId")
-    @field:JoinColumn(name = "board_id", nullable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private var _board: Board? = null
-    var board: Board
-        get() = requireNotNull(_board) { "Board is required" }
-        set(value) {
-            _board = value
-            boardId = _board?.id ?: boardId
-        }
+    @MapsId("boardId")
+    @JoinColumn(name = "board_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    lateinit var board: Board
+        internal set
 
+    val boardId: Long
+        get() = id.boardId ?: 0
 
-    @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
-    var boardId: Long = 0
-        get() = id.boardId ?: field
-        set(value) {
-            field = value
-            id.boardId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _board?.id) {
-                _board = Board::class.asRef(value)
-            }
-        }
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    lateinit var user: User
+        internal set
 
+    val userId: Long
+        get() = id.userId ?: 0
 
-    @field:JoinColumn(name = "picture_id")
-    @field:OneToOne(fetch = FetchType.LAZY)
-    private var _picture: File? = null
+    @JoinColumn(name = "picture_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    var picture: File? = null
+        internal set
 
-    @field:MapsId("userId")
-    @field:JoinColumn(name = "user_id", nullable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private var _user: User? = null
-    var user: User
-        get() = requireNotNull(_user) { "User is required" }
-        set(value) {
-            _user = value
-            userId = _user?.id ?: userId
-        }
-
-    @field:Column(name = "user_id", nullable = false, updatable = false, insertable = false)
-    var userId: Long = 0
-        get() = id.userId ?: field
-        set(value) {
-            field = value
-            id.userId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _user?.id) {
-                _user = User::class.asRef(value)
-            }
-        }
-
-    var picture: File?
-        get() = _picture
-        set(value) {
-            _picture = value
-            pictureId = _picture?.id ?: pictureId
-        }
-
-    @field:Column(name = "picture_id", updatable = false, insertable = false)
-    var pictureId: Long? = null
-        get() = _picture?.id ?: field
-        set(value) {
-            field = value
-            if (value == null) {
-                _picture = null
-            } else if (_picture?.id != value) {
-                _picture = File::class.asRef(value)
-            }
-        }
+    val pictureId: Long?
+        get() = picture?.id
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

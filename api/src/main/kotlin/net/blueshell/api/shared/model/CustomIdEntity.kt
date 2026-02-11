@@ -8,7 +8,7 @@ import org.hibernate.Hibernate
 abstract class CustomIdEntity<ID> : Identifiable<ID> {
     @Id
     override var id: ID? = null
-        protected set
+        internal set
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

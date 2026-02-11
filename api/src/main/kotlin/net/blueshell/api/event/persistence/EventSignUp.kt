@@ -31,48 +31,39 @@ import org.hibernate.annotations.SQLRestriction
 @NamedEntityGraph(
     name = "EventSignUp.withGuestAndAnswers",
     attributeNodes = [
-        NamedAttributeNode("_guest"),
+        NamedAttributeNode("guest"),
         NamedAttributeNode(value = "_answers", subgraph = "answersSub")
     ],
     subgraphs = [
-        NamedSubgraph(name = "answersSub", attributeNodes = [NamedAttributeNode("_question")])
+        NamedSubgraph(name = "answersSub", attributeNodes = [NamedAttributeNode("question")])
     ]
 )
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class EventSignUp : AuditedAutoIdEntity() {
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "event_id", nullable = false)
-    private var _event: Event? = null
-    var event: Event
-        get() = requireNotNull(_event) { "Event is required" }
-        set(value) {
-            _event = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    lateinit var event: Event
+        internal set
 
-    val eventId: Long get() = requireNotNull(_event?.id) { "eventId is required" }
+    val eventId: Long
+        get() = event.id ?: 0
 
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "user_id")
-    private var _user: User? = null
-    var user: User?
-        get() = _user
-        set(value) {
-            _user = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    var user: User? = null
+        internal set
 
-    val userId: Long? get() = _user?.id
+    val userId: Long?
+        get() = user?.id
 
-    @field:ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "guest_id")
-    private var _guest: Guest? = null
-    var guest: Guest?
-        get() = _guest
-        set(value) {
-            _guest = value
-        }
+    @ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
+    @JoinColumn(name = "guest_id")
+    var guest: Guest? = null
+        internal set
 
-    val guestId: Long? get() = _guest?.id
+    val guestId: Long?
+        get() = guest?.id
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(

@@ -33,18 +33,15 @@ class Question : DirtyAwareModel() {
     @Column(name = "idx", nullable = false)
     var idx: Long = 0
 
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "survey_id", nullable = false)
-    private var _survey: Survey? = null
-    var survey: Survey
-        get() = requireNotNull(_survey) { "Survey is required" }
-        set(value) {
-            _survey = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "survey_id", nullable = false)
+    lateinit var survey: Survey
+        internal set
 
-    val surveyId: Long get() = requireNotNull(_survey?.id) { "Survey ID is required" }
+    val surveyId: Long
+        get() = survey.id ?: 0
 
-    @OneToMany(mappedBy = "_question", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "question", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _answers: MutableSet<Answer> = linkedSetOf()
     val answers: Set<Answer>
         get() = _answers

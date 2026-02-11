@@ -17,7 +17,10 @@ object AnswerToAnswerDTOMapper : ObjectMappie<Answer, AnswerDTO>()
 
 fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
     version?.let { survey.version = it }
-    survey.questions.addAll(questions!!.map { it.asEntity() })
+    val mappedQuestions = questions!!.map { it.asEntity() }
+    val questionsSet = survey.questions as MutableSet
+    questionsSet.clear()
+    questionsSet.addAll(mappedQuestions)
     survey.questions.forEach { it.survey = survey }
     return survey
 }

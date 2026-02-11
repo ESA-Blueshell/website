@@ -13,13 +13,13 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_surveys_response_count", columnList = "response_count")
     ]
 )
-@NamedEntityGraph(name = "Survey.withQuestions", attributeNodes = [NamedAttributeNode("_questions")])
+@NamedEntityGraph(name = "Survey.withQuestions", attributeNodes = [NamedAttributeNode("questions")])
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE surveys SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 class Survey : AuditedAutoIdEntity() {
-    @OneToMany(mappedBy = "_survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "survey", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _questions: MutableSet<Question> = linkedSetOf()
-    val questions: MutableSet<Question>
+    val questions: Set<Question>
         get() = _questions
 
     @Column(name = "response_count", nullable = false, updatable = false, insertable = false)

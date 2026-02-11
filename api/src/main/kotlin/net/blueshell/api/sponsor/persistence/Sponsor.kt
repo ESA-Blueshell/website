@@ -28,24 +28,11 @@ class Sponsor : AuditedAutoIdEntity() {
     @Column(nullable = false, length = 4095)
     lateinit var description: String
 
-    @field:OneToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "logo_id", nullable = false)
-    private var _picture: File? = null
-    var picture: File
-        get() = requireNotNull(_picture) { "Picture is required" }
-        set(value) {
-            _picture = value
-            pictureId = _picture?.id ?: pictureId
-        }
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "logo_id", nullable = false)
+    lateinit var picture: File
+        internal set
 
-    @field:Column(name = "logo_id", nullable = false, updatable = false, insertable = false)
-    var pictureId: Long = 0
-        get() = _picture?.id ?: field
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _picture?.id) {
-                _picture = File::class.asRef(value)
-            }
-        }
+    val pictureId: Long
+        get() = picture.id ?: 0
 }

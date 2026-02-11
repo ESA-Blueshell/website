@@ -26,7 +26,8 @@ fun CommitteeMemberDTO.asEntity(member: CommitteeMember = CommitteeMember()): Co
 fun AdvancedCommitteeDTO.asEntity(committee: Committee = Committee()): Committee {
     committee.name = name!!
     committee.description = description!!
-    committee.members = members!!.map { it.asEntity() }
+    val mappedMembers = members!!.map { it.asEntity() }
+    committee.members = mappedMembers
     version?.let { committee.version = it }
     return committee
 }

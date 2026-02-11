@@ -20,24 +20,11 @@ class EventFeedback : AuditedAutoIdEntity() {
     @Column(name = "feedback", nullable = false)
     lateinit var feedback: String
 
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "event_id", nullable = false)
-    private var _event: Event? = null
-    var event: Event
-        get() = requireNotNull(_event) { "Event is required" }
-        set(value) {
-            _event = value
-            eventId = _event?.id ?: eventId
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    lateinit var event: Event
+        internal set
 
-    @field:Column(name = "event_id", nullable = false, updatable = false, insertable = false)
-    var eventId: Long = 0
-        get() = _event?.id ?: field
-        set(value) {
-            field = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _event?.id) {
-                _event = Event::class.asRef(value)
-            }
-        }
+    val eventId: Long
+        get() = event.id ?: 0
 }

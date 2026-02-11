@@ -28,27 +28,24 @@ import java.time.Instant
 @NamedEntityGraph(
     name = "Event.withBannerFileAndFormQuestions",
     attributeNodes = [
-        NamedAttributeNode(value = "_banner", subgraph = "bannerSub"),
-        NamedAttributeNode(value = "_signUpForm", subgraph = "formSub"),
+        NamedAttributeNode(value = "banner", subgraph = "bannerSub"),
+        NamedAttributeNode(value = "signUpForm", subgraph = "formSub"),
     ],
     subgraphs = [
-        NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("_file")]),
+        NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("file")]),
         NamedSubgraph(name = "formSub", attributeNodes = [NamedAttributeNode("_questions")]),
     ]
 )
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Event : AuditedAutoIdEntity() {
-    @field:ManyToOne(fetch = FetchType.LAZY)
-    @field:JoinColumn(name = "committee_id")
-    private var _committee: Committee? = null
-    var committee: Committee
-        get() = requireNotNull(_committee) { "Committee is required" }
-        set(value) {
-            _committee = value
-        }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "committee_id", nullable = false)
+    lateinit var committee: Committee
+        internal set
 
-    val committeeId: Long get() = requireNotNull(_committee?.id) { "committeeId is required" }
+    val committeeId: Long
+        get() = committee.id ?: 0
 
     @Column(name = "title", nullable = false)
     lateinit var title: String
@@ -65,13 +62,9 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "end_time", nullable = false)
     lateinit var endTime: Instant
 
-    @field:OneToOne(mappedBy = "_event", cascade = [CascadeType.ALL], orphanRemoval = true)
-    private var _banner: EventBanner? = null
-    var banner: EventBanner?
-        get() = _banner
-        set(value) {
-            _banner = value
-        }
+    @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var banner: EventBanner? = null
+        internal set
 
     @Column(name = "price_member")
     var memberPrice: Double? = null
@@ -79,12 +72,12 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "price_public")
     var publicPrice: Double? = null
 
-    @OneToMany(cascade = [CascadeType.ALL], mappedBy = "_event", fetch = FetchType.LAZY)
+    @OneToMany(cascade = [CascadeType.ALL], mappedBy = "event", fetch = FetchType.LAZY)
     private val _feedbacks: MutableSet<EventFeedback> = linkedSetOf()
     val feedbacks: Set<EventFeedback>
         get() = _feedbacks
 
-    @OneToMany(mappedBy = "_event", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "event", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _pictures: MutableSet<EventPicture> = linkedSetOf()
     val pictures: Set<EventPicture>
         get() = _pictures
@@ -101,16 +94,13 @@ class Event : AuditedAutoIdEntity() {
     @Column(name = "sign_up", nullable = false)
     var signUp = false
 
-    @field:JoinColumn(name = "survey_id")
-    @field:OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    private var _signUpForm: Survey? = null
-    var signUpForm: Survey?
-        get() = _signUpForm
-        set(value) {
-            _signUpForm = value
-        }
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JoinColumn(name = "survey_id")
+    var signUpForm: Survey? = null
+        internal set
 
-    val signUpFormId: Long? get() = _signUpForm?.id
+    val signUpFormId: Long?
+        get() = signUpForm?.id
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
     val signUpCount: Long = 0

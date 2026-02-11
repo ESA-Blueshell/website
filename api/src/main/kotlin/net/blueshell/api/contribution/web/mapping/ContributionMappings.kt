@@ -6,6 +6,8 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.web.dto.ContributionDTO
 import net.blueshell.api.contribution.web.dto.ContributionPeriodDTO
 import net.blueshell.api.contribution.web.dto.ContributionReminderDTO
+import net.blueshell.api.shared.model.asRef
+import net.blueshell.api.user.persistence.User
 import tech.mappie.api.ObjectMappie
 
 object ContributionToContributionDTOMapper : ObjectMappie<Contribution, ContributionDTO>()
@@ -16,8 +18,8 @@ object ContributionReminderToContributionReminderDTOMapper :
     ObjectMappie<ContributionReminder, ContributionReminderDTO>()
 
 fun ContributionDTO.asEntity(contribution: Contribution = Contribution()): Contribution {
-    contribution.userId = userId!!
-    contribution.contributionPeriodId = contributionPeriodId!!
+    contribution.user = User::class.asRef(userId!!)
+    contribution.contributionPeriod = ContributionPeriod::class.asRef(contributionPeriodId!!)
     version?.let { contribution.version = it }
     return contribution
 }
@@ -34,8 +36,8 @@ fun ContributionPeriodDTO.asEntity(period: ContributionPeriod = ContributionPeri
 }
 
 fun ContributionReminderDTO.asEntity(reminder: ContributionReminder = ContributionReminder()): ContributionReminder {
-    reminder.userId = userId!!
-    reminder.contributionPeriodId = contributionPeriodId!!
+    reminder.user = User::class.asRef(userId!!)
+    reminder.contributionPeriod = ContributionPeriod::class.asRef(contributionPeriodId!!)
     version?.let { reminder.version = it }
     return reminder
 }

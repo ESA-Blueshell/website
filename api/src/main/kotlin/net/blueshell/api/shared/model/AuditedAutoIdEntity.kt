@@ -12,7 +12,7 @@ abstract class AuditedAutoIdEntity : AuditedSoftDeleteEntity(), Identifiable<Lon
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Long? = null
-        protected set
+        internal set
 
     fun assignIdForRef(value: Long) {
         id = value

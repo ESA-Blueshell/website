@@ -40,51 +40,23 @@ class BoardDocument(
     @EmbeddedId
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<BoardDocument.Id> {
-    @field:MapsId("boardId")
-    @field:JoinColumn(name = "board_id", nullable = false)
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private var _board: Board? = null
-    var board: Board
-        get() = requireNotNull(_board) { "Board is required" }
-        set(value) {
-            _board = value
-            boardId = _board?.id ?: boardId
-        }
+    @MapsId("boardId")
+    @JoinColumn(name = "board_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    lateinit var board: Board
+        internal set
 
-    @field:Column(name = "board_id", nullable = false, updatable = false, insertable = false)
-    var boardId: Long = 0
-        get() = id.boardId ?: field
-        set(value) {
-            field = value
-            id.boardId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _board?.id) {
-                _board = Board::class.asRef(value)
-            }
-        }
+    val boardId: Long
+        get() = id.boardId ?: 0
 
-    @field:MapsId("fileId")
-    @field:JoinColumn(name = "file_id", nullable = false)
-    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
-    private var _file: File? = null
-    var file: File
-        get() = requireNotNull(_file) { "File is required" }
-        set(value) {
-            _file = value
-            fileId = _file?.id ?: fileId
-        }
+    @MapsId("fileId")
+    @JoinColumn(name = "file_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    lateinit var file: File
+        internal set
 
-    @field:Column(name = "file_id", nullable = false, updatable = false, insertable = false)
-    var fileId: Long = 0
-        get() = id.fileId ?: field
-        set(value) {
-            field = value
-            id.fileId = value
-            // Only override the reference, if the ref exists and is different from current
-            if (value != 0L && value != _file?.id) {
-                _file = File::class.asRef(value)
-            }
-        }
+    val fileId: Long
+        get() = id.fileId ?: 0
 
     @Column(name = "name", nullable = false)
     lateinit var name: String

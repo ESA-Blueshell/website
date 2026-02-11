@@ -34,35 +34,27 @@ class EventBanner(
     override var id: Id = Id()
 ) : AuditedSoftDeleteEntity(), Identifiable<EventBanner.Id> {
 
-    @field:MapsId("eventId")
-    @field:OneToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(name = "event_id", nullable = false)
-    private var _event: Event? = null
-    var event: Event
-        get() = requireNotNull(_event) { "Event is required" }
-        set(value) {
-            _event = value
-            id.eventId = value.id
-        }
+    @MapsId("eventId")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    lateinit var event: Event
+        internal set
 
-    val eventId: Long get() = requireNotNull(id.eventId) { "eventId is required" }
+    val eventId: Long
+        get() = id.eventId ?: 0
 
-    @field:MapsId("fileId")
-    @field:ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @field:JoinColumn(
+    @MapsId("fileId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
         name = "file_id",
         nullable = false,
         foreignKey = ForeignKey(name = "fk_event_banners_file")
     )
-    private var _file: File? = null
-    var file: File
-        get() = requireNotNull(_file) { "File is required" }
-        set(value) {
-            _file = value
-            id.fileId = value.id
-        }
+    lateinit var file: File
+        internal set
 
-    val fileId: Long get() = requireNotNull(id.fileId) { "fileId is required" }
+    val fileId: Long
+        get() = id.fileId ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

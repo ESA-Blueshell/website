@@ -1,7 +1,7 @@
 package net.blueshell.api.event.application
 
 import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.event.persistence.GuestRepository
+import net.blueshell.api.event.persistence.repository.GuestRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher

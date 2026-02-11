@@ -1,5 +1,6 @@
-package net.blueshell.api.file.persistence
+package net.blueshell.api.file.domain.model
 
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.web.mapping.asDto
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport

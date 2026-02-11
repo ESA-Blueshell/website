@@ -1,9 +1,10 @@
-package net.blueshell.api.auth.persistence
+package net.blueshell.api.auth.persistence.repository
 
+import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
-import java.util.*
+import java.util.Optional
 
 interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
     fun findBySelector(selector: String): Optional<RecoveryToken>

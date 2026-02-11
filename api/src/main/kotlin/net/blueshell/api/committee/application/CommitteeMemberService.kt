@@ -3,7 +3,7 @@ package net.blueshell.api.committee.application
 import net.blueshell.api.committee.application.event.CommitteeMembershipChanged
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
-import net.blueshell.api.committee.persistence.CommitteeMemberRepository
+import net.blueshell.api.committee.persistence.repository.CommitteeMemberRepository
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.service.BaseModelService

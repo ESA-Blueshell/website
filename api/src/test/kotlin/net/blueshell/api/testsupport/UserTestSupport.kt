@@ -6,7 +6,7 @@ import net.blueshell.api.auth.web.dto.response.AuthenticationDTO
 import net.blueshell.api.platform.config.TruncateTestDatabaseListener
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.UserRepository
+import net.blueshell.api.user.persistence.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken

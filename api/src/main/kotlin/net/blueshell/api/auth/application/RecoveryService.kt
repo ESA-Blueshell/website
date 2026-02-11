@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.application
 
 import net.blueshell.api.auth.persistence.RecoveryToken
-import net.blueshell.api.auth.persistence.RecoveryTokenRepository
+import net.blueshell.api.auth.persistence.repository.RecoveryTokenRepository
 import net.blueshell.api.platform.integration.queue.EmailJobs
 import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.shared.enums.ResetType

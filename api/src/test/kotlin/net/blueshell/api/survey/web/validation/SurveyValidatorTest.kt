@@ -7,7 +7,7 @@ import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
 import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.QuestionRepository
+import net.blueshell.api.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.survey.web.dto.QuestionDTO
 import net.blueshell.api.survey.web.dto.SurveyDTO

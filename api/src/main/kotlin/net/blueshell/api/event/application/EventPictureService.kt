@@ -1,7 +1,7 @@
 package net.blueshell.api.event.application
 
 import net.blueshell.api.event.persistence.EventPicture
-import net.blueshell.api.event.persistence.EventPictureRepository
+import net.blueshell.api.event.persistence.repository.EventPictureRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher

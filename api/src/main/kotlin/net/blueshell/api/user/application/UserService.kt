@@ -6,7 +6,7 @@ import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.application.event.UserCreated
 import net.blueshell.api.user.application.event.UserUpdated
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.UserRepository
+import net.blueshell.api.user.persistence.repository.UserRepository
 import net.blueshell.api.user.persistence.filter.UserFilter
 import net.blueshell.api.user.persistence.spec.UserSpecifications
 import org.springframework.beans.factory.annotation.Autowired

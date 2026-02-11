@@ -2,7 +2,7 @@ package net.blueshell.api.event.application
 
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
-import net.blueshell.api.event.persistence.EventBannerRepository
+import net.blueshell.api.event.persistence.repository.EventBannerRepository
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.service.BaseModelService

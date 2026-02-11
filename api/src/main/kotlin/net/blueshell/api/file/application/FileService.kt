@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct
 import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.file.application.event.FileDeleted
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.file.persistence.repository.FileRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService

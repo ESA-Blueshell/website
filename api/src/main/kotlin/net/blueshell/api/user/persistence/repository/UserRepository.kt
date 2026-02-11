@@ -1,6 +1,7 @@
-package net.blueshell.api.user.persistence
+package net.blueshell.api.user.persistence.repository
 
 import net.blueshell.api.shared.repository.BaseRepository
+import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Repository
 import java.util.*
 

@@ -3,7 +3,7 @@ package net.blueshell.api.event.application
 import net.blueshell.api.event.application.event.EventChange
 import net.blueshell.api.event.application.event.EventChanged
 import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.event.persistence.EventRepository
+import net.blueshell.api.event.persistence.repository.EventRepository
 import net.blueshell.api.event.persistence.filter.EventFilter
 import net.blueshell.api.event.persistence.spec.EventSpecifications
 import net.blueshell.api.file.persistence.File

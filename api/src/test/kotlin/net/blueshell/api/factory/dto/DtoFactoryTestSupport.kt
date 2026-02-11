@@ -15,11 +15,11 @@ import net.blueshell.api.platform.config.FactoryConfig
 import net.blueshell.api.platform.config.PhoneNumberConfig
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.survey.persistence.QuestionRepository
+import net.blueshell.api.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.testutil.ModelTestUtils
-import net.blueshell.api.user.persistence.UserRepository
+import net.blueshell.api.user.persistence.repository.UserRepository
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired

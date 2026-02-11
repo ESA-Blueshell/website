@@ -5,7 +5,7 @@ import net.blueshell.api.auth.web.dto.request.JwtRequest
 import net.blueshell.api.auth.web.dto.response.AuthenticationDTO
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.persistence.UserRepository
+import net.blueshell.api.user.persistence.repository.UserRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

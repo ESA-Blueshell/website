@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.application.email
 
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 

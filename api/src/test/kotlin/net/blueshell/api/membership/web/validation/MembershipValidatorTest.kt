@@ -40,12 +40,12 @@ class MembershipValidatorTest @Autowired constructor(
     @Test
     fun `membership dto with end date before start date fails validation`() {
         val startDate = LocalDate.now()
-        val dto: net.blueshell.api.domain.membership.web.dto.MembershipDTO = membershipFactory.createWithCustomizations {
+        val dto: MembershipDTO = membershipFactory.createWithCustomizations {
             it.startDate = startDate
             it.endDate = startDate.minusDays(1)
         }
 
-        val violations: Set<ConstraintViolation<net.blueshell.api.domain.membership.web.dto.MembershipDTO>> = validator.validate(dto)
+        val violations: Set<ConstraintViolation<MembershipDTO>> = validator.validate(dto)
         // No cross-field constraint asserted here.
         assertTrue(
             violations.none {

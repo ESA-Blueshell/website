@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.email.service
 
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer

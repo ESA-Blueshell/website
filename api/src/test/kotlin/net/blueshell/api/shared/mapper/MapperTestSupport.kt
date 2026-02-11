@@ -15,8 +15,8 @@ import net.blueshell.api.platform.config.TruncateTestDatabaseListener
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.repository.UserRepository
+import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -76,7 +76,7 @@ abstract class MapperTestSupport {
 
     protected fun persistCommittee(): Committee = persist(committeeFactory.createBasic())
 
-    protected fun persistContributionPeriod(): net.blueshell.api.domain.contribution.persistence.ContributionPeriod = persist(contributionPeriodFactory.createBasic())
+    protected fun persistContributionPeriod(): ContributionPeriod = persist(contributionPeriodFactory.createBasic())
 
     protected fun persistSurvey(): Survey = persist(surveyFactory.createBasic())
 

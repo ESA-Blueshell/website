@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model
 
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.domain.user.persistence.Address
 import org.junit.jupiter.api.Test
 import java.util.function.Consumer
 

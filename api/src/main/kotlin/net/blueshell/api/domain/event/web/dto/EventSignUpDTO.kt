@@ -5,7 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.survey.web.dto.AnswerDTO
-import net.blueshell.api.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 
 @Schema(name = "EventSignUp")
 @net.blueshell.api.domain.event.web.validation.ValidEventSignUp

@@ -7,7 +7,7 @@ import net.blueshell.api.domain.committee.persistence.repository.CommitteeMember
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

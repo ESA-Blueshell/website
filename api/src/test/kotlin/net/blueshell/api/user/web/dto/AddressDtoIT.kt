@@ -3,9 +3,9 @@ package net.blueshell.api.user.web.dto
 import net.blueshell.api.factory.dto.AddressDTOFactory
 import net.blueshell.api.factory.model.AddressFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
-import net.blueshell.api.user.application.AddressService
-import net.blueshell.api.user.persistence.Address
-import net.blueshell.api.user.web.mapping.asEntity
+import net.blueshell.api.domain.user.application.AddressService
+import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.user.web.mapping.asEntity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

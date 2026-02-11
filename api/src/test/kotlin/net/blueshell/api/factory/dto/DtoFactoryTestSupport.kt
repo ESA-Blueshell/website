@@ -19,7 +19,7 @@ import net.blueshell.api.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.testutil.ModelTestUtils
-import net.blueshell.api.user.persistence.repository.UserRepository
+import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -162,7 +162,7 @@ class DtoFactoryTestConfig {
     fun userService(): net.blueshell.api.user.application.UserService = mockk(relaxed = true)
 
     @Bean
-    fun membershipService(): net.blueshell.api.domain.membership.application.MembershipService = mockk(relaxed = true)
+    fun membershipService(): MembershipService = mockk(relaxed = true)
 
     @Bean
     fun eventService(): EventService = mockk(relaxed = true)

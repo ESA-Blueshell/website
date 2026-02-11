@@ -16,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionDtoIT @Autowired constructor(
     private val contributionDTOFactory: ContributionDTOFactory,
     private val contributionFactory: ContributionFactory,
-    private val contributionService: net.blueshell.api.domain.contribution.application.ContributionService
+    private val contributionService: ContributionService
 ) : MapperTestSupport() {
     @Nested
     inner class AsEntity {
@@ -37,7 +37,7 @@ class ContributionDtoIT @Autowired constructor(
             val saved = contributionService.create(mapped)
             flushAndClear()
 
-            val reloaded = reload(_root_ide_package_.net.blueshell.api.domain.contribution.persistence.Contribution::class.java, saved.id)
+            val reloaded = reload(Contribution::class.java, saved.id)
 
             assertThat(reloaded.userId).isEqualTo(user.id)
             assertThat(reloaded.contributionPeriodId).isEqualTo(period.id)

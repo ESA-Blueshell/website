@@ -4,7 +4,7 @@ import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.membership.web.dto.MembershipDTO
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import tech.mappie.api.ObjectMappie

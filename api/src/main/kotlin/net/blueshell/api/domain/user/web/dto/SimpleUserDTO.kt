@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.validation.group.Creation
 import net.blueshell.api.shared.validation.group.Update
-import net.blueshell.api.user.web.validation.UniqueUser
+import net.blueshell.api.domain.user.web.validation.UniqueUser
 
 @Schema(name = "SimpleUser")
 @UniqueUser(groups = [Update::class, Creation::class, Administration::class])

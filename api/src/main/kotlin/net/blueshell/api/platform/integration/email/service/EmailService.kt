@@ -10,7 +10,7 @@ import net.blueshell.api.platform.integration.email.model.ContributionReminderEm
 import net.blueshell.api.platform.integration.email.model.EventSignupEmail
 import net.blueshell.api.platform.integration.email.model.base.BaseEmail
 import net.blueshell.api.shared.enums.ResetType
-import net.blueshell.api.user.application.UserService
+import net.blueshell.api.domain.user.application.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

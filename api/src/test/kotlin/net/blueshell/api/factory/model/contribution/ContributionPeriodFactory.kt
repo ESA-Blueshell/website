@@ -15,8 +15,8 @@ class ContributionPeriodFactory(
     private val faker: Faker
 ) {
 
-    fun createBasic(): net.blueshell.api.domain.contribution.persistence.ContributionPeriod {
-        val period = _root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionPeriod()
+    fun createBasic(): ContributionPeriod {
+        val period = ContributionPeriod()
         val start = LocalDate.now().withDayOfMonth(1)
         period.startDate = start
         period.endDate = start.plusMonths(6)
@@ -27,9 +27,9 @@ class ContributionPeriodFactory(
         return period
     }
 
-    fun createFull(): net.blueshell.api.domain.contribution.persistence.ContributionPeriod = createBasic()
+    fun createFull(): ContributionPeriod = createBasic()
 
-    fun createWithCustomizations(customizer: Consumer<net.blueshell.api.domain.contribution.persistence.ContributionPeriod>): net.blueshell.api.domain.contribution.persistence.ContributionPeriod {
+    fun createWithCustomizations(customizer: Consumer<ContributionPeriod>): ContributionPeriod {
         val period = createFull()
         customizer.accept(period)
         return period

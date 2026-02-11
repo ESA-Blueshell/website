@@ -12,8 +12,8 @@ import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull

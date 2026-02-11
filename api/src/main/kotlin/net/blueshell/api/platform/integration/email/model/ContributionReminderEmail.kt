@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.email.model
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.platform.integration.email.model.base.BaseEmail
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 
 class ContributionReminderEmail(
     recipient: User,

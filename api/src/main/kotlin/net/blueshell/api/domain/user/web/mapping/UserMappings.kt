@@ -3,10 +3,10 @@ package net.blueshell.api.domain.user.web.mapping
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil
-import net.blueshell.api.user.persistence.Address
-import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
+import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder

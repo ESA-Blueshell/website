@@ -8,7 +8,7 @@ import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.web.dto.AnswerDTO
 import net.blueshell.api.survey.web.dto.SurveyDTO
-import net.blueshell.api.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import org.springframework.stereotype.Component
 
 /**

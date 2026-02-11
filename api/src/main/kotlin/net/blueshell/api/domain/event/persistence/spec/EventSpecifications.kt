@@ -7,7 +7,7 @@ import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.filter.EventFilter
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime

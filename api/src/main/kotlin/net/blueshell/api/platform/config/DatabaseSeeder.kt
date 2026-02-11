@@ -24,10 +24,10 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.user.application.AddressService
-import net.blueshell.api.user.application.UserService
-import net.blueshell.api.user.persistence.Address
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.application.AddressService
+import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile

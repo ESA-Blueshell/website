@@ -10,6 +10,6 @@ class ContributionPeriodFactoryTest : ModelFactoryTestSupport() {
     fun `creates persistable contribution period`() {
         val period = contributionPeriodFactory.createBasic()
         val saved = persist(period)
-        assertPersisted(_root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionPeriod::class.java, saved.id)
+        assertPersisted(ContributionPeriod::class.java, saved.id)
     }
 }

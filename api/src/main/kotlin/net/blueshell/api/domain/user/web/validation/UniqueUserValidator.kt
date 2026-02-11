@@ -2,9 +2,9 @@ package net.blueshell.api.domain.user.web.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.user.persistence.repository.UserRepository
-import net.blueshell.api.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.persistence.repository.UserRepository
+import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
+import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.function.BiConsumer

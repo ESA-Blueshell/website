@@ -7,7 +7,7 @@ import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
-import net.blueshell.api.user.application.UserService
+import net.blueshell.api.domain.user.application.UserService
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -45,7 +45,7 @@ class CommitteeMemberServiceIT : ServiceTestSupport() {
             val updatedUser = userService.findById(user.id!!)
             assertTrue(updatedUser.hasRole(Role.COMMITTEE))
             assertTrue(
-                applicationEvents.stream(_root_ide_package_.net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged::class.java).anyMatch { it.userId == user.id })
+                applicationEvents.stream(CommitteeMembershipChanged::class.java).anyMatch { it.userId == user.id })
         }
     }
 
@@ -62,7 +62,7 @@ class CommitteeMemberServiceIT : ServiceTestSupport() {
             assertTrue(userService.findById(user.id!!).hasRole(Role.COMMITTEE))
 
             committeeMemberService.deleteById(
-                _root_ide_package_.net.blueshell.api.domain.committee.persistence.CommitteeMember.Id(committeeId = committee.id!!, userId = user.id!!)
+                CommitteeMember.Id(committeeId = committee.id!!, userId = user.id!!)
             )
 
             val updatedUser = userService.findById(user.id!!)

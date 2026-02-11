@@ -2,7 +2,7 @@ package net.blueshell.api.auth.persistence
 
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

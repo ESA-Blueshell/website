@@ -22,7 +22,7 @@ class ContributionPeriodModelIT : ModelPersistenceTestSupport() {
             period.alumniFee = 5.0
             period.listId = 99
 
-            val found = persistAndReload(period, _root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionPeriod::class.java) { it.id }
+            val found = persistAndReload(period, net.blueshell.api.domain.contribution.persistence.ContributionPeriod::class.java) { it.id }
 
             assertEquals(period.startDate, found.startDate)
             assertEquals(period.endDate, found.endDate)

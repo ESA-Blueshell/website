@@ -17,8 +17,8 @@ class ContributionReminderFactory(
     private val contributionPeriodFactory: ContributionPeriodFactory
 ) {
 
-    fun createBasic(): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
-        val reminder = _root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionReminder()
+    fun createBasic(): ContributionReminder {
+        val reminder = ContributionReminder()
         val user = userFactory.createBasic()
         val period = contributionPeriodFactory.createBasic()
         reminder.user = user
@@ -26,9 +26,9 @@ class ContributionReminderFactory(
         return reminder
     }
 
-    fun createFull(): net.blueshell.api.domain.contribution.persistence.ContributionReminder = createBasic()
+    fun createFull(): ContributionReminder = createBasic()
 
-    fun createWithCustomizations(customizer: Consumer<net.blueshell.api.domain.contribution.persistence.ContributionReminder>): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
+    fun createWithCustomizations(customizer: Consumer<ContributionReminder>): ContributionReminder {
         val reminder = createFull()
         customizer.accept(reminder)
         return reminder

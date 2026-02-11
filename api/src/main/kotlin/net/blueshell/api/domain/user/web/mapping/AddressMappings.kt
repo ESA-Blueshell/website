@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.user.web.mapping
 
-import net.blueshell.api.user.persistence.Address
-import net.blueshell.api.user.web.dto.AddressDTO
+import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.user.web.dto.AddressDTO
 import tech.mappie.api.ObjectMappie
 
 object AddressToAddressDTOMapper : ObjectMappie<Address, AddressDTO>()

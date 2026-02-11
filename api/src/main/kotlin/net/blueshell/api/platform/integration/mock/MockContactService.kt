@@ -2,8 +2,8 @@ package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.platform.integration.contact.ContactService
-import net.blueshell.api.user.application.UserService
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Primary

@@ -4,7 +4,7 @@ import net.blueshell.api.domain.blog.web.dto.BlogDTO
 import net.blueshell.api.factory.UnifiedFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

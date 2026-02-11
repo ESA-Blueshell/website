@@ -4,8 +4,8 @@ import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.platform.integration.queue.ContactJobs
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
-import net.blueshell.api.user.application.event.UserCreated
-import net.blueshell.api.user.application.event.UserUpdated
+import net.blueshell.api.domain.user.application.event.UserCreated
+import net.blueshell.api.domain.user.application.event.UserUpdated
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

@@ -5,7 +5,7 @@ import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.domain.membership.application.event.MembershipChanged
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
-import net.blueshell.api.user.application.UserService
+import net.blueshell.api.domain.user.application.UserService
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -39,7 +39,7 @@ class MembershipServiceIT : ServiceTestSupport() {
 
             val updatedUser = users.findById(user.id!!)
             assertTrue(updatedUser.hasRole(Role.MEMBER))
-            assertTrue(applicationEvents.stream(_root_ide_package_.net.blueshell.api.domain.membership.application.event.MembershipChanged::class.java).anyMatch { it.userId == user.id })
+            assertTrue(applicationEvents.stream(MembershipChanged::class.java).anyMatch { it.userId == user.id })
         }
     }
 

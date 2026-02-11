@@ -4,7 +4,7 @@ import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.platform.integration.contact.ContactService
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.testsupport.ServiceTestSupport
-import net.blueshell.api.user.application.UserService
+import net.blueshell.api.domain.user.application.UserService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argThat

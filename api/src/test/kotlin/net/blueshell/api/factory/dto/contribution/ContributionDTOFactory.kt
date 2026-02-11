@@ -9,12 +9,12 @@ import java.sql.Timestamp
  * Factory for ContributionDTO test instances.
  */
 @Component
-class ContributionDTOFactory : BaseDtoFactory<net.blueshell.api.domain.contribution.web.dto.ContributionDTO>() {
+class ContributionDTOFactory : BaseDtoFactory<ContributionDTO>() {
 
-    override fun targetType(): Class<net.blueshell.api.domain.contribution.web.dto.ContributionDTO> = _root_ide_package_.net.blueshell.api.domain.contribution.web.dto.ContributionDTO::class.java
+    override fun targetType(): Class<ContributionDTO> = ContributionDTO::class.java
 
-    override fun createBasic(): net.blueshell.api.domain.contribution.web.dto.ContributionDTO {
-        return _root_ide_package_.net.blueshell.api.domain.contribution.web.dto.ContributionDTO(
+    override fun createBasic(): ContributionDTO {
+        return ContributionDTO(
             nextId(),
             nextId(),
             Timestamp.from(now())

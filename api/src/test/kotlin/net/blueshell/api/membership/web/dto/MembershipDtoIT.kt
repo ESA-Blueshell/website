@@ -17,7 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class MembershipDtoIT @Autowired constructor(
     private val membershipDTOFactory: MembershipDTOFactory,
     private val membershipFactory: MembershipFactory,
-    private val membershipService: net.blueshell.api.domain.membership.application.MembershipService
+    private val membershipService: MembershipService
 ) : MapperTestSupport() {
     @Nested
     inner class AsEntity {
@@ -34,7 +34,7 @@ class MembershipDtoIT @Autowired constructor(
             val saved = membershipService.create(mapped)
             flushAndClear()
 
-            val reloaded = reload(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id!!)
+            val reloaded = reload(Membership::class.java, saved.id!!)
 
             assertThat(reloaded.userId).isEqualTo(user.id)
             assertThat(reloaded.memberType).isEqualTo(dto.memberType)

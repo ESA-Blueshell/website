@@ -4,7 +4,7 @@ import net.blueshell.api.domain.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.factory.dto.committee.AdvancedCommitteeDTOFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
@@ -148,7 +148,7 @@ class CommitteeControllerIT @Autowired constructor(
             .andExpect(status().isNotFound())
     }
 
-    private fun createCommittee(board: User, member: User): net.blueshell.api.domain.committee.web.dto.AdvancedCommitteeDTO {
+    private fun createCommittee(board: User, member: User): AdvancedCommitteeDTO {
         val payload = committeePayload(board, member)
         val result = mvc.perform(
             post("/committees")

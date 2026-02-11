@@ -16,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class ContributionReminderDtoIT @Autowired constructor(
     private val contributionReminderDTOFactory: ContributionReminderDTOFactory,
     private val contributionReminderFactory: ContributionReminderFactory,
-    private val contributionReminderService: net.blueshell.api.domain.contribution.application.ContributionReminderService
+    private val contributionReminderService: ContributionReminderService
 ) : MapperTestSupport() {
     @Nested
     inner class AsEntity {
@@ -37,7 +37,7 @@ class ContributionReminderDtoIT @Autowired constructor(
             val saved = contributionReminderService.create(mapped)
             flushAndClear()
 
-            val reloaded = reload(_root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionReminder::class.java, saved.id)
+            val reloaded = reload(ContributionReminder::class.java, saved.id)
 
             assertThat(reloaded.userId).isEqualTo(user.id)
             assertThat(reloaded.contributionPeriodId).isEqualTo(period.id)

@@ -17,7 +17,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil.randomCapitalString
 import net.blueshell.api.survey.web.mapping.asEntity
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import tech.mappie.api.ObjectMappie

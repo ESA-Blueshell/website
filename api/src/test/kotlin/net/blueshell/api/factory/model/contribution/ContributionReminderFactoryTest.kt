@@ -16,6 +16,6 @@ class ContributionReminderFactoryTest : ModelFactoryTestSupport() {
         reminder.contributionPeriod = period
 
         val saved = persist(reminder)
-        assertPersisted(_root_ide_package_.net.blueshell.api.domain.contribution.persistence.ContributionReminder::class.java, saved.id)
+        assertPersisted(ContributionReminder::class.java, saved.id)
     }
 }

@@ -5,7 +5,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.platform.integration.contact.ContactService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.platform.integration.queue.ContactJobs
-import net.blueshell.api.user.application.UserService
+import net.blueshell.api.domain.user.application.UserService
 import org.springframework.stereotype.Component
 
 @Component

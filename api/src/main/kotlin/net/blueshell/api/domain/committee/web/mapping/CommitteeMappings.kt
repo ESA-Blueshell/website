@@ -7,7 +7,7 @@ import net.blueshell.api.domain.committee.web.dto.CommitteeMemberDTO
 import net.blueshell.api.domain.committee.web.dto.SimpleCommitteeDTO
 import net.blueshell.api.domain.committee.web.mapping.asEntity
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import tech.mappie.api.ObjectMappie
 
 object CommitteeMemberToCommitteeMemberDTOMapper : ObjectMappie<CommitteeMember, CommitteeMemberDTO>()

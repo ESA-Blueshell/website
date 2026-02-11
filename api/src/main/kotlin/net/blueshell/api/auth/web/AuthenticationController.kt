@@ -6,7 +6,7 @@ import net.blueshell.api.auth.security.JWTAuthBase
 import net.blueshell.api.auth.security.JwtTokenUtil
 import net.blueshell.api.auth.web.dto.request.JwtRequest
 import net.blueshell.api.auth.web.dto.response.AuthenticationDTO
-import net.blueshell.api.user.application.UserService
+import net.blueshell.api.domain.user.application.UserService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken

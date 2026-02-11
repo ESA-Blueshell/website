@@ -22,7 +22,7 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
             membership.memberType = MemberType.ALUMNI
             membership.incasso = true
 
-            val found = persistAndReload(membership, _root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java) { it.id }
+            val found = persistAndReload(membership, net.blueshell.api.domain.membership.persistence.Membership::class.java) { it.id }
 
             assertEquals(membership.startDate, found.startDate)
             assertEquals(membership.endDate, found.endDate)
@@ -35,7 +35,7 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
             val user = persist(userFactory.createBasic())
             val membership = membershipFactory.createBasic(user)
 
-            val found = persistAndReload(membership, _root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java) { it.id }
+            val found = persistAndReload(membership, net.blueshell.api.domain.membership.persistence.Membership::class.java) { it.id }
 
             assertEquals(user.id, found.userId)
             assertEquals(user.id, found.user?.id)
@@ -47,7 +47,7 @@ class MembershipModelIT : ModelPersistenceTestSupport() {
             val membership = membershipFactory.createBasic(user)
             membership.user = user
 
-            val found = persistAndReload(membership, _root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java) { it.id }
+            val found = persistAndReload(membership, net.blueshell.api.domain.membership.persistence.Membership::class.java) { it.id }
 
             assertEquals(user.id, found.userId)
             assertEquals(user.id, found.user.id)

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.dto.BaseDTO
-import net.blueshell.api.user.web.validation.UniqueUsername
+import net.blueshell.api.domain.user.web.validation.UniqueUsername
 
 @Schema(name = "MemberActivationRequest")
 data class MemberActivationRequest(

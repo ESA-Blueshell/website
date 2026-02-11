@@ -2,7 +2,7 @@ package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import java.sql.Date

@@ -5,7 +5,7 @@ import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.SQLDelete

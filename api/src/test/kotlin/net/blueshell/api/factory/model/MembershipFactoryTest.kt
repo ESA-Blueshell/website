@@ -12,7 +12,7 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         membership.user = user
 
         val saved = persist(membership)
-        assertPersisted(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id)
+        assertPersisted(Membership::class.java, saved.id)
     }
 
     @Test
@@ -22,7 +22,7 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         membership.user = user
 
         val saved = persist(membership)
-        assertPersisted(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id)
+        assertPersisted(Membership::class.java, saved.id)
     }
 
     @Test
@@ -32,6 +32,6 @@ class MembershipFactoryTest : ModelFactoryTestSupport() {
         membership.user = user
 
         val saved = persist(membership)
-        assertPersisted(_root_ide_package_.net.blueshell.api.domain.membership.persistence.Membership::class.java, saved.id)
+        assertPersisted(Membership::class.java, saved.id)
     }
 }

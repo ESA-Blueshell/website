@@ -5,7 +5,7 @@ import jakarta.persistence.MappedSuperclass
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
-import net.blueshell.api.user.web.validation.ValidMobilePhoneNumber
+import net.blueshell.api.domain.user.web.validation.ValidMobilePhoneNumber
 
 @Schema(name = "PersonalInfo")
 @MappedSuperclass

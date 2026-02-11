@@ -7,7 +7,7 @@ import net.blueshell.api.domain.contribution.web.dto.ContributionDTO
 import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodDTO
 import net.blueshell.api.domain.contribution.web.dto.ContributionReminderDTO
 import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.domain.user.persistence.User
 import tech.mappie.api.ObjectMappie
 
 object ContributionToContributionDTOMapper : ObjectMappie<Contribution, ContributionDTO>()

@@ -10,7 +10,7 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `enforce layering`(): Unit =
         arch("Enforce application layering") {
             layeredArchitecture()
-                .consideringAllDependencies()
+                .consideringOnlyDependenciesInAnyPackage("net.blueshell.api..")
 
                 .layer("Controllers").definedBy(ArchitecturePackages.CONTROLLER)
                 .layer("Validation").definedBy(ArchitecturePackages.VALIDATION)

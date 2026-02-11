@@ -7,6 +7,7 @@ import jakarta.persistence.Entity
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL_CONVERTER
+import net.blueshell.api.architecture.ArchitecturePackages.VALIDATION
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.architecture.support.SignatureConditions
 import net.blueshell.api.shared.model.Identifiable

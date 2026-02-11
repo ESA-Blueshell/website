@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.email.service
 
-import net.blueshell.api.auth.application.email.MemberActivationEmail
-import net.blueshell.api.auth.application.email.PasswordResetEmail
-import net.blueshell.api.auth.application.email.UserActivationEmail
+import net.blueshell.api.domain.auth.application.email.MemberActivationEmail
+import net.blueshell.api.domain.auth.application.email.PasswordResetEmail
+import net.blueshell.api.domain.auth.application.email.UserActivationEmail
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.EventSignUpService

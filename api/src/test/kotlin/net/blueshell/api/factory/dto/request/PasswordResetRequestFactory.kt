@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.request
 
-import net.blueshell.api.auth.web.dto.recovery.PasswordResetRequest
+import net.blueshell.api.domain.auth.web.dto.recovery.PasswordResetRequest
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

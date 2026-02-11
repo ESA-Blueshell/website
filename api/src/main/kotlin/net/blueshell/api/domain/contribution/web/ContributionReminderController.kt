@@ -2,7 +2,7 @@ package net.blueshell.api.domain.contribution.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.auth.security.IdentityProvider
+import net.blueshell.api.domain.auth.security.IdentityProvider
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.web.dto.ContributionReminderDTO
 import net.blueshell.api.domain.contribution.web.mapping.asDto

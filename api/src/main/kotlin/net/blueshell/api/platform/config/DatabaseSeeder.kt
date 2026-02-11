@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.config
 
 import com.github.javafaker.Faker
-import net.blueshell.api.auth.application.RecoveryService
-import net.blueshell.api.auth.persistence.RecoveryToken
+import net.blueshell.api.domain.auth.application.RecoveryService
+import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.committee.application.CommitteeMemberService
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee

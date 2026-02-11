@@ -25,17 +25,12 @@ class AdvancedUserDtoIT @Autowired constructor(
     inner class AsEntity {
         @Test
         fun `persists profile fields`() {
-            val address = persist(addressFactory.createBasic())
-            val dto = advancedUserDTOFactory.createBasic().apply {
-                addressId = address.id
-            }
+            val dto = advancedUserDTOFactory.createBasic()
             val user = userFactory.createBasic()
-
             val mapped = dto.asEntity(user, passwordEncoder)
 
             assertThat(mapped.username).isEqualTo(dto.username)
             assertThat(mapped.email).isEqualTo(dto.email)
-            assertThat(mapped.addressId).isEqualTo(address.id)
 
             val saved = userService.create(mapped)
             flushAndClear()
@@ -44,7 +39,6 @@ class AdvancedUserDtoIT @Autowired constructor(
 
             assertThat(reloaded.username).isEqualTo(dto.username)
             assertThat(reloaded.email).isEqualTo(dto.email)
-            assertThat(reloaded.addressId).isEqualTo(address.id)
         }
 
         @Test

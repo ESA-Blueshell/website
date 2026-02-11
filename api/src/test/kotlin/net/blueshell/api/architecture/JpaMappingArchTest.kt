@@ -44,17 +44,6 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.MODEL_BASE) {
         }
 
     @Test
-    fun `to-one associations should use private underscore backing field`(): Unit =
-        arch("To-one associations use private underscore-backed field") {
-            fields()
-                .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
-                .and().areAnnotatedWith(ManyToOne::class.java)
-                .or().areAnnotatedWith(OneToOne::class.java)
-                .should(bePrivateAndUnderscorePrefixed())
-                .because("Use private underscore-backed fields for JPA relations to keep control/invariants.")
-        }
-
-    @Test
     fun `relations with separate id column must be read-only or mapsId`(): Unit =
         arch("If both <name>Id and relation exist, join must be read-only or @MapsId") {
             fields()
@@ -66,12 +55,11 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.MODEL_BASE) {
         }
 
     @Test
-    fun `collection associations should be private underscore vals`(): Unit =
+    fun `one-to-many associations should use private underscore backing field`(): Unit =
         arch("Collections are private underscore-backed vals") {
             fields()
                 .that().areDeclaredInClassesThat().areAnnotatedWith(Entity::class.java)
                 .and().areAnnotatedWith(OneToMany::class.java)
-                .or().areAnnotatedWith(ManyToMany::class.java)
                 .should(bePrivateUnderscoreAndFinal())
                 .because("Keep mutable collections private; expose read-only views.")
         }

@@ -12,7 +12,7 @@ import net.blueshell.api.domain.user.web.validation.UniqueUser
 
 @Schema(name = "SimpleUser")
 @UniqueUser(groups = [Update::class, Creation::class, Administration::class])
-class SimpleUserDTO(
+open class SimpleUserDTO(
     @field:NotBlank
     var username: String? = null,
 

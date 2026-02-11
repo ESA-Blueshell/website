@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.config.permission
 
-import net.blueshell.api.auth.security.IdentityProvider
+import net.blueshell.api.domain.auth.security.IdentityProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.PermissionEvaluator
 import org.springframework.security.core.Authentication

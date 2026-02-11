@@ -8,8 +8,7 @@ import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.domain.user.web.validation.ValidMobilePhoneNumber
 
 @Schema(name = "PersonalInfo")
-@MappedSuperclass
-class PersonalInfoDTO(
+open class PersonalInfoDTO(
     @field:NotBlank
     @field:Email
     var email: String? = null,

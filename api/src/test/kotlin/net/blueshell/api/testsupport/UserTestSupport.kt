@@ -1,8 +1,8 @@
 package net.blueshell.api.testsupport
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import net.blueshell.api.auth.web.dto.request.JwtRequest
-import net.blueshell.api.auth.web.dto.response.AuthenticationDTO
+import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
+import net.blueshell.api.domain.auth.web.dto.response.AuthenticationDTO
 import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.user.persistence.User

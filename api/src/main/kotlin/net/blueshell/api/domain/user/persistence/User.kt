@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.user.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.auth.persistence.RecoveryToken
+import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.event.persistence.EventSignUp

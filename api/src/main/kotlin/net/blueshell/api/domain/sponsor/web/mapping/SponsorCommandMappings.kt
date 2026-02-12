@@ -8,8 +8,8 @@ import tech.mappie.api.ObjectMappie
 
 object CreateSponsorRequestToCommandMapper : ObjectMappie<CreateSponsorRequest, CreateSponsorCommand>() {
     override fun map(from: CreateSponsorRequest) = mapping {
-        CreateSponsorCommand::name fromProperty { from.name!! }
-        CreateSponsorCommand::description fromProperty { from.description!! }
+        CreateSponsorCommand::name fromValue { from.name!! }
+        CreateSponsorCommand::description fromValue { from.description!! }
     }
 }
 
@@ -21,9 +21,9 @@ private data class UpdateSponsorCommandRequest(
 object UpdateSponsorCommandRequestToCommandMapper : ObjectMappie<UpdateSponsorCommandRequest, UpdateSponsorCommand>() {
     override fun map(from: UpdateSponsorCommandRequest) = mapping {
         UpdateSponsorCommand::id fromProperty from::id
-        UpdateSponsorCommand::name fromProperty { from.request.name!! }
-        UpdateSponsorCommand::description fromProperty { from.request.description!! }
-        UpdateSponsorCommand::version fromProperty { from.request.version }
+        UpdateSponsorCommand::name fromValue { from.request.name!! }
+        UpdateSponsorCommand::description fromValue { from.request.description!! }
+        UpdateSponsorCommand::version fromValue { from.request.version }
     }
 }
 

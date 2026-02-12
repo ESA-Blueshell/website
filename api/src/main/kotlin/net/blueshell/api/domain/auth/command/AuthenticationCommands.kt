@@ -1,9 +1,12 @@
 package net.blueshell.api.domain.auth.command
 
-import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
 import net.blueshell.api.shared.command.Command
+import jakarta.validation.constraints.NotBlank
 
 data class AuthenticateCommand(
-    val request: JwtRequest
+    @field:NotBlank
+    val username: String,
+    @field:NotBlank
+    val password: String
 ) : Command<AuthenticationResponse>

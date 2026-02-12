@@ -2,35 +2,36 @@ package net.blueshell.api.domain.auth.web.mapping
 
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
-import net.blueshell.api.domain.auth.web.dto.recovery.MemberActivationRequest
-import net.blueshell.api.domain.auth.web.dto.recovery.PasswordResetRequest
-import net.blueshell.api.domain.auth.web.dto.recovery.UserActivationRequest
+import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
+import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
+import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
 import tech.mappie.api.ObjectMappie
 
 object JwtRequestToCommandMapper : ObjectMappie<JwtRequest, AuthenticateCommand>() {
     override fun map(from: JwtRequest) = mapping {
-        AuthenticateCommand::request fromProperty { from }
+        AuthenticateCommand::username fromValue { from.username!! }
+        AuthenticateCommand::password fromValue { from.password!! }
     }
 }
 
 object PasswordResetRequestToCommandMapper : ObjectMappie<PasswordResetRequest, SetPasswordCommand>() {
     override fun map(from: PasswordResetRequest) = mapping {
-        SetPasswordCommand::token fromProperty { from.token!! }
-        SetPasswordCommand::password fromProperty { from.password!! }
+        SetPasswordCommand::token fromValue { from.token!! }
+        SetPasswordCommand::password fromValue { from.password!! }
     }
 }
 
 object UserActivationRequestToCommandMapper : ObjectMappie<UserActivationRequest, UserActivateCommand>() {
     override fun map(from: UserActivationRequest) = mapping {
-        UserActivateCommand::token fromProperty { from.token!! }
+        UserActivateCommand::token fromValue { from.token!! }
     }
 }
 
 object MemberActivationRequestToCommandMapper : ObjectMappie<MemberActivationRequest, MemberActivateCommand>() {
     override fun map(from: MemberActivationRequest) = mapping {
-        MemberActivateCommand::token fromProperty { from.token!! }
-        MemberActivateCommand::username fromProperty { from.username!! }
-        MemberActivateCommand::password fromProperty { from.password!! }
+        MemberActivateCommand::token fromValue { from.token!! }
+        MemberActivateCommand::username fromValue { from.username!! }
+        MemberActivateCommand::password fromValue { from.password!! }
     }
 }
 

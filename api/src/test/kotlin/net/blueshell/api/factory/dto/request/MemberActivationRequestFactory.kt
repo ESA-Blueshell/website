@@ -1,6 +1,6 @@
 package net.blueshell.api.factory.dto.request
 
-import net.blueshell.api.domain.auth.web.dto.recovery.MemberActivationRequest
+import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 

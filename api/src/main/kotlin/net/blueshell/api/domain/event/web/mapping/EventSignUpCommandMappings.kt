@@ -13,19 +13,19 @@ import tech.mappie.api.ObjectMappie
 
 object AnswerRequestToAnswerDTOMapper : ObjectMappie<AnswerRequest, AnswerDTO>() {
     override fun map(from: AnswerRequest) = mapping {
-        AnswerDTO::questionId fromProperty { from.questionId!! }
-        AnswerDTO::optionSelections fromProperty { from.optionSelections }
-        AnswerDTO::textResponse fromProperty { from.textResponse }
+        AnswerDTO::questionId fromValue { from.questionId!! }
+        AnswerDTO::optionSelections fromValue { from.optionSelections }
+        AnswerDTO::textResponse fromValue { from.textResponse }
     }
 }
 
 object CreateGuestRequestToGuestDTOMapper : ObjectMappie<CreateGuestRequest, GuestDTO>() {
     override fun map(from: CreateGuestRequest) = mapping {
-        GuestDTO::name fromProperty { from.name!! }
-        GuestDTO::discord fromProperty { from.discord!! }
-        GuestDTO::email fromProperty { from.email!! }
-        GuestDTO::phoneNumber fromProperty { from.phoneNumber }
-        GuestDTO::version fromProperty { from.version }
+        GuestDTO::name fromValue { from.name!! }
+        GuestDTO::discord fromValue { from.discord!! }
+        GuestDTO::email fromValue { from.email!! }
+        GuestDTO::phoneNumber fromValue { from.phoneNumber }
+        GuestDTO::version fromValue { from.version }
     }
 }
 
@@ -41,28 +41,28 @@ private data class EventSignUpUpdateRequestPayload(
 
 object EventSignUpRequestPayloadToDtoMapper : ObjectMappie<EventSignUpRequestPayload, EventSignUpDTO>() {
     override fun map(from: EventSignUpRequestPayload) = mapping {
-        EventSignUpDTO::eventId fromProperty { from.eventId }
-        EventSignUpDTO::answers fromProperty {
+        EventSignUpDTO::eventId fromValue { from.eventId }
+        EventSignUpDTO::answers fromValue {
             from.request.answers?.map { AnswerRequestToAnswerDTOMapper.map(it) }?.toMutableList()
         }
-        EventSignUpDTO::guest fromProperty {
+        EventSignUpDTO::guest fromValue {
             from.request.guest?.let { CreateGuestRequestToGuestDTOMapper.map(it) }
         }
-        EventSignUpDTO::userId fromProperty { from.request.userId }
+        EventSignUpDTO::userId fromValue { from.request.userId }
     }
 }
 
 object EventSignUpUpdateRequestPayloadToDtoMapper : ObjectMappie<EventSignUpUpdateRequestPayload, EventSignUpDTO>() {
     override fun map(from: EventSignUpUpdateRequestPayload) = mapping {
-        EventSignUpDTO::eventId fromProperty { from.eventId }
-        EventSignUpDTO::answers fromProperty {
+        EventSignUpDTO::eventId fromValue { from.eventId }
+        EventSignUpDTO::answers fromValue {
             from.request.answers?.map { AnswerRequestToAnswerDTOMapper.map(it) }?.toMutableList()
         }
-        EventSignUpDTO::guest fromProperty {
+        EventSignUpDTO::guest fromValue {
             from.request.guest?.let { CreateGuestRequestToGuestDTOMapper.map(it) }
         }
-        EventSignUpDTO::userId fromProperty { from.request.userId }
-        EventSignUpDTO::version fromProperty { from.request.version }
+        EventSignUpDTO::userId fromValue { from.request.userId }
+        EventSignUpDTO::version fromValue { from.request.version }
     }
 }
 
@@ -81,21 +81,21 @@ private data class UpdateEventSignUpCommandRequest(
 
 object CreateEventSignUpCommandRequestToCommandMapper : ObjectMappie<CreateEventSignUpCommandRequest, CreateEventSignUpCommand>() {
     override fun map(from: CreateEventSignUpCommandRequest) = mapping {
-        CreateEventSignUpCommand::dto fromProperty {
+        CreateEventSignUpCommand::dto fromValue {
             EventSignUpRequestPayloadToDtoMapper.map(EventSignUpRequestPayload(from.eventId, from.request))
         }
-        CreateEventSignUpCommand::principalId fromProperty { from.principalId }
+        CreateEventSignUpCommand::principalId fromValue { from.principalId }
     }
 }
 
 object UpdateEventSignUpCommandRequestToCommandMapper : ObjectMappie<UpdateEventSignUpCommandRequest, UpdateEventSignUpCommand>() {
     override fun map(from: UpdateEventSignUpCommandRequest) = mapping {
-        UpdateEventSignUpCommand::eventId fromProperty { from.eventId }
-        UpdateEventSignUpCommand::dto fromProperty {
+        UpdateEventSignUpCommand::eventId fromValue { from.eventId }
+        UpdateEventSignUpCommand::dto fromValue {
             EventSignUpUpdateRequestPayloadToDtoMapper.map(EventSignUpUpdateRequestPayload(from.eventId, from.request))
         }
-        UpdateEventSignUpCommand::accessToken fromProperty { from.accessToken }
-        UpdateEventSignUpCommand::principalId fromProperty { from.principalId }
+        UpdateEventSignUpCommand::accessToken fromValue { from.accessToken }
+        UpdateEventSignUpCommand::principalId fromValue { from.principalId }
     }
 }
 

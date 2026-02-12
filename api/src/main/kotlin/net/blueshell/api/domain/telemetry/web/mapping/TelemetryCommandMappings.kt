@@ -6,8 +6,8 @@ import tech.mappie.api.ObjectMappie
 
 object CreateTelemetryRequestToCommandMapper : ObjectMappie<CreateTelemetryRequest, CreateTelemetryCommand>() {
     override fun map(from: CreateTelemetryRequest) = mapping {
-        CreateTelemetryCommand::platform fromProperty { from.platform!! }
-        CreateTelemetryCommand::url fromProperty { from.url!! }
+        CreateTelemetryCommand::platform fromValue { from.platform!! }
+        CreateTelemetryCommand::url fromValue { from.url!! }
     }
 }
 

@@ -8,11 +8,11 @@ import tech.mappie.api.ObjectMappie
 
 object BoardCreateMembershipRequestToCommandMapper : ObjectMappie<BoardCreateMembershipRequest, BoardCreateMembershipCommand>() {
     override fun map(from: BoardCreateMembershipRequest) = mapping {
-        BoardCreateMembershipCommand::userId fromProperty { from.userId!! }
-        BoardCreateMembershipCommand::memberType fromProperty { from.memberType!! }
-        BoardCreateMembershipCommand::startDate fromProperty { from.startDate!! }
-        BoardCreateMembershipCommand::endDate fromProperty { from.endDate }
-        BoardCreateMembershipCommand::incasso fromProperty { from.incasso!! }
+        BoardCreateMembershipCommand::userId fromValue { from.userId!! }
+        BoardCreateMembershipCommand::memberType fromValue { from.memberType!! }
+        BoardCreateMembershipCommand::startDate fromValue { from.startDate!! }
+        BoardCreateMembershipCommand::endDate fromValue { from.endDate }
+        BoardCreateMembershipCommand::incasso fromValue { from.incasso!! }
     }
 }
 
@@ -24,12 +24,12 @@ private data class UpdateMembershipCommandRequest(
 object UpdateMembershipCommandRequestToCommandMapper : ObjectMappie<UpdateMembershipCommandRequest, UpdateMembershipCommand>() {
     override fun map(from: UpdateMembershipCommandRequest) = mapping {
         UpdateMembershipCommand::id fromProperty from::id
-        UpdateMembershipCommand::userId fromProperty { from.request.userId!! }
-        UpdateMembershipCommand::memberType fromProperty { from.request.memberType }
-        UpdateMembershipCommand::startDate fromProperty { from.request.startDate!! }
-        UpdateMembershipCommand::endDate fromProperty { from.request.endDate }
-        UpdateMembershipCommand::incasso fromProperty { from.request.incasso }
-        UpdateMembershipCommand::version fromProperty { from.request.version }
+        UpdateMembershipCommand::userId fromValue { from.request.userId!! }
+        UpdateMembershipCommand::memberType fromValue { from.request.memberType }
+        UpdateMembershipCommand::startDate fromValue { from.request.startDate!! }
+        UpdateMembershipCommand::endDate fromValue { from.request.endDate }
+        UpdateMembershipCommand::incasso fromValue { from.request.incasso }
+        UpdateMembershipCommand::version fromValue { from.request.version }
     }
 }
 

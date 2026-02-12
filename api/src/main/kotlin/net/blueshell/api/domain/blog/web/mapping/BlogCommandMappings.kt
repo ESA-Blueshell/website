@@ -8,9 +8,9 @@ import tech.mappie.api.ObjectMappie
 
 object CreateBlogRequestToCommandMapper : ObjectMappie<CreateBlogRequest, CreateBlogCommand>() {
     override fun map(from: CreateBlogRequest) = mapping {
-        CreateBlogCommand::title fromProperty { from.title!! }
-        CreateBlogCommand::html fromProperty { from.html!! }
-        CreateBlogCommand::publishedAt fromProperty { from.publishedAt!! }
+        CreateBlogCommand::title fromValue { from.title!! }
+        CreateBlogCommand::html fromValue { from.html!! }
+        CreateBlogCommand::publishedAt fromValue { from.publishedAt!! }
     }
 }
 
@@ -22,10 +22,10 @@ private data class UpdateBlogCommandRequest(
 object UpdateBlogCommandRequestToCommandMapper : ObjectMappie<UpdateBlogCommandRequest, UpdateBlogCommand>() {
     override fun map(from: UpdateBlogCommandRequest) = mapping {
         UpdateBlogCommand::id fromProperty from::id
-        UpdateBlogCommand::title fromProperty { from.request.title!! }
-        UpdateBlogCommand::html fromProperty { from.request.html!! }
-        UpdateBlogCommand::publishedAt fromProperty { from.request.publishedAt!! }
-        UpdateBlogCommand::version fromProperty { from.request.version }
+        UpdateBlogCommand::title fromValue { from.request.title!! }
+        UpdateBlogCommand::html fromValue { from.request.html!! }
+        UpdateBlogCommand::publishedAt fromValue { from.request.publishedAt!! }
+        UpdateBlogCommand::version fromValue { from.request.version }
     }
 }
 

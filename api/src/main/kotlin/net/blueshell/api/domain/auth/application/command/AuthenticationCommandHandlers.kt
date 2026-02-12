@@ -22,11 +22,9 @@ class AuthenticateHandler(
     override val commandType = AuthenticateCommand::class
 
     override fun handle(command: AuthenticateCommand): AuthenticationResponse {
-        val username = requireNotNull(command.request.username) { "Username is required" }
-        val password = requireNotNull(command.request.password) { "Password is required" }
-        authenticationManager.authenticate(UsernamePasswordAuthenticationToken(username, password))
+        authenticationManager.authenticate(UsernamePasswordAuthenticationToken(command.username, command.password))
 
-        val user = users.findByUsername(username)
+        val user = users.findByUsername(command.username)
         val token = jwtTokenUtil.generateToken(user)
         val expirationTime = System.currentTimeMillis() + expiration
 

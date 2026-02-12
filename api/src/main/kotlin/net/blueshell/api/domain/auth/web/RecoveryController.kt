@@ -5,9 +5,9 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.auth.security.JWTAuthBase
-import net.blueshell.api.domain.auth.web.dto.recovery.MemberActivationRequest
-import net.blueshell.api.domain.auth.web.dto.recovery.PasswordResetRequest
-import net.blueshell.api.domain.auth.web.dto.recovery.UserActivationRequest
+import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
+import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
+import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
 import net.blueshell.api.domain.auth.web.mapping.asCommand
 import net.blueshell.api.domain.telemetry.web.dto.RedirectResponse
 import net.blueshell.api.shared.command.CommandBus

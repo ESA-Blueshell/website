@@ -14,15 +14,15 @@ private data class BlogResponseSource(
 
 object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
     override fun map(from: BlogResponseSource) = mapping {
-        BlogResponse::id fromProperty { from.blog.id }
-        BlogResponse::version fromProperty { from.blog.version }
-        BlogResponse::createdAt fromProperty { from.blog.createdAt }
-        BlogResponse::updatedAt fromProperty { from.blog.updatedAt }
-        BlogResponse::deletedAt fromProperty { from.blog.deletedAt }
-        BlogResponse::title fromProperty { from.blog.title }
-        BlogResponse::html fromProperty { from.blog.html }
-        BlogResponse::publishedAt fromProperty { from.blog.publishedAt }
-        BlogResponse::url fromProperty { "${from.frontendUrl}/blogs/${from.blog.id}" }
+        BlogResponse::id fromValue { from.blog.id }
+        BlogResponse::version fromValue { from.blog.version }
+        BlogResponse::createdAt fromValue { from.blog.createdAt }
+        BlogResponse::updatedAt fromValue { from.blog.updatedAt }
+        BlogResponse::deletedAt fromValue { from.blog.deletedAt }
+        BlogResponse::title fromValue { from.blog.title }
+        BlogResponse::html fromValue { from.blog.html }
+        BlogResponse::publishedAt fromValue { from.blog.publishedAt }
+        BlogResponse::url fromValue { "${from.frontendUrl}/blogs/${from.blog.id}" }
     }
 }
 

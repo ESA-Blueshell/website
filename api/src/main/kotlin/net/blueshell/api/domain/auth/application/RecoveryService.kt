@@ -185,8 +185,7 @@ class RecoveryService(
                 EmailJobs.Recovery,
                 EmailJobs.RecoveryPayload(user.id!!, rawToken, ResetType.MEMBER_ACTIVATION)
             )
-        } else if (recoveryTokens.any { it.type == ResetType.USER_ACTIVATION }
-        ) {
+        } else if (recoveryTokens.any { it.type == ResetType.USER_ACTIVATION }) {
             val rawToken = issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
             jobDispatcher.enqueue(
                 EmailJobs.Recovery,

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.auth.application.command
+package net.blueshell.api.domain.auth.application.handler
 
 import net.blueshell.api.domain.auth.command.AuthenticateCommand
 import net.blueshell.api.domain.auth.security.JwtTokenUtil

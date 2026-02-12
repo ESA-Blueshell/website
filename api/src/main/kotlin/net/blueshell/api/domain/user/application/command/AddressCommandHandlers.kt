@@ -2,12 +2,7 @@ package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.command.CreateAddressCommand
-import net.blueshell.api.domain.user.command.DeleteAddressByIdCommand
-import net.blueshell.api.domain.user.command.DeleteUserAddressCommand
-import net.blueshell.api.domain.user.command.FindAddressByIdCommand
-import net.blueshell.api.domain.user.command.FindAllAddressesCommand
-import net.blueshell.api.domain.user.command.UpdateAddressCommand
+import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component

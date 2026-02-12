@@ -3,8 +3,8 @@ package net.blueshell.api.factory.model.committee
 import com.github.javafaker.Faker
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
-import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.factory.model.UserFactory
 import org.springframework.stereotype.Component
 import java.util.function.Consumer
 

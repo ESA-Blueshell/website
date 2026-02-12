@@ -1,11 +1,11 @@
 package net.blueshell.api.domain.membership.application
 
+import net.blueshell.api.domain.membership.application.event.MembershipChanged
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.factory.model.MembershipFactory
 import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.domain.membership.application.event.MembershipChanged
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
-import net.blueshell.api.domain.user.application.UserService
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -16,7 +16,7 @@ import java.time.LocalDate
 class MembershipServiceIT : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var memberships: net.blueshell.api.domain.membership.application.MembershipService
+    private lateinit var memberships: MembershipService
 
     @Autowired
     private lateinit var users: UserService

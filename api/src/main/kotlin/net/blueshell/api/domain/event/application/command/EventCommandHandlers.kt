@@ -1,12 +1,7 @@
 package net.blueshell.api.domain.event.application.command
 
 import net.blueshell.api.domain.event.application.EventService
-import net.blueshell.api.domain.event.command.ApproveEventCommand
-import net.blueshell.api.domain.event.command.CreateEventCommand
-import net.blueshell.api.domain.event.command.DeleteEventByIdCommand
-import net.blueshell.api.domain.event.command.FindEventByIdCommand
-import net.blueshell.api.domain.event.command.FindEventsCommand
-import net.blueshell.api.domain.event.command.UpdateEventCommand
+import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler

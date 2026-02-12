@@ -10,14 +10,10 @@ import net.blueshell.api.domain.event.web.dto.EventBannerDTO
 import net.blueshell.api.domain.event.web.dto.EventDTO
 import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
 import net.blueshell.api.domain.event.web.dto.GuestDTO
-import net.blueshell.api.domain.event.web.mapping.asEntity
-import net.blueshell.api.domain.file.web.mapping.asEntity
+import net.blueshell.api.domain.survey.web.mapping.asEntity
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil.randomCapitalString
-import net.blueshell.api.domain.survey.web.mapping.asEntity
-import net.blueshell.api.domain.user.persistence.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import tech.mappie.api.ObjectMappie

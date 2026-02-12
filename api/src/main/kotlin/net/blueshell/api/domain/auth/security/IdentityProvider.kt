@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.security
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 

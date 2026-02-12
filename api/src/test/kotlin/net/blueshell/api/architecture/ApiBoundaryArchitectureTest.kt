@@ -7,7 +7,6 @@ import jakarta.persistence.Entity
 import net.blueshell.api.architecture.ArchitecturePackages.CONTROLLER
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL
 import net.blueshell.api.architecture.ArchitecturePackages.MODEL_CONVERTER
-import net.blueshell.api.architecture.ArchitecturePackages.VALIDATION
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.architecture.support.SignatureConditions
 import net.blueshell.api.shared.model.Identifiable
@@ -37,7 +36,8 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
         arch("Controllers must not depend on JPA/Hibernate") {
             noClasses()
                 .that().resideInAnyPackage(CONTROLLER)
-                .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..", "org.hibernate..", "..repository..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage("jakarta.persistence..", "org.hibernate..", "..repository..")
         }
 
     @Test

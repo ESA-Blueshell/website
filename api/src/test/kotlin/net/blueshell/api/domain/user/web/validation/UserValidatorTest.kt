@@ -2,12 +2,12 @@ package net.blueshell.api.domain.user.web.validation
 
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator
+import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
+import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import net.blueshell.api.factory.dto.user.AdvancedUserDTOFactory
 import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
 import net.blueshell.api.shared.validation.group.Creation
 import net.blueshell.api.shared.validation.group.Update
-import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

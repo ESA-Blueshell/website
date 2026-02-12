@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.dto.BaseDTO
 import net.blueshell.api.domain.user.web.validation.UniqueUsername
+import net.blueshell.api.shared.dto.BaseDTO
 
 @Schema(name = "MemberActivationRequest")
 data class MemberActivationRequest(

@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.auth.security.JwtTokenUtil
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.response.AuthenticationDTO
+import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

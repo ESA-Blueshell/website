@@ -1,13 +1,7 @@
 package net.blueshell.api.domain.committee.application.command
 
 import net.blueshell.api.domain.committee.application.CommitteeService
-import net.blueshell.api.domain.committee.command.CommitteeMemberData
-import net.blueshell.api.domain.committee.command.CreateCommitteeCommand
-import net.blueshell.api.domain.committee.command.DeleteCommitteeByIdCommand
-import net.blueshell.api.domain.committee.command.FindCommitteeByIdCommand
-import net.blueshell.api.domain.committee.command.FindCommitteesCommand
-import net.blueshell.api.domain.committee.command.FindCommitteesForCurrentUserCommand
-import net.blueshell.api.domain.committee.command.UpdateCommitteeCommand
+import net.blueshell.api.domain.committee.command.*
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.shared.command.CommandHandler

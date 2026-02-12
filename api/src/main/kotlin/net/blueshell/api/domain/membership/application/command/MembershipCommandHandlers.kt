@@ -1,15 +1,10 @@
 package net.blueshell.api.domain.membership.application.command
 
 import net.blueshell.api.domain.membership.application.MembershipService
-import net.blueshell.api.domain.membership.command.BoardCreateMembershipCommand
-import net.blueshell.api.domain.membership.command.CreateMembershipCommand
-import net.blueshell.api.domain.membership.command.FindMembershipByIdCommand
-import net.blueshell.api.domain.membership.command.FindMembershipsCommand
-import net.blueshell.api.domain.membership.command.UpdateMembershipCommand
+import net.blueshell.api.domain.membership.command.*
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
-import net.blueshell.api.shared.model.asRef
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Component
 

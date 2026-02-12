@@ -2,8 +2,8 @@ package net.blueshell.api.domain.user.web.validation
 
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator
-import net.blueshell.api.factory.dto.AddressDTOFactory
 import net.blueshell.api.domain.user.web.dto.AddressDTO
+import net.blueshell.api.factory.dto.AddressDTOFactory
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

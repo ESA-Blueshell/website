@@ -3,7 +3,6 @@ package net.blueshell.api.domain.auth.domain.model
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.model.ModelPersistenceTestSupport
-import net.blueshell.api.domain.user.persistence.User
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

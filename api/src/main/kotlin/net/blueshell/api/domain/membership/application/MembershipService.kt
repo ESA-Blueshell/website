@@ -2,9 +2,9 @@ package net.blueshell.api.domain.membership.application
 
 import net.blueshell.api.domain.membership.application.event.MembershipChange
 import net.blueshell.api.domain.membership.application.event.MembershipChanged
-import net.blueshell.api.domain.membership.persistence.repository.MemberRepository
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
+import net.blueshell.api.domain.membership.persistence.repository.MemberRepository
 import net.blueshell.api.domain.membership.persistence.spec.MembershipSpecifications
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
@@ -74,7 +74,8 @@ class MembershipService @Autowired constructor(
     }
 
     fun findByFilter(filter: MembershipFilter): MutableList<Membership> {
-        val spec = MembershipSpecifications.fromFilter(filter,
+        val spec = MembershipSpecifications.fromFilter(
+            filter,
             principal
         )
         return repository.findAll(spec)

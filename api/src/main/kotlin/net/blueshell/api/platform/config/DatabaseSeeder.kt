@@ -19,9 +19,6 @@ import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.survey.application.SurveyService
-import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.survey.persistence.Answer
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
@@ -29,6 +26,9 @@ import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.shared.enums.Role
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile

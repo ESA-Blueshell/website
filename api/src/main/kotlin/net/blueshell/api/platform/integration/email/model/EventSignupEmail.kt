@@ -2,8 +2,8 @@ package net.blueshell.api.platform.integration.email.model
 
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
-import net.blueshell.api.platform.integration.email.model.base.BaseEmail
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.email.model.base.BaseEmail
 
 class EventSignupEmail(private val eventSignUp: EventSignUp, frontendUrl: String, appUrl: String) : BaseEmail(
     createRecipientFromSignUp(

@@ -2,12 +2,12 @@ package net.blueshell.api.domain.committee.application
 
 import net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.factory.model.UserFactory
 import net.blueshell.api.factory.model.committee.CommitteeFactory
 import net.blueshell.api.factory.model.committee.CommitteeMemberFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
-import net.blueshell.api.domain.user.application.UserService
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 class CommitteeMemberServiceIT : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var committeeMemberService: net.blueshell.api.domain.committee.application.CommitteeMemberService
+    private lateinit var committeeMemberService: CommitteeMemberService
 
     @Autowired
     private lateinit var userService: UserService

@@ -2,8 +2,8 @@ package net.blueshell.api.domain.membership.application.listener
 
 import net.blueshell.api.domain.membership.application.event.MembershipChange
 import net.blueshell.api.domain.membership.application.event.MembershipChanged
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.shared.enums.Role
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

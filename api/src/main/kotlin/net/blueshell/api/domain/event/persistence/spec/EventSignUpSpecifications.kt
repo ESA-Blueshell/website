@@ -7,8 +7,8 @@ import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.auth.security.IdentityProvider
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 

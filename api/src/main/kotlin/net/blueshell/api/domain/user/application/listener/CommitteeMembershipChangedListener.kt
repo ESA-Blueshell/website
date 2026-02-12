@@ -2,8 +2,8 @@ package net.blueshell.api.domain.user.application.listener
 
 import net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged
 import net.blueshell.api.domain.committee.persistence.repository.CommitteeMemberRepository
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.shared.enums.Role
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

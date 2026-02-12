@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model.survey
 
-import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.factory.model.ModelFactoryTestSupport
 import org.junit.jupiter.api.Test
 
 class SurveyFactoryTest : ModelFactoryTestSupport() {

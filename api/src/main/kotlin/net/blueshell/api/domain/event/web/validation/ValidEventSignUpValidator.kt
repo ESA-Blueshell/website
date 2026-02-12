@@ -5,8 +5,8 @@ import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
-import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.shared.enums.QuestionType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.util.CollectionUtils
 import java.util.*

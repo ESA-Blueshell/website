@@ -1,11 +1,11 @@
 package net.blueshell.api.domain.sponsor.web.dto
 
-import net.blueshell.api.factory.dto.SponsorDTOFactory
-import net.blueshell.api.factory.model.SponsorFactory
-import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.domain.sponsor.application.SponsorService
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.sponsor.web.mapping.asEntity
+import net.blueshell.api.factory.dto.SponsorDTOFactory
+import net.blueshell.api.factory.model.SponsorFactory
+import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

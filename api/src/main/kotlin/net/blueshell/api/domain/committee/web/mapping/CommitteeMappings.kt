@@ -2,14 +2,7 @@ package net.blueshell.api.domain.committee.web.mapping
 
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
-import net.blueshell.api.domain.committee.web.dto.CommitteeDetailResponse
-import net.blueshell.api.domain.committee.web.dto.CommitteeMemberRequest
-import net.blueshell.api.domain.committee.web.dto.CommitteeMemberResponse
-import net.blueshell.api.domain.committee.web.dto.CommitteeSummaryResponse
-import net.blueshell.api.domain.committee.web.dto.CreateCommitteeRequest
-import net.blueshell.api.domain.committee.web.dto.UpdateCommitteeRequest
-import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.committee.web.dto.*
 import tech.mappie.api.ObjectMappie
 
 object CommitteeMemberToCommitteeMemberResponseMapper : ObjectMappie<CommitteeMember, CommitteeMemberResponse>()

@@ -1,11 +1,7 @@
 package net.blueshell.api.domain.contribution.application.command
 
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.command.CreateContributionPeriodCommand
-import net.blueshell.api.domain.contribution.command.DeleteContributionPeriodByIdCommand
-import net.blueshell.api.domain.contribution.command.FindContributionPeriodsCommand
-import net.blueshell.api.domain.contribution.command.FindCurrentContributionPeriodCommand
-import net.blueshell.api.domain.contribution.command.UpdateContributionPeriodCommand
+import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component

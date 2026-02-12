@@ -1,11 +1,7 @@
 package net.blueshell.api.domain.blog.application.command
 
 import net.blueshell.api.domain.blog.application.BlogService
-import net.blueshell.api.domain.blog.command.CreateBlogCommand
-import net.blueshell.api.domain.blog.command.DeleteBlogByIdCommand
-import net.blueshell.api.domain.blog.command.FindBlogByIdCommand
-import net.blueshell.api.domain.blog.command.FindBlogsCommand
-import net.blueshell.api.domain.blog.command.UpdateBlogCommand
+import net.blueshell.api.domain.blog.command.*
 import net.blueshell.api.domain.blog.persistence.Blog
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component

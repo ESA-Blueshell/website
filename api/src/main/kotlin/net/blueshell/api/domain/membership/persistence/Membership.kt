@@ -1,10 +1,9 @@
 package net.blueshell.api.domain.membership.persistence
 
 import jakarta.persistence.*
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
-import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.domain.user.persistence.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate

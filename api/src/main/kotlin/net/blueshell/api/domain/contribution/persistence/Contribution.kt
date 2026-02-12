@@ -1,10 +1,9 @@
 package net.blueshell.api.domain.contribution.persistence
 
 import jakarta.persistence.*
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
-import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.domain.user.persistence.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

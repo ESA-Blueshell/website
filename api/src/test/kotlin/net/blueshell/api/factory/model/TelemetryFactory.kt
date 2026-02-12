@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.model
 
 import com.github.javafaker.Faker
-import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
+import net.blueshell.api.shared.enums.PlatformType
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.model
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

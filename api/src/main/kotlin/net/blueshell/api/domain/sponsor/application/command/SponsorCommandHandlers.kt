@@ -1,11 +1,7 @@
 package net.blueshell.api.domain.sponsor.application.command
 
 import net.blueshell.api.domain.sponsor.application.SponsorService
-import net.blueshell.api.domain.sponsor.command.CreateSponsorCommand
-import net.blueshell.api.domain.sponsor.command.DeleteSponsorByIdCommand
-import net.blueshell.api.domain.sponsor.command.FindSponsorByIdCommand
-import net.blueshell.api.domain.sponsor.command.FindSponsorsCommand
-import net.blueshell.api.domain.sponsor.command.UpdateSponsorCommand
+import net.blueshell.api.domain.sponsor.command.*
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component

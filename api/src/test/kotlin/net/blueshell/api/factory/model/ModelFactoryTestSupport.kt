@@ -1,9 +1,15 @@
 package net.blueshell.api.factory.model
 
 import jakarta.persistence.EntityManager
+import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.domain.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.factory.model.board.BoardDocumentFactory
 import net.blueshell.api.factory.model.board.BoardFactory
 import net.blueshell.api.factory.model.board.BoardMemberFactory
@@ -16,13 +22,7 @@ import net.blueshell.api.factory.model.event.*
 import net.blueshell.api.factory.model.survey.AnswerFactory
 import net.blueshell.api.factory.model.survey.QuestionFactory
 import net.blueshell.api.factory.model.survey.SurveyFactory
-import net.blueshell.api.domain.file.persistence.File
-import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.domain.survey.persistence.Answer
-import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.Survey
-import net.blueshell.api.domain.user.persistence.User
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

@@ -1,10 +1,10 @@
 package net.blueshell.api.domain.membership.web.dto
 
-import net.blueshell.api.factory.dto.MembershipDTOFactory
-import net.blueshell.api.factory.model.MembershipFactory
 import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.membership.web.mapping.asEntity
+import net.blueshell.api.factory.dto.MembershipDTOFactory
+import net.blueshell.api.factory.model.MembershipFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat

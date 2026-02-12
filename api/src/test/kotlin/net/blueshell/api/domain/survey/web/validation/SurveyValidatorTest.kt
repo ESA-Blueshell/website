@@ -2,15 +2,15 @@ package net.blueshell.api.domain.survey.web.validation
 
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validator
-import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
-import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
-import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
-import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.domain.survey.web.dto.QuestionDTO
 import net.blueshell.api.domain.survey.web.dto.SurveyDTO
+import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
+import net.blueshell.api.factory.dto.survey.QuestionDTOFactory
+import net.blueshell.api.factory.dto.survey.SurveyDTOFactory
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.testutil.ModelTestUtils
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

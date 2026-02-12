@@ -1,9 +1,9 @@
 package net.blueshell.api.domain.file.web.dto
 
-import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.file.web.mapping.asEntity
+import net.blueshell.api.factory.dto.FileDTOFactory
 import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

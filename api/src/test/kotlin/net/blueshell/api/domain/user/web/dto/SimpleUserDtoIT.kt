@@ -1,10 +1,10 @@
 package net.blueshell.api.domain.user.web.dto
 
-import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
-import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.web.mapping.asEntity
+import net.blueshell.api.factory.dto.user.SimpleUserDTOFactory
+import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

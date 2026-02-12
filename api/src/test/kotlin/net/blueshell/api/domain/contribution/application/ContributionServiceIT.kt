@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired
 class ContributionServiceIT : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var contributions: net.blueshell.api.domain.contribution.application.ContributionService
+    private lateinit var contributions: ContributionService
 
     @Autowired
-    private lateinit var periods: net.blueshell.api.domain.contribution.application.ContributionPeriodService
+    private lateinit var periods: ContributionPeriodService
 
     @Autowired
     private lateinit var userFactory: UserFactory

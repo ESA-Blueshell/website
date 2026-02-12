@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.file.application
 
+import net.blueshell.api.domain.file.application.event.FileDeleted
 import net.blueshell.api.factory.model.FileFactory
 import net.blueshell.api.factory.model.UserFactory
-import net.blueshell.api.domain.file.application.event.FileDeleted
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.junit.jupiter.api.Assertions.assertFalse

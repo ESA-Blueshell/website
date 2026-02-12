@@ -1,11 +1,11 @@
 package net.blueshell.api.domain.survey.web.dto
 
-import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
-import net.blueshell.api.factory.model.survey.AnswerFactory
-import net.blueshell.api.shared.mapper.MapperTestSupport
 import net.blueshell.api.domain.survey.application.AnswerService
 import net.blueshell.api.domain.survey.persistence.Answer
 import net.blueshell.api.domain.survey.web.mapping.asEntity
+import net.blueshell.api.factory.dto.survey.AnswerDTOFactory
+import net.blueshell.api.factory.model.survey.AnswerFactory
+import net.blueshell.api.shared.mapper.MapperTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

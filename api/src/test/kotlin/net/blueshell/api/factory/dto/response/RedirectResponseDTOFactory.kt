@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.dto.response
 
-import net.blueshell.api.factory.dto.BaseDtoFactory
 import net.blueshell.api.domain.telemetry.web.dto.RedirectResponseDTO
+import net.blueshell.api.factory.dto.BaseDtoFactory
 import org.springframework.stereotype.Component
 
 /**

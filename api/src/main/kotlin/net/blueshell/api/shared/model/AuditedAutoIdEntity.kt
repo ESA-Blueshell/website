@@ -5,39 +5,13 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import org.hibernate.Hibernate
-import kotlin.reflect.KClass
 
 @MappedSuperclass
 abstract class AuditedAutoIdEntity : AuditedSoftDeleteEntity(), Identifiable<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Long? = null
-        internal set
-
-    fun assignIdForRef(value: Long) {
-        id = value
-    }
-
-    companion object {
-        /**
-         * Creates an "id-only" instance (reference) of an entity type.
-         *
-         * **DEPRECATED**: Use `EntityReferenceHelper.ref<T>(id)` instead, which creates proper JPA proxies
-         * that are recognized as managed entities and avoid "detached entity" errors.
-         *
-         * @see net.blueshell.api.shared.jpa.EntityReferenceHelper.ref
-         */
-        @Deprecated(
-            message = "Use EntityReferenceHelper.ref<T>(id) instead to avoid detached entity errors",
-            replaceWith = ReplaceWith("EntityReferenceHelper.ref<T>(id)", "net.blueshell.api.shared.jpa.EntityReferenceHelper")
-        )
-        inline fun <reified T> asRef(id: Long): T where T : AuditedAutoIdEntity {
-            val ctor = T::class.java.getDeclaredConstructor().apply { isAccessible = true }
-            val instance = ctor.newInstance()
-            instance.assignIdForRef(id)
-            return instance
-        }
-    }
+        protected set
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -52,15 +26,3 @@ abstract class AuditedAutoIdEntity : AuditedSoftDeleteEntity(), Identifiable<Lon
         return id?.hashCode() ?: Hibernate.getClass<AuditedAutoIdEntity?>(this).hashCode()
     }
 }
-
-/**
- * **DEPRECATED**: Use `EntityReferenceHelper.ref<T>(id)` instead to avoid detached entity errors.
- *
- * @see net.blueshell.api.shared.jpa.EntityReferenceHelper.ref
- */
-@Deprecated(
-    message = "Use EntityReferenceHelper.ref<T>(id) instead to avoid detached entity errors",
-    replaceWith = ReplaceWith("EntityReferenceHelper.ref<T>(id)", "net.blueshell.api.shared.jpa.EntityReferenceHelper")
-)
-inline fun <reified T : AuditedAutoIdEntity> KClass<T>.asRef(id: Long): T =
-    AuditedAutoIdEntity.asRef<T>(id)

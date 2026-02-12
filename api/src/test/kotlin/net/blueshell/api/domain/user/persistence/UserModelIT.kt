@@ -1,9 +1,9 @@
 package net.blueshell.api.domain.user.persistence
 
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.domain.user.web.mapping.asAdvancedDto
 import net.blueshell.api.domain.user.web.mapping.asSimpleDto
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested

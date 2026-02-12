@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.event.persistence
 
 import net.blueshell.api.domain.event.web.mapping.asDto
-import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import net.blueshell.api.domain.survey.persistence.Answer
+import net.blueshell.api.shared.model.ModelPersistenceTestSupport
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested

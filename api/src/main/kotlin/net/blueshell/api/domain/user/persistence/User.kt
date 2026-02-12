@@ -9,7 +9,7 @@ import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
-import net.blueshell.api.shared.model.asRef
+
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.springframework.security.core.GrantedAuthority

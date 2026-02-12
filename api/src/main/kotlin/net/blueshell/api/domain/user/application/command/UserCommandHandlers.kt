@@ -1,18 +1,10 @@
 package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.command.CreateGuestUserCommand
-import net.blueshell.api.domain.user.command.CreateUserCommand
-import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
-import net.blueshell.api.domain.user.command.FindUserByIdCommand
-import net.blueshell.api.domain.user.command.FindUsersCommand
-import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
-import net.blueshell.api.domain.user.command.UpdateGuestUserCommand
-import net.blueshell.api.domain.user.command.UpdateUserCommand
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.security.crypto.password.PasswordEncoder

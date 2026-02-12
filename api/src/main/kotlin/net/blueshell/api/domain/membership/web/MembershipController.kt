@@ -7,12 +7,11 @@ import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.domain.membership.web.dto.BoardCreateMembershipRequest
 import net.blueshell.api.domain.membership.web.dto.MembershipResponse
 import net.blueshell.api.domain.membership.web.dto.UpdateMembershipRequest
-import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.domain.membership.web.mapping.asEntity
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.model.asRef
-import net.blueshell.api.shared.web.BaseController
+import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException

@@ -5,16 +5,17 @@ import net.blueshell.api.domain.contribution.command.ContributionReminderItem
 import net.blueshell.api.domain.contribution.command.FindContributionRemindersCommand
 import net.blueshell.api.domain.contribution.command.SendContributionReminderBatchCommand
 import net.blueshell.api.domain.contribution.command.SendContributionReminderCommand
-import net.blueshell.api.domain.contribution.persistence.ContributionReminder
-import net.blueshell.api.shared.command.CommandHandler
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
 @Component
 class SendContributionReminderHandler(
-    private val service: ContributionReminderService
+    private val service: ContributionReminderService,
+    private val users: UserService,
 ) : CommandHandler<SendContributionReminderCommand, ContributionReminder> {
     override val commandType = SendContributionReminderCommand::class
 

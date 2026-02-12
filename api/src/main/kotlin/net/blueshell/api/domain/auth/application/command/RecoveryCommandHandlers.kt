@@ -1,12 +1,7 @@
 package net.blueshell.api.domain.auth.application.command
 
 import net.blueshell.api.domain.auth.application.RecoveryService
-import net.blueshell.api.domain.auth.command.MemberActivateCommand
-import net.blueshell.api.domain.auth.command.ResetPasswordCommand
-import net.blueshell.api.domain.auth.command.ResendMemberActivationEmailCommand
-import net.blueshell.api.domain.auth.command.ResendUserActivationCommand
-import net.blueshell.api.domain.auth.command.SetPasswordCommand
-import net.blueshell.api.domain.auth.command.UserActivateCommand
+import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component

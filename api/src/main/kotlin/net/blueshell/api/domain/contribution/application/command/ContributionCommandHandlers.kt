@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.contribution.application.command
 
+import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.CreateContributionCommand
 import net.blueshell.api.domain.contribution.command.DeleteContributionCommand
@@ -7,21 +8,24 @@ import net.blueshell.api.domain.contribution.command.FindContributionsByPeriodId
 import net.blueshell.api.domain.contribution.command.FindContributionsCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.shared.model.asRef
+import net.blueshell.api.domain.user.application.UserService
+
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
 @Component
 class CreateContributionHandler(
-    private val service: ContributionService
+    private val service: ContributionService,
+    private val users: UserService,
+    private val contributionPeriods: ContributionPeriodService
 ) : CommandHandler<CreateContributionCommand, Contribution> {
     override val commandType = CreateContributionCommand::class
 
     override fun handle(command: CreateContributionCommand): Contribution {
         var contribution = Contribution()
-        contribution.user = User::class.asRef(command.userId)
-        contribution.contributionPeriod = ContributionPeriod::class.asRef(command.contributionPeriodId)
+        contribution.user = users.findById(command.userId)
+        contribution.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId)
         contribution = service.create(contribution)
         return contribution
     }

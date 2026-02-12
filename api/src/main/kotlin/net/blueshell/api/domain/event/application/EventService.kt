@@ -3,12 +3,10 @@ package net.blueshell.api.domain.event.application
 import net.blueshell.api.domain.event.application.event.EventChange
 import net.blueshell.api.domain.event.application.event.EventChanged
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.filter.EventFilter
+import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSpecifications
-import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
-import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page

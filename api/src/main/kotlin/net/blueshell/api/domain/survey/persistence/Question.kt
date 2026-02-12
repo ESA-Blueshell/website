@@ -5,7 +5,7 @@ import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
 import net.blueshell.api.shared.model.DirtyAwareModel
-import net.blueshell.api.shared.model.asRef
+
 import net.blueshell.api.shared.model.converter.StringListConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

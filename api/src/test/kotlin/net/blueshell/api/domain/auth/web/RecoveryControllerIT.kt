@@ -4,6 +4,7 @@ import jakarta.mail.Multipart
 import jakarta.mail.Part
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.domain.auth.application.RecoveryService
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.factory.dto.request.MemberActivationRequestFactory
 import net.blueshell.api.factory.dto.request.PasswordResetRequestFactory
 import net.blueshell.api.factory.dto.request.UserActivationRequestFactory
@@ -12,7 +13,6 @@ import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.domain.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach

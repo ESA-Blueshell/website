@@ -1,18 +1,15 @@
-package net.blueshell.api.domain.user.web.validation
+package net.blueshell.api.domain.user.application.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
-/**
- * Custom annotation to ensure the uniqueness of the username.
- */
 @MustBeDocumented
-@Constraint(validatedBy = [ExistingUsernameValidator::class])
+@Constraint(validatedBy = [UniqueUsernameValidator::class])
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ExistingUsername(
-    val message: String = "Username is not known.",
+annotation class UniqueUsername(
+    val message: String = "Username is taken.",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )

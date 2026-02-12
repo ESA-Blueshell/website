@@ -1,5 +1,7 @@
 package net.blueshell.api.domain.user.command
 
+import net.blueshell.api.domain.user.application.validation.UniqueUserCommand
+import net.blueshell.api.domain.user.application.validation.UserUniquenessCandidate
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.shared.command.Command
@@ -8,6 +10,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import java.sql.Date
 
+@UniqueUserCommand
 data class CreateUserCommand(
     val isBoard: Boolean,
     val roles: Set<Role>,
@@ -30,8 +33,11 @@ data class CreateUserCommand(
     val addressId: Long?,
     val discord: String?,
     val phoneNumber: String?
-) : Command<User>
+) : Command<User>, UserUniquenessCandidate {
+    override val subjectId: Long? = null
+}
 
+@UniqueUserCommand
 data class CreateGuestUserCommand(
     val username: String?,
     val initials: String?,
@@ -44,16 +50,24 @@ data class CreateGuestUserCommand(
     val email: String?,
     val discord: String?,
     val phoneNumber: String?
-) : Command<User>
+) : Command<User>, UserUniquenessCandidate {
+    override val subjectId: Long? = null
+}
 
+@UniqueUserCommand
 data class UpdateGuestUserCommand(
     val id: Long,
     val discord: String?,
     val phoneNumber: String?,
     val newsletter: Boolean,
     val version: Long?
-) : Command<User>
+) : Command<User>, UserUniquenessCandidate {
+    override val subjectId: Long? = id
+    override val username: String? = null
+    override val email: String? = null
+}
 
+@UniqueUserCommand
 data class UpdateUserCommand(
     val id: Long,
     val isBoard: Boolean,
@@ -77,7 +91,9 @@ data class UpdateUserCommand(
     val discord: String?,
     val phoneNumber: String?,
     val version: Long?
-) : Command<User>
+) : Command<User>, UserUniquenessCandidate {
+    override val subjectId: Long? = id
+}
 
 data class FindUsersCommand(
     val filter: UserFilter,

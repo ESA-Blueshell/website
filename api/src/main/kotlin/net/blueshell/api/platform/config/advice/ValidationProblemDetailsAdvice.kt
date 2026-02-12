@@ -3,7 +3,6 @@ package net.blueshell.api.platform.config.advice
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
-import net.blueshell.api.shared.validation.DatabaseValidationException
 import org.slf4j.MDC
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -73,30 +72,6 @@ class ValidationProblemDetailsAdvice {
         return pd
     }
 
-    @ExceptionHandler(DatabaseValidationException::class)
-    fun handleDatabaseValidation(
-        ex: DatabaseValidationException,
-        request: HttpServletRequest
-    ): ProblemDetail {
-        val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
-        pd.instance = URI.create(request.requestURI)
-
-        val errors = ex.errors.map { error ->
-            errorMap(
-                error.objectName,
-                error.field,
-                error.rejectedValue,
-                error.message,
-                error.code
-            )
-        }
-
-        pd.setProperty("errors", errors)
-        val traceId = MDC.get("traceId")
-        if (traceId != null) pd.setProperty("traceId", traceId)
-
-        return pd
-    }
 
     companion object {
         /**

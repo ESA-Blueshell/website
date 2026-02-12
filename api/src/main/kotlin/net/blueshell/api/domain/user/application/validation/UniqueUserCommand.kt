@@ -1,15 +1,15 @@
-package net.blueshell.api.domain.event.web.validation
+package net.blueshell.api.domain.user.application.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
+@MustBeDocumented
+@Constraint(validatedBy = [UniqueUserCommandValidator::class])
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-@Constraint(validatedBy = [ValidEventSignUpValidator::class])
-annotation class ValidEventSignUp(
-    val message: String = "Invalid event sign-up payload",
+annotation class UniqueUserCommand(
+    val message: String = "User has duplicate fields.",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )

@@ -6,7 +6,6 @@ import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.util.MappingUtil
-import net.blueshell.api.shared.validation.DatabaseValidationErrors
 import org.springframework.data.domain.Page
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
@@ -20,7 +19,6 @@ class CreateUserHandler(
     override val commandType = CreateUserCommand::class
 
     override fun handle(command: CreateUserCommand): User {
-        validateCreateUser(command, service)
         var user = User()
         applyIdentityFields(
             user,
@@ -67,7 +65,6 @@ class CreateGuestUserHandler(
     override val commandType = CreateGuestUserCommand::class
 
     override fun handle(command: CreateGuestUserCommand): User {
-        validateCreateGuestUser(command, service)
         var user = User()
         applyIdentityFields(
             user,
@@ -95,7 +92,6 @@ class UpdateGuestUserHandler(
     override val commandType = UpdateGuestUserCommand::class
 
     override fun handle(command: UpdateGuestUserCommand): User {
-        validateUpdateGuestUser(command, service)
         var user = service.findById(command.id)
         user.discord = command.discord
         user.phoneNumber = command.phoneNumber
@@ -114,7 +110,6 @@ class UpdateUserHandler(
     override val commandType = UpdateUserCommand::class
 
     override fun handle(command: UpdateUserCommand): User {
-        validateUpdateUser(command, service)
         var user = service.findById(command.id)
         user.discord = command.discord
         user.phoneNumber = command.phoneNumber
@@ -144,79 +139,6 @@ class UpdateUserHandler(
         }
         user = service.update(user)
         return user
-    }
-}
-
-private fun validateCreateUser(command: CreateUserCommand, users: UserService) {
-    val errors = DatabaseValidationErrors(CreateUserCommand::class.simpleName ?: "CreateUserCommand")
-    val id = null
-    validateUserUniqueness(errors, users, id, command.username, command.email, command.discord, command.phoneNumber)
-    errors.throwIfAny()
-}
-
-private fun validateCreateGuestUser(command: CreateGuestUserCommand, users: UserService) {
-    val errors = DatabaseValidationErrors(CreateGuestUserCommand::class.simpleName ?: "CreateGuestUserCommand")
-    val id = null
-    validateUserUniqueness(errors, users, id, command.username, command.email, command.discord, command.phoneNumber)
-    errors.throwIfAny()
-}
-
-private fun validateUpdateGuestUser(command: UpdateGuestUserCommand, users: UserService) {
-    val errors = DatabaseValidationErrors(UpdateGuestUserCommand::class.simpleName ?: "UpdateGuestUserCommand")
-    val id = command.id
-    validateUserUniqueness(errors, users, id, null, null, command.discord, command.phoneNumber)
-    errors.throwIfAny()
-}
-
-private fun validateUpdateUser(command: UpdateUserCommand, users: UserService) {
-    val errors = DatabaseValidationErrors(UpdateUserCommand::class.simpleName ?: "UpdateUserCommand")
-    val id = command.id
-    if (command.isBoard) {
-        validateUserUniqueness(
-            errors,
-            users,
-            id,
-            command.username,
-            command.email,
-            command.discord,
-            command.phoneNumber
-        )
-    } else {
-        validateUserUniqueness(errors, users, id, null, null, command.discord, command.phoneNumber)
-    }
-    errors.throwIfAny()
-}
-
-private fun validateUserUniqueness(
-    errors: DatabaseValidationErrors,
-    users: UserService,
-    id: Long?,
-    username: String?,
-    email: String?,
-    discord: String?,
-    phoneNumber: String?
-) {
-    if (!username.isNullOrBlank()) {
-        val taken = if (id == null) users.existsByUsername(username) else users.existsByUsernameAndIdNot(username, id)
-        if (taken) errors.reject("username", username, "Username is taken.", "UniqueUser")
-    }
-
-    if (!email.isNullOrBlank()) {
-        val taken = if (id == null) users.existsByEmail(email) else users.existsByEmailAndIdNot(email, id)
-        if (taken) errors.reject("email", email, "Email is taken.", "UniqueUser")
-    }
-
-    if (!discord.isNullOrBlank()) {
-        val taken = if (id == null) users.existsByDiscord(discord) else users.existsByDiscordAndIdNot(discord, id)
-        if (taken) errors.reject("discord", discord, "Discord is taken.", "UniqueUser")
-    }
-
-    if (!phoneNumber.isNullOrBlank()) {
-        val taken = if (id == null) users.existsByPhoneNumber(phoneNumber) else users.existsByPhoneNumberAndIdNot(
-            phoneNumber,
-            id
-        )
-        if (taken) errors.reject("phoneNumber", phoneNumber, "Phone number is taken.", "UniqueUser")
     }
 }
 

@@ -17,6 +17,7 @@ class EventBannerDTOFactory(
 
     override fun createBasic(): EventBannerDTO {
         val dto = EventBannerDTO()
+        dto.fileId = fileFactory.createBasic().id ?: 0
         return dto
     }
 }

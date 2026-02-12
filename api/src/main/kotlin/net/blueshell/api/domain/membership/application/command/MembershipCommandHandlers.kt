@@ -3,7 +3,7 @@ package net.blueshell.api.domain.membership.application.command
 import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.command.*
 import net.blueshell.api.domain.membership.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Component
@@ -21,7 +21,8 @@ class FindMembershipsHandler(
 
 @Component
 class CreateMembershipHandler(
-    private val service: MembershipService
+    private val service: MembershipService,
+    private val users: UserService
 ) : CommandHandler<CreateMembershipCommand, Membership> {
     override val commandType = CreateMembershipCommand::class
 
@@ -35,7 +36,7 @@ class CreateMembershipHandler(
         val principalId = requireNotNull(command.principalId) { "User must be authenticated" }
 
         val membership = Membership()
-        membership.user = User::class.asRef(principalId)
+        membership.user = users.findById(principalId)
         service.create(membership)
         return membership
     }
@@ -43,13 +44,14 @@ class CreateMembershipHandler(
 
 @Component
 class BoardCreateMembershipHandler(
-    private val service: MembershipService
+    private val service: MembershipService,
+    private val users: UserService
 ) : CommandHandler<BoardCreateMembershipCommand, Membership> {
     override val commandType = BoardCreateMembershipCommand::class
 
     override fun handle(command: BoardCreateMembershipCommand): Membership {
         var membership = Membership()
-        membership.user = User::class.asRef(command.userId)
+        membership.user = users.findById(command.userId)
         membership.memberType = command.memberType
         membership.startDate = command.startDate
         membership.endDate = command.endDate
@@ -61,13 +63,14 @@ class BoardCreateMembershipHandler(
 
 @Component
 class UpdateMembershipHandler(
-    private val service: MembershipService
+    private val service: MembershipService,
+    private val users: UserService
 ) : CommandHandler<UpdateMembershipCommand, Membership> {
     override val commandType = UpdateMembershipCommand::class
 
     override fun handle(command: UpdateMembershipCommand): Membership {
         var membership = service.findById(command.id)
-        membership.user = User::class.asRef(command.userId)
+        membership.user = users.findById(command.userId)
         command.memberType?.let { membership.memberType = it }
         command.startDate?.let { membership.startDate = it }
         membership.endDate = command.endDate

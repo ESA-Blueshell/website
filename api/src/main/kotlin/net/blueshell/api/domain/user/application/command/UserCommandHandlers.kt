@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.user.application.command
 
+import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.*
-import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.util.MappingUtil
@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 @Component
 class CreateUserHandler(
     private val service: UserService,
+    private val addresses: AddressService,
     private val passwordEncoder: PasswordEncoder
 ) : CommandHandler<CreateUserCommand, User> {
     override val commandType = CreateUserCommand::class
@@ -38,7 +39,7 @@ class CreateUserHandler(
         user.newsletter = command.newsletter
         user.gender = command.gender
         user.studentNumber = command.studentNumber
-        command.addressId?.let { user.address = Address::class.asRef(it) }
+        command.addressId?.let { user.address = addresses.findById(it) }
 
         if (command.isBoard) {
             user.enabled = command.enabled
@@ -58,6 +59,7 @@ class CreateUserHandler(
 @Component
 class CreateGuestUserHandler(
     private val service: UserService,
+    private val addresses: AddressService,
     private val passwordEncoder: PasswordEncoder
 ) : CommandHandler<CreateGuestUserCommand, User> {
     override val commandType = CreateGuestUserCommand::class
@@ -76,7 +78,7 @@ class CreateGuestUserHandler(
         user.discord = command.discord
         user.phoneNumber = command.phoneNumber
         user.newsletter = command.newsletter
-        command.addressId?.let { user.address = Address::class.asRef(it) }
+        command.addressId?.let { user.address = addresses.findById(it) }
         user.password = passwordEncoder.encode(command.password)
         user = service.create(user)
         return user
@@ -85,8 +87,7 @@ class CreateGuestUserHandler(
 
 @Component
 class UpdateGuestUserHandler(
-    private val service: UserService,
-    private val passwordEncoder: PasswordEncoder
+    private val service: UserService
 ) : CommandHandler<UpdateGuestUserCommand, User> {
     override val commandType = UpdateGuestUserCommand::class
 
@@ -104,7 +105,7 @@ class UpdateGuestUserHandler(
 @Component
 class UpdateUserHandler(
     private val service: UserService,
-    private val passwordEncoder: PasswordEncoder
+    private val addresses: AddressService
 ) : CommandHandler<UpdateUserCommand, User> {
     override val commandType = UpdateUserCommand::class
 
@@ -120,7 +121,7 @@ class UpdateUserHandler(
         user.newsletter = command.newsletter
         user.gender = command.gender
         user.studentNumber = command.studentNumber
-        command.addressId?.let { user.address = Address::class.asRef(it) }
+        command.addressId?.let { user.address = addresses.findById(it) }
         command.version?.let { user.version = it }
 
         if (command.isBoard) {

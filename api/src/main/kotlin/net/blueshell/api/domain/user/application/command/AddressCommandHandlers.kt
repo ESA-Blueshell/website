@@ -9,7 +9,6 @@ import net.blueshell.api.domain.user.command.FindAddressByIdCommand
 import net.blueshell.api.domain.user.command.FindAllAddressesCommand
 import net.blueshell.api.domain.user.command.UpdateAddressCommand
 import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -21,7 +20,12 @@ class CreateAddressHandler(
 
     override fun handle(command: CreateAddressCommand): Address {
         var user = users.findById(command.userId)
-        val address = command.dto.asEntity()
+        val address = Address()
+        address.country = command.country
+        address.city = command.city
+        address.street = command.street
+        address.houseNumber = command.houseNumber
+        address.zipCode = command.zipCode
         user.address = address
         user = users.update(user)
         return user.address!!
@@ -36,7 +40,12 @@ class UpdateAddressHandler(
 
     override fun handle(command: UpdateAddressCommand): Address {
         var address = addressService.findById(command.id)
-        address = command.dto.asEntity(address)
+        address.country = command.country
+        address.city = command.city
+        address.street = command.street
+        address.houseNumber = command.houseNumber
+        address.zipCode = command.zipCode
+        command.version?.let { address.version = it }
         return addressService.update(address)
     }
 }

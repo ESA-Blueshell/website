@@ -6,7 +6,9 @@ import net.blueshell.api.domain.contribution.command.DeleteContributionCommand
 import net.blueshell.api.domain.contribution.command.FindContributionsByPeriodIdCommand
 import net.blueshell.api.domain.contribution.command.FindContributionsCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.web.mapping.asEntity
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.shared.model.asRef
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -17,7 +19,9 @@ class CreateContributionHandler(
     override val commandType = CreateContributionCommand::class
 
     override fun handle(command: CreateContributionCommand): Contribution {
-        var contribution = command.dto.asEntity()
+        var contribution = Contribution()
+        contribution.user = User::class.asRef(command.userId)
+        contribution.contributionPeriod = ContributionPeriod::class.asRef(command.contributionPeriodId)
         contribution = service.create(contribution)
         return contribution
     }

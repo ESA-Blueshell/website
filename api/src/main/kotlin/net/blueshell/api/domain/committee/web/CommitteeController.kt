@@ -4,10 +4,12 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.committee.application.CommitteeService
-import net.blueshell.api.domain.committee.web.dto.AdvancedCommitteeDTO
-import net.blueshell.api.domain.committee.web.mapping.asAdvancedDto
+import net.blueshell.api.domain.committee.web.dto.CommitteeDetailResponse
+import net.blueshell.api.domain.committee.web.dto.CreateCommitteeRequest
+import net.blueshell.api.domain.committee.web.dto.UpdateCommitteeRequest
+import net.blueshell.api.domain.committee.web.mapping.asDetailResponse
 import net.blueshell.api.domain.committee.web.mapping.asEntity
-import net.blueshell.api.domain.committee.web.mapping.asSimpleDto
+import net.blueshell.api.domain.committee.web.mapping.asSummaryResponse
 import net.blueshell.api.shared.dto.BaseDTO
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
@@ -27,21 +29,21 @@ class CommitteeController(
     fun findCommitteesForCurrentUser(): MutableList<out BaseDTO> {
         val principalId = principal?.id ?: return mutableListOf()
         if (hasAuthority(Role.BOARD)) {
-            return service.findAll().map { it.asAdvancedDto() }.toMutableList()
+            return service.findAll().map { it.asDetailResponse() }.toMutableList()
         }
 
         val committees = service.findAllByUserId(principalId)
-        return committees.map { it.asAdvancedDto() }.toMutableList()
+        return committees.map { it.asDetailResponse() }.toMutableList()
     }
 
     @GetMapping("/committees")
     @PermitAll
     fun findCommittees(): MutableList<out BaseDTO> {
         if (hasAuthority(Role.BOARD)) {
-            return service.findAll().map { it.asAdvancedDto() }.toMutableList()
+            return service.findAll().map { it.asDetailResponse() }.toMutableList()
         }
 
-        return service.findAll().map { it.asSimpleDto() }.toMutableList()
+        return service.findAll().map { it.asSummaryResponse() }.toMutableList()
     }
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
@@ -51,31 +53,31 @@ class CommitteeController(
     ): BaseDTO {
         val committee = service.findById(committeeId)
         if (hasAuthority(Role.BOARD) || committee.hasMember(principal)) {
-            return committee.asAdvancedDto()
+            return committee.asDetailResponse()
         }
 
-        return committee.asSimpleDto()
+        return committee.asSummaryResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createCommittee(@Valid @RequestBody advancedCommitteeDTO: @Valid AdvancedCommitteeDTO): AdvancedCommitteeDTO {
-        var committee = advancedCommitteeDTO.asEntity()
+    fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {
+        var committee = request.asEntity()
         committee = service.create(committee)
-        return committee.asAdvancedDto()
+        return committee.asDetailResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Committee', 'write'))")
     @PutMapping(value = ["/committees/{id}"])
     fun updateCommittee(
         @PathVariable id: Long,
-        @Valid @RequestBody dto: @Valid AdvancedCommitteeDTO
-    ): AdvancedCommitteeDTO {
+        @Valid @RequestBody request: @Valid UpdateCommitteeRequest
+    ): CommitteeDetailResponse {
         var committee = service.findById(id)
-        committee = dto.asEntity(committee)
+        committee = request.asEntity(committee)
         committee = service.update(committee)
-        return committee.asAdvancedDto()
+        return committee.asDetailResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

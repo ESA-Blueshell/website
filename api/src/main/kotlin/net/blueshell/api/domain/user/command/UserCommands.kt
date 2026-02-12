@@ -2,30 +2,81 @@ package net.blueshell.api.domain.user.command
 
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.filter.UserFilter
-import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.Role
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import java.sql.Date
 
 data class CreateUserCommand(
-    val dto: AdvancedUserDTO,
-    val isBoard: Boolean
+    val isBoard: Boolean,
+    val roles: Set<Role>,
+    val dateOfBirth: Date?,
+    val nationality: String?,
+    val photoConsent: Boolean,
+    val ehbo: Boolean,
+    val bhv: Boolean,
+    val enabled: Boolean,
+    val gender: String?,
+    val studentNumber: String?,
+    val username: String?,
+    val email: String?,
+    val initials: String?,
+    val firstName: String?,
+    val prefix: String?,
+    val lastName: String?,
+    val newsletter: Boolean,
+    val password: String?,
+    val addressId: Long?,
+    val discord: String?,
+    val phoneNumber: String?
 ) : Command<User>
 
 data class CreateGuestUserCommand(
-    val dto: SimpleUserDTO
+    val username: String?,
+    val initials: String?,
+    val firstName: String?,
+    val prefix: String?,
+    val lastName: String?,
+    val newsletter: Boolean,
+    val password: String?,
+    val addressId: Long?,
+    val email: String?,
+    val discord: String?,
+    val phoneNumber: String?
 ) : Command<User>
 
 data class UpdateGuestUserCommand(
     val id: Long,
-    val dto: SimpleUserDTO
+    val discord: String?,
+    val phoneNumber: String?,
+    val newsletter: Boolean,
+    val version: Long?
 ) : Command<User>
 
 data class UpdateUserCommand(
     val id: Long,
-    val dto: AdvancedUserDTO
+    val isBoard: Boolean,
+    val roles: Set<Role>,
+    val dateOfBirth: Date?,
+    val nationality: String?,
+    val photoConsent: Boolean,
+    val ehbo: Boolean,
+    val bhv: Boolean,
+    val enabled: Boolean,
+    val gender: String?,
+    val studentNumber: String?,
+    val username: String?,
+    val email: String?,
+    val initials: String?,
+    val firstName: String?,
+    val prefix: String?,
+    val lastName: String?,
+    val newsletter: Boolean,
+    val addressId: Long?,
+    val discord: String?,
+    val phoneNumber: String?,
+    val version: Long?
 ) : Command<User>
 
 data class FindUsersCommand(

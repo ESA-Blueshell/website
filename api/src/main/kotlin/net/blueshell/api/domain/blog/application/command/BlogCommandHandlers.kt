@@ -7,7 +7,6 @@ import net.blueshell.api.domain.blog.command.FindBlogByIdCommand
 import net.blueshell.api.domain.blog.command.FindBlogsCommand
 import net.blueshell.api.domain.blog.command.UpdateBlogCommand
 import net.blueshell.api.domain.blog.persistence.Blog
-import net.blueshell.api.domain.blog.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -18,7 +17,10 @@ class CreateBlogHandler(
     override val commandType = CreateBlogCommand::class
 
     override fun handle(command: CreateBlogCommand): Blog {
-        var blog = command.dto.asEntity()
+        var blog = Blog()
+        blog.title = command.title
+        blog.html = command.html
+        blog.publishedAt = command.publishedAt
         blog = service.create(blog)
         return blog
     }
@@ -32,7 +34,10 @@ class UpdateBlogHandler(
 
     override fun handle(command: UpdateBlogCommand): Blog {
         var blog = service.findById(command.id)
-        command.dto.asEntity(blog)
+        blog.title = command.title
+        blog.html = command.html
+        blog.publishedAt = command.publishedAt
+        command.version?.let { blog.version = it }
         blog = service.update(blog)
         return blog
     }

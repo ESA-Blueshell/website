@@ -4,8 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
-import net.blueshell.api.domain.membership.web.dto.MembershipDTO
-import net.blueshell.api.domain.membership.web.mapping.asDto
+import net.blueshell.api.domain.membership.web.dto.BoardCreateMembershipRequest
+import net.blueshell.api.domain.membership.web.dto.MembershipResponse
+import net.blueshell.api.domain.membership.web.dto.UpdateMembershipRequest
+import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.domain.membership.web.mapping.asEntity
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.asRef
@@ -24,14 +26,14 @@ import org.springframework.web.bind.annotation.*
 class MembershipController(service: MembershipService) : BaseController<MembershipService>(service) {
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
-    fun findMemberships(@ParameterObject filter: MembershipFilter): MutableList<MembershipDTO> {
-        return service.findByFilter(filter).map { it.asDto() }.toMutableList()
+    fun findMemberships(@ParameterObject filter: MembershipFilter): MutableList<MembershipResponse> {
+        return service.findByFilter(filter).map { it.asResponse() }.toMutableList()
     }
 
     @PreAuthorize("hasAuthority('GUEST')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createMembership(): MembershipDTO? {
+    fun createMembership(): MembershipResponse? {
         if (hasAuthority(Role.MEMBER)) {
             throw AccessDeniedException("User is already a member")
         } else if (principal?.addressId == null) {
@@ -41,32 +43,32 @@ class MembershipController(service: MembershipService) : BaseController<Membersh
         val membership = Membership()
         membership.user = User::class.asRef(principal!!.id!!)
         service.create(membership)
-        return membership.asDto()
+        return membership.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
-        @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody dto: MembershipDTO
-    ): MembershipDTO? {
-        var membership = dto.asEntity()
+        @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody request: BoardCreateMembershipRequest
+    ): MembershipResponse? {
+        var membership = request.asEntity()
         membership = service.create(membership)
-        return membership.asDto()
+        return membership.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/{id}"])
-    fun updateMembership(@PathVariable id: Long, @RequestBody dto: MembershipDTO): MembershipDTO? {
+    fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
         var membership = service.findById(id)
-        dto.asEntity(membership)
+        request.asEntity(membership)
         membership = service.update(membership)
-        return membership.asDto()
+        return membership.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/{id}"])
-    fun findMembershipById(@PathVariable id: Long): MembershipDTO {
-        return service.findById(id).asDto()
+    fun findMembershipById(@PathVariable id: Long): MembershipResponse {
+        return service.findById(id).asResponse()
     }
 }

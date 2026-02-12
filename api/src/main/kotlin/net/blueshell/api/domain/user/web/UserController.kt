@@ -9,11 +9,15 @@ import net.blueshell.api.shared.web.AdvancedController
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.filter.UserFilter
-import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
-import net.blueshell.api.domain.user.web.mapping.asAdvancedDto
+import net.blueshell.api.domain.user.web.dto.CreateGuestUserRequest
+import net.blueshell.api.domain.user.web.dto.CreateUserRequest
+import net.blueshell.api.domain.user.web.dto.UpdateGuestUserRequest
+import net.blueshell.api.domain.user.web.dto.UpdateUserRequest
+import net.blueshell.api.domain.user.web.dto.UserDetailResponse
+import net.blueshell.api.domain.user.web.dto.UserSummaryResponse
+import net.blueshell.api.domain.user.web.mapping.asDetailResponse
 import net.blueshell.api.domain.user.web.mapping.asEntity
-import net.blueshell.api.domain.user.web.mapping.asSimpleDto
+import net.blueshell.api.domain.user.web.mapping.asSummaryResponse
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -36,54 +40,54 @@ class UserController(
     @PostMapping("/users")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED) // TODO: Once all members are in the site, remove the ability for admins to create new users
-    fun createUser(@RequestBody dto: AdvancedUserDTO): AdvancedUserDTO {
+    fun createUser(@RequestBody request: CreateUserRequest): UserDetailResponse {
         val groups: Array<Class<*>> = if (hasAuthority(Role.BOARD))
             arrayOf(net.blueshell.api.shared.validation.group.Administration::class.java)
         else
             arrayOf(net.blueshell.api.shared.validation.group.Creation::class.java)
 
-        val violations = validator.validate(dto, *groups)
+        val violations = validator.validate(request, *groups)
         if (!violations.isEmpty()) {
             throw ConstraintViolationException(violations)
         }
 
-        var user = dto.asEntity(User(), passwordEncoder)
+        var user = request.asEntity(User(), passwordEncoder)
 
         user = service.create(user)
-        return user.asAdvancedDto()
+        return user.asDetailResponse()
     }
 
     @PostMapping("/users/guest")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGuestUser(@Validated(net.blueshell.api.shared.validation.group.Creation::class) @RequestBody dto: SimpleUserDTO): SimpleUserDTO {
-        var user = dto.asEntity(User(), passwordEncoder)
+    fun createGuestUser(@Validated(net.blueshell.api.shared.validation.group.Creation::class) @RequestBody request: CreateGuestUserRequest): UserSummaryResponse {
+        var user = request.asEntity(User(), passwordEncoder)
         user = service.create(user)
-        return user.asSimpleDto()
+        return user.asSummaryResponse()
     }
 
     @PutMapping("/users/guest/{id}")
     @PermitAll
     fun updateGuestUser(
         @PathVariable id: Long,
-        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody dto: SimpleUserDTO
-    ): SimpleUserDTO {
+        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateGuestUserRequest
+    ): UserSummaryResponse {
         var user = service.findById(id)
-        dto.asEntity(user, passwordEncoder)
+        request.asEntity(user, passwordEncoder)
         user = service.update(user)
-        return user.asSimpleDto()
+        return user.asSummaryResponse()
     }
 
     @PutMapping(value = ["/users/{id}"])
     @PreAuthorize("#dto.id == #id && (hasAuthority('BOARD') || hasPermission(#id, 'User', 'write'))")
     fun updateUser(
         @PathVariable id: Long,
-        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody dto: AdvancedUserDTO
-    ): AdvancedUserDTO {
+        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest
+    ): UserDetailResponse {
         var user = service.findById(id)
-        dto.asEntity(user, passwordEncoder)
+        request.asEntity(user, passwordEncoder)
         user = service.update(user)
-        return user.asAdvancedDto()
+        return user.asDetailResponse()
     }
 
     @GetMapping("/users")
@@ -91,16 +95,16 @@ class UserController(
     fun findUsers(
         @ParameterObject filter: UserFilter = UserFilter(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()
-    ): Page<AdvancedUserDTO> {
+    ): Page<UserDetailResponse> {
         val users = service.findByFilter(filter, pageable)
-        return users.map { it.asAdvancedDto() }
+        return users.map { it.asDetailResponse() }
     }
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
-    fun findUserById(@PathVariable userId: Long): AdvancedUserDTO {
+    fun findUserById(@PathVariable userId: Long): UserDetailResponse {
         val user = service.findById(userId)
-        return user.asAdvancedDto()
+        return user.asDetailResponse()
     }
 
     @DeleteMapping(value = ["/users/{userId}"])
@@ -115,8 +119,8 @@ class UserController(
     fun toggleUserRole(
         @PathVariable userId: Long,
         @RequestParam(value = "role") role: Role
-    ): AdvancedUserDTO {
+    ): UserDetailResponse {
         val user = service.toggleRole(userId, role)
-        return user.asAdvancedDto()
+        return user.asDetailResponse()
     }
 }

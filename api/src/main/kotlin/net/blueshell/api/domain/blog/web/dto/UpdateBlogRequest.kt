@@ -1,0 +1,19 @@
+package net.blueshell.api.domain.blog.web.dto
+
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
+import net.blueshell.api.shared.dto.VersionedDTO
+import java.time.Instant
+
+@Schema(name = "UpdateBlogRequest")
+data class UpdateBlogRequest(
+    @field:NotBlank
+    var title: String? = null,
+
+    @field:NotBlank
+    var html: String? = null,
+
+    @field:NotNull
+    var publishedAt: Instant? = null
+) : VersionedDTO()

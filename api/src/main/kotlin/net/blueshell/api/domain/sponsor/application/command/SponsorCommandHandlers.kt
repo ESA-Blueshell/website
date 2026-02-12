@@ -7,7 +7,6 @@ import net.blueshell.api.domain.sponsor.command.FindSponsorByIdCommand
 import net.blueshell.api.domain.sponsor.command.FindSponsorsCommand
 import net.blueshell.api.domain.sponsor.command.UpdateSponsorCommand
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
-import net.blueshell.api.domain.sponsor.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -29,7 +28,9 @@ class CreateSponsorHandler(
     override val commandType = CreateSponsorCommand::class
 
     override fun handle(command: CreateSponsorCommand): Sponsor {
-        var sponsor = command.dto.asEntity()
+        var sponsor = Sponsor()
+        sponsor.name = command.name
+        sponsor.description = command.description
         sponsor = service.create(sponsor)
         return sponsor
     }
@@ -43,7 +44,9 @@ class UpdateSponsorHandler(
 
     override fun handle(command: UpdateSponsorCommand): Sponsor {
         var sponsor = service.findById(command.id)
-        sponsor = command.dto.asEntity(sponsor)
+        sponsor.name = command.name
+        sponsor.description = command.description
+        command.version?.let { sponsor.version = it }
         sponsor = service.update(sponsor)
         return sponsor
     }

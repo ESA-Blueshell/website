@@ -1,17 +1,25 @@
 package net.blueshell.api.domain.user.command
 
 import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.web.dto.AddressDTO
 import net.blueshell.api.shared.command.Command
 
 data class CreateAddressCommand(
     val userId: Long,
-    val dto: AddressDTO
+    val country: String,
+    val city: String,
+    val street: String,
+    val houseNumber: String,
+    val zipCode: String
 ) : Command<Address>
 
 data class UpdateAddressCommand(
     val id: Long,
-    val dto: AddressDTO
+    val country: String,
+    val city: String,
+    val street: String,
+    val houseNumber: String,
+    val zipCode: String,
+    val version: Long?
 ) : Command<Address>
 
 class FindAllAddressesCommand : Command<MutableList<Address>>

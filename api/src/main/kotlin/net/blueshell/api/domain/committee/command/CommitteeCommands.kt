@@ -1,8 +1,12 @@
 package net.blueshell.api.domain.committee.command
 
 import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.domain.committee.web.dto.AdvancedCommitteeDTO
 import net.blueshell.api.shared.command.Command
+
+data class CommitteeMemberData(
+    val userId: Long,
+    val role: String
+)
 
 data class FindCommitteesForCurrentUserCommand(
     val principalId: Long?,
@@ -16,12 +20,17 @@ data class FindCommitteeByIdCommand(
 ) : Command<Committee>
 
 data class CreateCommitteeCommand(
-    val dto: AdvancedCommitteeDTO
+    val name: String,
+    val description: String,
+    val members: MutableList<CommitteeMemberData>
 ) : Command<Committee>
 
 data class UpdateCommitteeCommand(
     val id: Long,
-    val dto: AdvancedCommitteeDTO
+    val name: String,
+    val description: String,
+    val members: MutableList<CommitteeMemberData>,
+    val version: Long?
 ) : Command<Committee>
 
 data class DeleteCommitteeByIdCommand(

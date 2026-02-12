@@ -1,7 +1,5 @@
 package net.blueshell.api.domain.user.application.command
 
-import jakarta.validation.ConstraintViolationException
-import jakarta.validation.Validator
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.CreateGuestUserCommand
 import net.blueshell.api.domain.user.command.CreateUserCommand
@@ -12,11 +10,10 @@ import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
 import net.blueshell.api.domain.user.command.UpdateGuestUserCommand
 import net.blueshell.api.domain.user.command.UpdateUserCommand
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.web.mapping.asEntity
+import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.shared.command.CommandHandler
-import net.blueshell.api.shared.validation.group.Administration
-import net.blueshell.api.shared.validation.group.Creation
-import net.blueshell.api.shared.validation.group.Update
+import net.blueshell.api.shared.model.asRef
+import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
@@ -24,24 +21,43 @@ import org.springframework.stereotype.Component
 @Component
 class CreateUserHandler(
     private val service: UserService,
-    private val validator: Validator,
     private val passwordEncoder: PasswordEncoder
 ) : CommandHandler<CreateUserCommand, User> {
     override val commandType = CreateUserCommand::class
 
     override fun handle(command: CreateUserCommand): User {
-        val groups: Array<Class<*>> = if (command.isBoard) {
-            arrayOf(Administration::class.java)
+        var user = User()
+        applyIdentityFields(
+            user,
+            command.username,
+            command.email,
+            command.initials,
+            command.firstName,
+            command.prefix,
+            command.lastName
+        )
+        user.discord = command.discord
+        user.phoneNumber = command.phoneNumber
+        user.dateOfBirth = command.dateOfBirth
+        user.nationality = command.nationality
+        user.photoConsent = command.photoConsent
+        user.bhv = command.bhv
+        user.ehbo = command.ehbo
+        user.newsletter = command.newsletter
+        user.gender = command.gender
+        user.studentNumber = command.studentNumber
+        command.addressId?.let { user.address = Address::class.asRef(it) }
+
+        if (command.isBoard) {
+            user.enabled = command.enabled
+            user.roles = command.roles.toMutableSet()
+        }
+
+        user.password = if (command.isBoard) {
+            passwordEncoder.encode(MappingUtil.generateRandomString())
         } else {
-            arrayOf(Creation::class.java)
+            passwordEncoder.encode(command.password)
         }
-
-        val violations = validator.validate(command.dto, *groups)
-        if (violations.isNotEmpty()) {
-            throw ConstraintViolationException(violations)
-        }
-
-        var user = command.dto.asEntity(User(), passwordEncoder)
         user = service.create(user)
         return user
     }
@@ -55,7 +71,21 @@ class CreateGuestUserHandler(
     override val commandType = CreateGuestUserCommand::class
 
     override fun handle(command: CreateGuestUserCommand): User {
-        var user = command.dto.asEntity(User(), passwordEncoder)
+        var user = User()
+        applyIdentityFields(
+            user,
+            command.username,
+            command.email,
+            command.initials,
+            command.firstName,
+            command.prefix,
+            command.lastName
+        )
+        user.discord = command.discord
+        user.phoneNumber = command.phoneNumber
+        user.newsletter = command.newsletter
+        command.addressId?.let { user.address = Address::class.asRef(it) }
+        user.password = passwordEncoder.encode(command.password)
         user = service.create(user)
         return user
     }
@@ -70,7 +100,10 @@ class UpdateGuestUserHandler(
 
     override fun handle(command: UpdateGuestUserCommand): User {
         var user = service.findById(command.id)
-        command.dto.asEntity(user, passwordEncoder)
+        user.discord = command.discord
+        user.phoneNumber = command.phoneNumber
+        user.newsletter = command.newsletter
+        command.version?.let { user.version = it }
         user = service.update(user)
         return user
     }
@@ -85,7 +118,32 @@ class UpdateUserHandler(
 
     override fun handle(command: UpdateUserCommand): User {
         var user = service.findById(command.id)
-        command.dto.asEntity(user, passwordEncoder)
+        user.discord = command.discord
+        user.phoneNumber = command.phoneNumber
+        user.dateOfBirth = command.dateOfBirth
+        user.nationality = command.nationality
+        user.photoConsent = command.photoConsent
+        user.bhv = command.bhv
+        user.ehbo = command.ehbo
+        user.newsletter = command.newsletter
+        user.gender = command.gender
+        user.studentNumber = command.studentNumber
+        command.addressId?.let { user.address = Address::class.asRef(it) }
+        command.version?.let { user.version = it }
+
+        if (command.isBoard) {
+            user.enabled = command.enabled
+            user.roles = command.roles.toMutableSet()
+            applyIdentityFields(
+                user,
+                command.username,
+                command.email,
+                command.initials,
+                command.firstName,
+                command.prefix,
+                command.lastName
+            )
+        }
         user = service.update(user)
         return user
     }
@@ -133,4 +191,21 @@ class ToggleUserRoleHandler(
     override fun handle(command: ToggleUserRoleCommand): User {
         return service.toggleRole(command.userId, command.role)
     }
+}
+
+private fun applyIdentityFields(
+    user: User,
+    username: String?,
+    email: String?,
+    initials: String?,
+    firstName: String?,
+    prefix: String?,
+    lastName: String?
+) {
+    username?.let { user.username = it }
+    email?.let { user.email = it }
+    initials?.let { user.initials = it }
+    firstName?.let { user.firstName = it }
+    prefix?.let { user.prefix = it }
+    lastName?.let { user.lastName = it }
 }

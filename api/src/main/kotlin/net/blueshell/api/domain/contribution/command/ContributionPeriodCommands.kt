@@ -1,20 +1,31 @@
 package net.blueshell.api.domain.contribution.command
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodDTO
 import net.blueshell.api.shared.command.Command
+import java.time.LocalDate
 
 class FindContributionPeriodsCommand : Command<MutableList<ContributionPeriod>>
 
 class FindCurrentContributionPeriodCommand : Command<ContributionPeriod>
 
 data class CreateContributionPeriodCommand(
-    val dto: ContributionPeriodDTO
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val halfYearFee: Double,
+    val fullYearFee: Double,
+    val alumniFee: Double,
+    val listId: Long?
 ) : Command<ContributionPeriod>
 
 data class UpdateContributionPeriodCommand(
     val id: Long,
-    val dto: ContributionPeriodDTO
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val halfYearFee: Double,
+    val fullYearFee: Double,
+    val alumniFee: Double,
+    val listId: Long?,
+    val version: Long?
 ) : Command<ContributionPeriod>
 
 data class DeleteContributionPeriodByIdCommand(

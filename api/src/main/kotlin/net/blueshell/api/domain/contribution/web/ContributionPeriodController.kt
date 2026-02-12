@@ -4,8 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodDTO
-import net.blueshell.api.domain.contribution.web.mapping.asDto
+import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodResponse
+import net.blueshell.api.domain.contribution.web.dto.CreateContributionPeriodRequest
+import net.blueshell.api.domain.contribution.web.dto.UpdateContributionPeriodRequest
+import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.domain.contribution.web.mapping.asEntity
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,36 +22,36 @@ class ContributionPeriodController @Autowired constructor(
 ) : BaseController<ContributionPeriodService>(service) {
     @GetMapping("/contributionPeriods")
     @PermitAll
-    fun findContributionPeriods(): MutableList<ContributionPeriodDTO> {
-        return service.findAll().map { it.asDto() }.toMutableList()
+    fun findContributionPeriods(): MutableList<ContributionPeriodResponse> {
+        return service.findAll().map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
-    fun findCurrentContributionPeriod(): ContributionPeriodDTO {
+    fun findCurrentContributionPeriod(): ContributionPeriodResponse {
         val contributionPeriod = service.findLatest()
-        return contributionPeriod.asDto()
+        return contributionPeriod.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createContributionPeriod(@Valid @RequestBody dto: ContributionPeriodDTO): ContributionPeriodDTO {
-        var contributionPeriod = dto.asEntity()
+    fun createContributionPeriod(@Valid @RequestBody request: CreateContributionPeriodRequest): ContributionPeriodResponse {
+        var contributionPeriod = request.asEntity()
         contributionPeriod = service.create(contributionPeriod)
-        return contributionPeriod.asDto()
+        return contributionPeriod.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD') && #dto.id == #id")
     @PutMapping("/contributionPeriods/{id}")
     fun updateContributionPeriod(
         @PathVariable id: Long,
-        @Valid @RequestBody dto: ContributionPeriodDTO
-    ): ContributionPeriodDTO {
+        @Valid @RequestBody request: UpdateContributionPeriodRequest
+    ): ContributionPeriodResponse {
         var contributionPeriod = service.findById(id)
-        dto.asEntity(contributionPeriod)
+        request.asEntity(contributionPeriod)
         contributionPeriod = service.update(contributionPeriod)
-        return contributionPeriod.asDto()
+        return contributionPeriod.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

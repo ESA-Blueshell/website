@@ -4,8 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.domain.sponsor.application.SponsorService
-import net.blueshell.api.domain.sponsor.web.dto.SponsorDTO
-import net.blueshell.api.domain.sponsor.web.mapping.asDto
+import net.blueshell.api.domain.sponsor.web.dto.CreateSponsorRequest
+import net.blueshell.api.domain.sponsor.web.dto.SponsorResponse
+import net.blueshell.api.domain.sponsor.web.dto.UpdateSponsorRequest
+import net.blueshell.api.domain.sponsor.web.mapping.asResponse
 import net.blueshell.api.domain.sponsor.web.mapping.asEntity
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -17,32 +19,32 @@ import org.springframework.web.bind.annotation.*
 class SponsorController(service: SponsorService) : BaseController<SponsorService>(service) {
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/sponsors")
-    fun findSponsors(): MutableList<SponsorDTO> {
-        return service.findAll().map { it.asDto() }.toMutableList()
+    fun findSponsors(): MutableList<SponsorResponse> {
+        return service.findAll().map { it.asResponse() }.toMutableList()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/sponsors")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createSponsor(@Valid @RequestBody dto: SponsorDTO): SponsorDTO {
-        var sponsor = dto.asEntity()
+    fun createSponsor(@Valid @RequestBody request: CreateSponsorRequest): SponsorResponse {
+        var sponsor = request.asEntity()
         sponsor = service.create(sponsor)
-        return sponsor.asDto()
+        return sponsor.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/sponsors/{id}"])
-    fun updateSponsor(@PathVariable id: Long, @RequestBody dto: SponsorDTO): SponsorDTO {
+    fun updateSponsor(@PathVariable id: Long, @RequestBody request: UpdateSponsorRequest): SponsorResponse {
         var sponsor = service.findById(id)
-        sponsor = dto.asEntity(sponsor)
+        sponsor = request.asEntity(sponsor)
         sponsor = service.update(sponsor)
-        return sponsor.asDto()
+        return sponsor.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping(value = ["/sponsors/{id}"])
-    fun findSponsorById(@PathVariable id: Long): SponsorDTO {
-        return service.findById(id).asDto()
+    fun findSponsorById(@PathVariable id: Long): SponsorResponse {
+        return service.findById(id).asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")

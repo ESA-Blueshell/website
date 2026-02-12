@@ -5,8 +5,10 @@ import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.web.dto.AddressDTO
-import net.blueshell.api.domain.user.web.mapping.asDto
+import net.blueshell.api.domain.user.web.dto.AddressResponse
+import net.blueshell.api.domain.user.web.dto.CreateAddressRequest
+import net.blueshell.api.domain.user.web.dto.UpdateAddressRequest
+import net.blueshell.api.domain.user.web.mapping.asResponse
 import net.blueshell.api.domain.user.web.mapping.asEntity
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -21,35 +23,35 @@ class AddressController(service: AddressService, private val users: UserService)
     @ResponseStatus(
         HttpStatus.CREATED
     )
-    fun createAddress(@PathVariable userId: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
+    fun createAddress(@PathVariable userId: Long, @Valid @RequestBody request: CreateAddressRequest): AddressResponse {
         var user = users.findById(userId)
-        val address = dto.asEntity()
+        val address = request.asEntity()
         user.address = address
         user = users.update(user)
-        return user.address!!.asDto()
+        return user.address!!.asResponse()
     }
 
     @PutMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || (#id == #dto.id && hasPermission(#id, 'Address', 'write'))")
-    fun updateAddress(@PathVariable id: Long, @Valid @RequestBody dto: AddressDTO): AddressDTO {
+    fun updateAddress(@PathVariable id: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
         var address = service.findById(id)
-        address = dto.asEntity(address)
+        address = request.asEntity(address)
         address = service.update(address)
-        return address.asDto()
+        return address.asResponse()
     }
 
     @GetMapping("/addresses")
     @PreAuthorize("hasAuthority('BOARD')")
-    fun findAllAddresses(): MutableList<AddressDTO> {
+    fun findAllAddresses(): MutableList<AddressResponse> {
         val addresses = service.findAll()
-        return addresses.map { it.asDto() }.toMutableList()
+        return addresses.map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'read')")
-    fun findAddressById(@PathVariable id: Long): AddressDTO {
+    fun findAddressById(@PathVariable id: Long): AddressResponse {
         val address = service.findById(id)
-        return address.asDto()
+        return address.asResponse()
     }
 
     @DeleteMapping("/users/{userId}/addresses")

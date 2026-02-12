@@ -7,7 +7,6 @@ import net.blueshell.api.domain.contribution.command.FindContributionPeriodsComm
 import net.blueshell.api.domain.contribution.command.FindCurrentContributionPeriodCommand
 import net.blueshell.api.domain.contribution.command.UpdateContributionPeriodCommand
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -40,7 +39,13 @@ class CreateContributionPeriodHandler(
     override val commandType = CreateContributionPeriodCommand::class
 
     override fun handle(command: CreateContributionPeriodCommand): ContributionPeriod {
-        var contributionPeriod = command.dto.asEntity()
+        var contributionPeriod = ContributionPeriod()
+        contributionPeriod.startDate = command.startDate
+        contributionPeriod.endDate = command.endDate
+        contributionPeriod.halfYearFee = command.halfYearFee
+        contributionPeriod.fullYearFee = command.fullYearFee
+        contributionPeriod.alumniFee = command.alumniFee
+        contributionPeriod.listId = command.listId
         contributionPeriod = service.create(contributionPeriod)
         return contributionPeriod
     }
@@ -54,7 +59,13 @@ class UpdateContributionPeriodHandler(
 
     override fun handle(command: UpdateContributionPeriodCommand): ContributionPeriod {
         var contributionPeriod = service.findById(command.id)
-        command.dto.asEntity(contributionPeriod)
+        contributionPeriod.startDate = command.startDate
+        contributionPeriod.endDate = command.endDate
+        contributionPeriod.halfYearFee = command.halfYearFee
+        contributionPeriod.fullYearFee = command.fullYearFee
+        contributionPeriod.alumniFee = command.alumniFee
+        contributionPeriod.listId = command.listId
+        command.version?.let { contributionPeriod.version = it }
         contributionPeriod = service.update(contributionPeriod)
         return contributionPeriod
     }

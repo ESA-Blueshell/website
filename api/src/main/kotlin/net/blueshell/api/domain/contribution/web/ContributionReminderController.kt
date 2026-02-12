@@ -4,8 +4,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.auth.security.IdentityProvider
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
-import net.blueshell.api.domain.contribution.web.dto.ContributionReminderDTO
-import net.blueshell.api.domain.contribution.web.mapping.asDto
+import net.blueshell.api.domain.contribution.web.dto.ContributionReminderResponse
+import net.blueshell.api.domain.contribution.web.dto.CreateContributionReminderRequest
+import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.domain.contribution.web.mapping.asEntity
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -20,27 +21,27 @@ class ContributionReminderController @Autowired constructor(
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminder(@Valid @RequestBody dto: ContributionReminderDTO): ContributionReminderDTO {
-        var reminder = dto.asEntity()
+    fun sendContributionReminder(@Valid @RequestBody request: CreateContributionReminderRequest): ContributionReminderResponse {
+        var reminder = request.asEntity()
         reminder = reminderService.create(reminder)
         reminderService.sendReminder(reminder)
-        return reminder.asDto()
+        return reminder.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminderBatch(@Valid @RequestBody dtos: MutableList<ContributionReminderDTO>): MutableList<ContributionReminderDTO> {
-        var reminders = dtos.map { it.asEntity() }.toMutableList()
+    fun sendContributionReminderBatch(@Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>): MutableList<ContributionReminderResponse> {
+        var reminders = requests.map { it.asEntity() }.toMutableList()
         reminders = reminderService.createAll(reminders)
         reminderService.sendReminders(reminders)
-        return reminders.map { it.asDto() }.toMutableList()
+        return reminders.map { it.asResponse() }.toMutableList()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributionReminders")
-    fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderDTO> {
+    fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderResponse> {
         val contributions = reminderService.findByContributionPeriodId(contributionPeriodId)
-        return contributions.map { it.asDto() }.toMutableList()
+        return contributions.map { it.asResponse() }.toMutableList()
     }
 }

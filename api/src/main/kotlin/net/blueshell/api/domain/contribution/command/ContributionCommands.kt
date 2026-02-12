@@ -1,11 +1,11 @@
 package net.blueshell.api.domain.contribution.command
 
 import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.web.dto.ContributionDTO
 import net.blueshell.api.shared.command.Command
 
 data class CreateContributionCommand(
-    val dto: ContributionDTO
+    val userId: Long,
+    val contributionPeriodId: Long
 ) : Command<Contribution>
 
 data class FindContributionsCommand(

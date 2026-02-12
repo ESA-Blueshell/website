@@ -5,27 +5,26 @@ import net.blueshell.api.shared.model.asRef
 import net.blueshell.api.shared.util.MappingUtil
 import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.web.dto.AdvancedUserDTO
-import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.web.dto.CreateGuestUserRequest
+import net.blueshell.api.domain.user.web.dto.CreateUserRequest
+import net.blueshell.api.domain.user.web.dto.UpdateGuestUserRequest
+import net.blueshell.api.domain.user.web.dto.UpdateUserRequest
+import net.blueshell.api.domain.user.web.dto.UserDetailResponse
+import net.blueshell.api.domain.user.web.dto.UserSummaryResponse
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import tech.mappie.api.ObjectMappie
 
-object UserToAdvancedUserDTOMapper : ObjectMappie<User, AdvancedUserDTO>() {
+object UserToDetailResponseMapper : ObjectMappie<User, UserDetailResponse>() {
     override fun map(from: User) = mapping {
-        AdvancedUserDTO::password fromValue "" // Never expose the password in the DTO
-        AdvancedUserDTO::roles fromProperty from::inheritedRoles
+        UserDetailResponse::roles fromProperty from::inheritedRoles
     }
 }
 
-object UserToSimpleUserDTOMapper : ObjectMappie<User, SimpleUserDTO>() {
-    override fun map(from: User) = mapping {
-        SimpleUserDTO::password fromValue "" // Never expose the password in the DTO
-    }
-}
+object UserToSummaryResponseMapper : ObjectMappie<User, UserSummaryResponse>()
 
-fun AdvancedUserDTO.asEntity(
+fun CreateUserRequest.asEntity(
     user: User = User(),
     passwordEncoder: PasswordEncoder
 ): User {
@@ -37,10 +36,13 @@ fun AdvancedUserDTO.asEntity(
     user.bhv = bhv!!
     user.ehbo = ehbo!!
     user.newsletter = newsletter!!
+    if (hasAuthority(Role.BOARD)) {
+        user.enabled = enabled!!
+        roles?.let { user.roles = it.toMutableSet() }
+    }
     gender?.let { user.gender = it }
     studentNumber?.let { user.studentNumber = it }
     addressId?.let { user.address = Address::class.asRef(it) }
-    version?.let { user.version = it }
 
     val canEditIdentityFields = user.id == null || hasAuthority(Role.BOARD)
 
@@ -58,7 +60,36 @@ fun AdvancedUserDTO.asEntity(
     return user
 }
 
-fun SimpleUserDTO.asEntity(
+fun UpdateUserRequest.asEntity(
+    user: User = User(),
+    passwordEncoder: PasswordEncoder
+): User {
+    discord?.let { user.discord = it }
+    dateOfBirth?.let { user.dateOfBirth = it }
+    phoneNumber?.let { user.phoneNumber = it }
+    nationality?.let { user.nationality = it }
+    user.photoConsent = photoConsent!!
+    user.bhv = bhv!!
+    user.ehbo = ehbo!!
+    user.newsletter = newsletter!!
+    if (hasAuthority(Role.BOARD)) {
+        user.enabled = enabled!!
+        roles?.let { user.roles = it.toMutableSet() }
+    }
+    gender?.let { user.gender = it }
+    studentNumber?.let { user.studentNumber = it }
+    addressId?.let { user.address = Address::class.asRef(it) }
+    version?.let { user.version = it }
+
+    val canEditIdentityFields = user.id == null || hasAuthority(Role.BOARD)
+    if (canEditIdentityFields) {
+        applyUserIdentityFields(this, user)
+    }
+
+    return user
+}
+
+fun CreateGuestUserRequest.asEntity(
     user: User = User(),
     passwordEncoder: PasswordEncoder
 ): User {
@@ -69,7 +100,7 @@ fun SimpleUserDTO.asEntity(
     discord?.let { user.discord = it }
     phoneNumber?.let { user.phoneNumber = it }
     user.newsletter = newsletter!!
-    version?.let { user.version = it }
+    addressId?.let { user.address = Address::class.asRef(it) }
 
     if (user.id == null) {
         user.password = passwordEncoder.encode(password)
@@ -78,7 +109,18 @@ fun SimpleUserDTO.asEntity(
     return user
 }
 
-private fun applyUserIdentityFields(dto: AdvancedUserDTO, user: User) {
+fun UpdateGuestUserRequest.asEntity(
+    user: User = User(),
+    passwordEncoder: PasswordEncoder
+): User {
+    discord?.let { user.discord = it }
+    phoneNumber?.let { user.phoneNumber = it }
+    user.newsletter = newsletter!!
+    version?.let { user.version = it }
+    return user
+}
+
+private fun applyUserIdentityFields(dto: CreateUserRequest, user: User) {
     dto.username?.let { user.username = it }
     dto.email?.let { user.email = it }
     dto.initials?.let { user.initials = it }
@@ -87,7 +129,16 @@ private fun applyUserIdentityFields(dto: AdvancedUserDTO, user: User) {
     dto.lastName?.let { user.lastName = it }
 }
 
-private fun applyUserIdentityFields(dto: SimpleUserDTO, user: User) {
+private fun applyUserIdentityFields(dto: UpdateUserRequest, user: User) {
+    dto.username?.let { user.username = it }
+    dto.email?.let { user.email = it }
+    dto.initials?.let { user.initials = it }
+    dto.firstName?.let { user.firstName = it }
+    dto.prefix?.let { user.prefix = it }
+    dto.lastName?.let { user.lastName = it }
+}
+
+private fun applyUserIdentityFields(dto: CreateGuestUserRequest, user: User) {
     dto.username?.let { user.username = it }
     dto.email?.let { user.email = it }
     dto.initials?.let { user.initials = it }
@@ -103,6 +154,6 @@ private fun hasAuthority(role: Role): Boolean {
     }
 }
 
-fun User.asAdvancedDto(): AdvancedUserDTO = UserToAdvancedUserDTOMapper.map(this)
+fun User.asDetailResponse(): UserDetailResponse = UserToDetailResponseMapper.map(this)
 
-fun User.asSimpleDto(): SimpleUserDTO = UserToSimpleUserDTOMapper.map(this)
+fun User.asSummaryResponse(): UserSummaryResponse = UserToSummaryResponseMapper.map(this)

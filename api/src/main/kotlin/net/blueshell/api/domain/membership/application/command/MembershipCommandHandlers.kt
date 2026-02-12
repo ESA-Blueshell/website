@@ -7,7 +7,6 @@ import net.blueshell.api.domain.membership.command.FindMembershipByIdCommand
 import net.blueshell.api.domain.membership.command.FindMembershipsCommand
 import net.blueshell.api.domain.membership.command.UpdateMembershipCommand
 import net.blueshell.api.domain.membership.persistence.Membership
-import net.blueshell.api.domain.membership.web.mapping.asEntity
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.model.asRef
@@ -54,7 +53,12 @@ class BoardCreateMembershipHandler(
     override val commandType = BoardCreateMembershipCommand::class
 
     override fun handle(command: BoardCreateMembershipCommand): Membership {
-        var membership = command.dto.asEntity()
+        var membership = Membership()
+        membership.user = User::class.asRef(command.userId)
+        membership.memberType = command.memberType
+        membership.startDate = command.startDate
+        membership.endDate = command.endDate
+        membership.incasso = command.incasso
         membership = service.create(membership)
         return membership
     }
@@ -68,7 +72,12 @@ class UpdateMembershipHandler(
 
     override fun handle(command: UpdateMembershipCommand): Membership {
         var membership = service.findById(command.id)
-        command.dto.asEntity(membership)
+        membership.user = User::class.asRef(command.userId)
+        command.memberType?.let { membership.memberType = it }
+        command.startDate?.let { membership.startDate = it }
+        membership.endDate = command.endDate
+        command.incasso?.let { membership.incasso = it }
+        command.version?.let { membership.version = it }
         membership = service.update(membership)
         return membership
     }

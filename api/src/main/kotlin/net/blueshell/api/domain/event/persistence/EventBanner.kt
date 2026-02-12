@@ -52,6 +52,12 @@ class EventBanner(
     )
     val file: File? = null
 
+    var fileId: Long
+        set(value) {
+            id.fileId = value
+        }
+        get() = id.fileId ?: 0
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null) return false

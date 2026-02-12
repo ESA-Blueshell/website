@@ -52,8 +52,11 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
             val file = persist(fileWithUploader(fileFactory.createImage()))
             val banner = persist(eventBannerFactory.createBasic().apply {
                 this.event = event
-                this.id.fileId = file.id
+                this.id.fileId = file.id!!
             })
+
+            assertEquals(file.id, banner.id.fileId)
+            assertEquals(file.id, banner.fileId)
 
             val dto = banner.asDto()
 

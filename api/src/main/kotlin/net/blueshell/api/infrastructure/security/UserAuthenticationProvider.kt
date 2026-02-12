@@ -1,6 +1,7 @@
-package net.blueshell.api.domain.auth.security
+package net.blueshell.api.infrastructure.security
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.DisabledException
@@ -9,7 +10,6 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import org.springframework.web.server.ResponseStatusException
 
 @Component
 class UserAuthenticationProvider(
@@ -22,12 +22,12 @@ class UserAuthenticationProvider(
         val rawPassword = authentication.credentials?.toString() ?: ""
 
         val user = try {
-            users.findByUsername(username)
-        } catch (ex: ResponseStatusException) {
+            users.loadUserPrincipalByUsername(username)
+        } catch (ex: UserNotFoundException) {
             throw BadCredentialsException("Invalid credentials", ex)
         }
 
-        if (!user.enabled) {
+        if (!user.isEnabled) {
             throw DisabledException("User is disabled")
         }
         if (!passwordEncoder.matches(rawPassword, user.password)) {

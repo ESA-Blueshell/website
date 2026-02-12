@@ -3,6 +3,7 @@ package net.blueshell.api.domain.event.web.permission
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.persistence.EventSignUp
+import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,12 +24,12 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
 
         val signUp = entity as EventSignUp
         val event = events.findById(signUp.eventId)
-        val user = principal
+        val user = SecurityUtils.principalFrom(authentication)
 
         return when (permission) {
-            "read" -> signUp.user == user || signUp.event.committee.hasMember(principal)
-            "write" -> event.approved && (!event.membersOnly || hasAuthority(Role.MEMBER))
-            "delete" -> (user != null && signUp.user == principal)
+            "read" -> signUp.userId == user?.id || signUp.event.committee.hasMember(user?.id)
+            "write" -> event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER))
+            "delete" -> (user != null && signUp.userId == user.id)
             else -> false
         }
     }

@@ -6,7 +6,7 @@ import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 
@@ -40,7 +40,7 @@ object MembershipSpecifications {
         }
     }
 
-    fun fromFilter(f: MembershipFilter, user: User?): Specification<Membership> {
+    fun fromFilter(f: MembershipFilter, user: CurrentUser?): Specification<Membership> {
         var spec = Specification { _: Root<Membership>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
         if (f.from != null || f.to != null) {

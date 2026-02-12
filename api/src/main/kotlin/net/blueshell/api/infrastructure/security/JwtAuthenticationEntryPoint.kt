@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.auth.security
+package net.blueshell.api.infrastructure.security
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

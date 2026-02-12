@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.auth.command.*
-import net.blueshell.api.domain.auth.security.JWTAuthBase
 import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/recovery")
 class RecoveryController(
     private val commandBus: CommandBus
-) : JWTAuthBase() {
+) {
     @PostMapping("/password/reset/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll

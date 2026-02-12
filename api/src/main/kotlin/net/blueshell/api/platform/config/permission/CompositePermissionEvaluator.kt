@@ -1,6 +1,5 @@
 package net.blueshell.api.platform.config.permission
 
-import net.blueshell.api.domain.auth.security.IdentityProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.PermissionEvaluator
 import org.springframework.security.core.Authentication
@@ -11,7 +10,7 @@ import java.util.function.Function
 
 @Component
 class CompositePermissionEvaluator @Autowired constructor(private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>?>) :
-    IdentityProvider(), PermissionEvaluator {
+    PermissionEvaluator {
     override fun hasPermission(auth: Authentication?, target: Any?, perm: Any?): Boolean {
         if (target == null || perm == null) return false
         val domainClass = ClassUtils.getUserClass(target.javaClass)

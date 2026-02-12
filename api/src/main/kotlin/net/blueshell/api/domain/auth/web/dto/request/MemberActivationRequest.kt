@@ -19,5 +19,6 @@ data class MemberActivationRequest(
         regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
         message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
     )
+    @field:NotBlank
     var password: String? = null
 ) : BaseDTO()

@@ -1,10 +1,12 @@
 package net.blueshell.api.domain.auth.web.mapping
 
+import net.blueshell.api.domain.auth.application.AuthResult
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
+import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
 import tech.mappie.api.ObjectMappie
 
 object JwtRequestToCommandMapper : ObjectMappie<JwtRequest, AuthenticateCommand>() {
@@ -42,3 +44,14 @@ fun PasswordResetRequest.asCommand(): SetPasswordCommand = PasswordResetRequestT
 fun UserActivationRequest.asCommand(): UserActivateCommand = UserActivationRequestToCommandMapper.map(this)
 
 fun MemberActivationRequest.asCommand(): MemberActivateCommand = MemberActivationRequestToCommandMapper.map(this)
+
+fun AuthResult.asResponse(): AuthenticationResponse {
+    return AuthenticationResponse(
+        token = token,
+        userId = userId,
+        username = username,
+        expiration = expiresAtEpochMs,
+        roles = roles.toMutableSet(),
+        addressId = addressId
+    )
+}

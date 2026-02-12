@@ -2,7 +2,6 @@ package net.blueshell.api.shared.service
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import net.blueshell.api.domain.auth.security.IdentityProvider
 import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.core.ResolvableType
@@ -35,8 +34,7 @@ import java.util.function.Supplier
  * `pre…` / `post…` hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).
  */
-abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, ID>>(protected val repository: R) :
-    IdentityProvider() {
+abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, ID>>(protected val repository: R) {
     private val entityLabel: String
 
     @PersistenceContext

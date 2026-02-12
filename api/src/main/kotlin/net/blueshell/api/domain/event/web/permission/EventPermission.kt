@@ -2,6 +2,7 @@ package net.blueshell.api.domain.event.web.permission
 
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,11 +21,11 @@ class EventPermission @Autowired constructor(service: EventService) :
             return false
         }
         val event = entity as Event
-        val principal = principal
+        val principal = SecurityUtils.principalFrom(authentication)
         return when (permission) {
-            "read" -> event.approved || event.committee.hasMember(principal)
-            "write" -> event.committee.hasMember(principal)
-            "signUp" -> event.approved && (!event.membersOnly || hasAuthority(Role.MEMBER))
+            "read" -> event.approved || event.committee.hasMember(principal?.id)
+            "write" -> event.committee.hasMember(principal?.id)
+            "signUp" -> event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER))
             else -> false
         }
     }

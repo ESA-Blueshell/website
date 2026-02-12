@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.auth.command
 
-import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
+import net.blueshell.api.domain.auth.application.AuthResult
 import net.blueshell.api.shared.command.Command
 import jakarta.validation.constraints.NotBlank
 
@@ -9,4 +9,4 @@ data class AuthenticateCommand(
     val username: String,
     @field:NotBlank
     val password: String
-) : Command<AuthenticationResponse>
+) : Command<AuthResult>

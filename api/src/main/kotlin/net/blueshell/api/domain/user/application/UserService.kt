@@ -2,39 +2,51 @@ package net.blueshell.api.domain.user.application
 
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserUpdated
+import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.domain.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.infrastructure.security.UserPrincipal
+import net.blueshell.api.infrastructure.security.UserPrincipalMapper
+import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.http.HttpStatus
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
 @Service
 class UserService @Autowired constructor(
     repository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val events: AfterCommitEventPublisher
+    private val events: AfterCommitEventPublisher,
+    private val currentUserProvider: CurrentUserProvider
 ) : BaseModelService<User, Long, UserRepository>(repository) {
     @Throws(UsernameNotFoundException::class)
     fun loadUserByUsername(username: String): User {
-        return findByUsername(username)
+        return try {
+            findByUsername(username)
+        } catch (ex: UserNotFoundException) {
+            throw UsernameNotFoundException(ex.message, ex)
+        }
+    }
+
+    fun loadUserPrincipalByUsername(username: String): UserPrincipal {
+        return UserPrincipalMapper.fromUser(findByUsername(username))
     }
 
     @Transactional
     override fun create(entity: User): User {
         val saved = super.create(entity)
-        events.publish(UserCreated(saved.id!!))
+        events.publish(UserCreated(saved.id!!, createdByBoard = isBoardUser()))
         return saved
     }
 
@@ -47,9 +59,7 @@ class UserService @Autowired constructor(
 
     fun findByUsername(username: String): User {
         return repository.findByUsername(username).orElseThrow(Supplier {
-            ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with username: $username"
-            )
+            UserNotFoundException("User not found with username: $username")
         })
     }
 
@@ -118,7 +128,7 @@ class UserService @Autowired constructor(
     }
 
     fun findByFilter(filter: UserFilter, pageable: Pageable): Page<User> {
-        val spec = UserSpecifications.fromFilter(filter, principal)
+        val spec = UserSpecifications.fromFilter(filter, currentUserProvider.currentUser())
         return repository.findAll(spec, pageable)
     }
 
@@ -149,5 +159,15 @@ class UserService @Autowired constructor(
         val user = findById(userId)
         user.contactId = contactId
         update(user)
+    }
+
+    private fun isBoardUser(): Boolean {
+        val current = currentUserProvider.currentUser() ?: return false
+        return hasAuthority(current, Role.BOARD)
+    }
+
+    private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+        val inherited = user.roles.flatMap { it.allInheritedRoles }
+        return inherited.any { it.matchesRole(role) }
     }
 }

@@ -5,8 +5,10 @@ import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.domain.file.application.event.FileDeleted
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.file.persistence.repository.FileRepository
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,7 +34,9 @@ import java.util.function.Supplier
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
     @Value($$"${storage.location}") storageLocation: String,
-    private val events: AfterCommitEventPublisher
+    private val events: AfterCommitEventPublisher,
+    private val currentUserProvider: CurrentUserProvider,
+    private val users: UserService
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
     private val rootLocation: Path = Paths.get(storageLocation)
     private val assetsLocation: Path = Paths.get("assets")
@@ -199,7 +203,9 @@ class FileService @Autowired constructor(
     private fun populateAfterStore(file: File, name: String, fullPath: Path, path: String, mediaType: String) {
         file.name = name
         file.mediaType = mediaType
-        file.uploader = principal!!
+        val currentUserId = currentUserProvider.currentUser()?.id
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "No authenticated user")
+        file.uploader = users.findById(currentUserId)
         try {
             file.size = Files.size(fullPath)
         } catch (e: IOException) {

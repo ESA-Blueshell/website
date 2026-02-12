@@ -9,12 +9,14 @@ import net.blueshell.api.domain.event.web.dto.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.UpdateEventSignUpRequest
 import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
+import net.blueshell.api.infrastructure.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -54,7 +56,8 @@ class EventSignUpController @Autowired constructor(
     @ResponseStatus(HttpStatus.CREATED)
     fun createEventSignup(
         @PathVariable eventId: Long,
-        @Valid @RequestBody request: CreateEventSignUpRequest
+        @Valid @RequestBody request: CreateEventSignUpRequest,
+        @AuthenticationPrincipal principal: UserPrincipal?
     ): EventSignUpResponse {
         val eventSignUp = commandBus.dispatch(request.asCommand(eventId, principal?.id))
         return eventSignUp.asResponse()
@@ -69,7 +72,8 @@ class EventSignUpController @Autowired constructor(
     fun updateEventSignUp(
         @PathVariable eventId: Long,
         @Valid @RequestBody request: UpdateEventSignUpRequest,
-        @RequestParam(value = "accessToken", required = false) accessToken: String?
+        @RequestParam(value = "accessToken", required = false) accessToken: String?,
+        @AuthenticationPrincipal principal: UserPrincipal?
     ): EventSignUpResponse {
         val updated = commandBus.dispatch(
             request.asCommand(eventId, principal?.id, accessToken)

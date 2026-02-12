@@ -11,6 +11,7 @@ import net.blueshell.api.domain.user.web.dto.*
 import net.blueshell.api.domain.user.web.mapping.asCommand
 import net.blueshell.api.domain.user.web.mapping.asDetailResponse
 import net.blueshell.api.domain.user.web.mapping.asSummaryResponse
+import net.blueshell.api.infrastructure.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
@@ -35,8 +37,12 @@ class UserController(
     @PostMapping("/users")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED) // TODO: Once all members are in the site, remove the ability for admins to create new users
-    fun createUser(@RequestBody request: CreateUserRequest): UserDetailResponse {
-        val groups: Array<Class<*>> = if (hasAuthority(Role.BOARD))
+    fun createUser(
+        @RequestBody request: CreateUserRequest,
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): UserDetailResponse {
+        val isBoard = principal?.hasAuthority(Role.BOARD) == true
+        val groups: Array<Class<*>> = if (isBoard)
             arrayOf(net.blueshell.api.shared.validation.group.Administration::class.java)
         else
             arrayOf(net.blueshell.api.shared.validation.group.Creation::class.java)
@@ -46,7 +52,6 @@ class UserController(
             throw ConstraintViolationException(violations)
         }
 
-        val isBoard = hasAuthority(Role.BOARD)
         val user = commandBus.dispatch(request.asCommand(isBoard))
         return user.asDetailResponse()
     }
@@ -73,9 +78,10 @@ class UserController(
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'User', 'write')")
     fun updateUser(
         @PathVariable id: Long,
-        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest
+        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest,
+        @AuthenticationPrincipal principal: UserPrincipal?
     ): UserDetailResponse {
-        val isBoard = hasAuthority(Role.BOARD)
+        val isBoard = principal?.hasAuthority(Role.BOARD) == true
         val user = commandBus.dispatch(request.asCommand(id, isBoard))
         return user.asDetailResponse()
     }

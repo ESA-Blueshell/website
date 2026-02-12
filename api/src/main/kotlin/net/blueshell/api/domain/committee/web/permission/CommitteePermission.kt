@@ -2,6 +2,7 @@ package net.blueshell.api.domain.committee.web.permission
 
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -19,9 +20,10 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
             return false
         }
         val committee = entity as Committee
+        val principal = SecurityUtils.principalFrom(authentication)
         return when (permission) {
             "read" -> true
-            "events" -> committee.hasMember(principal)
+            "events" -> committee.hasMember(principal?.id)
             else -> false
         }
     }

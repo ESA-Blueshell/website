@@ -2,6 +2,7 @@ package net.blueshell.api.domain.user.web.permission
 
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -15,6 +16,7 @@ class AddressPermission @Autowired constructor(service: AddressService) :
             return false
         }
         val target = entity as Address
+        val principal = SecurityUtils.principalFrom(authentication)
         return when (permission) {
             "read", "write" -> (principal?.addressId == target.id)
             else -> false

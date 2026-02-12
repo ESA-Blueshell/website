@@ -12,11 +12,13 @@ import net.blueshell.api.domain.committee.web.dto.UpdateCommitteeRequest
 import net.blueshell.api.domain.committee.web.mapping.asCommand
 import net.blueshell.api.domain.committee.web.mapping.asDetailResponse
 import net.blueshell.api.domain.committee.web.mapping.asSummaryResponse
+import net.blueshell.api.infrastructure.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -29,18 +31,22 @@ class CommitteeController(
 ) {
     @GetMapping("/committeeMembers/committees")
     @PermitAll
-    fun findCommitteesForCurrentUser(): MutableList<CommitteeResponse> {
+    fun findCommitteesForCurrentUser(
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): MutableList<CommitteeResponse> {
         val principalId = principal?.id ?: return mutableListOf()
-        val includeAll = hasAuthority(Role.BOARD)
+        val includeAll = principal?.hasAuthority(Role.BOARD) == true
         val committees = commandBus.dispatch(FindCommitteesForCurrentUserCommand(principalId, includeAll))
         return committees.map { it.asDetailResponse() }.toMutableList()
     }
 
     @GetMapping("/committees")
     @PermitAll
-    fun findCommittees(): MutableList<CommitteeResponse> {
+    fun findCommittees(
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): MutableList<CommitteeResponse> {
         val committees = commandBus.dispatch(FindCommitteesCommand())
-        return if (hasAuthority(Role.BOARD)) {
+        return if (principal?.hasAuthority(Role.BOARD) == true) {
             committees.map { it.asDetailResponse() }.toMutableList()
         } else {
             committees.map { it.asSummaryResponse() }.toMutableList()
@@ -50,10 +56,11 @@ class CommitteeController(
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
     fun findCommitteeById(
-        @PathVariable committeeId: Long
+        @PathVariable committeeId: Long,
+        @AuthenticationPrincipal principal: UserPrincipal?
     ): CommitteeResponse {
         val committee = commandBus.dispatch(FindCommitteeByIdCommand(committeeId))
-        if (hasAuthority(Role.BOARD) || committee.hasMember(principal)) {
+        if (principal?.hasAuthority(Role.BOARD) == true || committee.hasMember(principal?.id)) {
             return committee.asDetailResponse()
         }
 

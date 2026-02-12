@@ -4,15 +4,15 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
-import net.blueshell.api.domain.auth.security.IdentityProvider
+import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
-import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 
-object EventSignUpSpecifications : IdentityProvider() {
+object EventSignUpSpecifications {
     private fun distinct(): Specification<EventSignUp> {
         return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder ->
             query.distinct(true)
@@ -89,7 +89,7 @@ object EventSignUpSpecifications : IdentityProvider() {
         }
     }
 
-    fun fromFilter(f: EventSignUpFilter, user: User?): Specification<EventSignUp> {
+    fun fromFilter(f: EventSignUpFilter, user: CurrentUser?): Specification<EventSignUp> {
         var spec = distinct() // avoid duplicates due to joins
 
         if (f.from != null || f.to != null) {
@@ -101,15 +101,38 @@ object EventSignUpSpecifications : IdentityProvider() {
         if (f.committeeId != null) {
             spec = spec.and(committeeId(f.committeeId))
         }
-        val isBoard = user?.hasAuthority(Role.BOARD) == true
-        val inCommittee = f.committeeId != null && user?.committeeIds?.contains(f.committeeId) == true
-        if (!isBoard && !inCommittee) {
-            spec = spec.and(approved(true))
+        val isBoard = user?.let { hasAuthority(it, Role.BOARD) } == true
+        val userId = user?.id
+        val committeeId = f.committeeId
+        if (!isBoard) {
+            if (committeeId != null && userId != null) {
+                spec = spec.and(approved(true).or(userInCommittee(userId, committeeId)))
+            } else {
+                spec = spec.and(approved(true))
+            }
         }
         if (f.eventId != null) {
             spec = spec.and(eventId(f.eventId))
         }
 
         return spec
+    }
+
+    private fun userInCommittee(userId: Long, committeeId: Long): Specification<EventSignUp> {
+        return Specification { root, q, cb ->
+            val sq = q.subquery(Long::class.java)
+            val cm = sq.from(CommitteeMember::class.java)
+            sq.select(cb.literal(1L))
+                .where(
+                    cb.equal(cm.get<Any>("committee").get<Any>("id"), committeeId),
+                    cb.equal(cm.get<Any>("userId"), userId)
+                )
+            cb.exists(sq)
+        }
+    }
+
+    private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+        val inherited = user.roles.flatMap { it.allInheritedRoles }
+        return inherited.any { it.matchesRole(role) }
     }
 }

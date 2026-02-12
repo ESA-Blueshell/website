@@ -6,8 +6,8 @@ import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.filter.EventFilter
-import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.CurrentUser
 import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
@@ -75,8 +75,8 @@ object EventSpecifications {
         }
     }
 
-    fun userIsCommitteeMember(user: User): Specification<Event> {
-        if (user.id == null) {
+    fun userIsCommitteeMember(userId: Long): Specification<Event> {
+        if (userId <= 0) {
             return Specification { _, _, cb -> cb.disjunction() }
         }
         return Specification { root, q, cb ->
@@ -89,7 +89,7 @@ object EventSpecifications {
                         cm.get<Any>("committee").get<Any>("id"),
                         root.get<Any>("committee").get<Any>("id")
                     ),
-                    cb.equal(cm.get<Any>("userId"), user.id)
+                    cb.equal(cm.get<Any>("userId"), userId)
                 )
             cb.exists(sq)
         }
@@ -117,7 +117,7 @@ object EventSpecifications {
         }
     }
 
-    fun fromFilter(f: EventFilter, user: User?): Specification<Event> {
+    fun fromFilter(f: EventFilter, user: CurrentUser?): Specification<Event> {
         var spec = Specification { _: Root<Event>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
         val from = f.from
@@ -144,17 +144,22 @@ object EventSpecifications {
         // Select the events that are visible to the user
         // Board members can see all events
         // So we don't filter further
-        if (user == null || !user.hasAuthority(Role.MEMBER)) {
+        if (user == null || !hasAuthority(user, Role.MEMBER)) {
             log.info("User {} has no member role", user)
             // Only approved are visible
             spec = spec.and(approved())
-        } else if (!user.hasAuthority(Role.BOARD)) {
+        } else if (!hasAuthority(user, Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
             // And approved events are included
-            spec = spec.and(approved().or(userIsCommitteeMember(user)))
+            spec = spec.and(approved().or(userIsCommitteeMember(user.id)))
             log.info("User {} has member role", user)
         }
 
         return spec
+    }
+
+    private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+        val inherited = user.roles.flatMap { it.allInheritedRoles }
+        return inherited.any { it.matchesRole(role) }
     }
 }

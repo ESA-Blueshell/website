@@ -8,21 +8,23 @@ import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.shared.enums.Role
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
 import net.blueshell.api.shared.command.CommandHandler
+import net.blueshell.api.shared.security.CurrentUser
+import net.blueshell.api.shared.security.CurrentUserProvider
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 
 @Component
 class CreateEventHandler(
-    private val service: EventService
+    private val service: EventService,
+    private val currentUserProvider: CurrentUserProvider
 ) : CommandHandler<CreateEventCommand, Event> {
     override val commandType = CreateEventCommand::class
 
     override fun handle(command: CreateEventCommand): Event {
         var event = Event()
-        applyEventFields(event, command)
+        val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
+        applyEventFields(event, command, isBoard)
         event = service.create(event)
         return event
     }
@@ -30,13 +32,15 @@ class CreateEventHandler(
 
 @Component
 class UpdateEventHandler(
-    private val service: EventService
+    private val service: EventService,
+    private val currentUserProvider: CurrentUserProvider
 ) : CommandHandler<UpdateEventCommand, Event> {
     override val commandType = UpdateEventCommand::class
 
     override fun handle(command: UpdateEventCommand): Event {
         var event = service.findById(command.id)
-        applyEventFields(event, command)
+        val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
+        applyEventFields(event, command, isBoard)
         command.version?.let { event.version = it }
         event = service.update(event)
         return event
@@ -90,7 +94,7 @@ class DeleteEventByIdHandler(
     }
 }
 
-private fun applyEventFields(event: Event, command: CreateEventCommand) {
+private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard: Boolean) {
     event.committee = Committee::class.asRef(command.committeeId)
     event.title = command.title
     event.description = command.description
@@ -103,10 +107,10 @@ private fun applyEventFields(event: Event, command: CreateEventCommand) {
     event.signUp = command.signUp
     event.banner = command.banner?.let { mapBanner(it) }
     event.signUpForm = command.signUpForm?.let { mapSurvey(it) }
-    event.approved = hasAuthority(Role.BOARD) && command.approved
+    event.approved = isBoard && command.approved
 }
 
-private fun applyEventFields(event: Event, command: UpdateEventCommand) {
+private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard: Boolean) {
     event.committee = Committee::class.asRef(command.committeeId)
     event.title = command.title
     event.description = command.description
@@ -119,7 +123,7 @@ private fun applyEventFields(event: Event, command: UpdateEventCommand) {
     event.signUp = command.signUp
     event.banner = command.banner?.let { mapBanner(it) }
     event.signUpForm = command.signUpForm?.let { mapSurvey(it) }
-    event.approved = hasAuthority(Role.BOARD) && command.approved
+    event.approved = isBoard && command.approved
 }
 
 private fun mapBanner(request: net.blueshell.api.domain.event.web.dto.EventBannerRequest): EventBanner {
@@ -144,9 +148,7 @@ private fun mapSurvey(request: net.blueshell.api.domain.survey.web.dto.SurveyReq
     return survey
 }
 
-private fun hasAuthority(role: Role): Boolean {
-    val authentication = SecurityContextHolder.getContext().authentication
-    return authentication != null && authentication.authorities.any { a: GrantedAuthority? ->
-        a?.authority == role.toString()
-    }
+private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+    val inherited = user.roles.flatMap { it.allInheritedRoles }
+    return inherited.any { it.matchesRole(role) }
 }

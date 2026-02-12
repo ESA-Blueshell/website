@@ -8,12 +8,14 @@ import net.blueshell.api.domain.membership.web.dto.MembershipResponse
 import net.blueshell.api.domain.membership.web.dto.UpdateMembershipRequest
 import net.blueshell.api.domain.membership.web.mapping.asCommand
 import net.blueshell.api.domain.membership.web.mapping.asResponse
+import net.blueshell.api.infrastructure.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
@@ -33,11 +35,13 @@ class MembershipController(
     @PreAuthorize("hasAuthority('GUEST')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createMembership(): MembershipResponse? {
+    fun createMembership(
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): MembershipResponse? {
         val membership = commandBus.dispatch(
             CreateMembershipCommand(
                 principalId = principal?.id,
-                isMember = hasAuthority(Role.MEMBER),
+                isMember = principal?.hasAuthority(Role.MEMBER) == true,
                 hasAddress = principal?.addressId != null
             )
         )

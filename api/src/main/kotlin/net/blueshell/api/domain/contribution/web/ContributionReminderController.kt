@@ -2,7 +2,6 @@ package net.blueshell.api.domain.contribution.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.domain.auth.security.IdentityProvider
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.CreateContributionReminderRequest
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "ContributionReminders")
 class ContributionReminderController @Autowired constructor(
     private val commandBus: CommandBus
-) : IdentityProvider() {
+) {
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)

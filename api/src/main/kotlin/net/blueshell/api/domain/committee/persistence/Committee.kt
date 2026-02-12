@@ -32,7 +32,11 @@ class Committee : AuditedAutoIdEntity() {
         get() = _members
 
     fun hasMember(user: User?): Boolean {
-        return user != null && _members.any { cm -> cm.user.id == user.id }
+        return hasMember(user?.id)
+    }
+
+    fun hasMember(userId: Long?): Boolean {
+        return userId != null && _members.any { cm -> cm.user.id == userId }
     }
 
     fun replaceMembers(members: List<CommitteeMember>) {

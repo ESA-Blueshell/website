@@ -2,6 +2,7 @@ package net.blueshell.api.domain.contribution.web.permission
 
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -15,6 +16,7 @@ class ContributionPermission @Autowired constructor(service: ContributionService
             return false
         }
         val contribution = entity as Contribution
+        val principal = SecurityUtils.principalFrom(authentication)
         return when (permission) {
             "read" -> (principal?.id == contribution.userId)
             else -> false

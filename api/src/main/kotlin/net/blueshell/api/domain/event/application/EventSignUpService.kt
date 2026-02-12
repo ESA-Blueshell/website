@@ -6,6 +6,7 @@ import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSignUpSpecifications
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -17,7 +18,8 @@ import java.util.function.Supplier
 @Service
 class EventSignUpService @Autowired constructor(
     repository: EventSignUpRepository,
-    private val events: AfterCommitEventPublisher
+    private val events: AfterCommitEventPublisher,
+    private val currentUserProvider: CurrentUserProvider
 ) : BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
     @Transactional
     override fun create(entity: EventSignUp): EventSignUp {
@@ -54,7 +56,7 @@ class EventSignUpService @Autowired constructor(
     }
 
     fun findByFilter(filter: EventSignUpFilter): MutableList<EventSignUp> {
-        val spec = EventSignUpSpecifications.fromFilter(filter, principal)
+        val spec = EventSignUpSpecifications.fromFilter(filter, currentUserProvider.currentUser())
         return repository.findAll(spec)
     }
 

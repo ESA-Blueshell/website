@@ -7,6 +7,7 @@ import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.domain.membership.persistence.repository.MemberRepository
 import net.blueshell.api.domain.membership.persistence.spec.MembershipSpecifications
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -15,7 +16,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MembershipService @Autowired constructor(
     repository: MemberRepository,
-    private val events: AfterCommitEventPublisher
+    private val events: AfterCommitEventPublisher,
+    private val currentUserProvider: CurrentUserProvider
 ) : BaseModelService<Membership, Long, MemberRepository>(repository) {
     @Transactional
     override fun create(entity: Membership): Membership {
@@ -76,7 +78,7 @@ class MembershipService @Autowired constructor(
     fun findByFilter(filter: MembershipFilter): MutableList<Membership> {
         val spec = MembershipSpecifications.fromFilter(
             filter,
-            principal
+            currentUserProvider.currentUser()
         )
         return repository.findAll(spec)
     }

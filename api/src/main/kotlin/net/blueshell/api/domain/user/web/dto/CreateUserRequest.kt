@@ -5,14 +5,12 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.domain.user.web.validation.UniqueUser
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.validation.group.Creation
 import java.sql.Date
 
 @Schema(name = "CreateUserRequest")
-@UniqueUser(groups = [Creation::class, Administration::class])
 data class CreateUserRequest(
     @field:NotNull
     var roles: Set<Role>? = null,

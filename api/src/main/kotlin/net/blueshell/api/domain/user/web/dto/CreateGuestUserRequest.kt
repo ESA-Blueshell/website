@@ -5,11 +5,9 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.domain.user.web.validation.UniqueUser
 import net.blueshell.api.shared.validation.group.Creation
 
 @Schema(name = "CreateGuestUserRequest")
-@UniqueUser(groups = [Creation::class])
 data class CreateGuestUserRequest(
     @field:NotBlank
     var username: String? = null,

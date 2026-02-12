@@ -5,6 +5,7 @@ import net.blueshell.api.domain.membership.command.*
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
+import net.blueshell.api.shared.validation.DatabaseValidationErrors
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Component
 
@@ -35,6 +36,8 @@ class CreateMembershipHandler(
         }
         val principalId = requireNotNull(command.principalId) { "User must be authenticated" }
 
+        validateMembershipCreation(CreateMembershipCommand::class.simpleName ?: "CreateMembershipCommand", principalId, service)
+
         val membership = Membership()
         membership.user = users.findById(principalId)
         service.create(membership)
@@ -50,6 +53,11 @@ class BoardCreateMembershipHandler(
     override val commandType = BoardCreateMembershipCommand::class
 
     override fun handle(command: BoardCreateMembershipCommand): Membership {
+        validateMembershipCreation(
+            BoardCreateMembershipCommand::class.simpleName ?: "BoardCreateMembershipCommand",
+            command.userId,
+            service
+        )
         var membership = Membership()
         membership.user = users.findById(command.userId)
         membership.memberType = command.memberType
@@ -90,4 +98,12 @@ class FindMembershipByIdHandler(
     override fun handle(command: FindMembershipByIdCommand): Membership {
         return service.findById(command.id)
     }
+}
+
+private fun validateMembershipCreation(objectName: String, userId: Long, memberships: MembershipService) {
+    val errors = DatabaseValidationErrors(objectName)
+    if (memberships.existsByUserId(userId)) {
+        errors.reject("userId", userId, "User is already a member.", "NoExistingMembershipForUserId")
+    }
+    errors.throwIfAny()
 }

@@ -3,7 +3,6 @@ package net.blueshell.api.domain.membership.web.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
-import net.blueshell.api.domain.membership.web.validation.NoExistingMembershipForUserId
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.validation.date.Today
@@ -15,7 +14,6 @@ import java.time.LocalDate
 @Schema(name = "Membership")
 data class MembershipDTO(
     @field:NotNull
-    @field:NoExistingMembershipForUserId
     var userId: Long? = null,
 
     @field:NotNull(groups = [Administration::class])

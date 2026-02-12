@@ -4,13 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.event.web.validation.GuestOrUserRequired
-import net.blueshell.api.domain.event.web.validation.ValidEventSignUp
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "EventSignUp")
-@ValidEventSignUp
 @GuestOrUserRequired
 data class EventSignUpDTO(
     @field:NotNull

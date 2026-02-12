@@ -5,13 +5,11 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.domain.user.web.validation.UniqueUser
 import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.validation.group.Creation
 import net.blueshell.api.shared.validation.group.Update
 
 @Schema(name = "SimpleUser")
-@UniqueUser(groups = [Update::class, Creation::class, Administration::class])
 open class SimpleUserDTO(
     @field:NotBlank
     var username: String? = null,

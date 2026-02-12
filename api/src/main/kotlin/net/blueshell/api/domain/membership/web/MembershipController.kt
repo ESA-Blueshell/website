@@ -1,20 +1,17 @@
 package net.blueshell.api.domain.membership.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
-import net.blueshell.api.domain.membership.application.MembershipService
-import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.membership.command.*
 import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.domain.membership.web.dto.BoardCreateMembershipRequest
 import net.blueshell.api.domain.membership.web.dto.MembershipResponse
 import net.blueshell.api.domain.membership.web.dto.UpdateMembershipRequest
-import net.blueshell.api.domain.membership.web.mapping.asEntity
 import net.blueshell.api.domain.membership.web.mapping.asResponse
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
@@ -22,26 +19,27 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping
 @Tag(name = "Memberships")
-class MembershipController(service: MembershipService) : BaseController<MembershipService>(service) {
+class MembershipController(
+    service: net.blueshell.api.domain.membership.application.MembershipService,
+    private val commandBus: CommandBus
+) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(service) {
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject filter: MembershipFilter): MutableList<MembershipResponse> {
-        return service.findByFilter(filter).map { it.asResponse() }.toMutableList()
+        return commandBus.dispatch(FindMembershipsCommand(filter)).map { it.asResponse() }.toMutableList()
     }
 
     @PreAuthorize("hasAuthority('GUEST')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(): MembershipResponse? {
-        if (hasAuthority(Role.MEMBER)) {
-            throw AccessDeniedException("User is already a member")
-        } else if (principal?.addressId == null) {
-            throw AccessDeniedException("User must have an address")
-        }
-
-        val membership = Membership()
-        membership.user = User::class.asRef(principal!!.id!!)
-        service.create(membership)
+        val membership = commandBus.dispatch(
+            CreateMembershipCommand(
+                principalId = principal?.id,
+                isMember = hasAuthority(Role.MEMBER),
+                hasAddress = principal?.addressId != null
+            )
+        )
         return membership.asResponse()
     }
 
@@ -51,23 +49,38 @@ class MembershipController(service: MembershipService) : BaseController<Membersh
     fun boardCreateMembership(
         @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody request: BoardCreateMembershipRequest
     ): MembershipResponse? {
-        var membership = request.asEntity()
-        membership = service.create(membership)
+        val membership = commandBus.dispatch(
+            BoardCreateMembershipCommand(
+                userId = requireNotNull(request.userId) { "User id is required" },
+                memberType = requireNotNull(request.memberType) { "Member type is required" },
+                startDate = requireNotNull(request.startDate) { "Start date is required" },
+                endDate = request.endDate,
+                incasso = requireNotNull(request.incasso) { "Incasso is required" }
+            )
+        )
         return membership.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
-        var membership = service.findById(id)
-        request.asEntity(membership)
-        membership = service.update(membership)
+        val membership = commandBus.dispatch(
+            UpdateMembershipCommand(
+                id = id,
+                userId = requireNotNull(request.userId) { "User id is required" },
+                memberType = request.memberType,
+                startDate = requireNotNull(request.startDate) { "Start date is required" },
+                endDate = request.endDate,
+                incasso = request.incasso,
+                version = request.version
+            )
+        )
         return membership.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/{id}"])
     fun findMembershipById(@PathVariable id: Long): MembershipResponse {
-        return service.findById(id).asResponse()
+        return commandBus.dispatch(FindMembershipByIdCommand(id)).asResponse()
     }
 }

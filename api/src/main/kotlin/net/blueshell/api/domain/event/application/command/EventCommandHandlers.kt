@@ -15,7 +15,7 @@ class CreateEventHandler(
     override val commandType = CreateEventCommand::class
 
     override fun handle(command: CreateEventCommand): Event {
-        var event = command.dto.asEntity()
+        var event = command.request.asEntity()
         event = service.create(event)
         return event
     }
@@ -29,7 +29,7 @@ class UpdateEventHandler(
 
     override fun handle(command: UpdateEventCommand): Event {
         var event = service.findById(command.id)
-        command.dto.asEntity(event)
+        command.request.asEntity(event)
         event = service.update(event)
         return event
     }

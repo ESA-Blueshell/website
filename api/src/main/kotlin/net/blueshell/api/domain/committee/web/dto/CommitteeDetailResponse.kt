@@ -22,4 +22,4 @@ data class CommitteeDetailResponse(
     @field:NotEmpty
     @field:Valid
     var members: MutableList<CommitteeMemberResponse>? = mutableListOf()
-) : AuditedAutoIdDTO()
+) : AuditedAutoIdDTO(), CommitteeResponse

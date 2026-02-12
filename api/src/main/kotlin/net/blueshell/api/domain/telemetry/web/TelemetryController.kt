@@ -2,11 +2,13 @@ package net.blueshell.api.domain.telemetry.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
-import jakarta.ws.rs.PathParam
-import net.blueshell.api.domain.telemetry.application.TelemetryService
+import jakarta.validation.Valid
+import net.blueshell.api.domain.telemetry.command.CreateTelemetryCommand
+import net.blueshell.api.domain.telemetry.command.FindTelemetryByIdCommand
+import net.blueshell.api.domain.telemetry.web.dto.CreateTelemetryRequest
 import net.blueshell.api.domain.telemetry.web.dto.TelemetryResponse
 import net.blueshell.api.domain.telemetry.web.mapping.asResponse
-import net.blueshell.api.shared.enums.PlatformType
+import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -14,11 +16,14 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Telemetries")
-class TelemetryController(service: TelemetryService) : BaseController<TelemetryService>(service) {
+class TelemetryController(
+    service: net.blueshell.api.domain.telemetry.application.TelemetryService,
+    private val commandBus: CommandBus
+) : BaseController<net.blueshell.api.domain.telemetry.application.TelemetryService>(service) {
     @GetMapping("/telemetry/{id}")
     @PermitAll
     fun findTelemetryById(@PathVariable id: Long): TelemetryResponse? {
-        val telemetry = service.findById(id)
+        val telemetry = commandBus.dispatch(FindTelemetryByIdCommand(id))
         return telemetry.asResponse()
     }
 
@@ -26,10 +31,14 @@ class TelemetryController(service: TelemetryService) : BaseController<TelemetryS
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTelemetry(
-        @PathParam("platform") platform: PlatformType,
-        @PathParam("url") url: String
+        @Valid @RequestBody request: CreateTelemetryRequest
     ): TelemetryResponse? {
-        val telemetry = service.createTelemetry(platform, url)
+        val telemetry = commandBus.dispatch(
+            CreateTelemetryCommand(
+                platform = requireNotNull(request.platform) { "Platform is required" },
+                url = requireNotNull(request.url) { "Url is required" }
+            )
+        )
         return telemetry.asResponse()
     }
 }

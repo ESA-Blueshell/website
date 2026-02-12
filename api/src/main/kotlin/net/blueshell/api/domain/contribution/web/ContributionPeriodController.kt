@@ -4,11 +4,12 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
+import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodResponse
 import net.blueshell.api.domain.contribution.web.dto.CreateContributionPeriodRequest
 import net.blueshell.api.domain.contribution.web.dto.UpdateContributionPeriodRequest
-import net.blueshell.api.domain.contribution.web.mapping.asEntity
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
+import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -18,18 +19,19 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "ContributionPeriods")
 class ContributionPeriodController @Autowired constructor(
-    service: ContributionPeriodService
+    service: ContributionPeriodService,
+    private val commandBus: CommandBus
 ) : BaseController<ContributionPeriodService>(service) {
     @GetMapping("/contributionPeriods")
     @PermitAll
     fun findContributionPeriods(): MutableList<ContributionPeriodResponse> {
-        return service.findAll().map { it.asResponse() }.toMutableList()
+        return commandBus.dispatch(FindContributionPeriodsCommand()).map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
     fun findCurrentContributionPeriod(): ContributionPeriodResponse {
-        val contributionPeriod = service.findLatest()
+        val contributionPeriod = commandBus.dispatch(FindCurrentContributionPeriodCommand())
         return contributionPeriod.asResponse()
     }
 
@@ -37,20 +39,37 @@ class ContributionPeriodController @Autowired constructor(
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody request: CreateContributionPeriodRequest): ContributionPeriodResponse {
-        var contributionPeriod = request.asEntity()
-        contributionPeriod = service.create(contributionPeriod)
+        val contributionPeriod = commandBus.dispatch(
+            CreateContributionPeriodCommand(
+                startDate = requireNotNull(request.startDate) { "Start date is required" },
+                endDate = requireNotNull(request.endDate) { "End date is required" },
+                halfYearFee = requireNotNull(request.halfYearFee) { "Half year fee is required" },
+                fullYearFee = requireNotNull(request.fullYearFee) { "Full year fee is required" },
+                alumniFee = requireNotNull(request.alumniFee) { "Alumni fee is required" },
+                listId = request.listId
+            )
+        )
         return contributionPeriod.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD') && #dto.id == #id")
+    @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping("/contributionPeriods/{id}")
     fun updateContributionPeriod(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateContributionPeriodRequest
     ): ContributionPeriodResponse {
-        var contributionPeriod = service.findById(id)
-        request.asEntity(contributionPeriod)
-        contributionPeriod = service.update(contributionPeriod)
+        val contributionPeriod = commandBus.dispatch(
+            UpdateContributionPeriodCommand(
+                id = id,
+                startDate = requireNotNull(request.startDate) { "Start date is required" },
+                endDate = requireNotNull(request.endDate) { "End date is required" },
+                halfYearFee = requireNotNull(request.halfYearFee) { "Half year fee is required" },
+                fullYearFee = requireNotNull(request.fullYearFee) { "Full year fee is required" },
+                alumniFee = requireNotNull(request.alumniFee) { "Alumni fee is required" },
+                listId = request.listId,
+                version = request.version
+            )
+        )
         return contributionPeriod.asResponse()
     }
 
@@ -58,6 +77,6 @@ class ContributionPeriodController @Autowired constructor(
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteContributionPeriodById(@PathVariable id: Long) {
-        service.deleteById(id)
+        commandBus.dispatch(DeleteContributionPeriodByIdCommand(id))
     }
 }

@@ -2,18 +2,19 @@ package net.blueshell.api.domain.event.command
 
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.filter.EventFilter
-import net.blueshell.api.domain.event.web.dto.EventDTO
+import net.blueshell.api.domain.event.web.dto.CreateEventRequest
+import net.blueshell.api.domain.event.web.dto.UpdateEventRequest
 import net.blueshell.api.shared.command.Command
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 
 data class CreateEventCommand(
-    val dto: EventDTO
+    val request: CreateEventRequest
 ) : Command<Event>
 
 data class UpdateEventCommand(
     val id: Long,
-    val dto: EventDTO
+    val request: UpdateEventRequest
 ) : Command<Event>
 
 data class ApproveEventCommand(

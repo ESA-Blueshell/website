@@ -2,11 +2,14 @@ package net.blueshell.api.domain.event.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.domain.event.application.EventSignUpService
+import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
-import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
+import net.blueshell.api.domain.event.web.dto.CreateEventSignUpRequest
+import net.blueshell.api.domain.event.web.dto.EventSignUpResponse
+import net.blueshell.api.domain.event.web.dto.UpdateEventSignUpRequest
 import net.blueshell.api.domain.event.web.mapping.asDto
-import net.blueshell.api.domain.event.web.mapping.asEntity
+import net.blueshell.api.domain.event.web.mapping.asResponse
+import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,42 +19,47 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "EventSignUps")
-class EventSignUpController @Autowired constructor(service: EventSignUpService) :
-    BaseController<EventSignUpService>(service) {
+class EventSignUpController @Autowired constructor(
+    service: net.blueshell.api.domain.event.application.EventSignUpService,
+    private val commandBus: CommandBus
+) : BaseController<net.blueshell.api.domain.event.application.EventSignUpService>(service) {
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
         "hasAuthority('BOARD') " +
                 "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
                 "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
-    fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpDTO> {
-        val eventSignUps = service.findByFilter(filter)
-        return eventSignUps.map { it.asDto() }.toMutableList()
+    fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpResponse> {
+        val eventSignUps = commandBus.dispatch(FindEventSignUpsCommand(filter))
+        return eventSignUps.map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
     @PreAuthorize("#accessToken != null")
-    fun findEventSignUpsByAccessToken(@PathVariable accessToken: String): MutableList<EventSignUpDTO> {
-        val signUps = service.findByGuestAccessToken(accessToken)
-        return signUps.map { it.asDto() }.toMutableList()
+    fun findEventSignUpsByAccessToken(@PathVariable accessToken: String): MutableList<EventSignUpResponse> {
+        val signUps = commandBus.dispatch(FindEventSignUpsByAccessTokenCommand(accessToken))
+        return signUps.map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'write')")
-    fun findEventSignUpsByEventId(@PathVariable eventId: Long): MutableList<EventSignUpDTO> {
-        val eventSignUps = service.findByEventId(eventId)
-        return eventSignUps.map { it.asDto() }.toMutableList()
+    fun findEventSignUpsByEventId(@PathVariable eventId: Long): MutableList<EventSignUpResponse> {
+        val eventSignUps = commandBus.dispatch(FindEventSignUpsByEventIdCommand(eventId))
+        return eventSignUps.map { it.asResponse() }.toMutableList()
     }
 
 
     @PostMapping(value = ["/events/{eventId}/signups"])
-    @PreAuthorize("hasAuthority('BOARD') or hasPermission(#dto.eventId, 'Event', 'signUp')")
+    @PreAuthorize("hasAuthority('BOARD') or hasPermission(#eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createEventSignup(@Valid @RequestBody dto: EventSignUpDTO): EventSignUpDTO {
+    fun createEventSignup(
+        @PathVariable eventId: Long,
+        @Valid @RequestBody request: CreateEventSignUpRequest
+    ): EventSignUpResponse {
+        val dto = request.asDto(eventId)
         principal?.id?.let { dto.userId = principal!!.id }
-        var eventSignUp = dto.asEntity()
-        eventSignUp = service.create(eventSignUp)
-        return eventSignUp.asDto()
+        val eventSignUp = commandBus.dispatch(CreateEventSignUpCommand(dto, principal?.id))
+        return eventSignUp.asResponse()
     }
 
     @PutMapping("/events/{eventId}/signups")
@@ -62,18 +70,19 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService) 
     )
     fun updateEventSignUp(
         @PathVariable eventId: Long,
-        @Valid @RequestBody dto: EventSignUpDTO,
+        @Valid @RequestBody request: UpdateEventSignUpRequest,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
-    ): EventSignUpDTO {
-        val signUp = if (accessToken == null) {
-            val principalId = requireNotNull(principal?.id) { "User must be authenticated" }
-            service.findByUserIdAndEventId(principalId, eventId)
-        } else {
-            service.findByGuestAccessTokenAndEventId(accessToken, eventId)
-        }
-        dto.asEntity(signUp)
-        val updated = service.update(signUp)
-        return updated.asDto()
+    ): EventSignUpResponse {
+        val dto = request.asDto(eventId)
+        val updated = commandBus.dispatch(
+            UpdateEventSignUpCommand(
+                eventId = eventId,
+                dto = dto,
+                accessToken = accessToken,
+                principalId = principal?.id
+            )
+        )
+        return updated.asResponse()
     }
 
 
@@ -88,6 +97,6 @@ class EventSignUpController @Autowired constructor(service: EventSignUpService) 
         @PathVariable eventSignupId: Long,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ) {
-        service.deleteById(eventSignupId)
+        commandBus.dispatch(DeleteEventSignUpCommand(eventSignupId))
     }
 }

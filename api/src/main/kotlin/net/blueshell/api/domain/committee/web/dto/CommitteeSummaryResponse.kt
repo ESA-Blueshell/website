@@ -14,4 +14,4 @@ data class CommitteeSummaryResponse(
     @field:NotBlank
     @field:Size(max = 4095)
     var description: String? = null,
-) : AuditedAutoIdDTO()
+) : AuditedAutoIdDTO(), CommitteeResponse

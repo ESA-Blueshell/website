@@ -3,11 +3,11 @@ package net.blueshell.api.domain.contribution.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.ContributionResponse
 import net.blueshell.api.domain.contribution.web.dto.CreateContributionRequest
-import net.blueshell.api.domain.contribution.web.mapping.asEntity
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
+import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -16,21 +16,27 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "Contributions")
-class ContributionController @Autowired constructor(service: ContributionService) :
-    BaseController<ContributionService>(service) {
+class ContributionController @Autowired constructor(
+    service: ContributionService,
+    private val commandBus: CommandBus
+) : BaseController<ContributionService>(service) {
     @PreAuthorize("hasAuthority('BOARD')")
     @PostMapping("/contributions")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContribution(@Valid @RequestBody request: CreateContributionRequest): ContributionResponse {
-        var contribution = request.asEntity()
-        contribution = service.create(contribution)
+        val contribution = commandBus.dispatch(
+            CreateContributionCommand(
+                userId = requireNotNull(request.userId) { "User id is required" },
+                contributionPeriodId = requireNotNull(request.contributionPeriodId) { "Contribution period id is required" }
+            )
+        )
         return contribution.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/contributions")
     fun findContributions(@RequestParam contributionPeriodId: Long): MutableList<ContributionResponse> {
-        val contributions = service.findByContributionPeriodId(contributionPeriodId)
+        val contributions = commandBus.dispatch(FindContributionsCommand(contributionPeriodId))
         return contributions.map { it.asResponse() }.toMutableList()
     }
 
@@ -38,13 +44,13 @@ class ContributionController @Autowired constructor(service: ContributionService
     @DeleteMapping("contributionPeriods/{contributionPeriodId}/users/{userId}/contributions")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteContribution(@PathVariable userId: Long, @PathVariable contributionPeriodId: Long) {
-        service.deleteById(Contribution.Id(userId, contributionPeriodId))
+        commandBus.dispatch(DeleteContributionCommand(userId, contributionPeriodId))
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
     fun findContributionsByPeriodId(@PathVariable periodId: Long): MutableList<ContributionResponse> {
-        val contributions = service.findByContributionPeriodId(periodId)
+        val contributions = commandBus.dispatch(FindContributionsByPeriodIdCommand(periodId))
         return contributions.map { it.asResponse() }.toMutableList()
     }
 }

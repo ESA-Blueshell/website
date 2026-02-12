@@ -2,14 +2,11 @@ package net.blueshell.api.domain.auth.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
+import net.blueshell.api.domain.auth.command.AuthenticateCommand
 import net.blueshell.api.domain.auth.security.JWTAuthBase
-import net.blueshell.api.domain.auth.security.JwtTokenUtil
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
-import net.blueshell.api.domain.auth.web.dto.response.AuthenticationDTO
-import net.blueshell.api.domain.user.application.UserService
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
+import net.blueshell.api.shared.command.CommandBus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,38 +15,12 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Authentication")
 class AuthenticationController(
-    private val authenticationManager: AuthenticationManager,
-    private val jwtTokenUtil: JwtTokenUtil,
-    private val users: UserService
+    private val commandBus: CommandBus
 ) : JWTAuthBase() {
-
-    @Value($$"${app.jwt.expiration}")
-    private var expiration: Long = 0
 
     @PostMapping(("/auth"))
     @PermitAll
-    fun authenticate(@Validated @RequestBody authenticationRequest: JwtRequest): AuthenticationDTO {
-        val username = requireNotNull(authenticationRequest.username) { "Username is required" }
-        val password = requireNotNull(authenticationRequest.password) { "Password is required" }
-        authenticate(username, password)
-
-        val user = users.findByUsername(username)
-        val token = jwtTokenUtil.generateToken(user)
-        val expirationTime = System.currentTimeMillis() + expiration
-
-        return AuthenticationDTO(
-            token,
-            user.id!!,
-            user.username,
-            expirationTime,
-            user.inheritedRoles as MutableSet,
-            user.addressId
-        )
-    }
-
-    private fun authenticate(username: String, password: String) {
-        authenticationManager.authenticate(
-            UsernamePasswordAuthenticationToken(username, password)
-        )
+    fun authenticate(@Validated @RequestBody authenticationRequest: JwtRequest): AuthenticationResponse {
+        return commandBus.dispatch(AuthenticateCommand(authenticationRequest))
     }
 }

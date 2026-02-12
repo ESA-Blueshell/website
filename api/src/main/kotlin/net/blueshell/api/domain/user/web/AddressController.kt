@@ -6,6 +6,7 @@ import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.web.dto.AddressResponse
 import net.blueshell.api.domain.user.web.dto.CreateAddressRequest
 import net.blueshell.api.domain.user.web.dto.UpdateAddressRequest
+import net.blueshell.api.domain.user.web.mapping.asCommand
 import net.blueshell.api.domain.user.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -25,33 +26,14 @@ class AddressController(
         HttpStatus.CREATED
     )
     fun createAddress(@PathVariable userId: Long, @Valid @RequestBody request: CreateAddressRequest): AddressResponse {
-        val address = commandBus.dispatch(
-            CreateAddressCommand(
-                userId = userId,
-                country = requireNotNull(request.country) { "Country is required" },
-                city = requireNotNull(request.city) { "City is required" },
-                street = requireNotNull(request.street) { "Street is required" },
-                houseNumber = requireNotNull(request.houseNumber) { "House number is required" },
-                zipCode = requireNotNull(request.zipCode) { "Zip code is required" }
-            )
-        )
+        val address = commandBus.dispatch(request.asCommand(userId))
         return address.asResponse()
     }
 
     @PutMapping("/addresses/{id}")
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'write')")
     fun updateAddress(@PathVariable id: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
-        val address = commandBus.dispatch(
-            UpdateAddressCommand(
-                id = id,
-                country = requireNotNull(request.country) { "Country is required" },
-                city = requireNotNull(request.city) { "City is required" },
-                street = requireNotNull(request.street) { "Street is required" },
-                houseNumber = requireNotNull(request.houseNumber) { "House number is required" },
-                zipCode = requireNotNull(request.zipCode) { "Zip code is required" },
-                version = request.version
-            )
-        )
+        val address = commandBus.dispatch(request.asCommand(id))
         return address.asResponse()
     }
 

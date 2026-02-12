@@ -8,6 +8,7 @@ import net.blueshell.api.domain.auth.security.JWTAuthBase
 import net.blueshell.api.domain.auth.web.dto.recovery.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.recovery.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.recovery.UserActivationRequest
+import net.blueshell.api.domain.auth.web.mapping.asCommand
 import net.blueshell.api.domain.telemetry.web.dto.RedirectResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
@@ -31,16 +32,13 @@ class RecoveryController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
     fun setPassword(@Valid @RequestBody request: PasswordResetRequest) {
-        val token = requireNotNull(request.token) { "Token is required" }
-        val password = requireNotNull(request.password) { "Password is required" }
-        commandBus.dispatch(SetPasswordCommand(token, password))
+        commandBus.dispatch(request.asCommand())
     }
 
     @PostMapping("/user/activate")
     @PermitAll
     fun userActivate(@Valid @RequestBody request: UserActivationRequest): RedirectResponse {
-        val token = requireNotNull(request.token) { "Token is required" }
-        val user = commandBus.dispatch(UserActivateCommand(token))
+        val user = commandBus.dispatch(request.asCommand())
         return if (user.dateOfBirth != null) {
             RedirectResponse("/membership/signUp?step=2")
         } else {
@@ -51,10 +49,7 @@ class RecoveryController(
     @PostMapping("/member/activate")
     @PermitAll
     fun memberActivate(@Valid @RequestBody request: MemberActivationRequest): RedirectResponse {
-        val token = requireNotNull(request.token) { "Token is required" }
-        val username = requireNotNull(request.username) { "Username is required" }
-        val password = requireNotNull(request.password) { "Password is required" }
-        commandBus.dispatch(MemberActivateCommand(token, username, password))
+        commandBus.dispatch(request.asCommand())
         return RedirectResponse("/")
     }
 

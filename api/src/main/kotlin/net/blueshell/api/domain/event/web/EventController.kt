@@ -9,6 +9,7 @@ import net.blueshell.api.domain.event.persistence.filter.EventFilter
 import net.blueshell.api.domain.event.web.dto.CreateEventRequest
 import net.blueshell.api.domain.event.web.dto.EventResponse
 import net.blueshell.api.domain.event.web.dto.UpdateEventRequest
+import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -32,14 +33,14 @@ class EventController(
         HttpStatus.CREATED
     )
     fun createEvent(@Valid @RequestBody request: CreateEventRequest): EventResponse {
-        val event = commandBus.dispatch(CreateEventCommand(request))
+        val event = commandBus.dispatch(request.asCommand())
         return event.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Event', 'write')")
     @PutMapping("/events/{id}")
     fun updateEvent(@PathVariable id: Long, @Valid @RequestBody request: UpdateEventRequest): EventResponse {
-        val event = commandBus.dispatch(UpdateEventCommand(id, request))
+        val event = commandBus.dispatch(request.asCommand(id))
         return event.asResponse()
     }
 

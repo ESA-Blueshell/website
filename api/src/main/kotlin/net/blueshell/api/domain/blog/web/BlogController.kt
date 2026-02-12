@@ -3,10 +3,13 @@ package net.blueshell.api.domain.blog.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.blog.command.*
+import net.blueshell.api.domain.blog.command.DeleteBlogByIdCommand
+import net.blueshell.api.domain.blog.command.FindBlogByIdCommand
+import net.blueshell.api.domain.blog.command.FindBlogsCommand
 import net.blueshell.api.domain.blog.web.dto.BlogResponse
 import net.blueshell.api.domain.blog.web.dto.CreateBlogRequest
 import net.blueshell.api.domain.blog.web.dto.UpdateBlogRequest
+import net.blueshell.api.domain.blog.web.mapping.asCommand
 import net.blueshell.api.domain.blog.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -28,28 +31,14 @@ class BlogController(
     @PreAuthorize("hasAuthority('BOARD')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBlog(@Valid @RequestBody request: CreateBlogRequest): BlogResponse {
-        val title = requireNotNull(request.title) { "Title is required" }
-        val html = requireNotNull(request.html) { "Html is required" }
-        val publishedAt = requireNotNull(request.publishedAt) { "PublishedAt is required" }
-        val blog = commandBus.dispatch(CreateBlogCommand(title, html, publishedAt))
+        val blog = commandBus.dispatch(request.asCommand())
         return blog.asResponse(frontendUrl)
     }
 
     @PostMapping("/blogs/{id}")
     @PreAuthorize("hasAuthority('BOARD')")
     fun updateBlog(@PathVariable id: Long, @Valid @RequestBody request: UpdateBlogRequest): BlogResponse {
-        val title = requireNotNull(request.title) { "Title is required" }
-        val html = requireNotNull(request.html) { "Html is required" }
-        val publishedAt = requireNotNull(request.publishedAt) { "PublishedAt is required" }
-        val blog = commandBus.dispatch(
-            UpdateBlogCommand(
-                id = id,
-                title = title,
-                html = html,
-                publishedAt = publishedAt,
-                version = request.version
-            )
-        )
+        val blog = commandBus.dispatch(request.asCommand(id))
         return blog.asResponse(frontendUrl)
     }
 

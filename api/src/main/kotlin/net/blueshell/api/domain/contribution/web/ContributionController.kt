@@ -6,6 +6,7 @@ import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.ContributionResponse
 import net.blueshell.api.domain.contribution.web.dto.CreateContributionRequest
+import net.blueshell.api.domain.contribution.web.mapping.asCommand
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -24,12 +25,7 @@ class ContributionController @Autowired constructor(
     @PostMapping("/contributions")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContribution(@Valid @RequestBody request: CreateContributionRequest): ContributionResponse {
-        val contribution = commandBus.dispatch(
-            CreateContributionCommand(
-                userId = requireNotNull(request.userId) { "User id is required" },
-                contributionPeriodId = requireNotNull(request.contributionPeriodId) { "Contribution period id is required" }
-            )
-        )
+        val contribution = commandBus.dispatch(request.asCommand())
         return contribution.asResponse()
     }
 

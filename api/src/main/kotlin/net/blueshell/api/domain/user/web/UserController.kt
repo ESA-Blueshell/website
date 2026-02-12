@@ -8,6 +8,7 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.domain.user.web.dto.*
+import net.blueshell.api.domain.user.web.mapping.asCommand
 import net.blueshell.api.domain.user.web.mapping.asDetailResponse
 import net.blueshell.api.domain.user.web.mapping.asSummaryResponse
 import net.blueshell.api.shared.command.CommandBus
@@ -46,31 +47,7 @@ class UserController(
         }
 
         val isBoard = hasAuthority(Role.BOARD)
-        val user = commandBus.dispatch(
-            CreateUserCommand(
-                isBoard = isBoard,
-                roles = request.roles ?: emptySet(),
-                dateOfBirth = request.dateOfBirth,
-                nationality = request.nationality,
-                photoConsent = requireNotNull(request.photoConsent) { "Photo consent is required" },
-                ehbo = requireNotNull(request.ehbo) { "EHBO is required" },
-                bhv = requireNotNull(request.bhv) { "BHV is required" },
-                enabled = request.enabled ?: false,
-                gender = request.gender,
-                studentNumber = request.studentNumber,
-                username = request.username,
-                email = request.email,
-                initials = request.initials,
-                firstName = request.firstName,
-                prefix = request.prefix,
-                lastName = request.lastName,
-                newsletter = requireNotNull(request.newsletter) { "Newsletter is required" },
-                password = if (isBoard) null else requireNotNull(request.password) { "Password is required" },
-                addressId = request.addressId,
-                discord = request.discord,
-                phoneNumber = request.phoneNumber
-            )
-        )
+        val user = commandBus.dispatch(request.asCommand(isBoard))
         return user.asDetailResponse()
     }
 
@@ -78,21 +55,7 @@ class UserController(
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
     fun createGuestUser(@Validated(net.blueshell.api.shared.validation.group.Creation::class) @RequestBody request: CreateGuestUserRequest): UserSummaryResponse {
-        val user = commandBus.dispatch(
-            CreateGuestUserCommand(
-                username = request.username,
-                initials = request.initials,
-                firstName = request.firstName,
-                prefix = request.prefix,
-                lastName = request.lastName,
-                newsletter = requireNotNull(request.newsletter) { "Newsletter is required" },
-                password = requireNotNull(request.password) { "Password is required" },
-                addressId = request.addressId,
-                email = request.email,
-                discord = request.discord,
-                phoneNumber = request.phoneNumber
-            )
-        )
+        val user = commandBus.dispatch(request.asCommand())
         return user.asSummaryResponse()
     }
 
@@ -102,15 +65,7 @@ class UserController(
         @PathVariable id: Long,
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateGuestUserRequest
     ): UserSummaryResponse {
-        val user = commandBus.dispatch(
-            UpdateGuestUserCommand(
-                id = id,
-                discord = request.discord,
-                phoneNumber = request.phoneNumber,
-                newsletter = requireNotNull(request.newsletter) { "Newsletter is required" },
-                version = request.version
-            )
-        )
+        val user = commandBus.dispatch(request.asCommand(id))
         return user.asSummaryResponse()
     }
 
@@ -121,32 +76,7 @@ class UserController(
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest
     ): UserDetailResponse {
         val isBoard = hasAuthority(Role.BOARD)
-        val user = commandBus.dispatch(
-            UpdateUserCommand(
-                id = id,
-                isBoard = isBoard,
-                roles = request.roles ?: emptySet(),
-                dateOfBirth = request.dateOfBirth,
-                nationality = request.nationality,
-                photoConsent = requireNotNull(request.photoConsent) { "Photo consent is required" },
-                ehbo = requireNotNull(request.ehbo) { "EHBO is required" },
-                bhv = requireNotNull(request.bhv) { "BHV is required" },
-                enabled = request.enabled ?: false,
-                gender = request.gender,
-                studentNumber = request.studentNumber,
-                username = request.username,
-                email = request.email,
-                initials = request.initials,
-                firstName = request.firstName,
-                prefix = request.prefix,
-                lastName = request.lastName,
-                newsletter = requireNotNull(request.newsletter) { "Newsletter is required" },
-                addressId = request.addressId,
-                discord = request.discord,
-                phoneNumber = request.phoneNumber,
-                version = request.version
-            )
-        )
+        val user = commandBus.dispatch(request.asCommand(id, isBoard))
         return user.asDetailResponse()
     }
 

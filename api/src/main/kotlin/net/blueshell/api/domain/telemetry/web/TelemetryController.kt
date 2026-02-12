@@ -7,6 +7,7 @@ import net.blueshell.api.domain.telemetry.command.CreateTelemetryCommand
 import net.blueshell.api.domain.telemetry.command.FindTelemetryByIdCommand
 import net.blueshell.api.domain.telemetry.web.dto.CreateTelemetryRequest
 import net.blueshell.api.domain.telemetry.web.dto.TelemetryResponse
+import net.blueshell.api.domain.telemetry.web.mapping.asCommand
 import net.blueshell.api.domain.telemetry.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -33,12 +34,7 @@ class TelemetryController(
     fun createTelemetry(
         @Valid @RequestBody request: CreateTelemetryRequest
     ): TelemetryResponse? {
-        val telemetry = commandBus.dispatch(
-            CreateTelemetryCommand(
-                platform = requireNotNull(request.platform) { "Platform is required" },
-                url = requireNotNull(request.url) { "Url is required" }
-            )
-        )
+        val telemetry = commandBus.dispatch(request.asCommand())
         return telemetry.asResponse()
     }
 }

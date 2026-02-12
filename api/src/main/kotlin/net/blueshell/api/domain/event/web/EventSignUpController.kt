@@ -7,7 +7,7 @@ import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
 import net.blueshell.api.domain.event.web.dto.CreateEventSignUpRequest
 import net.blueshell.api.domain.event.web.dto.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.UpdateEventSignUpRequest
-import net.blueshell.api.domain.event.web.mapping.asDto
+import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -56,9 +56,7 @@ class EventSignUpController @Autowired constructor(
         @PathVariable eventId: Long,
         @Valid @RequestBody request: CreateEventSignUpRequest
     ): EventSignUpResponse {
-        val dto = request.asDto(eventId)
-        principal?.id?.let { dto.userId = principal!!.id }
-        val eventSignUp = commandBus.dispatch(CreateEventSignUpCommand(dto, principal?.id))
+        val eventSignUp = commandBus.dispatch(request.asCommand(eventId, principal?.id))
         return eventSignUp.asResponse()
     }
 
@@ -73,14 +71,8 @@ class EventSignUpController @Autowired constructor(
         @Valid @RequestBody request: UpdateEventSignUpRequest,
         @RequestParam(value = "accessToken", required = false) accessToken: String?
     ): EventSignUpResponse {
-        val dto = request.asDto(eventId)
         val updated = commandBus.dispatch(
-            UpdateEventSignUpCommand(
-                eventId = eventId,
-                dto = dto,
-                accessToken = accessToken,
-                principalId = principal?.id
-            )
+            request.asCommand(eventId, principal?.id, accessToken)
         )
         return updated.asResponse()
     }

@@ -2,22 +2,34 @@ package net.blueshell.api.domain.blog.web.mapping
 
 import net.blueshell.api.domain.blog.persistence.Blog
 import net.blueshell.api.domain.blog.web.dto.BlogResponse
-import net.blueshell.api.domain.blog.web.dto.CreateBlogRequest
 import net.blueshell.api.domain.blog.web.dto.SocialDTO
-import net.blueshell.api.domain.blog.web.dto.UpdateBlogRequest
 import net.blueshell.api.shared.enums.PlatformType
 import org.jsoup.Jsoup
 import tech.mappie.api.ObjectMappie
 
-object BlogToBlogResponseMapper : ObjectMappie<Blog, BlogResponse>()
+private data class BlogResponseSource(
+    val blog: Blog,
+    val frontendUrl: String
+)
+
+object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
+    override fun map(from: BlogResponseSource) = mapping {
+        BlogResponse::id fromProperty { from.blog.id }
+        BlogResponse::version fromProperty { from.blog.version }
+        BlogResponse::createdAt fromProperty { from.blog.createdAt }
+        BlogResponse::updatedAt fromProperty { from.blog.updatedAt }
+        BlogResponse::deletedAt fromProperty { from.blog.deletedAt }
+        BlogResponse::title fromProperty { from.blog.title }
+        BlogResponse::html fromProperty { from.blog.html }
+        BlogResponse::publishedAt fromProperty { from.blog.publishedAt }
+        BlogResponse::url fromProperty { "${from.frontendUrl}/blogs/${from.blog.id}" }
+    }
+}
 
 object BlogToSocialDTOMapper : ObjectMappie<Blog, SocialDTO>()
 
-fun Blog.asResponse(frontendUrl: String): BlogResponse {
-    val response = BlogToBlogResponseMapper.map(this)
-    response.url = "$frontendUrl/blogs/${id}"
-    return response
-}
+fun Blog.asResponse(frontendUrl: String): BlogResponse =
+    BlogResponseSourceToBlogResponseMapper.map(BlogResponseSource(this, frontendUrl))
 
 fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
     val dto = BlogToSocialDTOMapper.map(this)
@@ -31,35 +43,13 @@ fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
     return dto
 }
 
-fun CreateBlogRequest.asEntity(blog: Blog = Blog()): Blog {
-    blog.title = title!!
-    blog.publishedAt = publishedAt!!
-    sanitizeHtml(this, blog)
-    return blog
-}
-
-fun UpdateBlogRequest.asEntity(blog: Blog = Blog()): Blog {
-    blog.title = title!!
-    blog.publishedAt = publishedAt!!
-    version?.let { blog.version = it }
-    sanitizeHtml(this, blog)
-    return blog
-}
-
-private fun sanitizeHtml(dto: CreateBlogRequest, blog: Blog) {
-    val content = dto.html!!
-    if (content.trim { it <= ' ' }.isNotEmpty()) {
-        val doc = Jsoup.parse(content)
-        doc.select("div:has(a:contains(Unsubscribe))").remove()
-        blog.html = doc.html().replace(">\\s+<".toRegex(), "><").trim { it <= ' ' }
+private fun sanitizeHtml(content: String): String {
+    if (content.trim { it <= ' ' }.isEmpty()) {
+        return ""
     }
+    val doc = Jsoup.parse(content)
+    doc.select("div:has(a:contains(Unsubscribe))").remove()
+    return doc.html().replace(">\\s+<".toRegex(), "><").trim { it <= ' ' }
 }
 
-private fun sanitizeHtml(dto: UpdateBlogRequest, blog: Blog) {
-    val content = dto.html!!
-    if (content.trim { it <= ' ' }.isNotEmpty()) {
-        val doc = Jsoup.parse(content)
-        doc.select("div:has(a:contains(Unsubscribe))").remove()
-        blog.html = doc.html().replace(">\\s+<".toRegex(), "><").trim { it <= ' ' }
-    }
-}
+fun sanitizeBlogHtml(html: String): String = sanitizeHtml(html)

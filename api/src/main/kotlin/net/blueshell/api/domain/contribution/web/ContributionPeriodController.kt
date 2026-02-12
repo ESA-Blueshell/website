@@ -8,6 +8,7 @@ import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodResponse
 import net.blueshell.api.domain.contribution.web.dto.CreateContributionPeriodRequest
 import net.blueshell.api.domain.contribution.web.dto.UpdateContributionPeriodRequest
+import net.blueshell.api.domain.contribution.web.mapping.asCommand
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -39,16 +40,7 @@ class ContributionPeriodController @Autowired constructor(
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody request: CreateContributionPeriodRequest): ContributionPeriodResponse {
-        val contributionPeriod = commandBus.dispatch(
-            CreateContributionPeriodCommand(
-                startDate = requireNotNull(request.startDate) { "Start date is required" },
-                endDate = requireNotNull(request.endDate) { "End date is required" },
-                halfYearFee = requireNotNull(request.halfYearFee) { "Half year fee is required" },
-                fullYearFee = requireNotNull(request.fullYearFee) { "Full year fee is required" },
-                alumniFee = requireNotNull(request.alumniFee) { "Alumni fee is required" },
-                listId = request.listId
-            )
-        )
+        val contributionPeriod = commandBus.dispatch(request.asCommand())
         return contributionPeriod.asResponse()
     }
 
@@ -58,18 +50,7 @@ class ContributionPeriodController @Autowired constructor(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateContributionPeriodRequest
     ): ContributionPeriodResponse {
-        val contributionPeriod = commandBus.dispatch(
-            UpdateContributionPeriodCommand(
-                id = id,
-                startDate = requireNotNull(request.startDate) { "Start date is required" },
-                endDate = requireNotNull(request.endDate) { "End date is required" },
-                halfYearFee = requireNotNull(request.halfYearFee) { "Half year fee is required" },
-                fullYearFee = requireNotNull(request.fullYearFee) { "Full year fee is required" },
-                alumniFee = requireNotNull(request.alumniFee) { "Alumni fee is required" },
-                listId = request.listId,
-                version = request.version
-            )
-        )
+        val contributionPeriod = commandBus.dispatch(request.asCommand(id))
         return contributionPeriod.asResponse()
     }
 

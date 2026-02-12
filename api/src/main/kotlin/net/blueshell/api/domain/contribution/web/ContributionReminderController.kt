@@ -6,6 +6,7 @@ import net.blueshell.api.domain.auth.security.IdentityProvider
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.CreateContributionReminderRequest
+import net.blueshell.api.domain.contribution.web.mapping.asCommand
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,12 +23,7 @@ class ContributionReminderController @Autowired constructor(
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminder(@Valid @RequestBody request: CreateContributionReminderRequest): ContributionReminderResponse {
-        val reminder = commandBus.dispatch(
-            SendContributionReminderCommand(
-                userId = requireNotNull(request.userId) { "User id is required" },
-                contributionPeriodId = requireNotNull(request.contributionPeriodId) { "Contribution period id is required" }
-            )
-        )
+        val reminder = commandBus.dispatch(request.asCommand())
         return reminder.asResponse()
     }
 
@@ -35,13 +31,7 @@ class ContributionReminderController @Autowired constructor(
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminderBatch(@Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>): MutableList<ContributionReminderResponse> {
-        val items = requests.map { request ->
-            ContributionReminderItem(
-                userId = requireNotNull(request.userId) { "User id is required" },
-                contributionPeriodId = requireNotNull(request.contributionPeriodId) { "Contribution period id is required" }
-            )
-        }.toMutableList()
-        val reminders = commandBus.dispatch(SendContributionReminderBatchCommand(items))
+        val reminders = commandBus.dispatch(requests.asCommand())
         return reminders.map { it.asResponse() }.toMutableList()
     }
 

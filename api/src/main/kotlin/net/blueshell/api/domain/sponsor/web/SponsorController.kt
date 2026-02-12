@@ -6,6 +6,7 @@ import net.blueshell.api.domain.sponsor.command.*
 import net.blueshell.api.domain.sponsor.web.dto.CreateSponsorRequest
 import net.blueshell.api.domain.sponsor.web.dto.SponsorResponse
 import net.blueshell.api.domain.sponsor.web.dto.UpdateSponsorRequest
+import net.blueshell.api.domain.sponsor.web.mapping.asCommand
 import net.blueshell.api.domain.sponsor.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
@@ -30,26 +31,14 @@ class SponsorController(
     @PostMapping("/sponsors")
     @ResponseStatus(HttpStatus.CREATED)
     fun createSponsor(@Valid @RequestBody request: CreateSponsorRequest): SponsorResponse {
-        val sponsor = commandBus.dispatch(
-            CreateSponsorCommand(
-                name = requireNotNull(request.name) { "Name is required" },
-                description = requireNotNull(request.description) { "Description is required" }
-            )
-        )
+        val sponsor = commandBus.dispatch(request.asCommand())
         return sponsor.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/sponsors/{id}"])
     fun updateSponsor(@PathVariable id: Long, @RequestBody request: UpdateSponsorRequest): SponsorResponse {
-        val sponsor = commandBus.dispatch(
-            UpdateSponsorCommand(
-                id = id,
-                name = requireNotNull(request.name) { "Name is required" },
-                description = requireNotNull(request.description) { "Description is required" },
-                version = request.version
-            )
-        )
+        val sponsor = commandBus.dispatch(request.asCommand(id))
         return sponsor.asResponse()
     }
 

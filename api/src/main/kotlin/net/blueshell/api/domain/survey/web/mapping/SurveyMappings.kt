@@ -1,17 +1,13 @@
 package net.blueshell.api.domain.survey.web.mapping
 
-
 import net.blueshell.api.domain.survey.persistence.Answer
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
-import net.blueshell.api.domain.survey.web.dto.AnswerRequest
 import net.blueshell.api.domain.survey.web.dto.AnswerResponse
 import net.blueshell.api.domain.survey.web.dto.QuestionDTO
-import net.blueshell.api.domain.survey.web.dto.QuestionRequest
 import net.blueshell.api.domain.survey.web.dto.QuestionResponse
 import net.blueshell.api.domain.survey.web.dto.SurveyDTO
-import net.blueshell.api.domain.survey.web.dto.SurveyRequest
 import net.blueshell.api.domain.survey.web.dto.SurveyResponse
 import tech.mappie.api.ObjectMappie
 
@@ -37,15 +33,6 @@ fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
     return survey
 }
 
-fun SurveyRequest.asEntity(survey: Survey = Survey()): Survey {
-    val mappedQuestions = questions!!.map { it.asEntity() }
-    val questionsSet = survey.questions as MutableSet
-    questionsSet.clear()
-    questionsSet.addAll(mappedQuestions)
-    survey.questions.forEach { it.survey = survey }
-    return survey
-}
-
 fun QuestionDTO.asEntity(question: Question = Question()): Question {
     question.idx = idx!!
     question.survey = Survey::class.asRef(surveyId!!)
@@ -56,33 +43,11 @@ fun QuestionDTO.asEntity(question: Question = Question()): Question {
     return question
 }
 
-fun QuestionRequest.asEntity(question: Question = Question()): Question {
-    question.idx = idx!!
-    question.type = type!!
-    question.label = label!!
-    question.choiceLabels = choiceLabels
-    return question
-}
-
 fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
     answer.question = Question::class.asRef(questionId!!)
     answer.optionSelections = optionSelections
     answer.textResponse = textResponse
     version?.let { answer.version = it }
-    return answer
-}
-
-fun AnswerRequest.asDto(answer: AnswerDTO = AnswerDTO()): AnswerDTO {
-    answer.questionId = questionId
-    answer.optionSelections = optionSelections
-    answer.textResponse = textResponse
-    return answer
-}
-
-fun AnswerRequest.asEntity(answer: Answer = Answer()): Answer {
-    answer.question = Question::class.asRef(questionId!!)
-    answer.optionSelections = optionSelections
-    answer.textResponse = textResponse
     return answer
 }
 

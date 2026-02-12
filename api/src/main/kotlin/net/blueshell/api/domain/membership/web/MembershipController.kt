@@ -6,6 +6,7 @@ import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.domain.membership.web.dto.BoardCreateMembershipRequest
 import net.blueshell.api.domain.membership.web.dto.MembershipResponse
 import net.blueshell.api.domain.membership.web.dto.UpdateMembershipRequest
+import net.blueshell.api.domain.membership.web.mapping.asCommand
 import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
@@ -49,32 +50,14 @@ class MembershipController(
     fun boardCreateMembership(
         @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody request: BoardCreateMembershipRequest
     ): MembershipResponse? {
-        val membership = commandBus.dispatch(
-            BoardCreateMembershipCommand(
-                userId = requireNotNull(request.userId) { "User id is required" },
-                memberType = requireNotNull(request.memberType) { "Member type is required" },
-                startDate = requireNotNull(request.startDate) { "Start date is required" },
-                endDate = request.endDate,
-                incasso = requireNotNull(request.incasso) { "Incasso is required" }
-            )
-        )
+        val membership = commandBus.dispatch(request.asCommand())
         return membership.asResponse()
     }
 
     @PreAuthorize("hasAuthority('BOARD')")
     @PutMapping(value = ["/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
-        val membership = commandBus.dispatch(
-            UpdateMembershipCommand(
-                id = id,
-                userId = requireNotNull(request.userId) { "User id is required" },
-                memberType = request.memberType,
-                startDate = requireNotNull(request.startDate) { "Start date is required" },
-                endDate = request.endDate,
-                incasso = request.incasso,
-                version = request.version
-            )
-        )
+        val membership = commandBus.dispatch(request.asCommand(id))
         return membership.asResponse()
     }
 

@@ -9,6 +9,7 @@ import net.blueshell.api.domain.committee.web.dto.CommitteeDetailResponse
 import net.blueshell.api.domain.committee.web.dto.CommitteeResponse
 import net.blueshell.api.domain.committee.web.dto.CreateCommitteeRequest
 import net.blueshell.api.domain.committee.web.dto.UpdateCommitteeRequest
+import net.blueshell.api.domain.committee.web.mapping.asCommand
 import net.blueshell.api.domain.committee.web.mapping.asDetailResponse
 import net.blueshell.api.domain.committee.web.mapping.asSummaryResponse
 import net.blueshell.api.shared.command.CommandBus
@@ -63,12 +64,7 @@ class CommitteeController(
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
     fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {
-        val name = requireNotNull(request.name) { "Name is required" }
-        val description = requireNotNull(request.description) { "Description is required" }
-        val members = requireNotNull(request.members) { "Members are required" }
-            .map { CommitteeMemberData(it.userId, it.role) }
-            .toMutableList()
-        val committee = commandBus.dispatch(CreateCommitteeCommand(name, description, members))
+        val committee = commandBus.dispatch(request.asCommand())
         return committee.asDetailResponse()
     }
 
@@ -78,20 +74,7 @@ class CommitteeController(
         @PathVariable id: Long,
         @Valid @RequestBody request: @Valid UpdateCommitteeRequest
     ): CommitteeDetailResponse {
-        val name = requireNotNull(request.name) { "Name is required" }
-        val description = requireNotNull(request.description) { "Description is required" }
-        val members = requireNotNull(request.members) { "Members are required" }
-            .map { CommitteeMemberData(it.userId, it.role) }
-            .toMutableList()
-        val committee = commandBus.dispatch(
-            UpdateCommitteeCommand(
-                id = id,
-                name = name,
-                description = description,
-                members = members,
-                version = request.version
-            )
-        )
+        val committee = commandBus.dispatch(request.asCommand(id))
         return committee.asDetailResponse()
     }
 

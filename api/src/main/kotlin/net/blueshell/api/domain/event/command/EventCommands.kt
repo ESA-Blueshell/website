@@ -2,19 +2,45 @@ package net.blueshell.api.domain.event.command
 
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.filter.EventFilter
-import net.blueshell.api.domain.event.web.dto.CreateEventRequest
-import net.blueshell.api.domain.event.web.dto.UpdateEventRequest
+import net.blueshell.api.domain.event.web.dto.EventBannerRequest
+import net.blueshell.api.domain.survey.web.dto.SurveyRequest
+import java.time.Instant
 import net.blueshell.api.shared.command.Command
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 
 data class CreateEventCommand(
-    val request: CreateEventRequest
+    val committeeId: Long,
+    val title: String,
+    val description: String,
+    val location: String?,
+    val startTime: Instant,
+    val endTime: Instant,
+    val memberPrice: Double?,
+    val publicPrice: Double?,
+    val approved: Boolean,
+    val membersOnly: Boolean,
+    val signUp: Boolean,
+    val banner: EventBannerRequest?,
+    val signUpForm: SurveyRequest?
 ) : Command<Event>
 
 data class UpdateEventCommand(
     val id: Long,
-    val request: UpdateEventRequest
+    val committeeId: Long,
+    val title: String,
+    val description: String,
+    val location: String?,
+    val startTime: Instant,
+    val endTime: Instant,
+    val memberPrice: Double?,
+    val publicPrice: Double?,
+    val approved: Boolean,
+    val membersOnly: Boolean,
+    val signUp: Boolean,
+    val banner: EventBannerRequest?,
+    val signUpForm: SurveyRequest?,
+    val version: Long?
 ) : Command<Event>
 
 data class ApproveEventCommand(

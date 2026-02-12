@@ -3,6 +3,7 @@ package net.blueshell.api.domain.blog.application.command
 import net.blueshell.api.domain.blog.application.BlogService
 import net.blueshell.api.domain.blog.command.*
 import net.blueshell.api.domain.blog.persistence.Blog
+import net.blueshell.api.domain.blog.web.mapping.sanitizeBlogHtml
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -15,7 +16,7 @@ class CreateBlogHandler(
     override fun handle(command: CreateBlogCommand): Blog {
         var blog = Blog()
         blog.title = command.title
-        blog.html = command.html
+        blog.html = sanitizeBlogHtml(command.html)
         blog.publishedAt = command.publishedAt
         blog = service.create(blog)
         return blog
@@ -31,7 +32,7 @@ class UpdateBlogHandler(
     override fun handle(command: UpdateBlogCommand): Blog {
         var blog = service.findById(command.id)
         blog.title = command.title
-        blog.html = command.html
+        blog.html = sanitizeBlogHtml(command.html)
         blog.publishedAt = command.publishedAt
         command.version?.let { blog.version = it }
         blog = service.update(blog)

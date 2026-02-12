@@ -562,7 +562,7 @@ class DatabaseSeeder(
         }
 
         val member = CommitteeMember().apply {
-            this.user = user
+            this.id.userId = user.id
             this.committee = committee
             this.role = role
         }
@@ -635,7 +635,7 @@ class DatabaseSeeder(
 
         val signUp = EventSignUp().apply {
             this.event = event
-            this.user = user
+            this.userId = user.id
 
             val form = event.signUpForm
             if (event.signUp && form?.questions != null) {
@@ -766,7 +766,7 @@ class DatabaseSeeder(
     private fun createGuestEventSignUpWithAnswers(guest: Guest, event: Event): EventSignUp {
         val signUp = EventSignUp().apply {
             this.event = event
-            user = null
+            this.userId = null
             this.guest = guest
 
             val form = event.signUpForm

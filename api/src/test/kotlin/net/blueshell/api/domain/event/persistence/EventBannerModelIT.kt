@@ -20,7 +20,7 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
 
             val banner = eventBannerFactory.createBasic()
             banner.event = event
-            banner.file = file
+            banner.id.fileId = file.id
 
             val found = persistAndReload(banner, EventBanner::class.java) { it.id }
 
@@ -35,12 +35,12 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
 
             val banner = eventBannerFactory.createBasic()
             banner.event = event
-            banner.file = file
+            banner.id.fileId = file.id
 
             val found = persistAndReload(banner, EventBanner::class.java) { it.id }
 
-            assertEquals(file.id, found.fileId)
-            Assertions.assertEquals(file.id, found.file.id)
+            assertEquals(file.id, found.file?.id)
+            Assertions.assertEquals(file.id, found.file?.id)
         }
     }
 
@@ -52,12 +52,12 @@ class EventBannerModelIT : ModelPersistenceTestSupport() {
             val file = persist(fileWithUploader(fileFactory.createImage()))
             val banner = persist(eventBannerFactory.createBasic().apply {
                 this.event = event
-                this.file = file
+                this.id.fileId = file.id
             })
 
             val dto = banner.asDto()
 
-            assertEquals(file.id, dto.file?.id)
+            assertEquals(file.id, dto.fileId)
         }
     }
 }

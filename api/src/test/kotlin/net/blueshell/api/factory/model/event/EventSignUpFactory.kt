@@ -28,7 +28,7 @@ class EventSignUpFactory(
         val user = userFactory.createFull()
 
         signUp.event = event
-        signUp.user = user
+        signUp.userId = user.id
         signUp.guest = null
 
         return signUp
@@ -45,7 +45,7 @@ class EventSignUpFactory(
     fun createForEventAndUser(event: Event, user: User): EventSignUp {
         val signUp = EventSignUp()
         signUp.event = event
-        signUp.user = user
+        signUp.userId = user.id
         signUp.guest = null
         return signUp
     }

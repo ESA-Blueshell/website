@@ -54,23 +54,22 @@ class QuestionServiceIT : ServiceTestSupport() {
 
         @Test
         fun `creating non-description question clears signups for survey`() {
-            val survey = persist(surveyFactory.createBasic())
             val committee = persist(committeeFactory.createBasic())
             val nonPersistedEvent = eventFactory.createWithCustomizations {
                 it.committee = committee
                 it.signUp = true
-                it.signUpForm = survey
+                it.signUpForm = surveyFactory.createBasic()
             }
-            println("Non Persisted event survey.id: ${nonPersistedEvent.signUpForm?.id}")
-            println("Non Persisted event surveyId: ${nonPersistedEvent.signUpFormId}")
             val event = events.create(
                 nonPersistedEvent
             )
 
+            val survey = event.signUpForm!!
+
             val user = persist(userFactory.createBasic())
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.user = user
+            signUp.userId = user.id
             signUps.create(signUp)
 
             assertTrue(signUps.findBySurveyId(survey.id!!).isNotEmpty())
@@ -103,7 +102,7 @@ class QuestionServiceIT : ServiceTestSupport() {
 
             assertTrue(answers.findByQuestionId(savedQuestion.id!!).any { it.id == savedAnswer.id })
 
-            questions.delete(savedQuestion)
+            questions.deleteById(savedQuestion.id!!)
 
             assertEquals(0, answers.findByQuestionId(savedQuestion.id!!).size)
         }

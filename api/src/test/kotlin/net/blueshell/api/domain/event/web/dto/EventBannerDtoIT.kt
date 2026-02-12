@@ -29,16 +29,16 @@ class EventBannerDtoIT @Autowired constructor(
             val event = persistEvent()
             val file = persist(fileWithUploader(fileFactory.createImage()))
             val dto = eventBannerDTOFactory.createBasic().apply {
-                this.file = fileDTOFactory.createBasic().also { it.id = file.id }
+                this.fileId = file.id
             }
             val banner = eventBannerFactory.createBasic().apply {
                 this.event = event
-                this.file = file
+                this.id.fileId = file.id
             }
 
             val mapped = dto.asEntity(banner)
             mapped.event = event
-            mapped.file = file
+            mapped.id.fileId = file.id
 
             val saved = eventBannerService.create(mapped)
             flushAndClear()
@@ -46,7 +46,7 @@ class EventBannerDtoIT @Autowired constructor(
             val reloaded = reload(EventBanner::class.java, saved.id)
 
             assertThat(reloaded.eventId).isEqualTo(event.id)
-            assertThat(reloaded.fileId).isEqualTo(file.id)
+            assertThat(reloaded.file?.id).isEqualTo(file.id)
         }
     }
 }

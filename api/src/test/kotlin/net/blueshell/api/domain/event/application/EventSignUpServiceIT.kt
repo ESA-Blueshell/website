@@ -46,11 +46,10 @@ class EventSignUpServiceIT : ServiceTestSupport() {
                     it.signUp = true
                 }
             )
-            val guest = persist(guestFactory.createBasic())
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.guest = guest
+            signUp.guest = guestFactory.createBasic()
 
             signUps.create(signUp)
 
@@ -71,7 +70,7 @@ class EventSignUpServiceIT : ServiceTestSupport() {
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.user = user
+            signUp.userId = user.id
 
             signUps.create(signUp)
 
@@ -88,11 +87,10 @@ class EventSignUpServiceIT : ServiceTestSupport() {
                     it.signUp = true
                 }
             )
-            val guest = persist(guestFactory.createBasic())
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.guest = guest
+            signUp.guest = guestFactory.createBasic()
 
             signUps.create(signUp)
 

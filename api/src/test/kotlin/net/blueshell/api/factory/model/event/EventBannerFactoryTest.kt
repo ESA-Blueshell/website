@@ -14,7 +14,7 @@ class EventBannerFactoryTest : ModelFactoryTestSupport() {
 
         val banner = eventBannerFactory.createBasic()
         banner.event = event
-        banner.file = bannerFile
+        banner.id.fileId = bannerFile.id
 
         val saved = persist(banner)
         assertPersisted(EventBanner::class.java, saved.id)

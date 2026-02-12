@@ -4,7 +4,6 @@ import jakarta.persistence.*
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
-import net.blueshell.api.shared.model.asRef
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -43,18 +42,15 @@ class EventBanner(
     val eventId: Long
         get() = id.eventId ?: 0
 
-    @MapsId("fileId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
         name = "file_id",
+        foreignKey = ForeignKey(name = "fk_event_banners_file"),
         nullable = false,
-        foreignKey = ForeignKey(name = "fk_event_banners_file")
+        insertable = false,
+        updatable = false,
     )
-    lateinit var file: File
-        internal set
-
-    val fileId: Long
-        get() = id.fileId ?: 0
+    val file: File? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -69,6 +65,7 @@ class EventBanner(
     @Embeddable
     data class Id(
         var eventId: Long? = null,
+        @Column(name = "file_id", nullable = false)
         var fileId: Long? = null
     ) : java.io.Serializable
 }

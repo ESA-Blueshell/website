@@ -51,7 +51,7 @@ fun EventDTO.asEntity(event: Event = Event()): Event {
 }
 
 fun EventBannerDTO.asEntity(banner: EventBanner = EventBanner()): EventBanner {
-    banner.file = file!!.asEntity()
+    banner.id.fileId = fileId
     version?.let { banner.version = it }
     return banner
 }
@@ -72,7 +72,7 @@ fun GuestDTO.asEntity(guest: Guest = Guest()): Guest {
 
 fun EventSignUpDTO.asEntity(signUp: EventSignUp = EventSignUp()): EventSignUp {
     signUp.event = Event::class.asRef(eventId!!)
-    userId?.let { signUp.user = User::class.asRef(it) }
+    userId?.let { signUp.userId = it }
     signUp.guest = guest?.asEntity()
 
     if (answers != null) {

@@ -30,7 +30,7 @@ abstract class BaseDtoFactory<T>(
     abstract fun createBasic(): T
 
     /** Fully populated instance (defaults to basic). */
-    fun createFull(): T = createBasic()
+    open fun createFull(): T = createBasic()
 
     /** Instance with inline tweaks. */
     fun createWithCustomizations(customizer: Consumer<T>?): T {

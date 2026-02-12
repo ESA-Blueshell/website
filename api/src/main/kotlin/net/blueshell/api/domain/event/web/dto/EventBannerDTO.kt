@@ -8,5 +8,5 @@ import net.blueshell.api.shared.dto.AuditedSoftDeleteDTO
 @Schema(name = "EventBanner")
 data class EventBannerDTO(
     @field:NotNull
-    var file: FileDTO? = null
+    var fileId: Long? = null
 ) : AuditedSoftDeleteDTO()

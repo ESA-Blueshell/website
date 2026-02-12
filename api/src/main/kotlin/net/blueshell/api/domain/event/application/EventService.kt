@@ -80,8 +80,8 @@ class EventService @Autowired constructor(
         event.banner?.let { banner ->
             banner.event = event
             // Replace transient file entity with reference if it has an ID
-            banner.file.id?.let { fileId ->
-                banner.file = File::class.asRef(fileId)
+            banner.file?.id?.let { fileId ->
+                banner.id.fileId = fileId
             }
         }
         // Set parent references for one-to-many nested relationship

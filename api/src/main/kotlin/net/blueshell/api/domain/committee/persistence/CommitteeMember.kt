@@ -41,11 +41,10 @@ class CommitteeMember(
     val committeeId: Long
         get() = id.committeeId ?: 0
 
-    @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
     lateinit var user: User
-        internal set
+        private set
 
     val userId: Long
         get() = id.userId ?: 0

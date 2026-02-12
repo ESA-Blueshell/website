@@ -20,7 +20,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.user = user
+            signUp.userId = user.id
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
 
@@ -35,7 +35,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.user = user
+            signUp.userId = user.id
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
 
@@ -51,7 +51,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.user = user
+            signUp.userId = user.id
             signUp.guest = guest
 
             val found = persistAndReload(signUp, EventSignUp::class.java) { it.id }
@@ -70,7 +70,7 @@ class EventSignUpModelIT : ModelPersistenceTestSupport() {
 
             val signUp = EventSignUp()
             signUp.event = event
-            signUp.user = user
+            signUp.userId = user.id
             val answers = signUp.answers as MutableSet<Answer>
             answers.clear()
             answers.add(answerOne)

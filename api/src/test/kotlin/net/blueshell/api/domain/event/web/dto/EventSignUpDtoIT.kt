@@ -40,7 +40,7 @@ class EventSignUpDtoIT @Autowired constructor(
             }
             val signUp = eventSignUpFactory.createBasic().apply {
                 this.event = event
-                this.user = user
+                this.userId = user.id
             }
             (signUp.answers as MutableSet<Answer>).clear()
 

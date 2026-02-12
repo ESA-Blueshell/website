@@ -28,6 +28,6 @@ class EventBannerService @Autowired constructor(
 
     private fun mergeRefs(banner: EventBanner) {
         banner.id.eventId?.let { banner.event = Event::class.asRef(it) }
-        banner.id.fileId?.let { banner.file = File::class.asRef(it) }
+        banner.id.fileId?.let { banner.id.fileId = it }
     }
 }

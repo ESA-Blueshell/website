@@ -36,13 +36,10 @@ class EventDtoIT @Autowired constructor(
                 committeeId = committee.id!!
                 approved = true
                 banner = eventBannerDTOFactory.createBasic().also {
-                    it.file = fileDTOFactory.createBasic().also { fileDto -> fileDto.id = file.id }
+                    it.fileId = file.id!!
                 }
             }
-            val event = eventFactory.createBasic()
-
-            val mapped = dto.asEntity(event)
-            mapped.banner?.file = file
+            val mapped = dto.asEntity()
             val saved = eventService.create(mapped)
             entityManager.flush()
             flushAndClear()
@@ -51,7 +48,7 @@ class EventDtoIT @Autowired constructor(
 
             assertThat(reloaded.committeeId).isEqualTo(committee.id)
             assertThat(reloaded.banner).isNotNull
-            assertThat(reloaded.banner!!.fileId).isEqualTo(file.id)
+            assertThat(reloaded.banner!!.file?.id).isEqualTo(file.id)
             assertThat(reloaded.approved).isTrue
         }
 

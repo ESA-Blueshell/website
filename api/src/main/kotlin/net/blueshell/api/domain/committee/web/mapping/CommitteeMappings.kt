@@ -17,8 +17,7 @@ object CommitteeToAdvancedCommitteeDTOMapper : ObjectMappie<Committee, AdvancedC
 object CommitteeToSimpleCommitteeDTOMapper : ObjectMappie<Committee, SimpleCommitteeDTO>()
 
 fun CommitteeMemberDTO.asEntity(member: CommitteeMember = CommitteeMember()): CommitteeMember {
-    member.user = User::class.asRef(userId!!)
-    member.committee = Committee::class.asRef(committeeId!!)
+    member.id.userId = userId!!
     member.role = role
     version?.let { member.version = it }
     return member

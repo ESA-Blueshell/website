@@ -50,20 +50,16 @@ class EventSignUp : AuditedAutoIdEntity() {
         get() = event.id ?: 0
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     var user: User? = null
-        internal set
+        private set
 
-    val userId: Long?
-        get() = user?.id
+    @Column(name = "user_id")
+    var userId: Long? = null
 
     @ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
     @JoinColumn(name = "guest_id")
     var guest: Guest? = null
-        internal set
-
-    val guestId: Long?
-        get() = guest?.id
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(

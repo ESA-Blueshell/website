@@ -96,17 +96,16 @@ class EventServiceIT : ServiceTestSupport() {
                     it.signUp = true
                 }
             )
-            val guest = persist(guestFactory.createBasic())
             val user = persist(userFactory.createBasic())
 
             val guestSignUp = EventSignUp()
             guestSignUp.event = event
-            guestSignUp.guest = guest
+            guestSignUp.guest = guestFactory.createBasic()
             signUps.create(guestSignUp)
 
             val userSignUp = EventSignUp()
             userSignUp.event = event
-            userSignUp.user = user
+            userSignUp.userId = user.id
             signUps.create(userSignUp)
 
             events.delete(event)

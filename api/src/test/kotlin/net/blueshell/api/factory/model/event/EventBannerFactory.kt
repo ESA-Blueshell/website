@@ -22,7 +22,7 @@ class EventBannerFactory(
         val event = eventFactory.createBasic()
         val file = fileFactory.createImage()
         banner.event = event
-        banner.file = file
+        banner.id.fileId = file.id
         return banner
     }
 

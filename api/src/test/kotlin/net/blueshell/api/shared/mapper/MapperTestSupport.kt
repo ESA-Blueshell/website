@@ -98,6 +98,7 @@ abstract class MapperTestSupport {
         val uploader = persistUser()
         entityManager.flush()
         file.uploader = uploader
+        file.path = file.name
         return file
     }
 

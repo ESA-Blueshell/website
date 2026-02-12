@@ -20,7 +20,7 @@ class CommitteeMemberFactory(
 
     fun createBasic(user: User, committee: Committee): CommitteeMember {
         val member = CommitteeMember()
-        member.user = user
+        member.id.userId = user.id
         member.committee = committee
         member.role = faker.options().option("Chair", "Secretary", "Treasurer", "Member")
         return member

@@ -13,5 +13,6 @@ data class FileDTO(
     var name: String? = null,
     var mediaType: String? = null,
     var size: Long? = null,
-    var type: FileType? = null
+    var type: FileType? = null,
+    var path: String? = null,
 ) : AuditedAutoIdDTO()

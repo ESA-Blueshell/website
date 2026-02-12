@@ -32,7 +32,7 @@ fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
 fun BlogDTO.asEntity(blog: Blog = Blog()): Blog {
     blog.title = title!!
     blog.publishedAt = publishedAt!!
-    blog.version = version!!
+    version?.let { blog.version = it }
     sanitizeHtml(this, blog)
     return blog
 }

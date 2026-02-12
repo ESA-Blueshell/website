@@ -85,7 +85,7 @@ class EventSignUpControllerIT @Autowired constructor(
         val board = users[Role.BOARD]!!
 
         val savedFile = givenUploadedBannerAsBoard()
-        val banner = uf.with(EventBannerDTO::class.java) { b -> b.file = savedFile }
+        val banner = uf.with(EventBannerDTO::class.java) { b -> b.fileId = savedFile.id }
 
         val eventDTO = uf.with(EventDTO::class.java) { e ->
             e.committeeId = committeeId

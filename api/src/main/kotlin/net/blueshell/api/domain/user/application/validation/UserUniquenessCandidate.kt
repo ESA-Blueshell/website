@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.validation
+package net.blueshell.api.domain.user.application.validation
 
 interface UserUniquenessCandidate {
     val subjectId: Long?

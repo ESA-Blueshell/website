@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.auth.command
 
-import net.blueshell.api.shared.validation.UniqueUsername
+import net.blueshell.api.domain.user.application.validation.UniqueUsername
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.Command
 import jakarta.validation.constraints.NotBlank

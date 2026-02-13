@@ -1,8 +1,7 @@
-package net.blueshell.api.shared.validation
+package net.blueshell.api.domain.user.application.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
-import net.blueshell.api.domain.user.application.validation.UniqueUserCommandValidator
 import kotlin.reflect.KClass
 
 @MustBeDocumented

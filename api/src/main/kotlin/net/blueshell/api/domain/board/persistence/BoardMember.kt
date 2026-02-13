@@ -9,6 +9,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.io.Serializable
+import java.time.LocalDate
 
 @Entity
 @Table(
@@ -66,6 +67,15 @@ class BoardMember(
 
     val pictureId: Long?
         get() = picture?.id
+
+    @Column(name = "role", nullable = false)
+    lateinit var role: String
+
+    @Column(name = "start_date", nullable = false)
+    lateinit var startDate: LocalDate
+
+    @Column(name = "end_date")
+    var endDate: LocalDate? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

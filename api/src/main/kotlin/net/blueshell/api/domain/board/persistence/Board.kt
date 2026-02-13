@@ -59,4 +59,26 @@ class Board : AuditedAutoIdEntity() {
 
     @Column(name = "name", nullable = false)
     lateinit var name: String
+
+    fun addMember(member: BoardMember) {
+        member.board = this
+        _members.add(member)
+    }
+
+    fun removeMember(userId: Long) {
+        _members.removeIf { it.userId == userId }
+    }
+
+    fun addDocument(document: BoardDocument) {
+        document.board = this
+        _documents.add(document)
+    }
+
+    fun removeDocument(fileId: Long) {
+        _documents.removeIf { it.fileId == fileId }
+    }
+
+    fun replacePicture(newPicture: File?) {
+        picture = newPicture
+    }
 }

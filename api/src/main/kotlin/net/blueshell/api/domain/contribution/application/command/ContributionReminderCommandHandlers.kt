@@ -21,8 +21,8 @@ class SendContributionReminderHandler(
 
     override fun handle(command: SendContributionReminderCommand): ContributionReminder {
         var reminder = ContributionReminder()
-        reminder.user = users.findById(command.userId)
-        reminder.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId)
+        reminder.user = users.findById(command.userId!!)
+        reminder.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!)
         reminder = service.create(reminder)
         service.sendReminder(reminder)
         return reminder
@@ -38,7 +38,7 @@ class SendContributionReminderBatchHandler(
     override val commandType = SendContributionReminderBatchCommand::class
 
     override fun handle(command: SendContributionReminderBatchCommand): MutableList<ContributionReminder> {
-        var reminders = command.items.map { item ->
+        var reminders = command.items!!.map { item ->
             buildReminder(item, users, contributionPeriods)
         }.toMutableList()
         reminders = service.createAll(reminders)
@@ -54,7 +54,7 @@ class FindContributionRemindersHandler(
     override val commandType = FindContributionRemindersCommand::class
 
     override fun handle(command: FindContributionRemindersCommand): MutableList<ContributionReminder> {
-        return service.findByContributionPeriodId(command.contributionPeriodId)
+        return service.findByContributionPeriodId(command.contributionPeriodId!!)
     }
 }
 
@@ -64,7 +64,7 @@ private fun buildReminder(
     contributionPeriods: ContributionPeriodService
 ): ContributionReminder {
     val reminder = ContributionReminder()
-    reminder.user = users.findById(item.userId)
-    reminder.contributionPeriod = contributionPeriods.findById(item.contributionPeriodId)
+    reminder.user = users.findById(item.userId!!)
+    reminder.contributionPeriod = contributionPeriods.findById(item.contributionPeriodId!!)
     return reminder
 }

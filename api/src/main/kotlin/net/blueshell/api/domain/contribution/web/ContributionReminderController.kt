@@ -3,8 +3,8 @@ package net.blueshell.api.domain.contribution.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.command.*
-import net.blueshell.api.domain.contribution.web.dto.ContributionReminderResponse
-import net.blueshell.api.domain.contribution.web.dto.CreateContributionReminderRequest
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
+import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionReminderRequest
 import net.blueshell.api.domain.contribution.web.mapping.asCommand
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus

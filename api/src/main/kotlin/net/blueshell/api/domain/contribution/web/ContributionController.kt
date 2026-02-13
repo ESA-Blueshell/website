@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.*
-import net.blueshell.api.domain.contribution.web.dto.ContributionResponse
-import net.blueshell.api.domain.contribution.web.dto.CreateContributionRequest
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
+import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionRequest
 import net.blueshell.api.domain.contribution.web.mapping.asCommand
 import net.blueshell.api.domain.contribution.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus

@@ -24,8 +24,8 @@ class CreateContributionHandler(
 
     override fun handle(command: CreateContributionCommand): Contribution {
         var contribution = Contribution()
-        contribution.user = users.findById(command.userId)
-        contribution.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId)
+        contribution.user = users.findById(command.userId!!)
+        contribution.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!)
         contribution = service.create(contribution)
         return contribution
     }
@@ -38,7 +38,7 @@ class FindContributionsHandler(
     override val commandType = FindContributionsCommand::class
 
     override fun handle(command: FindContributionsCommand): MutableList<Contribution> {
-        return service.findByContributionPeriodId(command.contributionPeriodId)
+        return service.findByContributionPeriodId(command.contributionPeriodId!!)
     }
 }
 
@@ -49,7 +49,7 @@ class DeleteContributionHandler(
     override val commandType = DeleteContributionCommand::class
 
     override fun handle(command: DeleteContributionCommand) {
-        service.deleteById(Contribution.Id(command.userId, command.contributionPeriodId))
+        service.deleteById(Contribution.Id(command.userId, command.contributionPeriodId!!))
     }
 }
 
@@ -60,6 +60,6 @@ class FindContributionsByPeriodIdHandler(
     override val commandType = FindContributionsByPeriodIdCommand::class
 
     override fun handle(command: FindContributionsByPeriodIdCommand): MutableList<Contribution> {
-        return service.findByContributionPeriodId(command.periodId)
+        return service.findByContributionPeriodId(command.periodId!!)
     }
 }

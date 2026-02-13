@@ -3,9 +3,9 @@ package net.blueshell.api.domain.contribution.web.mapping
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
-import net.blueshell.api.domain.contribution.web.dto.ContributionPeriodResponse
-import net.blueshell.api.domain.contribution.web.dto.ContributionReminderResponse
-import net.blueshell.api.domain.contribution.web.dto.ContributionResponse
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionPeriodResponse
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
 import tech.mappie.api.ObjectMappie
 
 object ContributionToContributionResponseMapper : ObjectMappie<Contribution, ContributionResponse>()

@@ -1,10 +1,10 @@
 package net.blueshell.api.domain.contribution.web.mapping
 
 import net.blueshell.api.domain.contribution.command.*
-import net.blueshell.api.domain.contribution.web.dto.CreateContributionPeriodRequest
-import net.blueshell.api.domain.contribution.web.dto.CreateContributionReminderRequest
-import net.blueshell.api.domain.contribution.web.dto.CreateContributionRequest
-import net.blueshell.api.domain.contribution.web.dto.UpdateContributionPeriodRequest
+import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionPeriodRequest
+import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionReminderRequest
+import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionRequest
+import net.blueshell.api.domain.contribution.web.dto.request.UpdateContributionPeriodRequest
 import tech.mappie.api.ObjectMappie
 
 object CreateContributionRequestToCommandMapper : ObjectMappie<CreateContributionRequest, CreateContributionCommand>() {

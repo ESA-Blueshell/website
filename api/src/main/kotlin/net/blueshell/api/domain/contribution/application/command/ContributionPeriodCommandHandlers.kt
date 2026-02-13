@@ -36,11 +36,11 @@ class CreateContributionPeriodHandler(
 
     override fun handle(command: CreateContributionPeriodCommand): ContributionPeriod {
         var contributionPeriod = ContributionPeriod()
-        contributionPeriod.startDate = command.startDate
-        contributionPeriod.endDate = command.endDate
-        contributionPeriod.halfYearFee = command.halfYearFee
-        contributionPeriod.fullYearFee = command.fullYearFee
-        contributionPeriod.alumniFee = command.alumniFee
+        contributionPeriod.startDate = command.startDate!!
+        contributionPeriod.endDate = command.endDate!!
+        contributionPeriod.halfYearFee = command.halfYearFee!!
+        contributionPeriod.fullYearFee = command.fullYearFee!!
+        contributionPeriod.alumniFee = command.alumniFee!!
         contributionPeriod.listId = command.listId
         contributionPeriod = service.create(contributionPeriod)
         return contributionPeriod
@@ -54,12 +54,12 @@ class UpdateContributionPeriodHandler(
     override val commandType = UpdateContributionPeriodCommand::class
 
     override fun handle(command: UpdateContributionPeriodCommand): ContributionPeriod {
-        var contributionPeriod = service.findById(command.id)
-        contributionPeriod.startDate = command.startDate
-        contributionPeriod.endDate = command.endDate
-        contributionPeriod.halfYearFee = command.halfYearFee
-        contributionPeriod.fullYearFee = command.fullYearFee
-        contributionPeriod.alumniFee = command.alumniFee
+        var contributionPeriod = service.findById(command.id!!)
+        contributionPeriod.startDate = command.startDate!!
+        contributionPeriod.endDate = command.endDate!!
+        contributionPeriod.halfYearFee = command.halfYearFee!!
+        contributionPeriod.fullYearFee = command.fullYearFee!!
+        contributionPeriod.alumniFee = command.alumniFee!!
         contributionPeriod.listId = command.listId
         command.version?.let { contributionPeriod.version = it }
         contributionPeriod = service.update(contributionPeriod)
@@ -74,6 +74,6 @@ class DeleteContributionPeriodByIdHandler(
     override val commandType = DeleteContributionPeriodByIdCommand::class
 
     override fun handle(command: DeleteContributionPeriodByIdCommand) {
-        service.deleteById(command.id)
+        service.deleteById(command.id!!)
     }
 }

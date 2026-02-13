@@ -1,11 +1,11 @@
 package net.blueshell.api.domain.membership.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import net.blueshell.api.domain.membership.application.query.MembershipQuery
 import net.blueshell.api.domain.membership.command.*
-import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
-import net.blueshell.api.domain.membership.web.dto.BoardCreateMembershipRequest
-import net.blueshell.api.domain.membership.web.dto.MembershipResponse
-import net.blueshell.api.domain.membership.web.dto.UpdateMembershipRequest
+import net.blueshell.api.domain.membership.web.dto.request.BoardCreateMembershipRequest
+import net.blueshell.api.domain.membership.web.dto.request.UpdateMembershipRequest
+import net.blueshell.api.domain.membership.web.dto.response.MembershipResponse
 import net.blueshell.api.domain.membership.web.mapping.asCommand
 import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.infrastructure.security.UserPrincipal
@@ -28,8 +28,8 @@ class MembershipController(
 ) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(service) {
     @PreAuthorize("hasAuthority('BOARD')")
     @GetMapping("/memberships")
-    fun findMemberships(@ParameterObject filter: MembershipFilter): MutableList<MembershipResponse> {
-        return commandBus.dispatch(FindMembershipsCommand(filter)).map { it.asResponse() }.toMutableList()
+    fun findMemberships(@ParameterObject query: MembershipQuery = MembershipQuery()): MutableList<MembershipResponse> {
+        return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
     }
 
     @PreAuthorize("hasAuthority('GUEST')")

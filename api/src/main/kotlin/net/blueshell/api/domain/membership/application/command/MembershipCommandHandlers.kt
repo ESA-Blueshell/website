@@ -15,7 +15,7 @@ class FindMembershipsHandler(
     override val commandType = FindMembershipsCommand::class
 
     override fun handle(command: FindMembershipsCommand): MutableList<Membership> {
-        return service.findByFilter(command.filter)
+        return service.findByQuery(command.filter)
     }
 }
 
@@ -27,10 +27,10 @@ class CreateMembershipHandler(
     override val commandType = CreateMembershipCommand::class
 
     override fun handle(command: CreateMembershipCommand): Membership {
-        if (command.isMember) {
+        if (command.isMember!!) {
             throw AccessDeniedException("User is already a member")
         }
-        if (!command.hasAddress) {
+        if (!command.hasAddress!!) {
             throw AccessDeniedException("User must have an address")
         }
         val principalId = requireNotNull(command.principalId) { "User must be authenticated" }
@@ -51,11 +51,11 @@ class BoardCreateMembershipHandler(
 
     override fun handle(command: BoardCreateMembershipCommand): Membership {
         var membership = Membership()
-        membership.user = users.findById(command.userId)
-        membership.memberType = command.memberType
-        membership.startDate = command.startDate
+        membership.user = users.findById(command.userId!!)
+        membership.memberType = command.memberType!!
+        membership.startDate = command.startDate!!
         membership.endDate = command.endDate
-        membership.incasso = command.incasso
+        membership.incasso = command.incasso!!
         membership = service.create(membership)
         return membership
     }
@@ -69,10 +69,10 @@ class UpdateMembershipHandler(
     override val commandType = UpdateMembershipCommand::class
 
     override fun handle(command: UpdateMembershipCommand): Membership {
-        var membership = service.findById(command.id)
-        membership.user = users.findById(command.userId)
+        var membership = service.findById(command.id!!)
+        membership.user = users.findById(command.userId!!)
         command.memberType?.let { membership.memberType = it }
-        command.startDate?.let { membership.startDate = it }
+        membership.startDate = command.startDate!!
         membership.endDate = command.endDate
         command.incasso?.let { membership.incasso = it }
         command.version?.let { membership.version = it }
@@ -88,6 +88,6 @@ class FindMembershipByIdHandler(
     override val commandType = FindMembershipByIdCommand::class
 
     override fun handle(command: FindMembershipByIdCommand): Membership {
-        return service.findById(command.id)
+        return service.findById(command.id!!)
     }
 }

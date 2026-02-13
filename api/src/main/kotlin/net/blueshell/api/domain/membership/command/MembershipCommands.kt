@@ -1,47 +1,63 @@
 package net.blueshell.api.domain.membership.command
 
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.PastOrPresent
+import jakarta.validation.constraints.Positive
+import net.blueshell.api.domain.membership.application.query.MembershipQuery
 import net.blueshell.api.domain.membership.application.validation.MembershipUserIdCandidate
 import net.blueshell.api.domain.membership.application.validation.NoExistingMembershipForUser
 import net.blueshell.api.domain.membership.persistence.Membership
-import net.blueshell.api.domain.membership.persistence.filter.MembershipFilter
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.MemberType
 import java.time.LocalDate
 
 data class FindMembershipsCommand(
-    val filter: MembershipFilter
+    val filter: MembershipQuery
 ) : Command<MutableList<Membership>>
 
 @NoExistingMembershipForUser
 data class CreateMembershipCommand(
     val principalId: Long?,
-    val isMember: Boolean,
-    val hasAddress: Boolean
+    @field:NotNull(message = "isMember flag is required")
+    val isMember: Boolean?,
+    @field:NotNull(message = "hasAddress flag is required")
+    val hasAddress: Boolean?
 ) : Command<Membership>, MembershipUserIdCandidate {
     override val membershipUserId: Long? = principalId
 }
 
 @NoExistingMembershipForUser
 data class BoardCreateMembershipCommand(
-    val userId: Long,
-    val memberType: MemberType,
-    val startDate: LocalDate,
+    @field:NotNull(message = "User ID is required")
+    val userId: Long?,
+    @field:NotNull(message = "Member type is required")
+    val memberType: MemberType?,
+    @field:NotNull(message = "Start date is required")
+    @field:PastOrPresent(message = "Start date cannot be in the future")
+    val startDate: LocalDate?,
     val endDate: LocalDate?,
-    val incasso: Boolean
+    @field:NotNull(message = "Incasso flag is required")
+    val incasso: Boolean?
 ) : Command<Membership>, MembershipUserIdCandidate {
     override val membershipUserId: Long? = userId
 }
 
 data class UpdateMembershipCommand(
-    val id: Long,
-    val userId: Long,
+    @field:NotNull(message = "Membership ID is required")
+    val id: Long?,
+    @field:NotNull(message = "User ID is required")
+    val userId: Long?,
     val memberType: MemberType?,
-    val startDate: LocalDate,
+    @field:NotNull(message = "Start date is required")
+    @field:PastOrPresent(message = "Start date cannot be in the future")
+    val startDate: LocalDate?,
     val endDate: LocalDate?,
     val incasso: Boolean?,
     val version: Long?
 ) : Command<Membership>
 
 data class FindMembershipByIdCommand(
-    val id: Long
+    @field:NotNull(message = "Membership ID is required")
+    @field:Positive(message = "Membership ID must be positive")
+    val id: Long?
 ) : Command<Membership>

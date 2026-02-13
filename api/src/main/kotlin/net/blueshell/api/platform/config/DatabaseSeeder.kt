@@ -1,7 +1,6 @@
 package net.blueshell.api.platform.config
 
 import com.github.javafaker.Faker
-import net.blueshell.api.domain.auth.application.RecoveryService
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.committee.application.CommitteeMemberService
 import net.blueshell.api.domain.committee.application.CommitteeService
@@ -55,7 +54,6 @@ class DatabaseSeeder(
     private val membershipService: MembershipService,
     private val contributionPeriodService: ContributionPeriodService,
     private val contributionService: ContributionService,
-    private val recoveryService: RecoveryService,
     private val surveyService: SurveyService,
     private val passwordEncoder: PasswordEncoder
 ) : CommandLineRunner {

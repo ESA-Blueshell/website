@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.web
 
 import jakarta.servlet.http.HttpServletRequest
-import net.blueshell.api.domain.auth.application.exception.InvalidRecoveryTokenException
+import net.blueshell.api.domain.auth.application.exception.*
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
@@ -13,6 +13,7 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 class AuthProblemDetailsAdvice {
+
     @ExceptionHandler(InvalidRecoveryTokenException::class)
     fun handleInvalidRecoveryToken(
         ex: InvalidRecoveryTokenException,
@@ -21,6 +22,26 @@ class AuthProblemDetailsAdvice {
         val pd = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND,
             ex.message ?: "Invalid or expired recovery token"
+        )
+        pd.type = URI.create("about:blank")
+        pd.instance = URI.create(request.requestURI)
+        return pd
+    }
+
+    @ExceptionHandler(
+        ExpiredRecoveryTokenException::class,
+        ConsumedRecoveryTokenException::class,
+        MalformedRecoveryTokenException::class,
+        InvalidTokenTypeException::class,
+        TokenVerificationFailedException::class
+    )
+    fun handleSpecificRecoveryTokenExceptions(
+        ex: RecoveryTokenException,
+        request: HttpServletRequest
+    ): ProblemDetail {
+        val pd = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST,
+            ex.message ?: "Recovery token error"
         )
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)

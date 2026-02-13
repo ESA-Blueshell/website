@@ -3,7 +3,7 @@ package net.blueshell.api.domain.auth.web
 import jakarta.mail.Multipart
 import jakarta.mail.Part
 import jakarta.mail.internet.MimeMessage
-import net.blueshell.api.domain.auth.application.RecoveryService
+import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.factory.dto.request.MemberActivationRequestFactory
 import net.blueshell.api.factory.dto.request.PasswordResetRequestFactory
@@ -31,7 +31,7 @@ import java.time.LocalDate
 @SpringBootTest
 @AutoConfigureMockMvc
 class RecoveryControllerIT @Autowired constructor(
-    private val recoveryService: RecoveryService,
+    private val recoveryTokenFactory: RecoveryTokenFactory,
     private val userFactory: UserFactory,
     private val passwordResetRequestFactory: PasswordResetRequestFactory,
     private val userActivationRequestFactory: UserActivationRequestFactory,
@@ -62,7 +62,7 @@ class RecoveryControllerIT @Autowired constructor(
     @Test
     fun `sets password with recovery token`() {
         val user = userRepository.save(userFactory.createBasic())
-        val rawToken = recoveryService.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
+        val rawToken = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
         val newPassword = "NewPassword123!"
 
         val payload = passwordResetRequestFactory.createBasic().apply {
@@ -84,7 +84,7 @@ class RecoveryControllerIT @Autowired constructor(
     @Test
     fun `activates user without date of birth`() {
         val user = userRepository.save(disabledUser(dateOfBirth = null))
-        val rawToken = recoveryService.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+        val rawToken = recoveryTokenFactory.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
 
         val payload = userActivationRequestFactory.createBasic().apply { token = rawToken }
 
@@ -103,7 +103,7 @@ class RecoveryControllerIT @Autowired constructor(
     fun `activates user with date of birth`() {
         val dateOfBirth = Date.valueOf(LocalDate.now().minusYears(20))
         val user = userRepository.save(disabledUser(dateOfBirth))
-        val rawToken = recoveryService.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+        val rawToken = recoveryTokenFactory.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
 
         val payload = userActivationRequestFactory.createBasic().apply { token = rawToken }
 
@@ -121,7 +121,7 @@ class RecoveryControllerIT @Autowired constructor(
     @Test
     fun `activates member with username and password`() {
         val user = userRepository.save(disabledUser(dateOfBirth = null))
-        val rawToken = recoveryService.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+        val rawToken = recoveryTokenFactory.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
 
         val payload = memberActivationRequestFactory.createBasic().apply { token = rawToken }
 
@@ -167,7 +167,7 @@ class RecoveryControllerIT @Autowired constructor(
     fun `resends activation email for user as board`() {
         val user = userRepository.save(disabledUser(dateOfBirth = null))
         val board = createUserWithRole(Role.BOARD)
-        recoveryService.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+        recoveryTokenFactory.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
 
         mvc.perform(
             post("/recovery/users/{userId}/resend/recovery", user.id)

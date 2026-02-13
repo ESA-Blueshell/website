@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.web.mapping
 
-import net.blueshell.api.domain.auth.application.AuthResult
 import net.blueshell.api.domain.auth.command.*
+import net.blueshell.api.domain.auth.domain.model.AuthenticationSession
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
@@ -45,7 +45,7 @@ fun UserActivationRequest.asCommand(): UserActivateCommand = UserActivationReque
 
 fun MemberActivationRequest.asCommand(): MemberActivateCommand = MemberActivationRequestToCommandMapper.map(this)
 
-fun AuthResult.asResponse(): AuthenticationResponse {
+fun AuthenticationSession.asResponse(): AuthenticationResponse {
     return AuthenticationResponse(
         token = token,
         userId = userId,

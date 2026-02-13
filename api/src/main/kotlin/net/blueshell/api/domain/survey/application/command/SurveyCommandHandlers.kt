@@ -2,8 +2,8 @@ package net.blueshell.api.domain.survey.application.command
 
 import net.blueshell.api.domain.survey.application.SurveyService
 import net.blueshell.api.domain.survey.command.*
+import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
-import net.blueshell.api.domain.survey.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -14,9 +14,18 @@ class CreateSurveyHandler(
     override val commandType = CreateSurveyCommand::class
 
     override fun handle(command: CreateSurveyCommand): Survey {
-        var survey = command.dto.asEntity()
-        survey = service.create(survey)
-        return survey
+        val survey = Survey()
+        val questions = command.questions.map { qData ->
+            Question().apply {
+                idx = qData.idx
+                type = qData.type
+                label = qData.label
+                choiceLabels = qData.choiceLabels?.toMutableList()
+                this.survey = survey
+            }
+        }
+        survey.replaceQuestions(questions)
+        return service.create(survey)
     }
 }
 
@@ -28,9 +37,17 @@ class UpdateSurveyHandler(
 
     override fun handle(command: UpdateSurveyCommand): Survey {
         var survey = service.findById(command.id)
-        command.dto.asEntity(survey)
-        survey = service.update(survey)
-        return survey
+        val questions = command.questions.map { qData ->
+            Question().apply {
+                idx = qData.idx
+                type = qData.type
+                label = qData.label
+                choiceLabels = qData.choiceLabels?.toMutableList()
+                this.survey = survey
+            }
+        }
+        survey.replaceQuestions(questions)
+        return service.update(survey)
     }
 }
 

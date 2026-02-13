@@ -1,41 +1,45 @@
 package net.blueshell.api.domain.survey.application.command
 
 import net.blueshell.api.domain.survey.application.QuestionService
+import net.blueshell.api.domain.survey.application.SurveyService
 import net.blueshell.api.domain.survey.command.*
 import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.repository.SurveyRepository
-import net.blueshell.api.domain.survey.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
 @Component
 class CreateQuestionHandler(
     private val service: QuestionService,
-    private val surveyRepository: SurveyRepository
+    private val surveyService: SurveyService
 ) : CommandHandler<CreateQuestionCommand, Question> {
     override val commandType = CreateQuestionCommand::class
 
     override fun handle(command: CreateQuestionCommand): Question {
-        var question = command.dto.asEntity()
-        question.survey = surveyRepository.getReferenceById(command.dto.surveyId!!)
-        question = service.create(question)
-        return question
+        val question = Question()
+        question.idx = command.idx
+        question.type = command.type
+        question.label = command.label
+        question.choiceLabels = command.choiceLabels
+        question.survey = surveyService.findById(command.surveyId)
+        return service.create(question)
     }
 }
 
 @Component
 class UpdateQuestionHandler(
     private val service: QuestionService,
-    private val surveyRepository: SurveyRepository
+    private val surveyService: SurveyService
 ) : CommandHandler<UpdateQuestionCommand, Question> {
     override val commandType = UpdateQuestionCommand::class
 
     override fun handle(command: UpdateQuestionCommand): Question {
         var question = service.findById(command.id)
-        command.dto.asEntity(question)
-        question.survey = surveyRepository.getReferenceById(command.dto.surveyId!!)
-        question = service.update(question)
-        return question
+        question.idx = command.idx
+        question.type = command.type
+        question.label = command.label
+        question.choiceLabels = command.choiceLabels
+        question.survey = surveyService.findById(command.surveyId)
+        return service.update(question)
     }
 }
 

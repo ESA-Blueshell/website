@@ -3,7 +3,6 @@ package net.blueshell.api.domain.event.command
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.domain.event.application.validation.EventSignUpCandidate
 import net.blueshell.api.domain.event.application.validation.ValidEventSignUpCommand
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.application.query.EventSignUpQuery

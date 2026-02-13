@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.event.application.validation
+package net.blueshell.api.domain.event.command
 
 import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
 

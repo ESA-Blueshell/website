@@ -1,24 +1,47 @@
 package net.blueshell.api.domain.survey.command
 
-import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.web.dto.QuestionDTO
 import net.blueshell.api.shared.command.Command
+import net.blueshell.api.shared.enums.QuestionType
 
 data class CreateQuestionCommand(
-    @field:Valid
-    @field:NotNull(message = "Question DTO is required")
-    var dto: QuestionDTO
+    @field:NotNull(message = "Question index is required")
+    var idx: Long,
+
+    @field:NotNull(message = "Survey ID is required")
+    var surveyId: Long,
+
+    @field:NotNull(message = "Question type is required")
+    var type: QuestionType,
+
+    @field:NotBlank(message = "Question label is required")
+    @field:Size(max = 2055, message = "Label cannot exceed 2055 characters")
+    var label: String,
+
+    val choiceLabels: MutableList<String>?
 ) : Command<Question>
 
 data class UpdateQuestionCommand(
     @field:NotNull(message = "Question ID is required")
     var id: Long,
 
-    @field:Valid
-    @field:NotNull(message = "Question DTO is required")
-    var dto: QuestionDTO
+    @field:NotNull(message = "Question index is required")
+    var idx: Long,
+
+    @field:NotNull(message = "Survey ID is required")
+    var surveyId: Long,
+
+    @field:NotNull(message = "Question type is required")
+    var type: QuestionType,
+
+    @field:NotBlank(message = "Question label is required")
+    @field:Size(max = 2055, message = "Label cannot exceed 2055 characters")
+    var label: String,
+
+    val choiceLabels: MutableList<String>?
 ) : Command<Question>
 
 class FindQuestionsCommand : Command<MutableList<Question>>

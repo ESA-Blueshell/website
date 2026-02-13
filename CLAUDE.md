@@ -860,6 +860,13 @@ Complete architectural documentation is in `docs/ADR-INDEX.md`:
 - **[ADR-013](docs/ADR-013-entity-association-pattern.md)**: Entity Association Pattern
 - **[ADR-016](docs/ADR-016-layer-dependency-rules.md)**: Layer Dependency Rules
 
+### Strategic Domain-Driven Design
+- **[ADR-017](docs/ADR-017-bounded-context-relationships-and-context-map.md)**: Bounded Context Relationships and Context Map
+- **[ADR-018](docs/ADR-018-data-ownership-in-modular-monolith.md)**: Data Ownership in Modular Monolith
+- **[ADR-019](docs/ADR-019-anti-corruption-layers-for-external-integration.md)**: Anti-Corruption Layers for External Integration
+- **[ADR-020](docs/ADR-020-shared-kernel-governance.md)**: Shared Kernel Governance
+- **[ADR-021](docs/ADR-021-observability-and-distributed-tracing.md)**: Observability and Distributed Tracing (Proposed)
+
 ### Data & Persistence
 - **[ADR-007](docs/ADR-007-repository-pattern-and-jpa.md)**: Repository Pattern and JPA
 - **[ADR-010](docs/ADR-010-database-migrations-with-flyway.md)**: Database Migrations with Flyway
@@ -904,6 +911,10 @@ Complete architectural documentation is in `docs/ADR-INDEX.md`:
 - ✅ Place permission evaluators in infrastructure (not web)
 - ✅ Use events for cross-domain communication
 - ✅ Respect layer boundaries - ArchUnit tests will enforce
+- ✅ Access cross-domain data via services, not repositories (ADR-018)
+- ✅ Use Anti-Corruption Layers for all external APIs (ADR-019)
+- ✅ Keep Shared Kernel minimal and well-governed (ADR-020)
+- ✅ Document domain relationships in Context Map (ADR-017)
 
 ### Development
 - ✅ Run ArchUnit tests before committing

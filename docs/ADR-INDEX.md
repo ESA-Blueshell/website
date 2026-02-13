@@ -13,6 +13,16 @@ This document provides an index of all Architecture Decision Records for the Blu
 | [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Entity references as single source of truth with computed ID properties |
 | [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Accepted | Strict layer dependency rules based on clean/hexagonal architecture principles |
 
+### Strategic Domain-Driven Design
+
+| # | Title | Status | Summary |
+|---|-------|--------|---------|
+| [017](ADR-017-bounded-context-relationships-and-context-map.md) | Bounded Context Relationships and Context Map | Accepted | Explicit context map documenting domain relationships using DDD patterns |
+| [018](ADR-018-data-ownership-in-modular-monolith.md) | Data Ownership in Modular Monolith | Accepted | Clear data ownership boundaries within shared database |
+| [019](ADR-019-anti-corruption-layers-for-external-integration.md) | Anti-Corruption Layers for External Integration | Accepted | ACLs protect domain model from external systems (Brevo, Google Calendar, Mollie) |
+| [020](ADR-020-shared-kernel-governance.md) | Shared Kernel Governance | Accepted | Governance rules for shared/ package with joint ownership and versioning |
+| [021](ADR-021-observability-and-distributed-tracing.md) | Observability and Distributed Tracing | Proposed | OpenTelemetry standards for correlation IDs and trace context (future enhancement) |
+
 ### Data & Persistence
 
 | # | Title | Status | Summary |

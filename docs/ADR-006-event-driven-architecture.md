@@ -456,9 +456,54 @@ class AuditEventListener(private val auditService: AuditService) {
 }
 ```
 
+## Future Enhancements
+
+### Transactional Outbox Pattern
+
+For distributed event publishing (e.g., to RabbitMQ, Kafka), consider the **Transactional Outbox pattern** ([microservices.io][4]):
+
+```kotlin
+// Write event to outbox table in same transaction
+@Transactional
+fun publishEvent(event: DomainEvent) {
+    // 1. Save domain state
+    repository.save(entity)
+
+    // 2. Write event to outbox table (same transaction)
+    outboxRepository.save(OutboxMessage(
+        aggregateId = entity.id,
+        eventType = event::class.simpleName,
+        payload = json.encode(event),
+        createdAt = Instant.now()
+    ))
+}
+
+// Separate process publishes from outbox
+@Scheduled(fixedDelay = 1000)
+fun processOutbox() {
+    val pending = outboxRepository.findPendingMessages()
+    pending.forEach { message ->
+        messageBroker.publish(message.payload)
+        outboxRepository.markAsPublished(message.id)
+    }
+}
+```
+
+**Benefits:**
+- Guarantees at-least-once event delivery
+- No dual-write problem (event publishing + state change in one transaction)
+- Reliable integration with external message brokers
+
+**See Also:**
+- ADR-017: Bounded Context Relationships and Context Map
+- ADR-018: Data Ownership in Modular Monolith
+
 ## References
 - Spring Framework Events Documentation
 - Domain-Driven Design: Domain Events
 - Event Sourcing Pattern
 - CQRS Pattern
 - Transaction Synchronization
+- Microservices.io, Transactional Outbox pattern ([microservices.io][4])
+
+[4]: https://microservices.io/patterns/data/transactional-outbox.html "Pattern: Transactional outbox"

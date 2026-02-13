@@ -51,6 +51,84 @@ fun replaceMembers(newMembers: List<CommitteeMember>) {
 }
 ```
 
+## Entity Assignment in Command Handlers
+
+### Pattern
+When command handlers need to set entity associations, **fetch the actual entity using a service** and assign the entity reference, not the ID.
+
+**CORRECT - Fetch entity via service:**
+```kotlin
+@Component
+class CreateEventHandler(
+    private val eventService: EventService,
+    private val committeeService: CommitteeService
+) : CommandHandler<CreateEventCommand, Event> {
+    override fun handle(command: CreateEventCommand): Event {
+        val committee = committeeService.findById(command.committeeId)
+        val event = Event()
+        event.committee = committee  // ✅ Assign entity
+        // ... other fields
+        return eventService.create(event)
+    }
+}
+```
+
+**INCORRECT - Don't use repository getReferenceById:**
+```kotlin
+// ❌ WRONG: Don't inject repositories into handlers
+@Component
+class CreateEventHandler(
+    private val eventService: EventService,
+    private val committeeRepository: CommitteeRepository  // ❌ Don't do this
+) : CommandHandler<CreateEventCommand, Event> {
+    override fun handle(command: CreateEventCommand): Event {
+        val event = Event()
+        event.committee = committeeRepository.getReferenceById(id)  // ❌ Lazy proxy
+        return eventService.create(event)
+    }
+}
+```
+
+**INCORRECT - Don't assign IDs directly:**
+```kotlin
+// ❌ WRONG: Don't set ID fields
+val event = Event()
+event.committeeId = command.committeeId  // ❌ ID assignment prohibited
+```
+
+### Rationale
+- **Services provide business logic**: Fetching via service ensures business rules (permissions, validation) are applied
+- **Explicit loading**: Forces deliberate entity loading rather than hidden lazy loading
+- **Testability**: Service methods can be mocked; repository references cannot
+- **Transaction management**: Services handle transactions properly
+- **Error handling**: Services provide domain-specific exceptions (e.g., `CommitteeNotFoundException`)
+
+### Mapping Functions
+For complex entity graphs, compute entity references before mapping:
+
+```kotlin
+@Component
+class CreateEventHandler(
+    private val eventService: EventService,
+    private val committeeService: CommitteeService,
+    private val fileService: FileService
+) : CommandHandler<CreateEventCommand, Event> {
+    override fun handle(command: CreateEventCommand): Event {
+        // Fetch all required entities first
+        val committee = committeeService.findById(command.committeeId)
+        val banner = command.bannerId?.let { fileService.findById(it) }
+
+        // Then create and populate
+        val event = Event()
+        event.committee = committee
+        event.banner = banner
+        // ... other fields
+
+        return eventService.create(event)
+    }
+}
+```
+
 ## Guidelines
 
 ### DO:
@@ -58,7 +136,8 @@ fun replaceMembers(newMembers: List<CommitteeMember>) {
 - ✅ Make ID properties computed (no @Column)
 - ✅ Use `private set` on associations
 - ✅ Use aggregate methods for bidirectional updates
-- ✅ Use `getReferenceById()` for lazy loading
+- ✅ **Fetch entities via services in command handlers**
+- ✅ **Assign entity references, not IDs**
 - ✅ Use underscore only for collection backing fields
 
 ### DON'T:
@@ -67,6 +146,9 @@ fun replaceMembers(newMembers: List<CommitteeMember>) {
 - ❌ Clear/add to collections directly (use aggregate methods)
 - ❌ Use dual fields (entity + ID)
 - ❌ Use underscore for regular properties
+- ❌ **Inject repositories into command handlers**
+- ❌ **Use `getReferenceById()` in command handlers**
+- ❌ **Pass repositories to mapping functions**
 
 ## Consequences
 - **Positive**: Single source of truth, type-safe, JPA-aligned

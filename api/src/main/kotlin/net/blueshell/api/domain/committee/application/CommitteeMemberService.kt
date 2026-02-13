@@ -55,6 +55,15 @@ class CommitteeMemberService(
         publishChange(member)
     }
 
+    /**
+     * Count the number of committee memberships for a user.
+     * Used by other domains to check if a user has committee role.
+     */
+    @Transactional(readOnly = true)
+    fun countMembershipsForUser(userId: Long): Long {
+        return repository.countByUser_Id(userId)
+    }
+
     private fun publishChange(member: CommitteeMember) {
         events.publish(
             CommitteeMembershipChanged(

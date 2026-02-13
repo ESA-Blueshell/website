@@ -65,4 +65,14 @@ class QuestionService @Autowired constructor(
         val question = findById(id)
         delete(question)
     }
+
+    /**
+     * Get a lazy reference to a Question by ID.
+     * Used when only the ID is needed for relationships (e.g., Answer → Question).
+     * Does not trigger database fetch until the entity is actually accessed.
+     */
+    @Transactional(readOnly = true)
+    fun getReferenceById(id: Long): Question {
+        return repository.getReferenceById(id)
+    }
 }

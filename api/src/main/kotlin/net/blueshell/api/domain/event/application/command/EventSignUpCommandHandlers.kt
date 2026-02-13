@@ -5,9 +5,9 @@ import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
+import net.blueshell.api.domain.survey.application.QuestionService
 import net.blueshell.api.domain.survey.persistence.Answer
 import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
 import net.blueshell.api.domain.event.web.dto.GuestDTO
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
@@ -52,13 +52,13 @@ class FindEventSignUpsByEventIdHandler(
 class CreateEventSignUpHandler(
     private val service: EventSignUpService,
     private val eventRepository: EventRepository,
-    private val questionRepository: QuestionRepository
+    private val questionService: QuestionService
 ) : CommandHandler<CreateEventSignUpCommand, EventSignUp> {
     override val commandType = CreateEventSignUpCommand::class
 
     override fun handle(command: CreateEventSignUpCommand): EventSignUp {
         command.principalId?.let { command.dto.userId = it }
-        var eventSignUp = mapSignUp(command.dto, eventRepository, questionRepository)
+        var eventSignUp = mapSignUp(command.dto, eventRepository, questionService)
         eventSignUp = service.create(eventSignUp)
         return eventSignUp
     }
@@ -68,7 +68,7 @@ class CreateEventSignUpHandler(
 class UpdateEventSignUpHandler(
     private val service: EventSignUpService,
     private val eventRepository: EventRepository,
-    private val questionRepository: QuestionRepository
+    private val questionService: QuestionService
 ) : CommandHandler<UpdateEventSignUpCommand, EventSignUp> {
     override val commandType = UpdateEventSignUpCommand::class
 
@@ -79,7 +79,7 @@ class UpdateEventSignUpHandler(
         } else {
             service.findByGuestAccessTokenAndEventId(command.accessToken, command.eventId)
         }
-        applySignUp(command.dto, signUp, eventRepository, questionRepository)
+        applySignUp(command.dto, signUp, eventRepository, questionService)
         return service.update(signUp)
     }
 }
@@ -95,18 +95,18 @@ class DeleteEventSignUpHandler(
     }
 }
 
-private fun mapSignUp(dto: EventSignUpDTO, eventRepository: EventRepository, questionRepository: QuestionRepository): EventSignUp {
+private fun mapSignUp(dto: EventSignUpDTO, eventRepository: EventRepository, questionService: QuestionService): EventSignUp {
     val signUp = EventSignUp()
-    applySignUp(dto, signUp, eventRepository, questionRepository)
+    applySignUp(dto, signUp, eventRepository, questionService)
     return signUp
 }
 
-private fun applySignUp(dto: EventSignUpDTO, signUp: EventSignUp, eventRepository: EventRepository, questionRepository: QuestionRepository) {
+private fun applySignUp(dto: EventSignUpDTO, signUp: EventSignUp, eventRepository: EventRepository, questionService: QuestionService) {
     signUp.event = eventRepository.getReferenceById(dto.eventId!!)
     dto.userId?.let { signUp.userId = it }
     signUp.guest = dto.guest?.let { mapGuest(it) }
 
-    val mappedAnswers = dto.answers?.map { mapAnswer(it, questionRepository) } ?: emptyList()
+    val mappedAnswers = dto.answers?.map { mapAnswer(it, questionService) } ?: emptyList()
     val answersSet = signUp.answers as MutableSet
     answersSet.clear()
     answersSet.addAll(mappedAnswers)
@@ -128,9 +128,9 @@ private fun mapGuest(dto: GuestDTO): Guest {
     return guest
 }
 
-private fun mapAnswer(dto: AnswerDTO, questionRepository: QuestionRepository): Answer {
+private fun mapAnswer(dto: AnswerDTO, questionService: QuestionService): Answer {
     val answer = Answer()
-    answer.question = questionRepository.getReferenceById(dto.questionId!!)
+    answer.question = questionService.getReferenceById(dto.questionId!!)
     answer.optionSelections = dto.optionSelections
     answer.textResponse = dto.textResponse
     dto.version?.let { answer.version = it }

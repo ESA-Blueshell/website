@@ -2,21 +2,25 @@ package net.blueshell.api.domain.survey.web.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
+import net.blueshell.api.domain.survey.application.QuestionService
 import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.shared.enums.QuestionType
 import org.springframework.beans.factory.annotation.Autowired
 
 
-data class ValidAnswerValidator @Autowired constructor(val questions: QuestionRepository) :
+data class ValidAnswerValidator @Autowired constructor(val questionService: QuestionService) :
     ConstraintValidator<ValidAnswer, AnswerDTO> {
     override fun isValid(dto: AnswerDTO?, context: ConstraintValidatorContext?): Boolean {
         if (dto == null) {
             return true // Let @NotNull handle this
         }
 
-        val question = questions.findById(dto.questionId ?: return false).orElse(null) ?: return false
+        val question = try {
+            questionService.findById(dto.questionId ?: return false)
+        } catch (e: Exception) {
+            return false
+        }
 
         return when (question.type) {
             QuestionType.OPEN -> dto.textResponse != null && !dto.textResponse!!.trim { it <= ' ' }.isEmpty()

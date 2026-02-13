@@ -1,25 +1,25 @@
 package net.blueshell.api.domain.contribution.web.mapping
 
-import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.domain.contribution.command.result.ContributionPeriodResult
+import net.blueshell.api.domain.contribution.command.result.ContributionReminderResult
+import net.blueshell.api.domain.contribution.command.result.ContributionResult
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionPeriodResponse
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
 import tech.mappie.api.ObjectMappie
 
-object ContributionToContributionResponseMapper : ObjectMappie<Contribution, ContributionResponse>()
+object ContributionResultToContributionResponseMapper : ObjectMappie<ContributionResult, ContributionResponse>()
 
-object ContributionPeriodToContributionPeriodResponseMapper :
-    ObjectMappie<ContributionPeriod, ContributionPeriodResponse>()
+object ContributionPeriodResultToContributionPeriodResponseMapper :
+    ObjectMappie<ContributionPeriodResult, ContributionPeriodResponse>()
 
-object ContributionReminderToContributionReminderResponseMapper :
-    ObjectMappie<ContributionReminder, ContributionReminderResponse>()
+object ContributionReminderResultToContributionReminderResponseMapper :
+    ObjectMappie<ContributionReminderResult, ContributionReminderResponse>()
 
-fun Contribution.asResponse(): ContributionResponse = ContributionToContributionResponseMapper.map(this)
+fun ContributionResult.asResponse(): ContributionResponse = ContributionResultToContributionResponseMapper.map(this)
 
-fun ContributionPeriod.asResponse(): ContributionPeriodResponse =
-    ContributionPeriodToContributionPeriodResponseMapper.map(this)
+fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
+    ContributionPeriodResultToContributionPeriodResponseMapper.map(this)
 
-fun ContributionReminder.asResponse(): ContributionReminderResponse =
-    ContributionReminderToContributionReminderResponseMapper.map(this)
+fun ContributionReminderResult.asResponse(): ContributionReminderResponse =
+    ContributionReminderResultToContributionReminderResponseMapper.map(this)

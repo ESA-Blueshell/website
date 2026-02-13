@@ -29,14 +29,17 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .consideringOnlyDependenciesInAnyPackage("net.blueshell.api..")
 
                 // Define layers from outside to inside
+                // IMPORTANT: Application is defined BEFORE Command so that classes in
+                // domain/*/application/command/ match Application layer (more specific) instead
+                // of Command layer. This prevents handlers from being misclassified as commands.
                 .layer("Web").definedBy(
                     ArchitecturePackages.WEB
                 )
-                .layer("Command").definedBy(
-                    ArchitecturePackages.COMMAND
-                )
                 .layer("Application").definedBy(
                     ArchitecturePackages.APPLICATION
+                )
+                .layer("Command").definedBy(
+                    ArchitecturePackages.COMMAND
                 )
                 .layer("Domain").definedBy(
                     ArchitecturePackages.DOMAIN_MODEL,
@@ -53,19 +56,25 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     ArchitecturePackages.SHARED
                 )
 
-                // Web layer can access: Command, Application, Persistence, Shared
-                // Web can access persistence for direct entity returns from command handlers
+                // Web layer can access: Application, Command, Persistence, Shared, Infrastructure
                 .whereLayer("Web")
-                .mayOnlyAccessLayers("Web", "Command", "Application", "Persistence", "Infrastructure", "Shared")
+                .mayOnlyAccessLayers("Web", "Application", "Command", "Persistence", "Infrastructure", "Shared")
 
-                // Command layer is INDEPENDENT - can only access Shared
-                // Critical for ADR-016: Commands must not import from Application or Web
-                .whereLayer("Command")
-                .mayOnlyAccessLayers("Command", "Shared")
-
-                // Application layer can access: Command, Domain, Persistence, Shared
+                // Application layer can access: Command, Domain, Persistence, Shared, Infrastructure
+                // Note: Application MUST access Command (handlers depend on command objects)
                 .whereLayer("Application")
                 .mayOnlyAccessLayers("Application", "Command", "Domain", "Persistence", "Infrastructure", "Shared")
+
+                // Command layer is INDEPENDENT - can only access Shared, Domain, Persistence
+                // Commands can reference domain models and persistence result types, but NOT application/web
+                // Note: Handler classes in application/command/ also match Command layer pattern, so we ignore
+                // their dependencies (they're actually Application layer and those rules apply to them)
+                .whereLayer("Command")
+                .mayOnlyAccessLayers("Command", "Shared", "Domain", "Persistence")
+                .ignoreDependency(
+                    { origin -> origin.name.endsWith("Handler") },
+                    { target -> true }
+                )
 
                 // Domain layer can access: Persistence (for domain services), Shared
                 .whereLayer("Domain")

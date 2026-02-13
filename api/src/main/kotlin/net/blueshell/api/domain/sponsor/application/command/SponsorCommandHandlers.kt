@@ -2,6 +2,9 @@ package net.blueshell.api.domain.sponsor.application.command
 
 import net.blueshell.api.domain.sponsor.application.SponsorService
 import net.blueshell.api.domain.sponsor.command.*
+import net.blueshell.api.domain.sponsor.command.result.SponsorResult
+import net.blueshell.api.domain.sponsor.command.result.toResult
+import net.blueshell.api.domain.sponsor.command.result.toResults
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
@@ -9,53 +12,53 @@ import org.springframework.stereotype.Component
 @Component
 class FindSponsorsHandler(
     private val service: SponsorService
-) : CommandHandler<FindSponsorsCommand, MutableList<Sponsor>> {
+) : CommandHandler<FindSponsorsCommand, List<SponsorResult>> {
     override val commandType = FindSponsorsCommand::class
 
-    override fun handle(command: FindSponsorsCommand): MutableList<Sponsor> {
-        return service.findAll()
+    override fun handle(command: FindSponsorsCommand): List<SponsorResult> {
+        return service.findAll().toResults()
     }
 }
 
 @Component
 class CreateSponsorHandler(
     private val service: SponsorService
-) : CommandHandler<CreateSponsorCommand, Sponsor> {
+) : CommandHandler<CreateSponsorCommand, SponsorResult> {
     override val commandType = CreateSponsorCommand::class
 
-    override fun handle(command: CreateSponsorCommand): Sponsor {
+    override fun handle(command: CreateSponsorCommand): SponsorResult {
         var sponsor = Sponsor()
         sponsor.name = command.name!!
         sponsor.description = command.description!!
         sponsor = service.create(sponsor)
-        return sponsor
+        return sponsor.toResult()
     }
 }
 
 @Component
 class UpdateSponsorHandler(
     private val service: SponsorService
-) : CommandHandler<UpdateSponsorCommand, Sponsor> {
+) : CommandHandler<UpdateSponsorCommand, SponsorResult> {
     override val commandType = UpdateSponsorCommand::class
 
-    override fun handle(command: UpdateSponsorCommand): Sponsor {
+    override fun handle(command: UpdateSponsorCommand): SponsorResult {
         var sponsor = service.findById(command.id!!)
         sponsor.name = command.name!!
         sponsor.description = command.description!!
         command.version?.let { sponsor.version = it }
         sponsor = service.update(sponsor)
-        return sponsor
+        return sponsor.toResult()
     }
 }
 
 @Component
 class FindSponsorByIdHandler(
     private val service: SponsorService
-) : CommandHandler<FindSponsorByIdCommand, Sponsor> {
+) : CommandHandler<FindSponsorByIdCommand, SponsorResult> {
     override val commandType = FindSponsorByIdCommand::class
 
-    override fun handle(command: FindSponsorByIdCommand): Sponsor {
-        return service.findById(command.id!!)
+    override fun handle(command: FindSponsorByIdCommand): SponsorResult {
+        return service.findById(command.id!!).toResult()
     }
 }
 

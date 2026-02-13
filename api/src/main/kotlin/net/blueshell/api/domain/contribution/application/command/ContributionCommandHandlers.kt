@@ -6,11 +6,11 @@ import net.blueshell.api.domain.contribution.command.CreateContributionCommand
 import net.blueshell.api.domain.contribution.command.DeleteContributionCommand
 import net.blueshell.api.domain.contribution.command.FindContributionsByPeriodIdCommand
 import net.blueshell.api.domain.contribution.command.FindContributionsCommand
+import net.blueshell.api.domain.contribution.command.result.ContributionResult
+import net.blueshell.api.domain.contribution.command.result.toContributionResults
+import net.blueshell.api.domain.contribution.command.result.toResult
 import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.UserService
-
-import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -19,26 +19,26 @@ class CreateContributionHandler(
     private val service: ContributionService,
     private val users: UserService,
     private val contributionPeriods: ContributionPeriodService
-) : CommandHandler<CreateContributionCommand, Contribution> {
+) : CommandHandler<CreateContributionCommand, ContributionResult> {
     override val commandType = CreateContributionCommand::class
 
-    override fun handle(command: CreateContributionCommand): Contribution {
+    override fun handle(command: CreateContributionCommand): ContributionResult {
         var contribution = Contribution()
         contribution.user = users.findById(command.userId!!)
         contribution.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!)
         contribution = service.create(contribution)
-        return contribution
+        return contribution.toResult()
     }
 }
 
 @Component
 class FindContributionsHandler(
     private val service: ContributionService
-) : CommandHandler<FindContributionsCommand, MutableList<Contribution>> {
+) : CommandHandler<FindContributionsCommand, List<ContributionResult>> {
     override val commandType = FindContributionsCommand::class
 
-    override fun handle(command: FindContributionsCommand): MutableList<Contribution> {
-        return service.findByContributionPeriodId(command.contributionPeriodId!!)
+    override fun handle(command: FindContributionsCommand): List<ContributionResult> {
+        return service.findByContributionPeriodId(command.contributionPeriodId!!).toContributionResults()
     }
 }
 
@@ -56,10 +56,10 @@ class DeleteContributionHandler(
 @Component
 class FindContributionsByPeriodIdHandler(
     private val service: ContributionService
-) : CommandHandler<FindContributionsByPeriodIdCommand, MutableList<Contribution>> {
+) : CommandHandler<FindContributionsByPeriodIdCommand, List<ContributionResult>> {
     override val commandType = FindContributionsByPeriodIdCommand::class
 
-    override fun handle(command: FindContributionsByPeriodIdCommand): MutableList<Contribution> {
-        return service.findByContributionPeriodId(command.periodId!!)
+    override fun handle(command: FindContributionsByPeriodIdCommand): List<ContributionResult> {
+        return service.findByContributionPeriodId(command.periodId!!).toContributionResults()
     }
 }

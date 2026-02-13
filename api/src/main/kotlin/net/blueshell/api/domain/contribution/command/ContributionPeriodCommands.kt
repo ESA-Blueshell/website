@@ -4,13 +4,13 @@ import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.command.result.ContributionPeriodResult
 import net.blueshell.api.shared.command.Command
 import java.time.LocalDate
 
-class FindContributionPeriodsCommand : Command<MutableList<ContributionPeriod>>
+class FindContributionPeriodsCommand : Command<List<ContributionPeriodResult>>
 
-class FindCurrentContributionPeriodCommand : Command<ContributionPeriod>
+class FindCurrentContributionPeriodCommand : Command<ContributionPeriodResult>
 
 data class CreateContributionPeriodCommand(
     @field:NotNull(message = "Start date is required")
@@ -28,7 +28,7 @@ data class CreateContributionPeriodCommand(
     @field:PositiveOrZero(message = "Alumni fee must be positive or zero")
     val alumniFee: Double?,
     val listId: Long?
-) : Command<ContributionPeriod>
+) : Command<ContributionPeriodResult>
 
 data class UpdateContributionPeriodCommand(
     @field:NotNull(message = "Contribution period ID is required")
@@ -49,7 +49,7 @@ data class UpdateContributionPeriodCommand(
     val alumniFee: Double?,
     val listId: Long?,
     val version: Long?
-) : Command<ContributionPeriod>
+) : Command<ContributionPeriodResult>
 
 data class DeleteContributionPeriodByIdCommand(
     @field:NotNull(message = "Contribution period ID is required")

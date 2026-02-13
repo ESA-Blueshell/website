@@ -36,19 +36,19 @@ domain/{domain-name}/
 │   │   ├── request/        # Inbound DTOs
 │   │   └── response/       # Outbound DTOs
 │   ├── mapping/            # Request/Response mappers
-│   ├── validation/         # Web-layer validators
-│   └── permission/         # Spring Security permission evaluators
+│   └── validation/         # Web-layer validators (format, structure)
 ├── command/                # Command Layer
-│   └── *Commands.kt        # Command objects with validation
+│   ├── *Commands.kt        # Command objects with field validation
+│   └── validation/         # Command-specific constraint annotations
 ├── application/            # Application Layer
 │   ├── command/            # Command handlers
 │   │   └── *CommandHandlers.kt
 │   ├── *Service.kt         # Application services
 │   ├── event/              # Domain events
 │   ├── listener/           # Event listeners
+│   ├── query/              # Query objects for dynamic searches
 │   ├── factory/            # Entity factories
 │   ├── validation/         # Business rule validators
-│   ├── email/              # Email builders
 │   └── exception/          # Application exceptions
 ├── domain/                 # Domain Layer (optional)
 │   ├── model/              # Domain models
@@ -56,24 +56,25 @@ domain/{domain-name}/
 └── persistence/            # Persistence Layer
     ├── *Entity.kt          # JPA entities
     ├── repository/         # Spring Data repositories
-    ├── spec/               # JPA Specifications for dynamic queries
-    └── filter/             # Query filter objects
+    └── spec/               # JPA Specifications for dynamic queries
 ```
 
 ### Layer Responsibilities
 
 **Web Layer**
 - HTTP request/response handling
-- Input validation (structural)
+- Input validation (structural: format, required fields, size limits)
 - Request → Command mapping
 - Entity → Response mapping
 - OpenAPI documentation
-- Permission evaluation for authorization
+- DTOs for external API contracts
 
 **Command Layer**
 - Command objects representing use cases
-- Field-level validation
+- Field-level validation (@NotNull, @Size, @Pattern)
+- Command-specific constraint annotations
 - Type-safe operation contracts
+- Independent of application/web layers
 
 **Application Layer**
 - Use case orchestration
@@ -82,22 +83,33 @@ domain/{domain-name}/
 - Business rule validation (with DB access)
 - Domain event definition and publishing
 - Event listening and reaction
+- Query objects for dynamic searches
 - Cross-aggregate coordination
+- Business logic orchestration
 
 **Domain Layer** (Optional)
 - Core business logic
 - Domain models (rich objects with behavior)
 - Domain services (business operations on multiple entities)
 - Domain invariant enforcement
+- Value objects and domain primitives
 - No infrastructure dependencies
 
 **Persistence Layer**
 - Data access
-- Entity definitions
+- Entity definitions (JPA entities)
 - Repository interfaces
 - Database queries
 - JPA Specifications for dynamic queries
-- Query filter objects for search criteria
+- Database schema concerns
+
+**Infrastructure Layer** (Cross-Cutting)
+- Spring Security configuration
+- Permission evaluators (authorization logic)
+- Email templates and services
+- External API integrations
+- Job scheduling and dispatching
+- Technical services (SMS, storage, etc.)
 
 ### Package Organization: Package-by-Feature
 
@@ -115,19 +127,53 @@ api/src/main/kotlin/net/blueshell/api/domain/
 └── survey/         # Survey management
 ```
 
+### Layer Dependency Rules
+
+**Dependency Flow (Clean Architecture):**
+```
+Web Layer
+   ↓ can import
+Command Layer
+   ↓ can import
+Application Layer
+   ↓ can import
+Domain Layer
+   ↓ can import
+Persistence Layer
+
+Infrastructure ← can import from any layer (adapter pattern)
+```
+
+**Prohibited Dependencies:**
+- ❌ Command → Application (commands must be independent)
+- ❌ Command → Web (commands must be reusable across interfaces)
+- ❌ Persistence → Web (persistence shouldn't know about presentation)
+- ❌ Persistence → Application (except query objects in application/query/)
+- ❌ Domain → Application (domain must be pure)
+- ❌ Domain → Persistence (domain shouldn't know about JPA)
+
+**Allowed Cross-Domain Dependencies:**
+- ✅ Application → Other domain's Application services
+- ✅ Application → Other domain's Persistence entities
+- ✅ Persistence → Other domain's Persistence entities
+- ✅ Application listeners → Other domain's Application events
+
 ### Architectural Boundaries (Enforced by ArchUnit)
 
 ```kotlin
 layeredArchitecture()
     .layer("Controllers").definedBy("..web..")
+    .layer("Commands").definedBy("..command..")
     .layer("Services").definedBy("..application..")
     .layer("Repositories").definedBy("..persistence.repository..")
     .layer("Model").definedBy("..persistence..", "..domain.model..")
 
     .whereLayer("Controllers")
-        .mayOnlyAccessLayers("Services", "Validation", "DTO", "Model", "Common")
+        .mayOnlyAccessLayers("Commands", "Services", "DTO", "Model", "Common")
+    .whereLayer("Commands")
+        .mayOnlyAccessLayers("Common")  // Commands are independent
     .whereLayer("Services")
-        .mayOnlyAccessLayers("Repositories", "Model", "Common", "Validation")
+        .mayOnlyAccessLayers("Commands", "Repositories", "Model", "Common")
     .whereLayer("Repositories")
         .mayOnlyAccessLayers("Model", "Common")
     .whereLayer("Model")
@@ -147,9 +193,18 @@ api/src/main/kotlin/net/blueshell/api/
 │   └── model/          # Base entities
 ├── infrastructure/     # Infrastructure concerns
 │   └── security/       # Spring Security config
+│       ├── JwtAuthFilter.kt
+│       ├── JwtTokenUtil.kt
+│       └── permission/ # Permission evaluators (domain-specific)
+│           ├── UserPermission.kt
+│           ├── EventPermission.kt
+│           └── ...
 └── platform/           # Platform concerns
     ├── config/         # Application configuration
     └── integration/    # External integrations
+        ├── email/      # Email templates and services
+        ├── calendar/   # Calendar integration
+        └── jobs/       # Job dispatching
 ```
 
 ## Consequences
@@ -196,6 +251,121 @@ Skip `domain/` layer when:
 - Domains may depend on other domains' **application services**
 - Domains should NOT depend on other domains' **web layer**
 - Use events for loosely-coupled cross-domain communication
+
+## Common Pitfalls and Anti-Patterns
+
+### ❌ Command Layer Violations
+
+**DON'T: Import from Application Layer**
+```kotlin
+// ❌ BAD: Command imports application validator
+import net.blueshell.api.domain.user.application.validation.UniqueUserCommand
+
+@UniqueUserCommand  // Application layer dependency
+data class CreateUserCommand(...)
+```
+
+**DO: Keep Commands Independent**
+```kotlin
+// ✅ GOOD: Validation annotation in command layer or shared
+import net.blueshell.api.shared.validation.UniqueUserCommand
+
+@UniqueUserCommand
+data class CreateUserCommand(...)
+```
+
+**DON'T: Import Web DTOs in Commands**
+```kotlin
+// ❌ BAD: Command depends on web layer
+import net.blueshell.api.domain.event.web.dto.request.SurveyRequest
+
+data class CreateEventCommand(
+    val survey: SurveyRequest  // Web DTO!
+)
+```
+
+**DO: Use Domain Objects**
+```kotlin
+// ✅ GOOD: Command uses domain object
+data class CreateEventCommand(
+    val survey: SurveyData  // Domain object in command layer
+)
+```
+
+### ❌ Persistence Layer Violations
+
+**DON'T: Place Query Parameters in Persistence**
+```kotlin
+// ❌ BAD: HTTP query params in persistence layer
+// domain/user/persistence/filter/UserFilter.kt
+class UserFilter {
+    var username: String?  // This represents HTTP query param
+}
+```
+
+**DO: Place Query Objects in Application**
+```kotlin
+// ✅ GOOD: Query objects in application layer
+// domain/user/application/query/UserQuery.kt
+data class UserQuery(
+    val username: String?,
+    val hasRole: Role?
+)
+
+// Web layer maps HTTP params → Query objects
+```
+
+### ❌ Infrastructure Concerns in Wrong Layer
+
+**DON'T: Permission Evaluators in Web Layer**
+```kotlin
+// ❌ BAD: domain/user/web/permission/UserPermission.kt
+// Permission evaluation is infrastructure, not web presentation
+```
+
+**DO: Permission Evaluators in Infrastructure**
+```kotlin
+// ✅ GOOD: infrastructure/security/permission/UserPermission.kt
+// Spring Security infrastructure concern
+```
+
+**DON'T: Email Templates in Application Layer**
+```kotlin
+// ❌ BAD: domain/auth/application/email/PasswordResetEmail.kt
+// Email formatting is infrastructure, not business logic
+```
+
+**DO: Email Templates in Platform Integration**
+```kotlin
+// ✅ GOOD: platform/integration/email/templates/PasswordResetEmail.kt
+// Application publishes events, platform handles email
+```
+
+### ❌ Circular Dependencies
+
+**DON'T: Direct Service-to-Service Calls Across Domains**
+```kotlin
+// ❌ BAD: Tight coupling between domains
+@Service
+class AuthenticationService(
+    private val userService: UserService  // Direct dependency
+)
+```
+
+**DO: Use Dependency Inversion or Events**
+```kotlin
+// ✅ GOOD: Interface for loose coupling
+interface UserProvider {
+    fun findByUsername(username: String): User
+}
+
+@Service
+class AuthenticationService(
+    private val userProvider: UserProvider  // Depends on interface
+)
+
+// OR use events for cross-domain communication
+```
 
 ### Migration Path
 For new features:

@@ -18,18 +18,25 @@ Traditional approaches:
 - **Global PermissionEvaluator**: Becomes bloated with all domain logic
 
 ## Decision
-We adopt a **domain-specific permission evaluator pattern** using Spring Security's `PermissionEvaluator` interface with domain-specific implementations.
+We adopt a **domain-specific permission evaluator pattern** using Spring Security's `PermissionEvaluator` interface with domain-specific implementations in the infrastructure layer.
 
 ### Architecture
 
 **Composite Pattern:**
 ```
 CompositePermissionEvaluator (platform/config/permission/)
-    ├─> UserPermission (domain/user/web/permission/)
-    ├─> AddressPermission (domain/user/web/permission/)
-    ├─> MembershipPermission (domain/membership/web/permission/)
+    ├─> UserPermission (infrastructure/security/permission/)
+    ├─> AddressPermission (infrastructure/security/permission/)
+    ├─> MembershipPermission (infrastructure/security/permission/)
     └─> [Other domain evaluators]
 ```
+
+**Rationale for Infrastructure Layer:**
+- Permission evaluators are **Spring Security adapters** (infrastructure concern)
+- They bridge domain logic (application services) with security framework
+- Not presentation concerns - used declaratively via @PreAuthorize
+- Can be used from multiple interfaces (REST, GraphQL, messaging, CLI)
+- Follow hexagonal architecture: adapters in outer layer
 
 ### Base Implementation
 
@@ -193,32 +200,38 @@ class UserController(
 
 ### Package Structure
 
-**Location:**
+**Location (Infrastructure Layer):**
 ```
-domain/{domain-name}/
-└── web/
+infrastructure/
+└── security/
     └── permission/
-        └── {Entity}Permission.kt
+        ├── UserPermission.kt
+        ├── AddressPermission.kt
+        ├── EventPermission.kt
+        └── MembershipPermission.kt
 ```
 
-**Example:**
-```
-domain/user/web/permission/
-├── UserPermission.kt
-└── AddressPermission.kt
-```
+**Why Infrastructure Layer:**
+- Permission evaluators are Spring Security infrastructure components
+- They adapt domain logic to framework requirements (adapter pattern)
+- Used across multiple interfaces (web, GraphQL, messaging)
+- Not tied to HTTP presentation layer
+- Follow hexagonal architecture principles
 
 ## Consequences
 
 ### Positive
 - **Separation of concerns**: Authorization logic isolated from business logic
-- **Domain-specific**: Each domain owns its authorization rules
+- **Proper layering**: Infrastructure concern placed in infrastructure layer
+- **Domain-specific**: Each entity has its own authorization rules
 - **Type-safe**: Compile-time checking of entity types
 - **Testable**: Can unit test permission evaluators independently
 - **Composable**: Auto-discovery via Spring DI
-- **Reusable**: Same evaluator used in controllers, services, or tests
+- **Reusable**: Same evaluator used across all interfaces (REST, GraphQL, messaging)
+- **Interface-agnostic**: Not tied to web/HTTP layer
 - **IDE support**: @PreAuthorize expressions benefit from code completion
 - **Standard Spring Security**: Leverages built-in framework support
+- **Hexagonal architecture**: Follows adapter pattern (infrastructure adapts domain)
 
 ### Negative
 - **Learning curve**: Developers must understand Spring Security SpEL
@@ -242,7 +255,7 @@ domain/user/web/permission/
 ### Evaluator Design
 
 **DO:**
-- ✅ Place evaluators in `domain/{domain}/web/permission/`
+- ✅ Place evaluators in `infrastructure/security/permission/`
 - ✅ Extend `BasePermissionEvaluator<Entity, ID, Service>`
 - ✅ Use switch/when for permission strings
 - ✅ Return `false` for unknown permissions
@@ -250,6 +263,7 @@ domain/user/web/permission/
 - ✅ Use `SecurityUtils.principalFrom()` to extract user
 - ✅ Keep logic simple (ownership, role checks)
 - ✅ Document permission strings and their meaning
+- ✅ Name evaluators after the entity: `UserPermission`, `EventPermission`
 
 **DON'T:**
 - ❌ Put complex business logic in evaluators

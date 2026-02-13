@@ -11,6 +11,7 @@ This document provides an index of all Architecture Decision Records for the Blu
 | [001](ADR-001-multi-layered-domain-driven-architecture.md) | Multi-Layered Domain-Driven Architecture | Accepted | Adopts DDD with package-by-feature organization, enforced by ArchUnit |
 | [002](ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Accepted | Uses Command pattern with CommandBus for all write operations |
 | [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Entity references as single source of truth with computed ID properties |
+| [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Accepted | Strict layer dependency rules based on clean/hexagonal architecture principles |
 
 ### Data & Persistence
 
@@ -71,7 +72,7 @@ Each ADR follows this structure:
 
 When making significant architectural decisions:
 
-1. **Number**: Use next available number (ADR-016, ADR-017, etc.)
+1. **Number**: Use next available number (ADR-017, ADR-018, etc.)
 2. **Title**: Use kebab-case format: `ADR-###-descriptive-title.md`
 3. **Template**: Follow existing ADR structure
 4. **Single Concern**: One decision per ADR

@@ -19,39 +19,80 @@ Traditional approaches:
 - **QueryDSL**: External dependency, code generation required
 
 ## Decision
-We adopt **JPA Specifications** (Spring Data JPA) for dynamic queries with **filter objects** for query parameters.
+We adopt **JPA Specifications** (Spring Data JPA) for dynamic queries with **query objects** in the application layer for search criteria.
 
 ### Architecture
 
 **Package Structure:**
 ```
 domain/{domain-name}/
+├── web/
+│   ├── dto/
+│   │   └── request/
+│   │       └── {Entity}SearchParams.kt  # HTTP query parameters
+│   └── mapping/
+│       └── QueryMappings.kt             # Maps params → query objects
+├── application/
+│   └── query/
+│       └── {Entity}Query.kt             # Domain query object
 └── persistence/
     ├── {Entity}.kt
     ├── repository/
     │   └── {Entity}Repository.kt
-    ├── spec/
-    │   └── {Entity}Specifications.kt
-    └── filter/
-        └── {Entity}Filter.kt
+    └── spec/
+        └── {Entity}Specifications.kt
 ```
 
 **Components:**
-1. **Specification Objects**: Reusable query fragments (predicates)
-2. **Filter Objects**: DTOs for search parameters
-3. **JpaSpecificationExecutor**: Repository interface for specifications
+1. **Specification Objects** (persistence/spec/): Reusable JPA query fragments
+2. **Query Objects** (application/query/): Domain-level search criteria
+3. **Search Params** (web/dto/): HTTP query parameters from controllers
+4. **JpaSpecificationExecutor**: Repository interface for specifications
+
+**Data Flow:**
+```
+HTTP Query Params (web)
+    ↓ mapping
+Query Object (application)
+    ↓ fromQuery()
+Specification (persistence)
+    ↓ findAll()
+Entities
+```
 
 ### Implementation Pattern
 
-**1. Filter Object (DTO for search parameters):**
+**1. Query Object (Application Layer - Domain Search Criteria):**
 ```kotlin
-// domain/user/persistence/filter/UserFilter.kt
-class UserFilter {
-    var isMember: Boolean? = null
-    var username: String? = null
-    var email: String? = null
-    var roles: Set<Role>? = null
+// domain/user/application/query/UserQuery.kt
+data class UserQuery(
+    val isMember: Boolean? = null,
+    val username: String? = null,
+    val email: String? = null,
+    val roles: Set<Role>? = null,
+    val enabled: Boolean? = null
+) {
+    companion object {
+        fun empty() = UserQuery()
+    }
 }
+```
+
+**1b. Search Parameters (Web Layer - HTTP Query Params):**
+```kotlin
+// domain/user/web/dto/request/UserSearchParams.kt
+data class UserSearchParams(
+    val isMember: Boolean?,
+    val username: String?,
+    val email: String?
+)
+
+// domain/user/web/mapping/QueryMappings.kt
+fun UserSearchParams.toQuery() = UserQuery(
+    isMember = this.isMember,
+    username = this.username,
+    email = this.email
+)
 ```
 
 **2. Specifications Object:**
@@ -88,16 +129,20 @@ object UserSpecifications {
         }
     }
 
-    // Composite specification from filter
-    fun fromFilter(filter: UserFilter, user: CurrentUser?): Specification<User> {
+    // Composite specification from query object
+    fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
         var spec = Specification<User> { _, _, cb -> cb.conjunction() }
 
-        filter.isMember?.let {
+        query.isMember?.let {
             spec = spec.and(hasMemberRole(it))
         }
 
-        filter.username?.let {
+        query.username?.let {
             spec = spec.and(usernameContains(it))
+        }
+
+        query.enabled?.let {
+            spec = spec.and(isEnabled(it))
         }
 
         return spec
@@ -130,18 +175,18 @@ class UserService(
         return repository.findAll(UserSpecifications.hasMemberAuthority())
     }
 
-    // Composite specification
-    fun findAllByFilter(filter: UserFilter, user: CurrentUser?): List<User> {
-        val spec = UserSpecifications.fromFilter(filter, user)
+    // Composite specification from query object
+    fun findAllByQuery(query: UserQuery, user: CurrentUser?): List<User> {
+        val spec = UserSpecifications.fromQuery(query, user)
         return repository.findAll(spec)
     }
 
     // With pagination
-    fun findAllByFilterPaginated(
-        filter: UserFilter,
+    fun findAllByQueryPaginated(
+        query: UserQuery,
         pageable: Pageable
     ): Page<User> {
-        val spec = UserSpecifications.fromFilter(filter, null)
+        val spec = UserSpecifications.fromQuery(query, null)
         return repository.findAll(spec, pageable)
     }
 
@@ -166,13 +211,27 @@ class UserController(
     fun search(
         @RequestParam(required = false) isMember: Boolean?,
         @RequestParam(required = false) username: String?,
+        @RequestParam(required = false) email: String?,
         pageable: Pageable
     ): Page<UserResponse> {
-        val filter = UserFilter().apply {
-            this.isMember = isMember
-            this.username = username
-        }
-        return userService.findAllByFilterPaginated(filter, pageable)
+        // Map query params to query object
+        val query = UserQuery(
+            isMember = isMember,
+            username = username,
+            email = email
+        )
+        return userService.findAllByQueryPaginated(query, pageable)
+            .map { it.asResponse() }
+    }
+
+    // OR use search params DTO:
+    @GetMapping("/search-v2")
+    fun searchV2(
+        params: UserSearchParams,
+        pageable: Pageable
+    ): Page<UserResponse> {
+        val query = params.toQuery()  // Web DTO → Query object
+        return userService.findAllByQueryPaginated(query, pageable)
             .map { it.asResponse() }
     }
 }
@@ -297,6 +356,9 @@ fun findNonMembers(): List<User> {
 - **Dynamic**: Build queries at runtime based on user input
 - **Maintainable**: Query logic centralized in specification objects
 - **No code generation**: Pure JPA Criteria API (unlike QueryDSL)
+- **Proper layering**: Query objects in application layer, not persistence
+- **Interface-agnostic**: Query objects can be used from REST, GraphQL, CLI
+- **Clean architecture**: Persistence doesn't depend on interface concerns
 
 ### Negative
 - **Learning curve**: Developers must understand JPA Criteria API
@@ -304,11 +366,13 @@ fun findNonMembers(): List<User> {
 - **Debugging**: Harder to see generated SQL during development
 - **Performance**: Can generate suboptimal queries (N+1, Cartesian products)
 - **IDE support**: Limited autocomplete for criteria paths
+- **Extra mapping**: Web params → Query object adds a mapping step
 
 ### Trade-offs
 - **Type-safety vs Simplicity**: Specifications vs string-based JPQL
 - **Reusability vs Directness**: Specification objects vs inline queries
 - **Dynamic vs Static**: Runtime composition vs compile-time methods
+- **Layer separation vs Convenience**: Query objects vs direct filters
 
 ## Guidelines
 
@@ -318,7 +382,7 @@ fun findNonMembers(): List<User> {
 - ✅ Create `{Entity}Specifications` object in `persistence/spec/`
 - ✅ Make specifications `object` (singleton) with factory methods
 - ✅ Name methods clearly: `hasMemberRole()`, `usernameContains()`
-- ✅ Use `fromFilter()` pattern for composite specifications
+- ✅ Use `fromQuery()` pattern for composite specifications
 - ✅ Call `query.distinct(true)` when joining collections
 - ✅ Use lowercase for case-insensitive string matching
 - ✅ Return `Specification<Entity>` from factory methods
@@ -330,20 +394,37 @@ fun findNonMembers(): List<User> {
 - ❌ Forget `distinct(true)` when joining ElementCollections
 - ❌ Hardcode values (accept parameters instead)
 
-### Filter Objects
+### Query Objects (Application Layer)
 
 **DO:**
-- ✅ Create filter DTO in `persistence/filter/`
-- ✅ Use nullable properties (null = not filtering)
-- ✅ Keep filters simple (primitive types, enums, IDs)
-- ✅ Document filter behavior
-- ✅ Provide defaults in `fromFilter()` if needed
+- ✅ Create query objects in `application/query/`
+- ✅ Use data classes with nullable properties (null = not filtering)
+- ✅ Keep queries simple (primitive types, enums, IDs, value objects)
+- ✅ Make query objects immutable
+- ✅ Provide companion object with `empty()` factory
+- ✅ Name clearly: `UserQuery`, `EventQuery`
 
 **DON'T:**
-- ❌ Put validation in filter objects
-- ❌ Include entities (use IDs instead)
-- ❌ Use mutable collections
-- ❌ Add business logic
+- ❌ Put query objects in persistence layer (dependency violation)
+- ❌ Include JPA-specific concerns (FetchType, joins)
+- ❌ Add validation logic (query objects are search criteria, not commands)
+- ❌ Use mutable properties
+- ❌ Include entity references (use IDs instead)
+
+### Search Parameters (Web Layer)
+
+**DO:**
+- ✅ Create search params DTOs in `web/dto/request/`
+- ✅ Map search params → query objects in `web/mapping/`
+- ✅ Use extension functions: `fun SearchParams.toQuery()`
+- ✅ Validate web input before mapping
+- ✅ Document HTTP query parameter behavior
+
+**DON'T:**
+- ❌ Pass web DTOs directly to services
+- ❌ Skip mapping step (web → application)
+- ❌ Put business logic in search params
+- ❌ Use search params in application layer
 
 ### Repository Usage
 
@@ -407,15 +488,15 @@ class UserSpecificationsTest {
     }
 
     @Test
-    fun `fromFilter should apply multiple filters`() {
+    fun `fromQuery should apply multiple filters`() {
         // Given
-        val filter = UserFilter().apply {
-            isMember = true
+        val query = UserQuery(
+            isMember = true,
             username = "john"
-        }
+        )
 
         // When
-        val spec = UserSpecifications.fromFilter(filter, null)
+        val spec = UserSpecifications.fromQuery(query, null)
         val result = repository.findAll(spec)
 
         // Then
@@ -446,21 +527,44 @@ class UserSpecificationsTest {
 - ✅ Performance-critical native SQL
 - ✅ Using database-specific features
 
+## Architectural Benefits
+
+### Proper Layer Separation
+```
+Web Layer: HTTP params → Search params DTO
+    ↓ mapping (web/mapping/)
+Application Layer: Query objects
+    ↓ fromQuery()
+Persistence Layer: Specifications → JPA Criteria
+    ↓
+Database
+```
+
+**Why This Matters:**
+1. **Persistence independence**: Application layer doesn't know about HTTP
+2. **Interface flexibility**: Can add GraphQL, CLI without changing specifications
+3. **Clean architecture**: Inner layers (persistence) don't depend on outer layers (web)
+4. **Testability**: Can test query logic without web infrastructure
+5. **Reusability**: Query objects can be constructed from any interface
+
 ## Best Practices
 
 ### DO:
 - ✅ Use specifications for dynamic search queries
 - ✅ Extract reusable predicates as separate methods
-- ✅ Use `fromFilter()` pattern for composite queries
+- ✅ Use `fromQuery()` pattern for composite queries
 - ✅ Call `distinct(true)` when joining collections
 - ✅ Test specifications with real database
 - ✅ Combine specifications with `.and()` and `.or()`
-- ✅ Use filter objects for controller parameters
+- ✅ Place query objects in `application/query/`
+- ✅ Map web params → query objects in web layer
 - ✅ Profile generated SQL queries
 
 ### DON'T:
 - ❌ Overuse specifications for simple queries
 - ❌ Put business logic in specifications
+- ❌ Put query objects in persistence layer (dependency violation)
+- ❌ Pass web DTOs to specifications
 - ❌ Return null from specifications
 - ❌ Create god-object specifications with all predicates
 - ❌ Ignore Cartesian products from multiple joins

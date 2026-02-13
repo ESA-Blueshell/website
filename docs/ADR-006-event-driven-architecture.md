@@ -26,12 +26,32 @@ We adopt **Spring's event-driven architecture** with domain events for cross-dom
 - Represent something that happened in the domain
 - Past tense naming (UserCreated, PasswordChanged)
 - Immutable data classes
-- Located in `application/event/` or shared package
+- Located in `domain/{domain-name}/application/event/`
+- Example: `domain/user/application/event/UserCreated.kt`
 
 **Integration Events**
 - For external system integration
 - May be published to message queues
 - Include all data needed by external systems
+- Located in shared infrastructure or domain application layer
+
+### Event Organization
+
+**Package Structure:**
+```
+domain/{domain-name}/
+├── application/
+│   ├── event/              # Domain events
+│   │   ├── UserCreated.kt
+│   │   ├── UserUpdated.kt
+│   │   └── UserDeleted.kt
+│   └── listener/           # Event listeners
+│       └── UserEventListener.kt
+```
+
+**Listeners** are placed in the domain that reacts to events, not necessarily where events are published:
+- `domain/user/application/event/UserCreated.kt` - event definition
+- `domain/auth/application/listener/RecoveryEventListener.kt` - listens to UserCreated
 
 ### Event Structure
 

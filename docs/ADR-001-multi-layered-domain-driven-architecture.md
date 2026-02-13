@@ -36,13 +36,15 @@ domain/{domain-name}/
 │   │   ├── request/        # Inbound DTOs
 │   │   └── response/       # Outbound DTOs
 │   ├── mapping/            # Request/Response mappers
-│   └── validation/         # Web-layer validators
+│   ├── validation/         # Web-layer validators
+│   └── permission/         # Spring Security permission evaluators
 ├── command/                # Command Layer
 │   └── *Commands.kt        # Command objects with validation
 ├── application/            # Application Layer
 │   ├── command/            # Command handlers
 │   │   └── *CommandHandlers.kt
 │   ├── *Service.kt         # Application services
+│   ├── event/              # Domain events
 │   ├── listener/           # Event listeners
 │   ├── factory/            # Entity factories
 │   ├── validation/         # Business rule validators
@@ -53,7 +55,9 @@ domain/{domain-name}/
 │   └── service/            # Domain services
 └── persistence/            # Persistence Layer
     ├── *Entity.kt          # JPA entities
-    └── repository/         # Spring Data repositories
+    ├── repository/         # Spring Data repositories
+    ├── spec/               # JPA Specifications for dynamic queries
+    └── filter/             # Query filter objects
 ```
 
 ### Layer Responsibilities
@@ -64,6 +68,7 @@ domain/{domain-name}/
 - Request → Command mapping
 - Entity → Response mapping
 - OpenAPI documentation
+- Permission evaluation for authorization
 
 **Command Layer**
 - Command objects representing use cases
@@ -75,7 +80,8 @@ domain/{domain-name}/
 - Command handling
 - Transaction management
 - Business rule validation (with DB access)
-- Event publishing
+- Domain event definition and publishing
+- Event listening and reaction
 - Cross-aggregate coordination
 
 **Domain Layer** (Optional)
@@ -90,6 +96,8 @@ domain/{domain-name}/
 - Entity definitions
 - Repository interfaces
 - Database queries
+- JPA Specifications for dynamic queries
+- Query filter objects for search criteria
 
 ### Package Organization: Package-by-Feature
 

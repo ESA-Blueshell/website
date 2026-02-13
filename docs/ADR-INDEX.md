@@ -18,6 +18,7 @@ This document provides an index of all Architecture Decision Records for the Blu
 |---|-------|--------|---------|
 | [007](ADR-007-repository-pattern-and-jpa.md) | Repository Pattern and JPA | Accepted | Spring Data JPA with repository pattern in persistence layer |
 | [010](ADR-010-database-migrations-with-flyway.md) | Database Migrations with Flyway | Accepted | Versioned SQL migrations with Flyway |
+| [015](ADR-015-jpa-specifications-dynamic-queries.md) | JPA Specifications and Dynamic Queries | Accepted | Type-safe dynamic queries using JPA Specifications with filter objects |
 
 ### Validation & Mapping
 
@@ -40,6 +41,7 @@ This document provides an index of all Architecture Decision Records for the Blu
 | [008](ADR-008-exception-handling-strategy.md) | Exception Handling Strategy | Accepted | Problem Details (RFC 7807) with domain-specific exception hierarchies |
 | [009](ADR-009-jwt-authentication-strategy.md) | JWT Authentication Strategy | Accepted | Stateless JWT authentication with Spring Security |
 | [012](ADR-012-api-documentation-with-openapi.md) | API Documentation with OpenAPI | Accepted | SpringDoc OpenAPI 3 (Swagger UI) with code-first approach |
+| [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Accepted | Domain-specific permission evaluators using Spring Security's PermissionEvaluator |
 
 ### Testing
 
@@ -69,7 +71,7 @@ Each ADR follows this structure:
 
 When making significant architectural decisions:
 
-1. **Number**: Use next available number (ADR-014, ADR-015, etc.)
+1. **Number**: Use next available number (ADR-016, ADR-017, etc.)
 2. **Title**: Use kebab-case format: `ADR-###-descriptive-title.md`
 3. **Template**: Follow existing ADR structure
 4. **Single Concern**: One decision per ADR

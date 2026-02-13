@@ -4,8 +4,10 @@ import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
+import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.survey.persistence.Answer
 import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
 import net.blueshell.api.domain.event.web.dto.GuestDTO
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
@@ -48,13 +50,15 @@ class FindEventSignUpsByEventIdHandler(
 
 @Component
 class CreateEventSignUpHandler(
-    private val service: EventSignUpService
+    private val service: EventSignUpService,
+    private val eventRepository: EventRepository,
+    private val questionRepository: QuestionRepository
 ) : CommandHandler<CreateEventSignUpCommand, EventSignUp> {
     override val commandType = CreateEventSignUpCommand::class
 
     override fun handle(command: CreateEventSignUpCommand): EventSignUp {
         command.principalId?.let { command.dto.userId = it }
-        var eventSignUp = mapSignUp(command.dto)
+        var eventSignUp = mapSignUp(command.dto, eventRepository, questionRepository)
         eventSignUp = service.create(eventSignUp)
         return eventSignUp
     }
@@ -62,7 +66,9 @@ class CreateEventSignUpHandler(
 
 @Component
 class UpdateEventSignUpHandler(
-    private val service: EventSignUpService
+    private val service: EventSignUpService,
+    private val eventRepository: EventRepository,
+    private val questionRepository: QuestionRepository
 ) : CommandHandler<UpdateEventSignUpCommand, EventSignUp> {
     override val commandType = UpdateEventSignUpCommand::class
 
@@ -73,7 +79,7 @@ class UpdateEventSignUpHandler(
         } else {
             service.findByGuestAccessTokenAndEventId(command.accessToken, command.eventId)
         }
-        applySignUp(command.dto, signUp)
+        applySignUp(command.dto, signUp, eventRepository, questionRepository)
         return service.update(signUp)
     }
 }
@@ -89,18 +95,18 @@ class DeleteEventSignUpHandler(
     }
 }
 
-private fun mapSignUp(dto: EventSignUpDTO): EventSignUp {
+private fun mapSignUp(dto: EventSignUpDTO, eventRepository: EventRepository, questionRepository: QuestionRepository): EventSignUp {
     val signUp = EventSignUp()
-    applySignUp(dto, signUp)
+    applySignUp(dto, signUp, eventRepository, questionRepository)
     return signUp
 }
 
-private fun applySignUp(dto: EventSignUpDTO, signUp: EventSignUp) {
-    signUp.event = net.blueshell.api.domain.event.persistence.Event::class.asRef(dto.eventId!!)
+private fun applySignUp(dto: EventSignUpDTO, signUp: EventSignUp, eventRepository: EventRepository, questionRepository: QuestionRepository) {
+    signUp.event = eventRepository.getReferenceById(dto.eventId!!)
     dto.userId?.let { signUp.userId = it }
     signUp.guest = dto.guest?.let { mapGuest(it) }
 
-    val mappedAnswers = dto.answers?.map { mapAnswer(it) } ?: emptyList()
+    val mappedAnswers = dto.answers?.map { mapAnswer(it, questionRepository) } ?: emptyList()
     val answersSet = signUp.answers as MutableSet
     answersSet.clear()
     answersSet.addAll(mappedAnswers)
@@ -122,9 +128,9 @@ private fun mapGuest(dto: GuestDTO): Guest {
     return guest
 }
 
-private fun mapAnswer(dto: AnswerDTO): Answer {
+private fun mapAnswer(dto: AnswerDTO, questionRepository: QuestionRepository): Answer {
     val answer = Answer()
-    answer.question = Question::class.asRef(dto.questionId!!)
+    answer.question = questionRepository.getReferenceById(dto.questionId!!)
     answer.optionSelections = dto.optionSelections
     answer.textResponse = dto.textResponse
     dto.version?.let { answer.version = it }

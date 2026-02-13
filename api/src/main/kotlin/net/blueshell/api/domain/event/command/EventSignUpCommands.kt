@@ -23,7 +23,7 @@ data class FindEventSignUpsByEventIdCommand(
 @ValidEventSignUpCommand
 data class CreateEventSignUpCommand(
     @field:Valid
-    val dto: EventSignUpDTO,
+    override val dto: EventSignUpDTO,
     val principalId: Long?
 ) : Command<EventSignUp>, EventSignUpCandidate
 
@@ -31,7 +31,7 @@ data class CreateEventSignUpCommand(
 data class UpdateEventSignUpCommand(
     val eventId: Long,
     @field:Valid
-    val dto: EventSignUpDTO,
+    override val dto: EventSignUpDTO,
     val accessToken: String?,
     val principalId: Long?
 ) : Command<EventSignUp>, EventSignUpCandidate

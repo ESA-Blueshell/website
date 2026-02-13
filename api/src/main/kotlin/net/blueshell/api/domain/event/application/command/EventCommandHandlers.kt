@@ -4,6 +4,7 @@ import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.domain.committee.persistence.repository.CommitteeRepository
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component
 @Component
 class CreateEventHandler(
     private val service: EventService,
+    private val committeeRepository: CommitteeRepository,
     private val currentUserProvider: CurrentUserProvider
 ) : CommandHandler<CreateEventCommand, Event> {
     override val commandType = CreateEventCommand::class
@@ -24,7 +26,7 @@ class CreateEventHandler(
     override fun handle(command: CreateEventCommand): Event {
         var event = Event()
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard)
+        applyEventFields(event, command, isBoard, committeeRepository)
         event = service.create(event)
         return event
     }
@@ -33,6 +35,7 @@ class CreateEventHandler(
 @Component
 class UpdateEventHandler(
     private val service: EventService,
+    private val committeeRepository: CommitteeRepository,
     private val currentUserProvider: CurrentUserProvider
 ) : CommandHandler<UpdateEventCommand, Event> {
     override val commandType = UpdateEventCommand::class
@@ -40,7 +43,7 @@ class UpdateEventHandler(
     override fun handle(command: UpdateEventCommand): Event {
         var event = service.findById(command.id)
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard)
+        applyEventFields(event, command, isBoard, committeeRepository)
         command.version?.let { event.version = it }
         event = service.update(event)
         return event
@@ -94,8 +97,8 @@ class DeleteEventByIdHandler(
     }
 }
 
-private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard: Boolean) {
-    event.committee = Committee::class.asRef(command.committeeId)
+private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard: Boolean, committeeRepository: CommitteeRepository) {
+    event.committee = committeeRepository.getReferenceById(command.committeeId)
     event.title = command.title
     event.description = command.description
     event.location = command.location
@@ -110,8 +113,8 @@ private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard:
     event.approved = isBoard && command.approved
 }
 
-private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard: Boolean) {
-    event.committee = Committee::class.asRef(command.committeeId)
+private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard: Boolean, committeeRepository: CommitteeRepository) {
+    event.committee = committeeRepository.getReferenceById(command.committeeId)
     event.title = command.title
     event.description = command.description
     event.location = command.location

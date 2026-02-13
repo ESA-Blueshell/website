@@ -16,13 +16,13 @@ internal data class CreateUserCommandRequest(
 internal object CreateUserCommandRequestToCommandMapper : ObjectMappie<CreateUserCommandRequest, CreateUserCommand>() {
     override fun map(from: CreateUserCommandRequest) = mapping {
         CreateUserCommand::isBoard fromValue from.isBoard
-        CreateUserCommand::roles fromValue { from.request.roles ?: emptySet<Role>() }
+        CreateUserCommand::roles fromValue (from.request.roles ?: emptySet<Role>())
         CreateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
         CreateUserCommand::nationality fromValue from.request.nationality
         CreateUserCommand::photoConsent fromValue from.request.photoConsent!!
         CreateUserCommand::ehbo fromValue from.request.ehbo!!
         CreateUserCommand::bhv fromValue from.request.bhv!!
-        CreateUserCommand::enabled fromValue { from.request.enabled ?: false }
+        CreateUserCommand::enabled fromValue (from.request.enabled ?: false)
         CreateUserCommand::gender fromValue from.request.gender
         CreateUserCommand::studentNumber fromValue from.request.studentNumber
         CreateUserCommand::username fromValue from.request.username
@@ -84,13 +84,13 @@ internal object UpdateUserCommandRequestToCommandMapper : ObjectMappie<UpdateUse
     override fun map(from: UpdateUserCommandRequest) = mapping {
         UpdateUserCommand::id fromValue from.id
         UpdateUserCommand::isBoard fromValue from.isBoard
-        UpdateUserCommand::roles fromValue { from.request.roles ?: emptySet<Role>() }
+        UpdateUserCommand::roles fromValue (from.request.roles ?: emptySet<Role>())
         UpdateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
         UpdateUserCommand::nationality fromValue from.request.nationality
         UpdateUserCommand::photoConsent fromValue from.request.photoConsent!!
         UpdateUserCommand::ehbo fromValue from.request.ehbo!!
         UpdateUserCommand::bhv fromValue from.request.bhv!!
-        UpdateUserCommand::enabled fromValue { from.request.enabled ?: false }
+        UpdateUserCommand::enabled fromValue (from.request.enabled ?: false)
         UpdateUserCommand::gender fromValue from.request.gender
         UpdateUserCommand::studentNumber fromValue from.request.studentNumber
         UpdateUserCommand::username fromValue from.request.username

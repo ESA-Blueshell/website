@@ -6,6 +6,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.repository.CommitteeRepository
 import net.blueshell.api.domain.event.persistence.EventBanner
+import net.blueshell.api.domain.survey.application.factory.SurveyFactory
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.shared.enums.Role
@@ -19,14 +20,15 @@ import org.springframework.stereotype.Component
 class CreateEventHandler(
     private val service: EventService,
     private val committeeRepository: CommitteeRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val surveyFactory: SurveyFactory
 ) : CommandHandler<CreateEventCommand, Event> {
     override val commandType = CreateEventCommand::class
 
     override fun handle(command: CreateEventCommand): Event {
         var event = Event()
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard, committeeRepository)
+        applyEventFields(event, command, isBoard, committeeRepository, surveyFactory)
         event = service.create(event)
         return event
     }
@@ -36,14 +38,15 @@ class CreateEventHandler(
 class UpdateEventHandler(
     private val service: EventService,
     private val committeeRepository: CommitteeRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val surveyFactory: SurveyFactory
 ) : CommandHandler<UpdateEventCommand, Event> {
     override val commandType = UpdateEventCommand::class
 
     override fun handle(command: UpdateEventCommand): Event {
         var event = service.findById(command.id)
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard, committeeRepository)
+        applyEventFields(event, command, isBoard, committeeRepository, surveyFactory)
         command.version?.let { event.version = it }
         event = service.update(event)
         return event
@@ -97,7 +100,7 @@ class DeleteEventByIdHandler(
     }
 }
 
-private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard: Boolean, committeeRepository: CommitteeRepository) {
+private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard: Boolean, committeeRepository: CommitteeRepository, surveyFactory: SurveyFactory) {
     event.committee = committeeRepository.getReferenceById(command.committeeId)
     event.title = command.title
     event.description = command.description
@@ -109,11 +112,11 @@ private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard:
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
     event.banner = command.banner?.let { mapBanner(it) }
-    event.signUpForm = command.signUpForm?.let { mapSurvey(it) }
+    event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
     event.approved = isBoard && command.approved
 }
 
-private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard: Boolean, committeeRepository: CommitteeRepository) {
+private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard: Boolean, committeeRepository: CommitteeRepository, surveyFactory: SurveyFactory) {
     event.committee = committeeRepository.getReferenceById(command.committeeId)
     event.title = command.title
     event.description = command.description
@@ -125,30 +128,14 @@ private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard:
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
     event.banner = command.banner?.let { mapBanner(it) }
-    event.signUpForm = command.signUpForm?.let { mapSurvey(it) }
+    event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
     event.approved = isBoard && command.approved
 }
 
-private fun mapBanner(request: net.blueshell.api.domain.event.web.dto.EventBannerRequest): EventBanner {
+private fun mapBanner(data: net.blueshell.api.domain.event.command.EventBannerData): EventBanner {
     val banner = EventBanner()
-    banner.id.fileId = request.fileId
-    request.version?.let { banner.version = it }
+    banner.id.fileId = data.fileId
     return banner
-}
-
-private fun mapSurvey(request: net.blueshell.api.domain.survey.web.dto.SurveyRequest): Survey {
-    val survey = Survey()
-    val questions = request.questions?.map { qRequest ->
-        val question = Question()
-        question.idx = qRequest.idx!!
-        question.type = qRequest.type!!
-        question.label = qRequest.label!!
-        question.choiceLabels = qRequest.choiceLabels
-        question.survey = survey
-        question
-    } ?: emptyList()
-    survey.replaceQuestions(questions)
-    return survey
 }
 
 private fun hasAuthority(user: CurrentUser, role: Role): Boolean {

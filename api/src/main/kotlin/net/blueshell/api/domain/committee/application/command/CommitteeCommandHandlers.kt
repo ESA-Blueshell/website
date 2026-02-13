@@ -4,6 +4,7 @@ import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.command.*
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -47,7 +48,8 @@ class FindCommitteeByIdHandler(
 
 @Component
 class CreateCommitteeHandler(
-    private val service: CommitteeService
+    private val service: CommitteeService,
+    private val userService: UserService
 ) : CommandHandler<CreateCommitteeCommand, Committee> {
     override val commandType = CreateCommitteeCommand::class
 
@@ -55,14 +57,15 @@ class CreateCommitteeHandler(
         val committee = Committee()
         committee.name = command.name
         committee.description = command.description
-        committee.replaceMembers(mapMembers(command.members))
+        committee.replaceMembers(mapMembers(command.members, committee, userService))
         return service.create(committee)
     }
 }
 
 @Component
 class UpdateCommitteeHandler(
-    private val service: CommitteeService
+    private val service: CommitteeService,
+    private val userService: UserService
 ) : CommandHandler<UpdateCommitteeCommand, Committee> {
     override val commandType = UpdateCommitteeCommand::class
 
@@ -70,7 +73,7 @@ class UpdateCommitteeHandler(
         var committee = service.findById(command.id)
         committee.name = command.name
         committee.description = command.description
-        committee.replaceMembers(mapMembers(command.members, committee))
+        committee.replaceMembers(mapMembers(command.members, committee, userService))
         command.version?.let { committee.version = it }
         return service.update(committee)
     }
@@ -89,12 +92,17 @@ class DeleteCommitteeByIdHandler(
 
 private fun mapMembers(
     members: MutableList<CommitteeMemberData>,
-    committee: Committee? = null
+    committee: Committee,
+    userService: UserService
 ): MutableList<CommitteeMember> {
-    val existingByUserId = committee?.members?.associateBy { it.userId } ?: emptyMap()
+    val existingByUserId = committee.members.associateBy { it.userId }
     return members.map { memberData ->
-        val member = existingByUserId[memberData.userId] ?: CommitteeMember()
-        member.id.userId = memberData.userId
+        val member = existingByUserId[memberData.userId] ?: CommitteeMember().apply {
+            // Fetch user entity via service (ADR-013)
+            user = userService.findById(memberData.userId)
+            id.userId = memberData.userId
+            this.committee = committee
+        }
         member.role = memberData.role
         member
     }.toMutableList()

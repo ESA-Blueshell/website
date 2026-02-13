@@ -44,7 +44,7 @@ class CommitteeMember(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
     lateinit var user: User
-        private set
+        internal set
 
     val userId: Long
         get() = id.userId ?: 0

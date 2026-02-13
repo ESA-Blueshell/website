@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.committee.web.permission
+package net.blueshell.api.infrastructure.security.permission
 
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee

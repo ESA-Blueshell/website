@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.committee.web.dto
+package net.blueshell.api.domain.committee.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
@@ -6,9 +6,10 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
-@Schema(name = "CreateCommitteeRequest")
-data class CreateCommitteeRequest(
+@Schema(name = "CommitteeDetailResponse")
+data class CommitteeDetailResponse(
     @field:NotBlank(message = "Committee name cannot be blank.")
     @field:Size(max = 255, message = "Committee name cannot exceed 255 characters.")
     var name: String? = null,
@@ -20,5 +21,5 @@ data class CreateCommitteeRequest(
     @field:NotNull
     @field:NotEmpty
     @field:Valid
-    var members: MutableList<CommitteeMemberRequest>? = mutableListOf()
-)
+    var members: MutableList<CommitteeMemberResponse>? = mutableListOf()
+) : AuditedAutoIdDTO(), CommitteeResponse

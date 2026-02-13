@@ -42,11 +42,11 @@ internal data class EventSignUpUpdateRequestPayload(
 internal object EventSignUpRequestPayloadToDtoMapper : ObjectMappie<EventSignUpRequestPayload, EventSignUpDTO>() {
     override fun map(from: EventSignUpRequestPayload) = mapping {
         EventSignUpDTO::eventId fromValue from.eventId
-        EventSignUpDTO::answers fromValue {
-            from.request.answers?.map { AnswerRequestToAnswerDTOMapper.map(it) }?.toMutableList()
-        }
-        EventSignUpDTO::guest fromValue {
-            from.request.guest?.let { CreateGuestRequestToGuestDTOMapper.map(it) }
+        EventSignUpDTO::answers fromValue from.request.answers?.map {
+            AnswerRequestToAnswerDTOMapper.map(it)
+        }?.toMutableList()
+        EventSignUpDTO::guest fromValue from.request.guest?.let {
+            CreateGuestRequestToGuestDTOMapper.map(it)
         }
         EventSignUpDTO::userId fromValue from.request.userId
     }
@@ -55,11 +55,11 @@ internal object EventSignUpRequestPayloadToDtoMapper : ObjectMappie<EventSignUpR
 internal object EventSignUpUpdateRequestPayloadToDtoMapper : ObjectMappie<EventSignUpUpdateRequestPayload, EventSignUpDTO>() {
     override fun map(from: EventSignUpUpdateRequestPayload) = mapping {
         EventSignUpDTO::eventId fromValue from.eventId
-        EventSignUpDTO::answers fromValue {
-            from.request.answers?.map { AnswerRequestToAnswerDTOMapper.map(it) }?.toMutableList()
-        }
-        EventSignUpDTO::guest fromValue {
-            from.request.guest?.let { CreateGuestRequestToGuestDTOMapper.map(it) }
+        EventSignUpDTO::answers fromValue from.request.answers?.map {
+            AnswerRequestToAnswerDTOMapper.map(it)
+        }?.toMutableList()
+        EventSignUpDTO::guest fromValue from.request.guest?.let {
+            CreateGuestRequestToGuestDTOMapper.map(it)
         }
         EventSignUpDTO::userId fromValue from.request.userId
         EventSignUpDTO::version fromValue from.request.version
@@ -81,9 +81,9 @@ internal data class UpdateEventSignUpCommandRequest(
 
 internal object CreateEventSignUpCommandRequestToCommandMapper : ObjectMappie<CreateEventSignUpCommandRequest, CreateEventSignUpCommand>() {
     override fun map(from: CreateEventSignUpCommandRequest) = mapping {
-        CreateEventSignUpCommand::dto fromValue {
-            EventSignUpRequestPayloadToDtoMapper.map(EventSignUpRequestPayload(from.eventId, from.request))
-        }
+        CreateEventSignUpCommand::dto fromValue EventSignUpRequestPayloadToDtoMapper.map(
+            EventSignUpRequestPayload(from.eventId, from.request)
+        )
         CreateEventSignUpCommand::principalId fromValue from.principalId
     }
 }
@@ -91,9 +91,9 @@ internal object CreateEventSignUpCommandRequestToCommandMapper : ObjectMappie<Cr
 internal object UpdateEventSignUpCommandRequestToCommandMapper : ObjectMappie<UpdateEventSignUpCommandRequest, UpdateEventSignUpCommand>() {
     override fun map(from: UpdateEventSignUpCommandRequest) = mapping {
         UpdateEventSignUpCommand::eventId fromValue from.eventId
-        UpdateEventSignUpCommand::dto fromValue {
-            EventSignUpUpdateRequestPayloadToDtoMapper.map(EventSignUpUpdateRequestPayload(from.eventId, from.request))
-        }
+        UpdateEventSignUpCommand::dto fromValue EventSignUpUpdateRequestPayloadToDtoMapper.map(
+            EventSignUpUpdateRequestPayload(from.eventId, from.request)
+        )
         UpdateEventSignUpCommand::accessToken fromValue from.accessToken
         UpdateEventSignUpCommand::principalId fromValue from.principalId
     }

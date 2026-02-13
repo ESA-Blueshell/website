@@ -2,8 +2,7 @@ package net.blueshell.api.domain.event.command
 
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.filter.EventFilter
-import net.blueshell.api.domain.event.web.dto.EventBannerRequest
-import net.blueshell.api.domain.survey.web.dto.SurveyRequest
+import net.blueshell.api.domain.survey.command.SurveyData
 import java.time.Instant
 import net.blueshell.api.shared.command.Command
 import org.springframework.data.domain.Page
@@ -21,8 +20,8 @@ data class CreateEventCommand(
     val approved: Boolean,
     val membersOnly: Boolean,
     val signUp: Boolean,
-    val banner: EventBannerRequest?,
-    val signUpForm: SurveyRequest?
+    val banner: EventBannerData?,
+    val signUpForm: SurveyData?
 ) : Command<Event>
 
 data class UpdateEventCommand(
@@ -38,8 +37,8 @@ data class UpdateEventCommand(
     val approved: Boolean,
     val membersOnly: Boolean,
     val signUp: Boolean,
-    val banner: EventBannerRequest?,
-    val signUpForm: SurveyRequest?,
+    val banner: EventBannerData?,
+    val signUpForm: SurveyData?,
     val version: Long?
 ) : Command<Event>
 

@@ -1,35 +1,44 @@
 package net.blueshell.api.domain.survey.command
 
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.survey.persistence.Answer
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.shared.command.Command
 
 data class CreateAnswerCommand(
     @field:Valid
-    val dto: AnswerDTO
+    @field:NotNull(message = "Answer DTO is required")
+    var dto: AnswerDTO
 ) : Command<Answer>
 
 data class UpdateAnswerCommand(
-    val id: Long,
+    @field:NotNull(message = "Answer ID is required")
+    var id: Long,
+
     @field:Valid
-    val dto: AnswerDTO
+    @field:NotNull(message = "Answer DTO is required")
+    var dto: AnswerDTO
 ) : Command<Answer>
 
 class FindAnswersCommand : Command<MutableList<Answer>>
 
 data class FindAnswerByIdCommand(
-    val id: Long
+    @field:NotNull(message = "Answer ID is required")
+    var id: Long
 ) : Command<Answer>
 
 data class FindAnswersBySurveyIdCommand(
-    val surveyId: Long
+    @field:NotNull(message = "Survey ID is required")
+    var surveyId: Long
 ) : Command<MutableSet<Answer>>
 
 data class FindAnswersByQuestionIdCommand(
-    val questionId: Long
+    @field:NotNull(message = "Question ID is required")
+    var questionId: Long
 ) : Command<MutableSet<Answer>>
 
 data class DeleteAnswerByIdCommand(
-    val id: Long
+    @field:NotNull(message = "Answer ID is required")
+    var id: Long
 ) : Command<Unit>

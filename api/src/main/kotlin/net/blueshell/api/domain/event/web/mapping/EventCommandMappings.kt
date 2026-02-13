@@ -4,6 +4,7 @@ import net.blueshell.api.domain.event.command.CreateEventCommand
 import net.blueshell.api.domain.event.command.UpdateEventCommand
 import net.blueshell.api.domain.event.web.dto.CreateEventRequest
 import net.blueshell.api.domain.event.web.dto.UpdateEventRequest
+import net.blueshell.api.domain.survey.web.mapping.asDomainData
 import tech.mappie.api.ObjectMappie
 
 object CreateEventRequestToCommandMapper : ObjectMappie<CreateEventRequest, CreateEventCommand>() {
@@ -19,8 +20,8 @@ object CreateEventRequestToCommandMapper : ObjectMappie<CreateEventRequest, Crea
         CreateEventCommand::approved fromValue from.approved!!
         CreateEventCommand::membersOnly fromValue from.membersOnly!!
         CreateEventCommand::signUp fromValue from.signUp!!
-        CreateEventCommand::banner fromValue from.banner
-        CreateEventCommand::signUpForm fromValue from.signUpForm
+        CreateEventCommand::banner fromValue from.banner?.asDomainData()
+        CreateEventCommand::signUpForm fromValue from.signUpForm?.asDomainData()
     }
 }
 
@@ -43,8 +44,8 @@ internal object UpdateEventCommandRequestToCommandMapper : ObjectMappie<UpdateEv
         UpdateEventCommand::approved fromValue from.request.approved!!
         UpdateEventCommand::membersOnly fromValue from.request.membersOnly!!
         UpdateEventCommand::signUp fromValue from.request.signUp!!
-        UpdateEventCommand::banner fromValue from.request.banner
-        UpdateEventCommand::signUpForm fromValue from.request.signUpForm
+        UpdateEventCommand::banner fromValue from.request.banner?.asDomainData()
+        UpdateEventCommand::signUpForm fromValue from.request.signUpForm?.asDomainData()
         UpdateEventCommand::version fromValue from.request.version
     }
 }

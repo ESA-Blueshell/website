@@ -56,14 +56,12 @@ internal data class ContributionReminderBatchCommandRequest(
 
 internal object ContributionReminderBatchCommandRequestToCommandMapper : ObjectMappie<ContributionReminderBatchCommandRequest, SendContributionReminderBatchCommand>() {
     override fun map(from: ContributionReminderBatchCommandRequest) = mapping {
-        SendContributionReminderBatchCommand::items fromValue {
-            from.requests.map {
-                ContributionReminderItem(
-                    userId = it.userId!!,
-                    contributionPeriodId = it.contributionPeriodId!!
-                )
-            }.toMutableList()
-        }
+        SendContributionReminderBatchCommand::items fromValue from.requests.map {
+            ContributionReminderItem(
+                userId = it.userId!!,
+                contributionPeriodId = it.contributionPeriodId!!
+            )
+        }.toMutableList()
     }
 }
 

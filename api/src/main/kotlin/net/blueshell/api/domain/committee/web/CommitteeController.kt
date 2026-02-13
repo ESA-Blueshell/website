@@ -5,10 +5,10 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.command.*
-import net.blueshell.api.domain.committee.web.dto.CommitteeDetailResponse
-import net.blueshell.api.domain.committee.web.dto.CommitteeResponse
-import net.blueshell.api.domain.committee.web.dto.CreateCommitteeRequest
-import net.blueshell.api.domain.committee.web.dto.UpdateCommitteeRequest
+import net.blueshell.api.domain.committee.web.dto.request.CreateCommitteeRequest
+import net.blueshell.api.domain.committee.web.dto.request.UpdateCommitteeRequest
+import net.blueshell.api.domain.committee.web.dto.response.CommitteeDetailResponse
+import net.blueshell.api.domain.committee.web.dto.response.CommitteeResponse
 import net.blueshell.api.domain.committee.web.mapping.asCommand
 import net.blueshell.api.domain.committee.web.mapping.asDetailResponse
 import net.blueshell.api.domain.committee.web.mapping.asSummaryResponse

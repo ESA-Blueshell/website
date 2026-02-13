@@ -5,8 +5,8 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.command.*
-import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.domain.user.web.dto.*
 import net.blueshell.api.domain.user.web.mapping.asCommand
 import net.blueshell.api.domain.user.web.mapping.asDetailResponse
@@ -89,10 +89,10 @@ class UserController(
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('BOARD')")
     fun findUsers(
-        @ParameterObject filter: UserFilter = UserFilter(),
+        @ParameterObject query: UserQuery = UserQuery(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()
     ): Page<UserDetailResponse> {
-        val users = commandBus.dispatch(FindUsersCommand(filter, pageable))
+        val users = commandBus.dispatch(FindUsersCommand(query, pageable))
         return users.map { it.asDetailResponse() }
     }
 

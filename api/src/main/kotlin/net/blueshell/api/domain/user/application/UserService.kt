@@ -3,8 +3,8 @@ package net.blueshell.api.domain.user.application
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.domain.user.application.exception.UserNotFoundException
+import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.domain.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.enums.Role
@@ -127,8 +127,8 @@ class UserService @Autowired constructor(
         }
     }
 
-    fun findByFilter(filter: UserFilter, pageable: Pageable): Page<User> {
-        val spec = UserSpecifications.fromFilter(filter, currentUserProvider.currentUser())
+    fun findByQuery(query: UserQuery, pageable: Pageable): Page<User> {
+        val spec = UserSpecifications.fromQuery(query, currentUserProvider.currentUser())
         return repository.findAll(spec, pageable)
     }
 

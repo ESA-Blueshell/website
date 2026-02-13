@@ -149,7 +149,7 @@ class FindUsersHandler(
     override val commandType = FindUsersCommand::class
 
     override fun handle(command: FindUsersCommand): Page<User> {
-        return service.findByFilter(command.filter, command.pageable)
+        return service.findByQuery(command.filter, command.pageable)
     }
 }
 

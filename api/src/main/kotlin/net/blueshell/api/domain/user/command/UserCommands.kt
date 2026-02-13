@@ -1,11 +1,11 @@
 package net.blueshell.api.domain.user.command
 
-import net.blueshell.api.domain.user.application.validation.UniqueUserCommand
-import net.blueshell.api.domain.user.application.validation.UserUniquenessCandidate
+import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.validation.UniqueUserCommand
+import net.blueshell.api.shared.validation.UserUniquenessCandidate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import java.sql.Date
@@ -96,7 +96,7 @@ data class UpdateUserCommand(
 }
 
 data class FindUsersCommand(
-    val filter: UserFilter,
+    val filter: UserQuery,
     val pageable: Pageable
 ) : Command<Page<User>>
 

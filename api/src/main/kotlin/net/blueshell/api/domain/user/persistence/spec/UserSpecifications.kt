@@ -5,8 +5,8 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.filter.UserFilter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
@@ -56,10 +56,10 @@ object UserSpecifications {
     }
 
 
-    fun fromFilter(f: UserFilter, user: CurrentUser?): Specification<User> {
+    fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
         var spec = Specification { _: Root<User>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
-        val isMember = f.isMember
+        val isMember = query.isMember
         if (isMember != null) {
             spec = spec.and(hasMemberRole(isMember))
         }

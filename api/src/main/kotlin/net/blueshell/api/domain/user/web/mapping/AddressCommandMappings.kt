@@ -6,12 +6,12 @@ import net.blueshell.api.domain.user.web.dto.CreateAddressRequest
 import net.blueshell.api.domain.user.web.dto.UpdateAddressRequest
 import tech.mappie.api.ObjectMappie
 
-private data class CreateAddressCommandRequest(
+internal data class CreateAddressCommandRequest(
     val userId: Long,
     val request: CreateAddressRequest
 )
 
-object CreateAddressCommandRequestToCommandMapper : ObjectMappie<CreateAddressCommandRequest, CreateAddressCommand>() {
+internal object CreateAddressCommandRequestToCommandMapper : ObjectMappie<CreateAddressCommandRequest, CreateAddressCommand>() {
     override fun map(from: CreateAddressCommandRequest) = mapping {
         CreateAddressCommand::userId fromProperty from::userId
         CreateAddressCommand::country fromValue { from.request.country!! }
@@ -22,12 +22,12 @@ object CreateAddressCommandRequestToCommandMapper : ObjectMappie<CreateAddressCo
     }
 }
 
-private data class UpdateAddressCommandRequest(
+internal data class UpdateAddressCommandRequest(
     val id: Long,
     val request: UpdateAddressRequest
 )
 
-object UpdateAddressCommandRequestToCommandMapper : ObjectMappie<UpdateAddressCommandRequest, UpdateAddressCommand>() {
+internal object UpdateAddressCommandRequestToCommandMapper : ObjectMappie<UpdateAddressCommandRequest, UpdateAddressCommand>() {
     override fun map(from: UpdateAddressCommandRequest) = mapping {
         UpdateAddressCommand::id fromProperty from::id
         UpdateAddressCommand::country fromValue { from.request.country!! }

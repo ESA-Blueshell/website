@@ -16,12 +16,12 @@ object BoardCreateMembershipRequestToCommandMapper : ObjectMappie<BoardCreateMem
     }
 }
 
-private data class UpdateMembershipCommandRequest(
+internal data class UpdateMembershipCommandRequest(
     val id: Long,
     val request: UpdateMembershipRequest
 )
 
-object UpdateMembershipCommandRequestToCommandMapper : ObjectMappie<UpdateMembershipCommandRequest, UpdateMembershipCommand>() {
+internal object UpdateMembershipCommandRequestToCommandMapper : ObjectMappie<UpdateMembershipCommandRequest, UpdateMembershipCommand>() {
     override fun map(from: UpdateMembershipCommandRequest) = mapping {
         UpdateMembershipCommand::id fromProperty from::id
         UpdateMembershipCommand::userId fromValue { from.request.userId!! }

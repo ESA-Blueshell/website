@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.auth.application.command
 
-import net.blueshell.api.domain.auth.application.service.AuthenticationService
+import net.blueshell.api.domain.auth.application.AuthenticationService
 import net.blueshell.api.domain.auth.command.AuthenticateCommand
 import net.blueshell.api.domain.auth.domain.model.AuthenticationSession
 import net.blueshell.api.shared.command.CommandHandler

@@ -24,12 +24,12 @@ object CreateEventRequestToCommandMapper : ObjectMappie<CreateEventRequest, Crea
     }
 }
 
-private data class UpdateEventCommandRequest(
+internal data class UpdateEventCommandRequest(
     val id: Long,
     val request: UpdateEventRequest
 )
 
-object UpdateEventCommandRequestToCommandMapper : ObjectMappie<UpdateEventCommandRequest, UpdateEventCommand>() {
+internal object UpdateEventCommandRequestToCommandMapper : ObjectMappie<UpdateEventCommandRequest, UpdateEventCommand>() {
     override fun map(from: UpdateEventCommandRequest) = mapping {
         UpdateEventCommand::id fromProperty from::id
         UpdateEventCommand::committeeId fromValue { from.request.committeeId!! }

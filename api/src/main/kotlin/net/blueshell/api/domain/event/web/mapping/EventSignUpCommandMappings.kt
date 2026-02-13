@@ -66,20 +66,20 @@ object EventSignUpUpdateRequestPayloadToDtoMapper : ObjectMappie<EventSignUpUpda
     }
 }
 
-private data class CreateEventSignUpCommandRequest(
+internal data class CreateEventSignUpCommandRequest(
     val eventId: Long,
     val principalId: Long?,
     val request: CreateEventSignUpRequest
 )
 
-private data class UpdateEventSignUpCommandRequest(
+internal data class UpdateEventSignUpCommandRequest(
     val eventId: Long,
     val principalId: Long?,
     val accessToken: String?,
     val request: UpdateEventSignUpRequest
 )
 
-object CreateEventSignUpCommandRequestToCommandMapper : ObjectMappie<CreateEventSignUpCommandRequest, CreateEventSignUpCommand>() {
+internal object CreateEventSignUpCommandRequestToCommandMapper : ObjectMappie<CreateEventSignUpCommandRequest, CreateEventSignUpCommand>() {
     override fun map(from: CreateEventSignUpCommandRequest) = mapping {
         CreateEventSignUpCommand::dto fromValue {
             EventSignUpRequestPayloadToDtoMapper.map(EventSignUpRequestPayload(from.eventId, from.request))
@@ -88,7 +88,7 @@ object CreateEventSignUpCommandRequestToCommandMapper : ObjectMappie<CreateEvent
     }
 }
 
-object UpdateEventSignUpCommandRequestToCommandMapper : ObjectMappie<UpdateEventSignUpCommandRequest, UpdateEventSignUpCommand>() {
+internal object UpdateEventSignUpCommandRequestToCommandMapper : ObjectMappie<UpdateEventSignUpCommandRequest, UpdateEventSignUpCommand>() {
     override fun map(from: UpdateEventSignUpCommandRequest) = mapping {
         UpdateEventSignUpCommand::eventId fromValue { from.eventId }
         UpdateEventSignUpCommand::dto fromValue {

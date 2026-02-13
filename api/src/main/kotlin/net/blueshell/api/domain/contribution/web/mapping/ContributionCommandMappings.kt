@@ -14,7 +14,7 @@ object CreateContributionRequestToCommandMapper : ObjectMappie<CreateContributio
     }
 }
 
-private data class UpdateContributionPeriodCommandRequest(
+internal data class UpdateContributionPeriodCommandRequest(
     val id: Long,
     val request: UpdateContributionPeriodRequest
 )
@@ -30,7 +30,7 @@ object CreateContributionPeriodRequestToCommandMapper : ObjectMappie<CreateContr
     }
 }
 
-object UpdateContributionPeriodCommandRequestToCommandMapper : ObjectMappie<UpdateContributionPeriodCommandRequest, UpdateContributionPeriodCommand>() {
+internal object UpdateContributionPeriodCommandRequestToCommandMapper : ObjectMappie<UpdateContributionPeriodCommandRequest, UpdateContributionPeriodCommand>() {
     override fun map(from: UpdateContributionPeriodCommandRequest) = mapping {
         UpdateContributionPeriodCommand::id fromProperty from::id
         UpdateContributionPeriodCommand::startDate fromValue { from.request.startDate!! }
@@ -50,11 +50,11 @@ object CreateContributionReminderRequestToCommandMapper : ObjectMappie<CreateCon
     }
 }
 
-private data class ContributionReminderBatchCommandRequest(
+internal data class ContributionReminderBatchCommandRequest(
     val requests: MutableList<CreateContributionReminderRequest>
 )
 
-object ContributionReminderBatchCommandRequestToCommandMapper : ObjectMappie<ContributionReminderBatchCommandRequest, SendContributionReminderBatchCommand>() {
+internal object ContributionReminderBatchCommandRequestToCommandMapper : ObjectMappie<ContributionReminderBatchCommandRequest, SendContributionReminderBatchCommand>() {
     override fun map(from: ContributionReminderBatchCommandRequest) = mapping {
         SendContributionReminderBatchCommand::items fromValue {
             from.requests.map {

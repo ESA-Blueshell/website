@@ -14,12 +14,12 @@ object CreateBlogRequestToCommandMapper : ObjectMappie<CreateBlogRequest, Create
     }
 }
 
-private data class UpdateBlogCommandRequest(
+internal data class UpdateBlogCommandRequest(
     val id: Long,
     val request: UpdateBlogRequest
 )
 
-object UpdateBlogCommandRequestToCommandMapper : ObjectMappie<UpdateBlogCommandRequest, UpdateBlogCommand>() {
+internal object UpdateBlogCommandRequestToCommandMapper : ObjectMappie<UpdateBlogCommandRequest, UpdateBlogCommand>() {
     override fun map(from: UpdateBlogCommandRequest) = mapping {
         UpdateBlogCommand::id fromProperty from::id
         UpdateBlogCommand::title fromValue { from.request.title!! }

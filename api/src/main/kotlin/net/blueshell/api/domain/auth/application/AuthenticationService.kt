@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.auth.application.service
+package net.blueshell.api.domain.auth.application
 
 import net.blueshell.api.domain.auth.domain.model.AuthenticationSession
 import net.blueshell.api.domain.auth.domain.service.TokenGenerator

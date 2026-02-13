@@ -22,8 +22,8 @@ data class CreateUserCommand(
     val enabled: Boolean,
     val gender: String?,
     val studentNumber: String?,
-    val username: String?,
-    val email: String?,
+    override val username: String?,
+    override val email: String?,
     val initials: String?,
     val firstName: String?,
     val prefix: String?,
@@ -31,15 +31,15 @@ data class CreateUserCommand(
     val newsletter: Boolean,
     val password: String?,
     val addressId: Long?,
-    val discord: String?,
-    val phoneNumber: String?
+    override val discord: String?,
+    override val phoneNumber: String?
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long? = null
 }
 
 @UniqueUserCommand
 data class CreateGuestUserCommand(
-    val username: String?,
+    override val username: String?,
     val initials: String?,
     val firstName: String?,
     val prefix: String?,
@@ -47,9 +47,9 @@ data class CreateGuestUserCommand(
     val newsletter: Boolean,
     val password: String?,
     val addressId: Long?,
-    val email: String?,
-    val discord: String?,
-    val phoneNumber: String?
+    override val email: String?,
+    override val discord: String?,
+    override val phoneNumber: String?
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long? = null
 }
@@ -57,8 +57,8 @@ data class CreateGuestUserCommand(
 @UniqueUserCommand
 data class UpdateGuestUserCommand(
     val id: Long,
-    val discord: String?,
-    val phoneNumber: String?,
+    override val discord: String?,
+    override val phoneNumber: String?,
     val newsletter: Boolean,
     val version: Long?
 ) : Command<User>, UserUniquenessCandidate {
@@ -80,19 +80,19 @@ data class UpdateUserCommand(
     val enabled: Boolean,
     val gender: String?,
     val studentNumber: String?,
-    val username: String?,
-    val email: String?,
+    override val username: String?,
+    override val email: String?,
     val initials: String?,
     val firstName: String?,
     val prefix: String?,
     val lastName: String?,
     val newsletter: Boolean,
     val addressId: Long?,
-    val discord: String?,
-    val phoneNumber: String?,
+    override val discord: String?,
+    override val phoneNumber: String?,
     val version: Long?
 ) : Command<User>, UserUniquenessCandidate {
-    override val subjectId: Long? = id
+    override val subjectId: Long = id
 }
 
 data class FindUsersCommand(

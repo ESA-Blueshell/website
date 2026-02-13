@@ -25,12 +25,12 @@ object CreateCommitteeRequestToCommandMapper : ObjectMappie<CreateCommitteeReque
     }
 }
 
-private data class UpdateCommitteeCommandRequest(
+internal data class UpdateCommitteeCommandRequest(
     val id: Long,
     val request: UpdateCommitteeRequest
 )
 
-object UpdateCommitteeCommandRequestToCommandMapper : ObjectMappie<UpdateCommitteeCommandRequest, UpdateCommitteeCommand>() {
+internal object UpdateCommitteeCommandRequestToCommandMapper : ObjectMappie<UpdateCommitteeCommandRequest, UpdateCommitteeCommand>() {
     override fun map(from: UpdateCommitteeCommandRequest) = mapping {
         UpdateCommitteeCommand::id fromProperty from::id
         UpdateCommitteeCommand::name fromValue { from.request.name!! }

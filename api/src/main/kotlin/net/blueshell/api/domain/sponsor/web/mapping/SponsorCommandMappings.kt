@@ -13,12 +13,12 @@ object CreateSponsorRequestToCommandMapper : ObjectMappie<CreateSponsorRequest, 
     }
 }
 
-private data class UpdateSponsorCommandRequest(
+internal data class UpdateSponsorCommandRequest(
     val id: Long,
     val request: UpdateSponsorRequest
 )
 
-object UpdateSponsorCommandRequestToCommandMapper : ObjectMappie<UpdateSponsorCommandRequest, UpdateSponsorCommand>() {
+internal object UpdateSponsorCommandRequestToCommandMapper : ObjectMappie<UpdateSponsorCommandRequest, UpdateSponsorCommand>() {
     override fun map(from: UpdateSponsorCommandRequest) = mapping {
         UpdateSponsorCommand::id fromProperty from::id
         UpdateSponsorCommand::name fromValue { from.request.name!! }

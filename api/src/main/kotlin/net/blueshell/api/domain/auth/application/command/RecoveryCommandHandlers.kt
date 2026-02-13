@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.application.command
 
-import net.blueshell.api.domain.auth.application.service.PasswordRecoveryService
-import net.blueshell.api.domain.auth.application.service.UserActivationService
+import net.blueshell.api.domain.auth.application.PasswordRecoveryService
+import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.queue.EmailJobs

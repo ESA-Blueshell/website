@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.auth.application.listener
 
-import net.blueshell.api.domain.auth.application.service.UserActivationService
+import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.platform.integration.queue.EmailJobs
 import net.blueshell.api.platform.integration.queue.JobDispatcher

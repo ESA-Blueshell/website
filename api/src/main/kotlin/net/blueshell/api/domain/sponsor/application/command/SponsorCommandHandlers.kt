@@ -25,8 +25,8 @@ class CreateSponsorHandler(
 
     override fun handle(command: CreateSponsorCommand): Sponsor {
         var sponsor = Sponsor()
-        sponsor.name = command.name
-        sponsor.description = command.description
+        sponsor.name = command.name!!
+        sponsor.description = command.description!!
         sponsor = service.create(sponsor)
         return sponsor
     }
@@ -39,9 +39,9 @@ class UpdateSponsorHandler(
     override val commandType = UpdateSponsorCommand::class
 
     override fun handle(command: UpdateSponsorCommand): Sponsor {
-        var sponsor = service.findById(command.id)
-        sponsor.name = command.name
-        sponsor.description = command.description
+        var sponsor = service.findById(command.id!!)
+        sponsor.name = command.name!!
+        sponsor.description = command.description!!
         command.version?.let { sponsor.version = it }
         sponsor = service.update(sponsor)
         return sponsor
@@ -55,7 +55,7 @@ class FindSponsorByIdHandler(
     override val commandType = FindSponsorByIdCommand::class
 
     override fun handle(command: FindSponsorByIdCommand): Sponsor {
-        return service.findById(command.id)
+        return service.findById(command.id!!)
     }
 }
 
@@ -66,6 +66,6 @@ class DeleteSponsorByIdHandler(
     override val commandType = DeleteSponsorByIdCommand::class
 
     override fun handle(command: DeleteSponsorByIdCommand) {
-        service.deleteById(command.id)
+        service.deleteById(command.id!!)
     }
 }

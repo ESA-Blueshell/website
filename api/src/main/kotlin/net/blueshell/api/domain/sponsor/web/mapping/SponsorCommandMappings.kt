@@ -2,8 +2,8 @@ package net.blueshell.api.domain.sponsor.web.mapping
 
 import net.blueshell.api.domain.sponsor.command.CreateSponsorCommand
 import net.blueshell.api.domain.sponsor.command.UpdateSponsorCommand
-import net.blueshell.api.domain.sponsor.web.dto.CreateSponsorRequest
-import net.blueshell.api.domain.sponsor.web.dto.UpdateSponsorRequest
+import net.blueshell.api.domain.sponsor.web.dto.request.CreateSponsorRequest
+import net.blueshell.api.domain.sponsor.web.dto.request.UpdateSponsorRequest
 import tech.mappie.api.ObjectMappie
 
 object CreateSponsorRequestToCommandMapper : ObjectMappie<CreateSponsorRequest, CreateSponsorCommand>() {

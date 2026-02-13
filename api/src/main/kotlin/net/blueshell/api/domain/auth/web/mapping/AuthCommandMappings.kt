@@ -11,29 +11,29 @@ import tech.mappie.api.ObjectMappie
 
 object JwtRequestToCommandMapper : ObjectMappie<JwtRequest, AuthenticateCommand>() {
     override fun map(from: JwtRequest) = mapping {
-        AuthenticateCommand::username fromValue { from.username!! }
-        AuthenticateCommand::password fromValue { from.password!! }
+        AuthenticateCommand::username fromValue from.username!!
+        AuthenticateCommand::password fromValue from.password!!
     }
 }
 
 object PasswordResetRequestToCommandMapper : ObjectMappie<PasswordResetRequest, SetPasswordCommand>() {
     override fun map(from: PasswordResetRequest) = mapping {
-        SetPasswordCommand::token fromValue { from.token!! }
-        SetPasswordCommand::password fromValue { from.password!! }
+        SetPasswordCommand::token fromValue from.token!!
+        SetPasswordCommand::password fromValue from.password!!
     }
 }
 
 object UserActivationRequestToCommandMapper : ObjectMappie<UserActivationRequest, UserActivateCommand>() {
     override fun map(from: UserActivationRequest) = mapping {
-        UserActivateCommand::token fromValue { from.token!! }
+        UserActivateCommand::token fromValue from.token!!
     }
 }
 
 object MemberActivationRequestToCommandMapper : ObjectMappie<MemberActivationRequest, MemberActivateCommand>() {
     override fun map(from: MemberActivationRequest) = mapping {
-        MemberActivateCommand::token fromValue { from.token!! }
-        MemberActivateCommand::username fromValue { from.username!! }
-        MemberActivateCommand::password fromValue { from.password!! }
+        MemberActivateCommand::token fromValue from.token!!
+        MemberActivateCommand::username fromValue from.username!!
+        MemberActivateCommand::password fromValue from.password!!
     }
 }
 

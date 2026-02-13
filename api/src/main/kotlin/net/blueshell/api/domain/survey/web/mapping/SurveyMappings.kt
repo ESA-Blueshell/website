@@ -35,7 +35,7 @@ fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
 
 fun QuestionDTO.asEntity(question: Question = Question()): Question {
     question.idx = idx!!
-    question.survey = Survey::class.asRef(surveyId!!)
+    // Note: survey reference must be set by caller using surveyRepository.getReferenceById(surveyId!!)
     question.type = type!!
     question.label = label!!
     question.choiceLabels = choiceLabels
@@ -44,7 +44,7 @@ fun QuestionDTO.asEntity(question: Question = Question()): Question {
 }
 
 fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
-    answer.question = Question::class.asRef(questionId!!)
+    // Note: question reference must be set by caller using questionRepository.getReferenceById(questionId!!)
     answer.optionSelections = optionSelections
     answer.textResponse = textResponse
     version?.let { answer.version = it }

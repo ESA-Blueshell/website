@@ -10,15 +10,15 @@ import tech.mappie.api.ObjectMappie
 
 object CommitteeMemberRequestToDataMapper : ObjectMappie<CommitteeMemberRequest, CommitteeMemberData>() {
     override fun map(from: CommitteeMemberRequest) = mapping {
-        CommitteeMemberData::userId fromValue { from.userId!! }
-        CommitteeMemberData::role fromValue { from.role }
+        CommitteeMemberData::userId fromValue from.userId!!
+        CommitteeMemberData::role fromValue from.role
     }
 }
 
 object CreateCommitteeRequestToCommandMapper : ObjectMappie<CreateCommitteeRequest, CreateCommitteeCommand>() {
     override fun map(from: CreateCommitteeRequest) = mapping {
-        CreateCommitteeCommand::name fromValue { from.name!! }
-        CreateCommitteeCommand::description fromValue { from.description!! }
+        CreateCommitteeCommand::name fromValue from.name!!
+        CreateCommitteeCommand::description fromValue from.description!!
         CreateCommitteeCommand::members fromValue {
             from.members!!.map { CommitteeMemberRequestToDataMapper.map(it) }.toMutableList()
         }
@@ -33,12 +33,12 @@ internal data class UpdateCommitteeCommandRequest(
 internal object UpdateCommitteeCommandRequestToCommandMapper : ObjectMappie<UpdateCommitteeCommandRequest, UpdateCommitteeCommand>() {
     override fun map(from: UpdateCommitteeCommandRequest) = mapping {
         UpdateCommitteeCommand::id fromProperty from::id
-        UpdateCommitteeCommand::name fromValue { from.request.name!! }
-        UpdateCommitteeCommand::description fromValue { from.request.description!! }
+        UpdateCommitteeCommand::name fromValue from.request.name!!
+        UpdateCommitteeCommand::description fromValue from.request.description!!
         UpdateCommitteeCommand::members fromValue {
             from.request.members!!.map { CommitteeMemberRequestToDataMapper.map(it) }.toMutableList()
         }
-        UpdateCommitteeCommand::version fromValue { from.request.version }
+        UpdateCommitteeCommand::version fromValue from.request.version
     }
 }
 

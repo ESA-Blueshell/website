@@ -8,7 +8,7 @@ import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
 import net.blueshell.api.domain.auth.web.mapping.asCommand
-import net.blueshell.api.domain.telemetry.web.dto.RedirectResponse
+import net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize

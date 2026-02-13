@@ -3,18 +3,21 @@ package net.blueshell.api.domain.survey.application.command
 import net.blueshell.api.domain.survey.application.AnswerService
 import net.blueshell.api.domain.survey.command.*
 import net.blueshell.api.domain.survey.persistence.Answer
+import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
 import net.blueshell.api.domain.survey.web.mapping.asEntity
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
 @Component
 class CreateAnswerHandler(
-    private val service: AnswerService
+    private val service: AnswerService,
+    private val questionRepository: QuestionRepository
 ) : CommandHandler<CreateAnswerCommand, Answer> {
     override val commandType = CreateAnswerCommand::class
 
     override fun handle(command: CreateAnswerCommand): Answer {
         var answer = command.dto.asEntity()
+        answer.question = questionRepository.getReferenceById(command.dto.questionId!!)
         answer = service.create(answer)
         return answer
     }
@@ -22,13 +25,15 @@ class CreateAnswerHandler(
 
 @Component
 class UpdateAnswerHandler(
-    private val service: AnswerService
+    private val service: AnswerService,
+    private val questionRepository: QuestionRepository
 ) : CommandHandler<UpdateAnswerCommand, Answer> {
     override val commandType = UpdateAnswerCommand::class
 
     override fun handle(command: UpdateAnswerCommand): Answer {
         var answer = service.findById(command.id)
         command.dto.asEntity(answer)
+        answer.question = questionRepository.getReferenceById(command.dto.questionId!!)
         answer = service.update(answer)
         return answer
     }

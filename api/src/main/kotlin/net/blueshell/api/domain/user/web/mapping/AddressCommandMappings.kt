@@ -14,11 +14,11 @@ internal data class CreateAddressCommandRequest(
 internal object CreateAddressCommandRequestToCommandMapper : ObjectMappie<CreateAddressCommandRequest, CreateAddressCommand>() {
     override fun map(from: CreateAddressCommandRequest) = mapping {
         CreateAddressCommand::userId fromProperty from::userId
-        CreateAddressCommand::country fromValue { from.request.country!! }
-        CreateAddressCommand::city fromValue { from.request.city!! }
-        CreateAddressCommand::street fromValue { from.request.street!! }
-        CreateAddressCommand::houseNumber fromValue { from.request.houseNumber!! }
-        CreateAddressCommand::zipCode fromValue { from.request.zipCode!! }
+        CreateAddressCommand::country fromValue from.request.country!!
+        CreateAddressCommand::city fromValue from.request.city!!
+        CreateAddressCommand::street fromValue from.request.street!!
+        CreateAddressCommand::houseNumber fromValue from.request.houseNumber!!
+        CreateAddressCommand::zipCode fromValue from.request.zipCode!!
     }
 }
 
@@ -30,12 +30,12 @@ internal data class UpdateAddressCommandRequest(
 internal object UpdateAddressCommandRequestToCommandMapper : ObjectMappie<UpdateAddressCommandRequest, UpdateAddressCommand>() {
     override fun map(from: UpdateAddressCommandRequest) = mapping {
         UpdateAddressCommand::id fromProperty from::id
-        UpdateAddressCommand::country fromValue { from.request.country!! }
-        UpdateAddressCommand::city fromValue { from.request.city!! }
-        UpdateAddressCommand::street fromValue { from.request.street!! }
-        UpdateAddressCommand::houseNumber fromValue { from.request.houseNumber!! }
-        UpdateAddressCommand::zipCode fromValue { from.request.zipCode!! }
-        UpdateAddressCommand::version fromValue { from.request.version }
+        UpdateAddressCommand::country fromValue from.request.country!!
+        UpdateAddressCommand::city fromValue from.request.city!!
+        UpdateAddressCommand::street fromValue from.request.street!!
+        UpdateAddressCommand::houseNumber fromValue from.request.houseNumber!!
+        UpdateAddressCommand::zipCode fromValue from.request.zipCode!!
+        UpdateAddressCommand::version fromValue from.request.version
     }
 }
 

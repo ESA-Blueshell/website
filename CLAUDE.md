@@ -6,28 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Full-stack web application for managing student association activities (ESA Blueshell). Spring Boot 3.x backend (Kotlin) with Vue.js 3 frontend (TypeScript), containerized with Docker.
 
-## Build and Development Commands
+**Architecture:** Multi-layered Domain-Driven Design (DDD) with clean architecture principles, enforced by ArchUnit tests.
+
+## Quick Start Commands
 
 ### Backend (API)
 
 ```bash
-# Run tests with Docker
-docker compose -f docker-compose.dev.yml run api ./gradlew :api:bootRun
+# Run application with Docker
+docker compose -f docker-compose.dev.yml up api
 
-# Run tests
+# Run all tests
 docker compose -f docker-compose.dev.yml run api ./gradlew :api:test
 
-# Run specific test
+# Run specific domain tests
 docker compose -f docker-compose.dev.yml run api ./gradlew :api:test --tests "net.blueshell.api.domain.auth.*"
 
-# Generate Brevo API client
-docker compose -f docker-compose.dev.yml run api ./gradlew :api:generateBrevoClient
+# Run architecture tests (ArchUnit)
+docker compose -f docker-compose.dev.yml run api ./gradlew :api:test --tests "net.blueshell.api.architecture.*"
 
-# Generate class dependency graph
-docker compose -f docker-compose.dev.yml run api ./gradlew :api:classDependencyGraph
-
-# Build (local)
+# Build locally
 ./gradlew :api:build
+
+# Generate OpenAPI spec and TypeScript client
+./generate_openapi.sh
 ```
 
 ### Frontend
@@ -38,559 +40,885 @@ cd frontend
 # Install dependencies
 yarn install
 
-# Development server (with hot reload) (run from project root)
+# Development server (from project root)
 docker compose -f docker-compose.dev.yml up frontend
 
 # Build for production
 yarn build
 
-# Typecheck
-yarn typecheck
-
-# Lint
+# Lint and typecheck
 yarn lint
+yarn typecheck
 
 # Generate API clients
 yarn gen:blueshell    # Generate from backend OpenAPI spec
-yarn gen:discord      # Generate Discord API client
 yarn gen:all          # Generate all clients
 ```
 
 ### Docker
 
 ```bash
+# Development environment (hot reload)
+./run-dev.sh
+# or
+docker compose -f docker-compose.dev.yml up --build
+
 # Production environment
 ./run.sh
 # or
 docker compose -f docker-compose.yml up --build -d
-
-# Development environment (with hot reload)
-./run-dev.sh
-# or
-docker compose -f docker-compose.dev.yml up --build -d
-
-# Generate OpenAPI specs and TypeScript clients
-./generate_openapi.sh
 ```
 
-## Backend Architecture
+## Architecture Overview
 
-The backend follows a **multi-layered domain-driven design** with strict layer separation enforced by ArchUnit tests. Each domain (e.g., `auth`, `user`, `event`, `committee`) is organized into these layers:
+The backend follows **clean architecture** and **domain-driven design** principles with strict layer separation. Each domain (e.g., `auth`, `user`, `event`, `committee`) is a self-contained bounded context.
 
-### Layer Structure
+**Core Principles:**
+- **Package by Feature**: Each domain is independent with clear boundaries
+- **Layer Independence**: Commands are independent; persistence doesn't depend on web
+- **Dependency Rule**: Dependencies point inward (web → command → application → domain → persistence)
+- **ArchUnit Enforcement**: Automated tests prevent architectural violations
 
-```
-domain/
-├── {domain-name}/
-    ├── web/                    # Web/API layer
-    │   ├── *Controller.kt      # REST controllers
-    │   ├── dto/                # Request/Response DTOs
-    │   │   ├── request/
-    │   │   └── response/
-    │   ├── mapping/            # Mappie mappings (request -> command)
-    │   └── validation/         # Custom validators
-    ├── command/                # Command definitions
-    │   └── *Commands.kt        # Command DTOs with validation
-    ├── application/            # Application layer
-    │   ├── command/            # Command handlers
-    │   │   └── *CommandHandlers.kt
-    │   ├── *Service.kt         # Application services (orchestration)
-    │   ├── listener/           # Event listeners
-    │   ├── factory/            # Domain object factories
-    │   ├── email/              # Email templates/builders
-    │   └── exception/          # Application exceptions
-    ├── domain/                 # Domain layer (business logic)
-    │   ├── model/              # Domain models (pure business logic)
-    │   └── service/            # Domain services
-    └── persistence/            # Persistence layer
-        ├── *Entity.kt          # JPA entities
-        └── repository/         # Spring Data repositories
-```
+**📚 For detailed architecture documentation, see:** [`docs/ADR-INDEX.md`](docs/ADR-INDEX.md)
 
-### Key Patterns
+## Layer Structure
 
-**Command Pattern with CommandBus**
-- Commands are immutable data classes in `command/` package
-- Commands include Jakarta validation annotations (field-level: `@NotNull`, `@NotBlank`; class-level: `@UniqueUserCommand`)
-- Command handlers in `application/command/` implement business logic
-- `CommandBus` automatically validates all commands before execution using Jakarta Bean Validation
-- Controllers map web requests to commands using Mappie and dispatch via CommandBus
-- Validation flows: Request DTO → Web validators → Command → CommandBus → Application validators → Handler
-
-**Service Responsibilities**
-- Application services orchestrate business operations (multiple repositories, domain services, events)
-- Domain services contain pure business logic without infrastructure concerns
-- Services do NOT handle request/response mapping (that's in web layer mappers)
-
-**Entity Association Management**
-- Use explicit ID references for existing entities in command DTOs
-- Only use nested objects for owned children (cascade operations)
-- Services resolve entity associations using `repository.getReferenceById(id)` or `findById(id)`
-- Entities define explicit association helper methods (e.g., `setBanner()`, `addMember()`) for bidirectional consistency
-
-**Mappie for Object Mapping**
-- Replaces MapStruct for mapping DTOs (Mappie 2.3.10)
-- Used at API boundaries: Request→Command and Entity→Response mappings
-- All mappers are `object` singletons extending `ObjectMappie<From, To>()`
-- Extension functions provide clean API (`.asCommand()`, `.asResponse()`)
-- Command→Entity mapping is manual in handlers (or via factories)
-- No `@AfterMapping` or hidden business logic in mappers
-- Mappers live in `web/mapping/` package, never in controllers or services
-
-**Testing**
-- ArchUnit tests enforce layering and architectural rules (`architecture/` package)
-- Unit tests for validators, factories, and DTOs
-- Service tests verify association wiring and error handling
-- Testcontainers for integration tests with MariaDB
-
-## Validation Architecture
-
-Validation is strategically distributed across layers following DDD principles. Each layer has specific validation responsibilities.
-
-### Layer Responsibilities
-
-**Web Layer** (`web/validation/`)
-- **Structural validation**: Format, presence, size, regex patterns
-- **Type safety**: Enum validation, type checking
-- **Simple business logic**: Single-field rules that don't require external dependencies
-- **Examples**: `@CountryCode`, `@ValidMobilePhoneNumber`, `@FileSize`, `@AllowedContentTypes`
-
-**Application Layer** (`application/validation/`)
-- **Business rules**: Complex validation requiring database access
-- **Cross-field validation**: Multi-property uniqueness checks
-- **Cross-aggregate validation**: Rules spanning multiple entities
-- **Examples**: `@UniqueUserCommand`, `@ValidEventSignUpCommand`, `@NoExistingMembershipForUser`
-
-**Command Layer** (`command/`)
-- **Field-level validation**: Jakarta Bean Validation annotations on command properties
-- **Class-level validation**: Custom annotations for complex command validation
-- **Validation interfaces**: Marker interfaces for validators (e.g., `UserUniquenessCandidate`)
-
-**Domain Services** (`domain/service/`)
-- **Domain invariant enforcement**: Core business rules
-- **Complex business logic validation**: Multi-step validation with business semantics
-- **Example**: `RecoveryTokenValidator` validates token format, expiry, consumption status
-
-### Validation Types and Placement
-
-| Validation Type | Layer | Dependency | Example |
-|----------------|-------|------------|---------|
-| Format (regex, length) | Web | None | `@Pattern`, `@Size`, `@Email` |
-| Presence/nullability | Web/Command | None | `@NotNull`, `@NotBlank` |
-| Type safety | Web | None | `@CountryCode`, `@ValidMobilePhoneNumber` |
-| File constraints | Web | None | `@FileSize`, `@AllowedContentTypes` |
-| Simple business logic | Web | None | `@GuestOrUserRequired` (either/or) |
-| Uniqueness checks | Application | UserService | `@UniqueUsername` |
-| Multi-field uniqueness | Application | Services | `@UniqueUserCommand` |
-| Cross-aggregate rules | Application | Multiple Services | `@ValidEventSignUpCommand` |
-| Domain invariants | Domain Service | Repositories | Token expiry, state transitions |
-
-### Validation Flow
+Each domain follows this standardized structure:
 
 ```
-HTTP Request
-    ↓
-Controller (@Valid on Request DTO)
-    ↓
-Web Layer Validators
-- Structural validation (format, presence, size)
-- Simple business rules (no DB access)
-    ↓
-Mapper (Request → Command)
-    ↓
-CommandBus.dispatch()
-    ↓
-Jakarta Bean Validation on Command
-- Field-level validation annotations
-- Class-level custom validators
-    ↓
-Application Layer Validators
-- Database-dependent business rules
-- Cross-aggregate validation
-    ↓
-Command Handler
-- Execute business logic (no validation)
-    ↓
-Domain Service (optional defensive validation)
-- Domain invariant enforcement
-- Complex business rule validation
-    ↓
-Repository/Database
+domain/{domain-name}/
+├── web/                    # Presentation Layer
+│   ├── *Controller.kt      # REST endpoints
+│   ├── dto/                # Request/Response DTOs
+│   │   ├── request/        # Inbound DTOs
+│   │   └── response/       # Outbound DTOs
+│   ├── mapping/            # Mappie mappers (DTO ↔ Command/Entity)
+│   └── validation/         # Web-layer validators (format, structure)
+├── command/                # Command Layer
+│   ├── *Commands.kt        # Command objects (immutable use case DTOs)
+│   └── validation/         # Command-specific constraint annotations
+├── application/            # Application Layer
+│   ├── command/            # Command handlers (business logic)
+│   │   └── *CommandHandlers.kt
+│   ├── *Service.kt         # Application services (orchestration)
+│   ├── event/              # Domain events (UserCreated, etc.)
+│   ├── listener/           # Event listeners (cross-domain reactions)
+│   ├── query/              # Query objects for dynamic searches
+│   ├── factory/            # Entity factories (complex creation)
+│   ├── validation/         # Business rule validators (DB access)
+│   └── exception/          # Application exceptions
+├── domain/                 # Domain Layer (optional - for complex domains)
+│   ├── model/              # Rich domain models (business behavior)
+│   └── service/            # Domain services (pure business logic)
+└── persistence/            # Persistence Layer
+    ├── *Entity.kt          # JPA entities
+    ├── repository/         # Spring Data repositories
+    └── spec/               # JPA Specifications (dynamic queries)
 ```
 
-### Best Practices
+**Infrastructure Layer** (cross-cutting concerns):
+```
+infrastructure/
+└── security/
+    └── permission/         # Permission evaluators (Spring Security)
+        ├── UserPermission.kt
+        └── EventPermission.kt
 
-**DO:**
-- ✅ Use Jakarta Bean Validation (`@NotNull`, `@NotBlank`, `@Size`) on Request DTOs for structural validation
-- ✅ Use custom validators in `web/validation/` for format validation without DB access
-- ✅ Use custom validators in `application/validation/` for business rules requiring services
-- ✅ Add field-level validation to commands for critical properties
-- ✅ Use class-level annotations for multi-field validation on commands
-- ✅ Let CommandBus handle all command validation automatically
-- ✅ Implement domain services for complex business logic validation
+platform/
+└── integration/
+    ├── email/              # Email templates and services
+    ├── calendar/           # Google Calendar integration
+    └── jobs/               # Job dispatching (RabbitMQ)
+```
 
-**DON'T:**
-- ❌ Put business logic requiring DB access in web layer validators
-- ❌ Make application validators depend on DTO types (use command interfaces instead)
-- ❌ Skip field-level validation on commands assuming DTOs are always valid
-- ❌ Perform validation in command handlers (validation should happen before)
-- ❌ Couple web layer to application layer through validator dependencies
+**📚 ADR References:**
+- **[ADR-001](docs/ADR-001-multi-layered-domain-driven-architecture.md)**: Complete layer structure and responsibilities
+- **[ADR-016](docs/ADR-016-layer-dependency-rules.md)**: Layer dependency rules and violations
 
-### Anti-patterns to Avoid
+## Key Architectural Patterns
 
-**Anti-pattern: Business Validation in Web DTOs**
+### 1. Command Pattern with CommandBus
+
+**Commands** are immutable data classes representing use cases. They must be **independent** of application and web layers.
+
+**Pattern:**
 ```kotlin
-// ❌ WRONG: Business logic in web layer
-@ValidEventSignUpCommand  // This validator accesses EventService
-data class EventSignUpDTO(
-    val eventId: Long?
-)
-```
-
-**Better: Validation on Command**
-```kotlin
-// ✅ CORRECT: Business validation on command
-@ValidEventSignUpCommand
-data class CreateEventSignUpCommand(
-    val dto: EventSignUpDTO
-) : Command<EventSignUp>
-```
-
-**Anti-pattern: No Field Validation on Commands**
-```kotlin
-// ❌ WRONG: No validation, assumes DTO is always valid
-data class CreateUserCommand(
-    val username: String?,  // Could be null or blank
-    val email: String?
-) : Command<User>
-```
-
-**Better: Field Validation on Commands**
-```kotlin
-// ✅ CORRECT: Defensive validation
-@UniqueUserCommand
+// domain/user/command/UserCommands.kt
+@UniqueUserCommand  // Business rule validator (application layer)
 data class CreateUserCommand(
     @field:NotBlank(message = "Username is required")
     val username: String?,
 
-    @field:NotBlank
     @field:Email
     val email: String?
 ) : Command<User>
 ```
 
-## Mapping Architecture
+**Flow:**
+```
+Controller → Mapper → Command → CommandBus → Validator → Handler → Service
+```
 
-Mapping responsibilities are clearly separated by layer. Mappie is used at API boundaries, while internal domain logic uses manual mapping or factory patterns.
+**Rules:**
+- ✅ Commands are in `command/` package
+- ✅ Commands have field-level validation (`@NotNull`, `@NotBlank`, `@Size`)
+- ✅ CommandBus validates all commands automatically
+- ❌ Commands MUST NOT import from `application/` or `web/` layers
+- ❌ Commands MUST NOT import web DTOs
 
-### Mapping Responsibilities by Layer
+**📚 See:** [ADR-002: Command Pattern](docs/ADR-002-command-pattern-with-command-bus.md)
 
-**Web Layer** (`web/mapping/`)
-- **Request → Command**: Maps external API contracts to internal commands
-- **Entity/Model → Response**: Maps domain models to external API responses
-- **Tool**: Mappie 2.3.10 with extension functions
+---
 
-**Application Layer** (`application/command/`)
-- **Command → Entity**: Creates/updates entities from commands in handlers
-- **Tool**: Manual property assignment (current) or factories (recommended)
+### 2. Validation Layer Separation
 
-**Domain Layer** (`domain/`)
-- **Aggregate methods**: Entity updates through domain logic
-- **Factories**: Complex entity creation (`application/factory/`)
+Validation is distributed across layers with specific responsibilities:
 
-### Mappie Usage Guidelines
+| Layer | Responsibility | Examples | DB Access |
+|-------|----------------|----------|-----------|
+| **Web** | Format, structure, presence | `@Email`, `@Size`, `@CountryCode` | ❌ No |
+| **Command** | Field-level validation | `@NotNull`, `@NotBlank` | ❌ No |
+| **Application** | Business rules | `@UniqueUsername`, `@ValidEventSignUpCommand` | ✅ Yes |
+| **Domain** | Invariant enforcement | Token expiry, state transitions | ✅ Yes |
 
-**Pattern: Request → Command**
+**Flow:**
+```
+HTTP Request
+    ↓
+Controller (@Valid on DTO) → Web validators (format)
+    ↓
+Mapper (DTO → Command)
+    ↓
+CommandBus → Jakarta validation (field-level)
+    ↓
+Application validators (business rules)
+    ↓
+Handler → Domain service (invariants)
+    ↓
+Repository
+```
+
+**Rules:**
+- ✅ Web validators: NO database access, structural only
+- ✅ Application validators: Can access services and repositories
+- ✅ Add field validation to commands (defensive programming)
+- ❌ Don't put business logic in web layer validators
+- ❌ Don't skip validation by calling services directly
+
+**📚 See:** [ADR-003: Validation Layer Separation](docs/ADR-003-validation-layer-separation.md)
+
+---
+
+### 3. Object Mapping with Mappie
+
+**Mappie 2.3.10** is used for all DTO ↔ Command and Entity ↔ Response mappings.
+
+**Pattern:**
 ```kotlin
-// File: domain/auth/web/mapping/AuthCommandMappings.kt
-object JwtRequestToCommandMapper : ObjectMappie<JwtRequest, AuthenticateCommand>() {
-    override fun map(from: JwtRequest) = mapping {
-        AuthenticateCommand::username fromValue { from.username!! }
-        AuthenticateCommand::password fromValue { from.password!! }
+// domain/user/web/mapping/UserCommandMappings.kt
+object CreateUserRequestToCommandMapper : ObjectMappie<CreateUserRequest, CreateUserCommand>() {
+    override fun map(from: CreateUserRequest) = mapping {
+        CreateUserCommand::username fromProperty from::username
+        CreateUserCommand::email fromProperty from::email
     }
 }
 
-fun JwtRequest.asCommand(): AuthenticateCommand = JwtRequestToCommandMapper.map(this)
+// Extension function for clean API
+fun CreateUserRequest.asCommand(): CreateUserCommand =
+    CreateUserRequestToCommandMapper.map(this)
+
+// Usage in controller
+@PostMapping
+fun createUser(@Valid @RequestBody request: CreateUserRequest): UserResponse {
+    val user = commandBus.dispatch(request.asCommand())
+    return user.asResponse()
+}
 ```
 
-**Pattern: Entity → Response**
+**Mapping Responsibilities:**
+- **Web → Command**: Mappie in `web/mapping/`
+- **Command → Entity**: Manual in handlers or factories
+- **Entity → Response**: Mappie in `web/mapping/`
+
+**Rules:**
+- ✅ Use Mappie for API boundaries (Request/Response)
+- ✅ Create extension functions (`.asCommand()`, `.asResponse()`)
+- ✅ Use `object` singletons for mappers (stateless)
+- ✅ Keep mappers in `web/mapping/` package
+- ❌ Don't put mapping logic in controllers or services
+- ❌ Don't mix Mappie and manual mapping inconsistently
+
+**📚 See:** [ADR-004: Mapping Strategy with Mappie](docs/ADR-004-mapping-strategy-with-mappie.md)
+
+---
+
+### 4. Entity Association Management
+
+**Pattern:** Entity references are the single source of truth, with computed ID properties.
+
+**Many-to-One (Required):**
 ```kotlin
-// File: domain/user/web/mapping/UserMappings.kt
-object UserToDetailResponseMapper : ObjectMappie<User, UserDetailResponse>() {
-    override fun map(from: User) = mapping {
-        UserDetailResponse::roles fromProperty from::inheritedRoles
+@ManyToOne(fetch = FetchType.LAZY, optional = false)
+@JoinColumn(name = "committee_id", nullable = false)
+var committee: Committee = committee
+    private set
+
+val committeeId: Long
+    get() = committee.id  // Computed, no @Column
+```
+
+**Aggregate Methods:**
+```kotlin
+fun replaceMembers(newMembers: List<CommitteeMember>) {
+    _members.clear()
+    newMembers.forEach { it.committee = this }
+    _members.addAll(newMembers)
+}
+```
+
+**Rules:**
+- ✅ Use entity references in business logic
+- ✅ Make ID properties computed (no `@Column`)
+- ✅ Use `getReferenceById()` for lazy loading
+- ✅ Use aggregate methods for bidirectional updates
+- ❌ Don't set ID fields directly
+- ❌ Don't add `@Column` to computed ID properties
+- ❌ Don't clear/add collections directly (use aggregate methods)
+
+**📚 See:** [ADR-013: Entity Association Pattern](docs/ADR-013-entity-association-pattern.md)
+
+---
+
+### 5. Event-Driven Architecture
+
+**Domain events** enable loose coupling between domains.
+
+**Publishing:**
+```kotlin
+@Service
+class UserService(
+    private val repository: UserRepository,
+    private val events: AfterCommitEventPublisher
+) {
+    @Transactional
+    override fun create(entity: User): User {
+        val saved = repository.save(entity)
+        events.publish(UserCreated(saved.id!!, createdByBoard = isBoardUser()))
+        return saved
     }
 }
-
-fun User.asDetailResponse(): UserDetailResponse = UserToDetailResponseMapper.map(this)
 ```
 
-**Pattern: Complex Mapping with Context**
+**Listening:**
 ```kotlin
-// When additional context is needed
-private data class BlogResponseSource(val blog: Blog, val frontendUrl: String)
-
-object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
-    override fun map(from: BlogResponseSource) = mapping {
-        BlogResponse::url fromValue { "${from.frontendUrl}/blogs/${from.blog.id}" }
-    }
-}
-
-fun Blog.asResponse(frontendUrl: String): BlogResponse =
-    BlogResponseSourceToBlogResponseMapper.map(BlogResponseSource(this, frontendUrl))
-```
-
-### Command → Entity Mapping
-
-**Current Pattern: Direct Property Assignment**
-
-Most command handlers use direct property assignment:
-```kotlin
-// Current implementation in most handlers
 @Component
-class CreateUserHandler(
-    private val service: UserService,
-    private val addresses: AddressService,
-    private val passwordEncoder: PasswordEncoder
-) : CommandHandler<CreateUserCommand, User> {
-    override fun handle(command: CreateUserCommand): User {
-        var user = User()
-        user.username = command.username
-        user.email = command.email
-        user.discord = command.discord
-        user.phoneNumber = command.phoneNumber
-        command.addressId?.let { user.address = addresses.findById(it) }
-        user.password = passwordEncoder.encode(command.password)
-        return service.create(user)
+class RecoveryEventListener(
+    private val activationService: UserActivationService
+) {
+    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun onUserCreated(event: UserCreated) {
+        activationService.issueActivationForNewUser(event.userId)
     }
 }
 ```
 
-**Recommended: Factory Pattern**
+**Event Location:**
+- **Events**: `domain/{domain}/application/event/`
+- **Listeners**: In the domain that **reacts** to events
 
-For complex entity creation, use factories:
+**Rules:**
+- ✅ Use past tense: `UserCreated`, `PasswordChanged`
+- ✅ Events are immutable data classes
+- ✅ Use `AfterCommitEventPublisher` for transactional safety
+- ✅ Place listeners in the domain that reacts
+- ❌ Don't include full entities in events (IDs only)
+- ❌ Don't depend on listener execution order
+
+**📚 See:** [ADR-006: Event-Driven Architecture](docs/ADR-006-event-driven-architecture.md)
+
+---
+
+### 6. JPA Specifications and Query Objects
+
+**Pattern:** Dynamic queries use query objects in application layer, not filters in persistence.
+
+**Query Object (Application Layer):**
 ```kotlin
-// Example: RecoveryTokenFactory (existing pattern)
+// domain/user/application/query/UserQuery.kt
+data class UserQuery(
+    val username: String? = null,
+    val isMember: Boolean? = null,
+    val enabled: Boolean? = null
+)
+```
+
+**Specification (Persistence Layer):**
+```kotlin
+// domain/user/persistence/spec/UserSpecifications.kt
+object UserSpecifications {
+    fun fromQuery(query: UserQuery): Specification<User> {
+        var spec = Specification<User> { _, _, cb -> cb.conjunction() }
+
+        query.username?.let {
+            spec = spec.and(usernameContains(it))
+        }
+
+        query.isMember?.let {
+            spec = spec.and(hasMemberRole(it))
+        }
+
+        return spec
+    }
+}
+```
+
+**Web Layer Mapping:**
+```kotlin
+// Controller receives HTTP params, maps to query object
+@GetMapping("/search")
+fun search(
+    @RequestParam username: String?,
+    @RequestParam isMember: Boolean?,
+    pageable: Pageable
+): Page<UserResponse> {
+    val query = UserQuery(username = username, isMember = isMember)
+    return userService.findAllByQuery(query, pageable)
+        .map { it.asResponse() }
+}
+```
+
+**Data Flow:**
+```
+HTTP Params → Query Object (application) → Specification (persistence) → Database
+```
+
+**Rules:**
+- ✅ Query objects in `application/query/`
+- ✅ Specifications in `persistence/spec/`
+- ✅ Web layer maps params → query objects
+- ❌ Don't put query objects in persistence layer
+- ❌ Don't pass web DTOs to specifications
+
+**📚 See:** [ADR-015: JPA Specifications and Dynamic Queries](docs/ADR-015-jpa-specifications-dynamic-queries.md)
+
+---
+
+### 7. Permission Evaluation (Infrastructure Layer)
+
+**Permission evaluators** are Spring Security infrastructure components, NOT web layer concerns.
+
+**Location:** `infrastructure/security/permission/`
+
+**Pattern:**
+```kotlin
+// infrastructure/security/permission/UserPermission.kt
+@Component
+class UserPermission(userService: UserService) :
+    BasePermissionEvaluator<User, Long, UserService>(userService) {
+
+    override fun hasPermission(
+        authentication: Authentication?,
+        entity: Any?,
+        permission: String?
+    ): Boolean {
+        val user = entity as User
+        val principal = SecurityUtils.principalFrom(authentication)
+        return when (permission) {
+            "read", "write" -> (principal?.id == user.id)
+            else -> false
+        }
+    }
+}
+```
+
+**Usage in Controllers:**
+```kotlin
+@PutMapping("/{id}")
+@PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'User', 'write')")
+fun update(@PathVariable id: Long, @RequestBody request: UpdateUserRequest): UserResponse {
+    val user = commandBus.dispatch(request.asCommand(id))
+    return user.asResponse()
+}
+```
+
+**Rules:**
+- ✅ Place in `infrastructure/security/permission/`
+- ✅ Extend `BasePermissionEvaluator`
+- ✅ Use with `@PreAuthorize` annotations
+- ❌ Don't put in web layer (not a presentation concern)
+- ❌ Don't put complex business logic in evaluators
+
+**📚 See:** [ADR-014: Permission Evaluation Strategy](docs/ADR-014-permission-evaluation-strategy.md)
+
+---
+
+### 8. Factory Pattern for Entity Creation
+
+**Use factories** for complex entity creation with security concerns or multi-step logic.
+
+**Pattern:**
+```kotlin
+// domain/auth/application/factory/RecoveryTokenFactory.kt
 @Component
 class RecoveryTokenFactory(
     private val repository: RecoveryTokenRepository,
     private val encoder: PasswordEncoder
 ) {
-    fun issue(user: User, type: ResetType, ttl: Duration): String {
+    fun issue(user: User, type: ResetType, ttl: Duration): RecoveryDispatch {
+        val selector = generateSelector()
+        val verifier = generateVerifier()
+
         val token = RecoveryToken()
         token.user = user
         token.type = type
-        token.selector = generateSelector()
+        token.selector = selector
         token.verifierHash = encoder.encode(verifier)
         token.expiresAt = Instant.now().plus(ttl)
+
         repository.save(token)
-        return "$selector.$verifier"
+
+        return RecoveryDispatch(
+            rawToken = "$selector.$verifier",
+            userId = user.id!!,
+            type = type
+        )
     }
 }
 ```
 
-**Recommended: Aggregate Methods**
+**When to Use:**
+- ✅ Complex creation logic
+- ✅ Security concerns (hashing, encoding)
+- ✅ Multi-step creation process
+- ✅ Entity requires validation/generation
 
-For entity updates, prefer aggregate methods over direct mutation:
+**When NOT to Use:**
+- ❌ Simple CRUD operations
+- ❌ Direct property assignment suffices
+
+**📚 See:** [ADR-005: Factory Pattern for Entity Creation](docs/ADR-005-factory-pattern-for-entity-creation.md)
+
+---
+
+## Layer Dependency Rules
+
+**The Dependency Rule:** Dependencies point inward. Inner layers know nothing about outer layers.
+
+```
+┌─────────────────────────────────────┐
+│   Web Layer (Controllers, DTOs)     │  ← Outermost
+├─────────────────────────────────────┤
+│   Command Layer (Independent!)      │
+├─────────────────────────────────────┤
+│   Application Layer (Services)      │
+├─────────────────────────────────────┤
+│   Domain Layer (Business Logic)     │  ← Core
+├─────────────────────────────────────┤
+│   Persistence Layer (Entities)      │
+└─────────────────────────────────────┘
+
+Infrastructure (Security, Email, Jobs) ← Adapters, can depend on any layer
+```
+
+**Critical Rules:**
+- ❌ **Commands MUST NOT import from application or web layers**
+- ❌ **Persistence MUST NOT import from web layer**
+- ❌ **Commands MUST NOT import web DTOs**
+- ✅ Web can import: command, application, persistence
+- ✅ Application can import: command, persistence, domain
+- ✅ Infrastructure can import: any layer (adapter pattern)
+
+**ArchUnit Enforcement:**
 ```kotlin
-// Example: Committee.replaceMembers()
-class UpdateCommitteeHandler(...) : CommandHandler<UpdateCommitteeCommand, Committee> {
-    override fun handle(command: UpdateCommitteeCommand): Committee {
-        var committee = service.findById(command.id)
-        committee.name = command.name
-        committee.description = command.description
-        committee.replaceMembers(mapMembers(command.members))  // Aggregate method
-        return service.update(committee)
-    }
+@ArchTest
+fun `commands must not depend on application layer`(classes: JavaClasses) {
+    noClasses()
+        .that().resideInAPackage("..command..")
+        .should().dependOnClassesThat()
+        .resideInAPackage("..application..")
+        .check(classes)
 }
 ```
 
-### Best Practices
+**📚 See:** [ADR-016: Layer Dependency Rules](docs/ADR-016-layer-dependency-rules.md)
 
-**DO:**
-- ✅ Use Mappie for all Request→Command and Entity→Response mappings
-- ✅ Create extension functions (`.asCommand()`, `.asResponse()`) for clean API
-- ✅ Use `object` singletons for Mappie mappers (stateless)
-- ✅ Use helper functions consistently across domains for complex mappings
-- ✅ Consider factory pattern for complex entity creation
-- ✅ Use aggregate methods for entity updates when business logic is involved
-- ✅ Keep mapping logic in `web/mapping/` package
+---
 
-**DON'T:**
-- ❌ Mix Mappie and manual mapping inconsistently
-- ❌ Put mapping logic in controllers or services
-- ❌ Directly mutate entities when aggregate methods should encapsulate the logic
-- ❌ Create ad-hoc factories in handlers; use dedicated factory classes
-- ❌ Skip helper functions when the same pattern repeats across handlers
+## Common Pitfalls and Anti-Patterns
 
-### Anti-patterns to Avoid
+### ❌ Commands Importing Application Layer
 
-**Anti-pattern: Inconsistent Entity Creation**
+**WRONG:**
 ```kotlin
-// ❌ Domain A uses direct assignment
-class CreateUserHandler(...) {
-    override fun handle(command: CreateUserCommand): User {
-        var user = User()
-        user.username = command.username
-        // ... 15 lines of property assignment
-    }
-}
+// domain/user/command/UserCommands.kt
+import net.blueshell.api.domain.user.application.validation.UniqueUserCommand
 
-// ❌ Domain B uses helper function
-class CreateEventHandler(...) {
-    override fun handle(command: CreateEventCommand): Event {
-        val event = Event()
-        applyEventFields(event, command)  // Different pattern
-    }
+@UniqueUserCommand  // ❌ Application layer dependency!
+data class CreateUserCommand(...)
+```
+
+**CORRECT:**
+```kotlin
+// Move annotation to command layer or shared
+// shared/validation/UniqueUserCommand.kt
+@Constraint(validatedBy = [UniqueUserCommandValidator::class])
+annotation class UniqueUserCommand
+```
+
+---
+
+### ❌ Commands Importing Web DTOs
+
+**WRONG:**
+```kotlin
+// domain/event/command/EventCommands.kt
+import net.blueshell.api.domain.event.web.dto.request.SurveyRequest
+
+data class CreateEventCommand(
+    val survey: SurveyRequest  // ❌ Web DTO in command!
+)
+```
+
+**CORRECT:**
+```kotlin
+// Create domain object in command layer
+data class SurveyData(val questions: List<QuestionData>)
+
+data class CreateEventCommand(
+    val survey: SurveyData  // ✅ Domain object
+)
+
+// Web layer maps SurveyRequest → SurveyData
+```
+
+---
+
+### ❌ Query Filters in Persistence Layer
+
+**WRONG:**
+```kotlin
+// domain/user/persistence/filter/UserFilter.kt  ❌ Wrong location!
+class UserFilter {
+    var username: String?  // HTTP query param - web concern!
 }
 ```
 
-**Better: Consistent Factory Pattern**
+**CORRECT:**
 ```kotlin
-// ✅ RECOMMENDED: Consistent factory pattern
+// domain/user/application/query/UserQuery.kt  ✅ Application layer
+data class UserQuery(
+    val username: String?
+)
+
+// Web layer maps HTTP params → UserQuery
+```
+
+---
+
+### ❌ Permission Evaluators in Web Layer
+
+**WRONG:**
+```kotlin
+// domain/user/web/permission/UserPermission.kt  ❌ Wrong location!
 @Component
-class UserFactory(private val passwordEncoder: PasswordEncoder) {
-    fun createFromCommand(command: CreateUserCommand): User {
-        return User().apply {
-            username = command.username
-            email = command.email
-            password = passwordEncoder.encode(command.password)
-        }
-    }
-}
-
-class CreateUserHandler(private val factory: UserFactory) {
-    override fun handle(command: CreateUserCommand): User {
-        val user = factory.createFromCommand(command)
-        return service.create(user)
-    }
-}
+class UserPermission : BasePermissionEvaluator<...> { }
 ```
 
-**Anti-pattern: Direct Entity Mutation**
+**CORRECT:**
 ```kotlin
-// ❌ WRONG: Direct mutation bypasses domain logic
-class UpdateCommitteeHandler(...) {
-    override fun handle(command: UpdateCommitteeCommand): Committee {
-        val committee = service.findById(command.id)
-        committee.members.clear()
-        committee.members.addAll(newMembers)  // No bidirectional consistency!
-    }
-}
+// infrastructure/security/permission/UserPermission.kt  ✅ Infrastructure
+@Component
+class UserPermission : BasePermissionEvaluator<...> { }
 ```
 
-**Better: Aggregate Method**
+---
+
+### ❌ Business Validation in Web Layer
+
+**WRONG:**
 ```kotlin
-// ✅ CORRECT: Aggregate method ensures invariants
-class UpdateCommitteeHandler(...) {
-    override fun handle(command: UpdateCommitteeCommand): Committee {
-        val committee = service.findById(command.id)
-        committee.replaceMembers(mapMembers(command.members))  // Maintains consistency
-        return service.update(committee)
-    }
-}
+// Web DTO with business rule validator
+@ValidEventSignUpCommand  // ❌ Accesses EventService - business logic!
+data class EventSignUpRequest(...)
 ```
 
-### Architectural Rules (Enforced by ArchUnit)
+**CORRECT:**
+```kotlin
+// Validation on command, not DTO
+@ValidEventSignUpCommand  // ✅ Application layer validator
+data class CreateEventSignUpCommand(...) : Command<EventSignUp>
+```
 
-- Controllers may access: Services, Validation, DTOs, Model, Common
-- Services may access: Repositories, Model, Common, Validation
-- Repositories may access: Model, Common
-- Model/DTO may access: Common
-- No circular dependencies between layers
+---
+
+### ❌ Email Templates in Application Layer
+
+**WRONG:**
+```kotlin
+// domain/auth/application/email/PasswordResetEmail.kt  ❌ Infrastructure leak
+class PasswordResetEmail { }
+```
+
+**CORRECT:**
+```kotlin
+// platform/integration/email/templates/PasswordResetEmail.kt  ✅ Infrastructure
+class PasswordResetEmail { }
+
+// Application publishes event, platform listens and sends email
+```
+
+---
+
+### ❌ Direct Entity Mutation Without Aggregate Methods
+
+**WRONG:**
+```kotlin
+// Direct mutation bypasses domain logic
+committee.members.clear()
+committee.members.addAll(newMembers)  // ❌ No bidirectional consistency!
+```
+
+**CORRECT:**
+```kotlin
+// Aggregate method ensures invariants
+committee.replaceMembers(newMembers)  // ✅ Maintains consistency
+```
+
+---
+
+### ❌ No Field Validation on Commands
+
+**WRONG:**
+```kotlin
+data class CreateUserCommand(
+    val username: String?,  // ❌ Could be null or blank!
+    val email: String?
+) : Command<User>
+```
+
+**CORRECT:**
+```kotlin
+data class CreateUserCommand(
+    @field:NotBlank(message = "Username is required")
+    val username: String?,
+
+    @field:Email
+    @field:NotBlank
+    val email: String?
+) : Command<User>
+```
+
+---
+
+## Development Workflow
+
+### Making Changes
+
+1. **Backend Changes:**
+   ```bash
+   # Make changes to domain
+   # Run tests
+   ./gradlew :api:test
+
+   # Run architecture tests
+   ./gradlew :api:test --tests "net.blueshell.api.architecture.*"
+   ```
+
+2. **API Contract Changes:**
+   ```bash
+   # Regenerate OpenAPI spec and TypeScript client
+   ./generate_openapi.sh
+
+   # Frontend will now have updated API client
+   ```
+
+3. **Database Schema Changes:**
+   ```bash
+   # Create new Flyway migration
+   # api/src/main/resources/db/migration/V{n}__description.sql
+
+   # Restart backend - Flyway runs automatically
+   docker compose -f docker-compose.dev.yml restart api
+   ```
+
+### Creating New Features
+
+1. **Create domain package structure:**
+   ```
+   domain/mynewdomain/
+   ├── web/
+   ├── command/
+   ├── application/
+   └── persistence/
+   ```
+
+2. **Define commands:**
+   ```kotlin
+   // command/MyDomainCommands.kt
+   data class CreateMyEntityCommand(...) : Command<MyEntity>
+   ```
+
+3. **Create handlers:**
+   ```kotlin
+   // application/command/MyDomainCommandHandlers.kt
+   @Component
+   class CreateMyEntityHandler(...) : CommandHandler<CreateMyEntityCommand, MyEntity>
+   ```
+
+4. **Create controller:**
+   ```kotlin
+   // web/MyDomainController.kt
+   @RestController
+   @RequestMapping("/mydomain")
+   class MyDomainController(private val commandBus: CommandBus)
+   ```
+
+5. **Add ArchUnit tests** to verify architectural compliance
+
+### Committing Changes
+
+Follow the git commit guidelines in CLAUDE.md:
+- Create feature branch
+- Make atomic commits
+- Run tests before committing
+- Use descriptive commit messages
+- Reference ADRs when making architectural decisions
+
+---
 
 ## Technology Stack
 
 ### Backend
-- Kotlin 2.3.10 with Java 24 toolchain
-- Spring Boot 3.5.7 (Web, Security, Data JPA, AMQP)
-- Spring Security with JWT (nimbus-jose-jwt, jjwt)
-- MariaDB 10.11.10 with Flyway migrations
-- Mappie 2.3.10 for object mapping
-- SpringDoc OpenAPI 3 for API documentation
-- Google Calendar API, Mollie (payments), Brevo (email campaigns)
-- Testing: JUnit 5, Mockito Kotlin, MockK, ArchUnit, Testcontainers, REST Assured
+- **Language**: Kotlin 2.3.10 with Java 24 toolchain
+- **Framework**: Spring Boot 3.5.7 (Web, Security, Data JPA, AMQP)
+- **Database**: MariaDB 10.11.10 with Flyway migrations
+- **Security**: Spring Security with JWT (nimbus-jose-jwt, jjwt)
+- **Mapping**: Mappie 2.3.10 for object mapping
+- **API Docs**: SpringDoc OpenAPI 3 (Swagger UI)
+- **Testing**: JUnit 5, Mockito Kotlin, MockK, ArchUnit, Testcontainers, REST Assured
+- **Integrations**: Google Calendar API, Mollie (payments), Brevo (email campaigns)
 
 ### Frontend
-- Vue.js 3.5.24 with TypeScript 5.7.2
-- Vuetify 3.10.2 (UI framework)
-- Vuex 4.1.0 (state management)
-- Vue Router 4.5.1
-- Axios 1.8.4 with auto-generated OpenAPI client (@hey-api/openapi-ts)
-- Vite 6.2.0 build tool
-- VeeValidate 4.15.1 (form validation)
-- Luxon (date handling), Marked (Markdown), DOMPurify (XSS protection)
+- **Framework**: Vue.js 3.5.24 with TypeScript 5.7.2
+- **UI**: Vuetify 3.10.2 (Material Design)
+- **State**: Vuex 4.1.0
+- **Routing**: Vue Router 4.5.1
+- **HTTP**: Axios 1.8.4 with OpenAPI-generated client
+- **Build**: Vite 6.2.0
+- **Validation**: VeeValidate 4.15.1
+- **Utilities**: Luxon (dates), Marked (Markdown), DOMPurify (XSS protection)
+
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Database**: MariaDB 10.11.10 (utf8mb4, Europe/Amsterdam timezone)
+- **Message Queue**: RabbitMQ (job dispatching)
+- **Reverse Proxy**: Nginx (SSL termination)
+
+---
 
 ## Database
 
-- Engine: MariaDB 10.11.10
-- Charset: utf8mb4 with utf8mb4_unicode_ci collation
-- Timezone: Europe/Amsterdam
-- Migrations: Flyway (`api/src/main/resources/db/migration/`)
-- Connection in dev: `localhost:3307` (Docker) or `localhost:3306` (local MariaDB)
+- **Engine**: MariaDB 10.11.10
+- **Charset**: utf8mb4 with utf8mb4_unicode_ci collation
+- **Timezone**: Europe/Amsterdam
+- **Migrations**: Flyway (`api/src/main/resources/db/migration/`)
+- **Connection (dev)**: `localhost:3307` (Docker) or `localhost:3306` (local)
+
+**Migration Pattern:** `V{version}__{description}.sql`
+```sql
+-- V5__add_user_roles.sql
+ALTER TABLE users ADD COLUMN roles JSON NOT NULL DEFAULT '[]';
+```
+
+---
 
 ## API Documentation
 
-- Swagger UI: `https://localhost/api/swagger-ui` (dev) or `https://esa-blueshell.nl/api/swagger-ui` (prod)
-- OpenAPI spec: `/api/v3/api-docs`
-- TypeScript client generation: Run `./generate_openapi.sh` after API changes
+- **Swagger UI (dev)**: https://localhost/api/swagger-ui
+- **Swagger UI (prod)**: https://esa-blueshell.nl/api/swagger-ui
+- **OpenAPI Spec**: `/api/v3/api-docs`
+- **Client Generation**: Run `./generate_openapi.sh` after API changes
 
-## Project Structure Notes
+---
 
-### Shared Infrastructure (`api/src/main/kotlin/net/blueshell/api/`)
-
-- `shared/command/`: CommandBus implementation, Command and CommandHandler interfaces
-- `shared/dto/`: Common DTOs and base classes
-- `shared/event/`: Event publishing infrastructure
-- `shared/model/`: Base entity classes and common domain models
-- `shared/security/`: JWT handling, authentication utilities
-- `shared/validation/`: Custom validation annotations
-- `infrastructure/security/`: Spring Security configuration, filters, authentication providers
-- `platform/`: Application configuration, error handling, OpenAPI config
-
-### Environment Configuration
+## Environment Configuration
 
 Required environment files in `env/`:
-- `.app.env`: Application config (JWT secret, SMTP, Brevo, Google Calendar, Mollie, social media APIs)
-- `.db.env`: Database credentials
+- **`.app.env`**: JWT secret, SMTP, Brevo, Google Calendar, Mollie, social APIs
+- **`.db.env`**: Database credentials
 
-### Important Files
+---
 
-- `docs/association-refactor-checklist.md`: Guidelines for refactoring entity associations (follow this pattern)
-- `api/openapi-overrides/`: Manual overrides for generated Brevo client
-- `openapi/`: OpenAPI specifications (blueshell.json auto-generated, discord.json manual)
+## Architecture Decision Records (ADRs)
 
-## Development Workflow
+Complete architectural documentation is in `docs/ADR-INDEX.md`:
 
-1. Make backend changes
-2. Run tests: `./gradlew :api:test`
-3. If API contracts changed, regenerate OpenAPI client: `./generate_openapi.sh`
-4. Test frontend integration
-5. Commit changes with descriptive message
+### Core Architecture
+- **[ADR-001](docs/ADR-001-multi-layered-domain-driven-architecture.md)**: Multi-Layered DDD Architecture
+- **[ADR-002](docs/ADR-002-command-pattern-with-command-bus.md)**: Command Pattern with CommandBus
+- **[ADR-013](docs/ADR-013-entity-association-pattern.md)**: Entity Association Pattern
+- **[ADR-016](docs/ADR-016-layer-dependency-rules.md)**: Layer Dependency Rules
 
-## Common Pitfalls
+### Data & Persistence
+- **[ADR-007](docs/ADR-007-repository-pattern-and-jpa.md)**: Repository Pattern and JPA
+- **[ADR-010](docs/ADR-010-database-migrations-with-flyway.md)**: Database Migrations with Flyway
+- **[ADR-015](docs/ADR-015-jpa-specifications-dynamic-queries.md)**: JPA Specifications and Dynamic Queries
 
-### General Architecture
-- Don't put business logic in mappers or validators - keep it in services/domain
-- Don't use `*_id` shadow fields when JPA manages the association
-- Always enforce bidirectional consistency when updating associations
-- Commands should be immutable data classes with validation, no behavior
-- Services resolve associations explicitly, never use `asRef()` patterns
-- ArchUnit tests will fail if layering is violated - respect the architecture
+### Validation & Mapping
+- **[ADR-003](docs/ADR-003-validation-layer-separation.md)**: Validation Layer Separation
+- **[ADR-004](docs/ADR-004-mapping-strategy-with-mappie.md)**: Mapping Strategy with Mappie
 
-### Validation Pitfalls
-- Don't put business validation annotations on Request DTOs (web layer) - use command-level validators instead
-- Don't let application validators depend on DTO types - use command interfaces (e.g., `UserUniquenessCandidate`)
-- Always add `@NotNull`/`@NotBlank` to critical command fields for defensive validation
-- Don't skip CommandBus validation by calling services directly
-- Don't perform validation logic in command handlers - validation should happen before execution
-- Don't access external services (DB, APIs) in web layer validators
+### Patterns
+- **[ADR-005](docs/ADR-005-factory-pattern-for-entity-creation.md)**: Factory Pattern for Entity Creation
+- **[ADR-006](docs/ADR-006-event-driven-architecture.md)**: Event-Driven Architecture
 
-### Mapping Pitfalls
-- Don't mix Mappie and manual mapping inconsistently across domains
-- Don't put mapping logic in controllers or services - keep it in `web/mapping/` package
-- Prefer aggregate methods over direct entity property mutation
-- Use factories for complex entity creation instead of inline construction
-- Keep helper functions consistent across domains (e.g., `applyIdentityFields`)
-- Don't create bidirectional associations manually - use entity helper methods (e.g., `replaceMembers()`)
-- Always use extension functions (`.asCommand()`, `.asResponse()`) rather than calling mappers directly
+### Security & API
+- **[ADR-008](docs/ADR-008-exception-handling-strategy.md)**: Exception Handling Strategy
+- **[ADR-009](docs/ADR-009-jwt-authentication-strategy.md)**: JWT Authentication Strategy
+- **[ADR-012](docs/ADR-012-api-documentation-with-openapi.md)**: API Documentation with OpenAPI
+- **[ADR-014](docs/ADR-014-permission-evaluation-strategy.md)**: Permission Evaluation Strategy
+
+### Testing
+- **[ADR-011](docs/ADR-011-testing-strategy.md)**: Testing Strategy
+
+**📚 Full Index:** [`docs/ADR-INDEX.md`](docs/ADR-INDEX.md)
+
+---
+
+## Important Files & Resources
+
+- **`docs/ADR-INDEX.md`**: Complete architectural documentation
+- **`docs/association-refactor-checklist.md`**: Entity association refactoring guide
+- **`api/openapi-overrides/`**: Manual overrides for generated Brevo client
+- **`openapi/`**: OpenAPI specifications (blueshell.json auto-generated, discord.json manual)
+
+---
+
+## Summary of Best Practices
+
+### Architecture
+- ✅ Follow clean architecture: dependencies point inward
+- ✅ Keep commands independent (no application/web imports)
+- ✅ Place query objects in application layer (not persistence)
+- ✅ Place permission evaluators in infrastructure (not web)
+- ✅ Use events for cross-domain communication
+- ✅ Respect layer boundaries - ArchUnit tests will enforce
+
+### Development
+- ✅ Run ArchUnit tests before committing
+- ✅ Add field validation to commands (@NotNull, @NotBlank)
+- ✅ Use Mappie for all DTO ↔ Command/Entity mappings
+- ✅ Use aggregate methods for entity updates
+- ✅ Use factories for complex entity creation
+- ✅ Reference ADRs when making architectural decisions
+
+### Testing
+- ✅ Write ArchUnit tests for new domains
+- ✅ Test command handlers independently
+- ✅ Use Testcontainers for integration tests
+- ✅ Test validators with edge cases
+
+---
+
+**For any architectural questions, consult the ADRs in `docs/` or ask Claude Code to explain specific patterns.**

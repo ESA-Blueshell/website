@@ -1,8 +1,10 @@
 package net.blueshell.api.domain.file.application
 
 import jakarta.annotation.PostConstruct
-import jakarta.ws.rs.BadRequestException
 import net.blueshell.api.domain.file.application.event.FileDeleted
+import net.blueshell.api.domain.file.application.exception.EmptyFileException
+import net.blueshell.api.domain.file.application.exception.FileNotFoundException
+import net.blueshell.api.domain.file.application.exception.FileStorageException
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.file.persistence.repository.FileRepository
 import net.blueshell.api.domain.user.application.UserService
@@ -43,11 +45,9 @@ class FileService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun findByName(name: String): File {
-        return repository.findByName(name).orElseThrow(Supplier {
-            ResponseStatusException(
-                HttpStatus.NOT_FOUND, "File not found with name: $name"
-            )
-        })
+        return repository.findByName(name).orElseThrow {
+            FileNotFoundException("name=$name")
+        }
     }
 
     @PostConstruct
@@ -65,7 +65,7 @@ class FileService @Autowired constructor(
     @Transactional
     fun storeMultipart(multipart: MultipartFile, type: FileType): File {
         if (multipart.isEmpty) {
-            throw BadRequestException("Empty file")
+            throw EmptyFileException()
         }
 
         try {
@@ -115,9 +115,9 @@ class FileService @Autowired constructor(
                 create(entity)
             }
         } catch (e: IOException) {
-            throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e)
+            throw FileStorageException("Failed to store file", e)
         } catch (e: NoSuchAlgorithmException) {
-            throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "SHA-256 not available", e)
+            throw FileStorageException("SHA-256 not available", e)
         }
     }
 
@@ -139,15 +139,9 @@ class FileService @Autowired constructor(
             val filePath = rootLocation.resolve(file.path)
             val resource: Resource = UrlResource(filePath.toUri())
             if (resource.exists() || resource.isReadable) return resource
-            throw ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "File not found with name: ${file.name}"
-            )
+            throw FileNotFoundException("name=${file.name}")
         } catch (_: MalformedURLException) {
-            throw ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "File not found with name: ${file.name}"
-            )
+            throw FileNotFoundException("name=${file.name}")
         }
     }
 
@@ -156,9 +150,9 @@ class FileService @Autowired constructor(
             val filePath = assetsLocation.resolve(filename)
             val resource: Resource = UrlResource(filePath.toUri())
             if (resource.exists() || resource.isReadable) return resource
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: $filename")
+            throw FileNotFoundException("asset=$filename")
         } catch (_: MalformedURLException) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with name: $filename")
+            throw FileNotFoundException("asset=$filename")
         }
     }
 
@@ -261,11 +255,9 @@ class FileService @Autowired constructor(
     }
 
     fun findByBannerEventId(eventId: Long): File {
-        return repository.findFirstBy_eventBannersIdEventId(eventId).orElseThrow(Supplier {
-            ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Event banner not found for event with id: $eventId"
-            )
-        })
+        return repository.findFirstBy_eventBannersIdEventId(eventId).orElseThrow {
+            FileNotFoundException("eventBanner eventId=$eventId")
+        }
     }
 
     fun deleteFromStoragePath(path: String) {

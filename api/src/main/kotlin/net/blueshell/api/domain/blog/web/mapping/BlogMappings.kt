@@ -1,18 +1,18 @@
 package net.blueshell.api.domain.blog.web.mapping
 
 import net.blueshell.api.domain.blog.persistence.Blog
-import net.blueshell.api.domain.blog.web.dto.BlogResponse
 import net.blueshell.api.domain.blog.web.dto.SocialDTO
+import net.blueshell.api.domain.blog.web.dto.response.BlogResponse
 import net.blueshell.api.shared.enums.PlatformType
 import org.jsoup.Jsoup
 import tech.mappie.api.ObjectMappie
 
-private data class BlogResponseSource(
+internal data class BlogResponseSource(
     val blog: Blog,
     val frontendUrl: String
 )
 
-object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
+internal object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
     override fun map(from: BlogResponseSource) = mapping {
         BlogResponse::id fromValue { from.blog.id }
         BlogResponse::version fromValue { from.blog.version }

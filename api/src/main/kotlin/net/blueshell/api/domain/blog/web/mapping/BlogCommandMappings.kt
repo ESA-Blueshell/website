@@ -2,8 +2,8 @@ package net.blueshell.api.domain.blog.web.mapping
 
 import net.blueshell.api.domain.blog.command.CreateBlogCommand
 import net.blueshell.api.domain.blog.command.UpdateBlogCommand
-import net.blueshell.api.domain.blog.web.dto.CreateBlogRequest
-import net.blueshell.api.domain.blog.web.dto.UpdateBlogRequest
+import net.blueshell.api.domain.blog.web.dto.request.CreateBlogRequest
+import net.blueshell.api.domain.blog.web.dto.request.UpdateBlogRequest
 import tech.mappie.api.ObjectMappie
 
 object CreateBlogRequestToCommandMapper : ObjectMappie<CreateBlogRequest, CreateBlogCommand>() {

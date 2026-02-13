@@ -6,9 +6,9 @@ import jakarta.validation.Valid
 import net.blueshell.api.domain.blog.command.DeleteBlogByIdCommand
 import net.blueshell.api.domain.blog.command.FindBlogByIdCommand
 import net.blueshell.api.domain.blog.command.FindBlogsCommand
-import net.blueshell.api.domain.blog.web.dto.BlogResponse
-import net.blueshell.api.domain.blog.web.dto.CreateBlogRequest
-import net.blueshell.api.domain.blog.web.dto.UpdateBlogRequest
+import net.blueshell.api.domain.blog.web.dto.request.CreateBlogRequest
+import net.blueshell.api.domain.blog.web.dto.request.UpdateBlogRequest
+import net.blueshell.api.domain.blog.web.dto.response.BlogResponse
 import net.blueshell.api.domain.blog.web.mapping.asCommand
 import net.blueshell.api.domain.blog.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.web.dto
+package net.blueshell.api.domain.blog.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO

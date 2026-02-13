@@ -111,10 +111,11 @@ domain/
 
 **Command Pattern with CommandBus**
 - Commands are immutable data classes in `command/` package
-- Commands include Jakarta validation annotations
+- Commands include Jakarta validation annotations (field-level: `@NotNull`, `@NotBlank`; class-level: `@UniqueUserCommand`)
 - Command handlers in `application/command/` implement business logic
-- `CommandBus` validates and dispatches commands to handlers
+- `CommandBus` automatically validates all commands before execution using Jakarta Bean Validation
 - Controllers map web requests to commands using Mappie and dispatch via CommandBus
+- Validation flows: Request DTO → Web validators → Command → CommandBus → Application validators → Handler
 
 **Service Responsibilities**
 - Application services orchestrate business operations (multiple repositories, domain services, events)
@@ -128,16 +129,367 @@ domain/
 - Entities define explicit association helper methods (e.g., `setBanner()`, `addMember()`) for bidirectional consistency
 
 **Mappie for Object Mapping**
-- Replaces MapStruct for mapping DTOs
-- Read-only mappings: entity → response DTO (in mappers)
-- Write mappings: request DTO → command (in web layer) and command → entity updates (in services)
+- Replaces MapStruct for mapping DTOs (Mappie 2.3.10)
+- Used at API boundaries: Request→Command and Entity→Response mappings
+- All mappers are `object` singletons extending `ObjectMappie<From, To>()`
+- Extension functions provide clean API (`.asCommand()`, `.asResponse()`)
+- Command→Entity mapping is manual in handlers (or via factories)
 - No `@AfterMapping` or hidden business logic in mappers
+- Mappers live in `web/mapping/` package, never in controllers or services
 
 **Testing**
 - ArchUnit tests enforce layering and architectural rules (`architecture/` package)
 - Unit tests for validators, factories, and DTOs
 - Service tests verify association wiring and error handling
 - Testcontainers for integration tests with MariaDB
+
+## Validation Architecture
+
+Validation is strategically distributed across layers following DDD principles. Each layer has specific validation responsibilities.
+
+### Layer Responsibilities
+
+**Web Layer** (`web/validation/`)
+- **Structural validation**: Format, presence, size, regex patterns
+- **Type safety**: Enum validation, type checking
+- **Simple business logic**: Single-field rules that don't require external dependencies
+- **Examples**: `@CountryCode`, `@ValidMobilePhoneNumber`, `@FileSize`, `@AllowedContentTypes`
+
+**Application Layer** (`application/validation/`)
+- **Business rules**: Complex validation requiring database access
+- **Cross-field validation**: Multi-property uniqueness checks
+- **Cross-aggregate validation**: Rules spanning multiple entities
+- **Examples**: `@UniqueUserCommand`, `@ValidEventSignUpCommand`, `@NoExistingMembershipForUser`
+
+**Command Layer** (`command/`)
+- **Field-level validation**: Jakarta Bean Validation annotations on command properties
+- **Class-level validation**: Custom annotations for complex command validation
+- **Validation interfaces**: Marker interfaces for validators (e.g., `UserUniquenessCandidate`)
+
+**Domain Services** (`domain/service/`)
+- **Domain invariant enforcement**: Core business rules
+- **Complex business logic validation**: Multi-step validation with business semantics
+- **Example**: `RecoveryTokenValidator` validates token format, expiry, consumption status
+
+### Validation Types and Placement
+
+| Validation Type | Layer | Dependency | Example |
+|----------------|-------|------------|---------|
+| Format (regex, length) | Web | None | `@Pattern`, `@Size`, `@Email` |
+| Presence/nullability | Web/Command | None | `@NotNull`, `@NotBlank` |
+| Type safety | Web | None | `@CountryCode`, `@ValidMobilePhoneNumber` |
+| File constraints | Web | None | `@FileSize`, `@AllowedContentTypes` |
+| Simple business logic | Web | None | `@GuestOrUserRequired` (either/or) |
+| Uniqueness checks | Application | UserService | `@UniqueUsername` |
+| Multi-field uniqueness | Application | Services | `@UniqueUserCommand` |
+| Cross-aggregate rules | Application | Multiple Services | `@ValidEventSignUpCommand` |
+| Domain invariants | Domain Service | Repositories | Token expiry, state transitions |
+
+### Validation Flow
+
+```
+HTTP Request
+    ↓
+Controller (@Valid on Request DTO)
+    ↓
+Web Layer Validators
+- Structural validation (format, presence, size)
+- Simple business rules (no DB access)
+    ↓
+Mapper (Request → Command)
+    ↓
+CommandBus.dispatch()
+    ↓
+Jakarta Bean Validation on Command
+- Field-level validation annotations
+- Class-level custom validators
+    ↓
+Application Layer Validators
+- Database-dependent business rules
+- Cross-aggregate validation
+    ↓
+Command Handler
+- Execute business logic (no validation)
+    ↓
+Domain Service (optional defensive validation)
+- Domain invariant enforcement
+- Complex business rule validation
+    ↓
+Repository/Database
+```
+
+### Best Practices
+
+**DO:**
+- ✅ Use Jakarta Bean Validation (`@NotNull`, `@NotBlank`, `@Size`) on Request DTOs for structural validation
+- ✅ Use custom validators in `web/validation/` for format validation without DB access
+- ✅ Use custom validators in `application/validation/` for business rules requiring services
+- ✅ Add field-level validation to commands for critical properties
+- ✅ Use class-level annotations for multi-field validation on commands
+- ✅ Let CommandBus handle all command validation automatically
+- ✅ Implement domain services for complex business logic validation
+
+**DON'T:**
+- ❌ Put business logic requiring DB access in web layer validators
+- ❌ Make application validators depend on DTO types (use command interfaces instead)
+- ❌ Skip field-level validation on commands assuming DTOs are always valid
+- ❌ Perform validation in command handlers (validation should happen before)
+- ❌ Couple web layer to application layer through validator dependencies
+
+### Anti-patterns to Avoid
+
+**Anti-pattern: Business Validation in Web DTOs**
+```kotlin
+// ❌ WRONG: Business logic in web layer
+@ValidEventSignUpCommand  // This validator accesses EventService
+data class EventSignUpDTO(
+    val eventId: Long?
+)
+```
+
+**Better: Validation on Command**
+```kotlin
+// ✅ CORRECT: Business validation on command
+@ValidEventSignUpCommand
+data class CreateEventSignUpCommand(
+    val dto: EventSignUpDTO
+) : Command<EventSignUp>
+```
+
+**Anti-pattern: No Field Validation on Commands**
+```kotlin
+// ❌ WRONG: No validation, assumes DTO is always valid
+data class CreateUserCommand(
+    val username: String?,  // Could be null or blank
+    val email: String?
+) : Command<User>
+```
+
+**Better: Field Validation on Commands**
+```kotlin
+// ✅ CORRECT: Defensive validation
+@UniqueUserCommand
+data class CreateUserCommand(
+    @field:NotBlank(message = "Username is required")
+    val username: String?,
+
+    @field:NotBlank
+    @field:Email
+    val email: String?
+) : Command<User>
+```
+
+## Mapping Architecture
+
+Mapping responsibilities are clearly separated by layer. Mappie is used at API boundaries, while internal domain logic uses manual mapping or factory patterns.
+
+### Mapping Responsibilities by Layer
+
+**Web Layer** (`web/mapping/`)
+- **Request → Command**: Maps external API contracts to internal commands
+- **Entity/Model → Response**: Maps domain models to external API responses
+- **Tool**: Mappie 2.3.10 with extension functions
+
+**Application Layer** (`application/command/`)
+- **Command → Entity**: Creates/updates entities from commands in handlers
+- **Tool**: Manual property assignment (current) or factories (recommended)
+
+**Domain Layer** (`domain/`)
+- **Aggregate methods**: Entity updates through domain logic
+- **Factories**: Complex entity creation (`application/factory/`)
+
+### Mappie Usage Guidelines
+
+**Pattern: Request → Command**
+```kotlin
+// File: domain/auth/web/mapping/AuthCommandMappings.kt
+object JwtRequestToCommandMapper : ObjectMappie<JwtRequest, AuthenticateCommand>() {
+    override fun map(from: JwtRequest) = mapping {
+        AuthenticateCommand::username fromValue { from.username!! }
+        AuthenticateCommand::password fromValue { from.password!! }
+    }
+}
+
+fun JwtRequest.asCommand(): AuthenticateCommand = JwtRequestToCommandMapper.map(this)
+```
+
+**Pattern: Entity → Response**
+```kotlin
+// File: domain/user/web/mapping/UserMappings.kt
+object UserToDetailResponseMapper : ObjectMappie<User, UserDetailResponse>() {
+    override fun map(from: User) = mapping {
+        UserDetailResponse::roles fromProperty from::inheritedRoles
+    }
+}
+
+fun User.asDetailResponse(): UserDetailResponse = UserToDetailResponseMapper.map(this)
+```
+
+**Pattern: Complex Mapping with Context**
+```kotlin
+// When additional context is needed
+private data class BlogResponseSource(val blog: Blog, val frontendUrl: String)
+
+object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
+    override fun map(from: BlogResponseSource) = mapping {
+        BlogResponse::url fromValue { "${from.frontendUrl}/blogs/${from.blog.id}" }
+    }
+}
+
+fun Blog.asResponse(frontendUrl: String): BlogResponse =
+    BlogResponseSourceToBlogResponseMapper.map(BlogResponseSource(this, frontendUrl))
+```
+
+### Command → Entity Mapping
+
+**Current Pattern: Direct Property Assignment**
+
+Most command handlers use direct property assignment:
+```kotlin
+// Current implementation in most handlers
+@Component
+class CreateUserHandler(
+    private val service: UserService,
+    private val addresses: AddressService,
+    private val passwordEncoder: PasswordEncoder
+) : CommandHandler<CreateUserCommand, User> {
+    override fun handle(command: CreateUserCommand): User {
+        var user = User()
+        user.username = command.username
+        user.email = command.email
+        user.discord = command.discord
+        user.phoneNumber = command.phoneNumber
+        command.addressId?.let { user.address = addresses.findById(it) }
+        user.password = passwordEncoder.encode(command.password)
+        return service.create(user)
+    }
+}
+```
+
+**Recommended: Factory Pattern**
+
+For complex entity creation, use factories:
+```kotlin
+// Example: RecoveryTokenFactory (existing pattern)
+@Component
+class RecoveryTokenFactory(
+    private val repository: RecoveryTokenRepository,
+    private val encoder: PasswordEncoder
+) {
+    fun issue(user: User, type: ResetType, ttl: Duration): String {
+        val token = RecoveryToken()
+        token.user = user
+        token.type = type
+        token.selector = generateSelector()
+        token.verifierHash = encoder.encode(verifier)
+        token.expiresAt = Instant.now().plus(ttl)
+        repository.save(token)
+        return "$selector.$verifier"
+    }
+}
+```
+
+**Recommended: Aggregate Methods**
+
+For entity updates, prefer aggregate methods over direct mutation:
+```kotlin
+// Example: Committee.replaceMembers()
+class UpdateCommitteeHandler(...) : CommandHandler<UpdateCommitteeCommand, Committee> {
+    override fun handle(command: UpdateCommitteeCommand): Committee {
+        var committee = service.findById(command.id)
+        committee.name = command.name
+        committee.description = command.description
+        committee.replaceMembers(mapMembers(command.members))  // Aggregate method
+        return service.update(committee)
+    }
+}
+```
+
+### Best Practices
+
+**DO:**
+- ✅ Use Mappie for all Request→Command and Entity→Response mappings
+- ✅ Create extension functions (`.asCommand()`, `.asResponse()`) for clean API
+- ✅ Use `object` singletons for Mappie mappers (stateless)
+- ✅ Use helper functions consistently across domains for complex mappings
+- ✅ Consider factory pattern for complex entity creation
+- ✅ Use aggregate methods for entity updates when business logic is involved
+- ✅ Keep mapping logic in `web/mapping/` package
+
+**DON'T:**
+- ❌ Mix Mappie and manual mapping inconsistently
+- ❌ Put mapping logic in controllers or services
+- ❌ Directly mutate entities when aggregate methods should encapsulate the logic
+- ❌ Create ad-hoc factories in handlers; use dedicated factory classes
+- ❌ Skip helper functions when the same pattern repeats across handlers
+
+### Anti-patterns to Avoid
+
+**Anti-pattern: Inconsistent Entity Creation**
+```kotlin
+// ❌ Domain A uses direct assignment
+class CreateUserHandler(...) {
+    override fun handle(command: CreateUserCommand): User {
+        var user = User()
+        user.username = command.username
+        // ... 15 lines of property assignment
+    }
+}
+
+// ❌ Domain B uses helper function
+class CreateEventHandler(...) {
+    override fun handle(command: CreateEventCommand): Event {
+        val event = Event()
+        applyEventFields(event, command)  // Different pattern
+    }
+}
+```
+
+**Better: Consistent Factory Pattern**
+```kotlin
+// ✅ RECOMMENDED: Consistent factory pattern
+@Component
+class UserFactory(private val passwordEncoder: PasswordEncoder) {
+    fun createFromCommand(command: CreateUserCommand): User {
+        return User().apply {
+            username = command.username
+            email = command.email
+            password = passwordEncoder.encode(command.password)
+        }
+    }
+}
+
+class CreateUserHandler(private val factory: UserFactory) {
+    override fun handle(command: CreateUserCommand): User {
+        val user = factory.createFromCommand(command)
+        return service.create(user)
+    }
+}
+```
+
+**Anti-pattern: Direct Entity Mutation**
+```kotlin
+// ❌ WRONG: Direct mutation bypasses domain logic
+class UpdateCommitteeHandler(...) {
+    override fun handle(command: UpdateCommitteeCommand): Committee {
+        val committee = service.findById(command.id)
+        committee.members.clear()
+        committee.members.addAll(newMembers)  // No bidirectional consistency!
+    }
+}
+```
+
+**Better: Aggregate Method**
+```kotlin
+// ✅ CORRECT: Aggregate method ensures invariants
+class UpdateCommitteeHandler(...) {
+    override fun handle(command: UpdateCommitteeCommand): Committee {
+        val committee = service.findById(command.id)
+        committee.replaceMembers(mapMembers(command.members))  // Maintains consistency
+        return service.update(committee)
+    }
+}
+```
 
 ### Architectural Rules (Enforced by ArchUnit)
 
@@ -218,9 +570,27 @@ Required environment files in `env/`:
 
 ## Common Pitfalls
 
+### General Architecture
 - Don't put business logic in mappers or validators - keep it in services/domain
 - Don't use `*_id` shadow fields when JPA manages the association
 - Always enforce bidirectional consistency when updating associations
 - Commands should be immutable data classes with validation, no behavior
 - Services resolve associations explicitly, never use `asRef()` patterns
 - ArchUnit tests will fail if layering is violated - respect the architecture
+
+### Validation Pitfalls
+- Don't put business validation annotations on Request DTOs (web layer) - use command-level validators instead
+- Don't let application validators depend on DTO types - use command interfaces (e.g., `UserUniquenessCandidate`)
+- Always add `@NotNull`/`@NotBlank` to critical command fields for defensive validation
+- Don't skip CommandBus validation by calling services directly
+- Don't perform validation logic in command handlers - validation should happen before execution
+- Don't access external services (DB, APIs) in web layer validators
+
+### Mapping Pitfalls
+- Don't mix Mappie and manual mapping inconsistently across domains
+- Don't put mapping logic in controllers or services - keep it in `web/mapping/` package
+- Prefer aggregate methods over direct entity property mutation
+- Use factories for complex entity creation instead of inline construction
+- Keep helper functions consistent across domains (e.g., `applyIdentityFields`)
+- Don't create bidirectional associations manually - use entity helper methods (e.g., `replaceMembers()`)
+- Always use extension functions (`.asCommand()`, `.asResponse()`) rather than calling mappers directly

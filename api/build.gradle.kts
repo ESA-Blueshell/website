@@ -24,6 +24,13 @@ version = "1.0.0"
 
 description = "The API for the Blueshell Esports website"
 
+// Configure kotlin-allopen plugin to make JPA entities non-final for Hibernate proxies
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(24))

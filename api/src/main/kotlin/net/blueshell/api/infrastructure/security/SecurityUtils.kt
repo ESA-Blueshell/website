@@ -1,6 +1,7 @@
 package net.blueshell.api.infrastructure.security
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.UserPrincipal
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 

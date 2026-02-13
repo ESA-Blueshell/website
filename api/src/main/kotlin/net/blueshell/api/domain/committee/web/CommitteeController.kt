@@ -12,7 +12,7 @@ import net.blueshell.api.domain.committee.web.dto.response.CommitteeResponse
 import net.blueshell.api.domain.committee.web.mapping.asCommand
 import net.blueshell.api.domain.committee.web.mapping.asDetailResponse
 import net.blueshell.api.domain.committee.web.mapping.asSummaryResponse
-import net.blueshell.api.infrastructure.security.UserPrincipal
+import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController

@@ -9,8 +9,8 @@ import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.domain.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
-import net.blueshell.api.infrastructure.security.UserPrincipal
-import net.blueshell.api.infrastructure.security.UserPrincipalMapper
+import net.blueshell.api.shared.security.UserPrincipal
+import net.blueshell.api.shared.security.UserPrincipalMapper
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.service.BaseModelService

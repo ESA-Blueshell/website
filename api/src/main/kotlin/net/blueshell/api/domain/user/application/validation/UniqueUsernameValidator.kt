@@ -3,6 +3,7 @@ package net.blueshell.api.domain.user.application.validation
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.shared.validation.UniqueUsername
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 

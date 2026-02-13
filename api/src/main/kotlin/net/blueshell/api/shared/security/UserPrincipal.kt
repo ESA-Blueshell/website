@@ -1,10 +1,16 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.shared.security
 
 import net.blueshell.api.shared.enums.Role
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
+/**
+ * User principal for Spring Security authentication.
+ * Moved to shared package to avoid cyclic dependencies between domain and infrastructure.
+ *
+ * ADR-020: Shared Kernel - Common authentication concept used across all domains.
+ */
 data class UserPrincipal(
     val id: Long,
     private val usernameValue: String,

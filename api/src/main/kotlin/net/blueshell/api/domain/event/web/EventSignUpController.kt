@@ -9,7 +9,7 @@ import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventSignUpRequest
 import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
-import net.blueshell.api.infrastructure.security.UserPrincipal
+import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject

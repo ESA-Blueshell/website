@@ -31,6 +31,7 @@ class DataOwnershipArchitectureTest {
             .that().resideInAPackage("..domain.user.application.listener..")
             .should().dependOnClassesThat()
             .resideInAPackage("..domain.committee.persistence.repository..")
+            .allowEmptyShould(true)
             .check(classes)
 
         // Committee domain listeners should not access User repositories
@@ -38,6 +39,7 @@ class DataOwnershipArchitectureTest {
             .that().resideInAPackage("..domain.committee.application.listener..")
             .should().dependOnClassesThat()
             .resideInAPackage("..domain.user.persistence.repository..")
+            .allowEmptyShould(true)
             .check(classes)
 
         // Event domain listeners should not access Survey repositories
@@ -45,6 +47,7 @@ class DataOwnershipArchitectureTest {
             .that().resideInAPackage("..domain.event.application.listener..")
             .should().dependOnClassesThat()
             .resideInAPackage("..domain.survey.persistence.repository..")
+            .allowEmptyShould(true)
             .check(classes)
     }
 

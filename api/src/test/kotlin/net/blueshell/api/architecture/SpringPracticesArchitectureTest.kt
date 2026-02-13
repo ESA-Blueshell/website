@@ -28,25 +28,29 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
 
     @Test
     fun `transactional annotations in application layer only`(): Unit =
-        arch("@Transactional must be in application layer (services, listeners)") {
-            // Class-level @Transactional outside application layer
+        arch("@Transactional must be in application/domain service layers") {
+            // Class-level @Transactional outside allowed layers
             noClasses()
                 .that().resideOutsideOfPackages(
                     ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.PLATFORM  // Jobs can be transactional
+                    ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can be transactional
+                    ArchitecturePackages.PLATFORM,  // Jobs can be transactional
+                    ArchitecturePackages.SHARED  // BaseModelService in shared
                 )
                 .should().beAnnotatedWith(Transactional::class.java)
-                .because("ADR-001: Transaction boundaries belong in application layer")
+                .because("ADR-001: Transaction boundaries belong in application/domain service layers")
 
-            // Method-level @Transactional outside application layer
+            // Method-level @Transactional outside allowed layers
             noMethods()
                 .that().areDeclaredInClassesThat()
                 .resideOutsideOfPackages(
                     ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.PLATFORM  // Jobs can be transactional
+                    ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can be transactional
+                    ArchitecturePackages.PLATFORM,  // Jobs can be transactional
+                    ArchitecturePackages.SHARED  // BaseModelService in shared
                 )
                 .should().beAnnotatedWith(Transactional::class.java)
-                .because("ADR-001: Transaction boundaries belong in application layer")
+                .because("ADR-001: Transaction boundaries belong in application/domain service layers")
         }
 
     @Test

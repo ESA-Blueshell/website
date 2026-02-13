@@ -173,6 +173,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .and().resideOutsideOfPackage(ArchitecturePackages.PERMISSION)
                 .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
                 .should().resideInAnyPackage(ArchitecturePackages.PERMISSION)
+                .allowEmptyShould(true)  // All permission evaluators already moved - test passes if none found outside
                 .because("ADR-014: Permission evaluators are infrastructure adapters, not web layer")
         }
 

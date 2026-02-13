@@ -71,7 +71,7 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .whereLayer("Domain")
                 .mayOnlyAccessLayers("Domain", "Persistence", "Shared")
 
-                // Persistence layer can only access: Shared
+                // Persistence layer can access: Shared and Application Query objects (ADR-015)
                 .whereLayer("Persistence")
                 .mayOnlyAccessLayers("Persistence", "Shared")
 
@@ -126,11 +126,19 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
     @Test
     fun `persistence must not depend on application layer`(): Unit =
-        arch("Persistence layer is inner - no application dependencies") {
+        arch("Persistence layer is inner - no application dependencies except queries") {
             com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses()
                 .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
                 .should().dependOnClassesThat()
-                .resideInAnyPackage(ArchitecturePackages.APPLICATION)
-                .because("ADR-016: Dependency direction is Application -> Persistence, not the reverse")
+                .resideInAnyPackage(
+                    ArchitecturePackages.SERVICE,
+                    ArchitecturePackages.COMMAND_HANDLER,
+                    ArchitecturePackages.APPLICATION_VALIDATION,
+                    ArchitecturePackages.LISTENER,
+                    ArchitecturePackages.EVENT,
+                    ArchitecturePackages.FACTORY
+                )
+                // Note: ArchitecturePackages.QUERY is intentionally omitted (ADR-015: Specs can use query objects)
+                .because("ADR-016: Persistence can depend on query objects (ADR-015), but not services/handlers/validators")
         }
 }

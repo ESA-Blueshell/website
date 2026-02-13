@@ -51,7 +51,6 @@ class EventSignUp : AuditedAutoIdEntity() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     var user: User? = null
-        private set
 
     @Column(name = "user_id")
     var userId: Long? = null

@@ -2,9 +2,9 @@ package net.blueshell.api.domain.event.web.mapping
 
 import net.blueshell.api.domain.event.command.CreateEventSignUpCommand
 import net.blueshell.api.domain.event.command.UpdateEventSignUpCommand
-import net.blueshell.api.domain.event.web.dto.CreateEventSignUpRequest
-import net.blueshell.api.domain.event.web.dto.CreateGuestRequest
-import net.blueshell.api.domain.event.web.dto.UpdateEventSignUpRequest
+import net.blueshell.api.domain.event.web.dto.request.CreateEventSignUpRequest
+import net.blueshell.api.domain.event.web.dto.request.CreateGuestRequest
+import net.blueshell.api.domain.event.web.dto.request.UpdateEventSignUpRequest
 import net.blueshell.api.domain.event.web.dto.GuestDTO
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.domain.survey.web.dto.AnswerRequest

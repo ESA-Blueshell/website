@@ -2,8 +2,8 @@ package net.blueshell.api.domain.event.web.mapping
 
 import net.blueshell.api.domain.event.command.CreateEventCommand
 import net.blueshell.api.domain.event.command.UpdateEventCommand
-import net.blueshell.api.domain.event.web.dto.CreateEventRequest
-import net.blueshell.api.domain.event.web.dto.UpdateEventRequest
+import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
+import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
 import net.blueshell.api.domain.survey.web.mapping.asDomainData
 import tech.mappie.api.ObjectMappie
 

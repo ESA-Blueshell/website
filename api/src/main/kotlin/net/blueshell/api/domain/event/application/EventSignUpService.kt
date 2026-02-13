@@ -2,7 +2,7 @@ package net.blueshell.api.domain.event.application
 
 import net.blueshell.api.domain.event.application.event.EventSignUpCreated
 import net.blueshell.api.domain.event.persistence.EventSignUp
-import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
+import net.blueshell.api.domain.event.application.query.EventSignUpQuery
 import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSignUpSpecifications
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
@@ -55,7 +55,7 @@ class EventSignUpService @Autowired constructor(
         return repository.findByEvent_Id(eventId)
     }
 
-    fun findByFilter(filter: EventSignUpFilter): MutableList<EventSignUp> {
+    fun findByFilter(filter: EventSignUpQuery): MutableList<EventSignUp> {
         val spec = EventSignUpSpecifications.fromFilter(filter, currentUserProvider.currentUser())
         return repository.findAll(spec)
     }

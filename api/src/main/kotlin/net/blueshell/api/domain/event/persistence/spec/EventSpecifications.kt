@@ -5,7 +5,7 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.filter.EventFilter
+import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import org.slf4j.LoggerFactory
@@ -117,7 +117,7 @@ object EventSpecifications {
         }
     }
 
-    fun fromFilter(f: EventFilter, user: CurrentUser?): Specification<Event> {
+    fun fromFilter(f: EventQuery, user: CurrentUser?): Specification<Event> {
         var spec = Specification { _: Root<Event>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
 
         val from = f.from

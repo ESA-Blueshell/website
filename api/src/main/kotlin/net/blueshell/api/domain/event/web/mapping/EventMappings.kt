@@ -6,13 +6,13 @@ import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.web.dto.EventBannerDTO
-import net.blueshell.api.domain.event.web.dto.EventBannerResponse
+import net.blueshell.api.domain.event.web.dto.response.EventBannerResponse
 import net.blueshell.api.domain.event.web.dto.EventDTO
-import net.blueshell.api.domain.event.web.dto.EventResponse
+import net.blueshell.api.domain.event.web.dto.response.EventResponse
 import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
-import net.blueshell.api.domain.event.web.dto.EventSignUpResponse
+import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.GuestDTO
-import net.blueshell.api.domain.event.web.dto.GuestResponse
+import net.blueshell.api.domain.event.web.dto.response.GuestResponse
 import net.blueshell.api.shared.enums.PlatformType
 import tech.mappie.api.ObjectMappie
 

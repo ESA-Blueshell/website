@@ -5,10 +5,10 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import jakarta.ws.rs.QueryParam
 import net.blueshell.api.domain.event.command.*
-import net.blueshell.api.domain.event.persistence.filter.EventFilter
-import net.blueshell.api.domain.event.web.dto.CreateEventRequest
-import net.blueshell.api.domain.event.web.dto.EventResponse
-import net.blueshell.api.domain.event.web.dto.UpdateEventRequest
+import net.blueshell.api.domain.event.application.query.EventQuery
+import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
+import net.blueshell.api.domain.event.web.dto.response.EventResponse
+import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
 import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
@@ -62,7 +62,7 @@ class EventController(
     @PermitAll
     fun findEvents(
         @ParameterObject pageable: Pageable = Pageable.unpaged(),
-        @ParameterObject filter: EventFilter = EventFilter()
+        @ParameterObject filter: EventQuery = EventQuery()
     ): Page<EventResponse> {
         val events = commandBus.dispatch(FindEventsCommand(pageable, filter))
         return events.map { it.asResponse() }

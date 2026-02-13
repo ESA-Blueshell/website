@@ -3,10 +3,10 @@ package net.blueshell.api.domain.event.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.event.command.*
-import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
-import net.blueshell.api.domain.event.web.dto.CreateEventSignUpRequest
-import net.blueshell.api.domain.event.web.dto.EventSignUpResponse
-import net.blueshell.api.domain.event.web.dto.UpdateEventSignUpRequest
+import net.blueshell.api.domain.event.application.query.EventSignUpQuery
+import net.blueshell.api.domain.event.web.dto.request.CreateEventSignUpRequest
+import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
+import net.blueshell.api.domain.event.web.dto.request.UpdateEventSignUpRequest
 import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
 import net.blueshell.api.infrastructure.security.UserPrincipal
@@ -31,7 +31,7 @@ class EventSignUpController @Autowired constructor(
                 "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
                 "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
-    fun findEventSignUps(@ParameterObject filter: EventSignUpFilter = EventSignUpFilter()): MutableList<EventSignUpResponse> {
+    fun findEventSignUps(@ParameterObject filter: EventSignUpQuery = EventSignUpQuery()): MutableList<EventSignUpResponse> {
         val eventSignUps = commandBus.dispatch(FindEventSignUpsCommand(filter))
         return eventSignUps.map { it.asResponse() }.toMutableList()
     }

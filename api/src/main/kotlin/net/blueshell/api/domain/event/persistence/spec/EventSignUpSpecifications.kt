@@ -6,7 +6,7 @@ import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.EventSignUp
-import net.blueshell.api.domain.event.persistence.filter.EventSignUpFilter
+import net.blueshell.api.domain.event.application.query.EventSignUpQuery
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
@@ -89,7 +89,7 @@ object EventSignUpSpecifications {
         }
     }
 
-    fun fromFilter(f: EventSignUpFilter, user: CurrentUser?): Specification<EventSignUp> {
+    fun fromFilter(f: EventSignUpQuery, user: CurrentUser?): Specification<EventSignUp> {
         var spec = distinct() // avoid duplicates due to joins
 
         if (f.from != null || f.to != null) {

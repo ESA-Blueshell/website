@@ -3,7 +3,7 @@ package net.blueshell.api.domain.event.application
 import net.blueshell.api.domain.event.application.event.EventChange
 import net.blueshell.api.domain.event.application.event.EventChanged
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.filter.EventFilter
+import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSpecifications
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
@@ -70,7 +70,7 @@ class EventService @Autowired constructor(
         )
     }
 
-    fun findByFilter(pageable: Pageable, filter: EventFilter): Page<Event> {
+    fun findByFilter(pageable: Pageable, filter: EventQuery): Page<Event> {
         val spec = EventSpecifications.fromFilter(filter, currentUserProvider.currentUser())
         return repository.findAll(spec, pageable)
     }

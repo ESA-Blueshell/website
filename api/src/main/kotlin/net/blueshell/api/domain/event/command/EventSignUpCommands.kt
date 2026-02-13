@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.event.application.validation.ValidEventSignUpCommand
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.application.query.EventSignUpQuery
-import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
 import net.blueshell.api.shared.command.Command
 
 data class FindEventSignUpsCommand(
@@ -27,8 +26,8 @@ data class FindEventSignUpsByEventIdCommand(
 @ValidEventSignUpCommand
 data class CreateEventSignUpCommand(
     @field:Valid
-    @field:NotNull(message = "EventSignUp DTO is required")
-    override var dto: EventSignUpDTO,
+    @field:NotNull(message = "EventSignUp data is required")
+    override var data: EventSignUpData,
     val principalId: Long?
 ) : Command<EventSignUp>, EventSignUpCandidate
 
@@ -38,8 +37,8 @@ data class UpdateEventSignUpCommand(
     var eventId: Long,
 
     @field:Valid
-    @field:NotNull(message = "EventSignUp DTO is required")
-    override var dto: EventSignUpDTO,
+    @field:NotNull(message = "EventSignUp data is required")
+    override var data: EventSignUpData,
 
     val accessToken: String?,
     val principalId: Long?

@@ -5,7 +5,7 @@ import net.blueshell.api.domain.contribution.application.event.ContributionChang
 import net.blueshell.api.domain.contribution.application.event.ContributionChanged
 import net.blueshell.api.domain.contribution.application.event.ContributionPeriodChanged
 import net.blueshell.api.platform.integration.queue.ContactJobs
-import net.blueshell.api.platform.integration.queue.JobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class ContributionContactListener(
-    private val jobDispatcher: JobDispatcher,
+    private val jobDispatcher: JobQueue,
     private val periods: ContributionPeriodService
 ) {
     @EventListener

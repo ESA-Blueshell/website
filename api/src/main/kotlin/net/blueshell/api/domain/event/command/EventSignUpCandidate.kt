@@ -1,7 +1,9 @@
 package net.blueshell.api.domain.event.command
 
-import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
-
+/**
+ * Interface for commands that contain event sign-up data.
+ * Used by validators to access sign-up information.
+ */
 interface EventSignUpCandidate {
-    val dto: EventSignUpDTO
+    val data: EventSignUpData
 }

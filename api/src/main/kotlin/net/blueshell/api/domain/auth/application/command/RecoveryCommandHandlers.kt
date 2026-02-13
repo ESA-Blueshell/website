@@ -5,14 +5,14 @@ import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.queue.EmailJobs
-import net.blueshell.api.platform.integration.queue.JobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
 @Component
 class ResetPasswordHandler(
     private val passwordRecoveryService: PasswordRecoveryService,
-    private val jobDispatcher: JobDispatcher
+    private val jobDispatcher: JobQueue
 ) : CommandHandler<ResetPasswordCommand, Unit> {
     override val commandType = ResetPasswordCommand::class
 
@@ -63,7 +63,7 @@ class MemberActivateHandler(
 @Component
 class ResendUserActivationHandler(
     private val activationService: UserActivationService,
-    private val jobDispatcher: JobDispatcher
+    private val jobDispatcher: JobQueue
 ) : CommandHandler<ResendUserActivationCommand, Unit> {
     override val commandType = ResendUserActivationCommand::class
 
@@ -81,7 +81,7 @@ class ResendUserActivationHandler(
 @Component
 class ResendMemberActivationEmailHandler(
     private val activationService: UserActivationService,
-    private val jobDispatcher: JobDispatcher
+    private val jobDispatcher: JobQueue
 ) : CommandHandler<ResendMemberActivationEmailCommand, Unit> {
     override val commandType = ResendMemberActivationEmailCommand::class
 

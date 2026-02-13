@@ -6,11 +6,8 @@ import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.survey.application.QuestionService
+import net.blueshell.api.domain.survey.command.AnswerData
 import net.blueshell.api.domain.survey.persistence.Answer
-import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.event.web.dto.EventSignUpDTO
-import net.blueshell.api.domain.event.web.dto.GuestDTO
-import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.shared.util.MappingUtil.randomCapitalString
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
@@ -57,8 +54,12 @@ class CreateEventSignUpHandler(
     override val commandType = CreateEventSignUpCommand::class
 
     override fun handle(command: CreateEventSignUpCommand): EventSignUp {
-        command.principalId?.let { command.dto.userId = it }
-        var eventSignUp = mapSignUp(command.dto, eventRepository, questionService)
+        // Apply principalId if provided (overrides data.userId)
+        val signUpData = command.principalId?.let {
+            command.data.copy(userId = it)
+        } ?: command.data
+
+        var eventSignUp = mapSignUp(signUpData, eventRepository, questionService)
         eventSignUp = service.create(eventSignUp)
         return eventSignUp
     }
@@ -79,7 +80,7 @@ class UpdateEventSignUpHandler(
         } else {
             service.findByGuestAccessTokenAndEventId(command.accessToken, command.eventId)
         }
-        applySignUp(command.dto, signUp, eventRepository, questionService)
+        applySignUp(command.data, signUp, eventRepository, questionService)
         return service.update(signUp)
     }
 }
@@ -95,44 +96,47 @@ class DeleteEventSignUpHandler(
     }
 }
 
-private fun mapSignUp(dto: EventSignUpDTO, eventRepository: EventRepository, questionService: QuestionService): EventSignUp {
+private fun mapSignUp(data: EventSignUpData, eventRepository: EventRepository, questionService: QuestionService): EventSignUp {
     val signUp = EventSignUp()
-    applySignUp(dto, signUp, eventRepository, questionService)
+    applySignUp(data, signUp, eventRepository, questionService)
     return signUp
 }
 
-private fun applySignUp(dto: EventSignUpDTO, signUp: EventSignUp, eventRepository: EventRepository, questionService: QuestionService) {
-    signUp.event = eventRepository.getReferenceById(dto.eventId!!)
-    dto.userId?.let { signUp.userId = it }
-    signUp.guest = dto.guest?.let { mapGuest(it) }
+private fun applySignUp(data: EventSignUpData, signUp: EventSignUp, eventRepository: EventRepository, questionService: QuestionService) {
+    signUp.event = eventRepository.getReferenceById(data.eventId)
+    data.userId?.let { signUp.userId = it }
+    signUp.guest = data.guest?.let { mapGuest(it) }
 
-    val mappedAnswers = dto.answers?.map { mapAnswer(it, questionService) } ?: emptyList()
+    val mappedAnswers = data.answers.map { mapAnswer(it, questionService) }
     val answersSet = signUp.answers as MutableSet
     answersSet.clear()
     answersSet.addAll(mappedAnswers)
 
-    dto.version?.let { signUp.version = it }
+    data.version?.let { signUp.version = it }
 }
 
-private fun mapGuest(dto: GuestDTO): Guest {
+private fun mapGuest(data: GuestData): Guest {
     val guest = Guest()
-    guest.name = dto.name!!
-    guest.discord = requireNotNull(dto.discord)
-    guest.email = requireNotNull(dto.email)
-    guest.phoneNumber = dto.phoneNumber
-    dto.version?.let { guest.version = it }
+    guest.name = data.name
+    guest.discord = data.discord
+    guest.email = data.email
+    guest.phoneNumber = data.phoneNumber
+    data.version?.let { guest.version = it }
 
-    if (guest.accessToken == null) {
+    // Generate access token if not provided or if guest is new
+    if (data.accessToken == null && guest.accessToken == null) {
         guest.accessToken = randomCapitalString(30)
+    } else if (data.accessToken != null) {
+        guest.accessToken = data.accessToken
     }
     return guest
 }
 
-private fun mapAnswer(dto: AnswerDTO, questionService: QuestionService): Answer {
+private fun mapAnswer(data: AnswerData, questionService: QuestionService): Answer {
     val answer = Answer()
-    answer.question = questionService.getReferenceById(dto.questionId!!)
-    answer.optionSelections = dto.optionSelections
-    answer.textResponse = dto.textResponse
-    dto.version?.let { answer.version = it }
+    answer.question = questionService.getReferenceById(data.questionId)
+    answer.optionSelections = data.optionSelections?.toMutableList()
+    answer.textResponse = data.textResponse
+    data.version?.let { answer.version = it }
     return answer
 }

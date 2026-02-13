@@ -4,7 +4,12 @@ import jakarta.persistence.*
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import java.time.Instant
+import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
 
+/**
+ * Platform implementation of JobExecution with persistence and tracking capabilities.
+ * Implements the shared JobExecution interface for domain layer usage.
+ */
 @Entity
 @Table(
     name = "job_executions",
@@ -16,7 +21,7 @@ import java.time.Instant
 )
 class JobExecution(
     @Column(name = "job_type", nullable = false)
-    var jobType: String = "",
+    override var jobType: String = "",
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -24,7 +29,7 @@ class JobExecution(
 
     @Lob
     @Column
-    var payload: String? = null,
+    override var payload: String? = null,
 
     @Lob
     @Column(name = "error_message")
@@ -41,4 +46,4 @@ class JobExecution(
 
     @Column(name = "finished_at")
     var finishedAt: Instant? = null
-) : AuditedAutoIdEntity()
+) : AuditedAutoIdEntity(), JobExecutionInterface

@@ -8,7 +8,7 @@ import net.blueshell.api.domain.event.application.event.EventSignUpCreated
 import net.blueshell.api.platform.integration.calendar.job.CalendarEventRef
 import net.blueshell.api.platform.integration.queue.CalendarJobs
 import net.blueshell.api.platform.integration.queue.EmailJobs
-import net.blueshell.api.platform.integration.queue.JobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class EventJobsListener(
-    private val jobDispatcher: JobDispatcher,
+    private val jobDispatcher: JobQueue,
     private val events: EventService,
     private val signUps: EventSignUpService
 ) {

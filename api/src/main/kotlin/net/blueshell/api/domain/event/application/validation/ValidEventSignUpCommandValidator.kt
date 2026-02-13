@@ -17,8 +17,8 @@ class ValidEventSignUpCommandValidator @Autowired constructor(
     override fun isValid(candidate: EventSignUpCandidate?, ctx: ConstraintValidatorContext): Boolean {
         if (candidate == null) return true
 
-        val dto = candidate.dto
-        val eventId = dto.eventId ?: return violation(ctx, "eventId", "Event id is required.")
+        val data = candidate.data
+        val eventId = data.eventId
 
         val event = try {
             events.findById(eventId)
@@ -37,7 +37,7 @@ class ValidEventSignUpCommandValidator @Autowired constructor(
             return true
         }
 
-        val answers = dto.answers ?: mutableListOf()
+        val answers = data.answers
         val provided = LinkedHashSet<Long>()
         var valid = true
 

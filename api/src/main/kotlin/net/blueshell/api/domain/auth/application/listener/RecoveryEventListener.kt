@@ -3,7 +3,7 @@ package net.blueshell.api.domain.auth.application.listener
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.platform.integration.queue.EmailJobs
-import net.blueshell.api.platform.integration.queue.JobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class RecoveryEventListener(
-    private val jobDispatcher: JobDispatcher,
+    private val jobDispatcher: JobQueue,
     private val activationService: UserActivationService
 ) {
 

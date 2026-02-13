@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.shared.security
 
 import net.blueshell.api.domain.user.persistence.User
 

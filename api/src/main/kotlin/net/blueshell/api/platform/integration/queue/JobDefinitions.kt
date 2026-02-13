@@ -2,11 +2,7 @@ package net.blueshell.api.platform.integration.queue
 
 import net.blueshell.api.platform.integration.calendar.job.CalendarEventRef
 import net.blueshell.api.shared.enums.ResetType
-
-interface JobDefinition<T : Any> {
-    val type: String
-    val payloadType: Class<T>
-}
+import net.blueshell.api.shared.job.JobDefinition
 
 object EmailJobs {
     object Recovery : JobDefinition<RecoveryPayload> {

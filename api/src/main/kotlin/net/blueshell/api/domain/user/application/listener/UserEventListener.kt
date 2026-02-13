@@ -5,7 +5,7 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.platform.integration.queue.ContactJobs
-import net.blueshell.api.platform.integration.queue.JobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.enums.Role
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class UserEventListener(
-    private val jobDispatcher: JobDispatcher,
+    private val jobDispatcher: JobQueue,
     private val committeeMembers: CommitteeMemberService,
     private val users: UserService
 ) {

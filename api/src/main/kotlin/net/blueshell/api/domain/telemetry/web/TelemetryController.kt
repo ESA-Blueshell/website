@@ -5,8 +5,8 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.telemetry.command.CreateTelemetryCommand
 import net.blueshell.api.domain.telemetry.command.FindTelemetryByIdCommand
-import net.blueshell.api.domain.telemetry.web.dto.CreateTelemetryRequest
-import net.blueshell.api.domain.telemetry.web.dto.TelemetryResponse
+import net.blueshell.api.domain.telemetry.web.dto.request.CreateTelemetryRequest
+import net.blueshell.api.domain.telemetry.web.dto.response.TelemetryResponse
 import net.blueshell.api.domain.telemetry.web.mapping.asCommand
 import net.blueshell.api.domain.telemetry.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus

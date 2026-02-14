@@ -2,7 +2,7 @@ package net.blueshell.api.domain.auth.application.listener
 
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.user.application.event.UserCreated
-import net.blueshell.api.platform.integration.queue.EmailJobs
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

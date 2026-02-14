@@ -5,9 +5,9 @@ import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.event.EventChange
 import net.blueshell.api.domain.event.application.event.EventChanged
 import net.blueshell.api.domain.event.application.event.EventSignUpCreated
-import net.blueshell.api.platform.integration.calendar.job.CalendarEventRef
-import net.blueshell.api.platform.integration.queue.CalendarJobs
-import net.blueshell.api.platform.integration.queue.EmailJobs
+import net.blueshell.api.shared.job.CalendarEventRef
+import net.blueshell.api.shared.job.CalendarJobs
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

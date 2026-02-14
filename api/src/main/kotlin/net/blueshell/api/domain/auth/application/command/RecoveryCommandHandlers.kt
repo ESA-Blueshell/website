@@ -4,7 +4,7 @@ import net.blueshell.api.domain.auth.application.PasswordRecoveryService
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.queue.EmailJobs
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component

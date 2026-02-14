@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.platform.integration.queue.ContactJobs
+import net.blueshell.api.shared.job.ContactJobs
 import org.springframework.stereotype.Component
 
 /**

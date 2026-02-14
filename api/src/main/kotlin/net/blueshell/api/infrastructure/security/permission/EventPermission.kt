@@ -3,7 +3,7 @@ package net.blueshell.api.infrastructure.security.permission
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.platform.config.permission.BasePermissionEvaluator
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

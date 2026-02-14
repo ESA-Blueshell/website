@@ -2,7 +2,7 @@ package net.blueshell.api.platform.config
 
 import net.blueshell.api.infrastructure.security.JwtAuthFilter
 import net.blueshell.api.infrastructure.security.JwtAuthenticationEntryPoint
-import net.blueshell.api.platform.config.permission.CompositePermissionEvaluator
+import net.blueshell.api.infrastructure.security.permission.CompositePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

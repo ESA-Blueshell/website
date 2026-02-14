@@ -1,6 +1,5 @@
 package net.blueshell.api.platform.integration.email.service
 
-import net.blueshell.api.domain.user.persistence.User
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
@@ -33,14 +32,16 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
 
     /**
      * Send an email using the template with Markdown content
-     * 
-     * @param toUser          The recipient
+     *
+     * @param recipientEmail  The recipient's email address
+     * @param recipientName   The recipient's full name
      * @param mainTitle       The main title for the email
      * @param markdownContent The email content in Markdown format
      * @return The processed HTML email content
      */
     fun createEmail(
-        toUser: User,
+        recipientEmail: String,
+        recipientName: String,
         mainTitle: String,
         markdownContent: String
     ): String {
@@ -52,8 +53,8 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         val variables: MutableMap<String, Any> = HashMap()
         variables["appUrl"] = appUrl
         variables["emailContent"] = htmlContent
-        variables["sentTo"] = toUser.email
-        variables["fullName"] = toUser.fullName
+        variables["sentTo"] = recipientEmail
+        variables["fullName"] = recipientName
         variables["mainTitle"] = mainTitle
 
         // Process the template

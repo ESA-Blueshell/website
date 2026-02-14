@@ -2,7 +2,7 @@ package net.blueshell.api.domain.contribution.application
 
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionReminderRepository
-import net.blueshell.api.platform.integration.queue.EmailJobs
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired

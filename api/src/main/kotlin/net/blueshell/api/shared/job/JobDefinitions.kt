@@ -1,8 +1,6 @@
-package net.blueshell.api.platform.integration.queue
+package net.blueshell.api.shared.job
 
-import net.blueshell.api.platform.integration.calendar.job.CalendarEventRef
 import net.blueshell.api.shared.enums.ResetType
-import net.blueshell.api.shared.job.JobDefinition
 
 object EmailJobs {
     object Recovery : JobDefinition<RecoveryPayload> {
@@ -93,3 +91,5 @@ object ContactJobs {
         val periodId: Long
     )
 }
+
+data class CalendarEventRef(val eventId: Long)

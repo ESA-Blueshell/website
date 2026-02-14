@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.calendar.CalendarAdapter
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.platform.integration.queue.CalendarJobs
+import net.blueshell.api.shared.job.CalendarEventRef
+import net.blueshell.api.shared.job.CalendarJobs
 import org.springframework.stereotype.Component
 
 /**

@@ -4,7 +4,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.event.ContributionChange
 import net.blueshell.api.domain.contribution.application.event.ContributionChanged
 import net.blueshell.api.domain.contribution.application.event.ContributionPeriodChanged
-import net.blueshell.api.platform.integration.queue.ContactJobs
+import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

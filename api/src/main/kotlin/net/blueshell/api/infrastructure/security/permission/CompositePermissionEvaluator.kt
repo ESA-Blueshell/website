@@ -9,7 +9,10 @@ import java.io.Serializable
 import java.util.function.Function
 
 @Component
-class CompositePermissionEvaluator @Autowired constructor(private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>?>) :
+class CompositePermissionEvaluator @Autowired constructor(
+    private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>?>,
+    private val rolePermission: RolePermission
+) :
     PermissionEvaluator {
     override fun hasPermission(auth: Authentication?, target: Any?, perm: Any?): Boolean {
         if (target == null || perm == null) return false
@@ -32,7 +35,15 @@ class CompositePermissionEvaluator @Autowired constructor(private val evaluators
         targetType: String?,
         perm: Any?
     ): Boolean {
-        if (targetId == null || targetType == null || perm == null) return false
+        if (targetType == null || perm == null) return false
+
+        // Check role-based permissions first (targetId can be null for role checks)
+        if (targetType == "Role") {
+            return rolePermission.hasPermission(auth, targetId, targetType, perm)
+        }
+
+        // For domain-based permissions, targetId is required
+        if (targetId == null) return false
 
         return evaluators.stream()
             .filter { e: BasePermissionEvaluator<*, *, *>? ->

@@ -1,10 +1,16 @@
 package net.blueshell.api.architecture
 
+import com.tngtech.archunit.core.domain.JavaMethod
+import com.tngtech.archunit.lang.ArchCondition
+import com.tngtech.archunit.lang.ConditionEvents
+import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
+import org.springframework.security.access.prepost.PreAuthorize
 
 /**
  * ArchUnit tests enforcing access rules between layers and components.
@@ -195,4 +201,37 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .because("ADR-015: Query objects are application concerns, not persistence filters")
                 .allowEmptyShould(true)
         }
+
+    @Test
+    fun `controller methods must not use standalone hasAuthority`(): Unit =
+        arch("@PreAuthorize should use hasPermission, not standalone hasAuthority") {
+            methods()
+                .that().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.WEB)
+                .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
+                .and().areAnnotatedWith(PreAuthorize::class.java)
+                .should(notUseStandaloneHasAuthority())
+                .because("ADR-014: All authorization should use permission evaluators for consistency and testability")
+        }
+
+    private fun notUseStandaloneHasAuthority(): ArchCondition<JavaMethod> {
+        return object : ArchCondition<JavaMethod>("not use standalone hasAuthority") {
+            override fun check(method: JavaMethod, events: ConditionEvents) {
+                val preAuth = method.tryGetAnnotationOfType(PreAuthorize::class.java)
+                if (preAuth.isPresent) {
+                    val expression = preAuth.get().value
+
+                    // Check if hasAuthority is used without hasPermission
+                    val hasAuthority = expression.contains("hasAuthority")
+                    val hasPermission = expression.contains("hasPermission")
+
+                    if (hasAuthority && !hasPermission) {
+                        val msg = "Method ${method.fullName} uses standalone hasAuthority('...') " +
+                                 "instead of hasPermission(...): $expression. " +
+                                 "Use hasPermission(null, 'Role', 'ROLENAME') for role checks."
+                        events.add(SimpleConditionEvent.violated(method, msg))
+                    }
+                }
+            }
+        }
+    }
 }

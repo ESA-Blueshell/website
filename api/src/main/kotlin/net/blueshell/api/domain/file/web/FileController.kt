@@ -25,7 +25,7 @@ class FileController(
     private val commandBus: CommandBus
 ) : BaseController<net.blueshell.api.domain.file.application.FileService>(service) {
     @GetMapping("/events/{eventId}/banners")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#eventId, 'Event', 'read')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
         return commandBus.dispatch(DownloadEventBannerCommand(eventId))
     }
@@ -34,7 +34,7 @@ class FileController(
     @ResponseStatus(
         HttpStatus.CREATED
     )
-    @PreAuthorize("hasAuthority('COMMITTEE')")
+    @PreAuthorize("hasPermission(null, 'Role', 'COMMITTEE')")
     fun uploadEventBanner(
         @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 2 * 1024 * 1024) @AllowedContentTypes(
             "image/png",

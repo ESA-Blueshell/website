@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*
 class ContributionReminderController @Autowired constructor(
     private val commandBus: CommandBus
 ) {
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminder(@Valid @RequestBody request: CreateContributionReminderRequest): ContributionReminderResponse {
@@ -26,7 +26,7 @@ class ContributionReminderController @Autowired constructor(
         return reminder.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminderBatch(@Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>): MutableList<ContributionReminderResponse> {
@@ -34,7 +34,7 @@ class ContributionReminderController @Autowired constructor(
         return reminders.map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @GetMapping("/contributionReminders")
     fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderResponse> {
         val reminders = commandBus.dispatch(FindContributionRemindersCommand(contributionPeriodId))

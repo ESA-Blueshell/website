@@ -27,7 +27,7 @@ class EventController(
     service: net.blueshell.api.domain.event.application.EventService,
     private val commandBus: CommandBus
 ) : BaseController<net.blueshell.api.domain.event.application.EventService>(service) {
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#request.committeeId, 'Committee', 'events')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#request.committeeId, 'Committee', 'events')")
     @PostMapping("/events")
     @ResponseStatus(
         HttpStatus.CREATED
@@ -37,14 +37,14 @@ class EventController(
         return event.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Event', 'write')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Event', 'write')")
     @PutMapping("/events/{id}")
     fun updateEvent(@PathVariable id: Long, @Valid @RequestBody request: UpdateEventRequest): EventResponse {
         val event = commandBus.dispatch(request.asCommand(id))
         return event.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @PutMapping("/events/{id}/approve")
     fun approveEvent(@PathVariable id: Long, @QueryParam(value = "approved") approved: Boolean): EventResponse {
         val event = commandBus.dispatch(ApproveEventCommand(id, approved))
@@ -52,7 +52,7 @@ class EventController(
     }
 
     @GetMapping("/events/{id}")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Event', 'read')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Event', 'read')")
     fun findEventById(@PathVariable id: Long): EventResponse {
         val event = commandBus.dispatch(FindEventByIdCommand(id))
         return event.asResponse()
@@ -68,7 +68,7 @@ class EventController(
         return events.map { it.asResponse() }
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @DeleteMapping("/events/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteEventById(@PathVariable eventId: Long) {

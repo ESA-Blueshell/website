@@ -75,7 +75,7 @@ class UserController(
     }
 
     @PutMapping(value = ["/users/{id}"])
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'User', 'write')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'User', 'write')")
     fun updateUser(
         @PathVariable id: Long,
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest,
@@ -87,7 +87,7 @@ class UserController(
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     fun findUsers(
         @ParameterObject query: UserQuery = UserQuery(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()
@@ -97,21 +97,21 @@ class UserController(
     }
 
     @GetMapping(value = ["/users/{userId}"])
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'read')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#userId, 'User', 'read')")
     fun findUserById(@PathVariable userId: Long): UserDetailResponse {
         val user = commandBus.dispatch(FindUserByIdCommand(userId))
         return user.asDetailResponse()
     }
 
     @DeleteMapping(value = ["/users/{userId}"])
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserById(@PathVariable userId: Long) {
         commandBus.dispatch(DeleteUserByIdCommand(userId))
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasPermission(null, 'Role', 'ADMIN')")
     fun toggleUserRole(
         @PathVariable userId: Long,
         @RequestParam(value = "role") role: Role

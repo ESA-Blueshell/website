@@ -21,7 +21,7 @@ class AddressController(
     private val commandBus: CommandBus
 ) : BaseController<net.blueshell.api.domain.user.application.AddressService>(service) {
     @PostMapping("/users/{userId}/addresses")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#userId, 'User', 'write')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#userId, 'User', 'write')")
     @ResponseStatus(
         HttpStatus.CREATED
     )
@@ -31,35 +31,35 @@ class AddressController(
     }
 
     @PutMapping("/addresses/{id}")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'write')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Address', 'write')")
     fun updateAddress(@PathVariable id: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
         val address = commandBus.dispatch(request.asCommand(id))
         return address.asResponse()
     }
 
     @GetMapping("/addresses")
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     fun findAllAddresses(): MutableList<AddressResponse> {
         val addresses = commandBus.dispatch(FindAllAddressesCommand())
         return addresses.map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping("/addresses/{id}")
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Address', 'read')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Address', 'read')")
     fun findAddressById(@PathVariable id: Long): AddressResponse {
         val address = commandBus.dispatch(FindAddressByIdCommand(id))
         return address.asResponse()
     }
 
     @DeleteMapping("/users/{userId}/addresses")
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserAddress(@PathVariable userId: Long) {
         commandBus.dispatch(DeleteUserAddressCommand(userId))
     }
 
     @DeleteMapping("/addresses/{id}")
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAddressById(@PathVariable id: Long) {
         commandBus.dispatch(DeleteAddressByIdCommand(id))

@@ -26,13 +26,13 @@ class MembershipController(
     service: net.blueshell.api.domain.membership.application.MembershipService,
     private val commandBus: CommandBus
 ) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(service) {
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject query: MembershipQuery = MembershipQuery()): MutableList<MembershipResponse> {
         return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasAuthority('GUEST')")
+    @PreAuthorize("hasPermission(null, 'Role', 'GUEST')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(
@@ -48,7 +48,7 @@ class MembershipController(
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @PostMapping("memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
@@ -58,14 +58,14 @@ class MembershipController(
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
     @PutMapping(value = ["/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
         val membership = commandBus.dispatch(request.asCommand(id))
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasAuthority('BOARD') || hasPermission(#id, 'Membership', 'read')")
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/{id}"])
     fun findMembershipById(@PathVariable id: Long): MembershipResponse {
         return commandBus.dispatch(FindMembershipByIdCommand(id)).asResponse()

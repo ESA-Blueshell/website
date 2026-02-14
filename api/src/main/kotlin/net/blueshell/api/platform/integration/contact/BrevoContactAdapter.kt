@@ -5,6 +5,7 @@ import net.blueshell.api.domain.user.application.contact.ContactServiceException
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 
@@ -23,9 +24,12 @@ import org.springframework.web.client.RestClientResponseException
  * - Easy to replace with Mailchimp, SendGrid, etc.
  * - All Brevo API errors are translated to domain exceptions
  * - Testing is simplified (mock the adapter interface)
+ *
+ * Active in production profile only (test/dev use MockContactAdapter)
  */
 @Service
 @Primary
+@Profile("!test & !dev")
 class BrevoContactAdapter(
     private val brevoClient: BrevoContactClient
 ) : ContactSyncAdapter {

@@ -1,0 +1,340 @@
+package net.blueshell.api.platform.integration.email.job
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.domain.event.persistence.EventSignUp
+import net.blueshell.api.domain.event.persistence.Guest
+import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.mock.MockJavaMailSender
+import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.testsupport.ServiceTestSupport
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.Instant
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+
+/**
+ * Integration tests for email job handlers.
+ *
+ * Tests job payload parsing and email sending through job execution.
+ */
+class EmailJobHandlersTest : ServiceTestSupport() {
+
+    @Autowired
+    private lateinit var recoveryEmailJob: RecoveryEmailJob
+
+    @Autowired
+    private lateinit var eventSignupEmailJob: EventSignupEmailJob
+
+    @Autowired
+    private lateinit var contributionReminderEmailJob: ContributionReminderEmailJob
+
+    @Autowired
+    private lateinit var mailSender: MockJavaMailSender
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
+    @BeforeEach
+    fun clearMailbox() {
+        mailSender.clear()
+    }
+
+    @Nested
+    inner class RecoveryEmailJobTest {
+
+        @Test
+        fun `processes password reset job and sends email`() {
+            // Given: User in database and job execution
+            val user = createAndSaveUser("john.doe", "john@example.com")
+            val payload = EmailJobs.RecoveryPayload(
+                userId = user.id!!,
+                token = "reset-token-123",
+                resetType = ResetType.PASSWORD_RESET
+            )
+            val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
+
+            // When: Handling job
+            recoveryEmailJob.handle(jobExecution.payload)
+
+            // Then: Email is sent
+            val emails = mailSender.outbox
+            assertThat(emails).hasSize(1)
+            assertThat(emails.first().allRecipients.map { it.toString() })
+                .contains("john@example.com")
+            assertThat(emails.first().subject)
+                .contains("Reset Your")
+        }
+
+        @Test
+        fun `processes user activation job and sends email`() {
+            // Given: User and activation job
+            val user = createAndSaveUser("jane.smith", "jane@example.com")
+            val payload = EmailJobs.RecoveryPayload(
+                userId = user.id!!,
+                token = "activation-token-456",
+                resetType = ResetType.USER_ACTIVATION
+            )
+            val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
+
+            // When: Handling job
+            recoveryEmailJob.handle(jobExecution.payload)
+
+            // Then: Activation email is sent
+            val emails = mailSender.outbox
+            assertThat(emails).hasSize(1)
+            assertThat(emails.first().subject).contains("Activate")
+        }
+
+        @Test
+        fun `processes member activation job and sends email`() {
+            // Given: User and member activation job
+            val user = createAndSaveUser("board.member", "board@example.com")
+            val payload = EmailJobs.RecoveryPayload(
+                userId = user.id!!,
+                token = "member-token-789",
+                resetType = ResetType.MEMBER_ACTIVATION
+            )
+            val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
+
+            // When: Handling job
+            recoveryEmailJob.handle(jobExecution.payload)
+
+            // Then: Member activation email is sent
+            val emails = mailSender.outbox
+            assertThat(emails).hasSize(1)
+            assertThat(emails.first().content.toString())
+                .contains("board of Blueshell")
+        }
+
+        @Test
+        fun `job type matches Recovery type`() {
+            assertThat(recoveryEmailJob.jobType).isEqualTo(EmailJobs.Recovery.type)
+        }
+    }
+
+    @Nested
+    inner class EventSignupEmailJobTest {
+
+        @Test
+        fun `processes event signup job and sends email`() {
+            // Given: Event signup in database and job
+            val event = createAndSaveEvent("Test Tournament", "Campus Hall")
+            val signUp = createAndSaveSignUp(event, "Guest User", "guest@example.com")
+            val payload = EmailJobs.EventSignupPayload(eventSignUpId = signUp.id!!)
+            val jobExecution = createJobExecution(EmailJobs.EventSignup.type, payload)
+
+            // When: Handling job
+            eventSignupEmailJob.handle(jobExecution.payload)
+
+            // Then: Signup email is sent
+            val emails = mailSender.outbox
+            assertThat(emails).hasSize(1)
+            assertThat(emails.first().allRecipients.map { it.toString() })
+                .contains("guest@example.com")
+            assertThat(emails.first().subject)
+                .contains("Event Registration Confirmed")
+                .contains("Test Tournament")
+        }
+
+        @Test
+        fun `job type matches EventSignup type`() {
+            assertThat(eventSignupEmailJob.jobType).isEqualTo(EmailJobs.EventSignup.type)
+        }
+    }
+
+    @Nested
+    inner class ContributionReminderEmailJobTest {
+
+        @Test
+        fun `processes contribution reminder job and sends email`() {
+            // Given: User, period, reminder, and job
+            val user = createAndSaveUser("contributor", "contributor@example.com")
+            val period = createAndSavePeriod()
+            createAndSaveReminder(user.id!!, period.id!!)
+
+            val payload = EmailJobs.ContributionReminderPayload(
+                userId = user.id!!,
+                contributionPeriodId = period.id!!
+            )
+            val jobExecution = createJobExecution(EmailJobs.ContributionReminder.type, payload)
+
+            // When: Handling job
+            contributionReminderEmailJob.handle(jobExecution.payload)
+
+            // Then: Reminder email is sent
+            val emails = mailSender.outbox
+            assertThat(emails).hasSize(1)
+            assertThat(emails.first().allRecipients.map { it.toString() })
+                .contains("contributor@example.com")
+            assertThat(emails.first().subject)
+                .contains("Contribution Payment Reminder")
+        }
+
+        @Test
+        fun `job type matches ContributionReminder type`() {
+            assertThat(contributionReminderEmailJob.jobType)
+                .isEqualTo(EmailJobs.ContributionReminder.type)
+        }
+    }
+
+    @Nested
+    inner class JobPayloadParsing {
+
+        @Test
+        fun `RecoveryEmailJob parses JSON payload correctly`() {
+            // Given: User and JSON payload
+            val user = createAndSaveUser("parse.test", "parse@example.com")
+            val payloadJson = """
+                {
+                    "userId": ${user.id},
+                    "token": "test-token",
+                    "resetType": "PASSWORD_RESET"
+                }
+            """.trimIndent()
+            val jobExecution = JobExecution().apply {
+                this.jobType = EmailJobs.Recovery.type
+                this.payload = payloadJson
+            }
+            persist(jobExecution)
+
+            // When: Handling job
+            recoveryEmailJob.handle(jobExecution.payload)
+
+            // Then: Email is sent (payload parsed correctly)
+            assertThat(mailSender.outbox).hasSize(1)
+        }
+
+        @Test
+        fun `EventSignupEmailJob parses JSON payload correctly`() {
+            // Given: Event signup and JSON payload
+            val event = createAndSaveEvent("Parse Test", "Location")
+            val signUp = createAndSaveSignUp(event, "Guest", "guest@example.com")
+            val payloadJson = """
+                {
+                    "eventSignUpId": ${signUp.id}
+                }
+            """.trimIndent()
+            val jobExecution = JobExecution().apply {
+                this.jobType = EmailJobs.EventSignup.type
+                this.payload = payloadJson
+            }
+            persist(jobExecution)
+
+            // When: Handling job
+            eventSignupEmailJob.handle(jobExecution.payload)
+
+            // Then: Email is sent (payload parsed correctly)
+            assertThat(mailSender.outbox).hasSize(1)
+        }
+
+        @Test
+        fun `ContributionReminderEmailJob parses JSON payload correctly`() {
+            // Given: Reminder and JSON payload
+            val user = createAndSaveUser("reminder.test", "reminder@example.com")
+            val period = createAndSavePeriod()
+            createAndSaveReminder(user.id!!, period.id!!)
+
+            val payloadJson = """
+                {
+                    "userId": ${user.id},
+                    "contributionPeriodId": ${period.id}
+                }
+            """.trimIndent()
+            val jobExecution = JobExecution().apply {
+                this.jobType = EmailJobs.ContributionReminder.type
+                this.payload = payloadJson
+            }
+            persist(jobExecution)
+
+            // When: Handling job
+            contributionReminderEmailJob.handle(jobExecution.payload)
+
+            // Then: Email is sent (payload parsed correctly)
+            assertThat(mailSender.outbox).hasSize(1)
+        }
+    }
+
+    // Helper methods
+    private fun createJobExecution(jobType: String, payload: Any): JobExecution {
+        val jobExecution = JobExecution()
+        jobExecution.jobType = jobType
+        jobExecution.payload = objectMapper.writeValueAsString(payload)
+        return persist(jobExecution)
+    }
+
+    private fun createAndSaveUser(username: String, email: String): User {
+        val user = User(
+            username = username,
+            password = passwordEncoder.encode("Password123!"),
+            firstName = username.split(".").first().capitalize(),
+            lastName = username.split(".").getOrElse(1) { "User" }.capitalize()
+        )
+        user.email = email
+        user.enabled = true
+        user.roles = mutableSetOf(Role.MEMBER)
+        return persist(user)
+    }
+
+    private fun createAndSavePeriod(): ContributionPeriod {
+        val period = ContributionPeriod()
+        period.startDate = LocalDate.of(2024, 1, 1)
+        period.endDate = LocalDate.of(2024, 12, 31)
+        period.halfYearFee = 25.0
+        period.fullYearFee = 45.0
+        period.alumniFee = 10.0
+        return persist(period)
+    }
+
+    private fun createAndSaveReminder(userId: Long, periodId: Long): ContributionReminder {
+        val reminder = ContributionReminder()
+        reminder.id = ContributionReminder.Id(userId, periodId)
+        return persist(reminder)
+    }
+
+    private fun createAndSaveEvent(title: String, location: String): Event {
+        val committee = createAndSaveCommittee("Test Committee")
+        val event = Event()
+        event.committee = committee
+        event.title = title
+        event.location = location
+        event.startTime = Instant.now().plus(7, ChronoUnit.DAYS)
+        event.endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS)
+        event.approved = true
+        event.signUp = true
+        return persist(event)
+    }
+
+    private fun createAndSaveCommittee(name: String): Committee {
+        val committee = Committee()
+        committee.name = name
+        committee.description = "Test committee for integration tests"
+        return persist(committee)
+    }
+
+    private fun createAndSaveSignUp(event: Event, guestName: String, guestEmail: String): EventSignUp {
+        val guest = Guest()
+        guest.name = guestName
+        guest.email = guestEmail
+        guest.accessToken = "test-token-${System.currentTimeMillis()}"
+
+        val signUp = EventSignUp()
+        signUp.event = event
+        signUp.guest = guest
+        return persist(signUp)
+    }
+}

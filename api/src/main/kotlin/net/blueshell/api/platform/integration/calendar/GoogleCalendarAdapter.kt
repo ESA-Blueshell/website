@@ -6,6 +6,7 @@ import net.blueshell.api.domain.event.application.calendar.CalendarEventRef
 import net.blueshell.api.domain.event.application.calendar.CalendarServiceException
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.io.IOException
 
@@ -24,9 +25,12 @@ import java.io.IOException
  * - Easy to replace with Microsoft Calendar, Apple Calendar, etc.
  * - All Google API errors are translated to domain exceptions
  * - Testing is simplified (mock the adapter interface)
+ *
+ * Active in production profile only (test/dev use MockCalendarAdapter)
  */
 @Service
 @Primary
+@Profile("!test & !dev")
 class GoogleCalendarAdapter(
     private val googleCalendarClient: GoogleCalendarClient
 ) : CalendarAdapter {

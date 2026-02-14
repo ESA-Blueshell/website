@@ -134,6 +134,84 @@ platform/
 **📚 ADR References:**
 - **[ADR-001](docs/ADR-001-multi-layered-domain-driven-architecture.md)**: Complete layer structure and responsibilities
 - **[ADR-016](docs/ADR-016-layer-dependency-rules.md)**: Layer dependency rules and violations
+- **[ADR-022](docs/ADR-022-platform-infrastructure-shared-organization.md)**: Platform, infrastructure, and shared organization
+
+## Platform, Infrastructure, and Shared Organization
+
+The API module distinguishes three cross-cutting layers with specific responsibilities:
+
+### Shared Kernel (`shared/`)
+**Purpose**: Cross-cutting contracts and abstractions used by all domains
+**Contents**: Command/Event infrastructure, base entities, job definitions, email content DTOs
+**Dependencies**: None (innermost layer - only Java/Kotlin stdlib)
+**Key Principle**: Defines interfaces and contracts, NOT implementations
+
+**Example:**
+```kotlin
+// shared/email/EmailContent.kt - Contract between domains and platform
+data class EmailContent(
+    val recipientEmail: String,
+    val subject: String,
+    val markdownContent: String
+)
+
+// shared/job/JobDefinitions.kt - Job contracts
+object CalendarJobs {
+    data class AddEvent(val eventId: Long)
+}
+```
+
+### Infrastructure (`infrastructure/`)
+**Purpose**: Spring Security and framework-specific infrastructure
+**Contents**: JWT authentication, permission evaluators, security filters
+**Dependencies**: Can depend on any layer (adapter pattern)
+**Key Principle**: Framework-specific, domain-aware implementations
+
+**Example:**
+```kotlin
+// infrastructure/security/permission/UserPermission.kt
+@Component
+class UserPermission(userService: UserService) :
+    BasePermissionEvaluator<User, Long, UserService>(userService) {
+    // Spring Security PermissionEvaluator
+}
+```
+
+### Platform (`platform/`)
+**Purpose**: External integrations and application configuration
+**Contents**: Anti-Corruption Layers (email, calendar, payments), Spring configuration, job queue
+**Dependencies**: Implements shared/ interfaces, adapts external APIs
+**Key Principle**: Isolates domains from external system details
+
+**Example:**
+```kotlin
+// platform/integration/email/service/EmailService.kt
+@Service
+class EmailService(private val brevoClient: BrevoClient) {
+    fun sendEmail(emailContent: EmailContent) {
+        // Adapts EmailContent to Brevo API
+        brevoClient.send(emailContent.toBrevoRequest())
+    }
+}
+```
+
+### Decision Tree: Where Does X Go?
+
+1. **Is it a contract between domains?** → `shared/`
+   - Examples: JobDefinition, EmailContent, Command, Event
+
+2. **Is it Spring Security infrastructure?** → `infrastructure/security/`
+   - Examples: JWT utilities, permission evaluators, auth filters
+
+3. **Is it an external system adapter?** → `platform/integration/{system}/`
+   - Examples: GoogleCalendarAdapter, BrevoEmailService, MolliePaymentClient
+
+4. **Is it Spring configuration?** → `platform/config/`
+   - Examples: SecurityConfig, JpaConfig, RabbitMqConfig
+
+**📚 See**: [ADR-022](docs/ADR-022-platform-infrastructure-shared-organization.md) for detailed guidance and examples
+
+---
 
 ## Key Architectural Patterns
 

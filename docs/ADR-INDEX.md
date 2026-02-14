@@ -12,6 +12,7 @@ This document provides an index of all Architecture Decision Records for the Blu
 | [002](ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Accepted | Uses Command pattern with CommandBus for all write operations |
 | [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Entity references as single source of truth with computed ID properties |
 | [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Accepted | Strict layer dependency rules based on clean/hexagonal architecture principles |
+| [022](ADR-022-platform-infrastructure-shared-organization.md) | Platform, Infrastructure, and Shared Organization | Accepted | Clear distinction between platform/, infrastructure/, and shared/ with decision tree |
 
 ### Strategic Domain-Driven Design
 
@@ -129,7 +130,6 @@ When making significant architectural decisions:
 
 - [CLAUDE.md](../CLAUDE.md) - Development guidelines
 - [README.md](../README.md) - Project overview
-- [association-refactor-checklist.md](association-refactor-checklist.md) - Entity association refactoring guide
 
 ## Maintenance
 
@@ -140,4 +140,4 @@ ADRs should be:
 - ✅ Used for onboarding new developers
 - ✅ Superseded rather than deleted when outdated
 
-Last Updated: 2026-02-13
+Last Updated: 2026-02-14

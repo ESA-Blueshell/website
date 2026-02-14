@@ -19,9 +19,10 @@ internal object CreateUserCommandRequestToCommandMapper : ObjectMappie<CreateUse
         CreateUserCommand::roles fromValue (from.request.roles ?: emptySet<Role>())
         CreateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
         CreateUserCommand::nationality fromValue from.request.nationality
-        CreateUserCommand::photoConsent fromValue from.request.photoConsent!!
-        CreateUserCommand::ehbo fromValue from.request.ehbo!!
-        CreateUserCommand::bhv fromValue from.request.bhv!!
+        // BOARD-only fields - use safe access for non-BOARD requests
+        CreateUserCommand::photoConsent fromValue (from.request.photoConsent ?: false)
+        CreateUserCommand::ehbo fromValue (from.request.ehbo ?: false)
+        CreateUserCommand::bhv fromValue (from.request.bhv ?: false)
         CreateUserCommand::enabled fromValue (from.request.enabled ?: false)
         CreateUserCommand::gender fromValue from.request.gender
         CreateUserCommand::studentNumber fromValue from.request.studentNumber
@@ -31,7 +32,7 @@ internal object CreateUserCommandRequestToCommandMapper : ObjectMappie<CreateUse
         CreateUserCommand::firstName fromValue from.request.firstName
         CreateUserCommand::prefix fromValue from.request.prefix
         CreateUserCommand::lastName fromValue from.request.lastName
-        CreateUserCommand::newsletter fromValue from.request.newsletter!!
+        CreateUserCommand::newsletter fromValue (from.request.newsletter ?: false)
         CreateUserCommand::password fromValue from.request.password
         CreateUserCommand::addressId fromValue from.request.addressId
         CreateUserCommand::discord fromValue from.request.discord
@@ -45,13 +46,13 @@ internal data class CreateGuestUserCommandRequest(
 
 internal object CreateGuestUserCommandRequestToCommandMapper : ObjectMappie<CreateGuestUserCommandRequest, CreateGuestUserCommand>() {
     override fun map(from: CreateGuestUserCommandRequest) = mapping {
-        CreateGuestUserCommand::username fromValue from.request.username
-        CreateGuestUserCommand::initials fromValue from.request.initials
-        CreateGuestUserCommand::firstName fromValue from.request.firstName
+        CreateGuestUserCommand::username fromValue (from.request.username ?: "")
+        CreateGuestUserCommand::initials fromValue (from.request.initials ?: "")
+        CreateGuestUserCommand::firstName fromValue (from.request.firstName ?: "")
         CreateGuestUserCommand::prefix fromValue from.request.prefix
-        CreateGuestUserCommand::lastName fromValue from.request.lastName
-        CreateGuestUserCommand::newsletter fromValue from.request.newsletter!!
-        CreateGuestUserCommand::password fromValue from.request.password!!
+        CreateGuestUserCommand::lastName fromValue (from.request.lastName ?: "")
+        CreateGuestUserCommand::newsletter fromValue (from.request.newsletter ?: false)
+        CreateGuestUserCommand::password fromValue (from.request.password ?: "")
         CreateGuestUserCommand::addressId fromValue from.request.addressId
         CreateGuestUserCommand::email fromValue from.request.email
         CreateGuestUserCommand::discord fromValue from.request.discord
@@ -69,7 +70,7 @@ internal object UpdateGuestUserCommandRequestToCommandMapper : ObjectMappie<Upda
         UpdateGuestUserCommand::id fromProperty from::id
         UpdateGuestUserCommand::discord fromValue from.request.discord
         UpdateGuestUserCommand::phoneNumber fromValue from.request.phoneNumber
-        UpdateGuestUserCommand::newsletter fromValue from.request.newsletter!!
+        UpdateGuestUserCommand::newsletter fromValue (from.request.newsletter ?: false)
         UpdateGuestUserCommand::version fromValue from.request.version
     }
 }
@@ -87,9 +88,10 @@ internal object UpdateUserCommandRequestToCommandMapper : ObjectMappie<UpdateUse
         UpdateUserCommand::roles fromValue (from.request.roles ?: emptySet<Role>())
         UpdateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
         UpdateUserCommand::nationality fromValue from.request.nationality
-        UpdateUserCommand::photoConsent fromValue from.request.photoConsent!!
-        UpdateUserCommand::ehbo fromValue from.request.ehbo!!
-        UpdateUserCommand::bhv fromValue from.request.bhv!!
+        // BOARD-only fields - use safe access for non-BOARD requests
+        UpdateUserCommand::photoConsent fromValue (from.request.photoConsent ?: false)
+        UpdateUserCommand::ehbo fromValue (from.request.ehbo ?: false)
+        UpdateUserCommand::bhv fromValue (from.request.bhv ?: false)
         UpdateUserCommand::enabled fromValue (from.request.enabled ?: false)
         UpdateUserCommand::gender fromValue from.request.gender
         UpdateUserCommand::studentNumber fromValue from.request.studentNumber
@@ -99,7 +101,7 @@ internal object UpdateUserCommandRequestToCommandMapper : ObjectMappie<UpdateUse
         UpdateUserCommand::firstName fromValue from.request.firstName
         UpdateUserCommand::prefix fromProperty from.request::prefix
         UpdateUserCommand::lastName fromProperty from.request::lastName
-        UpdateUserCommand::newsletter fromValue from.request.newsletter!!
+        UpdateUserCommand::newsletter fromValue (from.request.newsletter ?: false)
         UpdateUserCommand::addressId fromProperty from.request::addressId
         UpdateUserCommand::discord fromProperty from.request::discord
         UpdateUserCommand::phoneNumber fromProperty from.request::phoneNumber

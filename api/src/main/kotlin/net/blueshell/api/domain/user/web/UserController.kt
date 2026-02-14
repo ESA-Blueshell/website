@@ -19,6 +19,7 @@ import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.annotation.Validated
@@ -36,11 +37,18 @@ class UserController(
 ) {
     @PostMapping("/users")
     @PermitAll
-    @ResponseStatus(HttpStatus.CREATED) // TODO: Once all members are in the site, remove the ability for admins to create new users
+    @ResponseStatus(HttpStatus.CREATED)
     fun createUser(
         @RequestBody request: CreateUserRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): UserDetailResponse {
+        // Block non-BOARD authenticated users from creating accounts
+        // Allows: anonymous users (principal == null) and BOARD users
+        // Denies: MEMBER, GUEST, COMMITTEE, etc.
+        if (principal != null && !principal.hasAuthority(Role.BOARD)) {
+            throw AccessDeniedException("Only anonymous users or BOARD members can create users")
+        }
+
         val isBoard = principal?.hasAuthority(Role.BOARD) == true
         val groups: Array<Class<*>> = if (isBoard)
             arrayOf(net.blueshell.api.shared.validation.group.Administration::class.java)

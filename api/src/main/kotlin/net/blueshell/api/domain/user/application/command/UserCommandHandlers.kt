@@ -43,7 +43,16 @@ class CreateUserHandler(
 
         if (command.isBoard) {
             user.enabled = command.enabled
-            user.roles = command.roles.toMutableSet()
+            // Defensive: Ensure at least GUEST role if roles is empty
+            user.roles = if (command.roles.isEmpty()) {
+                mutableSetOf(net.blueshell.api.shared.enums.Role.GUEST)
+            } else {
+                command.roles.toMutableSet()
+            }
+        } else {
+            // Defensive: Explicitly set GUEST role for non-BOARD users
+            user.roles = mutableSetOf(net.blueshell.api.shared.enums.Role.GUEST)
+            user.enabled = false
         }
 
         user.password = if (command.isBoard) {

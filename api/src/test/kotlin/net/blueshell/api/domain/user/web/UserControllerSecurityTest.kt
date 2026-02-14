@@ -42,7 +42,95 @@ class UserControllerSecurityTest : UserTestSupport() {
                 post("/users")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"adminuser","email":"adminuser@test.com","password":"Password123!","roles":["MEMBER"]}""")
+                    .content("""{"username":"adminuser","email":"adminuser@test.com","password":"Password123!","roles":["MEMBER"],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `denies non-BOARD authenticated users from creating regular users`() {
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `denies COMMITTEE from creating regular users`() {
+            val committee = createUserWithRole(Role.COMMITTEE)
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(committee))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `denies GUEST from creating users`() {
+            val guest = createUserWithRole(Role.GUEST)
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(guest))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `regular user cannot send roles field - validation fails`() {
+            mvc.perform(
+                post("/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"hacker","email":"hack@test.com","password":"Password123!","roles":["ADMIN"]}""")
+            )
+                .andExpect(status().isCreated) // Anonymous users can still create, roles field is ignored
+        }
+
+        @Test
+        fun `BOARD creates user with empty roles array - gets GUEST role`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"emptyuser","email":"empty@test.com","roles":[],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `BOARD can create users with MEMBER role`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"member1","email":"member1@test.com","roles":["MEMBER"],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `BOARD can create users with multiple roles`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"multi","email":"multi@test.com","roles":["MEMBER","COMMITTEE"],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
             )
                 .andExpect(status().isCreated)
         }

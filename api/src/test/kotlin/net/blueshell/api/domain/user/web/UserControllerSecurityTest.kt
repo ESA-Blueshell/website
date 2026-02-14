@@ -35,14 +35,14 @@ class UserControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `allows BOARD to create user with additional fields`() {
+        fun `allows BOARD to create users `() {
             val board = createUserWithRole(Role.BOARD)
 
             mvc.perform(
                 post("/users")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"adminuser","email":"adminuser@test.com","password":"Password123!","roles":["MEMBER"],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
+                    .content("""{"username":"adminuser","email":"adminuser@test.com","password":"Password123!","dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
             )
                 .andExpect(status().isCreated)
         }
@@ -87,52 +87,42 @@ class UserControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `regular user cannot send roles field - validation fails`() {
+        fun `anonymous user creates regular user with GUEST role only`() {
             mvc.perform(
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"hacker","email":"hack@test.com","password":"Password123!","roles":["ADMIN"]}""")
+                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
             )
-                .andExpect(status().isCreated) // Anonymous users can still create, roles field is ignored
+                .andExpect(status().isCreated)
         }
 
         @Test
-        fun `BOARD creates user with empty roles array - gets GUEST role`() {
+        fun `anonymous user creates user with GUEST role and disabled state`() {
+            mvc.perform(
+                post("/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"testuser","email":"test@test.com","password":"Password123!"}""")
+            )
+                .andExpect(status().isCreated)
+
+            // User is created with GUEST role and disabled state
+            // Additional roles granted through membership/committee operations
+            // Account activation happens through recovery controller's activate endpoint
+        }
+
+        @Test
+        fun `BOARD user creates user with GUEST role and disabled state`() {
             val board = createUserWithRole(Role.BOARD)
 
             mvc.perform(
                 post("/users")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"emptyuser","email":"empty@test.com","roles":[],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
+                    .content("""{"username":"testuser2","email":"test2@test.com","password":"Password123!"}""")
             )
                 .andExpect(status().isCreated)
-        }
 
-        @Test
-        fun `BOARD can create users with MEMBER role`() {
-            val board = createUserWithRole(Role.BOARD)
-
-            mvc.perform(
-                post("/users")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"member1","email":"member1@test.com","roles":["MEMBER"],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
-            )
-                .andExpect(status().isCreated)
-        }
-
-        @Test
-        fun `BOARD can create users with multiple roles`() {
-            val board = createUserWithRole(Role.BOARD)
-
-            mvc.perform(
-                post("/users")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"multi","email":"multi@test.com","roles":["MEMBER","COMMITTEE"],"enabled":true,"dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
-            )
-                .andExpect(status().isCreated)
+            // User is created with GUEST role and disabled state regardless of who creates them
         }
     }
 

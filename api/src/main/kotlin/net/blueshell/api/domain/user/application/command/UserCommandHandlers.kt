@@ -39,22 +39,6 @@ class CreateUserHandler(
         user.newsletter = command.newsletter
         user.gender = command.gender
         user.studentNumber = command.studentNumber
-        command.addressId?.let { user.address = addresses.findById(it) }
-
-        if (command.isBoard) {
-            user.enabled = command.enabled
-            // Defensive: Ensure at least GUEST role if roles is empty
-            user.roles = if (command.roles.isEmpty()) {
-                mutableSetOf(net.blueshell.api.shared.enums.Role.GUEST)
-            } else {
-                command.roles.toMutableSet()
-            }
-        } else {
-            // Defensive: Explicitly set GUEST role for non-BOARD users
-            user.roles = mutableSetOf(net.blueshell.api.shared.enums.Role.GUEST)
-            user.enabled = false
-        }
-
         user.password = if (command.isBoard) {
             passwordEncoder.encode(MappingUtil.generateRandomString())
         } else {
@@ -87,7 +71,6 @@ class CreateGuestUserHandler(
         user.discord = command.discord
         user.phoneNumber = command.phoneNumber
         user.newsletter = command.newsletter
-        command.addressId?.let { user.address = addresses.findById(it) }
         user.password = passwordEncoder.encode(command.password)
         user = service.create(user)
         return user
@@ -134,8 +117,9 @@ class UpdateUserHandler(
         command.version?.let { user.version = it }
 
         if (command.isBoard) {
-            user.enabled = command.enabled
-            user.roles = command.roles.toMutableSet()
+            // BOARD users can update identity fields but not roles or enabled status
+            // Roles are managed through: memberships, committee membership, or ToggleUserRole endpoint
+            // Account activation happens exclusively through recovery controller's activate endpoint
             applyIdentityFields(
                 user,
                 command.username,

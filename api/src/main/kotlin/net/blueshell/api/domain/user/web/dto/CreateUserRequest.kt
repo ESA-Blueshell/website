@@ -12,26 +12,15 @@ import java.sql.Date
 
 @Schema(name = "CreateUserRequest")
 data class CreateUserRequest(
-    @field:NotNull(groups = [Administration::class])
-    var roles: Set<Role>? = null,
-
-    @field:NotNull(groups = [Administration::class])
     var dateOfBirth: Date? = null,
 
-    @field:NotBlank(groups = [Administration::class])
     var nationality: String? = null,
 
-    @field:NotNull(groups = [Administration::class])
     var photoConsent: Boolean? = null,
 
-    @field:NotNull(groups = [Administration::class])
     var ehbo: Boolean? = null,
 
-    @field:NotNull(groups = [Administration::class])
     var bhv: Boolean? = null,
-
-    @field:NotNull(groups = [Administration::class])
-    var enabled: Boolean? = null,
 
     var gender: String? = null,
     var studentNumber: String? = null,

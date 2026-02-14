@@ -16,14 +16,11 @@ internal data class CreateUserCommandRequest(
 internal object CreateUserCommandRequestToCommandMapper : ObjectMappie<CreateUserCommandRequest, CreateUserCommand>() {
     override fun map(from: CreateUserCommandRequest) = mapping {
         CreateUserCommand::isBoard fromValue from.isBoard
-        CreateUserCommand::roles fromValue (from.request.roles ?: emptySet<Role>())
         CreateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
         CreateUserCommand::nationality fromValue from.request.nationality
-        // BOARD-only fields - use safe access for non-BOARD requests
         CreateUserCommand::photoConsent fromValue (from.request.photoConsent ?: false)
         CreateUserCommand::ehbo fromValue (from.request.ehbo ?: false)
         CreateUserCommand::bhv fromValue (from.request.bhv ?: false)
-        CreateUserCommand::enabled fromValue (from.request.enabled ?: false)
         CreateUserCommand::gender fromValue from.request.gender
         CreateUserCommand::studentNumber fromValue from.request.studentNumber
         CreateUserCommand::username fromValue from.request.username
@@ -34,7 +31,6 @@ internal object CreateUserCommandRequestToCommandMapper : ObjectMappie<CreateUse
         CreateUserCommand::lastName fromValue from.request.lastName
         CreateUserCommand::newsletter fromValue (from.request.newsletter ?: false)
         CreateUserCommand::password fromValue from.request.password
-        CreateUserCommand::addressId fromValue from.request.addressId
         CreateUserCommand::discord fromValue from.request.discord
         CreateUserCommand::phoneNumber fromValue from.request.phoneNumber
     }
@@ -53,7 +49,6 @@ internal object CreateGuestUserCommandRequestToCommandMapper : ObjectMappie<Crea
         CreateGuestUserCommand::lastName fromValue (from.request.lastName ?: "")
         CreateGuestUserCommand::newsletter fromValue (from.request.newsletter ?: false)
         CreateGuestUserCommand::password fromValue (from.request.password ?: "")
-        CreateGuestUserCommand::addressId fromValue from.request.addressId
         CreateGuestUserCommand::email fromValue from.request.email
         CreateGuestUserCommand::discord fromValue from.request.discord
         CreateGuestUserCommand::phoneNumber fromValue from.request.phoneNumber
@@ -85,14 +80,11 @@ internal object UpdateUserCommandRequestToCommandMapper : ObjectMappie<UpdateUse
     override fun map(from: UpdateUserCommandRequest) = mapping {
         UpdateUserCommand::id fromValue from.id
         UpdateUserCommand::isBoard fromValue from.isBoard
-        UpdateUserCommand::roles fromValue (from.request.roles ?: emptySet<Role>())
         UpdateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
         UpdateUserCommand::nationality fromValue from.request.nationality
-        // BOARD-only fields - use safe access for non-BOARD requests
         UpdateUserCommand::photoConsent fromValue (from.request.photoConsent ?: false)
         UpdateUserCommand::ehbo fromValue (from.request.ehbo ?: false)
         UpdateUserCommand::bhv fromValue (from.request.bhv ?: false)
-        UpdateUserCommand::enabled fromValue (from.request.enabled ?: false)
         UpdateUserCommand::gender fromValue from.request.gender
         UpdateUserCommand::studentNumber fromValue from.request.studentNumber
         UpdateUserCommand::username fromValue from.request.username

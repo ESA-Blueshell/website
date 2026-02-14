@@ -13,13 +13,11 @@ import java.sql.Date
 @UniqueUserCommand
 data class CreateUserCommand(
     val isBoard: Boolean,
-    val roles: Set<Role>,
     val dateOfBirth: Date?,
     val nationality: String?,
     val photoConsent: Boolean,
     val ehbo: Boolean,
     val bhv: Boolean,
-    val enabled: Boolean,
     val gender: String?,
     val studentNumber: String?,
     override val username: String?,
@@ -30,7 +28,6 @@ data class CreateUserCommand(
     val lastName: String?,
     val newsletter: Boolean,
     val password: String?,
-    val addressId: Long?,
     override val discord: String?,
     override val phoneNumber: String?
 ) : Command<User>, UserUniquenessCandidate {
@@ -46,7 +43,6 @@ data class CreateGuestUserCommand(
     val lastName: String?,
     val newsletter: Boolean,
     val password: String?,
-    val addressId: Long?,
     override val email: String?,
     override val discord: String?,
     override val phoneNumber: String?
@@ -62,7 +58,7 @@ data class UpdateGuestUserCommand(
     val newsletter: Boolean,
     val version: Long?
 ) : Command<User>, UserUniquenessCandidate {
-    override val subjectId: Long? = id
+    override val subjectId: Long = id
     override val username: String? = null
     override val email: String? = null
 }
@@ -71,13 +67,11 @@ data class UpdateGuestUserCommand(
 data class UpdateUserCommand(
     val id: Long,
     val isBoard: Boolean,
-    val roles: Set<Role>,
     val dateOfBirth: Date?,
     val nationality: String?,
     val photoConsent: Boolean,
     val ehbo: Boolean,
     val bhv: Boolean,
-    val enabled: Boolean,
     val gender: String?,
     val studentNumber: String?,
     override val username: String?,

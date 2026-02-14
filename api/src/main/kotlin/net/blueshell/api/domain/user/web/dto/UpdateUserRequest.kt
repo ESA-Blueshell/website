@@ -9,26 +9,16 @@ import java.sql.Date
 
 @Schema(name = "UpdateUserRequest")
 data class UpdateUserRequest(
-    @field:NotNull
-    var roles: Set<Role>? = null,
-
-    @field:NotNull
     var dateOfBirth: Date? = null,
 
     @field:NotBlank
     var nationality: String? = null,
 
-    @field:NotNull
     var photoConsent: Boolean? = null,
 
-    @field:NotNull
     var ehbo: Boolean? = null,
 
-    @field:NotNull
     var bhv: Boolean? = null,
-
-    @field:NotNull
-    var enabled: Boolean? = null,
 
     var gender: String? = null,
     var studentNumber: String? = null,

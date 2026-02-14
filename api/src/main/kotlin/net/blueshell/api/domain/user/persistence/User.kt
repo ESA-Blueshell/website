@@ -79,6 +79,8 @@ class User(
     @Column(nullable = false)
     var newsletter: Boolean = false,
 
+    // Accounts are activated exclusively through recovery controller's activate endpoint
+    // All newly created users are disabled by default and must activate via email link
     @Column(nullable = false)
     var enabled: Boolean = false,
 
@@ -97,6 +99,11 @@ class User(
     @Column
     var nationality: String? = null,
 
+    // Roles are managed through multiple mechanisms:
+    // - GUEST: Default role assigned on user creation
+    // - MEMBER: Granted through membership creation/management
+    // - COMMITTEE: Granted through committee membership
+    // - BOARD/ADMIN: Granted through ToggleUserRole endpoint (requires ADMIN)
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "authorities", joinColumns = [JoinColumn(name = "user_id")])
     @Enumerated(EnumType.STRING)

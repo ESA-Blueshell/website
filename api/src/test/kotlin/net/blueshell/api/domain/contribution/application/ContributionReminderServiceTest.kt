@@ -1,10 +1,15 @@
 package net.blueshell.api.domain.contribution.application
 
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.LocalDate
 
 /**
  * Tests email job scheduling for contribution reminders.
@@ -17,10 +22,15 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
     @Autowired
     private lateinit var contributionReminderService: ContributionReminderService
 
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
     @Test
     fun `schedules contribution reminder email job`() {
         // Given: Contribution reminder entity
-        val reminder = createContributionReminder(userId = 1L, contributionPeriodId = 100L)
+        val user = createAndSaveUser()
+        val period = createAndSavePeriod()
+        val reminder = createContributionReminder(user, period)
         val savedReminder = persist(reminder)
 
         // When: Sending reminder
@@ -35,18 +45,23 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
         // And: Job has correct payload
         val jobPayload = jobs.first().payload
         assertThat(jobPayload)
-            .describedAs("Job should contain userId")
-            .contains("\"userId\":1")
-            .contains("\"contributionPeriodId\":100")
+            .describedAs("Job should contain userId and contributionPeriodId")
+            .contains("\"userId\":${user.id}")
+            .contains("\"contributionPeriodId\":${period.id}")
     }
 
     @Test
     fun `schedules multiple reminder jobs`() {
         // Given: Multiple contribution reminders
+        val user1 = createAndSaveUser("user1")
+        val user2 = createAndSaveUser("user2")
+        val user3 = createAndSaveUser("user3")
+        val period = createAndSavePeriod()
+
         val reminders = mutableListOf(
-            createContributionReminder(userId = 1L, contributionPeriodId = 100L),
-            createContributionReminder(userId = 2L, contributionPeriodId = 100L),
-            createContributionReminder(userId = 3L, contributionPeriodId = 100L)
+            createContributionReminder(user1, period),
+            createContributionReminder(user2, period),
+            createContributionReminder(user3, period)
         ).map { persist(it) }.toMutableList()
 
         // When: Sending reminders
@@ -59,12 +74,38 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
             .hasSize(reminders.size)
     }
 
-    private fun createContributionReminder(userId: Long, contributionPeriodId: Long): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
+    private fun createContributionReminder(user: User, period: ContributionPeriod): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
         val reminder = net.blueshell.api.domain.contribution.persistence.ContributionReminder()
         reminder.id = net.blueshell.api.domain.contribution.persistence.ContributionReminder.Id(
-            userId = userId,
-            contributionPeriodId = contributionPeriodId
+            userId = user.id,
+            contributionPeriodId = period.id
         )
+        // Must set entity references for @MapsId to work
+        reminder.user = user
+        reminder.contributionPeriod = period
         return reminder
+    }
+
+    private fun createAndSaveUser(username: String = "testuser"): User {
+        val user = User(
+            username = username,
+            password = passwordEncoder.encode("Password123!"),
+            firstName = "Test",
+            lastName = "User"
+        )
+        user.email = "$username@example.com"
+        user.enabled = true
+        user.roles = mutableSetOf(Role.MEMBER)
+        return persist(user)
+    }
+
+    private fun createAndSavePeriod(): ContributionPeriod {
+        val period = ContributionPeriod()
+        period.startDate = LocalDate.of(2024, 1, 1)
+        period.endDate = LocalDate.of(2024, 12, 31)
+        period.halfYearFee = 25.0
+        period.fullYearFee = 45.0
+        period.alumniFee = 10.0
+        return persist(period)
     }
 }

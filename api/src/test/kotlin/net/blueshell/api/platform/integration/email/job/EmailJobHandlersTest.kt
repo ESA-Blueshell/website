@@ -1,6 +1,8 @@
 package net.blueshell.api.platform.integration.email.job
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.mail.Multipart
+import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
@@ -117,7 +119,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             // Then: Member activation email is sent
             val emails = mailSender.outbox
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().content.toString())
+            assertThat(extractHtmlContent(emails.first()))
                 .contains("board of Blueshell")
         }
 
@@ -165,7 +167,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             // Given: User, period, reminder, and job
             val user = createAndSaveUser("contributor", "contributor@example.com")
             val period = createAndSavePeriod()
-            createAndSaveReminder(user.id!!, period.id!!)
+            createAndSaveReminder(user, period)
 
             val payload = EmailJobs.ContributionReminderPayload(
                 userId = user.id!!,
@@ -247,7 +249,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             // Given: Reminder and JSON payload
             val user = createAndSaveUser("reminder.test", "reminder@example.com")
             val period = createAndSavePeriod()
-            createAndSaveReminder(user.id!!, period.id!!)
+            createAndSaveReminder(user, period)
 
             val payloadJson = """
                 {
@@ -300,9 +302,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         return persist(period)
     }
 
-    private fun createAndSaveReminder(userId: Long, periodId: Long): ContributionReminder {
+    private fun createAndSaveReminder(user: User, period: ContributionPeriod): ContributionReminder {
         val reminder = ContributionReminder()
-        reminder.id = ContributionReminder.Id(userId, periodId)
+        reminder.id = ContributionReminder.Id(user.id, period.id)
+        // Must set entity references for @MapsId to work
+        reminder.user = user
+        reminder.contributionPeriod = period
         return persist(reminder)
     }
 
@@ -329,6 +334,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
     private fun createAndSaveSignUp(event: Event, guestName: String, guestEmail: String): EventSignUp {
         val guest = Guest()
         guest.name = guestName
+        guest.discord = "guest#1234"
         guest.email = guestEmail
         guest.accessToken = "test-token-${System.currentTimeMillis()}"
 
@@ -336,5 +342,31 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         signUp.event = event
         signUp.guest = guest
         return persist(signUp)
+    }
+
+    /**
+     * Extract HTML content from MimeMessage (handles multipart messages)
+     */
+    private fun extractHtmlContent(message: MimeMessage): String {
+        val content = message.content
+        if (content is Multipart) {
+            for (i in 0 until content.count) {
+                val bodyPart = content.getBodyPart(i)
+                if (bodyPart.contentType.startsWith("text/html")) {
+                    return bodyPart.content.toString()
+                }
+                // Check nested multipart (related/alternative)
+                if (bodyPart.content is Multipart) {
+                    val nested = bodyPart.content as Multipart
+                    for (j in 0 until nested.count) {
+                        val nestedPart = nested.getBodyPart(j)
+                        if (nestedPart.contentType.startsWith("text/html")) {
+                            return nestedPart.content.toString()
+                        }
+                    }
+                }
+            }
+        }
+        return content.toString()
     }
 }

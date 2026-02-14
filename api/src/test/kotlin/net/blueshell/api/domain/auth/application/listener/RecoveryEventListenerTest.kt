@@ -1,12 +1,14 @@
 package net.blueshell.api.domain.auth.application.listener
 
 import net.blueshell.api.domain.user.application.event.UserCreated
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
 
 /**
  * Tests for RecoveryEventListener verifying email jobs are scheduled.
@@ -21,11 +23,14 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
     @Autowired
     private lateinit var listener: RecoveryEventListener
 
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
     @Test
     fun `schedules user activation email when user is created`() {
-        // Given: User created event (non-board user)
-        val userId = 123L
-        val event = UserCreated(userId, createdByBoard = false)
+        // Given: User in database and created event (non-board user)
+        val user = createAndSaveUser("newuser", "newuser@example.com", enabled = false)
+        val event = UserCreated(user.id!!, createdByBoard = false)
 
         // When: Event is handled
         listener.onUserCreated(event)
@@ -39,14 +44,15 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         val jobPayload = jobs.first().payload
         assertThat(jobPayload)
             .describedAs("Job payload should contain userId")
-            .contains("\"userId\":$userId")
+            .contains("\"userId\":${user.id}")
+            .contains("\"resetType\":\"USER_ACTIVATION\"")
     }
 
     @Test
     fun `schedules member activation email when user is created by board`() {
-        // Given: User created event (board user)
-        val userId = 456L
-        val event = UserCreated(userId, createdByBoard = true)
+        // Given: User in database and created event (board user)
+        val user = createAndSaveUser("boarduser", "boarduser@example.com", enabled = false)
+        val event = UserCreated(user.id!!, createdByBoard = true)
 
         // When: Event is handled
         listener.onUserCreated(event)
@@ -60,6 +66,20 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         val jobPayload = jobs.first().payload
         assertThat(jobPayload)
             .describedAs("Job payload should contain userId")
-            .contains("\"userId\":$userId")
+            .contains("\"userId\":${user.id}")
+            .contains("\"resetType\":\"MEMBER_ACTIVATION\"")
+    }
+
+    private fun createAndSaveUser(username: String, email: String, enabled: Boolean): User {
+        val user = User(
+            username = username,
+            password = passwordEncoder.encode("Password123!"),
+            firstName = "Test",
+            lastName = "User"
+        )
+        user.email = email
+        user.enabled = enabled
+        user.roles = mutableSetOf(Role.MEMBER)
+        return persist(user)
     }
 }

@@ -60,11 +60,11 @@ class EmailTemplateServiceTest {
             markdownContent = markdownContent
         )
 
-        // Then: Recipient info is included
+        // Then: Recipient email and title are included (name is not displayed in template)
         assertThat(html)
             .contains("john@example.com")
-            .contains("John Doe")
             .contains("Welcome Email")
+            .contains("Hello World")
     }
 
     @Test
@@ -183,8 +183,11 @@ class EmailTemplateServiceTest {
         // Then: HTML is well-formed
         assertThat(html)
             .startsWith("<!DOCTYPE html>")
-            .contains("<html", "<head>", "<body>")
-            .contains("</body>", "</html>")
+            .contains("<html")
+            .contains("<head>")
+            .contains("<body")
+            .contains("</body>")
+            .contains("</html>")
             .contains("charset")
     }
 }

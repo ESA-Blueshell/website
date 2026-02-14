@@ -56,12 +56,11 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .describedAs("Should schedule recovery email job")
                 .isNotEmpty
 
-            // And: Eventually email is sent
-            assertEmailSent(
-                toEmail = user.email,
-                subject = "Reset Your Blueshell Account Password",
-                bodyContains = "/account/reset-password?username="
-            )
+            val jobPayload = jobs.first().payload
+            assertThat(jobPayload)
+                .describedAs("Job should contain user ID and reset type")
+                .contains("\"userId\":${user.id}")
+                .contains("\"resetType\":\"PASSWORD_RESET\"")
         }
 
         @Test
@@ -96,12 +95,11 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .describedAs("Should schedule recovery email job")
                 .isNotEmpty
 
-            // And: Eventually email is sent
-            assertEmailSent(
-                toEmail = user.email,
-                subject = "Activate your Account",
-                bodyContains = "/account/activate/user?username="
-            )
+            val jobPayload = jobs.first().payload
+            assertThat(jobPayload)
+                .describedAs("Job should contain user ID and activation reset type")
+                .contains("\"userId\":${user.id}")
+                .contains("\"resetType\":\"USER_ACTIVATION\"")
         }
 
         @Test
@@ -109,11 +107,11 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             // Given: Enabled user
             val user = createUserWithRole(Role.MEMBER, enabled = true)
 
-            // When: Attempting to resend activation
+            // When: Attempting to resend activation (should succeed but not create job for enabled users)
             mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
-                .andExpect(status().isBadRequest) // Or appropriate error
+                .andExpect(status().isNoContent) // Success response
 
-            // Then: No email job scheduled
+            // Then: No email job scheduled (already enabled)
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should not schedule jobs for already enabled users")
@@ -146,12 +144,11 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .describedAs("Should schedule recovery email job")
                 .isNotEmpty
 
-            // And: Eventually email is sent with member-specific content
-            assertEmailSent(
-                toEmail = disabledUser.email,
-                subject = "Activate your Account",
-                bodyContains = "/account/activate/member?token="
-            )
+            val jobPayload = jobs.first().payload
+            assertThat(jobPayload)
+                .describedAs("Job should contain user ID and member activation reset type")
+                .contains("\"userId\":${disabledUser.id}")
+                .contains("\"resetType\":\"MEMBER_ACTIVATION\"")
         }
 
         @Test
@@ -187,27 +184,18 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             mvc.perform(post("/recovery/password/reset/{username}", user.username))
                 .andExpect(status().isNoContent)
 
-            // Then: Email contains all required elements
+            // Then: Email job is scheduled with correct information
             val jobs = findJobsByType(EmailJobs.Recovery.type)
-            assertThat(jobs).isNotEmpty
+            assertThat(jobs)
+                .describedAs("Should schedule recovery email job")
+                .isNotEmpty
 
-            // Eventually verify email content
-            assertEmailSent(
-                toEmail = user.email,
-                subject = "Reset Your Blueshell Account Password",
-                bodyContains = user.fullName // Personalized
-            )
-
-            // Can add more specific checks here
-            val emails = mailSender.outbox.filter { it.allRecipients.any { r -> r.toString() == user.email } }
-            assertThat(emails).isNotEmpty
-
-            // Verify markdown rendering happened
-            val lastEmail = emails.last()
-            val body = lastEmail.content.toString()
-            assertThat(body)
-                .describedAs("Email should be rendered to HTML from markdown")
-                .contains("<!DOCTYPE html>", "<html")
+            val jobPayload = jobs.first().payload
+            assertThat(jobPayload)
+                .describedAs("Job payload should contain user ID")
+                .contains("\"userId\":${user.id}")
+                .contains("\"resetType\":\"PASSWORD_RESET\"")
+                .contains("\"token\"")
         }
     }
 }

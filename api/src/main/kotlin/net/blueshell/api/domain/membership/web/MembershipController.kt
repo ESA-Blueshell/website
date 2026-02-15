@@ -49,7 +49,7 @@ class MembershipController(
     }
 
     @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
-    @PostMapping("memberships/member")
+    @PostMapping("/memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
         @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody request: BoardCreateMembershipRequest
@@ -59,14 +59,14 @@ class MembershipController(
     }
 
     @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
-    @PutMapping(value = ["/{id}"])
+    @PutMapping(value = ["/memberships/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
         val membership = commandBus.dispatch(request.asCommand(id))
         return membership.asResponse()
     }
 
     @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Membership', 'read')")
-    @GetMapping(value = ["/{id}"])
+    @GetMapping(value = ["/memberships/{id}"])
     fun findMembershipById(@PathVariable id: Long): MembershipResponse {
         return commandBus.dispatch(FindMembershipByIdCommand(id)).asResponse()
     }

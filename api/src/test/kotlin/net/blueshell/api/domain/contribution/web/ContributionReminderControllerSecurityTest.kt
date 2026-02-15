@@ -18,6 +18,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class ContributionReminderControllerSecurityTest : UserTestSupport() {
+    private fun reminderPayload(userId: Long, contributionPeriodId: Long): String =
+        """{"contributionPeriodId":$contributionPeriodId,"userId":$userId}"""
+
+    private fun reminderBatchPayload(userId1: Long, userId2: Long, contributionPeriodId: Long): String =
+        """[{"contributionPeriodId":$contributionPeriodId,"userId":$userId1},{"contributionPeriodId":$contributionPeriodId,"userId":$userId2}]"""
 
     @Nested
     inner class SendContributionReminder {
@@ -25,12 +30,14 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to send reminders`() {
             val board = createUserWithRole(Role.BOARD)
+            val period = createContributionPeriodFixture()
+            val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/contributionReminders")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"contributionPeriodId":1,"userId":1}""")
+                    .content(reminderPayload(user.id!!, period.id!!))
             )
                 .andExpect(status().isCreated)
         }
@@ -38,22 +45,26 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from sending reminders`() {
             val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/contributionReminders")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"contributionPeriodId":1,"userId":1}""")
+                    .content(reminderPayload(user.id!!, period.id!!))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val period = createContributionPeriodFixture()
+            val user = createUserWithRole(Role.MEMBER)
             mvc.perform(
                 post("/contributionReminders")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"contributionPeriodId":1,"userId":1}""")
+                    .content(reminderPayload(user.id!!, period.id!!))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -65,12 +76,15 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to send batch reminders`() {
             val board = createUserWithRole(Role.BOARD)
+            val period = createContributionPeriodFixture()
+            val user1 = createUserWithRole(Role.MEMBER)
+            val user2 = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/contributionReminders/batch")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""[{"contributionPeriodId":1,"userId":1},{"contributionPeriodId":1,"userId":2}]""")
+                    .content(reminderBatchPayload(user1.id!!, user2.id!!, period.id!!))
             )
                 .andExpect(status().isCreated)
         }
@@ -78,22 +92,26 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from sending batch reminders`() {
             val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/contributionReminders/batch")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""[{"contributionPeriodId":1,"userId":1}]""")
+                    .content("""[${reminderPayload(user.id!!, period.id!!)}]""")
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val period = createContributionPeriodFixture()
+            val user = createUserWithRole(Role.MEMBER)
             mvc.perform(
                 post("/contributionReminders/batch")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""[{"contributionPeriodId":1,"userId":1}]""")
+                    .content("""[${reminderPayload(user.id!!, period.id!!)}]""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -105,10 +123,11 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to list reminders`() {
             val board = createUserWithRole(Role.BOARD)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributionReminders")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(board))
             )
                 .andExpect(status().isOk)
@@ -117,10 +136,11 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from listing reminders`() {
             val member = createUserWithRole(Role.MEMBER)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributionReminders")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(member))
             )
                 .andExpect(status().isForbidden)
@@ -128,9 +148,10 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val periodId = createContributionPeriodFixture().id!!
             mvc.perform(
                 get("/contributionReminders")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -142,10 +163,11 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `ADMIN can perform BOARD operations`() {
             val admin = createUserWithRole(Role.ADMIN)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributionReminders")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(admin))
             )
                 .andExpect(status().isOk)
@@ -154,10 +176,11 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
         @Test
         fun `COMMITTEE cannot access reminder endpoints`() {
             val committee = createUserWithRole(Role.COMMITTEE)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributionReminders")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(committee))
             )
                 .andExpect(status().isForbidden)

@@ -23,10 +23,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 class EventSignUpControllerSecurityTest : UserTestSupport() {
     private fun createSignUpGuestPayload(): String =
-        """{"guest":{"name":"Test User","discord":"test#1234","email":"test@example.com"}}"""
+        """{"guest":{"name":"Test User","discord":"test#1234","email":"test@example.com","phoneNumber":"+31612345678"}}"""
 
     private fun updateSignUpGuestPayload(name: String = "Updated Guest"): String =
-        """{"guest":{"name":"$name","discord":"test#1234","email":"test@example.com"}}"""
+        """{"guest":{"name":"$name","discord":"test#1234","email":"test@example.com","phoneNumber":"+31612345678"}}"""
 
     @Nested
     inner class FindEventSignUps {
@@ -236,7 +236,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture()
             val eventId = event.id!!
-            createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
+            createEventSignUpFixture(event = event, user = board)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
@@ -293,12 +293,12 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateSignUpGuestPayload("Hacked Name"))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(status().isNotFound)
         }
 
         @Test
         fun `returns 401 when unauthenticated without access token`() {
-            val eventId = createEventFixture().id!!
+            val eventId = createEventFixture(approved = false, signUp = false).id!!
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
@@ -377,7 +377,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                 delete("/events/signups/{eventSignupId}", signupId)
                     .param("accessToken", invalidToken)
             )
-                .andExpect(status().isForbidden)
+                .andExpect(status().isNotFound)
         }
 
         @Test
@@ -447,7 +447,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                 delete("/events/signups/{eventSignupId}", signupId)
                     .param("accessToken", invalidToken)
             )
-                .andExpect(status().isForbidden)
+                .andExpect(status().isNotFound)
         }
     }
 

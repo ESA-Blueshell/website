@@ -22,6 +22,24 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class EventControllerSecurityTest : UserTestSupport() {
+    private fun createEventPayload(
+        committeeId: Long,
+        title: String = "Board Event",
+        approved: Boolean = true,
+        membersOnly: Boolean = false,
+        signUp: Boolean = true
+    ): String =
+        """{"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp}"""
+
+    private fun updateEventPayload(
+        committeeId: Long,
+        version: Long,
+        title: String = "Updated Event",
+        approved: Boolean = true,
+        membersOnly: Boolean = false,
+        signUp: Boolean = true
+    ): String =
+        """{"committeeId":$committeeId,"title":"$title","description":"Updated event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp,"version":$version}"""
 
     @Nested
     inner class CreateEvent {
@@ -29,25 +47,28 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create events`() {
             val board = createUserWithRole(Role.BOARD)
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 post("/events")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Board Event","committeeId":1,"startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z"}""")
+                    .content(createEventPayload(committeeId))
             )
                 .andExpect(status().isCreated)
         }
 
         @Test
         fun `allows committee member to create event for their committee`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Committee Event","committeeId":1,"startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z"}""")
+                    .content(createEventPayload(committee.id!!, "Committee Event"))
             )
                 .andExpect(status().isCreated)
         }
@@ -55,12 +76,13 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from creating events`() {
             val member = createUserWithRole(Role.MEMBER)
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 post("/events")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Unauthorized Event","committeeId":1,"startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z"}""")
+                    .content(createEventPayload(committeeId, "Unauthorized Event"))
             )
                 .andExpect(status().isForbidden)
         }
@@ -68,22 +90,24 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from creating events`() {
             val guest = createUserWithRole(Role.GUEST)
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 post("/events")
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Guest Event","committeeId":1,"startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z"}""")
+                    .content(createEventPayload(committeeId, "Guest Event"))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val committeeId = createCommitteeFixture().id!!
             mvc.perform(
                 post("/events")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Unauthorized Event","committeeId":1,"startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z"}""")
+                    .content(createEventPayload(committeeId, "Unauthorized Event"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -95,27 +119,31 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update any event`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val event = createEventFixture()
+            val eventId = event.id!!
 
             mvc.perform(
                 put("/events/{id}", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Updated Event","committeeId":1}""")
+                    .content(updateEventPayload(event.committee.id!!, event.version))
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows committee member to update their event`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-            val eventId = 1L
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
+            val event = createEventFixture(committee = committee)
+            val eventId = event.id!!
 
             mvc.perform(
                 put("/events/{id}", eventId)
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Updated Event","committeeId":1}""")
+                    .content(updateEventPayload(committee.id!!, event.version))
             )
                 .andExpect(status().isOk)
         }
@@ -123,25 +151,27 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from updating events`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val event = createEventFixture()
+            val eventId = event.id!!
 
             mvc.perform(
                 put("/events/{id}", eventId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Hacked Event","committeeId":1}""")
+                    .content(updateEventPayload(event.committee.id!!, event.version, "Hacked Event"))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = 1L
+            val event = createEventFixture()
+            val eventId = event.id!!
 
             mvc.perform(
                 put("/events/{id}", eventId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Unauthorized Update","committeeId":1}""")
+                    .content(updateEventPayload(event.committee.id!!, event.version, "Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -153,7 +183,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to approve events`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = false).id!!
 
             mvc.perform(
                 put("/events/{id}/approve", eventId)
@@ -166,7 +196,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to reject events`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = true).id!!
 
             mvc.perform(
                 put("/events/{id}/approve", eventId)
@@ -179,7 +209,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies committee member from approving events`() {
             val committee = createUserWithRole(Role.COMMITTEE)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 put("/events/{id}/approve", eventId)
@@ -192,7 +222,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from approving events`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 put("/events/{id}/approve", eventId)
@@ -204,7 +234,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 put("/events/{id}/approve", eventId)
@@ -220,7 +250,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to read any event`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = false).id!!
 
             mvc.perform(
                 get("/events/{id}", eventId)
@@ -231,12 +261,14 @@ class EventControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows committee member to read their event`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-            val eventId = 1L
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
+            val eventId = createEventFixture(committee = committee, approved = false).id!!
 
             mvc.perform(
                 get("/events/{id}", eventId)
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -244,7 +276,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows regular user to read approved event`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = true).id!!
 
             mvc.perform(
                 get("/events/{id}", eventId)
@@ -256,7 +288,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from reading unapproved event`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = false).id!!
 
             mvc.perform(
                 get("/events/{id}", eventId)
@@ -267,7 +299,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated for restricted event`() {
-            val eventId = 1L
+            val eventId = createEventFixture(approved = false).id!!
 
             mvc.perform(
                 get("/events/{id}", eventId)
@@ -277,7 +309,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows unauthenticated to read approved event`() {
-            val eventId = 1L
+            val eventId = createEventFixture(approved = true).id!!
 
             mvc.perform(
                 get("/events/{id}", eventId)
@@ -330,7 +362,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete events`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 delete("/events/{eventId}", eventId)
@@ -342,7 +374,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies committee member from deleting events`() {
             val committee = createUserWithRole(Role.COMMITTEE)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 delete("/events/{eventId}", eventId)
@@ -354,7 +386,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from deleting events`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 delete("/events/{eventId}", eventId)
@@ -365,7 +397,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(delete("/events/{eventId}", eventId))
                 .andExpect(status().isUnauthorized)
@@ -378,7 +410,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `ADMIN can perform BOARD operations`() {
             val admin = createUserWithRole(Role.ADMIN)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 put("/events/{id}/approve", eventId)
@@ -391,12 +423,13 @@ class EventControllerSecurityTest : UserTestSupport() {
         @Test
         fun `BOARD can perform COMMITTEE operations`() {
             val board = createUserWithRole(Role.BOARD)
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 post("/events")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Board Event","committeeId":1,"startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z"}""")
+                    .content(createEventPayload(committeeId, "Board Event"))
             )
                 .andExpect(status().isCreated)
         }

@@ -20,6 +20,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class UserControllerSecurityTest : UserTestSupport() {
+    private fun createGuestUserPayload(username: String, email: String): String =
+        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":false,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
 
     @Nested
     inner class CreateUser {
@@ -134,7 +136,7 @@ class UserControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/users/guest")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"email":"guest@test.com"}""")
+                    .content(createGuestUserPayload("guestuser1", "guest@test.com"))
             )
                 .andExpect(status().isCreated)
         }
@@ -147,7 +149,7 @@ class UserControllerSecurityTest : UserTestSupport() {
                 post("/users/guest")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"email":"guest2@test.com"}""")
+                    .content(createGuestUserPayload("guestuser2", "guest2@test.com"))
             )
                 .andExpect(status().isCreated)
         }
@@ -500,7 +502,7 @@ class UserControllerSecurityTest : UserTestSupport() {
                 get("/users/{userId}", anotherUser.id)
                     .with(bearer(disabledUser))
             )
-                .andExpect(status().isUnauthorized)
+                .andExpect(status().isForbidden)
         }
     }
 }

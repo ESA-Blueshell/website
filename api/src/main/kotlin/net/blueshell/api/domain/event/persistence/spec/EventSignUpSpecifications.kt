@@ -59,10 +59,10 @@ object EventSignUpSpecifications {
         if (committeeId == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
             cb.equal(
-                root.join<Any, Any>(
-                    "event",
-                    JoinType.INNER
-                ).get<Any>("committeeId"), committeeId
+                root.join<Any, Any>("event", JoinType.INNER)
+                    .join<Any, Any>("committee", JoinType.INNER)
+                    .get<Any>("id"),
+                committeeId
             )
         }
     }
@@ -82,9 +82,8 @@ object EventSignUpSpecifications {
         if (eventId == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
             cb.equal(
-                root.get<Any>(
-                    "eventId"
-                ), eventId
+                root.join<Any, Any>("event", JoinType.INNER).get<Any>("id"),
+                eventId
             )
         }
     }
@@ -125,7 +124,7 @@ object EventSignUpSpecifications {
             sq.select(cb.literal(1L))
                 .where(
                     cb.equal(cm.get<Any>("committee").get<Any>("id"), committeeId),
-                    cb.equal(cm.get<Any>("userId"), userId)
+                    cb.equal(cm.get<Any>("user").get<Any>("id"), userId)
                 )
             cb.exists(sq)
         }

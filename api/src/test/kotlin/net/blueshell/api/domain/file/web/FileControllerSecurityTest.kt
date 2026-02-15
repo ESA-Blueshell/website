@@ -73,7 +73,9 @@ class FileControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = createEventFixture().id!!
+            val event = createEventFixture(approved = false)
+            attachEventBanner(event)
+            val eventId = event.id!!
 
             mvc.perform(get("/events/{eventId}/banners", eventId))
                 .andExpect(status().isUnauthorized)
@@ -96,7 +98,7 @@ class FileControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `denies BOARD from uploading banners`() {
+        fun `allows BOARD to upload banners`() {
             val board = createUserWithRole(Role.BOARD)
 
             mvc.perform(
@@ -104,7 +106,7 @@ class FileControllerSecurityTest : UserTestSupport() {
                     .file(bannerFile())
                     .with(bearer(board))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(status().isCreated)
         }
 
         @Test

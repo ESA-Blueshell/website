@@ -37,6 +37,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.RequestPostProcessor
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDate
 
@@ -255,10 +257,12 @@ abstract class UserTestSupport : ServiceTestSupport() {
         mediaType: String = "image/png",
         type: FileType = FileType.EVENT_BANNER
     ): File {
+        val path = Path.of("/tmp", "$name-${System.currentTimeMillis()}")
+        Files.writeString(path, "test-file")
         return persist(
             File().apply {
                 this.name = name
-                this.path = "/tmp/$name-${System.currentTimeMillis()}"
+                this.path = path.toString()
                 this.uploader = uploader
                 this.mediaType = mediaType
                 this.size = 1024

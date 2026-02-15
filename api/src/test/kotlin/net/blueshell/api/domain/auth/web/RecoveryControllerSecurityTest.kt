@@ -1,13 +1,17 @@
 package net.blueshell.api.domain.auth.web
 
+import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
+import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Duration
 
 /**
  * Security tests for RecoveryController.
@@ -20,6 +24,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class RecoveryControllerSecurityTest : UserTestSupport() {
+    @Autowired
+    private lateinit var recoveryTokenFactory: RecoveryTokenFactory
+
 
     @Nested
     inner class ResetPassword {
@@ -55,10 +62,12 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows anyone to set password with valid token`() {
+            val user = createUserWithRole(Role.MEMBER)
+            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofHours(1))
             mvc.perform(
                 post("/recovery/password")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"token":"validtoken123","password":"NewPassword123!"}""")
+                    .content("""{"token":"$token","password":"NewPassword123!"}""")
             )
                 .andExpect(status().isNoContent)
         }
@@ -66,12 +75,13 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows authenticated user to set password`() {
             val user = createUserWithRole(Role.MEMBER)
+            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofHours(1))
 
             mvc.perform(
                 post("/recovery/password")
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"token":"validtoken123","password":"NewPassword123!"}""")
+                    .content("""{"token":"$token","password":"NewPassword123!"}""")
             )
                 .andExpect(status().isNoContent)
         }
@@ -82,23 +92,27 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows anyone to activate user account`() {
+            val user = createUserWithRole(Role.MEMBER, enabled = false)
+            val token = recoveryTokenFactory.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
             mvc.perform(
                 post("/recovery/user/activate")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"token":"validtoken123"}""")
+                    .content("""{"token":"$token"}""")
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows authenticated user to activate account`() {
-            val user = createUserWithRole(Role.MEMBER)
+            val requester = createUserWithRole(Role.MEMBER)
+            val userToActivate = createUserWithRole(Role.MEMBER, enabled = false)
+            val token = recoveryTokenFactory.issue(userToActivate, ResetType.USER_ACTIVATION, Duration.ofHours(1))
 
             mvc.perform(
                 post("/recovery/user/activate")
-                    .with(bearer(user))
+                    .with(bearer(requester))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"token":"validtoken123"}""")
+                    .content("""{"token":"$token"}""")
             )
                 .andExpect(status().isOk)
         }
@@ -109,23 +123,27 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows anyone to activate member account`() {
+            val user = createUserWithRole(Role.MEMBER, enabled = false)
+            val token = recoveryTokenFactory.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
             mvc.perform(
                 post("/recovery/member/activate")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"token":"validtoken123"}""")
+                    .content("""{"token":"$token","username":"activated_${System.currentTimeMillis()}","password":"NewPassword123!"}""")
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows authenticated user to activate as member`() {
-            val user = createUserWithRole(Role.MEMBER)
+            val requester = createUserWithRole(Role.MEMBER)
+            val userToActivate = createUserWithRole(Role.MEMBER, enabled = false)
+            val token = recoveryTokenFactory.issue(userToActivate, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
 
             mvc.perform(
                 post("/recovery/member/activate")
-                    .with(bearer(user))
+                    .with(bearer(requester))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"token":"validtoken123"}""")
+                    .content("""{"token":"$token","username":"activated_${System.currentTimeMillis()}","password":"NewPassword123!"}""")
             )
                 .andExpect(status().isOk)
         }

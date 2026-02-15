@@ -18,6 +18,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class ContributionControllerSecurityTest : UserTestSupport() {
+    private fun contributionPayload(userId: Long, contributionPeriodId: Long): String =
+        """{"userId":$userId,"contributionPeriodId":$contributionPeriodId}"""
 
     @Nested
     inner class CreateContribution {
@@ -25,12 +27,14 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create contributions`() {
             val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
 
             mvc.perform(
                 post("/contributions")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1,"contributionPeriodId":1,"amount":100}""")
+                    .content(contributionPayload(user.id!!, period.id!!))
             )
                 .andExpect(status().isCreated)
         }
@@ -38,22 +42,26 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from creating contributions`() {
             val member = createUserWithRole(Role.MEMBER)
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
 
             mvc.perform(
                 post("/contributions")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1,"contributionPeriodId":1,"amount":100}""")
+                    .content(contributionPayload(user.id!!, period.id!!))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
             mvc.perform(
                 post("/contributions")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1,"contributionPeriodId":1,"amount":100}""")
+                    .content(contributionPayload(user.id!!, period.id!!))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -65,10 +73,11 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to list contributions`() {
             val board = createUserWithRole(Role.BOARD)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributions")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(board))
             )
                 .andExpect(status().isOk)
@@ -77,10 +86,11 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from listing contributions`() {
             val member = createUserWithRole(Role.MEMBER)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributions")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(member))
             )
                 .andExpect(status().isForbidden)
@@ -88,9 +98,10 @@ class ContributionControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val periodId = createContributionPeriodFixture().id!!
             mvc.perform(
                 get("/contributions")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -102,11 +113,16 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete contributions`() {
             val board = createUserWithRole(Role.BOARD)
-            val userId = 1L
-            val periodId = 1L
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            persist(net.blueshell.api.domain.contribution.persistence.Contribution().apply {
+                id = net.blueshell.api.domain.contribution.persistence.Contribution.Id(user.id, period.id)
+                this.user = user
+                this.contributionPeriod = period
+            })
 
             mvc.perform(
-                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", periodId, userId)
+                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)
                     .with(bearer(board))
             )
                 .andExpect(status().isNoContent)
@@ -115,11 +131,16 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting contributions`() {
             val member = createUserWithRole(Role.MEMBER)
-            val userId = 1L
-            val periodId = 1L
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            persist(net.blueshell.api.domain.contribution.persistence.Contribution().apply {
+                id = net.blueshell.api.domain.contribution.persistence.Contribution.Id(user.id, period.id)
+                this.user = user
+                this.contributionPeriod = period
+            })
 
             mvc.perform(
-                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", periodId, userId)
+                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)
                     .with(bearer(member))
             )
                 .andExpect(status().isForbidden)
@@ -127,11 +148,11 @@ class ContributionControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val userId = 1L
-            val periodId = 1L
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
 
             mvc.perform(
-                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", periodId, userId)
+                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -143,7 +164,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to list contributions by period`() {
             val board = createUserWithRole(Role.BOARD)
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributionPeriods/{periodId}/contributions", periodId)
@@ -155,7 +176,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from listing contributions by period`() {
             val member = createUserWithRole(Role.MEMBER)
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributionPeriods/{periodId}/contributions", periodId)
@@ -166,7 +187,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(get("/contributionPeriods/{periodId}/contributions", periodId))
                 .andExpect(status().isUnauthorized)
@@ -179,10 +200,11 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `ADMIN can perform BOARD operations`() {
             val admin = createUserWithRole(Role.ADMIN)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributions")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(admin))
             )
                 .andExpect(status().isOk)
@@ -191,10 +213,11 @@ class ContributionControllerSecurityTest : UserTestSupport() {
         @Test
         fun `COMMITTEE cannot access contribution endpoints`() {
             val committee = createUserWithRole(Role.COMMITTEE)
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 get("/contributions")
-                    .param("contributionPeriodId", "1")
+                    .param("contributionPeriodId", periodId.toString())
                     .with(bearer(committee))
             )
                 .andExpect(status().isForbidden)

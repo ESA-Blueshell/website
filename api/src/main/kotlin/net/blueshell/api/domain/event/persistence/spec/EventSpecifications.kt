@@ -89,7 +89,7 @@ object EventSpecifications {
                         cm.get<Any>("committee").get<Any>("id"),
                         root.get<Any>("committee").get<Any>("id")
                     ),
-                    cb.equal(cm.get<Any>("userId"), userId)
+                    cb.equal(cm.get<Any>("user").get<Any>("id"), userId)
                 )
             cb.exists(sq)
         }
@@ -99,9 +99,8 @@ object EventSpecifications {
         if (committeeId == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
             cb.equal(
-                root.get<Any>(
-                    "committeeId"
-                ), committeeId
+                root.get<Any>("committee").get<Any>("id"),
+                committeeId
             )
         }
     }

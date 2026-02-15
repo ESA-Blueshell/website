@@ -80,14 +80,14 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `allows MEMBER to create membership`() {
+        fun `denies MEMBER from creating membership`() {
             val member = assignAddress(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/memberships")
                     .with(bearer(member))
             )
-                .andExpect(status().isCreated)
+                .andExpect(status().isForbidden)
         }
 
         @Test

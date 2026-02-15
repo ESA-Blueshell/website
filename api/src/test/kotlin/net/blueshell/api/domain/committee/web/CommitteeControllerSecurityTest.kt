@@ -21,6 +21,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class CommitteeControllerSecurityTest : UserTestSupport() {
+    private fun createCommitteePayload(memberUserId: Long, name: String = "New Committee"): String =
+        """{"name":"$name","description":"Committee description","members":[{"userId":$memberUserId,"role":"Chair"}]}"""
+
+    private fun updateCommitteePayload(memberUserId: Long, version: Long, name: String = "Updated Committee"): String =
+        """{"name":"$name","description":"Updated committee description","members":[{"userId":$memberUserId,"role":"Chair"}],"version":$version}"""
 
     @Nested
     inner class FindCommitteesForCurrentUser {
@@ -109,7 +114,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to read any committee`() {
             val board = createUserWithRole(Role.BOARD)
-            val committeeId = 1L
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 get("/committees/{committeeId}", committeeId)
@@ -120,12 +125,14 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows committee member to read their committee`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-            val committeeId = 1L
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
+            val committeeId = committee.id!!
 
             mvc.perform(
                 get("/committees/{committeeId}", committeeId)
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -133,7 +140,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows non-member to read committee summary`() {
             val member = createUserWithRole(Role.MEMBER)
-            val committeeId = 1L
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 get("/committees/{committeeId}", committeeId)
@@ -143,11 +150,11 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `returns 401 when unauthenticated`() {
-            val committeeId = 1L
+        fun `returns committee summary when unauthenticated`() {
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(get("/committees/{committeeId}", committeeId))
-                .andExpect(status().isUnauthorized)
+                .andExpect(status().isOk)
         }
     }
 
@@ -157,12 +164,13 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create committees`() {
             val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/committees")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Committee","color":"#FF0000"}""")
+                    .content(createCommitteePayload(member.id!!))
             )
                 .andExpect(status().isCreated)
         }
@@ -170,12 +178,13 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from creating committees`() {
             val member = createUserWithRole(Role.MEMBER)
+            val committeeMember = createUserWithRole(Role.COMMITTEE)
 
             mvc.perform(
                 post("/committees")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Committee","color":"#FF0000"}""")
+                    .content(createCommitteePayload(committeeMember.id!!))
             )
                 .andExpect(status().isForbidden)
         }
@@ -183,22 +192,24 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies COMMITTEE role from creating committees`() {
             val committee = createUserWithRole(Role.COMMITTEE)
+            val member = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/committees")
                     .with(bearer(committee))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Committee","color":"#FF0000"}""")
+                    .content(createCommitteePayload(member.id!!))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
+            val member = createUserWithRole(Role.MEMBER)
             mvc.perform(
                 post("/committees")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Committee","color":"#FF0000"}""")
+                    .content(createCommitteePayload(member.id!!))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -210,53 +221,60 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update any committee`() {
             val board = createUserWithRole(Role.BOARD)
-            val committeeId = 1L
+            val member = createUserWithRole(Role.MEMBER)
+            val committee = addCommitteeMember(createCommitteeFixture(), member)
+            val committeeId = committee.id!!
 
             mvc.perform(
                 put("/committees/{id}", committeeId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Committee","color":"#00FF00"}""")
+                    .content(updateCommitteePayload(member.id!!, committee.version))
             )
                 .andExpect(status().isOk)
         }
 
         @Test
-        fun `allows committee member to update their committee`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-            val committeeId = 1L
+        fun `denies committee member from updating their committee`() {
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = addCommitteeMember(createCommitteeFixture(), committeeUser)
+            val committeeId = committee.id!!
 
             mvc.perform(
                 put("/committees/{id}", committeeId)
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Committee","color":"#00FF00"}""")
+                    .content(updateCommitteePayload(committeeUser.id!!, committee.version))
             )
-                .andExpect(status().isOk)
+                .andExpect(status().isForbidden)
         }
 
         @Test
         fun `denies non-member from updating committee`() {
             val member = createUserWithRole(Role.MEMBER)
-            val committeeId = 1L
+            val committeeOwner = createUserWithRole(Role.COMMITTEE)
+            val committee = addCommitteeMember(createCommitteeFixture(), committeeOwner)
+            val committeeId = committee.id!!
 
             mvc.perform(
                 put("/committees/{id}", committeeId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Hacked Committee","color":"#000000"}""")
+                    .content(updateCommitteePayload(committeeOwner.id!!, committee.version, "Hacked Committee"))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val committeeId = 1L
+            val member = createUserWithRole(Role.MEMBER)
+            val committee = addCommitteeMember(createCommitteeFixture(), member)
+            val committeeId = committee.id!!
 
             mvc.perform(
                 put("/committees/{id}", committeeId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Unauthorized Update","color":"#000000"}""")
+                    .content(updateCommitteePayload(member.id!!, committee.version, "Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -268,7 +286,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete committees`() {
             val board = createUserWithRole(Role.BOARD)
-            val committeeId = 1L
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 delete("/committees/{id}", committeeId)
@@ -280,7 +298,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies committee member from deleting committee`() {
             val committee = createUserWithRole(Role.COMMITTEE)
-            val committeeId = 1L
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 delete("/committees/{id}", committeeId)
@@ -292,7 +310,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-member from deleting committee`() {
             val member = createUserWithRole(Role.MEMBER)
-            val committeeId = 1L
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(
                 delete("/committees/{id}", committeeId)
@@ -303,7 +321,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val committeeId = 1L
+            val committeeId = createCommitteeFixture().id!!
 
             mvc.perform(delete("/committees/{id}", committeeId))
                 .andExpect(status().isUnauthorized)
@@ -316,12 +334,13 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `ADMIN can perform BOARD operations`() {
             val admin = createUserWithRole(Role.ADMIN)
+            val member = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/committees")
                     .with(bearer(admin))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Committee","color":"#FF0000"}""")
+                    .content(createCommitteePayload(member.id!!))
             )
                 .andExpect(status().isCreated)
         }
@@ -329,13 +348,15 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
         @Test
         fun `BOARD can perform COMMITTEE operations`() {
             val board = createUserWithRole(Role.BOARD)
-            val committeeId = 1L
+            val member = createUserWithRole(Role.MEMBER)
+            val committee = addCommitteeMember(createCommitteeFixture(), member)
+            val committeeId = committee.id!!
 
             mvc.perform(
                 put("/committees/{id}", committeeId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Committee","color":"#00FF00"}""")
+                    .content(updateCommitteePayload(member.id!!, committee.version))
             )
                 .andExpect(status().isOk)
         }

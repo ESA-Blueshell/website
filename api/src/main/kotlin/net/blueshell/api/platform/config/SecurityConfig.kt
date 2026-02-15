@@ -78,7 +78,6 @@ class SecurityConfig(
                     "/users/guest"
                 ).permitAll()
                     .requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
-                    .requestMatchers(HttpMethod.PUT, "/users/guest/*").permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
                         "/events/**",

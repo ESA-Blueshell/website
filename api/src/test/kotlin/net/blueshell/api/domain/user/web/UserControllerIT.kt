@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class UserControllerIT : UserTestSupport() {
+    private fun createGuestPayload(username: String, email: String): String =
+        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
 
     @Test
     fun `creates and updates user profile as board`() {
@@ -49,16 +51,31 @@ class UserControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `creates and updates guest user`() {
+    fun `creates guest user publicly`() {
+        val guestUsername = "guest_it_${System.currentTimeMillis()}"
+        val guestEmail = "$guestUsername@example.com"
+
+        mvc.perform(
+            post("/users/guest")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createGuestPayload(guestUsername, guestEmail))
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.id").isNotEmpty)
+            .andExpect(jsonPath("$.username").value(guestUsername))
+            .andExpect(jsonPath("$.email").value(guestEmail))
+    }
+
+    @Test
+    fun `board can update guest user`() {
+        val board = createUserWithRole(Role.BOARD)
         val guestUsername = "guest_it_${System.currentTimeMillis()}"
         val guestEmail = "$guestUsername@example.com"
 
         val createResult = mvc.perform(
             post("/users/guest")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """{"username":"$guestUsername","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"password":"Password123!","email":"$guestEmail","discord":"guest#1234","phoneNumber":"+31612345678"}"""
-                )
+                .content(createGuestPayload(guestUsername, guestEmail))
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.id").isNotEmpty)
@@ -70,6 +87,7 @@ class UserControllerIT : UserTestSupport() {
 
         mvc.perform(
             put("/users/guest/{id}", userId)
+                .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":$version}""")
         )
@@ -77,6 +95,22 @@ class UserControllerIT : UserTestSupport() {
             .andExpect(jsonPath("$.id").value(userId))
             .andExpect(jsonPath("$.discord").value("guest_updated#1234"))
             .andExpect(jsonPath("$.phoneNumber").value("+31612345679"))
+    }
+
+    @Test
+    fun `guest can update own guest profile`() {
+        val guest = createUserWithRole(Role.GUEST)
+
+        mvc.perform(
+            put("/users/guest/{id}", guest.id)
+                .with(bearer(guest))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}""")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(guest.id))
+            .andExpect(jsonPath("$.discord").value("guest_self_updated#1234"))
+            .andExpect(jsonPath("$.phoneNumber").value("+31612345670"))
     }
 
     @Test

@@ -73,7 +73,7 @@ class UserController(
     }
 
     @PutMapping("/users/guest/{id}")
-    @PermitAll
+    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'User', 'write')")
     fun updateGuestUser(
         @PathVariable id: Long,
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateGuestUserRequest

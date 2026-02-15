@@ -69,7 +69,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val userId = 1L
+            val userId = createUserWithRole(Role.MEMBER).id!!
 
             mvc.perform(
                 post("/users/{userId}/addresses", userId)
@@ -86,7 +86,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows user to update own address`() {
             val user = createUserWithRole(Role.MEMBER)
-            val addressId = 1L
+            val addressId = assignAddress(user).addressId!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
@@ -100,7 +100,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update any address`() {
             val board = createUserWithRole(Role.BOARD)
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
@@ -115,7 +115,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         fun `denies user from updating other user's address`() {
             val user1 = createUserWithRole(Role.MEMBER)
             val user2 = createUserWithRole(Role.MEMBER)
-            val addressId = 1L
+            val addressId = assignAddress(user2).addressId!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
@@ -128,7 +128,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
@@ -177,7 +177,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows user to read own address`() {
             val user = createUserWithRole(Role.MEMBER)
-            val addressId = 1L
+            val addressId = assignAddress(user).addressId!!
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
@@ -189,7 +189,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to read any address`() {
             val board = createUserWithRole(Role.BOARD)
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
@@ -202,7 +202,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         fun `denies user from reading other user's address`() {
             val user1 = createUserWithRole(Role.MEMBER)
             val user2 = createUserWithRole(Role.MEMBER)
-            val addressId = 1L
+            val addressId = assignAddress(user2).addressId!!
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
@@ -213,7 +213,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(get("/addresses/{id}", addressId))
                 .andExpect(status().isUnauthorized)
@@ -226,7 +226,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete user address`() {
             val board = createUserWithRole(Role.BOARD)
-            val userId = 1L
+            val userId = assignAddress(createUserWithRole(Role.MEMBER)).id!!
 
             mvc.perform(
                 delete("/users/{userId}/addresses", userId)
@@ -238,7 +238,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting user address`() {
             val member = createUserWithRole(Role.MEMBER)
-            val userId = 1L
+            val userId = assignAddress(createUserWithRole(Role.MEMBER)).id!!
 
             mvc.perform(
                 delete("/users/{userId}/addresses", userId)
@@ -249,7 +249,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val userId = 1L
+            val userId = assignAddress(createUserWithRole(Role.MEMBER)).id!!
 
             mvc.perform(delete("/users/{userId}/addresses", userId))
                 .andExpect(status().isUnauthorized)
@@ -262,7 +262,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete address by id`() {
             val board = createUserWithRole(Role.BOARD)
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
                 delete("/addresses/{id}", addressId)
@@ -274,7 +274,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting addresses`() {
             val member = createUserWithRole(Role.MEMBER)
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
                 delete("/addresses/{id}", addressId)
@@ -285,7 +285,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val addressId = 1L
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(delete("/addresses/{id}", addressId))
                 .andExpect(status().isUnauthorized)

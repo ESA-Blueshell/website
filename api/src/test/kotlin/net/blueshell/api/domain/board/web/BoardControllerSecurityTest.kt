@@ -19,6 +19,14 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class BoardControllerSecurityTest : UserTestSupport() {
+    private fun createBoardPayload(name: String = "New Board"): String =
+        """{"name":"$name","candidate":"Test Candidate","startDate":"2026-01-01"}"""
+
+    private fun updateBoardPayload(name: String = "Updated Board"): String =
+        """{"name":"$name","candidate":"Updated Candidate","startDate":"2026-01-01"}"""
+
+    private fun addBoardMemberPayload(userId: Long): String =
+        """{"userId":$userId,"role":"CHAIR","startDate":"2026-01-01"}"""
 
     @Nested
     inner class CreateBoard {
@@ -31,7 +39,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
                 post("/boards")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Board","year":2026}""")
+                    .content(createBoardPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -44,7 +52,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
                 post("/boards")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Board","year":2026}""")
+                    .content(createBoardPayload())
             )
                 .andExpect(status().isForbidden)
         }
@@ -57,7 +65,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
                 post("/boards")
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Board","year":2026}""")
+                    .content(createBoardPayload())
             )
                 .andExpect(status().isForbidden)
         }
@@ -67,7 +75,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/boards")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Board","year":2026}""")
+                    .content(createBoardPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -116,7 +124,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows anyone to read board details`() {
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(get("/boards/{id}", boardId))
                 .andExpect(status().isOk)
@@ -125,7 +133,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows authenticated user to read board details`() {
             val member = createUserWithRole(Role.MEMBER)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 get("/boards/{id}", boardId)
@@ -136,7 +144,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows unauthenticated access to board details`() {
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(get("/boards/{id}", boardId))
                 .andExpect(status().isOk)
@@ -149,13 +157,13 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update boards`() {
             val board = createUserWithRole(Role.BOARD)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 put("/boards/{id}", boardId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Board","year":2026}""")
+                    .content(updateBoardPayload())
             )
                 .andExpect(status().isOk)
         }
@@ -163,13 +171,13 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating boards`() {
             val member = createUserWithRole(Role.MEMBER)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 put("/boards/{id}", boardId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Hacked Board","year":2026}""")
+                    .content(updateBoardPayload("Hacked Board"))
             )
                 .andExpect(status().isForbidden)
         }
@@ -177,25 +185,25 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from updating boards`() {
             val guest = createUserWithRole(Role.GUEST)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 put("/boards/{id}", boardId)
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Hacked Board","year":2026}""")
+                    .content(updateBoardPayload("Hacked Board"))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 put("/boards/{id}", boardId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Unauthorized Update","year":2026}""")
+                    .content(updateBoardPayload("Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -207,7 +215,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete boards`() {
             val board = createUserWithRole(Role.BOARD)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 delete("/boards/{id}", boardId)
@@ -219,7 +227,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting boards`() {
             val member = createUserWithRole(Role.MEMBER)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 delete("/boards/{id}", boardId)
@@ -231,7 +239,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from deleting boards`() {
             val guest = createUserWithRole(Role.GUEST)
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(
                 delete("/boards/{id}", boardId)
@@ -242,7 +250,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val boardId = 1L
+            val boardId = createBoardFixture().id!!
 
             mvc.perform(delete("/boards/{id}", boardId))
                 .andExpect(status().isUnauthorized)
@@ -255,14 +263,14 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to add members`() {
             val board = createUserWithRole(Role.BOARD)
-            val boardId = 1L
-            val userId = 2L
+            val boardId = createBoardFixture().id!!
+            val userId = createUserWithRole(Role.MEMBER).id!!
 
             mvc.perform(
                 post("/boards/{boardId}/members", boardId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":$userId,"role":"CHAIR"}""")
+                    .content(addBoardMemberPayload(userId))
             )
                 .andExpect(status().isCreated)
         }
@@ -270,27 +278,27 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from adding members`() {
             val member = createUserWithRole(Role.MEMBER)
-            val boardId = 1L
-            val userId = 2L
+            val boardId = createBoardFixture().id!!
+            val userId = createUserWithRole(Role.MEMBER).id!!
 
             mvc.perform(
                 post("/boards/{boardId}/members", boardId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":$userId,"role":"CHAIR"}""")
+                    .content(addBoardMemberPayload(userId))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val boardId = 1L
-            val userId = 2L
+            val boardId = createBoardFixture().id!!
+            val userId = createUserWithRole(Role.MEMBER).id!!
 
             mvc.perform(
                 post("/boards/{boardId}/members", boardId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":$userId,"role":"CHAIR"}""")
+                    .content(addBoardMemberPayload(userId))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -302,8 +310,11 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to remove members`() {
             val board = createUserWithRole(Role.BOARD)
-            val boardId = 1L
-            val userId = 2L
+            val boardEntity = createBoardFixture()
+            val user = createUserWithRole(Role.MEMBER)
+            addBoardMember(boardEntity, user)
+            val boardId = boardEntity.id!!
+            val userId = user.id!!
 
             mvc.perform(
                 delete("/boards/{boardId}/members/{userId}", boardId, userId)
@@ -315,8 +326,11 @@ class BoardControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from removing members`() {
             val member = createUserWithRole(Role.MEMBER)
-            val boardId = 1L
-            val userId = 2L
+            val boardEntity = createBoardFixture()
+            val user = createUserWithRole(Role.MEMBER)
+            addBoardMember(boardEntity, user)
+            val boardId = boardEntity.id!!
+            val userId = user.id!!
 
             mvc.perform(
                 delete("/boards/{boardId}/members/{userId}", boardId, userId)
@@ -327,8 +341,11 @@ class BoardControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val boardId = 1L
-            val userId = 2L
+            val boardEntity = createBoardFixture()
+            val user = createUserWithRole(Role.MEMBER)
+            addBoardMember(boardEntity, user)
+            val boardId = boardEntity.id!!
+            val userId = user.id!!
 
             mvc.perform(
                 delete("/boards/{boardId}/members/{userId}", boardId, userId)
@@ -348,7 +365,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
                 post("/boards")
                     .with(bearer(admin))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Board","year":2026}""")
+                    .content(createBoardPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -361,7 +378,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
                 post("/boards")
                     .with(bearer(committee))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Board","year":2026}""")
+                    .content(createBoardPayload())
             )
                 .andExpect(status().isForbidden)
         }

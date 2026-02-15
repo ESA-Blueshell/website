@@ -18,6 +18,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class SponsorControllerSecurityTest : UserTestSupport() {
+    private fun createSponsorPayload(name: String = "New Sponsor"): String =
+        """{"name":"$name","description":"Sponsor description"}"""
+
+    private fun updateSponsorPayload(name: String = "Updated Sponsor"): String =
+        """{"name":"$name","description":"Updated sponsor description"}"""
 
     @Nested
     inner class FindSponsors {
@@ -62,7 +67,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
                 post("/sponsors")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Sponsor","logo":"https://example.com/logo.png"}""")
+                    .content(createSponsorPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -75,7 +80,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
                 post("/sponsors")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Sponsor","logo":"https://example.com/logo.png"}""")
+                    .content(createSponsorPayload())
             )
                 .andExpect(status().isForbidden)
         }
@@ -85,7 +90,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/sponsors")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"New Sponsor","logo":"https://example.com/logo.png"}""")
+                    .content(createSponsorPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -97,13 +102,13 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update sponsors`() {
             val board = createUserWithRole(Role.BOARD)
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Sponsor","logo":"https://example.com/logo.png"}""")
+                    .content(updateSponsorPayload())
             )
                 .andExpect(status().isOk)
         }
@@ -111,25 +116,25 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating sponsors`() {
             val member = createUserWithRole(Role.MEMBER)
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Sponsor","logo":"https://example.com/logo.png"}""")
+                    .content(updateSponsorPayload())
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Sponsor","logo":"https://example.com/logo.png"}""")
+                    .content(updateSponsorPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -141,7 +146,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to read sponsor details`() {
             val board = createUserWithRole(Role.BOARD)
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 get("/sponsors/{id}", sponsorId)
@@ -153,7 +158,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from reading sponsors`() {
             val member = createUserWithRole(Role.MEMBER)
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 get("/sponsors/{id}", sponsorId)
@@ -164,7 +169,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(get("/sponsors/{id}", sponsorId))
                 .andExpect(status().isUnauthorized)
@@ -177,7 +182,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete sponsors`() {
             val board = createUserWithRole(Role.BOARD)
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 delete("/sponsors/{id}", sponsorId)
@@ -189,7 +194,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting sponsors`() {
             val member = createUserWithRole(Role.MEMBER)
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(
                 delete("/sponsors/{id}", sponsorId)
@@ -200,7 +205,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val sponsorId = 1L
+            val sponsorId = createSponsorFixture().id!!
 
             mvc.perform(delete("/sponsors/{id}", sponsorId))
                 .andExpect(status().isUnauthorized)

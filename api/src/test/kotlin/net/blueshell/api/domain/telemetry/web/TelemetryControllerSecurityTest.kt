@@ -19,13 +19,15 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class TelemetryControllerSecurityTest : UserTestSupport() {
+    private fun telemetryPayload(url: String = "https://example.com/test"): String =
+        """{"url":"$url","platform":"TWITTER"}"""
 
     @Nested
     inner class FindTelemetryById {
 
         @Test
         fun `allows anyone to read telemetry`() {
-            val telemetryId = 1L
+            val telemetryId = createTelemetryFixture().id!!
 
             mvc.perform(get("/telemetry/{id}", telemetryId))
                 .andExpect(status().isOk)
@@ -34,7 +36,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows authenticated user to read telemetry`() {
             val member = createUserWithRole(Role.MEMBER)
-            val telemetryId = 1L
+            val telemetryId = createTelemetryFixture().id!!
 
             mvc.perform(
                 get("/telemetry/{id}", telemetryId)
@@ -46,7 +48,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to read telemetry`() {
             val board = createUserWithRole(Role.BOARD)
-            val telemetryId = 1L
+            val telemetryId = createTelemetryFixture().id!!
 
             mvc.perform(
                 get("/telemetry/{id}", telemetryId)
@@ -67,7 +69,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
                 post("/telemetry")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"eventName":"test_event","data":{"value":123}}""")
+                    .content(telemetryPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -80,7 +82,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
                 post("/telemetry")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"eventName":"test_event","data":{"value":123}}""")
+                    .content(telemetryPayload())
             )
                 .andExpect(status().isForbidden)
         }
@@ -90,7 +92,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/telemetry")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"eventName":"test_event","data":{"value":123}}""")
+                    .content(telemetryPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -107,7 +109,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
                 post("/telemetry")
                     .with(bearer(admin))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"eventName":"test_event","data":{"value":123}}""")
+                    .content(telemetryPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -120,7 +122,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
                 post("/telemetry")
                     .with(bearer(committee))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"eventName":"test_event","data":{"value":123}}""")
+                    .content(telemetryPayload())
             )
                 .andExpect(status().isForbidden)
         }

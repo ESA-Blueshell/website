@@ -70,7 +70,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows GUEST to create membership for self`() {
-            val guest = createUserWithRole(Role.GUEST)
+            val guest = assignAddress(createUserWithRole(Role.GUEST))
 
             mvc.perform(
                 post("/memberships")
@@ -81,7 +81,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows MEMBER to create membership`() {
-            val member = createUserWithRole(Role.MEMBER)
+            val member = assignAddress(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/memberships")
@@ -115,12 +115,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create membership for other users`() {
             val board = createUserWithRole(Role.BOARD)
+            val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/memberships/member")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1}""")
+                    .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
                 .andExpect(status().isCreated)
         }
@@ -128,12 +129,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from board creating membership`() {
             val member = createUserWithRole(Role.MEMBER)
+            val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/memberships/member")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1}""")
+                    .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
                 .andExpect(status().isForbidden)
         }
@@ -141,12 +143,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from board creating membership`() {
             val guest = createUserWithRole(Role.GUEST)
+            val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/memberships/member")
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1}""")
+                    .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
                 .andExpect(status().isForbidden)
         }
@@ -156,7 +159,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/memberships/member")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":1}""")
+                    .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -168,13 +171,14 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update memberships`() {
             val board = createUserWithRole(Role.BOARD)
-            val membershipId = 1L // Assuming ID 1 exists or creating one
+            val membership = createMembershipFixture()
+            val membershipId = membership.id!!
 
             mvc.perform(
                 put("/memberships/{id}", membershipId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"status":"ACTIVE"}""")
+                    .content("""{"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
                 .andExpect(status().isOk)
         }
@@ -182,13 +186,14 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating memberships`() {
             val member = createUserWithRole(Role.MEMBER)
-            val membershipId = 1L
+            val membership = createMembershipFixture()
+            val membershipId = membership.id!!
 
             mvc.perform(
                 put("/memberships/{id}", membershipId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"status":"ACTIVE"}""")
+                    .content("""{"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
                 .andExpect(status().isForbidden)
         }
@@ -196,25 +201,26 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from updating memberships`() {
             val guest = createUserWithRole(Role.GUEST)
-            val membershipId = 1L
+            val membership = createMembershipFixture()
+            val membershipId = membership.id!!
 
             mvc.perform(
                 put("/memberships/{id}", membershipId)
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"status":"ACTIVE"}""")
+                    .content("""{"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val membershipId = 1L
+            val membershipId = createMembershipFixture().id!!
 
             mvc.perform(
                 put("/memberships/{id}", membershipId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"status":"ACTIVE"}""")
+                    .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -226,7 +232,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows user to read own membership`() {
             val user = createUserWithRole(Role.MEMBER)
-            val membershipId = 1L // In a real test, this would be the user's actual membership
+            val membershipId = createMembershipFixture(user = user).id!!
 
             mvc.perform(
                 get("/memberships/{id}", membershipId)
@@ -238,7 +244,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to read any membership`() {
             val board = createUserWithRole(Role.BOARD)
-            val membershipId = 1L
+            val membershipId = createMembershipFixture().id!!
 
             mvc.perform(
                 get("/memberships/{id}", membershipId)
@@ -251,7 +257,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         fun `denies user from reading other user's membership`() {
             val user1 = createUserWithRole(Role.MEMBER)
             val user2 = createUserWithRole(Role.MEMBER)
-            val membershipId = 1L // Belongs to user2
+            val membershipId = createMembershipFixture(user = user2).id!!
 
             mvc.perform(
                 get("/memberships/{id}", membershipId)
@@ -262,7 +268,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val membershipId = 1L
+            val membershipId = createMembershipFixture().id!!
 
             mvc.perform(get("/memberships/{id}", membershipId))
                 .andExpect(status().isUnauthorized)

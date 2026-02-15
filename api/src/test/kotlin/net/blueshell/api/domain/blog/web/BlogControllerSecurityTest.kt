@@ -31,7 +31,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
                 post("/blogs")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>"}""")
+                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isCreated)
         }
@@ -44,7 +44,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
                 post("/blogs")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>"}""")
+                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isForbidden)
         }
@@ -54,7 +54,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/blogs")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>"}""")
+                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -66,13 +66,13 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update blogs`() {
             val board = createUserWithRole(Role.BOARD)
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Updated Blog","html":"<p>Updated Content</p>"}""")
+                    .content("""{"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isOk)
         }
@@ -80,25 +80,25 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating blogs`() {
             val member = createUserWithRole(Role.MEMBER)
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Hacked Blog","html":"<p>Hacked</p>"}""")
+                    .content("""{"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Unauthorized","html":"<p>Unauthorized</p>"}""")
+                    .content("""{"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -136,7 +136,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows anyone to read blog details`() {
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(get("/blogs/{id}", blogId))
                 .andExpect(status().isOk)
@@ -145,7 +145,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows authenticated user to read blog details`() {
             val member = createUserWithRole(Role.MEMBER)
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(
                 get("/blogs/{id}", blogId)
@@ -156,7 +156,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows unauthenticated access to blog details`() {
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(get("/blogs/{id}", blogId))
                 .andExpect(status().isOk)
@@ -169,7 +169,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete blogs`() {
             val board = createUserWithRole(Role.BOARD)
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(
                 delete("/blogs/{id}", blogId)
@@ -181,7 +181,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting blogs`() {
             val member = createUserWithRole(Role.MEMBER)
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(
                 delete("/blogs/{id}", blogId)
@@ -192,7 +192,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val blogId = 1L
+            val blogId = createBlogFixture().id!!
 
             mvc.perform(delete("/blogs/{id}", blogId))
                 .andExpect(status().isUnauthorized)
@@ -210,7 +210,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
                 post("/blogs")
                     .with(bearer(admin))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>"}""")
+                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isCreated)
         }
@@ -223,7 +223,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
                 post("/blogs")
                     .with(bearer(committee))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>"}""")
+                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
                 .andExpect(status().isForbidden)
         }

@@ -22,6 +22,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class EventSignUpControllerSecurityTest : UserTestSupport() {
+    private fun createSignUpGuestPayload(): String =
+        """{"guest":{"name":"Test User","discord":"test#1234","email":"test@example.com"}}"""
+
+    private fun updateSignUpGuestPayload(name: String = "Updated Guest"): String =
+        """{"guest":{"name":"$name","discord":"test#1234","email":"test@example.com"}}"""
 
     @Nested
     inner class FindEventSignUps {
@@ -64,12 +69,14 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows committee member to access signups for their committee's event`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
 
             mvc.perform(
                 get("/events/signups")
-                    .param("committeeId", "1")
-                    .with(bearer(committee))
+                    .param("committeeId", committee.id.toString())
+                    .with(bearer(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -97,10 +104,11 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows valid access token to view signups`() {
-            val validToken = "validAccessToken123"
+            val guest = createGuestFixture()
+            createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest)
 
             mvc.perform(
-                get("/events/signups/byAccessToken/{accessToken}", validToken)
+                get("/events/signups/byAccessToken/{accessToken}", guest.accessToken)
             )
                 .andExpect(status().isOk)
         }
@@ -118,7 +126,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to view signups for any event`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 get("/events/{eventId}/signups", eventId)
@@ -129,12 +137,14 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows event organizer to view signups for their event`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-            val eventId = 1L
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
+            val eventId = createEventFixture(committee = committee).id!!
 
             mvc.perform(
                 get("/events/{eventId}/signups", eventId)
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -142,7 +152,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from viewing event signups`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 get("/events/{eventId}/signups", eventId)
@@ -153,7 +163,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(get("/events/{eventId}/signups", eventId))
                 .andExpect(status().isUnauthorized)
@@ -166,13 +176,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create signups for any event`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 post("/events/{eventId}/signups", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Test User","email":"test@example.com"}""")
+                    .content(createSignUpGuestPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -180,13 +190,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows user to sign up for event they have permission for`() {
             val user = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = true, membersOnly = false, signUp = true).id!!
 
             mvc.perform(
                 post("/events/{eventId}/signups", eventId)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Test User","email":"test@example.com"}""")
+                    .content(createSignUpGuestPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -194,25 +204,25 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies user from signing up for event with insufficient permissions`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = false, membersOnly = false, signUp = true).id!!
 
             mvc.perform(
                 post("/events/{eventId}/signups", eventId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Test User","email":"test@example.com"}""")
+                    .content(createSignUpGuestPayload())
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 post("/events/{eventId}/signups", eventId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Test User","email":"test@example.com"}""")
+                    .content(createSignUpGuestPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -224,13 +234,15 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update signups`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val event = createEventFixture()
+            val eventId = event.id!!
+            createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Name"}""")
+                    .content(updateSignUpGuestPayload())
             )
                 .andExpect(status().isOk)
         }
@@ -238,27 +250,31 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows user to update own signup`() {
             val user = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val event = createEventFixture()
+            val eventId = event.id!!
+            createEventSignUpFixture(event = event, user = user)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Name"}""")
+                    .content(updateSignUpGuestPayload())
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows guest with valid access token to update signup`() {
-            val eventId = 1L
-            val accessToken = "validGuestToken123"
+            val event = createEventFixture()
+            val eventId = event.id!!
+            val guest = createGuestFixture(accessToken = "validGuestToken123")
+            createEventSignUpFixture(event = event, user = null, guest = guest)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
-                    .param("accessToken", accessToken)
+                    .param("accessToken", guest.accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Updated Guest Name"}""")
+                    .content(updateSignUpGuestPayload("Updated Guest Name"))
             )
                 .andExpect(status().isOk)
         }
@@ -267,25 +283,27 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         fun `denies user from updating other user's signup`() {
             val user1 = createUserWithRole(Role.MEMBER)
             val user2 = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val event = createEventFixture()
+            val eventId = event.id!!
+            createEventSignUpFixture(event = event, user = user2)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Hacked Name"}""")
+                    .content(updateSignUpGuestPayload("Hacked Name"))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated without access token`() {
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Unauthorized Update"}""")
+                    .content(updateSignUpGuestPayload("Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -297,7 +315,10 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete any signup`() {
             val board = createUserWithRole(Role.BOARD)
-            val signupId = 1L
+            val signupId = createEventSignUpFixture(
+                event = createEventFixture(),
+                user = createUserWithRole(Role.MEMBER)
+            ).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
@@ -309,7 +330,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows user to delete own signup`() {
             val user = createUserWithRole(Role.MEMBER)
-            val signupId = 1L
+            val signupId = createEventSignUpFixture(event = createEventFixture(), user = user).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
@@ -320,12 +341,12 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows guest with valid access token to delete signup`() {
-            val signupId = 1L
-            val accessToken = "validGuestToken123"
+            val guest = createGuestFixture(accessToken = "validGuestToken123")
+            val signupId = createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
-                    .param("accessToken", accessToken)
+                    .param("accessToken", guest.accessToken)
             )
                 .andExpect(status().isNoContent)
         }
@@ -334,7 +355,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         fun `denies user from deleting other user's signup`() {
             val user1 = createUserWithRole(Role.MEMBER)
             val user2 = createUserWithRole(Role.MEMBER)
-            val signupId = 1L
+            val signupId = createEventSignUpFixture(event = createEventFixture(), user = user2).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
@@ -345,7 +366,11 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `denies invalid guest token from deleting signup`() {
-            val signupId = 1L
+            val signupId = createEventSignUpFixture(
+                event = createEventFixture(),
+                user = null,
+                guest = createGuestFixture(accessToken = "validGuestToken")
+            ).id!!
             val invalidToken = "invalidToken"
 
             mvc.perform(
@@ -357,7 +382,10 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated without access token`() {
-            val signupId = 1L
+            val signupId = createEventSignUpFixture(
+                event = createEventFixture(),
+                user = createUserWithRole(Role.MEMBER)
+            ).id!!
 
             mvc.perform(delete("/events/signups/{eventSignupId}", signupId))
                 .andExpect(status().isUnauthorized)
@@ -369,43 +397,50 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows guest access token holder to view own signup`() {
-            val accessToken = "guestToken123"
+            val guest = createGuestFixture(accessToken = "guestToken123")
+            createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest)
 
             mvc.perform(
-                get("/events/signups/byAccessToken/{accessToken}", accessToken)
+                get("/events/signups/byAccessToken/{accessToken}", guest.accessToken)
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows guest access token holder to update signup`() {
-            val eventId = 1L
-            val accessToken = "guestToken123"
+            val guest = createGuestFixture(accessToken = "guestToken123")
+            val event = createEventFixture()
+            val eventId = event.id!!
+            createEventSignUpFixture(event = event, user = null, guest = guest)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
-                    .param("accessToken", accessToken)
+                    .param("accessToken", guest.accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Guest Updated"}""")
+                    .content(updateSignUpGuestPayload("Guest Updated"))
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows guest access token holder to delete signup`() {
-            val signupId = 1L
-            val accessToken = "guestToken123"
+            val guest = createGuestFixture(accessToken = "guestToken123")
+            val signupId = createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
-                    .param("accessToken", accessToken)
+                    .param("accessToken", guest.accessToken)
             )
                 .andExpect(status().isNoContent)
         }
 
         @Test
         fun `denies invalid guest access token from all operations`() {
-            val signupId = 1L
+            val signupId = createEventSignUpFixture(
+                event = createEventFixture(),
+                user = null,
+                guest = createGuestFixture(accessToken = "validGuestToken")
+            ).id!!
             val invalidToken = "invalidGuestToken"
 
             mvc.perform(
@@ -422,7 +457,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `ADMIN can perform BOARD operations`() {
             val admin = createUserWithRole(Role.ADMIN)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 get("/events/{eventId}/signups", eventId)
@@ -434,13 +469,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         @Test
         fun `BOARD can perform COMMITTEE operations`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(
                 post("/events/{eventId}/signups", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Test","email":"test@example.com"}""")
+                    .content(createSignUpGuestPayload())
             )
                 .andExpect(status().isCreated)
         }

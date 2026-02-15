@@ -5,7 +5,7 @@ import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -19,6 +19,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class FileControllerSecurityTest : UserTestSupport() {
+    private fun bannerFile() = MockMultipartFile(
+        "file",
+        "banner.png",
+        "image/png",
+        "png".toByteArray()
+    )
 
     @Nested
     inner class DownloadEventBanner {
@@ -26,7 +32,9 @@ class FileControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to download event banners`() {
             val board = createUserWithRole(Role.BOARD)
-            val eventId = 1L
+            val event = createEventFixture()
+            attachEventBanner(event)
+            val eventId = event.id!!
 
             mvc.perform(
                 get("/events/{eventId}/banners", eventId)
@@ -37,12 +45,16 @@ class FileControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows event organizer to download banner`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-            val eventId = 1L
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val committee = createCommitteeFixture()
+            addCommitteeMember(committee, committeeUser)
+            val event = createEventFixture(committee = committee)
+            attachEventBanner(event)
+            val eventId = event.id!!
 
             mvc.perform(
                 get("/events/{eventId}/banners", eventId)
-                    .with(bearer(committee))
+                    .with(bearer(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -50,7 +62,7 @@ class FileControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from downloading unapproved event banners`() {
             val member = createUserWithRole(Role.MEMBER)
-            val eventId = 1L
+            val eventId = createEventFixture(approved = false).id!!
 
             mvc.perform(
                 get("/events/{eventId}/banners", eventId)
@@ -61,7 +73,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val eventId = 1L
+            val eventId = createEventFixture().id!!
 
             mvc.perform(get("/events/{eventId}/banners", eventId))
                 .andExpect(status().isUnauthorized)
@@ -77,6 +89,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 multipart("/events/banners")
+                    .file(bannerFile())
                     .with(bearer(committee))
             )
                 .andExpect(status().isCreated)
@@ -88,6 +101,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 multipart("/events/banners")
+                    .file(bannerFile())
                     .with(bearer(board))
             )
                 .andExpect(status().isForbidden)
@@ -99,6 +113,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 multipart("/events/banners")
+                    .file(bannerFile())
                     .with(bearer(member))
             )
                 .andExpect(status().isForbidden)
@@ -110,6 +125,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 multipart("/events/banners")
+                    .file(bannerFile())
                     .with(bearer(guest))
             )
                 .andExpect(status().isForbidden)
@@ -118,7 +134,8 @@ class FileControllerSecurityTest : UserTestSupport() {
         @Test
         fun `returns 401 when unauthenticated`() {
             mvc.perform(
-                multipart("/events/banners")
+                    multipart("/events/banners")
+                        .file(bannerFile())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -133,6 +150,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 multipart("/events/banners")
+                    .file(bannerFile())
                     .with(bearer(admin))
             )
                 .andExpect(status().isCreated)

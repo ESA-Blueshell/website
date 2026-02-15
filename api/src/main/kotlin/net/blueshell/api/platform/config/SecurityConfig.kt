@@ -74,14 +74,22 @@ class SecurityConfig(
                     HttpMethod.POST,
                     "/auth",
                     "/recovery/**",
-                    "/events/*/signups",
                     "/users",
                     "/users/guest"
                 ).permitAll()
                     .requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
+                    .requestMatchers(HttpMethod.PUT, "/users/guest/*").permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
                         "/events/**",
+                        "/events/signups/byAccessToken/*",
+                        "/blogs",
+                        "/blogs/*",
+                        "/boards",
+                        "/boards/*",
+                        "/telemetry/*",
+                        "/committeeMembers/committees",
+                        "/contributionPeriods",
                         "/v3/api-docs**/**",
                         "/swagger-ui**/**",
                         "/download/**",

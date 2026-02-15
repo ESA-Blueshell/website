@@ -19,6 +19,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class ContributionPeriodControllerSecurityTest : UserTestSupport() {
+    private fun contributionPeriodPayload(
+        startDate: String = "2026-01-01",
+        endDate: String = "2026-12-31"
+    ): String =
+        """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0}"""
 
     @Nested
     inner class FindContributionPeriods {
@@ -57,6 +62,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows anyone to get current period`() {
+            createContributionPeriodFixture()
             mvc.perform(get("/contributionPeriods/current"))
                 .andExpect(status().isOk)
         }
@@ -64,6 +70,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows authenticated user to get current period`() {
             val member = createUserWithRole(Role.MEMBER)
+            createContributionPeriodFixture()
 
             mvc.perform(
                 get("/contributionPeriods/current")
@@ -74,6 +81,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows unauthenticated access to current period`() {
+            createContributionPeriodFixture()
             mvc.perform(get("/contributionPeriods/current"))
                 .andExpect(status().isOk)
         }
@@ -90,7 +98,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
                 post("/contributionPeriods")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isCreated)
         }
@@ -103,7 +111,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
                 post("/contributionPeriods")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isForbidden)
         }
@@ -113,7 +121,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/contributionPeriods")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -125,13 +133,14 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update periods`() {
             val board = createUserWithRole(Role.BOARD)
-            val periodId = 1L
+            val period = createContributionPeriodFixture()
+            val periodId = period.id!!
 
             mvc.perform(
                 put("/contributionPeriods/{id}", periodId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isOk)
         }
@@ -139,25 +148,26 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating periods`() {
             val member = createUserWithRole(Role.MEMBER)
-            val periodId = 1L
+            val period = createContributionPeriodFixture()
+            val periodId = period.id!!
 
             mvc.perform(
                 put("/contributionPeriods/{id}", periodId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 put("/contributionPeriods/{id}", periodId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -169,7 +179,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete periods`() {
             val board = createUserWithRole(Role.BOARD)
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 delete("/contributionPeriods/{id}", periodId)
@@ -181,7 +191,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting periods`() {
             val member = createUserWithRole(Role.MEMBER)
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(
                 delete("/contributionPeriods/{id}", periodId)
@@ -192,7 +202,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val periodId = 1L
+            val periodId = createContributionPeriodFixture().id!!
 
             mvc.perform(delete("/contributionPeriods/{id}", periodId))
                 .andExpect(status().isUnauthorized)
@@ -210,7 +220,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
                 post("/contributionPeriods")
                     .with(bearer(admin))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"2026","startDate":"2026-01-01","endDate":"2026-12-31"}""")
+                    .content(contributionPeriodPayload())
             )
                 .andExpect(status().isCreated)
         }

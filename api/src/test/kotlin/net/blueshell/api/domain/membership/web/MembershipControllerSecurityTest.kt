@@ -69,36 +69,25 @@ class MembershipControllerSecurityTest : UserTestSupport() {
     inner class CreateMembership {
 
         @Test
-        fun `allows MEMBER to create membership for self`() {
+        fun `denies MEMBER from creating a membership for self`() {
             val member = assignAddress(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/memberships")
                     .with(bearer(member))
             )
-                .andExpect(status().isCreated)
+                .andExpect(status().isForbidden)
         }
 
         @Test
-        fun `allows BOARD to self-create membership when no active membership exists`() {
-            val board = assignAddress(createUserWithRole(Role.BOARD))
-
-            mvc.perform(
-                post("/memberships")
-                    .with(bearer(board))
-            )
-                .andExpect(status().isCreated)
-        }
-
-        @Test
-        fun `denies GUEST from creating membership`() {
+        fun `allows a GUEST with an address to create a membership`() {
             val guest = assignAddress(createUserWithRole(Role.GUEST))
 
             mvc.perform(
                 post("/memberships")
                     .with(bearer(guest))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(status().isCreated)
         }
 
         @Test
@@ -117,7 +106,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                post("/memberships/member")
+                post("/users/${targetUser.id}/memberships")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
@@ -131,7 +120,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                post("/memberships/member")
+                post("/users/${targetUser.id}/memberships")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
@@ -145,7 +134,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                post("/memberships/member")
+                post("/users/${targetUser.id}/memberships")
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")

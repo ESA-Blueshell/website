@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.contribution.application
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
@@ -74,9 +75,9 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
             .hasSize(reminders.size)
     }
 
-    private fun createContributionReminder(user: User, period: ContributionPeriod): net.blueshell.api.domain.contribution.persistence.ContributionReminder {
-        val reminder = net.blueshell.api.domain.contribution.persistence.ContributionReminder()
-        reminder.id = net.blueshell.api.domain.contribution.persistence.ContributionReminder.Id(
+    private fun createContributionReminder(user: User, period: ContributionPeriod): ContributionReminder {
+        val reminder = ContributionReminder()
+        reminder.id = ContributionReminder.Id(
             userId = user.id,
             contributionPeriodId = period.id
         )

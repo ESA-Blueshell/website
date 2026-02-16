@@ -2,6 +2,7 @@ package net.blueshell.api.domain.committee.web
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -34,6 +35,8 @@ class CommitteeControllerIT : UserTestSupport() {
         val committeeId = created.path("id").asLong()
         val version = created.path("version").asLong()
 
+        assertThat(userRepository.findById(member.id!!).orElseThrow().roles).contains(Role.COMMITTEE)
+
         mvc.perform(get("/committees"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].id").value(committeeId))
@@ -55,6 +58,8 @@ class CommitteeControllerIT : UserTestSupport() {
             .andExpect(jsonPath("$.id").value(committeeId))
             .andExpect(jsonPath("$.name").value("Updated Committee"))
             .andExpect(jsonPath("$.members.length()").value(1))
+
+        assertThat(userRepository.findById(member.id!!).orElseThrow().roles).doesNotContain(Role.COMMITTEE)
 
         mvc.perform(delete("/committees/{id}", committeeId).with(bearer(board)))
             .andExpect(status().isNoContent)

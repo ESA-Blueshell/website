@@ -3,8 +3,6 @@ package net.blueshell.api.domain.committee.application.command
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.command.*
 import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.domain.committee.persistence.CommitteeMember
-import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 
@@ -48,34 +46,33 @@ class FindCommitteeByIdHandler(
 
 @Component
 class CreateCommitteeHandler(
-    private val service: CommitteeService,
-    private val userService: UserService
+    private val service: CommitteeService
 ) : CommandHandler<CreateCommitteeCommand, Committee> {
     override val commandType = CreateCommitteeCommand::class
 
     override fun handle(command: CreateCommitteeCommand): Committee {
-        val committee = Committee()
-        committee.name = command.name
-        committee.description = command.description
-        committee.replaceMembers(mapMembers(command.members, committee, userService))
-        return service.create(committee)
+        return service.createWithMembers(
+            name = command.name,
+            description = command.description,
+            members = command.members
+        )
     }
 }
 
 @Component
 class UpdateCommitteeHandler(
-    private val service: CommitteeService,
-    private val userService: UserService
+    private val service: CommitteeService
 ) : CommandHandler<UpdateCommitteeCommand, Committee> {
     override val commandType = UpdateCommitteeCommand::class
 
     override fun handle(command: UpdateCommitteeCommand): Committee {
-        var committee = service.findById(command.id)
-        committee.name = command.name
-        committee.description = command.description
-        committee.replaceMembers(mapMembers(command.members, committee, userService))
-        command.version?.let { committee.version = it }
-        return service.update(committee)
+        return service.updateWithMembers(
+            id = command.id,
+            name = command.name,
+            description = command.description,
+            members = command.members,
+            version = command.version
+        )
     }
 }
 
@@ -88,22 +85,4 @@ class DeleteCommitteeByIdHandler(
     override fun handle(command: DeleteCommitteeByIdCommand) {
         service.deleteById(command.id)
     }
-}
-
-private fun mapMembers(
-    members: MutableList<CommitteeMemberData>,
-    committee: Committee,
-    userService: UserService
-): MutableList<CommitteeMember> {
-    val existingByUserId = committee.members.associateBy { it.userId }
-    return members.map { memberData ->
-        val member = existingByUserId[memberData.userId] ?: CommitteeMember().apply {
-            // Fetch user entity via service (ADR-013)
-            user = userService.findById(memberData.userId)
-            id.userId = memberData.userId
-            this.committee = committee
-        }
-        member.role = memberData.role
-        member
-    }.toMutableList()
 }

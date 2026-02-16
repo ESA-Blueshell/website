@@ -25,8 +25,8 @@ class ContributionPeriodController @Autowired constructor(
 ) : BaseController<ContributionPeriodService>(service) {
     @GetMapping("/contributionPeriods")
     @PermitAll
-    fun findContributionPeriods(): MutableList<ContributionPeriodResponse> {
-        return commandBus.dispatch(FindContributionPeriodsCommand()).map { it.asResponse() }.toMutableList()
+    fun findContributionPeriods(): List<ContributionPeriodResponse> {
+        return commandBus.dispatch(FindContributionPeriodsCommand()).map { it.asResponse() }
     }
 
     @GetMapping("/contributionPeriods/current")
@@ -36,7 +36,7 @@ class ContributionPeriodController @Autowired constructor(
         return contributionPeriod.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'ContributionPeriod', 'create')")
+    @PreAuthorize("hasPermission(null, 'ContributionPeriod', 'write')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody request: CreateContributionPeriodRequest): ContributionPeriodResponse {

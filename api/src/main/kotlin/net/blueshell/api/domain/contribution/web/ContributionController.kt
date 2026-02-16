@@ -29,11 +29,11 @@ class ContributionController @Autowired constructor(
         return contribution.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Contribution', 'write')")
+    @PreAuthorize("hasPermission(null, 'Contribution', 'read')")
     @GetMapping("/contributions")
-    fun findContributions(@RequestParam contributionPeriodId: Long): MutableList<ContributionResponse> {
+    fun findContributions(@RequestParam contributionPeriodId: Long): List<ContributionResponse> {
         val contributions = commandBus.dispatch(FindContributionsCommand(contributionPeriodId))
-        return contributions.map { it.asResponse() }.toMutableList()
+        return contributions.map { it.asResponse() }
     }
 
     @PreAuthorize("hasPermission(null, 'Contribution', 'delete')")
@@ -43,7 +43,7 @@ class ContributionController @Autowired constructor(
         commandBus.dispatch(DeleteContributionCommand(userId, contributionPeriodId))
     }
 
-    @PreAuthorize("hasPermission(null, 'Contribution', 'write')")
+    @PreAuthorize("hasPermission(null, 'Contribution', 'read')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
     fun findContributionsByPeriodId(@PathVariable periodId: Long): MutableList<ContributionResponse> {
         val contributions = commandBus.dispatch(FindContributionsByPeriodIdCommand(periodId))

@@ -2,6 +2,7 @@ package net.blueshell.api.domain.file.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.NotNull
+import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.file.command.DownloadEventBannerCommand
 import net.blueshell.api.domain.file.command.UploadEventBannerCommand
 import net.blueshell.api.domain.file.web.dto.FileResponse
@@ -21,9 +22,9 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @Tag(name = "Files")
 class FileController(
-    service: net.blueshell.api.domain.file.application.FileService,
+    service: FileService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.file.application.FileService>(service) {
+) : BaseController<FileService>(service) {
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
@@ -34,7 +35,7 @@ class FileController(
     @ResponseStatus(
         HttpStatus.CREATED
     )
-    @PreAuthorize("hasPermission(null, 'EventBanner', 'create')")
+    @PreAuthorize("hasPermission(null, 'EventBanner', 'write')")
     fun uploadEventBanner(
         @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 2 * 1024 * 1024) @AllowedContentTypes(
             "image/png",

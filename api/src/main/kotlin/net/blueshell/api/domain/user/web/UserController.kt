@@ -6,14 +6,20 @@ import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.query.UserQuery
-import net.blueshell.api.domain.user.command.*
+import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
+import net.blueshell.api.domain.user.command.FindUserByIdCommand
+import net.blueshell.api.domain.user.command.FindUsersCommand
+import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
 import net.blueshell.api.domain.user.web.dto.*
 import net.blueshell.api.domain.user.web.mapping.asCommand
 import net.blueshell.api.domain.user.web.mapping.asDetailResponse
 import net.blueshell.api.domain.user.web.mapping.asSummaryResponse
-import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.UserPrincipal
+import net.blueshell.api.shared.validation.group.Administration
+import net.blueshell.api.shared.validation.group.Creation
+import net.blueshell.api.shared.validation.group.Update
 import net.blueshell.api.shared.web.AdvancedController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -51,9 +57,9 @@ class UserController(
 
         val isBoard = principal?.hasAuthority(Role.BOARD) == true
         val groups: Array<Class<*>> = if (isBoard)
-            arrayOf(net.blueshell.api.shared.validation.group.Administration::class.java)
+            arrayOf(Administration::class.java)
         else
-            arrayOf(net.blueshell.api.shared.validation.group.Creation::class.java)
+            arrayOf(Creation::class.java)
 
         val violations = validator.validate(request, *groups)
         if (!violations.isEmpty()) {
@@ -67,7 +73,7 @@ class UserController(
     @PostMapping("/users/guest")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGuestUser(@Validated(net.blueshell.api.shared.validation.group.Creation::class) @RequestBody request: CreateGuestUserRequest): UserSummaryResponse {
+    fun createGuestUser(@Validated(Creation::class) @RequestBody request: CreateGuestUserRequest): UserSummaryResponse {
         val user = commandBus.dispatch(request.asCommand())
         return user.asSummaryResponse()
     }
@@ -76,7 +82,7 @@ class UserController(
     @PreAuthorize("hasPermission(#id, 'User', 'write')")
     fun updateGuestUser(
         @PathVariable id: Long,
-        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateGuestUserRequest
+        @Validated(Update::class) @RequestBody request: UpdateGuestUserRequest
     ): UserSummaryResponse {
         val user = commandBus.dispatch(request.asCommand(id))
         return user.asSummaryResponse()
@@ -86,7 +92,7 @@ class UserController(
     @PreAuthorize("hasPermission(#id, 'User', 'write')")
     fun updateUser(
         @PathVariable id: Long,
-        @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest,
+        @Validated(Update::class) @RequestBody request: UpdateUserRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): UserDetailResponse {
         val isBoard = principal?.hasAuthority(Role.BOARD) == true
@@ -95,7 +101,7 @@ class UserController(
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(null, 'User', 'read')")
     fun findUsers(
         @ParameterObject query: UserQuery = UserQuery(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()
@@ -112,14 +118,14 @@ class UserController(
     }
 
     @DeleteMapping(value = ["/users/{userId}"])
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserById(@PathVariable userId: Long) {
         commandBus.dispatch(DeleteUserByIdCommand(userId))
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
-    @PreAuthorize("hasPermission(null, 'User', 'admin')")
+    @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
     fun toggleUserRole(
         @PathVariable userId: Long,
         @RequestParam(value = "role") role: Role

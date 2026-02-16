@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.membership.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.application.query.MembershipQuery
 import net.blueshell.api.domain.membership.command.*
 import net.blueshell.api.domain.membership.web.dto.request.BoardCreateMembershipRequest
@@ -10,6 +11,7 @@ import net.blueshell.api.domain.membership.web.mapping.asCommand
 import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
+import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
@@ -22,16 +24,16 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping
 @Tag(name = "Memberships")
 class MembershipController(
-    private val membershipService: net.blueshell.api.domain.membership.application.MembershipService,
+    private val membershipService: MembershipService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(membershipService) {
+) : BaseController<MembershipService>(membershipService) {
     @PreAuthorize("hasPermission(null, 'Membership', 'read')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject query: MembershipQuery = MembershipQuery()): MutableList<MembershipResponse> {
         return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'member')")
+    @PreAuthorize("hasPermission(#principal.id, 'User', 'write')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(
@@ -52,7 +54,7 @@ class MembershipController(
     @PostMapping("/memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
-        @Validated(net.blueshell.api.shared.validation.group.Administration::class) @RequestBody request: BoardCreateMembershipRequest
+        @Validated(Administration::class) @RequestBody request: BoardCreateMembershipRequest
     ): MembershipResponse? {
         val membership = commandBus.dispatch(request.asCommand())
         return membership.asResponse()

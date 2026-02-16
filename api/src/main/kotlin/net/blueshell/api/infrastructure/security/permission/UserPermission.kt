@@ -3,7 +3,6 @@ package net.blueshell.api.infrastructure.security.permission
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -18,13 +17,23 @@ class UserPermission @Autowired constructor(service: UserService) :
         }
         val rolePermission = hasRolePermission(authentication, permission)
         if (rolePermission != null) return rolePermission
-        if (entity == null) return false
+        if (entity == null) {
+            return when (permission) {
+                "read" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
+                "roles" -> SecurityUtils.hasAuthority(authentication, Role.ADMIN)
+                "delete" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
+                else -> false
+            }
+        }
 
         val user = entity as User
         val principal = SecurityUtils.principalFrom(authentication)
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        val isAdmin = SecurityUtils.hasAuthority(authentication, Role.ADMIN)
         return when (permission) {
             "read", "write" -> isBoard || (principal?.id == user.id)
+            "delete" -> isBoard
+            "roles" -> isAdmin
             else -> false
         }
     }
@@ -34,9 +43,7 @@ class UserPermission @Autowired constructor(service: UserService) :
             return false
         }
 
-        val rolePermission = hasRolePermission(authentication, permission)
-        if (rolePermission != null) return rolePermission
-        if (id == null) return false
+        if (id == null) return hasPermission(authentication, null, permission)
 
         val targetUser = service.findById(id as Long)
         return hasPermission(authentication, targetUser, permission)

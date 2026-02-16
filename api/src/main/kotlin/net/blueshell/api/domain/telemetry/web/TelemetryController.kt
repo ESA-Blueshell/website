@@ -3,6 +3,7 @@ package net.blueshell.api.domain.telemetry.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.domain.telemetry.application.TelemetryService
 import net.blueshell.api.domain.telemetry.command.CreateTelemetryCommand
 import net.blueshell.api.domain.telemetry.command.FindTelemetryByIdCommand
 import net.blueshell.api.domain.telemetry.web.dto.request.CreateTelemetryRequest
@@ -18,9 +19,9 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "Telemetries")
 class TelemetryController(
-    service: net.blueshell.api.domain.telemetry.application.TelemetryService,
+    service: TelemetryService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.telemetry.application.TelemetryService>(service) {
+) : BaseController<TelemetryService>(service) {
     @GetMapping("/telemetry/{id}")
     @PermitAll
     fun findTelemetryById(@PathVariable id: Long): TelemetryResponse? {

@@ -61,7 +61,7 @@ class RecoveryController(
 
     @PostMapping("/users/{userId}/resend/recovery")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#userId, 'User', 'email')")
     fun resendMemberActivationEmail(@PathVariable userId: Long) {
         commandBus.dispatch(ResendMemberActivationEmailCommand(userId))
     }

@@ -2,6 +2,7 @@ package net.blueshell.api.domain.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.web.dto.AddressResponse
 import net.blueshell.api.domain.user.web.dto.CreateAddressRequest
@@ -17,9 +18,9 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "Addresses")
 class AddressController(
-    service: net.blueshell.api.domain.user.application.AddressService,
+    service: AddressService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.user.application.AddressService>(service) {
+) : BaseController<AddressService>(service) {
     @PostMapping("/users/{userId}/addresses")
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     @ResponseStatus(
@@ -49,13 +50,6 @@ class AddressController(
     fun findAddressById(@PathVariable id: Long): AddressResponse {
         val address = commandBus.dispatch(FindAddressByIdCommand(id))
         return address.asResponse()
-    }
-
-    @DeleteMapping("/users/{userId}/addresses")
-    @PreAuthorize("hasPermission(null, 'Address', 'delete')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteUserAddress(@PathVariable userId: Long) {
-        commandBus.dispatch(DeleteUserAddressCommand(userId))
     }
 
     @DeleteMapping("/addresses/{id}")

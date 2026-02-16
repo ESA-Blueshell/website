@@ -29,13 +29,14 @@ class CommitteeController(
 ) : AdvancedController<CommitteeService>(
     service
 ) {
-    @GetMapping("/committeeMembers/committees")
-    @PermitAll
-    fun findCommitteesForCurrentUser(
-        @AuthenticationPrincipal principal: UserPrincipal?
+    @GetMapping("/users/{userId}/committees")
+    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
+    fun findCommitteesByUserId(
+        @AuthenticationPrincipal principal: UserPrincipal?,
+        @PathVariable(required = true) userId: Long
     ): MutableList<CommitteeResponse> {
         val principalId = principal?.id ?: return mutableListOf()
-        val includeAll = principal?.hasAuthority(Role.BOARD) == true
+        val includeAll = principal.hasAuthority(Role.BOARD)
         val committees = commandBus.dispatch(FindCommitteesForCurrentUserCommand(principalId, includeAll))
         return committees.map { it.asDetailResponse() }.toMutableList()
     }

@@ -43,6 +43,7 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
             return false
         }
 
-        return hasPermission(authentication, service.findById(id as Long), permission)
+        val entity = service.findById(id as Long)
+        return hasPermission(authentication, entity, permission)
     }
 }

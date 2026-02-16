@@ -4,11 +4,15 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import jakarta.ws.rs.QueryParam
-import net.blueshell.api.domain.event.command.*
+import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.query.EventQuery
+import net.blueshell.api.domain.event.command.ApproveEventCommand
+import net.blueshell.api.domain.event.command.DeleteEventByIdCommand
+import net.blueshell.api.domain.event.command.FindEventByIdCommand
+import net.blueshell.api.domain.event.command.FindEventsCommand
 import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
-import net.blueshell.api.domain.event.web.dto.response.EventResponse
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
+import net.blueshell.api.domain.event.web.dto.response.EventResponse
 import net.blueshell.api.domain.event.web.mapping.asCommand
 import net.blueshell.api.domain.event.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
@@ -24,9 +28,9 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping
 @Tag(name = "Events")
 class EventController(
-    service: net.blueshell.api.domain.event.application.EventService,
+    service: EventService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.event.application.EventService>(service) {
+) : BaseController<EventService>(service) {
     @PreAuthorize("hasPermission(#request.committeeId, 'Committee', 'events')")
     @PostMapping("/events")
     @ResponseStatus(
@@ -68,7 +72,7 @@ class EventController(
         return events.map { it.asResponse() }
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#eventId, 'Event', 'delete')")
     @DeleteMapping("/events/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteEventById(@PathVariable eventId: Long) {

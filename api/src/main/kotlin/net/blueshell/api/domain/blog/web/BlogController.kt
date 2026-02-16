@@ -3,6 +3,7 @@ package net.blueshell.api.domain.blog.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.domain.blog.application.BlogService
 import net.blueshell.api.domain.blog.command.DeleteBlogByIdCommand
 import net.blueshell.api.domain.blog.command.FindBlogByIdCommand
 import net.blueshell.api.domain.blog.command.FindBlogsCommand
@@ -21,14 +22,14 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "Blogs")
 class BlogController(
-    service: net.blueshell.api.domain.blog.application.BlogService,
+    service: BlogService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.blog.application.BlogService>(service) {
+) : BaseController<BlogService>(service) {
     @Value($$"${frontend.url}")
     private lateinit var frontendUrl: String
 
     @PostMapping("/blogs")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(null, 'Blog', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBlog(@Valid @RequestBody request: CreateBlogRequest): BlogResponse {
         val blog = commandBus.dispatch(request.asCommand())
@@ -36,7 +37,7 @@ class BlogController(
     }
 
     @PostMapping("/blogs/{id}")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#id, 'Blog', 'write')")
     fun updateBlog(@PathVariable id: Long, @Valid @RequestBody request: UpdateBlogRequest): BlogResponse {
         val blog = commandBus.dispatch(request.asCommand(id))
         return blog.asResponse(frontendUrl)
@@ -55,7 +56,7 @@ class BlogController(
     }
 
     @DeleteMapping("/blogs/{id}")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#id, 'Blog', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteById(@PathVariable id: Long) {
         commandBus.dispatch(DeleteBlogByIdCommand(id))

@@ -9,6 +9,7 @@ import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 class EventSignUpPermission @Autowired constructor(service: EventSignUpService, private val events: EventService) :
@@ -26,11 +27,13 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
         val event = events.findById(signUp.eventId)
         val user = SecurityUtils.principalFrom(authentication)
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        val isOwner = signUp.userId != null && signUp.userId == user?.id
+        val isActiveEvent = event.endTime.isAfter(Instant.now())
 
         return when (permission) {
             "read" -> isBoard || signUp.userId == user?.id || signUp.event.committee.hasMember(user?.id)
-            "write" -> isBoard || (event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
-            "delete" -> isBoard || (user != null && signUp.userId == user.id)
+            "write" -> isBoard || (isOwner && isActiveEvent)
+            "delete" -> isBoard || (isOwner && isActiveEvent)
             else -> false
         }
     }

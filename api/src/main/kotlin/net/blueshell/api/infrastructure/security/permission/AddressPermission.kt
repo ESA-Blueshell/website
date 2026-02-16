@@ -13,22 +13,31 @@ import org.springframework.stereotype.Component
 class AddressPermission @Autowired constructor(service: AddressService) :
     BasePermissionEvaluator<Address, Long, AddressService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        if (entity == null) {
+            return when (permission) {
+                "read", "write", "delete" -> isBoard
+                else -> false
+            }
+        }
+
         val target = entity as Address
         val principal = SecurityUtils.principalFrom(authentication)
-        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
             "read", "write" -> isBoard || (principal?.addressId == target.id)
+            "delete" -> isBoard || (principal?.addressId == target.id)
             else -> false
         }
     }
 
     override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
-        if (authentication == null || id == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        if (id == null) return hasPermission(authentication, null, permission)
 
         val target = service.findById(id as Long)
         return hasPermission(authentication, target, permission)

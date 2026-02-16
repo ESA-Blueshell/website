@@ -10,7 +10,6 @@ import net.blueshell.api.domain.membership.web.mapping.asCommand
 import net.blueshell.api.domain.membership.web.mapping.asResponse
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
@@ -23,32 +22,33 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping
 @Tag(name = "Memberships")
 class MembershipController(
-    service: net.blueshell.api.domain.membership.application.MembershipService,
+    private val membershipService: net.blueshell.api.domain.membership.application.MembershipService,
     private val commandBus: CommandBus
-) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(service) {
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(membershipService) {
+    @PreAuthorize("hasPermission(null, 'Membership', 'read')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject query: MembershipQuery = MembershipQuery()): MutableList<MembershipResponse> {
         return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'guest')")
+    @PreAuthorize("hasPermission(null, 'User', 'member')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(
         @AuthenticationPrincipal principal: UserPrincipal?
     ): MembershipResponse? {
+        val principalId = principal?.id
         val membership = commandBus.dispatch(
             CreateMembershipCommand(
-                principalId = principal?.id,
-                isMember = principal?.hasAuthority(Role.MEMBER) == true,
+                principalId = principalId,
+                isMember = principalId?.let { membershipService.existsActiveMembershipByUserId(it) } == true,
                 hasAddress = principal?.addressId != null
             )
         )
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(null, 'Membership', 'write')")
     @PostMapping("/memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
@@ -58,7 +58,7 @@ class MembershipController(
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
     @PutMapping(value = ["/memberships/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
         val membership = commandBus.dispatch(request.asCommand(id))

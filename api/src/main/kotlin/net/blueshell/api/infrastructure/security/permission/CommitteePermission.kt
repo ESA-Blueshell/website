@@ -17,24 +17,34 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
         entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        if (entity == null) {
+            return when (permission) {
+                "write", "delete" -> isBoard
+                "read" -> true
+                else -> false
+            }
+        }
+
         val committee = entity as Committee
         val principal = SecurityUtils.principalFrom(authentication)
-        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
             "read" -> true
             "events" -> isBoard || committee.hasMember(principal?.id)
             "write" -> isBoard
+            "delete" -> isBoard
             else -> false
         }
     }
 
     override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
-        if (authentication == null || id == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        if (id == null) return hasPermission(authentication, null, permission)
         val committee = service.findById(id as Long)
         return hasPermission(authentication, committee, permission)
     }

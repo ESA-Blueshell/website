@@ -28,7 +28,7 @@ class CreateMembershipHandler(
 
     override fun handle(command: CreateMembershipCommand): Membership {
         if (command.isMember!!) {
-            throw AccessDeniedException("User is already a member")
+            throw AccessDeniedException("User already has an active membership")
         }
         if (!command.hasAddress!!) {
             throw AccessDeniedException("User must have an address")

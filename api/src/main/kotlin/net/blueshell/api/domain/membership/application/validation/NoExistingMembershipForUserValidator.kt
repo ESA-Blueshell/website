@@ -12,6 +12,6 @@ class NoExistingMembershipForUserValidator @Autowired constructor(
 ) : ConstraintValidator<NoExistingMembershipForUser, MembershipUserIdCandidate> {
     override fun isValid(candidate: MembershipUserIdCandidate?, context: ConstraintValidatorContext): Boolean {
         val userId = candidate?.membershipUserId ?: return true
-        return !memberships.existsByUserId(userId)
+        return !memberships.existsActiveMembershipByUserId(userId)
     }
 }

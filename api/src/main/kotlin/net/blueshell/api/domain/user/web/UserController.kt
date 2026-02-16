@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping
 @Tag(name = "Users")
 class UserController(
-    service: net.blueshell.api.domain.user.application.UserService,
+    service: UserService,
     private val validator: Validator,
     private val commandBus: CommandBus
 ) : AdvancedController<UserService>(

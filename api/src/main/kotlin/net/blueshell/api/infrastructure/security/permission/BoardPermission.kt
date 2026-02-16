@@ -1,7 +1,7 @@
 package net.blueshell.api.infrastructure.security.permission
 
-import net.blueshell.api.domain.membership.application.MembershipService
-import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.board.application.BoardService
+import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,28 +9,16 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class MembershipPermission @Autowired constructor(service: MembershipService) :
-    BasePermissionEvaluator<Membership, Long, MembershipService>(service) {
-
+class BoardPermission @Autowired constructor(service: BoardService) :
+    BasePermissionEvaluator<Board, Long, BoardService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
         }
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
-        if (entity == null) {
-            return when (permission) {
-                "read", "write", "delete" -> isBoard
-                else -> false
-            }
-        }
-
-        val membership = entity as Membership
-        val principal = SecurityUtils.principalFrom(authentication)
-
         return when (permission) {
-            "read" -> isBoard || principal?.id == membership.userId
-            "write" -> isBoard
-            "delete" -> isBoard
+            "read" -> true
+            "create", "write", "delete", "members" -> isBoard
             else -> false
         }
     }
@@ -40,8 +28,7 @@ class MembershipPermission @Autowired constructor(service: MembershipService) :
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-
-        val membership = service.findById(id as Long)
-        return hasPermission(authentication, membership, permission)
+        val board = service.findById(id as Long)
+        return hasPermission(authentication, board, permission)
     }
 }

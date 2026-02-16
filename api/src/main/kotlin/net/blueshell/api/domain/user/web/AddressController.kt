@@ -38,7 +38,7 @@ class AddressController(
     }
 
     @GetMapping("/addresses")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(null, 'Address', 'read')")
     fun findAllAddresses(): MutableList<AddressResponse> {
         val addresses = commandBus.dispatch(FindAllAddressesCommand())
         return addresses.map { it.asResponse() }.toMutableList()
@@ -52,14 +52,14 @@ class AddressController(
     }
 
     @DeleteMapping("/users/{userId}/addresses")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(null, 'Address', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserAddress(@PathVariable userId: Long) {
         commandBus.dispatch(DeleteUserAddressCommand(userId))
     }
 
     @DeleteMapping("/addresses/{id}")
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#id, 'Address', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAddressById(@PathVariable id: Long) {
         commandBus.dispatch(DeleteAddressByIdCommand(id))

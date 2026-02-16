@@ -8,6 +8,7 @@ import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
 class EventPermission @Autowired constructor(service: EventService) :
@@ -23,10 +24,12 @@ class EventPermission @Autowired constructor(service: EventService) :
         val event = entity as Event
         val principal = SecurityUtils.principalFrom(authentication)
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        val isActive = event.endTime.isAfter(Instant.now())
         return when (permission) {
             "read" -> isBoard || event.approved || event.committee.hasMember(principal?.id)
             "write" -> isBoard || event.committee.hasMember(principal?.id)
-            "signUp" -> isBoard || (event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
+            "approve" -> isBoard
+            "signUp" -> isBoard || (isActive && event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
             else -> false
         }
     }

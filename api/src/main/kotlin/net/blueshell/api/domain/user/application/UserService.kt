@@ -17,6 +17,7 @@ import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -99,6 +100,11 @@ class UserService @Autowired constructor(
     @Transactional
     fun toggleRole(id: Long, role: Role): User {
         val user = findById(id)
+        val current = currentUserProvider.currentUser()
+
+        if (current?.id == id && !user.hasRole(role)) {
+            throw AccessDeniedException("Cannot elevate own privileges")
+        }
 
         if (user.hasRole(role)) {
             user.removeRole(role)

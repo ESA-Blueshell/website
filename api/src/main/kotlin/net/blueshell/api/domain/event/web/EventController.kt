@@ -44,7 +44,7 @@ class EventController(
         return event.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#id, 'Event', 'approve')")
     @PutMapping("/events/{id}/approve")
     fun approveEvent(@PathVariable id: Long, @QueryParam(value = "approved") approved: Boolean): EventResponse {
         val event = commandBus.dispatch(ApproveEventCommand(id, approved))

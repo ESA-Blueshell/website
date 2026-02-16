@@ -436,6 +436,18 @@ class UserControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
+        fun `denies ADMIN from elevating own privileges`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            mvc.perform(
+                put("/users/{userId}/roles", admin.id)
+                    .param("role", "SYSTEM")
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
         fun `denies BOARD from toggling user roles`() {
             val board = createUserWithRole(Role.BOARD)
             val targetUser = createUserWithRole(Role.MEMBER)

@@ -34,7 +34,7 @@ class FileController(
     @ResponseStatus(
         HttpStatus.CREATED
     )
-    @PreAuthorize("hasPermission(null, 'User', 'committee')")
+    @PreAuthorize("hasPermission(null, 'EventBanner', 'create')")
     fun uploadEventBanner(
         @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 2 * 1024 * 1024) @AllowedContentTypes(
             "image/png",

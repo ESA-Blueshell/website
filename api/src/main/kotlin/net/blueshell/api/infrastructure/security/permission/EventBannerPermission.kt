@@ -2,7 +2,9 @@ package net.blueshell.api.infrastructure.security.permission
 
 import net.blueshell.api.domain.event.application.EventBannerService
 import net.blueshell.api.domain.event.persistence.EventBanner
+import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -17,20 +19,28 @@ class EventBannerPermission @Autowired constructor(
         entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
+        }
+        if (entity == null) {
+            return when (permission) {
+                "create" -> SecurityUtils.hasAuthority(authentication, Role.COMMITTEE)
+                else -> false
+            }
         }
         val target = entity as EventBanner
         return when (permission) {
             "read" -> eventPermission.hasPermission(authentication, target.event, "read")
+            "write", "delete" -> eventPermission.hasPermission(authentication, target.event, "write")
             else -> false
         }
     }
 
     override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
-        if (authentication == null || id == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        if (id == null) return hasPermission(authentication, null, permission)
         val target = service.findById(id as EventBanner.Id)
         return hasPermission(authentication, target, permission)
     }

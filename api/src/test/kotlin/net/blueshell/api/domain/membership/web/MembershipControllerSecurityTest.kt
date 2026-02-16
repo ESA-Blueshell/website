@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  *
  * Verifies authorization rules are correctly enforced per ADR-014:
  * - BOARD users can list all memberships
- * - GUEST users can create their own membership
+ * - MEMBER/BOARD users can create their own membership when eligible
  * - BOARD users can create memberships for others
  * - Users can read their own membership, BOARD can read any
  * - BOARD users can update memberships
@@ -69,35 +69,34 @@ class MembershipControllerSecurityTest : UserTestSupport() {
     inner class CreateMembership {
 
         @Test
-        fun `allows GUEST to create membership for self`() {
-            val guest = assignAddress(createUserWithRole(Role.GUEST))
-
-            mvc.perform(
-                post("/memberships")
-                    .with(bearer(guest))
-            )
-                .andExpect(status().isCreated)
-        }
-
-        @Test
-        fun `denies MEMBER from creating membership`() {
+        fun `allows MEMBER to create membership for self`() {
             val member = assignAddress(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/memberships")
                     .with(bearer(member))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(status().isCreated)
         }
 
         @Test
-        fun `denies BOARD from self-creating membership via standard endpoint`() {
-            // BOARD should use boardCreateMembership endpoint instead
-            val board = createUserWithRole(Role.BOARD)
+        fun `allows BOARD to self-create membership when no active membership exists`() {
+            val board = assignAddress(createUserWithRole(Role.BOARD))
 
             mvc.perform(
                 post("/memberships")
                     .with(bearer(board))
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `denies GUEST from creating membership`() {
+            val guest = assignAddress(createUserWithRole(Role.GUEST))
+
+            mvc.perform(
+                post("/memberships")
+                    .with(bearer(guest))
             )
                 .andExpect(status().isForbidden)
         }

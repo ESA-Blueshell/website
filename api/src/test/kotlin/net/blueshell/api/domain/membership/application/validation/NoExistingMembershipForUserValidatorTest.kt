@@ -22,8 +22,8 @@ class NoExistingMembershipForUserValidatorTest {
     }
 
     @Test
-    fun `accepts when user has no membership`() {
-        whenever(memberships.existsByUserId(1)).thenReturn(false)
+    fun `accepts when user has no active membership`() {
+        whenever(memberships.existsActiveMembershipByUserId(1)).thenReturn(false)
 
         val candidate = object : MembershipUserIdCandidate {
             override val membershipUserId: Long? = 1
@@ -33,8 +33,8 @@ class NoExistingMembershipForUserValidatorTest {
     }
 
     @Test
-    fun `rejects when membership already exists`() {
-        whenever(memberships.existsByUserId(2)).thenReturn(true)
+    fun `rejects when active membership already exists`() {
+        whenever(memberships.existsActiveMembershipByUserId(2)).thenReturn(true)
 
         val candidate = object : MembershipUserIdCandidate {
             override val membershipUserId: Long? = 2

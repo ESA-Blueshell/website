@@ -13,14 +13,22 @@ import org.springframework.stereotype.Component
 class ContributionPermission @Autowired constructor(service: ContributionService) :
     BasePermissionEvaluator<Contribution, Contribution.Id, ContributionService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        if (entity == null) {
+            return when (permission) {
+                "create", "write", "delete" -> isBoard
+                else -> false
+            }
+        }
+
         val contribution = entity as Contribution
         val principal = SecurityUtils.principalFrom(authentication)
-        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
             "read" -> isBoard || (principal?.id == contribution.userId)
+            "write", "delete" -> isBoard
             else -> false
         }
     }

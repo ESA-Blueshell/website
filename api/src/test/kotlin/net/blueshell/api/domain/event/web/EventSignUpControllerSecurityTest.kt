@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 
 /**
  * Security tests for EventSignUpController.
@@ -306,6 +307,25 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                     .content(updateSignUpGuestPayload("Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
+        }
+
+        @Test
+        fun `denies user from updating own signup after event has ended`() {
+            val user = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture().apply {
+                endTime = Instant.now().minusSeconds(60)
+            }
+            persist(event)
+            val eventId = event.id!!
+            createEventSignUpFixture(event = event, user = user)
+
+            mvc.perform(
+                put("/events/{eventId}/signups", eventId)
+                    .with(bearer(user))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updateSignUpGuestPayload("Late Update"))
+            )
+                .andExpect(status().isForbidden)
         }
     }
 

@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository
 @Suppress("FunctionName")
 interface MemberRepository : BaseRepository<Membership, Long> {
     fun existsByUser_Id(userId: Long): Boolean
+    fun existsByUser_IdAndEndDateIsNull(userId: Long): Boolean
 }

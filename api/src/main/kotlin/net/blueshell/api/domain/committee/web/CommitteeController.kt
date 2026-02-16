@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @Tag(name = "Committees")
 class CommitteeController(
-    service: net.blueshell.api.domain.committee.application.CommitteeService,
+    service: CommitteeService,
     private val commandBus: CommandBus
 ) : AdvancedController<CommitteeService>(
     service
@@ -67,7 +67,7 @@ class CommitteeController(
         return committee.asSummaryResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(null, 'Committee', 'write')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
     fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {
@@ -85,7 +85,7 @@ class CommitteeController(
         return committee.asDetailResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'User', 'board')")
+    @PreAuthorize("hasPermission(#id, 'Committee', 'delete')")
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteCommitteeById(@PathVariable id: Long) {

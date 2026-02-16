@@ -132,7 +132,7 @@ private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard:
     event.approved = isBoard && command.approved
 }
 
-private fun mapBanner(data: net.blueshell.api.domain.event.command.EventBannerData): EventBanner {
+private fun mapBanner(data: EventBannerData): EventBanner {
     val banner = EventBanner()
     banner.id.fileId = data.fileId
     return banner

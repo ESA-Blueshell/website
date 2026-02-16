@@ -21,7 +21,7 @@ class ContributionController @Autowired constructor(
     service: ContributionService,
     private val commandBus: CommandBus
 ) : BaseController<ContributionService>(service) {
-    @PreAuthorize("hasPermission(null, 'Contribution', 'create')")
+    @PreAuthorize("hasPermission(null, 'Contribution', 'write')")
     @PostMapping("/contributions")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContribution(@Valid @RequestBody request: CreateContributionRequest): ContributionResponse {

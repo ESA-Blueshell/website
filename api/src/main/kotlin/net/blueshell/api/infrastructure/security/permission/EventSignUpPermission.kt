@@ -19,7 +19,10 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
         entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
+            return false
+        }
+        if (entity == null) {
             return false
         }
 

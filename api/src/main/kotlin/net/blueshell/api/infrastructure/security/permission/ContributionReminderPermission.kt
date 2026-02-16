@@ -17,7 +17,7 @@ class ContributionReminderPermission @Autowired constructor(service: Contributio
         }
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read", "create", "write", "delete" -> isBoard
+            "read", "write", "delete" -> isBoard
             else -> false
         }
     }

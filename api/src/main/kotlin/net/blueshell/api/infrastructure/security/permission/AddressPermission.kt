@@ -28,7 +28,7 @@ class AddressPermission @Autowired constructor(service: AddressService) :
         val principal = SecurityUtils.principalFrom(authentication)
         return when (permission) {
             "read", "write" -> isBoard || (principal?.addressId == target.id)
-            "delete" -> isBoard || (principal?.addressId == target.id)
+            "delete" -> isBoard
             else -> false
         }
     }

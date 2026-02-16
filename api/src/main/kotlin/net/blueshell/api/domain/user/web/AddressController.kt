@@ -52,6 +52,13 @@ class AddressController(
         return address.asResponse()
     }
 
+    @DeleteMapping("/users/{userId}/addresses")
+    @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteUserAddress(@PathVariable userId: Long) {
+        commandBus.dispatch(DeleteUserAddressCommand(userId))
+    }
+
     @DeleteMapping("/addresses/{id}")
     @PreAuthorize("hasPermission(#id, 'Address', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

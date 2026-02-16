@@ -33,7 +33,7 @@ class MembershipController(
         return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasPermission(#principal.id, 'User', 'write')")
+    @PreAuthorize("hasPermission(#principal.id, 'User', 'member')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(

@@ -18,16 +18,24 @@ class EventPermission @Autowired constructor(service: EventService) :
         entity: Any?,
         permission: String?
     ): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        if (entity == null) {
+            return when (permission) {
+                "signups" -> isBoard
+                else -> false
+            }
+        }
+
         val event = entity as Event
         val principal = SecurityUtils.principalFrom(authentication)
-        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         val isActive = event.endTime.isAfter(Instant.now())
         return when (permission) {
             "read" -> isBoard || event.approved || event.committee.hasMember(principal?.id)
             "write" -> isBoard || event.committee.hasMember(principal?.id)
+            "delete" -> isBoard || event.committee.hasMember(principal?.id)
             "approve" -> isBoard
             "signUp" -> isBoard || (isActive && event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
             else -> false

@@ -24,7 +24,7 @@ class EventBannerPermission @Autowired constructor(
         }
         if (entity == null) {
             return when (permission) {
-                "create" -> SecurityUtils.hasAuthority(authentication, Role.COMMITTEE)
+                "write" -> SecurityUtils.hasAuthority(authentication, Role.COMMITTEE)
                 else -> false
             }
         }

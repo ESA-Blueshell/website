@@ -1,7 +1,7 @@
 package net.blueshell.api.infrastructure.security.permission
 
-import net.blueshell.api.domain.board.application.BoardService
-import net.blueshell.api.domain.board.persistence.Board
+import net.blueshell.api.domain.sponsor.application.SponsorService
+import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,16 +9,15 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class BoardPermission @Autowired constructor(service: BoardService) :
-    BasePermissionEvaluator<Board, Long, BoardService>(service) {
+class SponsorPermission @Autowired constructor(service: SponsorService) :
+    BasePermissionEvaluator<Sponsor, Long, SponsorService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
         }
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read" -> true
-            "write", "delete", "members" -> isBoard
+            "read", "write", "delete" -> isBoard
             else -> false
         }
     }
@@ -28,7 +27,7 @@ class BoardPermission @Autowired constructor(service: BoardService) :
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-        val board = service.findById(id as Long)
-        return hasPermission(authentication, board, permission)
+        val sponsor = service.findById(id as Long)
+        return hasPermission(authentication, sponsor, permission)
     }
 }

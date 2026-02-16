@@ -29,11 +29,10 @@ class CommitteeController(
 ) : AdvancedController<CommitteeService>(
     service
 ) {
-    @GetMapping("/users/{userId}/committees")
-    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
+    @GetMapping("/committeeMembers/committees")
+    @PermitAll
     fun findCommitteesByUserId(
-        @AuthenticationPrincipal principal: UserPrincipal?,
-        @PathVariable(required = true) userId: Long
+        @AuthenticationPrincipal principal: UserPrincipal?
     ): MutableList<CommitteeResponse> {
         val principalId = principal?.id ?: return mutableListOf()
         val includeAll = principal.hasAuthority(Role.BOARD)

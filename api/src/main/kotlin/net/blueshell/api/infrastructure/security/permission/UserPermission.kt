@@ -34,6 +34,7 @@ class UserPermission @Autowired constructor(service: UserService) :
             "read", "write" -> isBoard || (principal?.id == user.id)
             "delete" -> isBoard
             "roles" -> isAdmin
+            "email" -> isBoard
             else -> false
         }
     }

@@ -18,7 +18,7 @@ class ContributionPeriodPermission @Autowired constructor(service: ContributionP
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
             "read" -> true
-            "create", "write", "delete" -> isBoard
+            "write", "delete" -> isBoard
             else -> false
         }
     }

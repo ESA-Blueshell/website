@@ -4,6 +4,7 @@ import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -17,8 +18,9 @@ class ContributionPermission @Autowired constructor(service: ContributionService
         }
         val contribution = entity as Contribution
         val principal = SecurityUtils.principalFrom(authentication)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read" -> (principal?.id == contribution.userId)
+            "read" -> isBoard || (principal?.id == contribution.userId)
             else -> false
         }
     }

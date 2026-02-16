@@ -29,7 +29,7 @@ class TelemetryController(
     }
 
     @PostMapping("/telemetry")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTelemetry(
         @Valid @RequestBody request: CreateTelemetryRequest

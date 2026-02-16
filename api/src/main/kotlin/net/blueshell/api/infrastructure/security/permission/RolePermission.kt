@@ -23,7 +23,7 @@ class RolePermission : PermissionEvaluator {
         permission: Any?
     ): Boolean {
         // For role checks, targetId and targetType are irrelevant
-        // hasPermission(null, 'Role', 'BOARD') pattern
+        // hasPermission(null, 'User', 'board') pattern
         return checkRole(authentication, permission?.toString())
     }
 

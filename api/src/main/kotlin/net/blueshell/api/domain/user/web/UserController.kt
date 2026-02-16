@@ -73,7 +73,7 @@ class UserController(
     }
 
     @PutMapping("/users/guest/{id}")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'User', 'write')")
+    @PreAuthorize("hasPermission(#id, 'User', 'write')")
     fun updateGuestUser(
         @PathVariable id: Long,
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateGuestUserRequest
@@ -83,7 +83,7 @@ class UserController(
     }
 
     @PutMapping(value = ["/users/{id}"])
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'User', 'write')")
+    @PreAuthorize("hasPermission(#id, 'User', 'write')")
     fun updateUser(
         @PathVariable id: Long,
         @Validated(net.blueshell.api.shared.validation.group.Update::class) @RequestBody request: UpdateUserRequest,
@@ -95,7 +95,7 @@ class UserController(
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     fun findUsers(
         @ParameterObject query: UserQuery = UserQuery(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()
@@ -105,21 +105,21 @@ class UserController(
     }
 
     @GetMapping(value = ["/users/{userId}"])
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#userId, 'User', 'read')")
+    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     fun findUserById(@PathVariable userId: Long): UserDetailResponse {
         val user = commandBus.dispatch(FindUserByIdCommand(userId))
         return user.asDetailResponse()
     }
 
     @DeleteMapping(value = ["/users/{userId}"])
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserById(@PathVariable userId: Long) {
         commandBus.dispatch(DeleteUserByIdCommand(userId))
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
-    @PreAuthorize("hasPermission(null, 'Role', 'ADMIN')")
+    @PreAuthorize("hasPermission(null, 'User', 'admin')")
     fun toggleUserRole(
         @PathVariable userId: Long,
         @RequestParam(value = "role") role: Role

@@ -4,6 +4,7 @@ import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -21,9 +22,11 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
         }
         val committee = entity as Committee
         val principal = SecurityUtils.principalFrom(authentication)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
             "read" -> true
-            "events" -> committee.hasMember(principal?.id)
+            "events" -> isBoard || committee.hasMember(principal?.id)
+            "write" -> isBoard
             else -> false
         }
     }

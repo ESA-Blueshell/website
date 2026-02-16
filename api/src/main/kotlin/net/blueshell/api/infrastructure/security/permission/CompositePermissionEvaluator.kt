@@ -10,8 +10,7 @@ import java.util.function.Function
 
 @Component
 class CompositePermissionEvaluator @Autowired constructor(
-    private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>?>,
-    private val rolePermission: RolePermission
+    private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>?>
 ) :
     PermissionEvaluator {
     override fun hasPermission(auth: Authentication?, target: Any?, perm: Any?): Boolean {
@@ -37,28 +36,20 @@ class CompositePermissionEvaluator @Autowired constructor(
     ): Boolean {
         if (targetType == null || perm == null) return false
 
-        // Check role-based permissions first (targetId can be null for role checks)
-        if (targetType == "Role") {
-            return rolePermission.hasPermission(auth, targetId, targetType, perm)
-        }
-
-        // For domain-based permissions, targetId is required
-        if (targetId == null) return false
-
-        return evaluators.stream()
+        val evaluator = evaluators.stream()
             .filter { e: BasePermissionEvaluator<*, *, *>? ->
                 val dt: Class<*> = e!!.domainType
                 dt.simpleName == targetType
                         || dt.name == targetType
             }
             .findFirst()
-            .map(Function { e: BasePermissionEvaluator<*, *, *>? ->
-                e!!.hasPermissionId(
-                    auth,
-                    targetId,
-                    perm.toString()
-                )
-            })
-            .orElse(false)
+            .orElse(null)
+            ?: return false
+
+        return if (targetId == null) {
+            evaluator.hasPermission(auth, null, perm.toString())
+        } else {
+            evaluator.hasPermissionId(auth, targetId, perm.toString())
+        }
     }
 }

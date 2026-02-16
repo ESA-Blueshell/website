@@ -25,11 +25,12 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
         val signUp = entity as EventSignUp
         val event = events.findById(signUp.eventId)
         val user = SecurityUtils.principalFrom(authentication)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
 
         return when (permission) {
-            "read" -> signUp.userId == user?.id || signUp.event.committee.hasMember(user?.id)
-            "write" -> event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER))
-            "delete" -> (user != null && signUp.userId == user.id)
+            "read" -> isBoard || signUp.userId == user?.id || signUp.event.committee.hasMember(user?.id)
+            "write" -> isBoard || (event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
+            "delete" -> isBoard || (user != null && signUp.userId == user.id)
             else -> false
         }
     }

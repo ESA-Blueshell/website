@@ -21,13 +21,13 @@ class SponsorController(
     service: net.blueshell.api.domain.sponsor.application.SponsorService,
     private val commandBus: CommandBus
 ) : BaseController<net.blueshell.api.domain.sponsor.application.SponsorService>(service) {
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @GetMapping("/sponsors")
     fun findSponsors(): MutableList<SponsorResponse> {
         return commandBus.dispatch(FindSponsorsCommand()).map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PostMapping("/sponsors")
     @ResponseStatus(HttpStatus.CREATED)
     fun createSponsor(@Valid @RequestBody request: CreateSponsorRequest): SponsorResponse {
@@ -35,20 +35,20 @@ class SponsorController(
         return sponsor.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PutMapping(value = ["/sponsors/{id}"])
     fun updateSponsor(@PathVariable id: Long, @Valid @RequestBody request: UpdateSponsorRequest): SponsorResponse {
         val sponsor = commandBus.dispatch(request.asCommand(id))
         return sponsor.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @GetMapping(value = ["/sponsors/{id}"])
     fun findSponsorById(@PathVariable id: Long): SponsorResponse {
         return commandBus.dispatch(FindSponsorByIdCommand(id)).asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @DeleteMapping(value = ["/sponsors/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSponsorById(@PathVariable id: Long) {

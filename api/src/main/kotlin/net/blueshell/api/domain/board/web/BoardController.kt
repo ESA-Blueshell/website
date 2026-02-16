@@ -23,7 +23,7 @@ class BoardController(
     private val commandBus: CommandBus
 ) {
     @PostMapping
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBoard(@Valid @RequestBody request: CreateBoardRequest): BoardResponse {
         val board = commandBus.dispatch(request.asCommand())
@@ -45,7 +45,7 @@ class BoardController(
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     fun updateBoard(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateBoardRequest
@@ -55,7 +55,7 @@ class BoardController(
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteBoard(@PathVariable id: Long) {
         commandBus.dispatch(DeleteBoardByIdCommand(id))
@@ -63,7 +63,7 @@ class BoardController(
 
     // Board Member endpoints
     @PostMapping("/{boardId}/members")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.CREATED)
     fun addMember(
         @PathVariable boardId: Long,
@@ -74,7 +74,7 @@ class BoardController(
     }
 
     @DeleteMapping("/{boardId}/members/{userId}")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeMember(
         @PathVariable boardId: Long,

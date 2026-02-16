@@ -36,7 +36,7 @@ class ContributionPeriodController @Autowired constructor(
         return contributionPeriod.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody request: CreateContributionPeriodRequest): ContributionPeriodResponse {
@@ -44,7 +44,7 @@ class ContributionPeriodController @Autowired constructor(
         return contributionPeriod.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PutMapping("/contributionPeriods/{id}")
     fun updateContributionPeriod(
         @PathVariable id: Long,
@@ -54,7 +54,7 @@ class ContributionPeriodController @Autowired constructor(
         return contributionPeriod.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @DeleteMapping("/contributionPeriods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteContributionPeriodById(@PathVariable id: Long) {

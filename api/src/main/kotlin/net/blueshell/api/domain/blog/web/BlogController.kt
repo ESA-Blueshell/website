@@ -28,7 +28,7 @@ class BlogController(
     private lateinit var frontendUrl: String
 
     @PostMapping("/blogs")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBlog(@Valid @RequestBody request: CreateBlogRequest): BlogResponse {
         val blog = commandBus.dispatch(request.asCommand())
@@ -36,7 +36,7 @@ class BlogController(
     }
 
     @PostMapping("/blogs/{id}")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     fun updateBlog(@PathVariable id: Long, @Valid @RequestBody request: UpdateBlogRequest): BlogResponse {
         val blog = commandBus.dispatch(request.asCommand(id))
         return blog.asResponse(frontendUrl)
@@ -55,7 +55,7 @@ class BlogController(
     }
 
     @DeleteMapping("/blogs/{id}")
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteById(@PathVariable id: Long) {
         commandBus.dispatch(DeleteBlogByIdCommand(id))

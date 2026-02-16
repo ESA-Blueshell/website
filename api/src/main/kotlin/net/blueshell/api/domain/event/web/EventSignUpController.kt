@@ -27,7 +27,7 @@ class EventSignUpController @Autowired constructor(
 ) : BaseController<net.blueshell.api.domain.event.application.EventSignUpService>(service) {
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
-        "hasPermission(null, 'Role', 'BOARD') " +
+        "hasPermission(null, 'User', 'board') " +
                 "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
                 "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
@@ -44,7 +44,7 @@ class EventSignUpController @Autowired constructor(
     }
 
     @GetMapping(value = ["/events/{eventId}/signups"])
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#eventId, 'Event', 'write')")
+    @PreAuthorize("hasPermission(#eventId, 'Event', 'write')")
     fun findEventSignUpsByEventId(@PathVariable eventId: Long): MutableList<EventSignUpResponse> {
         val eventSignUps = commandBus.dispatch(FindEventSignUpsByEventIdCommand(eventId))
         return eventSignUps.map { it.asResponse() }.toMutableList()
@@ -52,7 +52,7 @@ class EventSignUpController @Autowired constructor(
 
 
     @PostMapping(value = ["/events/{eventId}/signups"])
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') or hasPermission(#eventId, 'Event', 'signUp')")
+    @PreAuthorize("hasPermission(#eventId, 'Event', 'signUp')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createEventSignup(
         @PathVariable eventId: Long,
@@ -65,8 +65,7 @@ class EventSignUpController @Autowired constructor(
 
     @PutMapping("/events/{eventId}/signups")
     @PreAuthorize(
-        "hasPermission(null, 'Role', 'BOARD') " +
-                "or hasPermission(#eventId, 'Event', 'signUp') " +
+        "hasPermission(#eventId, 'Event', 'signUp') " +
                 "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
     )
     fun updateEventSignUp(
@@ -84,8 +83,7 @@ class EventSignUpController @Autowired constructor(
 
     @DeleteMapping(value = ["/events/signups/{eventSignupId}"])
     @PreAuthorize(
-        "hasPermission(null, 'Role', 'BOARD') " +
-                "or hasPermission(#eventSignupId, 'EventSignUp', 'delete') " +
+        "hasPermission(#eventSignupId, 'EventSignUp', 'delete') " +
                 "or hasPermission(#accessToken, 'Guest', 'write')"
     )
     @ResponseStatus(HttpStatus.NO_CONTENT)

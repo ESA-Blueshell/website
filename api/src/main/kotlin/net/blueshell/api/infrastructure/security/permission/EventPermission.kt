@@ -22,10 +22,11 @@ class EventPermission @Autowired constructor(service: EventService) :
         }
         val event = entity as Event
         val principal = SecurityUtils.principalFrom(authentication)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read" -> event.approved || event.committee.hasMember(principal?.id)
-            "write" -> event.committee.hasMember(principal?.id)
-            "signUp" -> event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER))
+            "read" -> isBoard || event.approved || event.committee.hasMember(principal?.id)
+            "write" -> isBoard || event.committee.hasMember(principal?.id)
+            "signUp" -> isBoard || (event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
             else -> false
         }
     }

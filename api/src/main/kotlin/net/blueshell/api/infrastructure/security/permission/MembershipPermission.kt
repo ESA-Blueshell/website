@@ -3,6 +3,7 @@ package net.blueshell.api.infrastructure.security.permission
 import net.blueshell.api.domain.membership.application.MembershipService
 import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.infrastructure.security.SecurityUtils
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -18,9 +19,10 @@ class MembershipPermission @Autowired constructor(service: MembershipService) :
 
         val membership = entity as Membership
         val principal = SecurityUtils.principalFrom(authentication)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
 
         return when (permission) {
-            "read", "write" -> principal?.id == membership.user?.id
+            "read", "write" -> isBoard || principal?.id == membership.user?.id
             else -> false
         }
     }

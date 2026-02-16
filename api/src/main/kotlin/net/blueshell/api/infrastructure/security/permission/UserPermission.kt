@@ -4,6 +4,7 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -12,23 +13,43 @@ import org.springframework.stereotype.Component
 class UserPermission @Autowired constructor(service: UserService) :
     BasePermissionEvaluator<User, Long, UserService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
-        if (authentication == null || entity == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
+        val rolePermission = hasRolePermission(authentication, permission)
+        if (rolePermission != null) return rolePermission
+        if (entity == null) return false
+
         val user = entity as User
         val principal = SecurityUtils.principalFrom(authentication)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read", "write" -> (principal?.id == user.id)
+            "read", "write" -> isBoard || (principal?.id == user.id)
             else -> false
         }
     }
 
     override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
-        if (authentication == null || id == null || permission == null) {
+        if (authentication == null || permission == null) {
             return false
         }
 
+        val rolePermission = hasRolePermission(authentication, permission)
+        if (rolePermission != null) return rolePermission
+        if (id == null) return false
+
         val targetUser = service.findById(id as Long)
         return hasPermission(authentication, targetUser, permission)
+    }
+
+    private fun hasRolePermission(authentication: Authentication, permission: String): Boolean? {
+        return when (permission) {
+            "guest" -> SecurityUtils.hasAuthority(authentication, Role.GUEST)
+            "member" -> SecurityUtils.hasAuthority(authentication, Role.MEMBER)
+            "committee" -> SecurityUtils.hasAuthority(authentication, Role.COMMITTEE)
+            "board" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
+            "admin" -> SecurityUtils.hasAuthority(authentication, Role.ADMIN)
+            else -> null
+        }
     }
 }

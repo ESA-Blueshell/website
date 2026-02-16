@@ -26,13 +26,13 @@ class MembershipController(
     service: net.blueshell.api.domain.membership.application.MembershipService,
     private val commandBus: CommandBus
 ) : BaseController<net.blueshell.api.domain.membership.application.MembershipService>(service) {
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject query: MembershipQuery = MembershipQuery()): MutableList<MembershipResponse> {
         return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'GUEST')")
+    @PreAuthorize("hasPermission(null, 'User', 'guest')")
     @PostMapping("/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(
@@ -48,7 +48,7 @@ class MembershipController(
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PostMapping("/memberships/member")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(
@@ -58,14 +58,14 @@ class MembershipController(
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PutMapping(value = ["/memberships/{id}"])
     fun updateMembership(@PathVariable id: Long, @RequestBody request: UpdateMembershipRequest): MembershipResponse? {
         val membership = commandBus.dispatch(request.asCommand(id))
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Membership', 'read')")
+    @PreAuthorize("hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/memberships/{id}"])
     fun findMembershipById(@PathVariable id: Long): MembershipResponse {
         return commandBus.dispatch(FindMembershipByIdCommand(id)).asResponse()

@@ -12,7 +12,7 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/management/jobs")
-@PreAuthorize("hasPermission(null, 'Role', 'ADMIN')")
+@PreAuthorize("hasPermission(null, 'User', 'admin')")
 @Tag(name = "Job Management", description = "API for managing job executions")
 class JobManagementController(
     private val jobExecutionService: JobExecutionService,

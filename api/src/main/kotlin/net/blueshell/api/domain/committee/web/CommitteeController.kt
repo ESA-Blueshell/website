@@ -67,7 +67,7 @@ class CommitteeController(
         return committee.asSummaryResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
     fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {
@@ -75,7 +75,7 @@ class CommitteeController(
         return committee.asDetailResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD') || hasPermission(#id, 'Committee', 'write')")
+    @PreAuthorize("hasPermission(#id, 'Committee', 'write')")
     @PutMapping(value = ["/committees/{id}"])
     fun updateCommittee(
         @PathVariable id: Long,
@@ -85,7 +85,7 @@ class CommitteeController(
         return committee.asDetailResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Role', 'BOARD')")
+    @PreAuthorize("hasPermission(null, 'User', 'board')")
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteCommitteeById(@PathVariable id: Long) {

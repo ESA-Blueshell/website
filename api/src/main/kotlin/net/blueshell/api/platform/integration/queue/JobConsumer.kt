@@ -15,7 +15,7 @@ class JobConsumer(
 
     @RabbitListener(queues = ["\${app.jobs.queue-name}"])
     fun handle(message: JobMessage) {
-        val execution = jobExecutionService.findById(message.executionId)
+        val execution = jobExecutionService.findByIdOrNull(message.executionId)
         if (execution == null) {
             logger.warn("Job execution {} not found; skipping message.", message.executionId)
             return

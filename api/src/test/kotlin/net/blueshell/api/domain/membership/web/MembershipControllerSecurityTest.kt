@@ -81,13 +81,24 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows a GUEST with an address to create a membership`() {
-            val guest = assignAddress(createUserWithRole(Role.GUEST))
+            val guest = assignCompletePersonDetails(assignAddress(createUserWithRole(Role.GUEST)))
 
             mvc.perform(
                 post("/memberships")
                     .with(bearer(guest))
             )
                 .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `denies user with incomplete member application profile`() {
+            val guest = assignAddress(createUserWithRole(Role.GUEST))
+
+            mvc.perform(
+                post("/memberships")
+                    .with(bearer(guest))
+            )
+                .andExpect(status().isForbidden)
         }
 
         @Test
@@ -103,7 +114,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create membership for other users`() {
             val board = createUserWithRole(Role.BOARD)
-            val targetUser = createUserWithRole(Role.MEMBER)
+            val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/users/${targetUser.id}/memberships")
@@ -117,7 +128,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from board creating membership`() {
             val member = createUserWithRole(Role.MEMBER)
-            val targetUser = createUserWithRole(Role.MEMBER)
+            val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/users/${targetUser.id}/memberships")
@@ -131,7 +142,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from board creating membership`() {
             val guest = createUserWithRole(Role.GUEST)
-            val targetUser = createUserWithRole(Role.MEMBER)
+            val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 post("/users/${targetUser.id}/memberships")

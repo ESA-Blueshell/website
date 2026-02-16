@@ -283,8 +283,8 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         val user = User(
             username = username,
             password = passwordEncoder.encode("Password123!"),
-            firstName = username.split(".").first().capitalize(),
-            lastName = username.split(".").getOrElse(1) { "User" }.capitalize()
+            firstName = username.split(".").first().replaceFirstChar { it.uppercase() },
+            lastName = username.split(".").getOrElse(1) { "User" }.replaceFirstChar { it.uppercase() }
         )
         user.email = email
         user.enabled = true

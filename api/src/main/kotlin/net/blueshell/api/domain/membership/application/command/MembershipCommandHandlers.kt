@@ -33,10 +33,11 @@ class CreateMembershipHandler(
         if (!command.hasAddress!!) {
             throw AccessDeniedException("User must have an address")
         }
-        val principalId = requireNotNull(command.principalId) { "User must be authenticated" }
-
+        if (!command.hasPersonDetails!!) {
+            throw AccessDeniedException("Complete profile is required before applying for membership")
+        }
         val membership = Membership()
-        membership.user = users.findById(principalId)
+        membership.user = users.findById(command.userId)
         service.create(membership)
         return membership
     }
@@ -50,14 +51,14 @@ class BoardCreateMembershipHandler(
     override val commandType = BoardCreateMembershipCommand::class
 
     override fun handle(command: BoardCreateMembershipCommand): Membership {
-        var membership = Membership()
-        membership.user = users.findById(command.userId!!)
-        membership.memberType = command.memberType!!
-        membership.startDate = command.startDate!!
-        membership.endDate = command.endDate
-        membership.incasso = command.incasso!!
-        membership = service.create(membership)
-        return membership
+        val membership = Membership().apply {
+            user = users.findById(command.userId!!)
+            memberType = command.memberType!!
+            startDate = command.startDate!!
+            endDate = command.endDate
+            incasso = command.incasso!!
+        }
+        return service.create(membership)
     }
 }
 

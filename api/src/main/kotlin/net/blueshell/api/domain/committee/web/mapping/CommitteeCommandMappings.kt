@@ -38,7 +38,7 @@ internal object UpdateCommitteeCommandRequestToCommandMapper : ObjectMappie<Upda
         UpdateCommitteeCommand::members fromValue from.request.members!!.map {
             CommitteeMemberRequestToDataMapper.map(it)
         }.toMutableList()
-        UpdateCommitteeCommand::version fromValue from.request.version
+        UpdateCommitteeCommand::version fromValue from.request.version!!
     }
 }
 

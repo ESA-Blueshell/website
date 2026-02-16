@@ -2,7 +2,7 @@ package net.blueshell.api.domain.membership.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.VersionedDTO
+import net.blueshell.api.shared.dto.BaseDTO
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate
@@ -20,5 +20,7 @@ data class UpdateMembershipRequest(
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var endDate: LocalDate? = null,
 
-    var incasso: Boolean? = null
-) : VersionedDTO()
+    var incasso: Boolean? = null,
+
+    var version: Long? = null
+) : BaseDTO()

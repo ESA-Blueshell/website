@@ -45,9 +45,10 @@ class MembershipController(
         val principalId = principal!!.id
         val membership = commandBus.dispatch(
             CreateMembershipCommand(
-                principalId = principalId,
+                userId = principal.id,
                 isMember = principal.hasAuthority(Role.MEMBER),
-                hasAddress = principal.addressId != null
+                hasAddress = principal.addressId != null,
+                hasPersonDetails = principal.personDetailsId != null,
             )
         )
         return membership.asResponse()

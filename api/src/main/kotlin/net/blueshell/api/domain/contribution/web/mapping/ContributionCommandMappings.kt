@@ -39,7 +39,7 @@ internal object UpdateContributionPeriodCommandRequestToCommandMapper : ObjectMa
         UpdateContributionPeriodCommand::fullYearFee fromValue from.request.fullYearFee!!
         UpdateContributionPeriodCommand::alumniFee fromValue from.request.alumniFee!!
         UpdateContributionPeriodCommand::listId fromValue from.request.listId
-        UpdateContributionPeriodCommand::version fromValue from.request.version
+        UpdateContributionPeriodCommand::version fromValue from.request.version!!
     }
 }
 

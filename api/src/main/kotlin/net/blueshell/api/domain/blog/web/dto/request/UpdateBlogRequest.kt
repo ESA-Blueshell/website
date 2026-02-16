@@ -3,7 +3,7 @@ package net.blueshell.api.domain.blog.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.VersionedDTO
+import net.blueshell.api.shared.dto.BaseDTO
 import java.time.Instant
 
 @Schema(name = "UpdateBlogRequest")
@@ -15,5 +15,7 @@ data class UpdateBlogRequest(
     var html: String? = null,
 
     @field:NotNull
-    var publishedAt: Instant? = null
-) : VersionedDTO()
+    var publishedAt: Instant? = null,
+
+    var version: Long? = null
+) : BaseDTO()

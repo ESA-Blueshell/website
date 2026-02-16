@@ -10,7 +10,8 @@ object UserPrincipalMapper {
             passwordValue = user.password,
             enabledValue = user.enabled,
             roles = user.roles.toSet(),
-            addressId = user.addressId
+            addressId = user.addressId,
+            personDetailsId = user.personDetailsId,
         )
     }
 }

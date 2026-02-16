@@ -497,7 +497,6 @@ class DatabaseSeeder(
             roles = setOf(role) as MutableSet<Role>
 
             newsletter = false
-            dateOfBirth = Date.valueOf(LocalDate.of(1995, 1, 1))
             consentPrivacy = true
             consentGdpr = true
             if (includeAddress) address = createAddressEntity()
@@ -522,7 +521,6 @@ class DatabaseSeeder(
             enabled = false
             roles = setOf(Role.GUEST) as MutableSet<Role>
             newsletter = false
-            dateOfBirth = Date.valueOf(LocalDate.of(1995, 1, 1))
             consentPrivacy = true
             consentGdpr = true
             if (includeAddress) address = createAddressEntity()

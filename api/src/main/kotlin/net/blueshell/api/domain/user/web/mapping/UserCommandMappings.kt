@@ -1,11 +1,7 @@
 package net.blueshell.api.domain.user.web.mapping
 
 import net.blueshell.api.domain.user.command.*
-import net.blueshell.api.domain.user.web.dto.CreateGuestUserRequest
-import net.blueshell.api.domain.user.web.dto.CreateUserRequest
-import net.blueshell.api.domain.user.web.dto.UpdateGuestUserRequest
-import net.blueshell.api.domain.user.web.dto.UpdateUserRequest
-import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.domain.user.web.dto.*
 import tech.mappie.api.ObjectMappie
 
 internal data class CreateUserCommandRequest(
@@ -16,13 +12,7 @@ internal data class CreateUserCommandRequest(
 internal object CreateUserCommandRequestToCommandMapper : ObjectMappie<CreateUserCommandRequest, CreateUserCommand>() {
     override fun map(from: CreateUserCommandRequest) = mapping {
         CreateUserCommand::isBoard fromValue from.isBoard
-        CreateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
-        CreateUserCommand::nationality fromValue from.request.nationality
         CreateUserCommand::photoConsent fromValue (from.request.photoConsent ?: false)
-        CreateUserCommand::ehbo fromValue (from.request.ehbo ?: false)
-        CreateUserCommand::bhv fromValue (from.request.bhv ?: false)
-        CreateUserCommand::gender fromValue from.request.gender
-        CreateUserCommand::studentNumber fromValue from.request.studentNumber
         CreateUserCommand::username fromValue from.request.username
         CreateUserCommand::email fromValue from.request.email
         CreateUserCommand::initials fromValue from.request.initials
@@ -40,7 +30,8 @@ internal data class CreateGuestUserCommandRequest(
     val request: CreateGuestUserRequest
 )
 
-internal object CreateGuestUserCommandRequestToCommandMapper : ObjectMappie<CreateGuestUserCommandRequest, CreateGuestUserCommand>() {
+internal object CreateGuestUserCommandRequestToCommandMapper :
+    ObjectMappie<CreateGuestUserCommandRequest, CreateGuestUserCommand>() {
     override fun map(from: CreateGuestUserCommandRequest) = mapping {
         CreateGuestUserCommand::username fromValue (from.request.username ?: "")
         CreateGuestUserCommand::initials fromValue (from.request.initials ?: "")
@@ -60,13 +51,14 @@ internal data class UpdateGuestUserCommandRequest(
     val request: UpdateGuestUserRequest
 )
 
-internal object UpdateGuestUserCommandRequestToCommandMapper : ObjectMappie<UpdateGuestUserCommandRequest, UpdateGuestUserCommand>() {
+internal object UpdateGuestUserCommandRequestToCommandMapper :
+    ObjectMappie<UpdateGuestUserCommandRequest, UpdateGuestUserCommand>() {
     override fun map(from: UpdateGuestUserCommandRequest) = mapping {
         UpdateGuestUserCommand::id fromProperty from::id
         UpdateGuestUserCommand::discord fromValue from.request.discord
         UpdateGuestUserCommand::phoneNumber fromValue from.request.phoneNumber
         UpdateGuestUserCommand::newsletter fromValue (from.request.newsletter ?: false)
-        UpdateGuestUserCommand::version fromValue from.request.version
+        UpdateGuestUserCommand::version fromValue from.request.version!!
     }
 }
 
@@ -80,13 +72,6 @@ internal object UpdateUserCommandRequestToCommandMapper : ObjectMappie<UpdateUse
     override fun map(from: UpdateUserCommandRequest) = mapping {
         UpdateUserCommand::id fromValue from.id
         UpdateUserCommand::isBoard fromValue from.isBoard
-        UpdateUserCommand::dateOfBirth fromValue from.request.dateOfBirth
-        UpdateUserCommand::nationality fromValue from.request.nationality
-        UpdateUserCommand::photoConsent fromValue (from.request.photoConsent ?: false)
-        UpdateUserCommand::ehbo fromValue (from.request.ehbo ?: false)
-        UpdateUserCommand::bhv fromValue (from.request.bhv ?: false)
-        UpdateUserCommand::gender fromValue from.request.gender
-        UpdateUserCommand::studentNumber fromValue from.request.studentNumber
         UpdateUserCommand::username fromValue from.request.username
         UpdateUserCommand::email fromValue from.request.email
         UpdateUserCommand::initials fromValue from.request.initials
@@ -94,10 +79,19 @@ internal object UpdateUserCommandRequestToCommandMapper : ObjectMappie<UpdateUse
         UpdateUserCommand::prefix fromProperty from.request::prefix
         UpdateUserCommand::lastName fromProperty from.request::lastName
         UpdateUserCommand::newsletter fromValue (from.request.newsletter ?: false)
-        UpdateUserCommand::addressId fromProperty from.request::addressId
         UpdateUserCommand::discord fromProperty from.request::discord
         UpdateUserCommand::phoneNumber fromProperty from.request::phoneNumber
-        UpdateUserCommand::version fromProperty from.request::version
+        UpdateUserCommand::version fromValue from.request.version!!
+    }
+}
+
+internal object UserStudyRequestToCommandDataMapper : ObjectMappie<UserStudyRequest, UserStudyData>() {
+    override fun map(from: UserStudyRequest) = mapping {
+        UserStudyData::level fromValue from.level!!
+        UserStudyData::programName fromValue from.programName!!.trim()
+        UserStudyData::status fromValue from.status!!
+        UserStudyData::startYear fromValue from.startYear
+        UserStudyData::graduationYear fromValue from.graduationYear
     }
 }
 
@@ -112,3 +106,5 @@ fun UpdateGuestUserRequest.asCommand(id: Long): UpdateGuestUserCommand =
 
 fun UpdateUserRequest.asCommand(id: Long, isBoard: Boolean): UpdateUserCommand =
     UpdateUserCommandRequestToCommandMapper.map(UpdateUserCommandRequest(id, isBoard, this))
+
+fun UserStudyRequest.asData(): UserStudyData = UserStudyRequestToCommandDataMapper.map(this)

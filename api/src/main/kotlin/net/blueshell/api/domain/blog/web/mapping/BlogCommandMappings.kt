@@ -25,7 +25,7 @@ internal object UpdateBlogCommandRequestToCommandMapper : ObjectMappie<UpdateBlo
         UpdateBlogCommand::title fromValue from.request.title!!
         UpdateBlogCommand::html fromValue from.request.html!!
         UpdateBlogCommand::publishedAt fromValue from.request.publishedAt!!
-        UpdateBlogCommand::version fromValue from.request.version
+        UpdateBlogCommand::version fromValue from.request.version!!
     }
 }
 

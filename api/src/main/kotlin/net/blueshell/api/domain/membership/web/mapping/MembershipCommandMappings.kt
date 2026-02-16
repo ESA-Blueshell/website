@@ -29,7 +29,7 @@ internal object UpdateMembershipCommandRequestToCommandMapper : ObjectMappie<Upd
         UpdateMembershipCommand::startDate fromValue from.request.startDate!!
         UpdateMembershipCommand::endDate fromValue from.request.endDate
         UpdateMembershipCommand::incasso fromValue from.request.incasso
-        UpdateMembershipCommand::version fromValue from.request.version
+        UpdateMembershipCommand::version fromValue from.request.version!!
     }
 }
 

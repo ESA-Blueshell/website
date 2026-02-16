@@ -17,13 +17,15 @@ data class FindMembershipsCommand(
 
 @NoExistingMembershipForUser
 data class CreateMembershipCommand(
-    val principalId: Long?,
+    val userId: Long,
     @field:NotNull(message = "isMember flag is required")
     val isMember: Boolean?,
     @field:NotNull(message = "hasAddress flag is required")
-    val hasAddress: Boolean?
+    val hasAddress: Boolean?,
+    @field:NotNull(message = "personDetails are required")
+    val hasPersonDetails: Boolean?
 ) : Command<Membership>, MembershipUserIdCandidate {
-    override val membershipUserId: Long? = principalId
+    override val membershipUserId: Long = userId
 }
 
 @NoExistingMembershipForUser
@@ -53,7 +55,8 @@ data class UpdateMembershipCommand(
     val startDate: LocalDate?,
     val endDate: LocalDate?,
     val incasso: Boolean?,
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<Membership>
 
 data class FindMembershipByIdCommand(

@@ -48,7 +48,8 @@ data class UpdateContributionPeriodCommand(
     @field:PositiveOrZero(message = "Alumni fee must be positive or zero")
     val alumniFee: Double?,
     val listId: Long?,
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<ContributionPeriodResult>
 
 data class DeleteContributionPeriodByIdCommand(

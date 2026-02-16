@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.user.command
 
+import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.shared.command.Command
 
@@ -19,7 +20,8 @@ data class UpdateAddressCommand(
     val street: String,
     val houseNumber: String,
     val zipCode: String,
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<Address>
 
 class FindAllAddressesCommand : Command<MutableList<Address>>

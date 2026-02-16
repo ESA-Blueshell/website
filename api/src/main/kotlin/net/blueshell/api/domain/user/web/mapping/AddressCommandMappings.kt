@@ -35,7 +35,7 @@ internal object UpdateAddressCommandRequestToCommandMapper : ObjectMappie<Update
         UpdateAddressCommand::street fromValue from.request.street!!
         UpdateAddressCommand::houseNumber fromValue from.request.houseNumber!!
         UpdateAddressCommand::zipCode fromValue from.request.zipCode!!
-        UpdateAddressCommand::version fromValue from.request.version
+        UpdateAddressCommand::version fromValue from.request.version!!
     }
 }
 

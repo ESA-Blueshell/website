@@ -64,12 +64,6 @@ class User(
     @Column(name = "phone_number")
     var phoneNumber: String? = null,
 
-    @Column(name = "student_number")
-    var studentNumber: String? = null,
-
-    @Column(name = "date_of_birth")
-    var dateOfBirth: Date? = null,
-
     @Column
     var discord: String? = null,
 
@@ -90,15 +84,6 @@ class User(
     @Column(name = "consent_gdpr")
     var consentGdpr: Boolean = false,
 
-    @Column
-    var gender: String? = null,
-
-    @Column(name = "photo_consent")
-    var photoConsent: Boolean = false,
-
-    @Column
-    var nationality: String? = null,
-
     // Roles are managed through multiple mechanisms:
     // - GUEST: Default role assigned on user creation
     // - MEMBER: Granted through membership creation/management
@@ -110,20 +95,8 @@ class User(
     @Column(name = "authority")
     var roles: MutableSet<Role> = mutableSetOf(Role.GUEST),
 
-    @Column(name = "ehbo")
-    var ehbo: Boolean = false,
-
     @Column(name = "contact_id")
     var contactId: Long? = null,
-
-    @Column(name = "bhv")
-    var bhv: Boolean = false,
-
-    @Column(name = "study")
-    var study: String? = null,
-
-    @Column(name = "start_study_year")
-    var startStudyYear: Long? = null,
 
     ) : AuditedAutoIdEntity() {
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
@@ -150,6 +123,12 @@ class User(
     val profilePictureId: Long?
         get() = profilePicture?.id
 
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var personDetails: PersonDetails? = null
+        internal set
+
+    val personDetailsId: Long?
+        get() = personDetails?.id
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()
@@ -175,6 +154,11 @@ class User(
     private val _eventSignUps: MutableSet<EventSignUp> = linkedSetOf()
     val eventSignUps: Set<EventSignUp>
         get() = _eventSignUps
+
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    private val _studies: MutableSet<UserStudy> = linkedSetOf()
+    val studies: Set<UserStudy>
+        get() = _studies
 
     val committeeIds: Set<Long>
         get() = committeeMembers.mapNotNull { it.committee.id }.toSet()
@@ -202,18 +186,9 @@ class User(
     val fullName: String
         get() = listOfNotNull(firstName, prefix?.takeIf { it.isNotBlank() }, lastName).joinToString(" ")
 
-//    override fun getUsername(): String = username
-//    fun setUsername(value: String) {
-//        username = value
-//    }
-
-//    override fun getPassword(): String = password
-//    fun setPassword(value: String) {
-//        password = value
-//    }
-
-    fun isAccountNonExpired(): Boolean = true
-    fun isAccountNonLocked(): Boolean = true
-    fun isCredentialsNonExpired(): Boolean = true
-    fun isEnabled(): Boolean = enabled
+    fun replaceStudies(studies: Collection<UserStudy>) {
+        _studies.clear()
+        _studies.addAll(studies)
+        _studies.forEach { it.user = this }
+    }
 }

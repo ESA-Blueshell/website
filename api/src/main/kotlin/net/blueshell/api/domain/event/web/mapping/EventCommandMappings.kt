@@ -46,7 +46,7 @@ internal object UpdateEventCommandRequestToCommandMapper : ObjectMappie<UpdateEv
         UpdateEventCommand::signUp fromValue from.request.signUp!!
         UpdateEventCommand::banner fromValue from.request.banner?.asDomainData()
         UpdateEventCommand::signUpForm fromValue from.request.signUpForm?.asDomainData()
-        UpdateEventCommand::version fromValue from.request.version
+        UpdateEventCommand::version fromValue from.request.version!!
     }
 }
 

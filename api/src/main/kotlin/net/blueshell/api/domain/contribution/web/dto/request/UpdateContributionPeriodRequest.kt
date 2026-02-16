@@ -2,7 +2,7 @@ package net.blueshell.api.domain.contribution.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.VersionedDTO
+import net.blueshell.api.shared.dto.BaseDTO
 import java.time.LocalDate
 
 @Schema(name = "UpdateContributionPeriodRequest")
@@ -22,5 +22,7 @@ data class UpdateContributionPeriodRequest(
     @field:NotNull
     var alumniFee: Double? = null,
 
-    var listId: Long? = null
-) : VersionedDTO()
+    var listId: Long? = null,
+
+    var version: Long? = null
+) : BaseDTO()

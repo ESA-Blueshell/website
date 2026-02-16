@@ -3,7 +3,7 @@ package net.blueshell.api.domain.user.web.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import net.blueshell.api.domain.user.web.validation.ValidCountryCode
-import net.blueshell.api.shared.dto.VersionedDTO
+import net.blueshell.api.shared.dto.BaseDTO
 
 @Schema(name = "UpdateAddressRequest")
 data class UpdateAddressRequest(
@@ -21,5 +21,7 @@ data class UpdateAddressRequest(
     var houseNumber: String? = null,
 
     @field:NotEmpty
-    var zipCode: String? = null
-) : VersionedDTO()
+    var zipCode: String? = null,
+
+    var version: Long? = null
+) : BaseDTO()

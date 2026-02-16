@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.validation.group.Administration
 import net.blueshell.api.shared.validation.group.Creation
 import java.sql.Date
 
@@ -67,5 +65,6 @@ data class CreateUserRequest(
     var discord: String? = null,
 
     @field:NotBlank
-    var phoneNumber: String? = null
+    var phoneNumber: String? = null,
+    var studies: List<UserStudyRequest>? = null
 )

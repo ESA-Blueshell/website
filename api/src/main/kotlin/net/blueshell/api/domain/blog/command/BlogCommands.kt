@@ -33,7 +33,8 @@ data class UpdateBlogCommand(
     @field:NotNull(message = "Published date is required")
     val publishedAt: Instant,
 
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<Blog>
 
 class FindBlogsCommand : Command<MutableList<Blog>>

@@ -42,7 +42,8 @@ data class UpdateBoardCommand(
 
     val pictureId: Long? = null,
 
-    val version: Long? = null
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<Board>
 
 data class FindBoardByIdCommand(

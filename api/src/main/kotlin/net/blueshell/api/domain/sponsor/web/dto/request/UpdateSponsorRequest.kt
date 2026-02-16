@@ -3,7 +3,7 @@ package net.blueshell.api.domain.sponsor.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.dto.VersionedDTO
+import net.blueshell.api.shared.dto.BaseDTO
 
 @Schema(name = "UpdateSponsorRequest")
 data class UpdateSponsorRequest(
@@ -13,5 +13,7 @@ data class UpdateSponsorRequest(
 
     @field:NotBlank(message = "Sponsor description cannot be empty.")
     @field:Size(max = 4095, message = "Sponsor description cannot exceed 4095 characters.")
-    var description: String? = null
-) : VersionedDTO()
+    var description: String? = null,
+
+    var version: Long? = null
+) : BaseDTO()

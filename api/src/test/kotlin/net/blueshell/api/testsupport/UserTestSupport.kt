@@ -19,6 +19,11 @@ import net.blueshell.api.domain.membership.persistence.Membership
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.user.persistence.PersonDetails
+import net.blueshell.api.shared.enums.StudyLevel
+import net.blueshell.api.domain.user.persistence.StudyProgram
+import net.blueshell.api.shared.enums.StudyStatus
+import net.blueshell.api.domain.user.persistence.UserStudy
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
@@ -39,6 +44,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 import java.nio.file.Files
 import java.nio.file.Path
+import java.sql.Date
 import java.time.Instant
 import java.time.LocalDate
 
@@ -218,6 +224,39 @@ abstract class UserTestSupport : ServiceTestSupport() {
 
     protected fun assignAddress(user: User, address: Address = createAddressFixture()): User {
         user.address = address
+        return persist(user)
+    }
+
+    protected fun assignCompletePersonDetails(user: User): User {
+        val profile = PersonDetails(
+            user = user,
+            dateOfBirth = Date.valueOf(LocalDate.of(1998, 5, 5)),
+            studentNumber = "s${System.currentTimeMillis()}",
+            gender = "X",
+            photoConsent = true,
+            bhv = false,
+            ehbo = false,
+            nationality = "NL"
+        )
+
+        val program = persist(
+            StudyProgram().apply {
+                this.level = StudyLevel.BSC
+                this.name = "Applied Computer Science ${System.currentTimeMillis()}"
+                this.active = true
+            }
+        )
+
+        user.personDetails = profile
+        user.replaceStudies(
+            listOf(
+                UserStudy(
+                    studyProgram = program,
+                    status = StudyStatus.ONGOING,
+                    startYear = LocalDate.now().year - 1
+                )
+            )
+        )
         return persist(user)
     }
 

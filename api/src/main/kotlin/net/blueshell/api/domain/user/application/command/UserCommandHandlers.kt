@@ -3,8 +3,11 @@ package net.blueshell.api.domain.user.application.command
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.*
+import net.blueshell.api.domain.user.persistence.StudyProgram
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.user.persistence.repository.StudyProgramRepository
 import net.blueshell.api.shared.command.CommandHandler
+import net.blueshell.api.shared.enums.StudyLevel
 import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -13,7 +16,7 @@ import org.springframework.stereotype.Component
 @Component
 class CreateUserHandler(
     private val service: UserService,
-    private val addresses: AddressService,
+    private val studyPrograms: StudyProgramRepository,
     private val passwordEncoder: PasswordEncoder
 ) : CommandHandler<CreateUserCommand, User> {
     override val commandType = CreateUserCommand::class
@@ -31,14 +34,7 @@ class CreateUserHandler(
         )
         user.discord = command.discord
         user.phoneNumber = command.phoneNumber
-        user.dateOfBirth = command.dateOfBirth
-        user.nationality = command.nationality
-        user.photoConsent = command.photoConsent
-        user.bhv = command.bhv
-        user.ehbo = command.ehbo
         user.newsletter = command.newsletter
-        user.gender = command.gender
-        user.studentNumber = command.studentNumber
         user.password = if (command.isBoard) {
             passwordEncoder.encode(MappingUtil.generateRandomString())
         } else {
@@ -52,7 +48,6 @@ class CreateUserHandler(
 @Component
 class CreateGuestUserHandler(
     private val service: UserService,
-    private val addresses: AddressService,
     private val passwordEncoder: PasswordEncoder
 ) : CommandHandler<CreateGuestUserCommand, User> {
     override val commandType = CreateGuestUserCommand::class
@@ -97,7 +92,8 @@ class UpdateGuestUserHandler(
 @Component
 class UpdateUserHandler(
     private val service: UserService,
-    private val addresses: AddressService
+    private val addresses: AddressService,
+    private val studyPrograms: StudyProgramRepository
 ) : CommandHandler<UpdateUserCommand, User> {
     override val commandType = UpdateUserCommand::class
 
@@ -105,16 +101,8 @@ class UpdateUserHandler(
         var user = service.findById(command.id)
         user.discord = command.discord
         user.phoneNumber = command.phoneNumber
-        user.dateOfBirth = command.dateOfBirth
-        user.nationality = command.nationality
-        user.photoConsent = command.photoConsent
-        user.bhv = command.bhv
-        user.ehbo = command.ehbo
         user.newsletter = command.newsletter
-        user.gender = command.gender
-        user.studentNumber = command.studentNumber
-        command.addressId?.let { user.address = addresses.findById(it) }
-        command.version?.let { user.version = it }
+        user.version = command.version
 
         if (command.isBoard) {
             // BOARD users can update identity fields but not roles or enabled status
@@ -194,4 +182,16 @@ private fun applyIdentityFields(
     firstName?.let { user.firstName = it }
     prefix?.let { user.prefix = it }
     lastName?.let { user.lastName = it }
+}
+
+private fun StudyProgramRepository.resolveStudyProgram(name: String, level: StudyLevel): StudyProgram {
+    return findByNameAndLevel(name, level).orElseGet {
+        save(
+            StudyProgram().apply {
+                this.name = name
+                this.level = level
+                this.active = true
+            }
+        )
+    }
 }

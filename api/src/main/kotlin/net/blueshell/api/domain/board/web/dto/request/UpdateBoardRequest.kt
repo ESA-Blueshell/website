@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.dto.BaseDTO
 import java.time.LocalDate
 
 @Schema(name = "UpdateBoardRequest")
@@ -23,4 +24,4 @@ data class UpdateBoardRequest(
     var pictureId: Long? = null,
 
     var version: Long? = null
-)
+) : BaseDTO()

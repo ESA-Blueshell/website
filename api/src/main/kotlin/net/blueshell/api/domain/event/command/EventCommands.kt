@@ -92,7 +92,8 @@ data class UpdateEventCommand(
     @field:Valid
     val signUpForm: SurveyData?,
 
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<Event>
 
 data class ApproveEventCommand(

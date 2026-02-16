@@ -23,7 +23,7 @@ internal object UpdateSponsorCommandRequestToCommandMapper : ObjectMappie<Update
         UpdateSponsorCommand::id fromProperty from::id
         UpdateSponsorCommand::name fromValue from.request.name!!
         UpdateSponsorCommand::description fromValue from.request.description!!
-        UpdateSponsorCommand::version fromValue from.request.version
+        UpdateSponsorCommand::version fromValue from.request.version!!
     }
 }
 

@@ -59,7 +59,8 @@ data class UpdateCommitteeCommand(
     @field:Valid
     var members: MutableList<CommitteeMemberData>,
 
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<Committee>
 
 data class DeleteCommitteeByIdCommand(

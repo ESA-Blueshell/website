@@ -29,7 +29,7 @@ class UpdateBoardRequestToCommandMapper(private val id: Long) : ObjectMappie<Upd
         UpdateBoardCommand::startDate fromValue from.startDate!!
         UpdateBoardCommand::endDate fromProperty from::endDate
         UpdateBoardCommand::pictureId fromProperty from::pictureId
-        UpdateBoardCommand::version fromProperty from::version
+        UpdateBoardCommand::version fromValue  from.version!!
     }
 }
 

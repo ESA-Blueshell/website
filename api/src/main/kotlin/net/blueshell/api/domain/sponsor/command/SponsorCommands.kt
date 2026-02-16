@@ -28,7 +28,8 @@ data class UpdateSponsorCommand(
     @field:NotBlank(message = "Description is required")
     @field:Size(min = 1, max = 5000, message = "Description must be 1-5000 characters")
     val description: String?,
-    val version: Long?
+    @field:NotNull(message = "Version is required for optimistic locking")
+    val version: Long
 ) : Command<SponsorResult>
 
 data class FindSponsorByIdCommand(

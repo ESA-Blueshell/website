@@ -3,15 +3,12 @@ package net.blueshell.api.domain.user.web.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.validation.group.Update
 import java.sql.Date
 
 @Schema(name = "UpdateUserRequest")
 data class UpdateUserRequest(
     var dateOfBirth: Date? = null,
 
-    @field:NotBlank
     var nationality: String? = null,
 
     var photoConsent: Boolean? = null,
@@ -52,6 +49,8 @@ data class UpdateUserRequest(
 
     @field:NotBlank
     var phoneNumber: String? = null,
+
+    var studies: List<UserStudyRequest>? = null,
 
     var version: Long? = null
 )

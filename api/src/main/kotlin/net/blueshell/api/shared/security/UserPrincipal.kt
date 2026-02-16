@@ -17,7 +17,8 @@ data class UserPrincipal(
     private val passwordValue: String,
     private val enabledValue: Boolean,
     val roles: Set<Role>,
-    val addressId: Long?
+    val addressId: Long?,
+    val personDetailsId: Long?,
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         val inherited = roles.flatMap { it.allInheritedRoles }.toSet()

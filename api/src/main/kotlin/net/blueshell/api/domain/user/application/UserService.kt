@@ -8,7 +8,7 @@ import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.domain.user.persistence.spec.UserSpecifications
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.security.UserPrincipalMapper
 import net.blueshell.api.shared.security.CurrentUserProvider
@@ -28,7 +28,7 @@ import java.util.function.Supplier
 class UserService @Autowired constructor(
     repository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val events: AfterCommitEventPublisher,
+    private val trackedEvents: TrackedEventPublisher,
     private val currentUserProvider: CurrentUserProvider
 ) : BaseModelService<User, Long, UserRepository>(repository) {
     @Throws(UsernameNotFoundException::class)
@@ -47,14 +47,25 @@ class UserService @Autowired constructor(
     @Transactional
     override fun create(entity: User): User {
         val saved = super.create(entity)
-        events.publish(UserCreated(saved.id!!, createdByBoard = isBoardUser()))
+        trackedEvents.publish { actor ->
+            UserCreated(
+                saved.id!!,
+                createdByBoard = isBoardUser(),
+                actor = actor
+            )
+        }
         return saved
     }
 
     @Transactional
     override fun update(entity: User): User {
         val saved = super.update(entity)
-        events.publish(UserUpdated(saved.id!!))
+        trackedEvents.publish { actor ->
+            UserUpdated(
+                saved.id!!,
+                actor = actor
+            )
+        }
         return saved
     }
 

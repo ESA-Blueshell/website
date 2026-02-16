@@ -4,7 +4,7 @@ import net.blueshell.api.domain.survey.application.event.QuestionChange
 import net.blueshell.api.domain.survey.application.event.QuestionChanged
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.repository.QuestionRepository
-import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -13,26 +13,27 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class QuestionService @Autowired constructor(
     repository: QuestionRepository,
-    private val events: AfterCommitEventPublisher
+    private val trackedEvents: TrackedEventPublisher
 ) : BaseModelService<Question, Long, QuestionRepository>(repository) {
     @Transactional
     override fun create(entity: Question): Question {
         val saved = super.create(entity)
-        events.publish(
+        trackedEvents.publish { actor ->
             QuestionChanged(
                 questionId = saved.id!!,
                 surveyId = saved.surveyId,
                 type = saved.type,
-                changeType = QuestionChange.CREATED
+                changeType = QuestionChange.CREATED,
+                actor = actor
             )
-        )
+        }
         return saved
     }
 
     @Transactional
     override fun update(entity: Question): Question {
         val saved = super.update(entity)
-        events.publish(
+        trackedEvents.publish { actor ->
             QuestionChanged(
                 questionId = saved.id!!,
                 surveyId = saved.surveyId,
@@ -40,24 +41,27 @@ class QuestionService @Autowired constructor(
                 changeType = QuestionChange.UPDATED,
                 dirty = saved.dirty,
                 dirtyFields = saved.dirtyFields,
-                hasAnswers = saved.answers.isNotEmpty()
+                hasAnswers = saved.answers.isNotEmpty(),
+                actor = actor
             )
-        )
+        }
         return saved
     }
 
     @Transactional
     override fun delete(entity: Question) {
         val questionId = entity.id!!
-        val event = QuestionChanged(
-            questionId = questionId,
-            surveyId = entity.surveyId,
-            type = entity.type,
-            changeType = QuestionChange.DELETED,
-            hasAnswers = entity.answers.isNotEmpty()
-        )
         super.delete(entity)
-        events.publish(event)
+        trackedEvents.publish { actor ->
+            QuestionChanged(
+                questionId = questionId,
+                surveyId = entity.surveyId,
+                type = entity.type,
+                changeType = QuestionChange.DELETED,
+                hasAnswers = entity.answers.isNotEmpty(),
+                actor = actor
+            )
+        }
     }
 
     @Transactional

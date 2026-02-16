@@ -8,7 +8,7 @@ import net.blueshell.api.domain.event.application.event.EventSignUpCreated
 import net.blueshell.api.shared.job.CalendarEventRef
 import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class EventJobsListener(
-    private val jobDispatcher: JobQueue,
+    private val jobs: TrackedJobDispatcher,
     private val events: EventService,
     private val signUps: EventSignUpService
 ) {
@@ -30,9 +30,10 @@ class EventJobsListener(
             EventChange.CREATED -> {
                 val e = events.findById(evt.eventId)
                 if (e.approved) {
-                    jobDispatcher.enqueue(
+                    jobs.enqueueFromActor(
                         CalendarJobs.AddEvent,
-                        CalendarEventRef(e.id!!)
+                        CalendarEventRef(e.id!!),
+                        evt
                     )
                 }
             }
@@ -40,21 +41,24 @@ class EventJobsListener(
             EventChange.UPDATED -> {
                 val e = events.findById(evt.eventId)
                 if (e.approved) {
-                    jobDispatcher.enqueue(
+                    jobs.enqueueFromActor(
                         CalendarJobs.SyncEvent,
-                        CalendarEventRef(e.id!!)
+                        CalendarEventRef(e.id!!),
+                        evt
                     )
                 } else {
-                    jobDispatcher.enqueue(
+                    jobs.enqueueFromActor(
                         CalendarJobs.RemoveEvent,
-                        CalendarEventRef(e.id!!)
+                        CalendarEventRef(e.id!!),
+                        evt
                     )
                 }
             }
 
-            EventChange.DELETED -> jobDispatcher.enqueue(
+            EventChange.DELETED -> jobs.enqueueFromActor(
                 CalendarJobs.RemoveEvent,
-                CalendarEventRef(evt.eventId)
+                CalendarEventRef(evt.eventId),
+                evt
             )
         }
     }
@@ -67,9 +71,10 @@ class EventJobsListener(
     fun onPersist(evt: EventSignUpCreated) {
         val e = signUps.findById(evt.signUpId)
         if (e.guest != null) {
-            jobDispatcher.enqueue(
+            jobs.enqueueFromActor(
                 EmailJobs.EventSignup,
-                EmailJobs.EventSignupPayload(e.id!!)
+                EmailJobs.EventSignupPayload(e.id!!),
+                evt
             )
         }
     }

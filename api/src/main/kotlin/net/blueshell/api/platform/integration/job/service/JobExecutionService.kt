@@ -3,6 +3,7 @@ package net.blueshell.api.platform.integration.job.service
 import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.tracking.Actor
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -10,13 +11,20 @@ import java.time.Instant
 class JobExecutionService(
     private val jobExecutionRepository: JobExecutionRepository
 ) {
-    fun createQueued(jobType: String, payload: String?): JobExecution {
+    fun createQueued(
+        jobType: String,
+        payload: String?,
+        actor: Actor
+    ): JobExecution {
         val execution = JobExecution(
             jobType = jobType,
             status = JobExecutionStatus.QUEUED,
             payload = payload,
             attempts = 0,
-            queuedAt = Instant.now()
+            queuedAt = Instant.now(),
+            initiatedByUserId = actor.userId,
+            initiatedByType = actor.type,
+            initiatedByRole = actor.role
         )
         return jobExecutionRepository.save(execution)
     }

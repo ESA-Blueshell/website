@@ -42,6 +42,10 @@ class JobManagementController(
         queuedAt = queuedAt,
         startedAt = startedAt,
         finishedAt = finishedAt,
+        actor = actor,
+        initiatedByUserId = initiatedByUserId,
+        initiatedByType = initiatedByType,
+        initiatedByRole = initiatedByRole,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

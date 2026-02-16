@@ -1,8 +1,11 @@
 package net.blueshell.api.platform.integration.job.model
 
 import jakarta.persistence.*
+import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.tracking.Actor
 import java.time.Instant
 import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
 
@@ -45,5 +48,26 @@ class JobExecution(
     var startedAt: Instant? = null,
 
     @Column(name = "finished_at")
-    var finishedAt: Instant? = null
+    var finishedAt: Instant? = null,
+
+    @Column(name = "initiated_by_user_id")
+    var initiatedByUserId: Long? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "initiated_by_type", nullable = false)
+    var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "initiated_by_role", nullable = false)
+    var initiatedByRole: Role = Role.ADMIN
 ) : AuditedAutoIdEntity(), JobExecutionInterface
+
+{
+    @get:Transient
+    override val actor: Actor
+        get() = Actor(
+            userId = initiatedByUserId,
+            type = initiatedByType,
+            role = initiatedByRole
+        )
+}

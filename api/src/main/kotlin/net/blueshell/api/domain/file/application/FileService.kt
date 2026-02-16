@@ -9,7 +9,7 @@ import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.file.persistence.repository.FileRepository
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
 import org.slf4j.LoggerFactory
@@ -36,7 +36,7 @@ import java.util.function.Supplier
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
     @Value($$"${storage.location}") storageLocation: String,
-    private val events: AfterCommitEventPublisher,
+    private val trackedEvents: TrackedEventPublisher,
     private val currentUserProvider: CurrentUserProvider,
     private val users: UserService
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
@@ -123,9 +123,14 @@ class FileService @Autowired constructor(
 
     @Transactional
     override fun delete(entity: File) {
-        val event = FileDeleted(entity.id!!, entity.path)
         super.delete(entity)
-        events.publish(event)
+        trackedEvents.publish { actor ->
+            FileDeleted(
+                entity.id!!,
+                entity.path,
+                actor = actor
+            )
+        }
     }
 
     @Transactional

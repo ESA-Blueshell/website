@@ -3,7 +3,7 @@ package net.blueshell.api.domain.contribution.application
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionReminderRepository
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionReminderService @Autowired constructor(
     repository: ContributionReminderRepository,
     private val periodService: ContributionPeriodService,
-    private val jobDispatcher: JobQueue
+    private val jobs: TrackedJobDispatcher
 ) : BaseModelService<ContributionReminder, ContributionReminder.Id, ContributionReminderRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
@@ -23,7 +23,7 @@ class ContributionReminderService @Autowired constructor(
 
     fun sendReminder(reminder: ContributionReminder) {
         val reminderId = reminder.id
-        jobDispatcher.enqueue(
+        jobs.enqueue(
             EmailJobs.ContributionReminder,
             EmailJobs.ContributionReminderPayload(reminderId.userId!!, reminderId.contributionPeriodId!!)
         )

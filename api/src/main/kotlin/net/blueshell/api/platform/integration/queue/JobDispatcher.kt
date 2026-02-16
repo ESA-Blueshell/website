@@ -6,6 +6,8 @@ import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.shared.tracking.ActorProvider
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 
@@ -18,21 +20,35 @@ class JobDispatcher(
     private val rabbitTemplate: RabbitTemplate,
     private val objectMapper: ObjectMapper,
     private val jobQueueProperties: JobQueueProperties,
-    private val jobExecutionService: JobExecutionService
+    private val jobExecutionService: JobExecutionService,
+    private val actorProvider: ActorProvider
 ) : JobQueue {
-    override fun <T : Any> enqueue(job: JobDefinition<T>, payload: T): JobExecution {
-        return enqueue(job.type, payload)
+    override fun <T : Any> enqueue(
+        job: JobDefinition<T>,
+        payload: T,
+        actor: Actor?
+    ): JobExecution {
+        return enqueue(job.type, payload, actor)
     }
 
-    override fun enqueue(jobType: String, payload: Any?): JobExecution {
+    override fun enqueue(
+        jobType: String,
+        payload: Any?,
+        actor: Actor?
+    ): JobExecution {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
-        val execution = jobExecutionService.createQueued(jobType, payloadJson)
+        val resolvedActor = actor ?: actorProvider.currentOrSystem()
+        val execution = jobExecutionService.createQueued(
+            jobType = jobType,
+            payload = payloadJson,
+            actor = resolvedActor
+        )
         sendMessage(execution)
         return execution
     }
 
     fun enqueueEmail(jobType: String, payload: Any): JobExecution {
-        return enqueue(jobType, payload)
+        return enqueue(jobType, payload, null)
     }
 
     fun requeue(execution: JobExecution) {

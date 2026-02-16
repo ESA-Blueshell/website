@@ -4,7 +4,7 @@ import net.blueshell.api.domain.contribution.application.event.ContributionChang
 import net.blueshell.api.domain.contribution.application.event.ContributionChanged
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
-import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionService @Autowired constructor(
     repository: ContributionRepository,
     private val periodService: ContributionPeriodService,
-    private val events: AfterCommitEventPublisher
+    private val trackedEvents: TrackedEventPublisher
 ) : BaseModelService<Contribution, Contribution.Id, ContributionRepository>(repository) {
     @Transactional
     override fun create(entity: Contribution): Contribution {
@@ -35,13 +35,14 @@ class ContributionService @Autowired constructor(
         val userId = entity.userId
         val periodId = entity.contributionPeriodId
         super.delete(entity)
-        events.publish(
+        trackedEvents.publish { actor ->
             ContributionChanged(
                 userId,
                 periodId,
-                ContributionChange.DELETED
+                ContributionChange.DELETED,
+                actor = actor
             )
-        )
+        }
     }
 
     @Transactional
@@ -58,12 +59,13 @@ class ContributionService @Autowired constructor(
     }
 
     private fun publishChange(contribution: Contribution, changeType: ContributionChange) {
-        events.publish(
+        trackedEvents.publish { actor ->
             ContributionChanged(
                 contribution.userId,
                 contribution.contributionPeriodId,
-                changeType
+                changeType,
+                actor = actor
             )
-        )
+        }
     }
 }

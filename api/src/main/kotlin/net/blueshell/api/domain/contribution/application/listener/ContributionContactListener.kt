@@ -5,7 +5,7 @@ import net.blueshell.api.domain.contribution.application.event.ContributionChang
 import net.blueshell.api.domain.contribution.application.event.ContributionChanged
 import net.blueshell.api.domain.contribution.application.event.ContributionPeriodChanged
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class ContributionContactListener(
-    private val jobDispatcher: JobQueue,
+    private val jobs: TrackedJobDispatcher,
     private val periods: ContributionPeriodService
 ) {
     @EventListener
@@ -21,14 +21,16 @@ class ContributionContactListener(
     fun onContributionChange(evt: ContributionChanged) {
         when (evt.changeType) {
             ContributionChange.CREATED,
-            ContributionChange.UPDATED -> jobDispatcher.enqueue(
+            ContributionChange.UPDATED -> jobs.enqueueFromActor(
                 ContactJobs.AddToList,
-                ContactJobs.AddToListPayload(evt.userId, evt.periodId)
+                ContactJobs.AddToListPayload(evt.userId, evt.periodId),
+                evt
             )
 
-            ContributionChange.DELETED -> jobDispatcher.enqueue(
+            ContributionChange.DELETED -> jobs.enqueueFromActor(
                 ContactJobs.RemoveFromList,
-                ContactJobs.RemoveFromListPayload(evt.userId, evt.periodId)
+                ContactJobs.RemoveFromListPayload(evt.userId, evt.periodId),
+                evt
             )
         }
     }
@@ -38,9 +40,10 @@ class ContributionContactListener(
     fun onPeriodChange(evt: ContributionPeriodChanged) {
         val period = periods.findById(evt.periodId)
         if (period.listId != null) return
-        jobDispatcher.enqueue(
+        jobs.enqueueFromActor(
             ContactJobs.CreateContributionPeriodList,
-            ContactJobs.CreateContributionPeriodListPayload(period.id!!)
+            ContactJobs.CreateContributionPeriodListPayload(period.id!!),
+            evt
         )
     }
 }

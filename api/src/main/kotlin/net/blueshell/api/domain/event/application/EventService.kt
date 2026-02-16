@@ -6,8 +6,8 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSpecifications
-import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -18,19 +18,20 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class EventService @Autowired constructor(
     repository: EventRepository,
-    private val events: AfterCommitEventPublisher,
+    private val trackedEvents: TrackedEventPublisher,
     private val currentUserProvider: CurrentUserProvider
 ) : BaseModelService<Event, Long, EventRepository>(repository) {
     @Transactional
     override fun create(entity: Event): Event {
         mergeAssociations(entity)
         val saved = super.create(entity)
-        events.publish(
+        trackedEvents.publish { actor ->
             EventChanged(
                 saved.id!!,
-                EventChange.CREATED
+                EventChange.CREATED,
+                actor = actor
             )
-        )
+        }
         return saved
     }
 
@@ -38,12 +39,13 @@ class EventService @Autowired constructor(
     override fun update(entity: Event): Event {
         mergeAssociations(entity)
         val saved = super.update(entity)
-        events.publish(
+        trackedEvents.publish { actor ->
             EventChanged(
                 saved.id!!,
-                EventChange.UPDATED
+                EventChange.UPDATED,
+                actor = actor
             )
-        )
+        }
         return saved
     }
 
@@ -51,23 +53,25 @@ class EventService @Autowired constructor(
     override fun delete(entity: Event) {
         val eventId = entity.id!!
         super.delete(entity)
-        events.publish(
+        trackedEvents.publish { actor ->
             EventChanged(
                 eventId,
-                EventChange.DELETED
+                EventChange.DELETED,
+                actor = actor
             )
-        )
+        }
     }
 
     @Transactional
     override fun deleteById(id: Long) {
         super.deleteById(id)
-        events.publish(
+        trackedEvents.publish { actor ->
             EventChanged(
                 id,
-                EventChange.DELETED
+                EventChange.DELETED,
+                actor = actor
             )
-        )
+        }
     }
 
     fun findByFilter(pageable: Pageable, filter: EventQuery): Page<Event> {

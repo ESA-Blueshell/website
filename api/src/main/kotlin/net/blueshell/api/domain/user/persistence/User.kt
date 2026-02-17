@@ -49,17 +49,17 @@ class User(
     @Column(nullable = false)
     var password: String,
 
+    @Column(nullable = false)
+    var initials: String,
+
     @Column(name = "first_name", nullable = false)
     var firstName: String,
-
-    @Column(name = "last_name", nullable = false)
-    var lastName: String,
 
     @Column
     var prefix: String? = null,
 
-    @Column(nullable = false)
-    var initials: String,
+    @Column(name = "last_name", nullable = false)
+    var lastName: String,
 
     @Column(name = "phone_number")
     var phoneNumber: String,

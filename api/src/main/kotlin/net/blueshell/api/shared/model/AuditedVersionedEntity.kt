@@ -14,22 +14,24 @@ abstract class AuditedVersionedEntity : VersionedEntity() {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
-    var createdAt: Instant? = null
-        internal set
+    final lateinit var createdAt: Instant
+        private set
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
-    var createdBy: User? = null
+    final lateinit var createdBy: User
+        private set
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
-    var updatedAt: Instant? = null
-        internal set
+    final lateinit var updatedAt: Instant
+        private set
 
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by_id")
-    var updatedBy: User? = null
+    final lateinit var updatedBy: User
+        private set
 }

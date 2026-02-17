@@ -44,28 +44,28 @@ import java.sql.Date
 class User(
 
     @Column(nullable = false, unique = false)
-    var username: String = "",
+    var username: String,
 
     @Column(nullable = false)
-    var password: String = "",
+    var password: String,
 
     @Column(name = "first_name", nullable = false)
-    var firstName: String = "",
+    var firstName: String,
 
     @Column(name = "last_name", nullable = false)
-    var lastName: String = "",
+    var lastName: String,
 
     @Column
     var prefix: String? = null,
 
-    @Column
-    var initials: String? = null,
+    @Column(nullable = false)
+    var initials: String,
 
     @Column(name = "phone_number")
-    var phoneNumber: String? = null,
+    var phoneNumber: String,
 
-    @Column
-    var discord: String? = null,
+    @Column(nullable = false)
+    var discord: String,
 
     @Column
     var steamid: String? = null,
@@ -101,31 +101,30 @@ class User(
     ) : AuditedAutoIdEntity() {
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
-    var address: Address? = null
-        internal set
+    final var address: Address? = null
+        private set
 
     val addressId: Long?
         get() = address?.id
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     var email: String = ""
         set(value) {
             field = value.trim().lowercase()
         }
         get() = field.trim().lowercase()
 
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture_id")
-    var profilePicture: File? = null
-        internal set
+    final var profilePicture: File? = null
+        private set
 
     val profilePictureId: Long?
         get() = profilePicture?.id
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var personDetails: PersonDetails? = null
-        internal set
+    final var personDetails: PersonDetails? = null
+        private set
 
     val personDetailsId: Long?
         get() = personDetails?.id

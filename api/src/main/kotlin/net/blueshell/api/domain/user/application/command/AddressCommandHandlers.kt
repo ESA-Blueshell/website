@@ -9,21 +9,23 @@ import org.springframework.stereotype.Component
 
 @Component
 class CreateAddressHandler(
-    private val users: UserService
+    private val users: UserService,
+    private val addresses: AddressService
 ) : CommandHandler<CreateAddressCommand, Address> {
     override val commandType = CreateAddressCommand::class
 
     override fun handle(command: CreateAddressCommand): Address {
-        var user = users.findById(command.userId)
-        val address = Address()
-        address.country = command.country
-        address.city = command.city
-        address.street = command.street
-        address.houseNumber = command.houseNumber
-        address.zipCode = command.zipCode
-        user.address = address
-        user = users.update(user)
-        return user.address!!
+        val user = users.findById(command.userId)
+        val address = Address(
+            user = user,
+            country = command.country,
+            city = command.city,
+            street = command.street,
+            houseNumber = command.houseNumber,
+            zipCode = command.zipCode
+        )
+
+        return addresses.update(address)
     }
 }
 
@@ -34,13 +36,14 @@ class UpdateAddressHandler(
     override val commandType = UpdateAddressCommand::class
 
     override fun handle(command: UpdateAddressCommand): Address {
-        var address = addressService.findById(command.id)
-        address.country = command.country
-        address.city = command.city
-        address.street = command.street
-        address.houseNumber = command.houseNumber
-        address.zipCode = command.zipCode
-        command.version?.let { address.version = it }
+        val address = addressService.findById(command.id).apply {
+            country = command.country
+            city = command.city
+            street = command.street
+            houseNumber = command.houseNumber
+            zipCode = command.zipCode
+            version = command.version
+        }
         return addressService.update(address)
     }
 }

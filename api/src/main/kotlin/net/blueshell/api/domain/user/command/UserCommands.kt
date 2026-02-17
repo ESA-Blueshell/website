@@ -12,7 +12,6 @@ import org.springframework.data.domain.Pageable
 @UniqueUserCommand
 data class CreateUserCommand(
     val isBoard: Boolean,
-    val photoConsent: Boolean,
     override val username: String,
     override val email: String,
     val initials: String,

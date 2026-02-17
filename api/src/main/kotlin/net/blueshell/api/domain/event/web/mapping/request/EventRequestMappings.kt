@@ -1,10 +1,10 @@
-package net.blueshell.api.domain.event.web.mapping
+package net.blueshell.api.domain.event.web.mapping.request
 
 import net.blueshell.api.domain.event.command.CreateEventCommand
 import net.blueshell.api.domain.event.command.UpdateEventCommand
 import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
-import net.blueshell.api.domain.survey.web.mapping.asDomainData
+import net.blueshell.api.domain.survey.web.mapping.request.asDomainData
 import tech.mappie.api.ObjectMappie
 
 object CreateEventRequestToCommandMapper : ObjectMappie<CreateEventRequest, CreateEventCommand>() {

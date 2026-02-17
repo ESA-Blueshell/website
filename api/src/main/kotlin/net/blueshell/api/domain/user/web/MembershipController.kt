@@ -9,8 +9,8 @@ import net.blueshell.api.domain.user.command.FindMembershipsCommand
 import net.blueshell.api.domain.user.web.dto.request.BoardCreateMembershipRequest
 import net.blueshell.api.domain.user.web.dto.request.UpdateMembershipRequest
 import net.blueshell.api.domain.user.web.dto.response.MembershipResponse
-import net.blueshell.api.domain.user.web.mapping.asCommand
-import net.blueshell.api.domain.user.web.mapping.asResponse
+import net.blueshell.api.domain.user.web.mapping.request.asCommand
+import net.blueshell.api.domain.user.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal

@@ -10,8 +10,8 @@ import net.blueshell.api.domain.blog.command.FindBlogsCommand
 import net.blueshell.api.domain.blog.web.dto.request.CreateBlogRequest
 import net.blueshell.api.domain.blog.web.dto.request.UpdateBlogRequest
 import net.blueshell.api.domain.blog.web.dto.response.BlogResponse
-import net.blueshell.api.domain.blog.web.mapping.asCommand
-import net.blueshell.api.domain.blog.web.mapping.asResponse
+import net.blueshell.api.domain.blog.web.mapping.request.asCommand
+import net.blueshell.api.domain.blog.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Value

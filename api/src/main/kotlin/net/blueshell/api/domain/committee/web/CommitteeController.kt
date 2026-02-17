@@ -9,9 +9,9 @@ import net.blueshell.api.domain.committee.web.dto.request.CreateCommitteeRequest
 import net.blueshell.api.domain.committee.web.dto.request.UpdateCommitteeRequest
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeDetailResponse
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeResponse
-import net.blueshell.api.domain.committee.web.mapping.asCommand
-import net.blueshell.api.domain.committee.web.mapping.asDetailResponse
-import net.blueshell.api.domain.committee.web.mapping.asSummaryResponse
+import net.blueshell.api.domain.committee.web.mapping.request.asCommand
+import net.blueshell.api.domain.committee.web.mapping.response.asDetailResponse
+import net.blueshell.api.domain.committee.web.mapping.response.asSummaryResponse
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role

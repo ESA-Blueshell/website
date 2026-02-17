@@ -8,8 +8,8 @@ import net.blueshell.api.domain.event.application.query.EventSignUpQuery
 import net.blueshell.api.domain.event.web.dto.request.CreateEventSignUpRequest
 import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventSignUpRequest
-import net.blueshell.api.domain.event.web.mapping.asCommand
-import net.blueshell.api.domain.event.web.mapping.asResponse
+import net.blueshell.api.domain.event.web.mapping.request.asCommand
+import net.blueshell.api.domain.event.web.mapping.response.asResponse
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController

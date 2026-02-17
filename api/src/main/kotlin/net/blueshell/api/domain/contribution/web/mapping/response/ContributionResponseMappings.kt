@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.contribution.web.mapping
+package net.blueshell.api.domain.contribution.web.mapping.response
 
 import net.blueshell.api.domain.contribution.command.result.ContributionPeriodResult
 import net.blueshell.api.domain.contribution.command.result.ContributionReminderResult

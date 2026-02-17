@@ -3,7 +3,7 @@ package net.blueshell.api.domain.blog.application.command
 import net.blueshell.api.domain.blog.application.BlogService
 import net.blueshell.api.domain.blog.command.*
 import net.blueshell.api.domain.blog.persistence.Blog
-import net.blueshell.api.domain.blog.web.mapping.sanitizeBlogHtml
+import net.blueshell.api.domain.blog.web.mapping.response.sanitizeBlogHtml
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.stereotype.Component
 

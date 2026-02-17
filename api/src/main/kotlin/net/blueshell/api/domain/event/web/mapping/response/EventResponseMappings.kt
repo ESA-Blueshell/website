@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.event.web.mapping
+package net.blueshell.api.domain.event.web.mapping.response
 
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner

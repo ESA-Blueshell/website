@@ -6,7 +6,7 @@ import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.file.command.DownloadEventBannerCommand
 import net.blueshell.api.domain.file.command.UploadEventBannerCommand
 import net.blueshell.api.domain.file.web.dto.FileResponse
-import net.blueshell.api.domain.file.web.mapping.asResponse
+import net.blueshell.api.domain.file.web.mapping.response.asResponse
 import net.blueshell.api.domain.file.web.validation.AllowedContentTypes
 import net.blueshell.api.domain.file.web.validation.FileSize
 import net.blueshell.api.shared.command.CommandBus

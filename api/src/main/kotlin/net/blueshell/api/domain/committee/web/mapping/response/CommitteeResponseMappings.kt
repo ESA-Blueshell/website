@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.committee.web.mapping
+package net.blueshell.api.domain.committee.web.mapping.response
 
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember

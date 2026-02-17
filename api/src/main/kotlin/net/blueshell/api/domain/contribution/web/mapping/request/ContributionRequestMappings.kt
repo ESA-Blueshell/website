@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.contribution.web.mapping
+package net.blueshell.api.domain.contribution.web.mapping.request
 
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionPeriodRequest

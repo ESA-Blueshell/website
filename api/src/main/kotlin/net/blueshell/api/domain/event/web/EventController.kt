@@ -13,8 +13,8 @@ import net.blueshell.api.domain.event.command.FindEventsCommand
 import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
 import net.blueshell.api.domain.event.web.dto.response.EventResponse
-import net.blueshell.api.domain.event.web.mapping.asCommand
-import net.blueshell.api.domain.event.web.mapping.asResponse
+import net.blueshell.api.domain.event.web.mapping.request.asCommand
+import net.blueshell.api.domain.event.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject

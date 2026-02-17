@@ -8,8 +8,8 @@ import net.blueshell.api.domain.telemetry.command.CreateTelemetryCommand
 import net.blueshell.api.domain.telemetry.command.FindTelemetryByIdCommand
 import net.blueshell.api.domain.telemetry.web.dto.request.CreateTelemetryRequest
 import net.blueshell.api.domain.telemetry.web.dto.response.TelemetryResponse
-import net.blueshell.api.domain.telemetry.web.mapping.asCommand
-import net.blueshell.api.domain.telemetry.web.mapping.asResponse
+import net.blueshell.api.domain.telemetry.web.mapping.request.asCommand
+import net.blueshell.api.domain.telemetry.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus

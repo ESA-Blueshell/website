@@ -1,9 +1,7 @@
-package net.blueshell.api.domain.blog.web.mapping
+package net.blueshell.api.domain.blog.web.mapping.response
 
 import net.blueshell.api.domain.blog.persistence.Blog
-import net.blueshell.api.domain.blog.web.dto.SocialDTO
 import net.blueshell.api.domain.blog.web.dto.response.BlogResponse
-import net.blueshell.api.shared.enums.PlatformType
 import org.jsoup.Jsoup
 import tech.mappie.api.ObjectMappie
 
@@ -29,22 +27,8 @@ internal object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogRespon
     }
 }
 
-object BlogToSocialDTOMapper : ObjectMappie<Blog, SocialDTO>()
-
 fun Blog.asResponse(frontendUrl: String): BlogResponse =
     BlogResponseSourceToBlogResponseMapper.map(BlogResponseSource(this, frontendUrl))
-
-fun Blog.asSocialDto(frontendUrl: String): SocialDTO {
-    val dto = BlogToSocialDTOMapper.map(this)
-    dto.url = "$frontendUrl/blogs$id"
-    dto.platforms = arrayOf(
-        PlatformType.FACEBOOK,
-        PlatformType.TWITTER,
-        PlatformType.INSTAGRAM,
-        PlatformType.LINKEDIN
-    )
-    return dto
-}
 
 private fun sanitizeHtml(content: String): String {
     if (content.trim { it <= ' ' }.isEmpty()) {

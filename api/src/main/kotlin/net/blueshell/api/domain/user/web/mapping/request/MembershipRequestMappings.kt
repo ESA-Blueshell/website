@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.web.mapping
+package net.blueshell.api.domain.user.web.mapping.request
 
 import net.blueshell.api.domain.user.command.BoardCreateMembershipCommand
 import net.blueshell.api.domain.user.command.UpdateMembershipCommand

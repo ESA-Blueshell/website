@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.web.mapping
+package net.blueshell.api.domain.user.web.mapping.response
 
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.web.dto.response.MembershipResponse

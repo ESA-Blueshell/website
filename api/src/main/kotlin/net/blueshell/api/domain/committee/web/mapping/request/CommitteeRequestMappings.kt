@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.committee.web.mapping
+package net.blueshell.api.domain.committee.web.mapping.request
 
 import net.blueshell.api.domain.committee.command.CommitteeMemberData
 import net.blueshell.api.domain.committee.command.CreateCommitteeCommand

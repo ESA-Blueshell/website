@@ -7,8 +7,8 @@ import net.blueshell.api.domain.sponsor.command.*
 import net.blueshell.api.domain.sponsor.web.dto.request.CreateSponsorRequest
 import net.blueshell.api.domain.sponsor.web.dto.response.SponsorResponse
 import net.blueshell.api.domain.sponsor.web.dto.request.UpdateSponsorRequest
-import net.blueshell.api.domain.sponsor.web.mapping.asCommand
-import net.blueshell.api.domain.sponsor.web.mapping.asResponse
+import net.blueshell.api.domain.sponsor.web.mapping.request.asCommand
+import net.blueshell.api.domain.sponsor.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus

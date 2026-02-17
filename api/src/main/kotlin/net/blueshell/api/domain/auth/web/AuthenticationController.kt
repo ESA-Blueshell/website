@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
-import net.blueshell.api.domain.auth.web.mapping.asCommand
-import net.blueshell.api.domain.auth.web.mapping.asResponse
+import net.blueshell.api.domain.auth.web.mapping.request.asCommand
+import net.blueshell.api.domain.auth.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.PostMapping

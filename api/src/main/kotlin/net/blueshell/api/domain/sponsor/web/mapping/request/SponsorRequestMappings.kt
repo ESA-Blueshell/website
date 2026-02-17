@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.sponsor.web.mapping
+package net.blueshell.api.domain.sponsor.web.mapping.request
 
 import net.blueshell.api.domain.sponsor.command.CreateSponsorCommand
 import net.blueshell.api.domain.sponsor.command.UpdateSponsorCommand

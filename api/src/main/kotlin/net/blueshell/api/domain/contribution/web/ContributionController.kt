@@ -6,8 +6,8 @@ import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
 import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionRequest
-import net.blueshell.api.domain.contribution.web.mapping.asCommand
-import net.blueshell.api.domain.contribution.web.mapping.asResponse
+import net.blueshell.api.domain.contribution.web.mapping.request.asCommand
+import net.blueshell.api.domain.contribution.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.web.mapping
+package net.blueshell.api.domain.blog.web.mapping.request
 
 import net.blueshell.api.domain.blog.command.CreateBlogCommand
 import net.blueshell.api.domain.blog.command.UpdateBlogCommand

@@ -5,8 +5,8 @@ import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionReminderRequest
-import net.blueshell.api.domain.contribution.web.mapping.asCommand
-import net.blueshell.api.domain.contribution.web.mapping.asResponse
+import net.blueshell.api.domain.contribution.web.mapping.request.asCommand
+import net.blueshell.api.domain.contribution.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus

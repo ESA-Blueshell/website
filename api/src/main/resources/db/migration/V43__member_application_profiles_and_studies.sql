@@ -1,4 +1,4 @@
-CREATE TABLE person_details
+CREATE TABLE member_profiles
 (
     id             BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT       NOT NULL,
@@ -17,15 +17,15 @@ CREATE TABLE person_details
     version         BIGINT       NOT NULL DEFAULT 0
 );
 
-ALTER TABLE person_details
-    ADD CONSTRAINT fk_person_details_user FOREIGN KEY (user_id) REFERENCES users (id);
-ALTER TABLE person_details
-    ADD CONSTRAINT fk_person_details_created_by FOREIGN KEY (created_by_id) REFERENCES users (id);
-ALTER TABLE person_details
-    ADD CONSTRAINT fk_person_details_updated_by FOREIGN KEY (updated_by_id) REFERENCES users (id);
+ALTER TABLE member_profiles
+    ADD CONSTRAINT fk_member_profiles_user FOREIGN KEY (user_id) REFERENCES users (id);
+ALTER TABLE member_profiles
+    ADD CONSTRAINT fk_member_profiles_created_by FOREIGN KEY (created_by_id) REFERENCES users (id);
+ALTER TABLE member_profiles
+    ADD CONSTRAINT fk_member_profiles_updated_by FOREIGN KEY (updated_by_id) REFERENCES users (id);
 
-CREATE UNIQUE INDEX uk_person_details_user_id_deleted_at ON person_details (user_id, deleted_at);
-CREATE INDEX idx_person_details_user_id ON person_details (user_id);
+CREATE UNIQUE INDEX uk_member_profiles_user_id_deleted_at ON member_profiles (user_id, deleted_at);
+CREATE INDEX idx_member_profiles_user_id ON member_profiles (user_id);
 
 CREATE TABLE study_programs
 (
@@ -98,7 +98,7 @@ WHERE u.study IS NOT NULL
           AND sp.deleted_at = '9999-12-31 23:59:59'
     );
 
-INSERT INTO person_details (
+INSERT INTO member_profiles (
     user_id,
     date_of_birth,
     student_number,

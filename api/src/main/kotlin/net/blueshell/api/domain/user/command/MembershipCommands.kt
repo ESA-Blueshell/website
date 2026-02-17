@@ -22,8 +22,8 @@ data class CreateMembershipCommand(
     val isMember: Boolean?,
     @field:NotNull(message = "hasAddress flag is required")
     val hasAddress: Boolean?,
-    @field:NotNull(message = "personDetails are required")
-    val hasPersonDetails: Boolean?
+    @field:NotNull(message = "hasMemberProfile flag is required")
+    val hasMemberProfile: Boolean?
 ) : Command<Membership>, MembershipUserIdCandidate {
     override val membershipUserId: Long = userId
 }

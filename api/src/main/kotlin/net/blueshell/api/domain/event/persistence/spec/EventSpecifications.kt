@@ -144,14 +144,12 @@ object EventSpecifications {
         // Board members can see all events
         // So we don't filter further
         if (user == null || !hasAuthority(user, Role.MEMBER)) {
-            log.info("User {} has no member role", user)
             // Only approved are visible
             spec = spec.and(approved())
         } else if (!hasAuthority(user, Role.BOARD)) {
             // For a regular member, non-public events of their committee are included
             // And approved events are included
             spec = spec.and(approved().or(userIsCommitteeMember(user.id)))
-            log.info("User {} has member role", user)
         }
 
         return spec

@@ -38,7 +38,7 @@ class RecoveryController(
     @PermitAll
     fun userActivate(@Valid @RequestBody request: UserActivationRequest): RedirectResponse {
         val user = commandBus.dispatch(request.asCommand())
-        return if (user.personDetails != null) {
+        return if (user.memberProfile != null) {
             RedirectResponse("/membership/signUp?step=2")
         } else {
             RedirectResponse("/")

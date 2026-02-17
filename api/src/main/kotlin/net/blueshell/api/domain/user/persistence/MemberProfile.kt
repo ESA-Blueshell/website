@@ -8,17 +8,17 @@ import java.sql.Date
 
 @Entity
 @Table(
-    name = "person_details",
+    name = "member_profiles",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_person_details_user_id_deleted_at", columnNames = ["user_id", "deleted_at"])
+        UniqueConstraint(name = "uk_member_profiles_user_id_deleted_at", columnNames = ["user_id", "deleted_at"])
     ],
     indexes = [
-        Index(name = "idx_person_details_user_id", columnList = "user_id")
+        Index(name = "idx_member_profiles_user_id", columnList = "user_id")
     ]
 )
-@SQLDelete(sql = "UPDATE person_details SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE member_profiles SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class PersonDetails(
+class MemberProfile(
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)

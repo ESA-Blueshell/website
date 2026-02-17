@@ -19,7 +19,7 @@ import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.persistence.PersonDetails
+import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
@@ -239,8 +239,8 @@ abstract class UserTestSupport : ServiceTestSupport() {
         return persist(user)
     }
 
-    protected fun assignCompletePersonDetails(user: User): User {
-        val profile = PersonDetails(
+    protected fun assignMemberProfile(user: User): User {
+        val profile = MemberProfile(
             user = user,
             dateOfBirth = Date.valueOf(LocalDate.of(1998, 5, 5)),
             studentNumber = "s${System.currentTimeMillis()}",
@@ -251,7 +251,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
             nationality = "NL"
         )
 
-        user.replacePersonDetails(profile)
+        user.replaceMemberProfile(profile)
         return persist(user)
     }
 

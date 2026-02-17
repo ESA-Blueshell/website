@@ -48,7 +48,7 @@ class MembershipController(
                 userId = principal.id,
                 isMember = principal.hasAuthority(Role.MEMBER),
                 hasAddress = principal.addressId != null,
-                hasPersonDetails = principal.personDetailsId != null,
+                hasMemberProfile = principal.personDetailsId != null,
             )
         )
         return membership.asResponse()

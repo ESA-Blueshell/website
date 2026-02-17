@@ -81,7 +81,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows a GUEST with an address to create a membership`() {
-            val guest = assignCompletePersonDetails(assignAddress(createUserWithRole(Role.GUEST)))
+            val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships")
@@ -114,7 +114,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to create membership for other users`() {
             val board = createUserWithRole(Role.BOARD)
-            val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
+            val targetUser = assignMemberProfile(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
@@ -128,7 +128,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from board creating membership`() {
             val member = createUserWithRole(Role.MEMBER)
-            val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
+            val targetUser = assignMemberProfile(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
@@ -142,7 +142,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies GUEST from board creating membership`() {
             val guest = createUserWithRole(Role.GUEST)
-            val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
+            val targetUser = assignMemberProfile(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")

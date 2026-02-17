@@ -37,7 +37,7 @@ class CreateMembershipHandler(
         if (!command.hasAddress!!) {
             throw AccessDeniedException("User must have an address")
         }
-        if (!command.hasPersonDetails!!) {
+        if (!command.hasMemberProfile!!) {
             throw AccessDeniedException("Complete profile is required before applying for membership")
         }
         val membership = Membership()

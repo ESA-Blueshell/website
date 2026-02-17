@@ -6,7 +6,6 @@ import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.file.persistence.File
-import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
@@ -120,11 +119,11 @@ class User(
         get() = profilePicture?.id
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    final var personDetails: PersonDetails? = null
+    final var memberProfile: MemberProfile? = null
         private set
 
     val personDetailsId: Long?
-        get() = personDetails?.id
+        get() = memberProfile?.id
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()
@@ -181,7 +180,7 @@ class User(
         this.address = address
     }
 
-    fun replacePersonDetails(personDetails: PersonDetails?) {
-        this.personDetails = personDetails
+    fun replaceMemberProfile(memberProfile: MemberProfile?) {
+        this.memberProfile = memberProfile
     }
 }

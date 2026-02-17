@@ -151,15 +151,12 @@ private fun UpsertMemberProfileData.upsertInto(user: User) {
         return
     }
 
-    existing.apply {
-        dateOfBirth = dateOfBirth
-        studentNumber = studentNumber
-        studentNumber = studentNumber
-        gender = gender
-        photoConsent = photoConsent
-        nationality = nationality
-        bhv = bhv
-        ehbo = ehbo
-        version = version
-    }
+    existing.dateOfBirth = Date.valueOf(dateOfBirth)
+    existing.studentNumber = studentNumber
+    existing.gender = gender
+    existing.photoConsent = photoConsent
+    existing.nationality = nationality
+    existing.bhv = bhv
+    existing.ehbo = ehbo
+    existing.version = version!!
 }

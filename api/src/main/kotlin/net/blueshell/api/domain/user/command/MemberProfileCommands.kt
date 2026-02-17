@@ -16,7 +16,6 @@ data class CreateMemberProfileCommand(
 ) : Command<MemberProfile>
 
 data class UpdateMemberProfileCommand(
-    val id: Long,
     val userId: Long,
     val dateOfBirth: LocalDate,
     val studentNumber: String,

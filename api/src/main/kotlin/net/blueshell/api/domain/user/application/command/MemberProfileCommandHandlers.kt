@@ -20,6 +20,12 @@ class CreateMemberProfileHandler(
 
     override fun handle(command: CreateMemberProfileCommand): MemberProfile {
         val user = users.findById(command.userId)
+        if (user.memberProfile != null) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "MemberProfile already exists for user ${command.userId}"
+            )
+        }
         val profile = MemberProfile(
             user = user,
             dateOfBirth = Date.valueOf(command.dateOfBirth),
@@ -43,7 +49,7 @@ class UpdateMemberProfileHandler(
     override val commandType = UpdateMemberProfileCommand::class
 
     override fun handle(command: UpdateMemberProfileCommand): MemberProfile {
-        val profile = memberProfileService.findById(command.id).apply {
+        val profile = memberProfileService.findById(command.userId).apply {
             dateOfBirth = Date.valueOf(command.dateOfBirth)
             studentNumber = command.studentNumber
             gender = command.gender

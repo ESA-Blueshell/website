@@ -1,27 +1,22 @@
 package net.blueshell.api.domain.user.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.AuditedCustomIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.sql.Date
 
 @Entity
 @Table(
-    name = "member_profiles",
-    uniqueConstraints = [
-        UniqueConstraint(name = "uk_member_profiles_user_id_deleted_at", columnNames = ["user_id", "deleted_at"])
-    ],
-    indexes = [
-        Index(name = "idx_member_profiles_user_id", columnList = "user_id")
-    ]
+    name = "member_profiles"
 )
 @SQLDelete(sql = "UPDATE member_profiles SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class MemberProfile(
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @MapsId
+    @JoinColumn(name = "id", nullable = false)
     val user: User,
 
     @Column(name = "date_of_birth", nullable = false)
@@ -45,7 +40,7 @@ class MemberProfile(
     @Column(name = "ehbo", nullable = false)
     var ehbo: Boolean,
 
-    ) : AuditedAutoIdEntity() {
+    ) : AuditedCustomIdEntity<Long>() {
     val userId: Long?
         get() = user.id
 }

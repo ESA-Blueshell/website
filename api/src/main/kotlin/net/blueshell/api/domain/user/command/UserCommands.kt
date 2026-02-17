@@ -8,6 +8,18 @@ import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.Role
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import java.time.LocalDate
+
+data class UpsertMemberProfileData(
+    val dateOfBirth: LocalDate,
+    val studentNumber: String,
+    val gender: String,
+    val photoConsent: Boolean,
+    val nationality: String,
+    val bhv: Boolean,
+    val ehbo: Boolean,
+    val version: Long? = null
+)
 
 @UniqueUserCommand
 data class CreateUserCommand(
@@ -21,7 +33,8 @@ data class CreateUserCommand(
     val newsletter: Boolean,
     val password: String?,
     override val discord: String,
-    override val phoneNumber: String
+    override val phoneNumber: String,
+    val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long? = null
 }
@@ -38,7 +51,8 @@ data class BoardUpdateUserCommand(
     val newsletter: Boolean,
     override val discord: String,
     override val phoneNumber: String,
-    val version: Long
+    val version: Long,
+    val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long? = null
 }
@@ -49,7 +63,8 @@ data class UpdateUserCommand(
     override val discord: String,
     override val phoneNumber: String,
     val newsletter: Boolean,
-    val version: Long
+    val version: Long,
+    val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long = id
     override val username: String? = null

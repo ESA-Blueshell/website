@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
@@ -36,6 +37,9 @@ class CreateUserRequest(
 
     @field:NotBlank
     var phoneNumber: String? = null,
+
+    @field:Valid
+    var memberProfile: UpsertMemberProfileRequest? = null,
 
     @field:NotBlank(groups = [Creation::class])
     @field:Size(

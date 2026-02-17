@@ -37,7 +37,7 @@ class MemberProfileController(
         return memberProfile.asResponse()
     }
 
-    @PutMapping("/memberProfiles/{userId}")
+    @PutMapping("/users/{userId}/memberProfiles")
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     fun updateMemberProfile(
         @PathVariable userId: Long,
@@ -47,7 +47,7 @@ class MemberProfileController(
         return memberProfile.asResponse()
     }
 
-    @GetMapping("/memberProfiles/{userId}")
+    @GetMapping("/users/{userId}/memberProfiles")
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     fun findMemberProfileByUserId(@PathVariable userId: Long): MemberProfileResponse {
         val memberProfile = commandBus.dispatch(FindMemberProfileByUserIdCommand(userId))

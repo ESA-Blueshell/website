@@ -1,16 +1,22 @@
 package net.blueshell.api.domain.user.application.command
 
-import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.command.*
+import net.blueshell.api.domain.user.command.BoardUpdateUserCommand
+import net.blueshell.api.domain.user.command.CreateUserCommand
+import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
+import net.blueshell.api.domain.user.command.FindUserByIdCommand
+import net.blueshell.api.domain.user.command.FindUsersCommand
+import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
+import net.blueshell.api.domain.user.command.UpdateUserCommand
+import net.blueshell.api.domain.user.command.UpsertMemberProfileData
+import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.web.dto.request.UpdateUserRequest
 import net.blueshell.api.shared.command.CommandHandler
-import net.blueshell.api.shared.enums.StudyLevel
 import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
+import java.sql.Date
 
 @Component
 class CreateUserHandler(
@@ -36,6 +42,9 @@ class CreateUserHandler(
                 passwordEncoder.encode(command.password)
             },
         )
+        command.memberProfile?.let { payload ->
+            user.replaceMemberProfile(payload.toEntity(user))
+        }
 
         user = service.create(user)
         return user
@@ -60,6 +69,21 @@ class BoardUpdateUserHandler(
             prefix = command.prefix
             lastName = command.lastName
             version = command.version
+            command.memberProfile?.let { payload ->
+                val profile = memberProfile
+                if (profile == null) {
+                    replaceMemberProfile(payload.toEntity(this))
+                } else {
+                    profile.dateOfBirth = Date.valueOf(payload.dateOfBirth)
+                    profile.studentNumber = payload.studentNumber
+                    profile.gender = payload.gender
+                    profile.photoConsent = payload.photoConsent
+                    profile.nationality = payload.nationality
+                    profile.bhv = payload.bhv
+                    profile.ehbo = payload.ehbo
+                    payload.version?.let { profile.version = it }
+                }
+            }
         }
         user = service.update(user)
         return user
@@ -78,6 +102,22 @@ class UpdateUserHandler(
             phoneNumber = command.phoneNumber
             newsletter = command.newsletter
             version = command.version
+            command.memberProfile?.let { payload ->
+                replaceMemberProfile(payload.toEntity(this))
+                val profile = memberProfile
+                if (profile == null) {
+                    replaceMemberProfile(payload.toEntity(this))
+                } else {
+                    profile.dateOfBirth = Date.valueOf(payload.dateOfBirth)
+                    profile.studentNumber = payload.studentNumber
+                    profile.gender = payload.gender
+                    profile.photoConsent = payload.photoConsent
+                    profile.nationality = payload.nationality
+                    profile.bhv = payload.bhv
+                    profile.ehbo = payload.ehbo
+                    payload.version?.let { profile.version = it }
+                }
+            }
         }
         user = service.update(user)
         return user
@@ -127,3 +167,17 @@ class ToggleUserRoleHandler(
         return service.toggleRole(command.userId, command.role)
     }
 }
+
+private fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
+    MemberProfile(
+        user = user,
+        dateOfBirth = Date.valueOf(dateOfBirth),
+        studentNumber = studentNumber,
+        gender = gender,
+        photoConsent = photoConsent,
+        nationality = nationality,
+        bhv = bhv,
+        ehbo = ehbo
+    ).also { profile ->
+        version?.let { profile.version = it }
+    }

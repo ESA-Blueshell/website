@@ -2,8 +2,10 @@ package net.blueshell.api.domain.user.web.mapping.request
 
 import net.blueshell.api.domain.user.command.CreateMemberProfileCommand
 import net.blueshell.api.domain.user.command.UpdateMemberProfileCommand
+import net.blueshell.api.domain.user.command.UpsertMemberProfileData
 import net.blueshell.api.domain.user.web.dto.request.CreateMemberProfileRequest
 import net.blueshell.api.domain.user.web.dto.request.UpdateMemberProfileRequest
+import net.blueshell.api.domain.user.web.dto.request.UpsertMemberProfileRequest
 
 fun CreateMemberProfileRequest.asCommand(): CreateMemberProfileCommand =
     CreateMemberProfileCommand(
@@ -28,4 +30,17 @@ fun UpdateMemberProfileRequest.asCommand(userId: Long): UpdateMemberProfileComma
         bhv = this.bhv!!,
         ehbo = this.ehbo!!,
         version = this.version!!
+    )
+
+
+fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =
+    UpsertMemberProfileData(
+        dateOfBirth = this.dateOfBirth!!,
+        studentNumber = this.studentNumber!!,
+        gender = this.gender!!,
+        photoConsent = this.photoConsent!!,
+        nationality = this.nationality!!,
+        bhv = this.bhv!!,
+        ehbo = this.ehbo!!,
+        version = this.version
     )

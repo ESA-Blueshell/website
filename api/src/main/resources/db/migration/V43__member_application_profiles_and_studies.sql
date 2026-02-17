@@ -1,7 +1,6 @@
 CREATE TABLE member_profiles
 (
-    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id         BIGINT       NOT NULL,
+    id              BIGINT       NOT NULL PRIMARY KEY,
     date_of_birth   DATE         NULL,
     student_number  VARCHAR(255) NULL,
     gender          VARCHAR(64)  NULL,
@@ -18,14 +17,11 @@ CREATE TABLE member_profiles
 );
 
 ALTER TABLE member_profiles
-    ADD CONSTRAINT fk_member_profiles_user FOREIGN KEY (user_id) REFERENCES users (id);
+    ADD CONSTRAINT fk_member_profiles_id FOREIGN KEY (id) REFERENCES users (id);
 ALTER TABLE member_profiles
     ADD CONSTRAINT fk_member_profiles_created_by FOREIGN KEY (created_by_id) REFERENCES users (id);
 ALTER TABLE member_profiles
     ADD CONSTRAINT fk_member_profiles_updated_by FOREIGN KEY (updated_by_id) REFERENCES users (id);
-
-CREATE UNIQUE INDEX uk_member_profiles_user_id_deleted_at ON member_profiles (user_id, deleted_at);
-CREATE INDEX idx_member_profiles_user_id ON member_profiles (user_id);
 
 CREATE TABLE study_programs
 (
@@ -99,7 +95,7 @@ WHERE u.study IS NOT NULL
     );
 
 INSERT INTO member_profiles (
-    user_id,
+    id,
     date_of_birth,
     student_number,
     gender,

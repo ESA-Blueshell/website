@@ -1,9 +1,9 @@
 package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import java.sql.Date
 
 @Schema(name = "UpdateUserRequest")
 open class UpdateUserRequest(
@@ -15,6 +15,9 @@ open class UpdateUserRequest(
 
     @field:NotBlank
     var phoneNumber: String? = null,
+
+    @field:Valid
+    var memberProfile: UpsertMemberProfileRequest? = null,
 
     @field:NotNull
     var version: Long? = null

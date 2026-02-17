@@ -135,20 +135,18 @@ class AddBoardMemberHandler(
 
 @Component
 class RemoveBoardMemberHandler(
-    private val boardService: BoardService
+    private val boardService: BoardService,
+    private val boardMemberService: BoardMemberService
 ) : CommandHandler<RemoveBoardMemberCommand, Unit> {
     override val commandType = RemoveBoardMemberCommand::class
 
     @Transactional
     override fun handle(command: RemoveBoardMemberCommand) {
-        val board = boardService.findById(command.boardId)
-
-        // Check if member exists before removing
-        val memberExists = board.members.any { it.userId == command.userId }
-        if (!memberExists) {
+        boardService.findById(command.boardId)
+        val memberId = BoardMember.Id(command.boardId, command.userId)
+        if (!boardMemberService.existsById(memberId)) {
             throw BoardMemberNotFoundException(command.boardId, command.userId)
         }
-
-        boardService.removeMember(board, command.userId)
+        boardMemberService.deleteById(memberId)
     }
 }

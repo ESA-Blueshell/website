@@ -114,6 +114,7 @@ dependencies {
     testImplementation("io.rest-assured:spring-mock-mvc:5.5.6")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
     testImplementation("io.github.classgraph:classgraph:4.8.179")
+    testImplementation("com.microsoft.playwright:playwright:1.52.0")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("io.mockk:mockk:1.13.13")
 

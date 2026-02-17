@@ -3,7 +3,13 @@ import {computed, ref} from "vue"
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/dist/v-phone-input.css"
 import {VPhoneInput} from "v-phone-input"
-import {createGuestUser, type SimpleUser, updateGuestUser} from "@/services/api"
+import {
+  createUser,
+  type CreateUserRequest,
+  type UpdateUserRequest,
+  updateUser,
+  type UserDetailResponse,
+} from "@/services/api"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
@@ -25,7 +31,22 @@ const {showPassword = false, showSubmit = false, submitText = "Submit"} = define
   submitText?: string
 }>()
 
-const user = defineModel<SimpleUser>({
+type SimpleUserFormModel = {
+  id?: number
+  version?: number
+  username: string
+  initials: string
+  firstName: string
+  prefix?: string
+  lastName: string
+  newsletter: boolean
+  email: string
+  discord: string
+  phoneNumber: string
+  password?: string
+}
+
+const user = defineModel<SimpleUserFormModel>({
   default: () => ({
     discord: "",
     email: "",
@@ -53,7 +74,42 @@ const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 const confirmPassword = ref<string>("")
 const {passwordFieldProps} = usePasswordToggle()
 
-const save = async (): Promise<SimpleUser | null> => {
+const toCreateUserRequest = (model: SimpleUserFormModel): CreateUserRequest => ({
+  username: model.username,
+  initials: model.initials,
+  firstName: model.firstName,
+  prefix: model.prefix,
+  lastName: model.lastName,
+  newsletter: model.newsletter,
+  email: model.email,
+  discord: model.discord,
+  phoneNumber: model.phoneNumber,
+  password: model.password,
+})
+
+const toUpdateUserRequest = (model: SimpleUserFormModel): UpdateUserRequest => ({
+  newsletter: model.newsletter,
+  discord: model.discord,
+  phoneNumber: model.phoneNumber,
+  version: model.version ?? 0,
+})
+
+const fromUserDetail = (data: UserDetailResponse): SimpleUserFormModel => ({
+  id: data.id,
+  version: data.version,
+  username: data.username,
+  initials: data.initials,
+  firstName: data.firstName,
+  prefix: data.prefix,
+  lastName: data.lastName,
+  newsletter: data.newsletter,
+  email: data.email,
+  discord: data.discord,
+  phoneNumber: data.phoneNumber,
+  password: "",
+})
+
+const save = async (): Promise<SimpleUserFormModel | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)
@@ -63,10 +119,17 @@ const save = async (): Promise<SimpleUser | null> => {
     const resp = await withSaving(async () => {
       const hasId = Boolean(user.value?.id)
       return hasId
-        ? await updateGuestUser({path: {id: user.value!.id!}, body: user.value!, throwOnError: true})
-        : await createGuestUser({body: user.value!, throwOnError: true})
+        ? await updateUser({
+          path: {id: user.value!.id!},
+          body: toUpdateUserRequest(user.value!),
+          throwOnError: true,
+        })
+        : await createUser({
+          body: toCreateUserRequest(user.value!),
+          throwOnError: true,
+        })
     })
-    user.value = resp.data!
+    user.value = fromUserDetail(resp.data!)
     emit("submitted", true)
     setSubmitResult(true)
     return user.value

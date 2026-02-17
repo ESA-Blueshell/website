@@ -1,19 +1,19 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type Guest, type Login, Role} from "@/services/api"
+import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
 
 export interface State {
-  login: Login | null;
-  guestData: Guest | null;
+  login: LoginResponse | null;
+  guestData: GuestResponse | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
   xsrfToken: string | null;
 }
 
 export interface Mutations {
-  setLogin(state: State, payload: Login): void;
+  setLogin(state: State, payload: LoginResponse): void;
 
-  setLoginState(stage: State, payload: Login | null): void;
+  setLoginState(stage: State, payload: LoginResponse | null): void;
 
   logout(state: State): void;
 
@@ -30,8 +30,8 @@ export interface Mutations {
 
 export interface Actions {
   login(context: {
-    commit: (type: keyof Mutations, payload?: Login) => void
-  }, payload: Login): Promise<void>;
+    commit: (type: keyof Mutations, payload?: LoginResponse) => void
+  }, payload: LoginResponse): Promise<void>;
 
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
 
@@ -43,7 +43,7 @@ export interface Actions {
 }
 
 export interface Getters {
-  getLogin(state: State): Login | null;
+  getLogin(state: State): LoginResponse | null;
 
   isLoggedIn(state: State): boolean;
 
@@ -76,8 +76,8 @@ export type TypedStore = Store<State> & {
 
 const store = createStore<State>({
   state(): State {
-    return {
-      login: readJsonCookie<Login>("login"),
+      return {
+      login: readJsonCookie<LoginResponse>("login"),
       guestData: readJsonCookie("guestData"),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
@@ -85,13 +85,13 @@ const store = createStore<State>({
     }
   },
   mutations: {
-    async setLogin(state: State, payload: Login) {
+    async setLogin(state: State, payload: LoginResponse) {
       state.login = payload
       writeJsonCookie("login", payload)
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`
       localStorage.setItem("auth:ping", String(Date.now()))
     },
-    setLoginState(state: State, payload: Login | null): void {
+    setLoginState(state: State, payload: LoginResponse | null): void {
       state.login = payload
     },
     async logout(state: State) {
@@ -119,7 +119,7 @@ const store = createStore<State>({
         state.statusSnackbarMessage = null
       }
     },
-    saveGuestData(state: State, data: Guest): void {
+    saveGuestData(state: State, data: GuestResponse): void {
       writeJsonCookie("guestData", data)
       state.guestData = data
     },
@@ -128,7 +128,7 @@ const store = createStore<State>({
     },
   },
   getters: {
-    getLogin(state: State): Login | null {
+    getLogin(state: State): LoginResponse | null {
       return state.login
     },
     isLoggedIn(state: State): boolean {
@@ -153,7 +153,7 @@ const store = createStore<State>({
       const roles = state.login?.roles ?? []
       return roles.some(r => `${r}` === `${Role.MEMBER}`)
     },
-    getGuestData(state: State): Guest | null {
+    getGuestData(state: State): GuestResponse | null {
       return state.guestData
     },
     getXsrfToken(state: State): string | null {

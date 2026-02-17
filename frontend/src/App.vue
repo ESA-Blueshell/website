@@ -477,7 +477,7 @@ import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import DOMPurify from "dompurify"
-import {type AdvancedUser, findUserById, type Login} from "@/services/api"
+import {findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
 
 // Reactive state
 const drawer = ref<boolean>(false)
@@ -542,7 +542,7 @@ onMounted(async () => {
     showCookieSnackbar.value = true
   }
 
-  const loginData: Login = login.value
+  const loginData: LoginResponse = login.value
   if (loginData) {
     try {
       const resp = await findUserById({
@@ -552,9 +552,8 @@ onMounted(async () => {
         throwOnError: true,
       })
 
-      const userData: AdvancedUser = resp.data!
+      const userData: UserDetailResponse = resp.data!
       store.commit("setRoles", userData.roles)
-      store.commit("setAddressId", userData.addressId)
     } catch (e: unknown) {
       $handleNetworkError(e)
     }

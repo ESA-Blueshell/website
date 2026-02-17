@@ -74,7 +74,7 @@ import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import {authenticate, type Login} from "@/services/api"
+import {authenticate, type LoginResponse} from "@/services/api"
 import type {State} from "@/plugins/store"
 import type {VForm} from "vuetify/lib/components"
 
@@ -119,7 +119,7 @@ const login = async () => {
     loading.value = false
 
     if (response.status === 200) {
-      const loginData = response.data as Login
+      const loginData = response.data as LoginResponse
       store.commit("setLogin", loginData)
 
       // Go to redirect page or home page

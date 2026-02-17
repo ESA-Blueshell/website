@@ -6,20 +6,35 @@ import net.blueshell.api.domain.contribution.command.result.ContributionResult
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionPeriodResponse
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
-import tech.mappie.api.ObjectMappie
 
-object ContributionResultToContributionResponseMapper : ObjectMappie<ContributionResult, ContributionResponse>()
-
-object ContributionPeriodResultToContributionPeriodResponseMapper :
-    ObjectMappie<ContributionPeriodResult, ContributionPeriodResponse>()
-
-object ContributionReminderResultToContributionReminderResponseMapper :
-    ObjectMappie<ContributionReminderResult, ContributionReminderResponse>()
-
-fun ContributionResult.asResponse(): ContributionResponse = ContributionResultToContributionResponseMapper.map(this)
+fun ContributionResult.asResponse(): ContributionResponse =
+    ContributionResponse(
+        userId = this.userId,
+        contributionPeriodId = this.contributionPeriodId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
 fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
-    ContributionPeriodResultToContributionPeriodResponseMapper.map(this)
+    ContributionPeriodResponse(
+        id = this.id,
+        startDate = this.startDate,
+        endDate = this.endDate,
+        halfYearFee = this.halfYearFee,
+        fullYearFee = this.fullYearFee,
+        alumniFee = this.alumniFee,
+        listId = this.listId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
 fun ContributionReminderResult.asResponse(): ContributionReminderResponse =
-    ContributionReminderResultToContributionReminderResponseMapper.map(this)
+    ContributionReminderResponse(
+        userId = this.userId,
+        contributionPeriodId = this.contributionPeriodId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )

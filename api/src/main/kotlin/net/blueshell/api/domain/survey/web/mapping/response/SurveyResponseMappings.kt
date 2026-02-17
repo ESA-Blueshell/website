@@ -9,40 +9,71 @@ import net.blueshell.api.domain.survey.web.dto.QuestionDTO
 import net.blueshell.api.domain.survey.web.dto.QuestionResponse
 import net.blueshell.api.domain.survey.web.dto.SurveyDTO
 import net.blueshell.api.domain.survey.web.dto.SurveyResponse
-import tech.mappie.api.ObjectMappie
 
-object SurveyToSurveyDTOMapper : ObjectMappie<Survey, SurveyDTO>()
+fun Survey.asDto(): SurveyDTO =
+    SurveyDTO(
+        id = this.id,
+        questions = this.questions.map { it.asDto() }.toMutableList(),
+        responseCount = this.responseCount,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object QuestionToQuestionDTOMapper : ObjectMappie<Question, QuestionDTO>()
+fun Question.asDto(): QuestionDTO =
+    QuestionDTO(
+        id = this.id,
+        idx = this.idx,
+        surveyId = this.surveyId,
+        type = this.type,
+        label = this.label,
+        choiceLabels = this.choiceLabels,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object AnswerToAnswerDTOMapper : ObjectMappie<Answer, AnswerDTO>()
+fun Answer.asDto(): AnswerDTO =
+    AnswerDTO(
+        id = this.id,
+        questionId = this.questionId,
+        optionSelections = this.optionSelections,
+        textResponse = this.textResponse,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object SurveyToSurveyResponseMapper : ObjectMappie<Survey, SurveyResponse>() {
-    override fun map(from: Survey) = mapping {
-        SurveyResponse::id fromValue from.id!!
-    }
-}
+fun Survey.asResponse(): SurveyResponse =
+    SurveyResponse(
+        id = this.id!!,
+        questions = this.questions.map { it.asResponse() }.toMutableList(),
+        responseCount = this.responseCount,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object QuestionToQuestionResponseMapper : ObjectMappie<Question, QuestionResponse>() {
-    override fun map(from: Question) = mapping {
-        QuestionResponse::id fromValue from.id!!
-    }
-}
+fun Question.asResponse(): QuestionResponse =
+    QuestionResponse(
+        id = this.id!!,
+        idx = this.idx,
+        surveyId = this.surveyId,
+        type = this.type,
+        label = this.label,
+        choiceLabels = this.choiceLabels,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object AnswerToAnswerResponseMapper : ObjectMappie<Answer, AnswerResponse>() {
-    override fun map(from: Answer) = mapping {
-        AnswerResponse::id fromValue from.id!!
-    }
-}
-
-fun Survey.asDto(): SurveyDTO = SurveyToSurveyDTOMapper.map(this)
-
-fun Question.asDto(): QuestionDTO = QuestionToQuestionDTOMapper.map(this)
-
-fun Answer.asDto(): AnswerDTO = AnswerToAnswerDTOMapper.map(this)
-
-fun Survey.asResponse(): SurveyResponse = SurveyToSurveyResponseMapper.map(this)
-
-fun Question.asResponse(): QuestionResponse = QuestionToQuestionResponseMapper.map(this)
-
-fun Answer.asResponse(): AnswerResponse = AnswerToAnswerResponseMapper.map(this)
+fun Answer.asResponse(): AnswerResponse =
+    AnswerResponse(
+        id = this.id!!,
+        questionId = this.questionId,
+        optionSelections = this.optionSelections,
+        textResponse = this.textResponse,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )

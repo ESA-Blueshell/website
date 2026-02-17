@@ -10,38 +10,59 @@ import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.response.GuestResponse
 import net.blueshell.api.domain.survey.web.mapping.response.asResponse
 import net.blueshell.api.domain.user.web.mapping.response.asSummaryResponse
-import tech.mappie.api.ObjectMappie
 
-object EventToEventResponseMapper : ObjectMappie<Event, EventResponse>() {
-    override fun map(from: Event) = mapping {
-        EventResponse::id fromValue from.id!!
-        EventResponse::banner fromValue from.banner?.asResponse()
-        EventResponse::signUpForm fromValue from.signUpForm?.asResponse()
-    }
-}
+fun Event.asResponse(): EventResponse =
+    EventResponse(
+        id = this.id!!,
+        committeeId = this.committeeId,
+        title = this.title,
+        description = this.description,
+        location = this.location,
+        startTime = this.startTime,
+        endTime = this.endTime,
+        memberPrice = this.memberPrice,
+        publicPrice = this.publicPrice,
+        approved = this.approved,
+        membersOnly = this.membersOnly,
+        signUp = this.signUp,
+        banner = this.banner?.asResponse(),
+        signUpCount = this.signUpCount,
+        signUpForm = this.signUpForm?.asResponse(),
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object EventBannerToEventBannerResponseMapper : ObjectMappie<EventBanner, EventBannerResponse>()
+fun EventBanner.asResponse(): EventBannerResponse =
+    EventBannerResponse(
+        eventId = this.eventId,
+        fileId = this.fileId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object GuestToGuestResponseMapper : ObjectMappie<Guest, GuestResponse>() {
-    override fun map(from: Guest) = mapping {
-        GuestResponse::id fromValue from.id!!
-        GuestResponse::accessToken fromValue from.accessToken!!
-    }
-}
+fun Guest.asResponse(): GuestResponse =
+    GuestResponse(
+        id = this.id!!,
+        name = this.name,
+        email = this.email,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber,
+        accessToken = this.accessToken,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object EventSignUpToEventSignUpResponseMapper : ObjectMappie<EventSignUp, EventSignUpResponse>() {
-    override fun map(from: EventSignUp) = mapping {
-        EventSignUpResponse::id fromValue from.id!!
-        EventSignUpResponse::answers fromValue from.answers.map { it.asResponse() }.toMutableList()
-        EventSignUpResponse::guest fromValue from.guest?.asResponse()
-        EventSignUpResponse::user fromValue from.user?.asSummaryResponse()
-    }
-}
-
-fun Event.asResponse(): EventResponse = EventToEventResponseMapper.map(this)
-
-fun EventBanner.asResponse(): EventBannerResponse = EventBannerToEventBannerResponseMapper.map(this)
-
-fun Guest.asResponse(): GuestResponse = GuestToGuestResponseMapper.map(this)
-
-fun EventSignUp.asResponse(): EventSignUpResponse = EventSignUpToEventSignUpResponseMapper.map(this)
+fun EventSignUp.asResponse(): EventSignUpResponse =
+    EventSignUpResponse(
+        id = this.id!!,
+        eventId = this.eventId,
+        answers = this.answers.map { it.asResponse() }.toMutableList(),
+        guest = this.guest?.asResponse(),
+        user = this.user?.asSummaryResponse(),
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )

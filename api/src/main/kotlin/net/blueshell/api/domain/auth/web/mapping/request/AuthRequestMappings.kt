@@ -1,44 +1,34 @@
 package net.blueshell.api.domain.auth.web.mapping.request
 
-import net.blueshell.api.domain.auth.command.*
+import net.blueshell.api.domain.auth.command.AuthenticateCommand
+import net.blueshell.api.domain.auth.command.MemberActivateCommand
+import net.blueshell.api.domain.auth.command.SetPasswordCommand
+import net.blueshell.api.domain.auth.command.UserActivateCommand
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
-import tech.mappie.api.ObjectMappie
 
-object JwtRequestToCommandMapper : ObjectMappie<JwtRequest, AuthenticateCommand>() {
-    override fun map(from: JwtRequest) = mapping {
-        AuthenticateCommand::username fromValue from.username!!
-        AuthenticateCommand::password fromValue from.password!!
-    }
-}
+fun JwtRequest.asCommand(): AuthenticateCommand =
+    AuthenticateCommand(
+        username = this.username!!,
+        password = this.password!!,
+    )
 
-object PasswordResetRequestToCommandMapper : ObjectMappie<PasswordResetRequest, SetPasswordCommand>() {
-    override fun map(from: PasswordResetRequest) = mapping {
-        SetPasswordCommand::token fromValue from.token!!
-        SetPasswordCommand::password fromValue from.password!!
-    }
-}
+fun PasswordResetRequest.asCommand(): SetPasswordCommand =
+    SetPasswordCommand(
+        token = this.token!!,
+        password = this.password!!,
+    )
 
-object UserActivationRequestToCommandMapper : ObjectMappie<UserActivationRequest, UserActivateCommand>() {
-    override fun map(from: UserActivationRequest) = mapping {
-        UserActivateCommand::token fromValue from.token!!
-    }
-}
+fun UserActivationRequest.asCommand(): UserActivateCommand =
+    UserActivateCommand(
+        token = this.token!!,
+    )
 
-object MemberActivationRequestToCommandMapper : ObjectMappie<MemberActivationRequest, MemberActivateCommand>() {
-    override fun map(from: MemberActivationRequest) = mapping {
-        MemberActivateCommand::token fromValue from.token!!
-        MemberActivateCommand::username fromValue from.username!!
-        MemberActivateCommand::password fromValue from.password!!
-    }
-}
-
-fun JwtRequest.asCommand(): AuthenticateCommand = JwtRequestToCommandMapper.map(this)
-
-fun PasswordResetRequest.asCommand(): SetPasswordCommand = PasswordResetRequestToCommandMapper.map(this)
-
-fun UserActivationRequest.asCommand(): UserActivateCommand = UserActivationRequestToCommandMapper.map(this)
-
-fun MemberActivationRequest.asCommand(): MemberActivateCommand = MemberActivationRequestToCommandMapper.map(this)
+fun MemberActivationRequest.asCommand(): MemberActivateCommand =
+    MemberActivateCommand(
+        token = this.token!!,
+        username = this.username!!,
+        password = this.password!!,
+    )

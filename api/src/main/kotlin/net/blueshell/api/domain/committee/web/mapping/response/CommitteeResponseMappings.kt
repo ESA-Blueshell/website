@@ -5,28 +5,34 @@ import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeDetailResponse
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeMemberResponse
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeSummaryResponse
-import tech.mappie.api.ObjectMappie
 
-object CommitteeMemberToCommitteeMemberResponseMapper : ObjectMappie<CommitteeMember, CommitteeMemberResponse>() {
-    override fun map(from: CommitteeMember) = mapping {
-        CommitteeMemberResponse::role fromValue from.role!!
-    }
-}
+fun CommitteeMember.asDto(): CommitteeMemberResponse =
+    CommitteeMemberResponse(
+        userId = this.userId,
+        committeeId = this.committeeId,
+        role = this.role!!,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object CommitteeToCommitteeDetailResponseMapper : ObjectMappie<Committee, CommitteeDetailResponse>() {
-    override fun map(from: Committee) = mapping {
-        CommitteeDetailResponse::id fromValue from.id!!
-    }
-}
+fun Committee.asDetailResponse(): CommitteeDetailResponse =
+    CommitteeDetailResponse(
+        id = this.id!!,
+        name = this.name,
+        description = this.description,
+        members = this.members.map { it.asDto() }.toMutableList(),
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-object CommitteeToCommitteeSummaryResponseMapper : ObjectMappie<Committee, CommitteeSummaryResponse>() {
-    override fun map(from: Committee) = mapping {
-        CommitteeSummaryResponse::id fromValue from.id!!
-    }
-}
-
-fun CommitteeMember.asDto(): CommitteeMemberResponse = CommitteeMemberToCommitteeMemberResponseMapper.map(this)
-
-fun Committee.asDetailResponse(): CommitteeDetailResponse = CommitteeToCommitteeDetailResponseMapper.map(this)
-
-fun Committee.asSummaryResponse(): CommitteeSummaryResponse = CommitteeToCommitteeSummaryResponseMapper.map(this)
+fun Committee.asSummaryResponse(): CommitteeSummaryResponse =
+    CommitteeSummaryResponse(
+        id = this.id!!,
+        name = this.name,
+        description = this.description,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )

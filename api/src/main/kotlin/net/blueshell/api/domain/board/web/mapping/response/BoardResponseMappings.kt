@@ -4,18 +4,29 @@ import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.domain.board.web.dto.response.BoardMemberResponse
 import net.blueshell.api.domain.board.web.dto.response.BoardResponse
-import tech.mappie.api.ObjectMappie
 
-object BoardToBoardResponseMapper : ObjectMappie<Board, BoardResponse>() {
-    override fun map(from: Board) = mapping {
-        BoardResponse::id fromValue from.id!!
-        BoardResponse::pictureId fromValue from.picture?.id
-        BoardResponse::members fromValue from.members.map { it.asResponse() }
-    }
-}
+fun Board.asResponse(): BoardResponse =
+    BoardResponse(
+        id = this.id!!,
+        name = this.name,
+        candidate = this.candidate,
+        startDate = this.startDate,
+        endDate = this.endDate,
+        pictureId = this.pictureId,
+        members = this.members.map { it.asResponse() },
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
-fun Board.asResponse(): BoardResponse = BoardToBoardResponseMapper.map(this)
-
-object BoardMemberToBoardMemberResponseMapper : ObjectMappie<BoardMember, BoardMemberResponse>()
-
-fun BoardMember.asResponse(): BoardMemberResponse = BoardMemberToBoardMemberResponseMapper.map(this)
+fun BoardMember.asResponse(): BoardMemberResponse =
+    BoardMemberResponse(
+        userId = this.userId,
+        boardId = this.boardId,
+        role = this.role,
+        startDate = this.startDate,
+        endDate = this.endDate,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )

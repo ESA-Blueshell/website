@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.BaseDTO
 import net.blueshell.api.shared.enums.Role
 import java.io.Serial
 import java.util.function.ToIntFunction
@@ -13,28 +12,27 @@ import java.util.function.ToIntFunction
 @Schema(name = "LoginResponse")
 data class AuthenticationResponse(
     @field:NotBlank
-    var token: String? = null,
+    var token: String,
 
     @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
     @field:NotBlank
-    var username: String? = null,
+    var username: String,
 
     @field:NotNull
-    var expiration: Long? = null,
+    var expiration: Long,
 
     @field:NotEmpty
-    var roles: MutableSet<Role>? = null,
+    var roles: MutableSet<Role>,
 
     var addressId: Long? = null
-) : BaseDTO() {
+) {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role>
         get() {
-            if (roles == null || roles!!.isEmpty()) return ArrayList()
-
-            return roles!!.stream()
+            if (roles.isEmpty()) return ArrayList()
+            return roles.stream()
                 .sorted(Comparator.comparingInt(ToIntFunction { obj: Role -> obj.ordinal }))
                 .toList()
         }

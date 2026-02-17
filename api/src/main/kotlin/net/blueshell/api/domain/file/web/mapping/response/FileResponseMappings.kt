@@ -7,7 +7,11 @@ import tech.mappie.api.ObjectMappie
 
 object FileToFileDTOMapper : ObjectMappie<File, FileDTO>()
 
-object FileToFileResponseMapper : ObjectMappie<File, FileResponse>()
+object FileToFileResponseMapper : ObjectMappie<File, FileResponse>() {
+    override fun map(from: File) = mapping {
+        FileResponse::id fromValue from.id!!
+    }
+}
 
 fun File.asDto(): FileDTO = FileToFileDTOMapper.map(this)
 

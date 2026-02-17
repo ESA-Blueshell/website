@@ -26,6 +26,10 @@ fun User.asDetailResponse(): UserDetailResponse =
 
 fun User.asSummaryResponse(): UserSummaryResponse =
     UserSummaryResponse(
+        id = this.id!!,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
         email = this.email,
         discord = this.discord,
         phoneNumber = this.phoneNumber,

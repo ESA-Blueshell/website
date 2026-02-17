@@ -6,47 +6,51 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.domain.survey.web.dto.SurveyResponse
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import java.time.Instant
 
 @Schema(name = "EventResponse")
 data class EventResponse(
+    var id: Long,
+
     @field:NotNull
-    var committeeId: Long? = null,
+    var committeeId: Long,
 
     @field:NotBlank(message = "Event title cannot be empty.")
     @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")
-    var title: String? = null,
+    var title: String,
 
     @field:NotBlank(message = "Event description cannot be empty.")
     @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
-    var description: String? = null,
+    var description: String?,
 
     var location: String? = null,
 
     @field:NotNull
-    var startTime: Instant? = null,
+    var startTime: Instant,
 
     @field:NotNull
-    var endTime: Instant? = null,
+    var endTime: Instant,
 
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,
 
     @field:NotNull
-    var approved: Boolean? = null,
+    var approved: Boolean,
 
     @field:NotNull
-    var membersOnly: Boolean? = null,
+    var membersOnly: Boolean,
 
     @field:NotNull
-    var signUp: Boolean? = null,
+    var signUp: Boolean,
 
     var banner: EventBannerResponse? = null,
 
     @field:NotNull
-    var signUpCount: Long? = null,
+    var signUpCount: Long,
 
     @field:Valid
-    var signUpForm: SurveyResponse? = null
-) : AuditedAutoIdDTO()
+    var signUpForm: SurveyResponse? = null,
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant
+)

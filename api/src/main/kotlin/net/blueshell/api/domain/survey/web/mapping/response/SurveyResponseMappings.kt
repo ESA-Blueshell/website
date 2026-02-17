@@ -17,11 +17,23 @@ object QuestionToQuestionDTOMapper : ObjectMappie<Question, QuestionDTO>()
 
 object AnswerToAnswerDTOMapper : ObjectMappie<Answer, AnswerDTO>()
 
-object SurveyToSurveyResponseMapper : ObjectMappie<Survey, SurveyResponse>()
+object SurveyToSurveyResponseMapper : ObjectMappie<Survey, SurveyResponse>() {
+    override fun map(from: Survey) = mapping {
+        SurveyResponse::id fromValue from.id!!
+    }
+}
 
-object QuestionToQuestionResponseMapper : ObjectMappie<Question, QuestionResponse>()
+object QuestionToQuestionResponseMapper : ObjectMappie<Question, QuestionResponse>() {
+    override fun map(from: Question) = mapping {
+        QuestionResponse::id fromValue from.id!!
+    }
+}
 
-object AnswerToAnswerResponseMapper : ObjectMappie<Answer, AnswerResponse>()
+object AnswerToAnswerResponseMapper : ObjectMappie<Answer, AnswerResponse>() {
+    override fun map(from: Answer) = mapping {
+        AnswerResponse::id fromValue from.id!!
+    }
+}
 
 fun Survey.asDto(): SurveyDTO = SurveyToSurveyDTOMapper.map(this)
 

@@ -1,12 +1,15 @@
 package net.blueshell.api.domain.contribution.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.dto.AuditedSoftDeleteDTO
 import java.sql.Timestamp
+import java.time.Instant
 
 @Schema(name = "ContributionResponse")
 data class ContributionResponse(
-    var userId: Long? = null,
-    var contributionPeriodId: Long? = null,
-    var remindedAt: Timestamp? = null
-) : AuditedSoftDeleteDTO()
+    var userId: Long,
+    var contributionPeriodId: Long,
+    var remindedAt: Timestamp? = null,
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant
+)

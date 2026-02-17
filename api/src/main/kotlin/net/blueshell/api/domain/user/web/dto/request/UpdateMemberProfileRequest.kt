@@ -3,7 +3,6 @@ package net.blueshell.api.domain.user.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.BaseDTO
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate
 

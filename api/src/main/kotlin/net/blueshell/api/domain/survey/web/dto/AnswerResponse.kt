@@ -2,14 +2,19 @@ package net.blueshell.api.domain.survey.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
+import java.time.Instant
 
 @Schema(name = "AnswerResponse")
 data class AnswerResponse(
+    var id: Long,
+
     @field:NotNull
-    var questionId: Long? = null,
+    var questionId: Long,
 
     var optionSelections: MutableList<Boolean>? = null,
 
-    var textResponse: String? = null
-) : AuditedAutoIdDTO()
+    var textResponse: String? = null,
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant,
+)

@@ -8,10 +8,10 @@ import java.time.Instant
  * Note: remindedAt field in DTO doesn't exist in entity, so it's omitted here.
  */
 data class ContributionReminderResult(
-    val userId: Long?,
-    val contributionPeriodId: Long?,
-    val version: Long?,
-    val createdAt: Instant?,
-    val updatedAt: Instant?,
+    val userId: Long,
+    val contributionPeriodId: Long,
+    val version: Long,
+    val createdAt: Instant,
+    val updatedAt: Instant,
     val deletedAt: Instant?
 )

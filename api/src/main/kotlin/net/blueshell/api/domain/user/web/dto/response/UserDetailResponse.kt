@@ -1,9 +1,7 @@
 package net.blueshell.api.domain.user.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.shared.enums.Role
-import java.sql.Date
 import java.time.Instant
 
 @Schema(name = "UserDetailResponse")

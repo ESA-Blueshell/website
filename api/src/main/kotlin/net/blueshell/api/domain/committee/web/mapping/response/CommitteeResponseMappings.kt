@@ -7,11 +7,23 @@ import net.blueshell.api.domain.committee.web.dto.response.CommitteeMemberRespon
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeSummaryResponse
 import tech.mappie.api.ObjectMappie
 
-object CommitteeMemberToCommitteeMemberResponseMapper : ObjectMappie<CommitteeMember, CommitteeMemberResponse>()
+object CommitteeMemberToCommitteeMemberResponseMapper : ObjectMappie<CommitteeMember, CommitteeMemberResponse>() {
+    override fun map(from: CommitteeMember) = mapping {
+        CommitteeMemberResponse::role fromValue from.role!!
+    }
+}
 
-object CommitteeToCommitteeDetailResponseMapper : ObjectMappie<Committee, CommitteeDetailResponse>()
+object CommitteeToCommitteeDetailResponseMapper : ObjectMappie<Committee, CommitteeDetailResponse>() {
+    override fun map(from: Committee) = mapping {
+        CommitteeDetailResponse::id fromValue from.id!!
+    }
+}
 
-object CommitteeToCommitteeSummaryResponseMapper : ObjectMappie<Committee, CommitteeSummaryResponse>()
+object CommitteeToCommitteeSummaryResponseMapper : ObjectMappie<Committee, CommitteeSummaryResponse>() {
+    override fun map(from: Committee) = mapping {
+        CommitteeSummaryResponse::id fromValue from.id!!
+    }
+}
 
 fun CommitteeMember.asDto(): CommitteeMemberResponse = CommitteeMemberToCommitteeMemberResponseMapper.map(this)
 

@@ -5,16 +5,21 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.survey.web.dto.AnswerResponse
 import net.blueshell.api.domain.user.web.dto.response.UserSummaryResponse
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
+import java.time.Instant
 
 @Schema(name = "EventSignUpResponse")
 data class EventSignUpResponse(
+    var id: Long,
+
     @field:NotNull
-    var eventId: Long? = null,
+    var eventId: Long,
 
     @field:Valid
-    var answers: MutableList<AnswerResponse>? = mutableListOf(),
+    var answers: MutableList<AnswerResponse> = mutableListOf(),
 
     var guest: GuestResponse? = null,
     var user: UserSummaryResponse? = null,
-) : AuditedAutoIdDTO()
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant
+)

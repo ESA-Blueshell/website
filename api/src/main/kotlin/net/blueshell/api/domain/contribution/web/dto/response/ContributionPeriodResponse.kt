@@ -1,15 +1,19 @@
 package net.blueshell.api.domain.contribution.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
+import java.time.Instant
 import java.time.LocalDate
 
 @Schema(name = "ContributionPeriodResponse")
 data class ContributionPeriodResponse(
-    var startDate: LocalDate? = null,
-    var endDate: LocalDate? = null,
-    var halfYearFee: Double? = null,
-    var fullYearFee: Double? = null,
-    var alumniFee: Double? = null,
-    var listId: Long? = null
-) : AuditedAutoIdDTO()
+    var id: Long,
+    var startDate: LocalDate,
+    var endDate: LocalDate,
+    var halfYearFee: Double,
+    var fullYearFee: Double,
+    var alumniFee: Double,
+    var listId: Long? = null,
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant
+)

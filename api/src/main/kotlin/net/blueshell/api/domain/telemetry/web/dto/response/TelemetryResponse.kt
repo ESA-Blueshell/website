@@ -1,11 +1,15 @@
 package net.blueshell.api.domain.telemetry.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.shared.enums.PlatformType
+import java.time.Instant
 
 @Schema(name = "TelemetryResponse")
 data class TelemetryResponse(
-    var url: String? = null,
-    var platform: PlatformType? = null
-) : AuditedAutoIdDTO()
+    var id: Long,
+    var url: String,
+    var platform: PlatformType,
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant
+)

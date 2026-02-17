@@ -2,7 +2,6 @@ package net.blueshell.api.domain.survey.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.BaseDTO
 
 @Schema(name = "AnswerRequest")
 data class AnswerRequest(
@@ -12,4 +11,4 @@ data class AnswerRequest(
     var optionSelections: MutableList<Boolean>? = null,
 
     var textResponse: String? = null
-) : BaseDTO()
+)

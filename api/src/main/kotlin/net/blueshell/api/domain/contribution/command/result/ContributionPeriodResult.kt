@@ -8,15 +8,15 @@ import java.time.LocalDate
  * Matches the structure of ContributionPeriodResponse DTO (1:1 mapping).
  */
 data class ContributionPeriodResult(
-    val id: Long?,
+    val id: Long,
     val startDate: LocalDate,
     val endDate: LocalDate,
     val halfYearFee: Double,
     val fullYearFee: Double,
     val alumniFee: Double,
     val listId: Long?,
-    val version: Long?,
-    val createdAt: Instant?,
-    val updatedAt: Instant?,
+    val version: Long,
+    val createdAt: Instant,
+    val updatedAt: Instant,
     val deletedAt: Instant?
 )

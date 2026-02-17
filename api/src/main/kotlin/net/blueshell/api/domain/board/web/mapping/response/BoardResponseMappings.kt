@@ -8,6 +8,7 @@ import tech.mappie.api.ObjectMappie
 
 object BoardToBoardResponseMapper : ObjectMappie<Board, BoardResponse>() {
     override fun map(from: Board) = mapping {
+        BoardResponse::id fromValue from.id!!
         BoardResponse::pictureId fromValue from.picture?.id
         BoardResponse::members fromValue from.members.map { it.asResponse() }
     }

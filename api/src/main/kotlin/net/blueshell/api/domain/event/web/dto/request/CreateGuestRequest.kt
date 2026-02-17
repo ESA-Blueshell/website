@@ -2,7 +2,6 @@ package net.blueshell.api.domain.event.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import net.blueshell.api.shared.dto.BaseDTO
 
 @Schema(name = "CreateGuestRequest")
 data class CreateGuestRequest(
@@ -18,4 +17,4 @@ data class CreateGuestRequest(
     var phoneNumber: String? = null,
 
     var version: Long? = null
-) : BaseDTO()
+)

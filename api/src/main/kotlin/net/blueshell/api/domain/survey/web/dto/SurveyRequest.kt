@@ -5,7 +5,6 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.survey.web.validation.ValidQuestionList
-import net.blueshell.api.shared.dto.BaseDTO
 
 @Schema(name = "SurveyRequest")
 data class SurveyRequest(
@@ -14,4 +13,4 @@ data class SurveyRequest(
     @field:ValidQuestionList
     @field:Valid
     var questions: MutableList<QuestionRequest>? = null
-) : BaseDTO()
+)

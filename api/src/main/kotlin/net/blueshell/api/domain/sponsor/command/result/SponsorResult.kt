@@ -10,11 +10,11 @@ import java.time.Instant
  * ensuring commands don't directly return persistence entities (ADR-016 strict clean architecture).
  */
 data class SponsorResult(
-    val id: Long?,
+    val id: Long,
     val name: String,
     val description: String,
-    val version: Long?,
-    val createdAt: Instant?,
-    val updatedAt: Instant?,
+    val version: Long,
+    val createdAt: Instant,
+    val updatedAt: Instant,
     val deletedAt: Instant?
 )

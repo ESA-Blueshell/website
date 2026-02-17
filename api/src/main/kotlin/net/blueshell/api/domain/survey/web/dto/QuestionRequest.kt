@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.domain.survey.web.validation.ValidQuestion
-import net.blueshell.api.shared.dto.BaseDTO
 import net.blueshell.api.shared.enums.QuestionType
 
 @Schema(name = "QuestionRequest")
@@ -22,4 +21,4 @@ data class QuestionRequest(
     var label: String? = null,
 
     var choiceLabels: MutableList<String>? = null
-) : BaseDTO()
+)

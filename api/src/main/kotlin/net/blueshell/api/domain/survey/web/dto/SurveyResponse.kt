@@ -4,29 +4,29 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
-import java.util.function.Function
+import java.time.Instant
 
 @Schema(name = "SurveyResponse")
 data class SurveyResponse(
+    var id: Long,
+
     @field:NotEmpty
     @field:NotNull
-    var questions: MutableList<QuestionResponse>? = null,
+    var questions: MutableList<QuestionResponse>,
 
     @field:NotNull
-    var responseCount: Long? = null
-) : AuditedAutoIdDTO() {
+    var responseCount: Long,
+    var version: Long,
+    var createdAt: Instant,
+    var updatedAt: Instant
+) {
     @get:JsonProperty("questions")
-    val questionsSorted: MutableList<QuestionResponse?>
+    val questionsSorted: MutableList<QuestionResponse>
         get() {
-            if (questions == null) return mutableListOf()
-            return questions!!.stream()
+            return questions.stream()
                 .sorted(
                     Comparator
-                        .comparing<QuestionResponse?, @NotNull Long?>(
-                            Function { obj: QuestionResponse? -> obj!!.idx },
-                            Comparator.nullsLast(Comparator.naturalOrder<@NotNull Long>())
-                        )
+                        .comparing(QuestionResponse::idx)
                 ).toList()
         }
 }

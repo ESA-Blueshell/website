@@ -12,13 +12,12 @@ internal data class BlogResponseSource(
 
 internal object BlogResponseSourceToBlogResponseMapper : ObjectMappie<BlogResponseSource, BlogResponse>() {
     override fun map(from: BlogResponseSource): BlogResponse {
-        val computedUrl = "${from.frontendUrl}/blogs/${from.blog.id}"
+        val computedUrl = "${from.frontendUrl}/blogs/${from.blog.id!!}"
         return mapping {
-            BlogResponse::id fromValue from.blog.id
+            BlogResponse::id fromValue from.blog.id!!
             BlogResponse::version fromValue from.blog.version
             BlogResponse::createdAt fromValue from.blog.createdAt
             BlogResponse::updatedAt fromValue from.blog.updatedAt
-            BlogResponse::deletedAt fromValue from.blog.deletedAt
             BlogResponse::title fromValue from.blog.title
             BlogResponse::html fromValue from.blog.html
             BlogResponse::publishedAt fromValue from.blog.publishedAt

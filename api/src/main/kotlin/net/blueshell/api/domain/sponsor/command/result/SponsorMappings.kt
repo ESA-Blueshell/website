@@ -7,7 +7,7 @@ import net.blueshell.api.domain.sponsor.persistence.Sponsor
  * Used by command handlers to convert persistence entities to command results.
  */
 fun Sponsor.toResult(): SponsorResult = SponsorResult(
-    id = this.id,
+    id = this.id!!,
     name = this.name,
     description = this.description,
     version = this.version,

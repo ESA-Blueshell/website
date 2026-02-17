@@ -9,8 +9,8 @@ import net.blueshell.api.domain.contribution.persistence.ContributionReminder
  * Used by command handlers to convert persistence entities to command results.
  */
 fun Contribution.toResult(): ContributionResult = ContributionResult(
-    userId = this.id.userId,
-    contributionPeriodId = this.id.contributionPeriodId,
+    userId = this.id.userId!!,
+    contributionPeriodId = this.id.contributionPeriodId!!,
     version = this.version,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,
@@ -20,7 +20,7 @@ fun Contribution.toResult(): ContributionResult = ContributionResult(
 fun List<Contribution>.toContributionResults(): List<ContributionResult> = this.map { it.toResult() }
 
 fun ContributionPeriod.toResult(): ContributionPeriodResult = ContributionPeriodResult(
-    id = this.id,
+    id = this.id!!,
     startDate = this.startDate,
     endDate = this.endDate,
     halfYearFee = this.halfYearFee,
@@ -36,8 +36,8 @@ fun ContributionPeriod.toResult(): ContributionPeriodResult = ContributionPeriod
 fun List<ContributionPeriod>.toContributionPeriodResults(): List<ContributionPeriodResult> = this.map { it.toResult() }
 
 fun ContributionReminder.toResult(): ContributionReminderResult = ContributionReminderResult(
-    userId = this.id.userId,
-    contributionPeriodId = this.id.contributionPeriodId,
+    userId = this.id.userId!!,
+    contributionPeriodId = this.id.contributionPeriodId!!,
     version = this.version,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,

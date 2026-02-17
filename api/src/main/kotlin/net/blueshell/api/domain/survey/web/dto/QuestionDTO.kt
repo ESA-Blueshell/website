@@ -5,12 +5,14 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.domain.survey.web.validation.ValidQuestion
-import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 import net.blueshell.api.shared.enums.QuestionType
+import java.time.Instant
 
 @Schema(name = "Question")
 @ValidQuestion
 data class QuestionDTO(
+    var id: Long? = null,
+
     @field:NotNull
     var idx: Long? = null,
 
@@ -24,5 +26,8 @@ data class QuestionDTO(
     @field:Size(max = 2055, message = "Label cannot exceed 2055 characters.")
     var label: String? = null,
 
-    var choiceLabels: MutableList<String>? = null
-) : AuditedAutoIdDTO()
+    var choiceLabels: MutableList<String>? = null,
+    var version: Long? = null,
+    var createdAt: Instant? = null,
+    var updatedAt: Instant? = null,
+)

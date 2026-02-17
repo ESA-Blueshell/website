@@ -12,6 +12,7 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import org.hibernate.annotations.ColumnTransformer
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.sql.Date
@@ -45,6 +46,10 @@ class User(
 
     @Column(nullable = false, unique = false)
     var username: String,
+
+    @Column(nullable = false, unique = true)
+    @ColumnTransformer(read = "lower(email)", write = "lower(trim(?))")
+    var email: String,
 
     @Column(nullable = false)
     var password: String,
@@ -106,13 +111,6 @@ class User(
 
     val addressId: Long?
         get() = address?.id
-
-    @Column(nullable = false, unique = true)
-    var email: String = ""
-        set(value) {
-            field = value.trim().lowercase()
-        }
-        get() = field.trim().lowercase()
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture_id")

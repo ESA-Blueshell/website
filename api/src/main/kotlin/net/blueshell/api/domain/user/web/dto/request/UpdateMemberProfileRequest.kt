@@ -33,4 +33,4 @@ data class UpdateMemberProfileRequest(
 
     @field:NotNull
     var version: Long? = null
-) : BaseDTO()
+)

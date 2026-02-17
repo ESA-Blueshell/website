@@ -24,4 +24,4 @@ data class UpdateAddressRequest(
     var zipCode: String? = null,
 
     var version: Long? = null
-) : BaseDTO()
+)

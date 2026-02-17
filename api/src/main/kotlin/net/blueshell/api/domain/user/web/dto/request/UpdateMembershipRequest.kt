@@ -23,4 +23,4 @@ data class UpdateMembershipRequest(
     var incasso: Boolean? = null,
 
     var version: Long? = null
-) : BaseDTO()
+)

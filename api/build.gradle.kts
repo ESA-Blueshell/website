@@ -14,7 +14,6 @@ plugins {
     kotlin("plugin.allopen") version kotlinVersion
     kotlin("plugin.noarg") version kotlinVersion
     kotlin("kapt") version kotlinVersion
-    id("tech.mappie.plugin") version "2.3.10-2.3.1"
 
     java
 }
@@ -251,12 +250,6 @@ tasks.named<JavaCompile>("compileTestJava") {
 tasks.matching { it.name.contains("Kotlin") }.configureEach {
     dependsOn(tasks.named("generateBrevoClient"))
     inputs.dir(brevoOutputDir)
-}
-
-mappie {
-    strictness {
-        visibility = true
-    }
 }
 
 val compileKotlin: KotlinCompile by tasks

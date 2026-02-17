@@ -73,11 +73,14 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
     private fun createAndSaveUser(username: String, email: String, enabled: Boolean): User {
         val user = User(
             username = username,
+            email = email,
             password = passwordEncoder.encode("Password123!"),
+            initials = "TU",
             firstName = "Test",
-            lastName = "User"
+            lastName = "User",
+            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+            discord = "$username#0001"
         )
-        user.email = email
         user.enabled = enabled
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)

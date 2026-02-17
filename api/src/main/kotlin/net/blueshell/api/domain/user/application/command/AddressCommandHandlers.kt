@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CreateAddressHandler(
-    private val users: UserService,
-    private val addresses: AddressService
+    private val users: UserService
 ) : CommandHandler<CreateAddressCommand, Address> {
     override val commandType = CreateAddressCommand::class
 
@@ -25,7 +24,9 @@ class CreateAddressHandler(
             zipCode = command.zipCode
         )
 
-        return addresses.update(address)
+        user.replaceAddress(address)
+        val updated = users.update(user)
+        return checkNotNull(updated.address) { "Address was not linked to user ${user.id}" }
     }
 }
 

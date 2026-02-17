@@ -22,7 +22,7 @@ class AddressController(
     private val commandBus: CommandBus
 ) : BaseController<AddressService>(service) {
     @PostMapping("/addresses")
-    @PreAuthorize("hasPermission(#userId, 'User', 'write')")
+    @PreAuthorize("hasPermission(#request.userId, 'User', 'write')")
     @ResponseStatus(
         HttpStatus.CREATED
     )

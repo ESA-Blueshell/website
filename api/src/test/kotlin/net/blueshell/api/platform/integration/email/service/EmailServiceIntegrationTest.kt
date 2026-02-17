@@ -234,11 +234,14 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
     private fun createAndSaveUser(username: String, email: String): User {
         val user = User(
             username = username,
+            email = email,
             password = passwordEncoder.encode("Password123!"),
-            firstName = username.split(".").first().capitalize(),
-            lastName = username.split(".").getOrElse(1) { "User" }.capitalize()
+            initials = "TU",
+            firstName = username.split(".").first().replaceFirstChar { it.uppercase() },
+            lastName = username.split(".").getOrElse(1) { "User" }.replaceFirstChar { it.uppercase() },
+            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+            discord = "$username#0001"
         )
-        user.email = email
         user.enabled = true
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)

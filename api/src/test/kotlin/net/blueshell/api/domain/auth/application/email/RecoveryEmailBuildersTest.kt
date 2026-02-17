@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.auth.application.email
 
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -104,11 +105,21 @@ class RecoveryEmailBuildersTest {
         val names = fullName.split(" ", limit = 2)
         return User(
             username = username,
+            email = email,
             password = "dummy",
+            initials = names.mapNotNull { it.firstOrNull()?.toString() }.joinToString(""),
             firstName = names.getOrElse(0) { "Test" },
-            lastName = names.getOrElse(1) { "User" }
-        ).apply {
-            this.email = email
-        }
+            lastName = names.getOrElse(1) { "User" },
+            prefix = "",
+            phoneNumber = "0612345678",
+            discord = "$username#0001",
+            steamid = null,
+            newsletter = false,
+            enabled = true,
+            consentPrivacy = false,
+            consentGdpr = false,
+            roles = mutableSetOf(Role.MEMBER),
+            contactId = null
+        )
     }
 }

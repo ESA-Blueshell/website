@@ -177,4 +177,12 @@ class User(
 
     val fullName: String
         get() = listOfNotNull(firstName, prefix?.takeIf { it.isNotBlank() }, lastName).joinToString(" ")
+
+    fun replaceAddress(address: Address?) {
+        this.address = address
+    }
+
+    fun replacePersonDetails(personDetails: PersonDetails?) {
+        this.personDetails = personDetails
+    }
 }

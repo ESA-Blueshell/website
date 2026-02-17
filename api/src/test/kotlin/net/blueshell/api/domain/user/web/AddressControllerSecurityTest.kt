@@ -31,10 +31,10 @@ class AddressControllerSecurityTest : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                post("/users/{userId}/addresses", user.id)
+                post("/addresses")
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""{"userId":${user.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
             )
                 .andExpect(status().isCreated)
         }
@@ -45,10 +45,10 @@ class AddressControllerSecurityTest : UserTestSupport() {
             val targetUser = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                post("/users/{userId}/addresses", targetUser.id)
+                post("/addresses")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""{"userId":${targetUser.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
             )
                 .andExpect(status().isCreated)
         }
@@ -59,10 +59,10 @@ class AddressControllerSecurityTest : UserTestSupport() {
             val user2 = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                post("/users/{userId}/addresses", user2.id)
+                post("/addresses")
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""{"userId":${user2.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
             )
                 .andExpect(status().isForbidden)
         }
@@ -72,9 +72,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
             val userId = createUserWithRole(Role.MEMBER).id!!
 
             mvc.perform(
-                post("/users/{userId}/addresses", userId)
+                post("/addresses")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""{"userId":$userId,"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -85,14 +85,15 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows user to update own address`() {
-            val user = createUserWithRole(Role.MEMBER)
-            val addressId = assignAddress(user).addressId!!
+            val user = assignAddress(createUserWithRole(Role.MEMBER))
+            val address = refreshUser(user).address!!
+            val addressId = address.id!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL"}""")
+                    .content("""{"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}""")
             )
                 .andExpect(status().isOk)
         }
@@ -100,13 +101,14 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update any address`() {
             val board = createUserWithRole(Role.BOARD)
-            val addressId = createAddressFixture().id!!
+            val address = createAddressFixture()
+            val addressId = address.id!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL"}""")
+                    .content("""{"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}""")
             )
                 .andExpect(status().isOk)
         }
@@ -115,25 +117,27 @@ class AddressControllerSecurityTest : UserTestSupport() {
         fun `denies user from updating other user's address`() {
             val user1 = createUserWithRole(Role.MEMBER)
             val user2 = createUserWithRole(Role.MEMBER)
-            val addressId = assignAddress(user2).addressId!!
+            val address = refreshUser(assignAddress(user2)).address!!
+            val addressId = address.id!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Hacked","houseNumber":"999","zipCode":"9999XX","city":"Hacked","country":"NL"}""")
+                    .content("""{"street":"Hacked","houseNumber":"999","zipCode":"9999XX","city":"Hacked","country":"NL","version":${address.version}}""")
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val addressId = createAddressFixture().id!!
+            val address = createAddressFixture()
+            val addressId = address.id!!
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Unauthorized","houseNumber":"000","zipCode":"0000XX","city":"Unauthorized","country":"NL"}""")
+                    .content("""{"street":"Unauthorized","houseNumber":"000","zipCode":"0000XX","city":"Unauthorized","country":"NL","version":${address.version}}""")
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -176,8 +180,8 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows user to read own address`() {
-            val user = createUserWithRole(Role.MEMBER)
-            val addressId = assignAddress(user).addressId!!
+            val user = assignAddress(createUserWithRole(Role.MEMBER))
+            val addressId = refreshUser(user).addressId!!
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
@@ -226,10 +230,10 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to delete user address`() {
             val board = createUserWithRole(Role.BOARD)
-            val userId = assignAddress(createUserWithRole(Role.MEMBER)).id!!
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
-                delete("/users/{userId}/addresses", userId)
+                delete("/addresses/{id}", addressId)
                     .with(bearer(board))
             )
                 .andExpect(status().isNoContent)
@@ -238,10 +242,10 @@ class AddressControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from deleting user address`() {
             val member = createUserWithRole(Role.MEMBER)
-            val userId = assignAddress(createUserWithRole(Role.MEMBER)).id!!
+            val addressId = createAddressFixture().id!!
 
             mvc.perform(
-                delete("/users/{userId}/addresses", userId)
+                delete("/addresses/{id}", addressId)
                     .with(bearer(member))
             )
                 .andExpect(status().isForbidden)
@@ -249,9 +253,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val userId = assignAddress(createUserWithRole(Role.MEMBER)).id!!
+            val addressId = createAddressFixture().id!!
 
-            mvc.perform(delete("/users/{userId}/addresses", userId))
+            mvc.perform(delete("/addresses/{id}", addressId))
                 .andExpect(status().isUnauthorized)
         }
     }

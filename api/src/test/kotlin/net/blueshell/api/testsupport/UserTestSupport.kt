@@ -20,10 +20,6 @@ import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.domain.user.persistence.Address
 import net.blueshell.api.domain.user.persistence.PersonDetails
-import net.blueshell.api.shared.enums.StudyLevel
-import net.blueshell.api.domain.user.persistence.StudyProgram
-import net.blueshell.api.shared.enums.StudyStatus
-import net.blueshell.api.domain.user.persistence.UserStudy
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
@@ -101,13 +97,17 @@ abstract class UserTestSupport : ServiceTestSupport() {
      * Creates and persists a user with specific role.
      */
     protected fun createUserWithRole(role: Role, enabled: Boolean = true): User {
+        val username = "user_${role.name.lowercase()}_${System.currentTimeMillis()}"
         val user = User(
-            username = "user_${role.name.lowercase()}_${System.currentTimeMillis()}",
+            username = username,
+            email = "$username@test.com",
             password = passwordEncoder.encode("Password123!"),
+            initials = "TU",
             firstName = "Test",
-            lastName = role.name
+            lastName = role.name,
+            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+            discord = "$username#0001"
         )
-        user.email = "${user.username}@test.com"
         user.roles = mutableSetOf(role)
         user.enabled = enabled
         return userRepository.save(user)
@@ -117,9 +117,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
      * Refreshes user from database.
      */
     protected fun refreshUser(user: User): User {
-        entityManager.flush()
-        entityManager.clear()
-        return userRepository.findById(user.id!!).orElseThrow()
+        return transactionTemplate.execute {
+            entityManager.flush()
+            entityManager.clear()
+            userRepository.findById(user.id!!).orElseThrow()
+        }!!
     }
 
     protected fun createBlogFixture(
@@ -208,22 +210,32 @@ abstract class UserTestSupport : ServiceTestSupport() {
     }
 
     protected fun createAddressFixture(
+        user: User = createUserWithRole(Role.MEMBER),
         city: String = "Enschede",
         country: String = "NL"
     ): Address {
-        return persist(
-            Address().apply {
-                this.country = country
-                this.city = city
-                this.street = "Street"
-                this.houseNumber = "1"
-                this.zipCode = "1234AB"
-            }
+        val address = Address(
+            user = user,
+            country = country,
+            city = city,
+            street = "Street",
+            houseNumber = "1",
+            zipCode = "1234AB"
         )
+
+        val persistedUser = assignAddress(user, address)
+        return refreshUser(persistedUser).address!!
     }
 
-    protected fun assignAddress(user: User, address: Address = createAddressFixture()): User {
-        user.address = address
+    protected fun assignAddress(user: User, address: Address = Address(
+        user = user,
+        country = "NL",
+        city = "Enschede",
+        street = "Street",
+        houseNumber = "1",
+        zipCode = "1234AB"
+    )): User {
+        user.replaceAddress(address)
         return persist(user)
     }
 
@@ -239,24 +251,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
             nationality = "NL"
         )
 
-        val program = persist(
-            StudyProgram().apply {
-                this.level = StudyLevel.BSC
-                this.name = "Applied Computer Science ${System.currentTimeMillis()}"
-                this.active = true
-            }
-        )
-
-        user.personDetails = profile
-        user.replaceStudies(
-            listOf(
-                UserStudy(
-                    studyProgram = program,
-                    status = StudyStatus.ONGOING,
-                    startYear = LocalDate.now().year - 1
-                )
-            )
-        )
+        user.replacePersonDetails(profile)
         return persist(user)
     }
 

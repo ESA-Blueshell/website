@@ -90,12 +90,14 @@ class ContributionReminderEmailBuilderTest {
     private fun createTestUser(username: String, email: String, firstName: String, lastName: String): User {
         return User(
             username = username,
+            email = email,
             password = "dummy",
+            initials = "${firstName.firstOrNull() ?: 'T'}${lastName.firstOrNull() ?: 'U'}",
             firstName = firstName,
-            lastName = lastName
-        ).apply {
-            this.email = email
-        }
+            lastName = lastName,
+            phoneNumber = "0612345678",
+            discord = "$username#0001"
+        )
     }
 
     private fun createTestPeriod(

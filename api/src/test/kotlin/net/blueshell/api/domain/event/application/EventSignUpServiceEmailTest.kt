@@ -109,11 +109,14 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
     private fun createAndSaveUser(): User {
         val user = User(
             username = "testuser",
+            email = "testuser@example.com",
             password = passwordEncoder.encode("Password123!"),
+            initials = "TU",
             firstName = "Test",
-            lastName = "User"
+            lastName = "User",
+            phoneNumber = "0612345678",
+            discord = "testuser#0001"
         )
-        user.email = "testuser@example.com"
         user.enabled = true
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)

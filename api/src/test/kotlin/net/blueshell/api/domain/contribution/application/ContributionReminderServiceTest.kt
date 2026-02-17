@@ -90,11 +90,14 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
     private fun createAndSaveUser(username: String = "testuser"): User {
         val user = User(
             username = username,
+            email = "$username@example.com",
             password = passwordEncoder.encode("Password123!"),
+            initials = "TU",
             firstName = "Test",
-            lastName = "User"
+            lastName = "User",
+            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+            discord = "$username#0001"
         )
-        user.email = "$username@example.com"
         user.enabled = true
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)

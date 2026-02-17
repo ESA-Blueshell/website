@@ -5,24 +5,25 @@ import MemberUserList from "@/components/common/lists/MemberUserList.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 
 import {
-  type AdvancedUser,
-  type Contribution,
-  type ContributionPeriod,
+  type ContributionPeriodResponse,
+  type ContributionResponse,
+  type CreateUserRequest,
   findContributionsByPeriodId,
   findMemberships,
   findUserById,
   findUsers,
-  type Membership,
+  type MembershipResponse,
+  type UserDetailResponse,
 } from "@/services/api"
 
 defineOptions({name: "MemberManagerPage"})
 
-const users = ref<AdvancedUser[]>([])
-const memberships = ref<Membership[]>([])
-const contributions = ref<Contribution[]>([])
+const users = ref<Array<CreateUserRequest & Partial<UserDetailResponse>>>([])
+const memberships = ref<MembershipResponse[]>([])
+const contributions = ref<ContributionResponse[]>([])
 
 const selectedPeriodId = ref<number>(0)
-const contributionPeriod = ref<ContributionPeriod | undefined>()
+const contributionPeriod = ref<ContributionPeriodResponse | undefined>()
 const expanded = ref<number>(0)
 
 if ("scrollRestoration" in globalThis.history) {
@@ -35,17 +36,17 @@ const getUsers = async () => {
   else console.log(response.error)
 }
 
-const hasActiveMembership = (u: AdvancedUser) =>
+const hasActiveMembership = (u: CreateUserRequest & Partial<UserDetailResponse>) =>
   memberships.value.some((m) => m.userId === u.id && !m.endDate)
 
-const members = computed<AdvancedUser[]>(() => users.value.filter((u) => hasActiveMembership(u)))
-const nonMembers = computed<AdvancedUser[]>(() => users.value.filter((u) => !hasActiveMembership(u)))
+const members = computed<Array<CreateUserRequest & Partial<UserDetailResponse>>>(() => users.value.filter((u) => hasActiveMembership(u)))
+const nonMembers = computed<Array<CreateUserRequest & Partial<UserDetailResponse>>>(() => users.value.filter((u) => !hasActiveMembership(u)))
 
-const deleteUser = (user: AdvancedUser) => {
+const deleteUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => {
   users.value = users.value.filter((u) => u.id !== user.id)
 }
 
-const updateUser = (user: AdvancedUser) => {
+const updateUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => {
   const index = users.value.findIndex((u) => u.id === user.id)
   if (index === -1) {
     users.value = [...users.value, user]
@@ -60,7 +61,7 @@ const updateUser = (user: AdvancedUser) => {
 }
 
 
-const membershipChanged = async (updatedMembership: Membership) => {
+const membershipChanged = async (updatedMembership: MembershipResponse) => {
   const index = memberships.value.findIndex((m) => m.id === updatedMembership.id)
   if (index === -1) memberships.value = [...memberships.value, updatedMembership]
   else memberships.value = [
@@ -75,20 +76,20 @@ const membershipChanged = async (updatedMembership: Membership) => {
 }
 
 
-const membershipsByUserId = computed<Record<number, Membership>>(() => {
-  const map: Record<number, Membership> = {}
+const membershipsByUserId = computed<Record<number, MembershipResponse>>(() => {
+  const map: Record<number, MembershipResponse> = {}
   memberships.value?.forEach((m) => map[m.userId] = m)
   return map
 })
 
-const contributionsByUserId = computed<Record<number, Contribution>>(() => {
-  const map: Record<number, Contribution> = {}
+const contributionsByUserId = computed<Record<number, ContributionResponse>>(() => {
+  const map: Record<number, ContributionResponse> = {}
   contributions.value?.forEach((c) => map[c.userId] = c)
   return map
 })
 
 
-const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
+const contributionPeriodChanged = async (newPeriod: ContributionPeriodResponse) => {
   if (!newPeriod) return
   contributionPeriod.value = newPeriod
   selectedPeriodId.value = newPeriod.id as number

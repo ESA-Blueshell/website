@@ -14,9 +14,10 @@
         <!-- Step 1: Personal information -->
         <template #[`item.1`]>
           <v-card class="pa-4">
-            <advanced-user-form
+            <user-form
               ref="userRef"
               v-model="user"
+              :options="{ includeMemberProfile: true }"
               :show-password="!user?.id"
             />
             <v-row align="center">
@@ -203,17 +204,18 @@
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
-  type Address,
-  type AdvancedUser,
+  type AddressResponse,
+  type CreateUserRequest,
   findAddressById,
   findUserById,
-  type Membership,
+  type MembershipResponse,
   resendUserActivation,
   Role,
+  type UserDetailResponse,
 } from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -228,11 +230,11 @@ const currentStep = ref<number>(Steps.Personal)
 const submitting = ref(false)
 const resendBusy = ref(false)
 
-const user = ref<AdvancedUser>()
-const address = ref<Address>()
-const membership = ref<Membership>()
+const user = ref<CreateUserRequest & Partial<UserDetailResponse>>()
+const address = ref<AddressResponse>()
+const membership = ref<MembershipResponse>()
 
-const userRef = ref<InstanceType<typeof AdvancedUserForm>>()
+const userRef = ref<InstanceType<typeof UserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
 const membershipRef = ref<InstanceType<typeof MembershipForm>>()
 
@@ -310,7 +312,7 @@ const previousStep = () => {
 }
 
 async function fetchAddress() {
-  const addressId = user.value?.addressId || address.value?.id
+  const addressId = login.value?.addressId || address.value?.id
   if (!addressId) return
   try {
     const {data} = await findAddressById({path: {id: addressId}})

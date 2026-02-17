@@ -35,14 +35,9 @@
           class="mt-10"
         >
           <v-form ref="form">
-            <advanced-user-form
-              v-if="isMember"
+            <user-form
               v-model="user"
-              show-submit
-            />
-            <simple-user-form
-              v-else
-              v-model="user"
+              :options="{ includeMemberProfile: isMember }"
               show-submit
             />
           </v-form>
@@ -59,11 +54,10 @@ import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
-import {type AdvancedUser, findUserById, type SimpleUser} from "@/services/api"
-import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
+import {type CreateUserRequest, findUserById, type UserDetailResponse} from "@/services/api"
 
-const user = ref<SimpleUser | AdvancedUser>()
+const user = ref<CreateUserRequest & Partial<UserDetailResponse>>()
 const store = useStore()
 const isMember = computed<boolean>(() => store.getters.isMember)
 

@@ -7,8 +7,7 @@
       class="mx-auto pb-10 mt-10"
       style="max-width: 600px"
     >
-      <simple-user-form
-        ref="simpleUserForm"
+      <user-form
         show-password
         show-submit
         submit-text="Create Account"
@@ -32,7 +31,7 @@
 <script lang="ts" setup>
 import {ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
 
 const isSuccess = ref(false)
 

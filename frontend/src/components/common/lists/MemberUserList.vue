@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import MemberUserRow from "../rows/MemberUserRow.vue"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
-import type {AdvancedUser, Contribution, Membership} from "@/services/api"
+import UserForm from "@/components/form/UserForm.vue"
+import type {ContributionResponse, CreateUserRequest, MembershipResponse, UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
 
 defineOptions({name: "MemberUserList"})
 
 const props = withDefaults(defineProps<{
   title: string
-  membershipsByUserId?: Record<number, Membership>,
-  contributionsByUserId?: Record<number, Contribution>,
-  users: AdvancedUser[]
+  membershipsByUserId?: Record<number, MembershipResponse>,
+  contributionsByUserId?: Record<number, ContributionResponse>,
+  users: Array<CreateUserRequest & Partial<UserDetailResponse>>
   allowCreate?: boolean
   enableDelete?: boolean
   startOpen?: boolean
@@ -28,9 +28,9 @@ const expanded = defineModel<number>("expanded", {default: 0})
 const {title, users, membershipsByUserId, contributionsByUserId, allowCreate, enableDelete, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
-  (e: "delete:user", user: AdvancedUser): void
-  (e: "update:user", user: AdvancedUser): void
-  (e: "update:membership", membership: Membership): void
+  (e: "delete:user", user: CreateUserRequest & Partial<UserDetailResponse>): void
+  (e: "update:user", user: CreateUserRequest & Partial<UserDetailResponse>): void
+  (e: "update:membership", membership: MembershipResponse): void
 }>()
 
 const localSearch = ref("")
@@ -50,14 +50,14 @@ const toggleCreate = () => {
   expanded.value = expanded.value === -1 ? 0 : -1
 }
 
-const membershipChanged = (membership: Membership) => emit("update:membership", membership)
-const updateUser = (user: AdvancedUser) => {
+const membershipChanged = (membership: MembershipResponse) => emit("update:membership", membership)
+const updateUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => {
   console.log("user", user)
   emit("update:user", user)
 }
-const deleteUser = (user: AdvancedUser) => emit("delete:user", user)
+const deleteUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => emit("delete:user", user)
 
-const createDraft = ref<AdvancedUser>()
+const createDraft = ref<CreateUserRequest & Partial<UserDetailResponse>>()
 const onCreateSubmitted = (ok: boolean) => {
   if (ok && createDraft.value) {
     emit("update:user", createDraft.value)
@@ -123,8 +123,9 @@ const onCreateSubmitted = (ok: boolean) => {
             </v-list-item>
             <v-expand-transition>
               <div v-if="expanded === -1">
-                <advanced-user-form
+                <user-form
                   v-model="createDraft"
+                  :options="{ includeMemberProfile: true, updateKind: 'board' }"
                   class="mt-4"
                   show-submit
                   @submitted="onCreateSubmitted"

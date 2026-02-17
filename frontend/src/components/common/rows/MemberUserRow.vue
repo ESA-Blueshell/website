@@ -1,16 +1,23 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import {DateTime} from "luxon"
 import StartMembershipDialog from "@/components/common/modals/StartMembershipDialog.vue"
-import {type AdvancedUser, type Contribution, deleteUserById, type Membership, updateMembership} from "@/services/api"
+import {
+  type CreateUserRequest,
+  type ContributionResponse,
+  deleteUserById,
+  type MembershipResponse,
+  updateMembership,
+  type UserDetailResponse,
+} from "@/services/api"
 
 defineOptions({name: "MemberUserRow"})
 
-const user = defineModel<AdvancedUser>("user", {required: true})
-const membership = defineModel<Membership>("membership", {required: false, default: undefined})
-const contribution = defineModel<Contribution>("contribution", {required: false, default: undefined})
+const user = defineModel<CreateUserRequest & Partial<UserDetailResponse>>("user", {required: true})
+const membership = defineModel<MembershipResponse>("membership", {required: false, default: undefined})
+const contribution = defineModel<ContributionResponse>("contribution", {required: false, default: undefined})
 const expanded = defineModel<number>("expanded", {default: 0})
 
 withDefaults(defineProps<{
@@ -20,8 +27,8 @@ withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: "delete:user", user: AdvancedUser): void
-  (e: "update:membership", membership: Membership): void
+  (e: "delete:user", user: CreateUserRequest & Partial<UserDetailResponse>): void
+  (e: "update:membership", membership: MembershipResponse): void
 }>()
 
 const deleteDialog = ref(false)
@@ -52,7 +59,7 @@ const endMembership = async () => {
 const resumeMembership = async () => {
   try {
     if (!membership.value) return
-    const membershipData: Membership = {
+    const membershipData: MembershipResponse = {
       ...membership.value,
       userId: user.value.id as number,
       endDate: undefined,
@@ -64,7 +71,7 @@ const resumeMembership = async () => {
   }
 }
 
-const membershipChanged = (value: Membership): void => {
+const membershipChanged = (value: MembershipResponse): void => {
   emit("update:membership", value)
 }
 
@@ -172,8 +179,9 @@ const confirmDeleteUser = async () => {
           v-if="expanded === user.id"
           @click.stop
         >
-          <advanced-user-form
+          <user-form
             v-model="user"
+            :options="{ includeMemberProfile: true, updateKind: 'board' }"
             class="mt-6"
             show-submit
             @submitted="onSubmitted"

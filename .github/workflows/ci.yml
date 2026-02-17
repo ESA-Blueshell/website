@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
     paths:
       - 'api/**'
       - 'frontend/**'
@@ -13,16 +12,6 @@ on:
       - 'openapi/**'
       - 'docker-compose.yml'
       - 'nginx/**'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'api/**'
-      - 'frontend/**'
-      - 'pom.xml'
-      - 'env/**'
-      - '.github/actions/**'
-      - '.github/workflows/**'
-      - 'openapi/**'
   workflow_dispatch:
 
 concurrency:

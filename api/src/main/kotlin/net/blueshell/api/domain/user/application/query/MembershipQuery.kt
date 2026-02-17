@@ -8,9 +8,9 @@ import java.time.LocalDate
  * Used in the application layer for building JPA Specifications.
  */
 data class MembershipQuery(
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var from: LocalDate? = null,
 
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var to: LocalDate? = null
 )

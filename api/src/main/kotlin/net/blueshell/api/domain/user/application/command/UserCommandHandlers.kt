@@ -22,6 +22,7 @@ class CreateUserHandler(
     override fun handle(command: CreateUserCommand): User {
         var user = User(
             username = command.username,
+            email = command.email,
             initials = command.initials,
             firstName = command.firstName,
             prefix = command.prefix,
@@ -34,9 +35,7 @@ class CreateUserHandler(
             } else {
                 passwordEncoder.encode(command.password)
             },
-        ).apply {
-            email = command.email
-        }
+        )
 
         user = service.create(user)
         return user

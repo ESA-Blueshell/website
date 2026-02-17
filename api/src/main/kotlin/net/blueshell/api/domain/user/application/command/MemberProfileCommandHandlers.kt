@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.user.application.command
 
+import net.blueshell.api.domain.user.application.MemberProfileService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.CreateMemberProfileCommand
 import net.blueshell.api.domain.user.command.FindMemberProfileByUserIdCommand
@@ -37,28 +38,22 @@ class CreateMemberProfileHandler(
 
 @Component
 class UpdateMemberProfileHandler(
-    private val users: UserService
+    private val memberProfileService: MemberProfileService,
 ) : CommandHandler<UpdateMemberProfileCommand, MemberProfile> {
     override val commandType = UpdateMemberProfileCommand::class
 
     override fun handle(command: UpdateMemberProfileCommand): MemberProfile {
-        val user = users.findById(command.userId)
-        val profile = user.memberProfile ?: throw ResponseStatusException(
-            HttpStatus.NOT_FOUND,
-            "MemberProfile not found for user ${command.userId}"
-        )
-
-        profile.dateOfBirth = Date.valueOf(command.dateOfBirth)
-        profile.studentNumber = command.studentNumber
-        profile.gender = command.gender
-        profile.photoConsent = command.photoConsent
-        profile.nationality = command.nationality
-        profile.bhv = command.bhv
-        profile.ehbo = command.ehbo
-        profile.version = command.version
-
-        val updated = users.update(user)
-        return checkNotNull(updated.memberProfile) { "Member profile was not linked to user ${user.id}" }
+        val profile = memberProfileService.findById(command.id).apply {
+            dateOfBirth = Date.valueOf(command.dateOfBirth)
+            studentNumber = command.studentNumber
+            gender = command.gender
+            photoConsent = command.photoConsent
+            nationality = command.nationality
+            bhv = command.bhv
+            ehbo = command.ehbo
+            version = command.version
+        }
+        return memberProfileService.update(profile)
     }
 }
 

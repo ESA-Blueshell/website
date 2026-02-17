@@ -21,12 +21,15 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE sponsors SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Sponsor : AuditedAutoIdEntity() {
+class Sponsor(
+
     @Column(nullable = false)
-    lateinit var name: String
+    var name: String,
 
     @Column(nullable = false, length = 4095)
-    lateinit var description: String
+    var description: String
+
+) : AuditedAutoIdEntity() {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "logo_id", nullable = false)

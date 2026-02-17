@@ -52,7 +52,7 @@ class CompositePermissionEvaluatorTest {
         fun `returns false when no evaluator supports target class`() {
             val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
 
-            val allowed = evaluator.hasPermission(authentication, Sponsor(), "read")
+            val allowed = evaluator.hasPermission(authentication, Sponsor(name = "abc", description = "cba"), "read")
 
             assertThat(allowed).isFalse()
         }

@@ -112,9 +112,10 @@ class SponsorCommandHandlersTest {
         }
     }
 
-    private fun sponsor(name: String, description: String): Sponsor = Sponsor().apply {
-        this.name = name
-        this.description = description
+    private fun sponsor(name: String, description: String): Sponsor = Sponsor(
+        name = name,
+        description = description
+    ).apply {
         setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
         setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))
     }

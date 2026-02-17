@@ -347,9 +347,10 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected fun createSponsorFixture(name: String = "Sponsor ${System.currentTimeMillis()}"): Sponsor {
         val uploader = createUserWithRole(Role.BOARD)
         return persist(
-            Sponsor().apply {
-                this.name = name
-                this.description = "Sponsor description"
+            Sponsor(
+                name = name,
+                description = "Sponsor description"
+            ).apply {
                 this.picture = createFileFixture(uploader = uploader, type = FileType.SPONSOR_PICTURE)
             }
         )

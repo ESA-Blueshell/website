@@ -9,8 +9,8 @@ import net.blueshell.api.domain.board.web.dto.request.CreateBoardRequest
 import net.blueshell.api.domain.board.web.dto.request.UpdateBoardRequest
 import net.blueshell.api.domain.board.web.dto.response.BoardMemberResponse
 import net.blueshell.api.domain.board.web.dto.response.BoardResponse
-import net.blueshell.api.domain.board.web.mapping.asCommand
-import net.blueshell.api.domain.board.web.mapping.asResponse
+import net.blueshell.api.domain.board.web.mapping.request.asCommand
+import net.blueshell.api.domain.board.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize

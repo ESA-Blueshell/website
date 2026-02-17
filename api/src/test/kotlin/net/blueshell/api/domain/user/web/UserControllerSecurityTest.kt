@@ -223,7 +223,7 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", user.id)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"firstName":"UpdatedName"}""")
+                    .content("""{"discord":"updated_self#1234","phoneNumber":"+31612345679","newsletter":false,"version":${user.version}}""")
             )
                 .andExpect(status().isOk)
         }
@@ -237,7 +237,7 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", user2.id)
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"firstName":"Hacked"}""")
+                    .content("""{"discord":"hacked#1234","phoneNumber":"+31699999999","newsletter":false,"version":${user2.version}}""")
             )
                 .andExpect(status().isForbidden)
         }
@@ -251,7 +251,7 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", targetUser.id)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"firstName":"UpdatedByBoard"}""")
+                    .content("""{"discord":"updated_by_board#1234","phoneNumber":"+31611111111","newsletter":true,"version":${targetUser.version}}""")
             )
                 .andExpect(status().isOk)
         }
@@ -263,7 +263,7 @@ class UserControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/users/{id}", user.id)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"firstName":"Unauthorized"}""")
+                    .content("""{"discord":"unauthorized#1234","phoneNumber":"+31622222222","newsletter":false,"version":${user.version}}""")
             )
                 .andExpect(status().isUnauthorized)
         }

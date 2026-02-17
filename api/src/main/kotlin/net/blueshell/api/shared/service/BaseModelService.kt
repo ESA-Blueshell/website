@@ -187,4 +187,13 @@ abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, 
     open fun deleteAllById(ids: Set<ID>) {
         repository.deleteAllById(ids)
     }
+
+    /* -----------------------------------------------------------------
+     * OTHER
+     * ----------------------------------------------------------------- */
+
+    @Transactional
+    open fun existsById(id: ID): Boolean {
+        return repository.existsById(id)
+    }
 }

@@ -26,8 +26,8 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
     private fun createSignUpGuestPayload(): String =
         """{"guest":{"name":"Test User","discord":"test#1234","email":"test@example.com","phoneNumber":"+31612345678"}}"""
 
-    private fun updateSignUpGuestPayload(name: String = "Updated Guest"): String =
-        """{"guest":{"name":"$name","discord":"test#1234","email":"test@example.com","phoneNumber":"+31612345678"}}"""
+    private fun updateSignUpGuestPayload(version: Long, name: String = "Updated Guest"): String =
+        """{"guest":{"name":"$name","discord":"test#1234","email":"test@example.com","phoneNumber":"+31612345678"},"version":$version}"""
 
     @Nested
     inner class FindEventSignUps {
@@ -237,13 +237,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture()
             val eventId = event.id!!
-            createEventSignUpFixture(event = event, user = board)
+            val signUp = createEventSignUpFixture(event = event, user = board)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload())
+                    .content(updateSignUpGuestPayload(signUp.version))
             )
                 .andExpect(status().isOk)
         }
@@ -253,13 +253,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val event = createEventFixture()
             val eventId = event.id!!
-            createEventSignUpFixture(event = event, user = user)
+            val signUp = createEventSignUpFixture(event = event, user = user)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload())
+                    .content(updateSignUpGuestPayload(signUp.version))
             )
                 .andExpect(status().isOk)
         }
@@ -269,13 +269,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             val event = createEventFixture()
             val eventId = event.id!!
             val guest = createGuestFixture(accessToken = "validGuestToken123")
-            createEventSignUpFixture(event = event, user = null, guest = guest)
+            val signUp = createEventSignUpFixture(event = event, user = null, guest = guest)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .param("accessToken", guest.accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload("Updated Guest Name"))
+                    .content(updateSignUpGuestPayload(signUp.version, "Updated Guest Name"))
             )
                 .andExpect(status().isOk)
         }
@@ -286,13 +286,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             val user2 = createUserWithRole(Role.MEMBER)
             val event = createEventFixture()
             val eventId = event.id!!
-            createEventSignUpFixture(event = event, user = user2)
+            val signUp = createEventSignUpFixture(event = event, user = user2)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload("Hacked Name"))
+                    .content(updateSignUpGuestPayload(signUp.version, "Hacked Name"))
             )
                 .andExpect(status().isNotFound)
         }
@@ -304,7 +304,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload("Unauthorized Update"))
+                    .content(updateSignUpGuestPayload(0L, "Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -317,13 +317,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             }
             persist(event)
             val eventId = event.id!!
-            createEventSignUpFixture(event = event, user = user)
+            val signUp = createEventSignUpFixture(event = event, user = user)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload("Late Update"))
+                    .content(updateSignUpGuestPayload(signUp.version, "Late Update"))
             )
                 .andExpect(status().isForbidden)
         }
@@ -431,13 +431,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             val guest = createGuestFixture(accessToken = "guestToken123")
             val event = createEventFixture()
             val eventId = event.id!!
-            createEventSignUpFixture(event = event, user = null, guest = guest)
+            val signUp = createEventSignUpFixture(event = event, user = null, guest = guest)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
                     .param("accessToken", guest.accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSignUpGuestPayload("Guest Updated"))
+                    .content(updateSignUpGuestPayload(signUp.version, "Guest Updated"))
             )
                 .andExpect(status().isOk)
         }

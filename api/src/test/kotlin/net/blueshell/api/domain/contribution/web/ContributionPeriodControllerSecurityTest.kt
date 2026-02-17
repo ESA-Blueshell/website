@@ -25,6 +25,13 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
     ): String =
         """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0}"""
 
+    private fun updateContributionPeriodPayload(
+        version: Long,
+        startDate: String = "2026-01-01",
+        endDate: String = "2026-12-31"
+    ): String =
+        """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0,"version":$version}"""
+
     @Nested
     inner class FindContributionPeriods {
 
@@ -140,7 +147,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
                 put("/contributionPeriods/{id}", periodId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(contributionPeriodPayload())
+                    .content(updateContributionPeriodPayload(period.version))
             )
                 .andExpect(status().isOk)
         }
@@ -155,19 +162,20 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
                 put("/contributionPeriods/{id}", periodId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(contributionPeriodPayload())
+                    .content(updateContributionPeriodPayload(period.version))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val periodId = createContributionPeriodFixture().id!!
+            val period = createContributionPeriodFixture()
+            val periodId = period.id!!
 
             mvc.perform(
                 put("/contributionPeriods/{id}", periodId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(contributionPeriodPayload())
+                    .content(updateContributionPeriodPayload(period.version))
             )
                 .andExpect(status().isUnauthorized)
         }

@@ -61,7 +61,6 @@ class Board : AuditedAutoIdEntity() {
     lateinit var name: String
 
     fun addMember(member: BoardMember) {
-        member.board = this
         _members.add(member)
     }
 

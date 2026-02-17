@@ -39,23 +39,32 @@ import java.time.LocalDate
     """
 )
 class BoardMember(
+
     @EmbeddedId
-    override var id: Id = Id()
-) : AuditedSoftDeleteEntity(), Identifiable<BoardMember.Id> {
+    override var id: Id = Id(),
+
     @MapsId("boardId")
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    lateinit var board: Board
-        internal set
-
-    val boardId: Long
-        get() = id.boardId ?: 0
+    val board: Board,
 
     @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    lateinit var user: User
-        internal set
+    val user: User,
+
+    @Column(nullable = false)
+    var role: String,
+
+    @Column(nullable = false)
+    var startDate: LocalDate,
+
+    @Column()
+    var endDate: LocalDate? = null
+
+) : AuditedSoftDeleteEntity(), Identifiable<BoardMember.Id> {
+    val boardId: Long
+        get() = id.boardId ?: 0
 
     val userId: Long
         get() = id.userId ?: 0
@@ -67,15 +76,6 @@ class BoardMember(
 
     val pictureId: Long?
         get() = picture?.id
-
-    @Column(name = "role", nullable = false)
-    lateinit var role: String
-
-    @Column(name = "start_date", nullable = false)
-    lateinit var startDate: LocalDate
-
-    @Column(name = "end_date")
-    var endDate: LocalDate? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

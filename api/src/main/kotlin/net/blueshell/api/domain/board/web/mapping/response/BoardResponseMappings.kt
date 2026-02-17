@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.board.web.mapping
+package net.blueshell.api.domain.board.web.mapping.response
 
 import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.domain.board.persistence.BoardMember

@@ -66,13 +66,14 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update blogs`() {
             val board = createUserWithRole(Role.BOARD)
-            val blogId = createBlogFixture().id!!
+            val blog = createBlogFixture()
+            val blogId = blog.id!!
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
+                    .content("""{"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}""")
             )
                 .andExpect(status().isOk)
         }
@@ -80,25 +81,27 @@ class BlogControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating blogs`() {
             val member = createUserWithRole(Role.MEMBER)
-            val blogId = createBlogFixture().id!!
+            val blog = createBlogFixture()
+            val blogId = blog.id!!
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
+                    .content("""{"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}""")
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val blogId = createBlogFixture().id!!
+            val blog = createBlogFixture()
+            val blogId = blog.id!!
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
+                    .content("""{"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}""")
             )
                 .andExpect(status().isUnauthorized)
         }

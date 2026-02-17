@@ -214,12 +214,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val membershipId = createMembershipFixture().id!!
+            val membership = createMembershipFixture()
+            val membershipId = membership.id!!
 
             mvc.perform(
                 put("/memberships/{id}", membershipId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
+                    .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
                 .andExpect(status().isUnauthorized)
         }

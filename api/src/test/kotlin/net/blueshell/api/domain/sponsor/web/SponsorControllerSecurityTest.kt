@@ -21,8 +21,8 @@ class SponsorControllerSecurityTest : UserTestSupport() {
     private fun createSponsorPayload(name: String = "New Sponsor"): String =
         """{"name":"$name","description":"Sponsor description"}"""
 
-    private fun updateSponsorPayload(name: String = "Updated Sponsor"): String =
-        """{"name":"$name","description":"Updated sponsor description"}"""
+    private fun updateSponsorPayload(version: Long, name: String = "Updated Sponsor"): String =
+        """{"name":"$name","description":"Updated sponsor description","version":$version}"""
 
     @Nested
     inner class FindSponsors {
@@ -102,13 +102,14 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows BOARD to update sponsors`() {
             val board = createUserWithRole(Role.BOARD)
-            val sponsorId = createSponsorFixture().id!!
+            val sponsor = createSponsorFixture()
+            val sponsorId = sponsor.id!!
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSponsorPayload())
+                    .content(updateSponsorPayload(sponsor.version))
             )
                 .andExpect(status().isOk)
         }
@@ -116,25 +117,27 @@ class SponsorControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies non-BOARD users from updating sponsors`() {
             val member = createUserWithRole(Role.MEMBER)
-            val sponsorId = createSponsorFixture().id!!
+            val sponsor = createSponsorFixture()
+            val sponsorId = sponsor.id!!
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSponsorPayload())
+                    .content(updateSponsorPayload(sponsor.version))
             )
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val sponsorId = createSponsorFixture().id!!
+            val sponsor = createSponsorFixture()
+            val sponsorId = sponsor.id!!
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateSponsorPayload())
+                    .content(updateSponsorPayload(sponsor.version))
             )
                 .andExpect(status().isUnauthorized)
         }

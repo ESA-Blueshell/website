@@ -153,13 +153,13 @@ abstract class UserTestSupport : ServiceTestSupport() {
     }
 
     protected fun addBoardMember(board: Board, user: User, role: String = "CHAIR"): Board {
-        val member = BoardMember().apply {
-            id = BoardMember.Id(board.id, user.id)
-            this.board = board
-            this.user = user
-            this.role = role
-            this.startDate = LocalDate.now().minusDays(1)
-        }
+        val member = BoardMember(
+            id = BoardMember.Id(board.id, user.id),
+            board = board,
+            user = user,
+            role = role,
+            startDate = LocalDate.now().minusDays(1)
+        )
         board.addMember(member)
         return persist(board)
     }

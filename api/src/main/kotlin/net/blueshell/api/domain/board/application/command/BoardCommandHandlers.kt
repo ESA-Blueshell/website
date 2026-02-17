@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.board.application.command
 
+import net.blueshell.api.domain.board.application.BoardMemberService
 import net.blueshell.api.domain.board.application.BoardService
 import net.blueshell.api.domain.board.application.exception.BoardMemberNotFoundException
 import net.blueshell.api.domain.board.command.*
@@ -100,24 +101,35 @@ class DeleteBoardByIdHandler(
 @Component
 class AddBoardMemberHandler(
     private val boardService: BoardService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val boardMemberService: BoardMemberService
 ) : CommandHandler<AddBoardMemberCommand, BoardMember> {
     override val commandType = AddBoardMemberCommand::class
 
     @Transactional
     override fun handle(command: AddBoardMemberCommand): BoardMember {
+        val id = BoardMember.Id(command.boardId, command.userId)
+        val exists = boardMemberService.existsById(id)
         val board = boardService.findById(command.boardId)
         val user = userService.findById(command.userId)
 
-        val member = BoardMember()
-        member.user = user
-        member.role = command.role
-        member.startDate = command.startDate
-        member.endDate = command.endDate
-
-        boardService.addMember(board, member)
-
-        return member
+        if (exists) {
+            val member = boardMemberService.findById(id).apply {
+                role = command.role
+                startDate = command.startDate
+                endDate = command.endDate
+            }
+            return boardMemberService.update(member)
+        } else {
+            val member = BoardMember(
+                user = user,
+                board = board,
+                role = command.role,
+                startDate = command.startDate,
+                endDate = command.endDate,
+            )
+            return boardMemberService.create(member)
+        }
     }
 }
 

@@ -1,8 +1,8 @@
-package net.blueshell.api.domain.user.web.mapping
+package net.blueshell.api.domain.user.web.mapping.response
 
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.web.dto.UserDetailResponse
-import net.blueshell.api.domain.user.web.dto.UserSummaryResponse
+import net.blueshell.api.domain.user.web.dto.response.UserDetailResponse
+import net.blueshell.api.domain.user.web.dto.response.UserSummaryResponse
 import tech.mappie.api.ObjectMappie
 
 object UserToDetailResponseMapper : ObjectMappie<User, UserDetailResponse>() {

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.web.dto
+package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.validation.group.Creation
 
-@Schema(name = "CreateGuestUserRequest")
-data class CreateGuestUserRequest(
+@Schema(name = "CreateUserRequest")
+class CreateUserRequest(
     @field:NotBlank
     var username: String? = null,
 
@@ -28,6 +28,15 @@ data class CreateGuestUserRequest(
     @field:NotNull
     var newsletter: Boolean? = null,
 
+    @field:NotBlank
+    var email: String? = null,
+
+    @field:NotBlank
+    var discord: String? = null,
+
+    @field:NotBlank
+    var phoneNumber: String? = null,
+
     @field:NotBlank(groups = [Creation::class])
     @field:Size(
         min = 8,
@@ -41,15 +50,4 @@ data class CreateGuestUserRequest(
         groups = [Creation::class]
     )
     var password: String? = null,
-
-    var addressId: Long? = null,
-
-    @field:NotBlank
-    var email: String? = null,
-
-    @field:NotBlank
-    var discord: String? = null,
-
-    @field:NotBlank
-    var phoneNumber: String? = null
 )

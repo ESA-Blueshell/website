@@ -1,7 +1,7 @@
-package net.blueshell.api.domain.user.web.mapping
+package net.blueshell.api.domain.user.web.mapping.response
 
 import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.web.dto.AddressResponse
+import net.blueshell.api.domain.user.web.dto.response.AddressResponse
 import tech.mappie.api.ObjectMappie
 
 object AddressToAddressResponseMapper : ObjectMappie<Address, AddressResponse>()

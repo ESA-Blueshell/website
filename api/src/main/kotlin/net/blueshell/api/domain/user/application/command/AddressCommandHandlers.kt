@@ -68,19 +68,6 @@ class FindAddressByIdHandler(
 }
 
 @Component
-class DeleteUserAddressHandler(
-    private val users: UserService
-) : CommandHandler<DeleteUserAddressCommand, Unit> {
-    override val commandType = DeleteUserAddressCommand::class
-
-    override fun handle(command: DeleteUserAddressCommand) {
-        val user = users.findById(command.userId)
-        user.address = null
-        users.update(user)
-    }
-}
-
-@Component
 class DeleteAddressByIdHandler(
     private val addressService: AddressService
 ) : CommandHandler<DeleteAddressByIdCommand, Unit> {

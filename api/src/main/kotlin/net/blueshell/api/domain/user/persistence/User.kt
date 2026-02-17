@@ -155,11 +155,6 @@ class User(
     val eventSignUps: Set<EventSignUp>
         get() = _eventSignUps
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    private val _studies: MutableSet<UserStudy> = linkedSetOf()
-    val studies: Set<UserStudy>
-        get() = _studies
-
     val committeeIds: Set<Long>
         get() = committeeMembers.mapNotNull { it.committee.id }.toSet()
 
@@ -185,10 +180,4 @@ class User(
 
     val fullName: String
         get() = listOfNotNull(firstName, prefix?.takeIf { it.isNotBlank() }, lastName).joinToString(" ")
-
-    fun replaceStudies(studies: Collection<UserStudy>) {
-        _studies.clear()
-        _studies.addAll(studies)
-        _studies.forEach { it.user = this }
-    }
 }

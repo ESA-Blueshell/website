@@ -2,24 +2,22 @@ package net.blueshell.api.domain.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
-import jakarta.validation.ConstraintViolationException
-import jakarta.validation.Validator
+import jakarta.validation.Valid
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
 import net.blueshell.api.domain.user.command.FindUserByIdCommand
 import net.blueshell.api.domain.user.command.FindUsersCommand
 import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
-import net.blueshell.api.domain.user.web.dto.*
-import net.blueshell.api.domain.user.web.mapping.asCommand
-import net.blueshell.api.domain.user.web.mapping.asDetailResponse
-import net.blueshell.api.domain.user.web.mapping.asSummaryResponse
+import net.blueshell.api.domain.user.web.dto.request.BoardUpdateUserRequest
+import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
+import net.blueshell.api.domain.user.web.dto.request.UpdateUserRequest
+import net.blueshell.api.domain.user.web.dto.response.UserDetailResponse
+import net.blueshell.api.domain.user.web.mapping.request.asCommand
+import net.blueshell.api.domain.user.web.mapping.response.asDetailResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
-import net.blueshell.api.shared.validation.group.Administration
-import net.blueshell.api.shared.validation.group.Creation
-import net.blueshell.api.shared.validation.group.Update
 import net.blueshell.api.shared.web.AdvancedController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -28,7 +26,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -36,7 +33,6 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Users")
 class UserController(
     service: UserService,
-    private val validator: Validator,
     private val commandBus: CommandBus
 ) : AdvancedController<UserService>(
     service
@@ -45,7 +41,7 @@ class UserController(
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
     fun createUser(
-        @RequestBody request: CreateUserRequest,
+        @RequestBody @Valid request: CreateUserRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): UserDetailResponse {
         // Block non-BOARD authenticated users from creating accounts
@@ -56,47 +52,30 @@ class UserController(
         }
 
         val isBoard = principal?.hasAuthority(Role.BOARD) == true
-        val groups: Array<Class<*>> = if (isBoard)
-            arrayOf(Administration::class.java)
-        else
-            arrayOf(Creation::class.java)
-
-        val violations = validator.validate(request, *groups)
-        if (!violations.isEmpty()) {
-            throw ConstraintViolationException(violations)
-        }
-
         val user = commandBus.dispatch(request.asCommand(isBoard))
         return user.asDetailResponse()
     }
 
-    @PostMapping("/users/guest")
-    @PermitAll
-    @ResponseStatus(HttpStatus.CREATED)
-    fun createGuestUser(@Validated(Creation::class) @RequestBody request: CreateGuestUserRequest): UserSummaryResponse {
-        val user = commandBus.dispatch(request.asCommand())
-        return user.asSummaryResponse()
-    }
-
-    @PutMapping("/users/guest/{id}")
-    @PreAuthorize("hasPermission(#id, 'User', 'write')")
-    fun updateGuestUser(
-        @PathVariable id: Long,
-        @Validated(Update::class) @RequestBody request: UpdateGuestUserRequest
-    ): UserSummaryResponse {
-        val user = commandBus.dispatch(request.asCommand(id))
-        return user.asSummaryResponse()
-    }
-
-    @PutMapping(value = ["/users/{id}"])
+    @PutMapping("/users/{id}")
     @PreAuthorize("hasPermission(#id, 'User', 'write')")
     fun updateUser(
-        @PathVariable id: Long,
-        @Validated(Update::class) @RequestBody request: UpdateUserRequest,
+        @PathVariable(required = true) id: Long,
+        @RequestBody(required = true) payload: UpdateUserRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): UserDetailResponse {
         val isBoard = principal?.hasAuthority(Role.BOARD) == true
-        val user = commandBus.dispatch(request.asCommand(id, isBoard))
+
+        // Board members can update all fields except the password, while users can only update a subset of their
+        // own fields. This is enforced by using different command objects for board vs regular updates.
+        val user = when (payload) {
+            is BoardUpdateUserRequest -> {
+                if (!isBoard) throw AccessDeniedException("Board role required")
+                commandBus.dispatch(payload.asCommand(id))
+            }
+
+            is UpdateUserRequest -> commandBus.dispatch(payload.asCommand(id))
+        }
+
         return user.asDetailResponse()
     }
 

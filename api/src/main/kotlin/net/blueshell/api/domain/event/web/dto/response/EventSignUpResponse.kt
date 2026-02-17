@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.survey.web.dto.AnswerResponse
-import net.blueshell.api.domain.user.web.dto.SimpleUserDTO
+import net.blueshell.api.domain.user.web.dto.response.UserSummaryResponse
 import net.blueshell.api.shared.dto.AuditedAutoIdDTO
 
 @Schema(name = "EventSignUpResponse")
@@ -16,6 +16,5 @@ data class EventSignUpResponse(
     var answers: MutableList<AnswerResponse>? = mutableListOf(),
 
     var guest: GuestResponse? = null,
-    var user: SimpleUserDTO? = null,
-    var userId: Long? = null
+    var user: UserSummaryResponse? = null,
 ) : AuditedAutoIdDTO()

@@ -3,9 +3,8 @@ package net.blueshell.api.domain.user.application.command
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.*
-import net.blueshell.api.domain.user.persistence.StudyProgram
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.repository.StudyProgramRepository
+import net.blueshell.api.domain.user.web.dto.request.UpdateUserRequest
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.enums.StudyLevel
 import net.blueshell.api.shared.util.MappingUtil
@@ -16,74 +15,53 @@ import org.springframework.stereotype.Component
 @Component
 class CreateUserHandler(
     private val service: UserService,
-    private val studyPrograms: StudyProgramRepository,
     private val passwordEncoder: PasswordEncoder
 ) : CommandHandler<CreateUserCommand, User> {
     override val commandType = CreateUserCommand::class
 
     override fun handle(command: CreateUserCommand): User {
-        var user = User()
-        applyIdentityFields(
-            user,
-            command.username,
-            command.email,
-            command.initials,
-            command.firstName,
-            command.prefix,
-            command.lastName
-        )
-        user.discord = command.discord
-        user.phoneNumber = command.phoneNumber
-        user.newsletter = command.newsletter
-        user.password = if (command.isBoard) {
-            passwordEncoder.encode(MappingUtil.generateRandomString())
-        } else {
-            passwordEncoder.encode(command.password)
+        var user = User(
+            username = command.username,
+            initials = command.initials,
+            firstName = command.firstName,
+            prefix = command.prefix,
+            lastName = command.lastName,
+            discord = command.discord,
+            phoneNumber = command.phoneNumber,
+            newsletter = command.newsletter,
+            password = if (command.isBoard) {
+                passwordEncoder.encode(MappingUtil.generateRandomString())
+            } else {
+                passwordEncoder.encode(command.password)
+            },
+        ).apply {
+            email = command.email
         }
+
         user = service.create(user)
         return user
     }
 }
 
 @Component
-class CreateGuestUserHandler(
-    private val service: UserService,
-    private val passwordEncoder: PasswordEncoder
-) : CommandHandler<CreateGuestUserCommand, User> {
-    override val commandType = CreateGuestUserCommand::class
-
-    override fun handle(command: CreateGuestUserCommand): User {
-        var user = User()
-        applyIdentityFields(
-            user,
-            command.username,
-            command.email,
-            command.initials,
-            command.firstName,
-            command.prefix,
-            command.lastName
-        )
-        user.discord = command.discord
-        user.phoneNumber = command.phoneNumber
-        user.newsletter = command.newsletter
-        user.password = passwordEncoder.encode(command.password)
-        user = service.create(user)
-        return user
-    }
-}
-
-@Component
-class UpdateGuestUserHandler(
+class BoardUpdateUserHandler(
     private val service: UserService
-) : CommandHandler<UpdateGuestUserCommand, User> {
-    override val commandType = UpdateGuestUserCommand::class
+) : CommandHandler<BoardUpdateUserCommand, User> {
+    override val commandType = BoardUpdateUserCommand::class
 
-    override fun handle(command: UpdateGuestUserCommand): User {
-        var user = service.findById(command.id)
-        user.discord = command.discord
-        user.phoneNumber = command.phoneNumber
-        user.newsletter = command.newsletter
-        command.version?.let { user.version = it }
+    override fun handle(command: BoardUpdateUserCommand): User {
+        var user = service.findById(command.id).apply {
+            username = command.username
+            email = command.email
+            discord = command.discord
+            phoneNumber = command.phoneNumber
+            newsletter = command.newsletter
+            initials = command.initials
+            firstName = command.firstName
+            prefix = command.prefix
+            lastName = command.lastName
+            version = command.version
+        }
         user = service.update(user)
         return user
     }
@@ -92,31 +70,15 @@ class UpdateGuestUserHandler(
 @Component
 class UpdateUserHandler(
     private val service: UserService,
-    private val addresses: AddressService,
-    private val studyPrograms: StudyProgramRepository
 ) : CommandHandler<UpdateUserCommand, User> {
     override val commandType = UpdateUserCommand::class
 
     override fun handle(command: UpdateUserCommand): User {
-        var user = service.findById(command.id)
-        user.discord = command.discord
-        user.phoneNumber = command.phoneNumber
-        user.newsletter = command.newsletter
-        user.version = command.version
-
-        if (command.isBoard) {
-            // BOARD users can update identity fields but not roles or enabled status
-            // Roles are managed through: memberships, committee membership, or ToggleUserRole endpoint
-            // Account activation happens exclusively through recovery controller's activate endpoint
-            applyIdentityFields(
-                user,
-                command.username,
-                command.email,
-                command.initials,
-                command.firstName,
-                command.prefix,
-                command.lastName
-            )
+        var user = service.findById(command.id).apply {
+            discord = command.discord
+            phoneNumber = command.phoneNumber
+            newsletter = command.newsletter
+            version = command.version
         }
         user = service.update(user)
         return user
@@ -164,34 +126,5 @@ class ToggleUserRoleHandler(
 
     override fun handle(command: ToggleUserRoleCommand): User {
         return service.toggleRole(command.userId, command.role)
-    }
-}
-
-private fun applyIdentityFields(
-    user: User,
-    username: String?,
-    email: String?,
-    initials: String?,
-    firstName: String?,
-    prefix: String?,
-    lastName: String?
-) {
-    username?.let { user.username = it }
-    email?.let { user.email = it }
-    initials?.let { user.initials = it }
-    firstName?.let { user.firstName = it }
-    prefix?.let { user.prefix = it }
-    lastName?.let { user.lastName = it }
-}
-
-private fun StudyProgramRepository.resolveStudyProgram(name: String, level: StudyLevel): StudyProgram {
-    return findByNameAndLevel(name, level).orElseGet {
-        save(
-            StudyProgram().apply {
-                this.name = name
-                this.level = level
-                this.active = true
-            }
-        )
     }
 }

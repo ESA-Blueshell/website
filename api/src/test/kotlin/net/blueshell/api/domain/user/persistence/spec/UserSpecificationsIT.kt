@@ -30,6 +30,18 @@ class UserSpecificationsIT : UserTestSupport() {
             assertThat(result.map { it.id }).contains(member.id, board.id)
             assertThat(result.map { it.id }).doesNotContain(guest.id)
         }
+
+        @Test
+        fun `hasMemberAuthority alias includes member and board`() {
+            val guest = createUserWithRole(Role.GUEST)
+            val member = createUserWithRole(Role.MEMBER)
+            val board = createUserWithRole(Role.BOARD)
+
+            val result = users.findAll(UserSpecifications.hasMemberAuthority())
+
+            assertThat(result.map { it.id }).contains(member.id, board.id)
+            assertThat(result.map { it.id }).doesNotContain(guest.id)
+        }
     }
 
     @Nested
@@ -72,6 +84,17 @@ class UserSpecificationsIT : UserTestSupport() {
 
             assertThat(result.map { it.id }).contains(member.id)
             assertThat(result.map { it.id }).doesNotContain(guest.id)
+        }
+
+        @Test
+        fun `applies isMember false filter`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val guest = createUserWithRole(Role.GUEST)
+
+            val result = users.findAll(UserSpecifications.fromQuery(UserQuery(isMember = false), user = null))
+
+            assertThat(result.map { it.id }).contains(guest.id)
+            assertThat(result.map { it.id }).doesNotContain(member.id)
         }
 
         @Test

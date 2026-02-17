@@ -26,6 +26,20 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
     inner class TimeAndFieldFilters {
 
         @Test
+        fun `filters signups by approved false`() {
+            val committee = createCommitteeFixture()
+            val approvedEvent = createEvent(committee, LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val draftEvent = createEvent(committee, LocalDateTime.of(2024, 2, 11, 12, 0), approved = false)
+            val approvedSignUp = createSignUp(approvedEvent)
+            val draftSignUp = createSignUp(draftEvent)
+
+            val result = eventSignUps.findAll(EventSignUpSpecifications.approved(false))
+
+            assertThat(result.map { it.id }).contains(draftSignUp.id)
+            assertThat(result.map { it.id }).doesNotContain(approvedSignUp.id)
+        }
+
+        @Test
         fun `filters signups by event start time range`() {
             val committee = createCommitteeFixture()
             val januaryEvent = createEvent(committee, LocalDateTime.of(2024, 1, 10, 12, 0), approved = true)
@@ -135,6 +149,25 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
                 EventSignUpSpecifications.fromFilter(
                     EventSignUpQuery(committeeId = committee.id),
                     CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId)
+                )
+            )
+
+            assertThat(result.map { it.id }).contains(approvedSignUp.id)
+            assertThat(result.map { it.id }).doesNotContain(draftSignUp.id)
+        }
+
+        @Test
+        fun `anonymous with committee filter sees only approved signups`() {
+            val committee = createCommitteeFixture()
+            val approved = createEvent(committee, LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val draft = createEvent(committee, LocalDateTime.of(2024, 2, 11, 12, 0), approved = false)
+            val approvedSignUp = createSignUp(approved)
+            val draftSignUp = createSignUp(draft)
+
+            val result = eventSignUps.findAll(
+                EventSignUpSpecifications.fromFilter(
+                    EventSignUpQuery(committeeId = committee.id),
+                    user = null
                 )
             )
 

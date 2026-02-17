@@ -26,6 +26,20 @@ class EventSpecificationsIT : UserTestSupport() {
     inner class TimeFilters {
 
         @Test
+        fun `filters by startTimeFrom including boundary`() {
+            val committee = createCommitteeFixture()
+            val before = createEvent(committee, "Before", LocalDateTime.of(2024, 2, 9, 11, 59), approved = true)
+            val atBoundary = createEvent(committee, "At Boundary", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+
+            val result = events.findAll(
+                EventSpecifications.startTimeFrom(LocalDateTime.of(2024, 2, 10, 12, 0))
+            )
+
+            assertThat(result.map { it.id }).contains(atBoundary.id)
+            assertThat(result.map { it.id }).doesNotContain(before.id)
+        }
+
+        @Test
         fun `filters by timeBetween`() {
             val committee = createCommitteeFixture()
             val january = createEvent(committee, "January Event", LocalDateTime.of(2024, 1, 10, 12, 0), approved = true)
@@ -53,6 +67,19 @@ class EventSpecificationsIT : UserTestSupport() {
 
             assertThat(result.map { it.id }).contains(lanParty.id)
             assertThat(result.map { it.id }).doesNotContain(meetup.id)
+        }
+
+        @Test
+        fun `filters by committeeId`() {
+            val committeeA = createCommitteeFixture(name = "Committee A")
+            val committeeB = createCommitteeFixture(name = "Committee B")
+            val eventA = createEvent(committeeA, "Event A", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val eventB = createEvent(committeeB, "Event B", LocalDateTime.of(2024, 2, 11, 12, 0), approved = true)
+
+            val result = events.findAll(EventSpecifications.committeeId(committeeA.id))
+
+            assertThat(result.map { it.id }).contains(eventA.id)
+            assertThat(result.map { it.id }).doesNotContain(eventB.id)
         }
     }
 
@@ -100,6 +127,31 @@ class EventSpecificationsIT : UserTestSupport() {
             val result = events.findAll(EventSpecifications.fromFilter(EventQuery(), currentUser))
 
             assertThat(result.map { it.id }).contains(approved.id, draft.id)
+        }
+
+        @Test
+        fun `board approved false filter returns only drafts`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val approved = createEvent(committee, "Approved", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val draft = createEvent(committee, "Draft", LocalDateTime.of(2024, 2, 11, 12, 0), approved = false)
+
+            val currentUser = CurrentUser(board.id!!, setOf(Role.BOARD), board.addressId)
+            val result = events.findAll(EventSpecifications.fromFilter(EventQuery(approved = false), currentUser))
+
+            assertThat(result.map { it.id }).contains(draft.id)
+            assertThat(result.map { it.id }).doesNotContain(approved.id)
+        }
+
+        @Test
+        fun `anonymous approved false filter returns no events`() {
+            val committee = createCommitteeFixture()
+            createEvent(committee, "Approved", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            createEvent(committee, "Draft", LocalDateTime.of(2024, 2, 11, 12, 0), approved = false)
+
+            val result = events.findAll(EventSpecifications.fromFilter(EventQuery(approved = false), user = null))
+
+            assertThat(result).isEmpty()
         }
     }
 

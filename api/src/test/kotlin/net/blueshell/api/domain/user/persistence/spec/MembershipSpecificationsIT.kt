@@ -68,6 +68,23 @@ class MembershipSpecificationsIT : UserTestSupport() {
         }
 
         @Test
+        fun `filters memberships with only lower bound by end date`() {
+            val january = createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
+            val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
+            val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
+
+            val result = memberships.findAll(
+                MembershipSpecifications.timeOverlap(
+                    LocalDate.of(2024, 2, 10),
+                    null
+                )
+            )
+
+            assertThat(result.map { it.id }).contains(february.id, ongoing.id)
+            assertThat(result.map { it.id }).doesNotContain(january.id)
+        }
+
+        @Test
         fun `normalizes reversed bounds`() {
             createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
@@ -96,6 +113,22 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val result = memberships.findAll(
                 MembershipSpecifications.fromQuery(
                     MembershipQuery(from = LocalDate.of(2024, 2, 10), to = LocalDate.of(2024, 3, 10)),
+                    user = null
+                )
+            )
+
+            assertThat(result.map { it.id }).contains(february.id, ongoing.id)
+        }
+
+        @Test
+        fun `normalizes reversed bounds from membership query`() {
+            createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
+            val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
+            val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
+
+            val result = memberships.findAll(
+                MembershipSpecifications.fromQuery(
+                    MembershipQuery(from = LocalDate.of(2024, 3, 10), to = LocalDate.of(2024, 2, 10)),
                     user = null
                 )
             )

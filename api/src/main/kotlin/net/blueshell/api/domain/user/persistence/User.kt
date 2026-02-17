@@ -6,7 +6,7 @@ import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.file.persistence.File
-import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
@@ -15,7 +15,6 @@ import org.hibernate.annotations.SQLRestriction
 import org.hibernate.annotations.ColumnTransformer
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import java.sql.Date
 
 @Entity
 @Table(
@@ -57,16 +56,16 @@ class User(
     @Column(nullable = false)
     var initials: String,
 
-    @Column(name = "first_name", nullable = false)
+    @Column(nullable = false)
     var firstName: String,
 
     @Column
     var prefix: String? = null,
 
-    @Column(name = "last_name", nullable = false)
+    @Column(nullable = false)
     var lastName: String,
 
-    @Column(name = "phone_number")
+    @Column(nullable = false)
     var phoneNumber: String,
 
     @Column(nullable = false)
@@ -83,10 +82,10 @@ class User(
     @Column(nullable = false)
     var enabled: Boolean = false,
 
-    @Column(name = "consent_privacy")
+    @Column
     var consentPrivacy: Boolean = false,
 
-    @Column(name = "consent_gdpr")
+    @Column
     var consentGdpr: Boolean = false,
 
     // Roles are managed through multiple mechanisms:

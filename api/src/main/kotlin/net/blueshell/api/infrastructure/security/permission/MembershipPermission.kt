@@ -1,7 +1,7 @@
 package net.blueshell.api.infrastructure.security.permission
 
-import net.blueshell.api.domain.membership.application.MembershipService
-import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.user.application.MembershipService
+import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired

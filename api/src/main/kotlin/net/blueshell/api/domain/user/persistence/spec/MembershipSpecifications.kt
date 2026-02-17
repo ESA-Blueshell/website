@@ -1,11 +1,11 @@
-package net.blueshell.api.domain.membership.persistence.spec
+package net.blueshell.api.domain.user.persistence.spec
 
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
-import net.blueshell.api.domain.membership.application.query.MembershipQuery
-import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.user.application.query.MembershipQuery
+import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate

@@ -1,12 +1,12 @@
-package net.blueshell.api.domain.membership.command
+package net.blueshell.api.domain.user.command
 
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Positive
-import net.blueshell.api.domain.membership.application.query.MembershipQuery
-import net.blueshell.api.domain.membership.application.validation.MembershipUserIdCandidate
-import net.blueshell.api.domain.membership.application.validation.NoExistingMembershipForUser
-import net.blueshell.api.domain.membership.persistence.Membership
+import net.blueshell.api.domain.user.application.query.MembershipQuery
+import net.blueshell.api.domain.user.application.validation.MembershipUserIdCandidate
+import net.blueshell.api.domain.user.application.validation.NoExistingMembershipForUser
+import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.MemberType
 import java.time.LocalDate

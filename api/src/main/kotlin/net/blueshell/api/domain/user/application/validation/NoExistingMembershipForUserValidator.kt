@@ -1,8 +1,8 @@
-package net.blueshell.api.domain.membership.application.validation
+package net.blueshell.api.domain.user.application.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.membership.application.MembershipService
+import net.blueshell.api.domain.user.application.MembershipService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 

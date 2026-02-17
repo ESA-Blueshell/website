@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.membership.application.validation
+package net.blueshell.api.domain.user.application.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload

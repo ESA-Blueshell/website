@@ -1,16 +1,16 @@
-package net.blueshell.api.domain.membership.web
+package net.blueshell.api.domain.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
-import net.blueshell.api.domain.membership.application.MembershipService
-import net.blueshell.api.domain.membership.application.query.MembershipQuery
-import net.blueshell.api.domain.membership.command.CreateMembershipCommand
-import net.blueshell.api.domain.membership.command.FindMembershipByIdCommand
-import net.blueshell.api.domain.membership.command.FindMembershipsCommand
-import net.blueshell.api.domain.membership.web.dto.request.BoardCreateMembershipRequest
-import net.blueshell.api.domain.membership.web.dto.request.UpdateMembershipRequest
-import net.blueshell.api.domain.membership.web.dto.response.MembershipResponse
-import net.blueshell.api.domain.membership.web.mapping.asCommand
-import net.blueshell.api.domain.membership.web.mapping.asResponse
+import net.blueshell.api.domain.user.application.MembershipService
+import net.blueshell.api.domain.user.application.query.MembershipQuery
+import net.blueshell.api.domain.user.command.CreateMembershipCommand
+import net.blueshell.api.domain.user.command.FindMembershipByIdCommand
+import net.blueshell.api.domain.user.command.FindMembershipsCommand
+import net.blueshell.api.domain.user.web.dto.request.BoardCreateMembershipRequest
+import net.blueshell.api.domain.user.web.dto.request.UpdateMembershipRequest
+import net.blueshell.api.domain.user.web.dto.response.MembershipResponse
+import net.blueshell.api.domain.user.web.mapping.asCommand
+import net.blueshell.api.domain.user.web.mapping.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal

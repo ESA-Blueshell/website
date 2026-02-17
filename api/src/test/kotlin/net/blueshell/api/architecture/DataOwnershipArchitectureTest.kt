@@ -123,7 +123,6 @@ class DataOwnershipArchitectureTest {
                 "..domain.committee.persistence.repository..",
                 "..domain.event.persistence.repository..",
                 "..domain.survey.persistence.repository..",
-                "..domain.membership.persistence.repository..",
                 "..domain.contribution.persistence.repository..",
                 "..domain.auth.persistence.repository.."
             )

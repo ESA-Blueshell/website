@@ -1,9 +1,9 @@
-package net.blueshell.api.domain.membership.web.mapping
+package net.blueshell.api.domain.user.web.mapping
 
-import net.blueshell.api.domain.membership.command.BoardCreateMembershipCommand
-import net.blueshell.api.domain.membership.command.UpdateMembershipCommand
-import net.blueshell.api.domain.membership.web.dto.request.BoardCreateMembershipRequest
-import net.blueshell.api.domain.membership.web.dto.request.UpdateMembershipRequest
+import net.blueshell.api.domain.user.command.BoardCreateMembershipCommand
+import net.blueshell.api.domain.user.command.UpdateMembershipCommand
+import net.blueshell.api.domain.user.web.dto.request.BoardCreateMembershipRequest
+import net.blueshell.api.domain.user.web.dto.request.UpdateMembershipRequest
 import tech.mappie.api.ObjectMappie
 
 object BoardCreateMembershipRequestToCommandMapper : ObjectMappie<BoardCreateMembershipRequest, BoardCreateMembershipCommand>() {

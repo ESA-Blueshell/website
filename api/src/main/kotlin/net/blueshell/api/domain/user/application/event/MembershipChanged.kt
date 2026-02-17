@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.membership.application.event
+package net.blueshell.api.domain.user.application.event
 
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorTracked

@@ -1,7 +1,7 @@
-package net.blueshell.api.domain.membership.application.validation
+package net.blueshell.api.domain.user.application.validation
 
-import net.blueshell.api.domain.membership.application.MembershipService
-import org.assertj.core.api.Assertions.assertThat
+import net.blueshell.api.domain.user.application.MembershipService
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -13,12 +13,12 @@ class NoExistingMembershipForUserValidatorTest {
 
     @Test
     fun `accepts null candidate or null user id`() {
-        assertThat(validator.isValid(null, mock())).isTrue()
+        Assertions.assertThat(validator.isValid(null, mock())).isTrue()
 
         val candidate = object : MembershipUserIdCandidate {
             override val membershipUserId: Long? = null
         }
-        assertThat(validator.isValid(candidate, mock())).isTrue()
+        Assertions.assertThat(validator.isValid(candidate, mock())).isTrue()
     }
 
     @Test
@@ -29,7 +29,7 @@ class NoExistingMembershipForUserValidatorTest {
             override val membershipUserId: Long? = 1
         }
 
-        assertThat(validator.isValid(candidate, mock())).isTrue()
+        Assertions.assertThat(validator.isValid(candidate, mock())).isTrue()
     }
 
     @Test
@@ -40,6 +40,6 @@ class NoExistingMembershipForUserValidatorTest {
             override val membershipUserId: Long? = 2
         }
 
-        assertThat(validator.isValid(candidate, mock())).isFalse()
+        Assertions.assertThat(validator.isValid(candidate, mock())).isFalse()
     }
 }

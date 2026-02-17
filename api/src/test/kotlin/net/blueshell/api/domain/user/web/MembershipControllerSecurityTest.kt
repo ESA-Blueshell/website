@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.membership.web
+package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
 /**
  * Security tests for MembershipController.
@@ -30,10 +30,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
 
             mvc.perform(
-                get("/memberships")
+                MockMvcRequestBuilders.get("/memberships")
                     .with(bearer(board))
             )
-                .andExpect(status().isOk)
+                .andExpect(MockMvcResultMatchers.status().isOk)
         }
 
         @Test
@@ -41,10 +41,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                get("/memberships")
+                MockMvcRequestBuilders.get("/memberships")
                     .with(bearer(member))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
@@ -52,16 +52,16 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val guest = createUserWithRole(Role.GUEST)
 
             mvc.perform(
-                get("/memberships")
+                MockMvcRequestBuilders.get("/memberships")
                     .with(bearer(guest))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            mvc.perform(get("/memberships"))
-                .andExpect(status().isUnauthorized)
+            mvc.perform(MockMvcRequestBuilders.get("/memberships"))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }
 
@@ -73,10 +73,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val member = assignAddress(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
-                post("/memberships")
+                MockMvcRequestBuilders.post("/memberships")
                     .with(bearer(member))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
@@ -84,10 +84,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val guest = assignCompletePersonDetails(assignAddress(createUserWithRole(Role.GUEST)))
 
             mvc.perform(
-                post("/memberships")
+                MockMvcRequestBuilders.post("/memberships")
                     .with(bearer(guest))
             )
-                .andExpect(status().isCreated)
+                .andExpect(MockMvcResultMatchers.status().isCreated)
         }
 
         @Test
@@ -95,16 +95,16 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val guest = assignAddress(createUserWithRole(Role.GUEST))
 
             mvc.perform(
-                post("/memberships")
+                MockMvcRequestBuilders.post("/memberships")
                     .with(bearer(guest))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
         fun `denies unauthenticated access`() {
-            mvc.perform(post("/memberships"))
-                .andExpect(status().isUnauthorized)
+            mvc.perform(MockMvcRequestBuilders.post("/memberships"))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }
 
@@ -117,12 +117,12 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
-                post("/users/${targetUser.id}/memberships")
+                MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
-                .andExpect(status().isCreated)
+                .andExpect(MockMvcResultMatchers.status().isCreated)
         }
 
         @Test
@@ -131,12 +131,12 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
-                post("/users/${targetUser.id}/memberships")
+                MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
@@ -145,22 +145,22 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val targetUser = assignCompletePersonDetails(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
-                post("/users/${targetUser.id}/memberships")
+                MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
             mvc.perform(
-                post("/memberships/member")
+                MockMvcRequestBuilders.post("/memberships/member")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
-                .andExpect(status().isUnauthorized)
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }
 
@@ -174,12 +174,12 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = membership.id!!
 
             mvc.perform(
-                put("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
-                .andExpect(status().isOk)
+                .andExpect(MockMvcResultMatchers.status().isOk)
         }
 
         @Test
@@ -189,12 +189,12 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = membership.id!!
 
             mvc.perform(
-                put("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
@@ -204,12 +204,12 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = membership.id!!
 
             mvc.perform(
-                put("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
@@ -218,11 +218,11 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = membership.id!!
 
             mvc.perform(
-                put("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}""")
             )
-                .andExpect(status().isUnauthorized)
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }
 
@@ -235,10 +235,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = createMembershipFixture(user = user).id!!
 
             mvc.perform(
-                get("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.get("/memberships/{id}", membershipId)
                     .with(bearer(user))
             )
-                .andExpect(status().isOk)
+                .andExpect(MockMvcResultMatchers.status().isOk)
         }
 
         @Test
@@ -247,10 +247,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = createMembershipFixture().id!!
 
             mvc.perform(
-                get("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.get("/memberships/{id}", membershipId)
                     .with(bearer(board))
             )
-                .andExpect(status().isOk)
+                .andExpect(MockMvcResultMatchers.status().isOk)
         }
 
         @Test
@@ -260,18 +260,18 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = createMembershipFixture(user = user2).id!!
 
             mvc.perform(
-                get("/memberships/{id}", membershipId)
+                MockMvcRequestBuilders.get("/memberships/{id}", membershipId)
                     .with(bearer(user1))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
             val membershipId = createMembershipFixture().id!!
 
-            mvc.perform(get("/memberships/{id}", membershipId))
-                .andExpect(status().isUnauthorized)
+            mvc.perform(MockMvcRequestBuilders.get("/memberships/{id}", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }
 
@@ -283,10 +283,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
 
             mvc.perform(
-                get("/memberships")
+                MockMvcRequestBuilders.get("/memberships")
                     .with(bearer(admin))
             )
-                .andExpect(status().isOk)
+                .andExpect(MockMvcResultMatchers.status().isOk)
         }
 
         @Test
@@ -294,10 +294,10 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val committee = createUserWithRole(Role.COMMITTEE)
 
             mvc.perform(
-                get("/memberships")
+                MockMvcRequestBuilders.get("/memberships")
                     .with(bearer(committee))
             )
-                .andExpect(status().isForbidden)
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
     }
 }

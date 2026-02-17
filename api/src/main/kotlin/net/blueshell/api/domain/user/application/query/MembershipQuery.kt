@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.membership.application.query
+package net.blueshell.api.domain.user.application.query
 
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate

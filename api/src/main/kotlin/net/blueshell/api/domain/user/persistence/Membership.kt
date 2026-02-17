@@ -1,7 +1,14 @@
-package net.blueshell.api.domain.membership.persistence
+package net.blueshell.api.domain.user.persistence
 
-import jakarta.persistence.*
-import net.blueshell.api.domain.user.persistence.User
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.membership.web.dto.request
+package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull

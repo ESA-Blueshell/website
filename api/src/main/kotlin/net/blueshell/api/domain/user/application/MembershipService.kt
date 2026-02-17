@@ -1,11 +1,11 @@
-package net.blueshell.api.domain.membership.application
+package net.blueshell.api.domain.user.application
 
-import net.blueshell.api.domain.membership.application.event.MembershipChange
-import net.blueshell.api.domain.membership.application.event.MembershipChanged
-import net.blueshell.api.domain.membership.application.query.MembershipQuery
-import net.blueshell.api.domain.membership.persistence.Membership
-import net.blueshell.api.domain.membership.persistence.repository.MemberRepository
-import net.blueshell.api.domain.membership.persistence.spec.MembershipSpecifications
+import net.blueshell.api.domain.user.application.event.MembershipChange
+import net.blueshell.api.domain.user.application.event.MembershipChanged
+import net.blueshell.api.domain.user.application.query.MembershipQuery
+import net.blueshell.api.domain.user.persistence.Membership
+import net.blueshell.api.domain.user.persistence.repository.MemberRepository
+import net.blueshell.api.domain.user.persistence.spec.MembershipSpecifications
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService

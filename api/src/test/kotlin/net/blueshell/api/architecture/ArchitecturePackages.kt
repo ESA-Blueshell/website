@@ -72,7 +72,6 @@ object ArchitecturePackages {
     const val DOMAIN_COMMITTEE = "$ROOT.domain.committee.."
     const val DOMAIN_EVENT = "$ROOT.domain.event.."
     const val DOMAIN_SURVEY = "$ROOT.domain.survey.."
-    const val DOMAIN_MEMBERSHIP = "$ROOT.domain.membership.."
     const val DOMAIN_CONTRIBUTION = "$ROOT.domain.contribution.."
     const val DOMAIN_SPONSOR = "$ROOT.domain.sponsor.."
     const val DOMAIN_BOARD = "$ROOT.domain.board.."

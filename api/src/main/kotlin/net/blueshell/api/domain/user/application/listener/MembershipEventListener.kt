@@ -1,7 +1,7 @@
-package net.blueshell.api.domain.membership.application.listener
+package net.blueshell.api.domain.user.application.listener
 
-import net.blueshell.api.domain.membership.application.event.MembershipChange
-import net.blueshell.api.domain.membership.application.event.MembershipChanged
+import net.blueshell.api.domain.user.application.event.MembershipChange
+import net.blueshell.api.domain.user.application.event.MembershipChanged
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.enums.Role
 import org.slf4j.LoggerFactory

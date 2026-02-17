@@ -32,8 +32,8 @@ class UserControllerIT : UserTestSupport() {
 
         val created = mapper.readTree(createResult.response.contentAsByteArray)
         val userId = created.path("id").asLong()
-        val username = created.path("username").asText()
-        val email = created.path("email").asText()
+        val updatedUsername = "integration_user_updated_${System.currentTimeMillis()}"
+        val updatedEmail = "$updatedUsername@example.com"
         val version = created.path("version").asLong()
 
         mvc.perform(
@@ -41,7 +41,7 @@ class UserControllerIT : UserTestSupport() {
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    """{"username":"$username","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"nationality":"Dutch","email":"$email","discord":"updated#1234","phoneNumber":"+31612345679","version":$version}"""
+                    """{"kind":"board","username":"$updatedUsername","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"nationality":"Dutch","email":"$updatedEmail","discord":"updated#1234","phoneNumber":"+31612345679","version":$version}"""
                 )
         )
             .andExpect(status().isOk)
@@ -56,7 +56,7 @@ class UserControllerIT : UserTestSupport() {
         val guestEmail = "$guestUsername@example.com"
 
         mvc.perform(
-            post("/users/guest")
+            post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createGuestPayload(guestUsername, guestEmail))
         )
@@ -73,7 +73,7 @@ class UserControllerIT : UserTestSupport() {
         val guestEmail = "$guestUsername@example.com"
 
         val createResult = mvc.perform(
-            post("/users/guest")
+            post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createGuestPayload(guestUsername, guestEmail))
         )
@@ -86,10 +86,10 @@ class UserControllerIT : UserTestSupport() {
         val version = created.path("version").asLong()
 
         mvc.perform(
-            put("/users/guest/{id}", userId)
+            put("/users/{id}", userId)
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":$version}""")
+                .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":$version}""")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(userId))
@@ -102,10 +102,10 @@ class UserControllerIT : UserTestSupport() {
         val guest = createUserWithRole(Role.GUEST)
 
         mvc.perform(
-            put("/users/guest/{id}", guest.id)
+            put("/users/{id}", guest.id)
                 .with(bearer(guest))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}""")
+                .content("""{"kind":"user","discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}""")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(guest.id))

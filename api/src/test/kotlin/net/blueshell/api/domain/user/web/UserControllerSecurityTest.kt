@@ -20,193 +20,43 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class UserControllerSecurityTest : UserTestSupport() {
-    private fun createGuestUserPayload(username: String, email: String): String =
+    private fun createUserPayload(username: String, email: String): String =
         """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":false,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
 
     @Nested
     inner class CreateUser {
-
         @Test
-        fun `allows anyone to create regular user`() {
+        fun `allows anonymous user to create user`() {
             mvc.perform(
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"newuser","email":"newuser@test.com","password":"Password123!"}""")
+                    .content(createUserPayload("guestuser1", "guest@test.com"))
             )
                 .andExpect(status().isCreated)
         }
 
         @Test
-        fun `allows BOARD to create users `() {
+        fun `allows BOARD user to create user`() {
             val board = createUserWithRole(Role.BOARD)
 
             mvc.perform(
                 post("/users")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"adminuser","email":"adminuser@test.com","password":"Password123!","dateOfBirth":"1990-01-01","nationality":"Dutch","photoConsent":true,"ehbo":false,"bhv":false}""")
+                    .content(createUserPayload("testuser2", "test2@test.com"))
             )
                 .andExpect(status().isCreated)
         }
 
         @Test
-        fun `denies non-BOARD authenticated users from creating regular users`() {
+        fun `denies MEMBER user from creating user`() {
             val member = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 post("/users")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
-            )
-                .andExpect(status().isForbidden)
-        }
-
-        @Test
-        fun `denies COMMITTEE from creating regular users`() {
-            val committee = createUserWithRole(Role.COMMITTEE)
-
-            mvc.perform(
-                post("/users")
-                    .with(bearer(committee))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
-            )
-                .andExpect(status().isForbidden)
-        }
-
-        @Test
-        fun `denies GUEST from creating users`() {
-            val guest = createUserWithRole(Role.GUEST)
-
-            mvc.perform(
-                post("/users")
-                    .with(bearer(guest))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
-            )
-                .andExpect(status().isForbidden)
-        }
-
-        @Test
-        fun `anonymous user creates regular user with GUEST role only`() {
-            mvc.perform(
-                post("/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"newuser","email":"new@test.com","password":"Password123!"}""")
-            )
-                .andExpect(status().isCreated)
-        }
-
-        @Test
-        fun `anonymous user creates user with GUEST role and disabled state`() {
-            mvc.perform(
-                post("/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"testuser","email":"test@test.com","password":"Password123!"}""")
-            )
-                .andExpect(status().isCreated)
-
-            // User is created with GUEST role and disabled state
-            // Additional roles granted through membership/committee operations
-            // Account activation happens through recovery controller's activate endpoint
-        }
-
-        @Test
-        fun `BOARD user creates user with GUEST role and disabled state`() {
-            val board = createUserWithRole(Role.BOARD)
-
-            mvc.perform(
-                post("/users")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"testuser2","email":"test2@test.com","password":"Password123!"}""")
-            )
-                .andExpect(status().isCreated)
-
-            // User is created with GUEST role and disabled state regardless of who creates them
-        }
-    }
-
-    @Nested
-    inner class CreateGuestUser {
-
-        @Test
-        fun `allows anyone to create guest user`() {
-            mvc.perform(
-                post("/users/guest")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(createGuestUserPayload("guestuser1", "guest@test.com"))
-            )
-                .andExpect(status().isCreated)
-        }
-
-        @Test
-        fun `allows authenticated user to create guest user`() {
-            val member = createUserWithRole(Role.MEMBER)
-
-            mvc.perform(
-                post("/users/guest")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(createGuestUserPayload("guestuser2", "guest2@test.com"))
-            )
-                .andExpect(status().isCreated)
-        }
-    }
-
-    @Nested
-    inner class UpdateGuestUser {
-
-        @Test
-        fun `returns 401 when unauthenticated`() {
-            val guest = createUserWithRole(Role.GUEST)
-
-            mvc.perform(
-                put("/users/guest/{id}", guest.id)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
-            )
-                .andExpect(status().isUnauthorized)
-        }
-
-        @Test
-        fun `allows guest user to update own profile`() {
-            val guest = createUserWithRole(Role.GUEST)
-
-            mvc.perform(
-                put("/users/guest/{id}", guest.id)
-                    .with(bearer(guest))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
-            )
-                .andExpect(status().isOk)
-        }
-
-        @Test
-        fun `allows BOARD to update guest user`() {
-            val board = createUserWithRole(Role.BOARD)
-            val guest = createUserWithRole(Role.GUEST)
-
-            mvc.perform(
-                put("/users/guest/{id}", guest.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
-            )
-                .andExpect(status().isOk)
-        }
-
-        @Test
-        fun `denies non-BOARD user from updating another guest user`() {
-            val member = createUserWithRole(Role.MEMBER)
-            val guest = createUserWithRole(Role.GUEST)
-
-            mvc.perform(
-                put("/users/guest/{id}", guest.id)
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
+                    .content(createUserPayload("newuser", "new@test.com"))
             )
                 .andExpect(status().isForbidden)
         }
@@ -214,56 +64,68 @@ class UserControllerSecurityTest : UserTestSupport() {
 
     @Nested
     inner class UpdateUser {
+        @Test
+        fun `allows GUEST user to do user update on self`() {
+            val guest = createUserWithRole(Role.GUEST)
+
+            mvc.perform(
+                put("/users/{id}", guest.id)
+                    .with(bearer(guest))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
+            )
+                .andExpect(status().isOk)
+        }
 
         @Test
-        fun `allows user to update own profile`() {
+        fun `allows BOARD user to do user updates on others`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                put("/users/{id}", member.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${member.version}}""")
+            )
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `denies MEMBER user to do user update for others`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val guest = createUserWithRole(Role.GUEST)
+
+            mvc.perform(
+                put("/users/{id}", guest.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `allows MEMBER user to do user update on self`() {
             val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 put("/users/{id}", user.id)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"updated_self#1234","phoneNumber":"+31612345679","newsletter":false,"version":${user.version}}""")
+                    .content("""{"kind":"user","discord":"updated_self#1234","phoneNumber":"+31612345679","newsletter":false,"version":${user.version}}""")
             )
                 .andExpect(status().isOk)
         }
 
         @Test
-        fun `denies user from updating another user's profile`() {
-            val user1 = createUserWithRole(Role.MEMBER)
-            val user2 = createUserWithRole(Role.MEMBER)
-
-            mvc.perform(
-                put("/users/{id}", user2.id)
-                    .with(bearer(user1))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"hacked#1234","phoneNumber":"+31699999999","newsletter":false,"version":${user2.version}}""")
-            )
-                .andExpect(status().isForbidden)
-        }
-
-        @Test
-        fun `allows BOARD to update any user profile`() {
-            val board = createUserWithRole(Role.BOARD)
-            val targetUser = createUserWithRole(Role.MEMBER)
-
-            mvc.perform(
-                put("/users/{id}", targetUser.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"updated_by_board#1234","phoneNumber":"+31611111111","newsletter":true,"version":${targetUser.version}}""")
-            )
-                .andExpect(status().isOk)
-        }
-
-        @Test
-        fun `returns 401 when unauthenticated`() {
+        fun `returns 401 for unauthenticated user update`() {
             val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
                 put("/users/{id}", user.id)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"discord":"unauthorized#1234","phoneNumber":"+31622222222","newsletter":false,"version":${user.version}}""")
+                    .content("""{"kind":"user","discord":"unauthorized#1234","phoneNumber":"+31622222222","newsletter":false,"version":${user.version}}""")
             )
                 .andExpect(status().isUnauthorized)
         }

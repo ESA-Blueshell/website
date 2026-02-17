@@ -6,7 +6,7 @@ import net.blueshell.api.platform.integration.job.repository.JobExecutionReposit
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
 import org.springframework.test.context.event.ApplicationEvents
@@ -45,7 +45,7 @@ abstract class ServiceTestSupport {
     @Autowired
     protected lateinit var jobExecutions: JobExecutionRepository
 
-    @MockBean
+    @MockitoBean
     protected lateinit var rabbitTemplate: RabbitTemplate
 
     protected val transactionTemplate: TransactionTemplate by lazy {

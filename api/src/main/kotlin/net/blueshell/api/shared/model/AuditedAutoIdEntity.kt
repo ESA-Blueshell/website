@@ -10,8 +10,8 @@ import org.hibernate.Hibernate
 abstract class AuditedAutoIdEntity : AuditedSoftDeleteEntity(), Identifiable<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    final override var id: Long? = null
-        private set
+    override var id: Long? = null
+        internal set
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

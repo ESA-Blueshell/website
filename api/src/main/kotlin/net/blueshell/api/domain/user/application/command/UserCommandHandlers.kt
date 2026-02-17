@@ -62,7 +62,7 @@ class BoardUpdateUserHandler(
             prefix = command.prefix
             lastName = command.lastName
             version = command.version
-            command.memberProfile?.let { replaceMemberProfile(it.toEntity(this)) }
+            command.memberProfile?.upsertInto(this)
         }
         user = service.update(user)
         return user
@@ -81,7 +81,7 @@ class UpdateUserHandler(
             phoneNumber = command.phoneNumber
             newsletter = command.newsletter
             version = command.version
-            command.memberProfile?.let { replaceMemberProfile(it.toEntity(this)) }
+            command.memberProfile?.upsertInto(this)
         }
         user = service.update(user)
         return user
@@ -142,6 +142,24 @@ private fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         nationality = nationality,
         bhv = bhv,
         ehbo = ehbo
-    ).also { profile ->
-        version?.let { profile.version = it }
+    )
+
+private fun UpsertMemberProfileData.upsertInto(user: User) {
+    val existing = user.memberProfile
+    if (existing == null) {
+        user.replaceMemberProfile(toEntity(user))
+        return
     }
+
+    existing.apply {
+        dateOfBirth = dateOfBirth
+        studentNumber = studentNumber
+        studentNumber = studentNumber
+        gender = gender
+        photoConsent = photoConsent
+        nationality = nationality
+        bhv = bhv
+        ehbo = ehbo
+        version = version
+    }
+}

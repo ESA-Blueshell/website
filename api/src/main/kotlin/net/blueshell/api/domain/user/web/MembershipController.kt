@@ -43,12 +43,15 @@ class MembershipController(
         @AuthenticationPrincipal principal: UserPrincipal?
     ): MembershipResponse? {
         val principalId = principal!!.id
+        val isMember = principal.hasAuthority(Role.MEMBER)
+        val hasAddress = principal.addressId != null
+        val hasMemberProfile = principal.personDetailsId != null
         val membership = commandBus.dispatch(
             CreateMembershipCommand(
-                userId = principal.id,
-                isMember = principal.hasAuthority(Role.MEMBER),
-                hasAddress = principal.addressId != null,
-                hasMemberProfile = principal.personDetailsId != null,
+                userId = principalId,
+                isMember = isMember,
+                hasAddress = hasAddress,
+                hasMemberProfile = hasMemberProfile,
             )
         )
         return membership.asResponse()

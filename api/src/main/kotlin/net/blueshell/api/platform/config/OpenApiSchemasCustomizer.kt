@@ -3,7 +3,7 @@ package net.blueshell.api.platform.config
 import io.swagger.v3.core.converter.ModelConverters
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
-import net.blueshell.api.domain.user.web.dto.response.PersonalInfoResponse
+import net.blueshell.api.domain.user.web.dto.response.MemberProfileResponse
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,7 +24,7 @@ class OpenApiSchemasCustomizer {
 
     companion object {
         private val EXPLICIT_CLASSES: MutableSet<Class<*>> = mutableSetOf(
-            PersonalInfoResponse::class.java
+            MemberProfileResponse::class.java
         )
     }
 }

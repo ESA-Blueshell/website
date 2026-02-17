@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApproveEventData, ApproveEventErrors, ApproveEventResponses, AuthenticateData, AuthenticateErrors, AuthenticateResponses, BoardCreateMembershipData, BoardCreateMembershipErrors, BoardCreateMembershipResponses, CreateAddressData, CreateAddressErrors, CreateAddressResponses, CreateBlogData, CreateBlogErrors, CreateBlogResponses, CreateCommitteeData, CreateCommitteeErrors, CreateCommitteeResponses, CreateContributionData, CreateContributionErrors, CreateContributionPeriodData, CreateContributionPeriodErrors, CreateContributionPeriodResponses, CreateContributionResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateEventSignupData, CreateEventSignupErrors, CreateEventSignupResponses, CreateGuestUserData, CreateGuestUserErrors, CreateGuestUserResponses, CreateMembershipData, CreateMembershipErrors, CreateMembershipResponses, CreateSponsorData, CreateSponsorErrors, CreateSponsorResponses, CreateTelemetryData, CreateTelemetryErrors, CreateTelemetryResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteAddressByIdData, DeleteAddressByIdErrors, DeleteAddressByIdResponses, DeleteByIdData, DeleteByIdErrors, DeleteByIdResponses, DeleteCommitteeByIdData, DeleteCommitteeByIdErrors, DeleteCommitteeByIdResponses, DeleteContributionData, DeleteContributionErrors, DeleteContributionPeriodByIdData, DeleteContributionPeriodByIdErrors, DeleteContributionPeriodByIdResponses, DeleteContributionResponses, DeleteEventByIdData, DeleteEventByIdErrors, DeleteEventByIdResponses, DeleteEventSignupData, DeleteEventSignupErrors, DeleteEventSignupResponses, DeleteSponsorByIdData, DeleteSponsorByIdErrors, DeleteSponsorByIdResponses, DeleteUserAddressData, DeleteUserAddressErrors, DeleteUserAddressResponses, DeleteUserByIdData, DeleteUserByIdErrors, DeleteUserByIdResponses, DownloadEventBannerData, DownloadEventBannerErrors, DownloadEventBannerResponses, FindAddressByIdData, FindAddressByIdErrors, FindAddressByIdResponses, FindAllAddressesData, FindAllAddressesErrors, FindAllAddressesResponses, FindBlogByIdData, FindBlogByIdErrors, FindBlogByIdResponses, FindBlogsData, FindBlogsErrors, FindBlogsResponses, FindCommitteeByIdData, FindCommitteeByIdErrors, FindCommitteeByIdResponses, FindCommitteesData, FindCommitteesErrors, FindCommitteesForCurrentUserData, FindCommitteesForCurrentUserErrors, FindCommitteesForCurrentUserResponses, FindCommitteesResponses, FindContributionPeriodsData, FindContributionPeriodsErrors, FindContributionPeriodsResponses, FindContributionRemindersData, FindContributionRemindersErrors, FindContributionRemindersResponses, FindContributionsByPeriodIdData, FindContributionsByPeriodIdErrors, FindContributionsByPeriodIdResponses, FindContributionsData, FindContributionsErrors, FindContributionsResponses, FindCurrentContributionPeriodData, FindCurrentContributionPeriodErrors, FindCurrentContributionPeriodResponses, FindEventByIdData, FindEventByIdErrors, FindEventByIdResponses, FindEventsData, FindEventsErrors, FindEventSignUpsByAccessTokenData, FindEventSignUpsByAccessTokenErrors, FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByEventIdData, FindEventSignUpsByEventIdErrors, FindEventSignUpsByEventIdResponses, FindEventSignUpsData, FindEventSignUpsErrors, FindEventSignUpsResponses, FindEventsResponses, FindMembershipByIdData, FindMembershipByIdErrors, FindMembershipByIdResponses, FindMembershipsData, FindMembershipsErrors, FindMembershipsResponses, FindSponsorByIdData, FindSponsorByIdErrors, FindSponsorByIdResponses, FindSponsorsData, FindSponsorsErrors, FindSponsorsResponses, FindTelemetryByIdData, FindTelemetryByIdErrors, FindTelemetryByIdResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUsersData, FindUsersErrors, FindUsersResponses, HealthCheckData, HealthCheckErrors, HealthCheckResponses, ListJobExecutionsData, ListJobExecutionsResponses, MemberActivateData, MemberActivateErrors, MemberActivateResponses, ResendMemberActivationEmailData, ResendMemberActivationEmailErrors, ResendMemberActivationEmailResponses, ResendUserActivationData, ResendUserActivationErrors, ResendUserActivationResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RetryJobExecutionData, RetryJobExecutionErrors, RetryJobExecutionResponses, SendContributionReminderBatchData, SendContributionReminderBatchErrors, SendContributionReminderBatchResponses, SendContributionReminderData, SendContributionReminderErrors, SendContributionReminderResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, ToggleUserRoleData, ToggleUserRoleErrors, ToggleUserRoleResponses, UpdateAddressData, UpdateAddressErrors, UpdateAddressResponses, UpdateBlogData, UpdateBlogErrors, UpdateBlogResponses, UpdateCommitteeData, UpdateCommitteeErrors, UpdateCommitteeResponses, UpdateContributionPeriodData, UpdateContributionPeriodErrors, UpdateContributionPeriodResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateEventSignUpData, UpdateEventSignUpErrors, UpdateEventSignUpResponses, UpdateGuestUserData, UpdateGuestUserErrors, UpdateGuestUserResponses, UpdateMembershipData, UpdateMembershipErrors, UpdateMembershipResponses, UpdateSponsorData, UpdateSponsorErrors, UpdateSponsorResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadEventBannerData, UploadEventBannerErrors, UploadEventBannerResponses, UserActivateData, UserActivateErrors, UserActivateResponses } from './types.gen';
+import type { AddMemberData, AddMemberErrors, AddMemberResponses, ApproveEventData, ApproveEventErrors, ApproveEventResponses, AuthenticateData, AuthenticateErrors, AuthenticateResponses, BoardCreateMembershipData, BoardCreateMembershipErrors, BoardCreateMembershipResponses, CreateAddressData, CreateAddressErrors, CreateAddressResponses, CreateBlogData, CreateBlogErrors, CreateBlogResponses, CreateBoardData, CreateBoardErrors, CreateBoardResponses, CreateCommitteeData, CreateCommitteeErrors, CreateCommitteeResponses, CreateContributionData, CreateContributionErrors, CreateContributionPeriodData, CreateContributionPeriodErrors, CreateContributionPeriodResponses, CreateContributionResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateEventSignupData, CreateEventSignupErrors, CreateEventSignupResponses, CreateMemberProfileData, CreateMemberProfileErrors, CreateMemberProfileResponses, CreateMembershipData, CreateMembershipErrors, CreateMembershipResponses, CreateSponsorData, CreateSponsorErrors, CreateSponsorResponses, CreateTelemetryData, CreateTelemetryErrors, CreateTelemetryResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteAddressByIdData, DeleteAddressByIdErrors, DeleteAddressByIdResponses, DeleteBoardData, DeleteBoardErrors, DeleteBoardResponses, DeleteByIdData, DeleteByIdErrors, DeleteByIdResponses, DeleteCommitteeByIdData, DeleteCommitteeByIdErrors, DeleteCommitteeByIdResponses, DeleteContributionData, DeleteContributionErrors, DeleteContributionPeriodByIdData, DeleteContributionPeriodByIdErrors, DeleteContributionPeriodByIdResponses, DeleteContributionResponses, DeleteEventByIdData, DeleteEventByIdErrors, DeleteEventByIdResponses, DeleteEventSignupData, DeleteEventSignupErrors, DeleteEventSignupResponses, DeleteSponsorByIdData, DeleteSponsorByIdErrors, DeleteSponsorByIdResponses, DeleteUserByIdData, DeleteUserByIdErrors, DeleteUserByIdResponses, DownloadEventBannerData, DownloadEventBannerErrors, DownloadEventBannerResponses, FindAddressByIdData, FindAddressByIdErrors, FindAddressByIdResponses, FindAllAddressesData, FindAllAddressesErrors, FindAllAddressesResponses, FindAllBoardsData, FindAllBoardsErrors, FindAllBoardsResponses, FindBlogByIdData, FindBlogByIdErrors, FindBlogByIdResponses, FindBlogsData, FindBlogsErrors, FindBlogsResponses, FindBoardByIdData, FindBoardByIdErrors, FindBoardByIdResponses, FindCommitteeByIdData, FindCommitteeByIdErrors, FindCommitteeByIdResponses, FindCommitteesByUserIdData, FindCommitteesByUserIdErrors, FindCommitteesByUserIdResponses, FindCommitteesData, FindCommitteesErrors, FindCommitteesResponses, FindContributionPeriodsData, FindContributionPeriodsErrors, FindContributionPeriodsResponses, FindContributionRemindersData, FindContributionRemindersErrors, FindContributionRemindersResponses, FindContributionsByPeriodIdData, FindContributionsByPeriodIdErrors, FindContributionsByPeriodIdResponses, FindContributionsData, FindContributionsErrors, FindContributionsResponses, FindCurrentContributionPeriodData, FindCurrentContributionPeriodErrors, FindCurrentContributionPeriodResponses, FindEventByIdData, FindEventByIdErrors, FindEventByIdResponses, FindEventsData, FindEventsErrors, FindEventSignUpsByAccessTokenData, FindEventSignUpsByAccessTokenErrors, FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByEventIdData, FindEventSignUpsByEventIdErrors, FindEventSignUpsByEventIdResponses, FindEventSignUpsData, FindEventSignUpsErrors, FindEventSignUpsResponses, FindEventsResponses, FindMemberProfileByUserIdData, FindMemberProfileByUserIdErrors, FindMemberProfileByUserIdResponses, FindMembershipByIdData, FindMembershipByIdErrors, FindMembershipByIdResponses, FindMembershipsData, FindMembershipsErrors, FindMembershipsResponses, FindSponsorByIdData, FindSponsorByIdErrors, FindSponsorByIdResponses, FindSponsorsData, FindSponsorsErrors, FindSponsorsResponses, FindTelemetryByIdData, FindTelemetryByIdErrors, FindTelemetryByIdResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUsersData, FindUsersErrors, FindUsersResponses, HealthCheckData, HealthCheckErrors, HealthCheckResponses, ListData, ListErrors, ListResponses, MemberActivateData, MemberActivateErrors, MemberActivateResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, ResendMemberActivationEmailData, ResendMemberActivationEmailErrors, ResendMemberActivationEmailResponses, ResendUserActivationData, ResendUserActivationErrors, ResendUserActivationResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RetryData, RetryErrors, RetryResponses, SendContributionReminderBatchData, SendContributionReminderBatchErrors, SendContributionReminderBatchResponses, SendContributionReminderData, SendContributionReminderErrors, SendContributionReminderResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, ToggleUserRoleData, ToggleUserRoleErrors, ToggleUserRoleResponses, UpdateAddressData, UpdateAddressErrors, UpdateAddressResponses, UpdateBlogData, UpdateBlogErrors, UpdateBlogResponses, UpdateBoardData, UpdateBoardErrors, UpdateBoardResponses, UpdateCommitteeData, UpdateCommitteeErrors, UpdateCommitteeResponses, UpdateContributionPeriodData, UpdateContributionPeriodErrors, UpdateContributionPeriodResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateEventSignUpData, UpdateEventSignUpErrors, UpdateEventSignUpResponses, UpdateMemberProfileData, UpdateMemberProfileErrors, UpdateMemberProfileResponses, UpdateMembershipData, UpdateMembershipErrors, UpdateMembershipResponses, UpdateSponsorData, UpdateSponsorErrors, UpdateSponsorResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadEventBannerData, UploadEventBannerErrors, UploadEventBannerResponses, UserActivateData, UserActivateErrors, UserActivateResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -22,6 +22,16 @@ export const findAllAddresses = <ThrowOnError extends boolean = false>(options?:
     responseType: 'json',
     url: '/addresses',
     ...options
+});
+
+export const createAddress = <ThrowOnError extends boolean = false>(options: Options<CreateAddressData, ThrowOnError>) => (options.client ?? client).post<CreateAddressResponses, CreateAddressErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/addresses',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 export const deleteAddressById = <ThrowOnError extends boolean = false>(options: Options<DeleteAddressByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteAddressByIdResponses, DeleteAddressByIdErrors, ThrowOnError>({ url: '/addresses/{id}', ...options });
@@ -86,7 +96,53 @@ export const updateBlog = <ThrowOnError extends boolean = false>(options: Option
     }
 });
 
-export const findCommitteesForCurrentUser = <ThrowOnError extends boolean = false>(options?: Options<FindCommitteesForCurrentUserData, ThrowOnError>) => (options?.client ?? client).get<FindCommitteesForCurrentUserResponses, FindCommitteesForCurrentUserErrors, ThrowOnError>({
+export const findAllBoards = <ThrowOnError extends boolean = false>(options?: Options<FindAllBoardsData, ThrowOnError>) => (options?.client ?? client).get<FindAllBoardsResponses, FindAllBoardsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/boards',
+    ...options
+});
+
+export const createBoard = <ThrowOnError extends boolean = false>(options: Options<CreateBoardData, ThrowOnError>) => (options.client ?? client).post<CreateBoardResponses, CreateBoardErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/boards',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const addMember = <ThrowOnError extends boolean = false>(options: Options<AddMemberData, ThrowOnError>) => (options.client ?? client).post<AddMemberResponses, AddMemberErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/boards/{boardId}/members',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const removeMember = <ThrowOnError extends boolean = false>(options: Options<RemoveMemberData, ThrowOnError>) => (options.client ?? client).delete<RemoveMemberResponses, RemoveMemberErrors, ThrowOnError>({ url: '/boards/{boardId}/members/{userId}', ...options });
+
+export const deleteBoard = <ThrowOnError extends boolean = false>(options: Options<DeleteBoardData, ThrowOnError>) => (options.client ?? client).delete<DeleteBoardResponses, DeleteBoardErrors, ThrowOnError>({ url: '/boards/{id}', ...options });
+
+export const findBoardById = <ThrowOnError extends boolean = false>(options: Options<FindBoardByIdData, ThrowOnError>) => (options.client ?? client).get<FindBoardByIdResponses, FindBoardByIdErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/boards/{id}',
+    ...options
+});
+
+export const updateBoard = <ThrowOnError extends boolean = false>(options: Options<UpdateBoardData, ThrowOnError>) => (options.client ?? client).put<UpdateBoardResponses, UpdateBoardErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/boards/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const findCommitteesByUserId = <ThrowOnError extends boolean = false>(options?: Options<FindCommitteesByUserIdData, ThrowOnError>) => (options?.client ?? client).get<FindCommitteesByUserIdResponses, FindCommitteesByUserIdErrors, ThrowOnError>({
     responseType: 'json',
     url: '/committeeMembers/committees',
     ...options
@@ -148,6 +204,8 @@ export const findCurrentContributionPeriod = <ThrowOnError extends boolean = fal
     ...options
 });
 
+export const deleteContribution = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionData, ThrowOnError>) => (options.client ?? client).delete<DeleteContributionResponses, DeleteContributionErrors, ThrowOnError>({ url: '/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions', ...options });
+
 export const deleteContributionPeriodById = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionPeriodByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteContributionPeriodByIdResponses, DeleteContributionPeriodByIdErrors, ThrowOnError>({ url: '/contributionPeriods/{id}', ...options });
 
 export const updateContributionPeriod = <ThrowOnError extends boolean = false>(options: Options<UpdateContributionPeriodData, ThrowOnError>) => (options.client ?? client).put<UpdateContributionPeriodResponses, UpdateContributionPeriodErrors, ThrowOnError>({
@@ -166,7 +224,7 @@ export const findContributionsByPeriodId = <ThrowOnError extends boolean = false
     ...options
 });
 
-export const findContributionReminders = <ThrowOnError extends boolean = false>(options?: Options<FindContributionRemindersData, ThrowOnError>) => (options?.client ?? client).get<FindContributionRemindersResponses, FindContributionRemindersErrors, ThrowOnError>({
+export const findContributionReminders = <ThrowOnError extends boolean = false>(options: Options<FindContributionRemindersData, ThrowOnError>) => (options.client ?? client).get<FindContributionRemindersResponses, FindContributionRemindersErrors, ThrowOnError>({
     responseType: 'json',
     url: '/contributionReminders',
     ...options
@@ -192,7 +250,7 @@ export const sendContributionReminderBatch = <ThrowOnError extends boolean = fal
     }
 });
 
-export const findContributions = <ThrowOnError extends boolean = false>(options?: Options<FindContributionsData, ThrowOnError>) => (options?.client ?? client).get<FindContributionsResponses, FindContributionsErrors, ThrowOnError>({
+export const findContributions = <ThrowOnError extends boolean = false>(options: Options<FindContributionsData, ThrowOnError>) => (options.client ?? client).get<FindContributionsResponses, FindContributionsErrors, ThrowOnError>({
     responseType: 'json',
     url: '/contributions',
     ...options
@@ -207,8 +265,6 @@ export const createContribution = <ThrowOnError extends boolean = false>(options
         ...options.headers
     }
 });
-
-export const deleteContribution = <ThrowOnError extends boolean = false>(options: Options<DeleteContributionData, ThrowOnError>) => (options.client ?? client).delete<DeleteContributionResponses, DeleteContributionErrors, ThrowOnError>({ url: '/contributions/{id}', ...options });
 
 export const findEvents = <ThrowOnError extends boolean = false>(options?: Options<FindEventsData, ThrowOnError>) => (options?.client ?? client).get<FindEventsResponses, FindEventsErrors, ThrowOnError>({
     responseType: 'json',
@@ -237,12 +293,6 @@ export const uploadEventBanner = <ThrowOnError extends boolean = false>(options:
     }
 });
 
-export const downloadEventBanner = <ThrowOnError extends boolean = false>(options: Options<DownloadEventBannerData, ThrowOnError>) => (options.client ?? client).get<DownloadEventBannerResponses, DownloadEventBannerErrors, ThrowOnError>({
-    responseType: 'json',
-    url: '/events/banners/{bannerId}',
-    ...options
-});
-
 export const findEventSignUps = <ThrowOnError extends boolean = false>(options?: Options<FindEventSignUpsData, ThrowOnError>) => (options?.client ?? client).get<FindEventSignUpsResponses, FindEventSignUpsErrors, ThrowOnError>({
     responseType: 'json',
     url: '/events/signups',
@@ -255,9 +305,15 @@ export const findEventSignUpsByAccessToken = <ThrowOnError extends boolean = fal
     ...options
 });
 
-export const deleteEventSignup = <ThrowOnError extends boolean = false>(options: Options<DeleteEventSignupData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventSignupResponses, DeleteEventSignupErrors, ThrowOnError>({ url: '/events/signups/{eventSignupId}', ...options });
+export const deleteEventSignup = <ThrowOnError extends boolean = false>(options: Options<DeleteEventSignupData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventSignupResponses, DeleteEventSignupErrors, ThrowOnError>({ url: '/events/signups/{id}', ...options });
 
 export const deleteEventById = <ThrowOnError extends boolean = false>(options: Options<DeleteEventByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventByIdResponses, DeleteEventByIdErrors, ThrowOnError>({ url: '/events/{eventId}', ...options });
+
+export const downloadEventBanner = <ThrowOnError extends boolean = false>(options: Options<DownloadEventBannerData, ThrowOnError>) => (options.client ?? client).get<DownloadEventBannerResponses, DownloadEventBannerErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/events/{eventId}/banners',
+    ...options
+});
 
 export const findEventSignUpsByEventId = <ThrowOnError extends boolean = false>(options: Options<FindEventSignUpsByEventIdData, ThrowOnError>) => (options.client ?? client).get<FindEventSignUpsByEventIdResponses, FindEventSignUpsByEventIdErrors, ThrowOnError>({
     responseType: 'json',
@@ -313,6 +369,28 @@ export const healthCheck = <ThrowOnError extends boolean = false>(options?: Opti
     ...options
 });
 
+export const list = <ThrowOnError extends boolean = false>(options?: Options<ListData, ThrowOnError>) => (options?.client ?? client).get<ListResponses, ListErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/management/jobs',
+    ...options
+});
+
+export const retry = <ThrowOnError extends boolean = false>(options: Options<RetryData, ThrowOnError>) => (options.client ?? client).post<RetryResponses, RetryErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/management/jobs/{id}/retry',
+    ...options
+});
+
+export const createMemberProfile = <ThrowOnError extends boolean = false>(options: Options<CreateMemberProfileData, ThrowOnError>) => (options.client ?? client).post<CreateMemberProfileResponses, CreateMemberProfileErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/memberProfiles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const findMemberships = <ThrowOnError extends boolean = false>(options?: Options<FindMembershipsData, ThrowOnError>) => (options?.client ?? client).get<FindMembershipsResponses, FindMembershipsErrors, ThrowOnError>({
     responseType: 'json',
     url: '/memberships',
@@ -325,9 +403,15 @@ export const createMembership = <ThrowOnError extends boolean = false>(options?:
     ...options
 });
 
-export const boardCreateMembership = <ThrowOnError extends boolean = false>(options: Options<BoardCreateMembershipData, ThrowOnError>) => (options.client ?? client).post<BoardCreateMembershipResponses, BoardCreateMembershipErrors, ThrowOnError>({
+export const findMembershipById = <ThrowOnError extends boolean = false>(options: Options<FindMembershipByIdData, ThrowOnError>) => (options.client ?? client).get<FindMembershipByIdResponses, FindMembershipByIdErrors, ThrowOnError>({
     responseType: 'json',
-    url: '/memberships/member',
+    url: '/memberships/{id}',
+    ...options
+});
+
+export const updateMembership = <ThrowOnError extends boolean = false>(options: Options<UpdateMembershipData, ThrowOnError>) => (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/memberships/{id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -407,7 +491,11 @@ export const updateSponsor = <ThrowOnError extends boolean = false>(options: Opt
 export const createTelemetry = <ThrowOnError extends boolean = false>(options: Options<CreateTelemetryData, ThrowOnError>) => (options.client ?? client).post<CreateTelemetryResponses, CreateTelemetryErrors, ThrowOnError>({
     responseType: 'json',
     url: '/telemetry',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 export const findTelemetryById = <ThrowOnError extends boolean = false>(options: Options<FindTelemetryByIdData, ThrowOnError>) => (options.client ?? client).get<FindTelemetryByIdResponses, FindTelemetryByIdErrors, ThrowOnError>({
@@ -425,26 +513,6 @@ export const findUsers = <ThrowOnError extends boolean = false>(options?: Option
 export const createUser = <ThrowOnError extends boolean = false>(options: Options<CreateUserData, ThrowOnError>) => (options.client ?? client).post<CreateUserResponses, CreateUserErrors, ThrowOnError>({
     responseType: 'json',
     url: '/users',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-export const createGuestUser = <ThrowOnError extends boolean = false>(options: Options<CreateGuestUserData, ThrowOnError>) => (options.client ?? client).post<CreateGuestUserResponses, CreateGuestUserErrors, ThrowOnError>({
-    responseType: 'json',
-    url: '/users/guest',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-export const updateGuestUser = <ThrowOnError extends boolean = false>(options: Options<UpdateGuestUserData, ThrowOnError>) => (options.client ?? client).put<UpdateGuestUserResponses, UpdateGuestUserErrors, ThrowOnError>({
-    responseType: 'json',
-    url: '/users/guest/{id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -470,11 +538,25 @@ export const findUserById = <ThrowOnError extends boolean = false>(options: Opti
     ...options
 });
 
-export const deleteUserAddress = <ThrowOnError extends boolean = false>(options: Options<DeleteUserAddressData, ThrowOnError>) => (options.client ?? client).delete<DeleteUserAddressResponses, DeleteUserAddressErrors, ThrowOnError>({ url: '/users/{userId}/addresses', ...options });
-
-export const createAddress = <ThrowOnError extends boolean = false>(options: Options<CreateAddressData, ThrowOnError>) => (options.client ?? client).post<CreateAddressResponses, CreateAddressErrors, ThrowOnError>({
+export const findMemberProfileByUserId = <ThrowOnError extends boolean = false>(options: Options<FindMemberProfileByUserIdData, ThrowOnError>) => (options.client ?? client).get<FindMemberProfileByUserIdResponses, FindMemberProfileByUserIdErrors, ThrowOnError>({
     responseType: 'json',
-    url: '/users/{userId}/addresses',
+    url: '/users/{userId}/memberProfiles',
+    ...options
+});
+
+export const updateMemberProfile = <ThrowOnError extends boolean = false>(options: Options<UpdateMemberProfileData, ThrowOnError>) => (options.client ?? client).put<UpdateMemberProfileResponses, UpdateMemberProfileErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}/memberProfiles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const boardCreateMembership = <ThrowOnError extends boolean = false>(options: Options<BoardCreateMembershipData, ThrowOnError>) => (options.client ?? client).post<BoardCreateMembershipResponses, BoardCreateMembershipErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}/memberships',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -485,33 +567,5 @@ export const createAddress = <ThrowOnError extends boolean = false>(options: Opt
 export const toggleUserRole = <ThrowOnError extends boolean = false>(options: Options<ToggleUserRoleData, ThrowOnError>) => (options.client ?? client).put<ToggleUserRoleResponses, ToggleUserRoleErrors, ThrowOnError>({
     responseType: 'json',
     url: '/users/{userId}/roles',
-    ...options
-});
-
-export const findMembershipById = <ThrowOnError extends boolean = false>(options: Options<FindMembershipByIdData, ThrowOnError>) => (options.client ?? client).get<FindMembershipByIdResponses, FindMembershipByIdErrors, ThrowOnError>({
-    responseType: 'json',
-    url: '/{id}',
-    ...options
-});
-
-export const updateMembership = <ThrowOnError extends boolean = false>(options: Options<UpdateMembershipData, ThrowOnError>) => (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError>({
-    responseType: 'json',
-    url: '/{id}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-export const listJobExecutions = <ThrowOnError extends boolean = false>(options?: Options<ListJobExecutionsData, ThrowOnError>) => (options?.client ?? client).get<ListJobExecutionsResponses, unknown, ThrowOnError>({
-    responseType: 'json',
-    url: '/management/jobs',
-    ...options
-});
-
-export const retryJobExecution = <ThrowOnError extends boolean = false>(options: Options<RetryJobExecutionData, ThrowOnError>) => (options.client ?? client).post<RetryJobExecutionResponses, RetryJobExecutionErrors, ThrowOnError>({
-    responseType: 'json',
-    url: '/management/jobs/{id}/retry',
     ...options
 });

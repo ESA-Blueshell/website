@@ -4,76 +4,51 @@ export type ClientOptions = {
     baseURL: 'http://localhost:8080' | (string & {});
 };
 
-export type Address = {
-    city: string;
-    country: string;
-    createdAt?: string;
-    deletedAt?: string;
-    houseNumber: string;
-    id?: number;
-    street: string;
-    updatedAt?: string;
-    version?: number;
-    zipCode: string;
+export type Actor = {
+    role: Role;
+    type: 'USER' | 'SYSTEM';
+    userId?: number;
 };
 
-export type AdvancedCommittee = {
-    createdAt?: string;
-    deletedAt?: string;
-    description: string;
-    id?: number;
-    members: Array<CommitteeMember>;
-    name: string;
-    updatedAt?: string;
-    version?: number;
+export type AddBoardMemberRequest = {
+    endDate?: string;
+    role: string;
+    startDate: string;
+    userId: number;
 };
 
-export type AdvancedUser = {
-    addressId?: number;
-    bhv: boolean;
-    createdAt?: string;
-    dateOfBirth: string;
-    deletedAt?: string;
-    discord: string;
-    ehbo: boolean;
-    email: string;
-    enabled?: boolean;
-    firstName: string;
-    fullName?: string;
-    gender?: string;
-    id?: number;
-    initials: string;
-    lastName: string;
-    nationality: string;
-    newsletter: boolean;
-    password?: string;
-    phoneNumber: string;
-    photoConsent: boolean;
-    prefix?: string;
-    roles?: Array<Role>;
-    studentNumber?: string;
-    updatedAt?: string;
-    username: string;
-    version?: number;
+export type AddressResponse = {
+    city?: string;
+    country?: string;
+    createdAt: string;
+    houseNumber?: string;
+    id: number;
+    street?: string;
+    updatedAt: string;
+    version: number;
+    zipCode?: string;
 };
 
-export type Answer = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
+export type AnswerRequest = {
     optionSelections?: Array<boolean>;
     questionId: number;
     textResponse?: string;
-    updatedAt?: string;
-    version?: number;
+};
+
+export type AnswerResponse = {
+    createdAt: string;
+    id: number;
+    optionSelections?: Array<boolean>;
+    questionId: number;
+    textResponse?: string;
+    updatedAt: string;
+    version: number;
 };
 
 /**
  * Problem Details for HTTP APIs including validation errors.
  */
 export type ApiError = {
-    createdAt?: string;
-    deletedAt?: string;
     /**
      * Human-readable explanation specific to this occurrence.
      */
@@ -82,7 +57,6 @@ export type ApiError = {
      * List of field/object validation errors (present when binding/validation fails).
      */
     errors?: Array<FieldValidationError>;
-    id?: number;
     /**
      * A URI reference that identifies the specific occurrence.
      */
@@ -103,119 +77,265 @@ export type ApiError = {
      * Problem type URI (RFC 7807).
      */
     type?: string;
-    updatedAt?: string;
-    version?: number;
 };
 
-export type BaseDto = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    updatedAt?: string;
-    version?: number;
-};
-
-export type Blog = {
-    createdAt?: string;
-    deletedAt?: string;
+export type BlogResponse = {
+    createdAt: string;
     html: string;
-    id?: number;
-    publishedAt?: string;
+    id: number;
+    publishedAt: string;
     title: string;
-    updatedAt?: string;
-    url?: string;
-    version?: number;
+    updatedAt: string;
+    url: string;
+    version: number;
 };
 
-export type CommitteeMember = {
-    committeeId?: number;
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
+export type BoardCreateMembershipRequest = {
+    endDate?: string;
+    incasso: boolean;
+    memberType: MemberType;
+    startDate?: string;
+    userId: number;
+};
+
+export type BoardMemberResponse = {
+    boardId: number;
+    createdAt: string;
+    endDate?: string;
     role: string;
-    updatedAt?: string;
+    startDate: string;
+    updatedAt: string;
     userId: number;
-    version?: number;
+    version: number;
 };
 
-export type Contribution = {
-    contributionPeriodId: number;
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    remindedAt?: string;
-    updatedAt?: string;
-    userId: number;
-    version?: number;
+export type BoardResponse = {
+    candidate: string;
+    createdAt: string;
+    endDate?: string;
+    id: number;
+    members: Array<BoardMemberResponse>;
+    name: string;
+    pictureId?: number;
+    startDate: string;
+    updatedAt: string;
+    version: number;
 };
 
-export type ContributionPeriod = {
+export type CommitteeDetailResponse = {
+    createdAt: string;
+    description: string;
+    id: number;
+    members: Array<CommitteeMemberResponse>;
+    name: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type CommitteeMemberRequest = {
+    role: string;
+    userId: number;
+};
+
+export type CommitteeMemberResponse = {
+    committeeId: number;
+    createdAt: string;
+    role: string;
+    updatedAt: string;
+    userId: number;
+    version: number;
+};
+
+export type CommitteeResponse = unknown;
+
+export type ContributionPeriodResponse = {
     alumniFee: number;
-    createdAt?: string;
-    deletedAt?: string;
+    createdAt: string;
     endDate: string;
     fullYearFee: number;
     halfYearFee: number;
-    id?: number;
+    id: number;
     listId?: number;
     startDate: string;
-    updatedAt?: string;
-    version?: number;
+    updatedAt: string;
+    version: number;
 };
 
-export type ContributionReminder = {
+export type ContributionReminderResponse = {
     contributionPeriodId: number;
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
+    createdAt: string;
     remindedAt?: string;
-    updatedAt?: string;
+    updatedAt: string;
     userId: number;
-    version?: number;
+    version: number;
 };
 
-export type Event = {
-    approved?: boolean;
-    banner?: EventBanner;
+export type ContributionResponse = {
+    contributionPeriodId: number;
+    createdAt: string;
+    remindedAt?: string;
+    updatedAt: string;
+    userId: number;
+    version: number;
+};
+
+export type CreateAddressRequest = {
+    city: string;
+    country: string;
+    houseNumber: string;
+    street: string;
+    userId: number;
+    zipCode: string;
+};
+
+export type CreateBlogRequest = {
+    html: string;
+    publishedAt: string;
+    title: string;
+};
+
+export type CreateBoardRequest = {
+    candidate: string;
+    endDate?: string;
+    name: string;
+    pictureId?: number;
+    startDate: string;
+};
+
+export type CreateCommitteeRequest = {
+    description: string;
+    members: Array<CommitteeMemberRequest>;
+    name: string;
+};
+
+export type CreateContributionPeriodRequest = {
+    alumniFee: number;
+    endDate: string;
+    fullYearFee: number;
+    halfYearFee: number;
+    listId?: number;
+    startDate: string;
+};
+
+export type CreateContributionReminderRequest = {
+    contributionPeriodId: number;
+    userId: number;
+};
+
+export type CreateContributionRequest = {
+    contributionPeriodId: number;
+    userId: number;
+};
+
+export type CreateEventRequest = {
+    approved: boolean;
+    banner?: EventBannerRequest;
     committeeId: number;
-    createdAt?: string;
-    deletedAt?: string;
     description: string;
     endTime: string;
-    id?: number;
     location?: string;
     memberPrice?: number;
-    membersOnly?: boolean;
+    membersOnly: boolean;
     publicPrice?: number;
-    signUp?: boolean;
-    signUpCount?: number;
-    signUpForm?: Survey;
+    signUp: boolean;
+    signUpForm?: SurveyRequest;
     startTime: string;
     title: string;
-    updatedAt?: string;
-    version?: number;
 };
 
-export type EventBanner = {
-    createdAt?: string;
-    deletedAt?: string;
-    file: File;
-    id?: number;
-    updatedAt?: string;
-    version?: number;
-};
-
-export type EventSignUp = {
-    answers?: Array<Answer>;
-    createdAt?: string;
-    deletedAt?: string;
-    eventId?: number;
-    guest?: Guest;
-    id?: number;
-    updatedAt?: string;
-    user?: SimpleUser;
+export type CreateEventSignUpRequest = {
+    answers?: Array<AnswerRequest>;
+    guest?: CreateGuestRequest;
     userId?: number;
+};
+
+export type CreateGuestRequest = {
+    discord: string;
+    email: string;
+    name: string;
+    phoneNumber?: string;
     version?: number;
+};
+
+export type CreateMemberProfileRequest = {
+    bhv: boolean;
+    dateOfBirth: string;
+    ehbo: boolean;
+    gender: string;
+    nationality: string;
+    photoConsent: boolean;
+    studentNumber: string;
+    userId: number;
+};
+
+export type CreateSponsorRequest = {
+    description: string;
+    name: string;
+};
+
+export type CreateTelemetryRequest = {
+    platform: PlatformType;
+    url: string;
+};
+
+export type CreateUserRequest = {
+    discord: string;
+    email: string;
+    firstName: string;
+    fullName?: string;
+    initials: string;
+    lastName: string;
+    memberProfile?: UpsertMemberProfileRequest;
+    newsletter: boolean;
+    password?: string;
+    phoneNumber: string;
+    prefix?: string;
+    username: string;
+};
+
+export type EventBannerRequest = {
+    fileId: number;
+    version?: number;
+};
+
+export type EventBannerResponse = {
+    createdAt: string;
+    eventId: number;
+    fileId: number;
+    updatedAt: string;
+    version: number;
+};
+
+export type EventResponse = {
+    approved: boolean;
+    banner?: EventBannerResponse;
+    committeeId: number;
+    createdAt: string;
+    description: string;
+    endTime: string;
+    id: number;
+    location?: string;
+    memberPrice?: number;
+    membersOnly: boolean;
+    publicPrice?: number;
+    signUp: boolean;
+    signUpCount: number;
+    signUpForm?: SurveyResponse;
+    startTime: string;
+    title: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type EventSignUpResponse = {
+    answers: Array<AnswerResponse>;
+    createdAt: string;
+    eventId: number;
+    guest?: GuestResponse;
+    id: number;
+    updatedAt: string;
+    user?: UserSummaryResponse;
+    version: number;
 };
 
 /**
@@ -246,16 +366,16 @@ export type FieldValidationError = {
     };
 };
 
-export type File = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    mediaType?: string;
-    name?: string;
+export type FileResponse = {
+    createdAt: string;
+    id: number;
+    mediaType: string;
+    name: string;
+    path: string;
     size?: number;
-    type?: FileType;
-    updatedAt?: string;
-    version?: number;
+    type: FileType;
+    updatedAt: string;
+    version: number;
 };
 
 export enum FileType {
@@ -266,51 +386,68 @@ export enum FileType {
     SPONSOR_PICTURE = 'SPONSOR_PICTURE'
 }
 
-export type Guest = {
-    accessToken?: string;
-    createdAt?: string;
-    deletedAt?: string;
+export type GuestResponse = {
+    accessToken: string;
+    createdAt: string;
     discord: string;
     email: string;
-    id?: number;
+    id: number;
     name: string;
-    phoneNumber: string;
+    phoneNumber?: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type JobExecution = {
+    actor?: Actor;
+    attempts: number;
+    createdAt?: string;
+    errorMessage?: string;
+    finishedAt?: string;
+    id?: number;
+    initiatedByRole?: Role;
+    initiatedByType?: 'USER' | 'SYSTEM';
+    initiatedByUserId?: number;
+    jobType: string;
+    payload?: string;
+    queuedAt?: string;
+    startedAt?: string;
+    status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED';
     updatedAt?: string;
-    version?: number;
 };
 
 export type JwtRequest = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    password?: string;
-    updatedAt?: string;
-    username?: string;
-    version?: number;
+    password: string;
+    username: string;
 };
 
-export type Login = {
+export type LoginResponse = {
     addressId?: number;
-    createdAt?: string;
-    deletedAt?: string;
     expiration: number;
-    id?: number;
     roles: Array<Role>;
     token: string;
-    updatedAt?: string;
     userId: number;
     username: string;
-    version?: number;
 };
 
 export type MemberActivationRequest = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    password?: string;
+    password: string;
     token: string;
-    updatedAt?: string;
     username: string;
+};
+
+export type MemberProfileResponse = {
+    bhv?: boolean;
+    createdAt?: string;
+    dateOfBirth?: string;
+    ehbo?: boolean;
+    gender?: string;
+    id?: number;
+    nationality?: string;
+    photoConsent?: boolean;
+    studentNumber?: string;
+    updatedAt?: string;
+    userId?: number;
     version?: number;
 };
 
@@ -321,19 +458,16 @@ export enum MemberType {
     NONE = 'NONE'
 }
 
-export type Membership = {
-    city?: string;
-    country?: string;
-    createdAt?: string;
-    deletedAt?: string;
+export type MembershipResponse = {
+    createdAt: string;
     endDate?: string;
-    id?: number;
+    id: number;
     incasso: boolean;
-    memberType?: MemberType;
-    startDate?: string;
-    updatedAt?: string;
+    memberType: MemberType;
+    startDate: string;
+    updatedAt: string;
     userId: number;
-    version?: number;
+    version: number;
 };
 
 export type PageMetadata = {
@@ -343,35 +477,19 @@ export type PageMetadata = {
     totalPages?: number;
 };
 
-export type PagedModelAdvancedUser = {
-    content?: Array<AdvancedUser>;
+export type PagedModelEventResponse = {
+    content?: Array<EventResponse>;
     page?: PageMetadata;
 };
 
-export type PagedModelEvent = {
-    content?: Array<Event>;
+export type PagedModelUserDetailResponse = {
+    content?: Array<UserDetailResponse>;
     page?: PageMetadata;
 };
 
 export type PasswordResetRequest = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
     password: string;
     token: string;
-    updatedAt?: string;
-    version?: number;
-};
-
-export type PersonalInfo = {
-    createdAt?: string;
-    deletedAt?: string;
-    discord: string;
-    email: string;
-    id?: number;
-    phoneNumber: string;
-    updatedAt?: string;
-    version?: number;
 };
 
 export enum PlatformType {
@@ -381,17 +499,23 @@ export enum PlatformType {
     INSTAGRAM = 'INSTAGRAM'
 }
 
-export type Question = {
+export type QuestionRequest = {
     choiceLabels?: Array<string>;
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
     idx: number;
     label: string;
-    surveyId?: number;
     type: QuestionType;
-    updatedAt?: string;
-    version?: number;
+};
+
+export type QuestionResponse = {
+    choiceLabels?: Array<string>;
+    createdAt: string;
+    id: number;
+    idx: number;
+    label: string;
+    surveyId: number;
+    type: QuestionType;
+    updatedAt: string;
+    version: number;
 };
 
 export enum QuestionType {
@@ -418,94 +542,180 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
-export type SimpleCommittee = {
-    createdAt?: string;
-    deletedAt?: string;
-    description?: string;
-    id?: number;
-    name?: string;
-    updatedAt?: string;
-    version?: number;
-};
-
-export type SimpleUser = {
-    addressId?: number;
-    createdAt?: string;
-    deletedAt?: string;
-    discord: string;
-    email: string;
-    firstName: string;
-    fullName?: string;
-    id?: number;
-    initials: string;
-    lastName: string;
-    newsletter: boolean;
-    password?: string;
-    phoneNumber: string;
-    prefix?: string;
-    updatedAt?: string;
-    username: string;
-    version?: number;
-};
-
-export type Sponsor = {
-    createdAt?: string;
-    deletedAt?: string;
+export type SponsorResponse = {
+    createdAt: string;
     description: string;
-    id?: number;
+    id: number;
     name: string;
-    updatedAt?: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type SurveyRequest = {
+    questions: Array<QuestionRequest>;
+};
+
+export type SurveyResponse = {
+    createdAt: string;
+    id: number;
+    questions: Array<QuestionResponse>;
+    responseCount: number;
+    updatedAt: string;
+    version: number;
+};
+
+export type TelemetryResponse = {
+    createdAt: string;
+    id: number;
+    platform: PlatformType;
+    updatedAt: string;
+    url: string;
+    version: number;
+};
+
+export type UpdateAddressRequest = {
+    city: string;
+    country: string;
+    houseNumber: string;
+    street: string;
+    version: number;
+    zipCode: string;
+};
+
+export type UpdateBlogRequest = {
+    html: string;
+    publishedAt: string;
+    title: string;
+    version: number;
+};
+
+export type UpdateBoardRequest = {
+    candidate: string;
+    endDate?: string;
+    name: string;
+    pictureId?: number;
+    startDate: string;
+    version: number;
+};
+
+export type UpdateCommitteeRequest = {
+    description: string;
+    members: Array<CommitteeMemberRequest>;
+    name: string;
+    version: number;
+};
+
+export type UpdateContributionPeriodRequest = {
+    alumniFee: number;
+    endDate: string;
+    fullYearFee: number;
+    halfYearFee: number;
+    listId?: number;
+    startDate: string;
+    version: number;
+};
+
+export type UpdateEventRequest = {
+    approved: boolean;
+    banner?: EventBannerRequest;
+    committeeId: number;
+    description: string;
+    endTime: string;
+    location?: string;
+    memberPrice?: number;
+    membersOnly: boolean;
+    publicPrice?: number;
+    signUp: boolean;
+    signUpForm?: SurveyRequest;
+    startTime: string;
+    title: string;
+    version: number;
+};
+
+export type UpdateEventSignUpRequest = {
+    answers?: Array<AnswerRequest>;
+    guest?: CreateGuestRequest;
+    userId?: number;
     version?: number;
 };
 
-export type Survey = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    questions: Array<Question>;
-    responseCount?: number;
-    updatedAt?: string;
-    version?: number;
+export type UpdateMemberProfileRequest = {
+    bhv: boolean;
+    dateOfBirth: string;
+    ehbo: boolean;
+    gender: string;
+    nationality: string;
+    photoConsent: boolean;
+    studentNumber: string;
+    version: number;
 };
 
-export type Telemetry = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
-    platform?: PlatformType;
-    updatedAt?: string;
-    url?: string;
+export type UpdateMembershipRequest = {
+    endDate?: string;
+    incasso?: boolean;
+    memberType?: MemberType;
+    startDate?: string;
+    userId: number;
+    version: number;
+};
+
+export type UpdateSponsorRequest = {
+    description: string;
+    name: string;
+    version: number;
+};
+
+export type UpdateUserRequest = {
+    discord: string;
+    memberProfile?: UpsertMemberProfileRequest;
+    newsletter: boolean;
+    phoneNumber: string;
+    version: number;
+};
+
+export type UpsertMemberProfileRequest = {
+    bhv: boolean;
+    dateOfBirth: string;
+    ehbo: boolean;
+    gender: string;
+    nationality: string;
+    photoConsent: boolean;
+    studentNumber: string;
     version?: number;
 };
 
 export type UserActivationRequest = {
-    createdAt?: string;
-    deletedAt?: string;
-    id?: number;
     token: string;
-    updatedAt?: string;
-    version?: number;
 };
 
-export enum JobExecutionStatus {
-    QUEUED = 'QUEUED',
-    RUNNING = 'RUNNING',
-    SUCCESS = 'SUCCESS',
-    FAILED = 'FAILED'
-}
+export type UserDetailResponse = {
+    createdAt: string;
+    discord: string;
+    email: string;
+    enabled: boolean;
+    firstName: string;
+    fullName: string;
+    id: number;
+    initials: string;
+    lastName: string;
+    newsletter: boolean;
+    phoneNumber: string;
+    prefix?: string;
+    roles: Array<Role>;
+    updatedAt: string;
+    username: string;
+    version: number;
+};
 
-export type JobExecution = {
-    id?: number;
-    jobType?: string;
-    status?: JobExecutionStatus;
-    payload?: string;
-    errorMessage?: string;
-    attempts?: number;
-    queuedAt?: string;
-    startedAt?: string;
-    finishedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
+export type UserSummaryResponse = {
+    createdAt: string;
+    discord: string;
+    email: string;
+    fullName: string;
+    id: number;
+    phoneNumber: string;
+    updatedAt: string;
+    version: number;
 };
 
 export type FindAllAddressesData = {
@@ -544,10 +754,51 @@ export type FindAllAddressesResponses = {
     /**
      * OK
      */
-    200: Array<Address>;
+    200: Array<AddressResponse>;
 };
 
 export type FindAllAddressesResponse = FindAllAddressesResponses[keyof FindAllAddressesResponses];
+
+export type CreateAddressData = {
+    body: CreateAddressRequest;
+    path?: never;
+    query?: never;
+    url: '/addresses';
+};
+
+export type CreateAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateAddressError = CreateAddressErrors[keyof CreateAddressErrors];
+
+export type CreateAddressResponses = {
+    /**
+     * Created
+     */
+    201: AddressResponse;
+};
+
+export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
 
 export type DeleteAddressByIdData = {
     body?: never;
@@ -630,13 +881,13 @@ export type FindAddressByIdResponses = {
     /**
      * OK
      */
-    200: Address;
+    200: AddressResponse;
 };
 
 export type FindAddressByIdResponse = FindAddressByIdResponses[keyof FindAddressByIdResponses];
 
 export type UpdateAddressData = {
-    body: Address;
+    body: UpdateAddressRequest;
     path: {
         id: number;
     };
@@ -673,7 +924,7 @@ export type UpdateAddressResponses = {
     /**
      * OK
      */
-    200: Address;
+    200: AddressResponse;
 };
 
 export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressResponses];
@@ -714,7 +965,7 @@ export type AuthenticateResponses = {
     /**
      * OK
      */
-    200: Login;
+    200: LoginResponse;
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
@@ -755,13 +1006,13 @@ export type FindBlogsResponses = {
     /**
      * OK
      */
-    200: Array<Blog>;
+    200: Array<BlogResponse>;
 };
 
 export type FindBlogsResponse = FindBlogsResponses[keyof FindBlogsResponses];
 
 export type CreateBlogData = {
-    body: Blog;
+    body: CreateBlogRequest;
     path?: never;
     query?: never;
     url: '/blogs';
@@ -796,7 +1047,7 @@ export type CreateBlogResponses = {
     /**
      * Created
      */
-    201: Blog;
+    201: BlogResponse;
 };
 
 export type CreateBlogResponse = CreateBlogResponses[keyof CreateBlogResponses];
@@ -882,13 +1133,13 @@ export type FindBlogByIdResponses = {
     /**
      * OK
      */
-    200: Blog;
+    200: BlogResponse;
 };
 
 export type FindBlogByIdResponse = FindBlogByIdResponses[keyof FindBlogByIdResponses];
 
 export type UpdateBlogData = {
-    body: Blog;
+    body: UpdateBlogRequest;
     path: {
         id: number;
     };
@@ -925,19 +1176,19 @@ export type UpdateBlogResponses = {
     /**
      * OK
      */
-    200: Blog;
+    200: BlogResponse;
 };
 
 export type UpdateBlogResponse = UpdateBlogResponses[keyof UpdateBlogResponses];
 
-export type FindCommitteesForCurrentUserData = {
+export type FindAllBoardsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/committeeMembers/committees';
+    url: '/boards';
 };
 
-export type FindCommitteesForCurrentUserErrors = {
+export type FindAllBoardsErrors = {
     /**
      * Validation error
      */
@@ -960,16 +1211,314 @@ export type FindCommitteesForCurrentUserErrors = {
     500: ApiError;
 };
 
-export type FindCommitteesForCurrentUserError = FindCommitteesForCurrentUserErrors[keyof FindCommitteesForCurrentUserErrors];
+export type FindAllBoardsError = FindAllBoardsErrors[keyof FindAllBoardsErrors];
 
-export type FindCommitteesForCurrentUserResponses = {
+export type FindAllBoardsResponses = {
     /**
      * OK
      */
-    200: Array<BaseDto>;
+    200: Array<BoardResponse>;
 };
 
-export type FindCommitteesForCurrentUserResponse = FindCommitteesForCurrentUserResponses[keyof FindCommitteesForCurrentUserResponses];
+export type FindAllBoardsResponse = FindAllBoardsResponses[keyof FindAllBoardsResponses];
+
+export type CreateBoardData = {
+    body: CreateBoardRequest;
+    path?: never;
+    query?: never;
+    url: '/boards';
+};
+
+export type CreateBoardErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateBoardError = CreateBoardErrors[keyof CreateBoardErrors];
+
+export type CreateBoardResponses = {
+    /**
+     * Created
+     */
+    201: BoardResponse;
+};
+
+export type CreateBoardResponse = CreateBoardResponses[keyof CreateBoardResponses];
+
+export type AddMemberData = {
+    body: AddBoardMemberRequest;
+    path: {
+        boardId: number;
+    };
+    query?: never;
+    url: '/boards/{boardId}/members';
+};
+
+export type AddMemberErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AddMemberError = AddMemberErrors[keyof AddMemberErrors];
+
+export type AddMemberResponses = {
+    /**
+     * Created
+     */
+    201: BoardMemberResponse;
+};
+
+export type AddMemberResponse = AddMemberResponses[keyof AddMemberResponses];
+
+export type RemoveMemberData = {
+    body?: never;
+    path: {
+        boardId: number;
+        userId: number;
+    };
+    query?: never;
+    url: '/boards/{boardId}/members/{userId}';
+};
+
+export type RemoveMemberErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
+
+export type RemoveMemberResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+
+export type DeleteBoardData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/boards/{id}';
+};
+
+export type DeleteBoardErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteBoardError = DeleteBoardErrors[keyof DeleteBoardErrors];
+
+export type DeleteBoardResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteBoardResponse = DeleteBoardResponses[keyof DeleteBoardResponses];
+
+export type FindBoardByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/boards/{id}';
+};
+
+export type FindBoardByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBoardByIdError = FindBoardByIdErrors[keyof FindBoardByIdErrors];
+
+export type FindBoardByIdResponses = {
+    /**
+     * OK
+     */
+    200: BoardResponse;
+};
+
+export type FindBoardByIdResponse = FindBoardByIdResponses[keyof FindBoardByIdResponses];
+
+export type UpdateBoardData = {
+    body: UpdateBoardRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/boards/{id}';
+};
+
+export type UpdateBoardErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateBoardError = UpdateBoardErrors[keyof UpdateBoardErrors];
+
+export type UpdateBoardResponses = {
+    /**
+     * OK
+     */
+    200: BoardResponse;
+};
+
+export type UpdateBoardResponse = UpdateBoardResponses[keyof UpdateBoardResponses];
+
+export type FindCommitteesByUserIdData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/committeeMembers/committees';
+};
+
+export type FindCommitteesByUserIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteesByUserIdError = FindCommitteesByUserIdErrors[keyof FindCommitteesByUserIdErrors];
+
+export type FindCommitteesByUserIdResponses = {
+    /**
+     * OK
+     */
+    200: Array<CommitteeResponse>;
+};
+
+export type FindCommitteesByUserIdResponse = FindCommitteesByUserIdResponses[keyof FindCommitteesByUserIdResponses];
 
 export type FindCommitteesData = {
     body?: never;
@@ -1007,13 +1556,13 @@ export type FindCommitteesResponses = {
     /**
      * OK
      */
-    200: Array<BaseDto>;
+    200: Array<CommitteeResponse>;
 };
 
 export type FindCommitteesResponse = FindCommitteesResponses[keyof FindCommitteesResponses];
 
 export type CreateCommitteeData = {
-    body: AdvancedCommittee;
+    body: CreateCommitteeRequest;
     path?: never;
     query?: never;
     url: '/committees';
@@ -1048,7 +1597,7 @@ export type CreateCommitteeResponses = {
     /**
      * Created
      */
-    201: AdvancedCommittee;
+    201: CommitteeDetailResponse;
 };
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
@@ -1091,7 +1640,7 @@ export type FindCommitteeByIdResponses = {
     /**
      * OK
      */
-    200: BaseDto;
+    200: CommitteeResponse;
 };
 
 export type FindCommitteeByIdResponse = FindCommitteeByIdResponses[keyof FindCommitteeByIdResponses];
@@ -1140,7 +1689,7 @@ export type DeleteCommitteeByIdResponses = {
 export type DeleteCommitteeByIdResponse = DeleteCommitteeByIdResponses[keyof DeleteCommitteeByIdResponses];
 
 export type UpdateCommitteeData = {
-    body: AdvancedCommittee;
+    body: UpdateCommitteeRequest;
     path: {
         id: number;
     };
@@ -1177,7 +1726,7 @@ export type UpdateCommitteeResponses = {
     /**
      * OK
      */
-    200: AdvancedCommittee;
+    200: CommitteeDetailResponse;
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
@@ -1218,13 +1767,13 @@ export type FindContributionPeriodsResponses = {
     /**
      * OK
      */
-    200: Array<ContributionPeriod>;
+    200: Array<ContributionPeriodResponse>;
 };
 
 export type FindContributionPeriodsResponse = FindContributionPeriodsResponses[keyof FindContributionPeriodsResponses];
 
 export type CreateContributionPeriodData = {
-    body: ContributionPeriod;
+    body: CreateContributionPeriodRequest;
     path?: never;
     query?: never;
     url: '/contributionPeriods';
@@ -1259,7 +1808,7 @@ export type CreateContributionPeriodResponses = {
     /**
      * Created
      */
-    201: ContributionPeriod;
+    201: ContributionPeriodResponse;
 };
 
 export type CreateContributionPeriodResponse = CreateContributionPeriodResponses[keyof CreateContributionPeriodResponses];
@@ -1300,10 +1849,54 @@ export type FindCurrentContributionPeriodResponses = {
     /**
      * OK
      */
-    200: ContributionPeriod;
+    200: ContributionPeriodResponse;
 };
 
 export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
+
+export type DeleteContributionData = {
+    body?: never;
+    path: {
+        userId: number;
+        contributionPeriodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions';
+};
+
+export type DeleteContributionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteContributionError = DeleteContributionErrors[keyof DeleteContributionErrors];
+
+export type DeleteContributionResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteContributionResponse = DeleteContributionResponses[keyof DeleteContributionResponses];
 
 export type DeleteContributionPeriodByIdData = {
     body?: never;
@@ -1349,7 +1942,7 @@ export type DeleteContributionPeriodByIdResponses = {
 export type DeleteContributionPeriodByIdResponse = DeleteContributionPeriodByIdResponses[keyof DeleteContributionPeriodByIdResponses];
 
 export type UpdateContributionPeriodData = {
-    body: ContributionPeriod;
+    body: UpdateContributionPeriodRequest;
     path: {
         id: number;
     };
@@ -1386,7 +1979,7 @@ export type UpdateContributionPeriodResponses = {
     /**
      * OK
      */
-    200: ContributionPeriod;
+    200: ContributionPeriodResponse;
 };
 
 export type UpdateContributionPeriodResponse = UpdateContributionPeriodResponses[keyof UpdateContributionPeriodResponses];
@@ -1429,7 +2022,7 @@ export type FindContributionsByPeriodIdResponses = {
     /**
      * OK
      */
-    200: Array<Contribution>;
+    200: Array<ContributionResponse>;
 };
 
 export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
@@ -1437,8 +2030,8 @@ export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdRes
 export type FindContributionRemindersData = {
     body?: never;
     path?: never;
-    query?: {
-        contributionPeriodId?: number;
+    query: {
+        contributionPeriodId: number;
     };
     url: '/contributionReminders';
 };
@@ -1472,13 +2065,13 @@ export type FindContributionRemindersResponses = {
     /**
      * OK
      */
-    200: Array<ContributionReminder>;
+    200: Array<ContributionReminderResponse>;
 };
 
 export type FindContributionRemindersResponse = FindContributionRemindersResponses[keyof FindContributionRemindersResponses];
 
 export type SendContributionReminderData = {
-    body: ContributionReminder;
+    body: CreateContributionReminderRequest;
     path?: never;
     query?: never;
     url: '/contributionReminders';
@@ -1513,13 +2106,13 @@ export type SendContributionReminderResponses = {
     /**
      * Created
      */
-    201: ContributionReminder;
+    201: ContributionReminderResponse;
 };
 
 export type SendContributionReminderResponse = SendContributionReminderResponses[keyof SendContributionReminderResponses];
 
 export type SendContributionReminderBatchData = {
-    body: Array<ContributionReminder>;
+    body: Array<CreateContributionReminderRequest>;
     path?: never;
     query?: never;
     url: '/contributionReminders/batch';
@@ -1554,7 +2147,7 @@ export type SendContributionReminderBatchResponses = {
     /**
      * Created
      */
-    201: Array<ContributionReminder>;
+    201: Array<ContributionReminderResponse>;
 };
 
 export type SendContributionReminderBatchResponse = SendContributionReminderBatchResponses[keyof SendContributionReminderBatchResponses];
@@ -1562,8 +2155,8 @@ export type SendContributionReminderBatchResponse = SendContributionReminderBatc
 export type FindContributionsData = {
     body?: never;
     path?: never;
-    query?: {
-        contributionPeriodId?: number;
+    query: {
+        contributionPeriodId: number;
     };
     url: '/contributions';
 };
@@ -1597,13 +2190,13 @@ export type FindContributionsResponses = {
     /**
      * OK
      */
-    200: Array<Contribution>;
+    200: Array<ContributionResponse>;
 };
 
 export type FindContributionsResponse = FindContributionsResponses[keyof FindContributionsResponses];
 
 export type CreateContributionData = {
-    body: Contribution;
+    body: CreateContributionRequest;
     path?: never;
     query?: never;
     url: '/contributions';
@@ -1638,53 +2231,10 @@ export type CreateContributionResponses = {
     /**
      * Created
      */
-    201: Contribution;
+    201: ContributionResponse;
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
-
-export type DeleteContributionData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/contributions/{id}';
-};
-
-export type DeleteContributionErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteContributionError = DeleteContributionErrors[keyof DeleteContributionErrors];
-
-export type DeleteContributionResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteContributionResponse = DeleteContributionResponses[keyof DeleteContributionResponses];
 
 export type FindEventsData = {
     body?: never;
@@ -1740,13 +2290,13 @@ export type FindEventsResponses = {
     /**
      * OK
      */
-    200: PagedModelEvent;
+    200: PagedModelEventResponse;
 };
 
 export type FindEventsResponse = FindEventsResponses[keyof FindEventsResponses];
 
 export type CreateEventData = {
-    body: Event;
+    body: CreateEventRequest;
     path?: never;
     query?: never;
     url: '/events';
@@ -1781,7 +2331,7 @@ export type CreateEventResponses = {
     /**
      * Created
      */
-    201: Event;
+    201: EventResponse;
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
@@ -1824,53 +2374,10 @@ export type UploadEventBannerResponses = {
     /**
      * Created
      */
-    201: File;
+    201: FileResponse;
 };
 
 export type UploadEventBannerResponse = UploadEventBannerResponses[keyof UploadEventBannerResponses];
-
-export type DownloadEventBannerData = {
-    body?: never;
-    path: {
-        bannerId: number;
-    };
-    query?: never;
-    url: '/events/banners/{bannerId}';
-};
-
-export type DownloadEventBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
-
-export type DownloadEventBannerResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
 
 export type FindEventSignUpsData = {
     body?: never;
@@ -1915,7 +2422,7 @@ export type FindEventSignUpsResponses = {
     /**
      * OK
      */
-    200: Array<EventSignUp>;
+    200: Array<EventSignUpResponse>;
 };
 
 export type FindEventSignUpsResponse = FindEventSignUpsResponses[keyof FindEventSignUpsResponses];
@@ -1958,7 +2465,7 @@ export type FindEventSignUpsByAccessTokenResponses = {
     /**
      * OK
      */
-    200: Array<EventSignUp>;
+    200: Array<EventSignUpResponse>;
 };
 
 export type FindEventSignUpsByAccessTokenResponse = FindEventSignUpsByAccessTokenResponses[keyof FindEventSignUpsByAccessTokenResponses];
@@ -1966,12 +2473,12 @@ export type FindEventSignUpsByAccessTokenResponse = FindEventSignUpsByAccessToke
 export type DeleteEventSignupData = {
     body?: never;
     path: {
-        eventSignupId: number;
+        id: number;
     };
     query?: {
         accessToken?: string;
     };
-    url: '/events/signups/{eventSignupId}';
+    url: '/events/signups/{id}';
 };
 
 export type DeleteEventSignupErrors = {
@@ -2051,6 +2558,49 @@ export type DeleteEventByIdResponses = {
 
 export type DeleteEventByIdResponse = DeleteEventByIdResponses[keyof DeleteEventByIdResponses];
 
+export type DownloadEventBannerData = {
+    body?: never;
+    path: {
+        eventId: number;
+    };
+    query?: never;
+    url: '/events/{eventId}/banners';
+};
+
+export type DownloadEventBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadEventBannerError = DownloadEventBannerErrors[keyof DownloadEventBannerErrors];
+
+export type DownloadEventBannerResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadEventBannerResponse = DownloadEventBannerResponses[keyof DownloadEventBannerResponses];
+
 export type FindEventSignUpsByEventIdData = {
     body?: never;
     path: {
@@ -2089,14 +2639,16 @@ export type FindEventSignUpsByEventIdResponses = {
     /**
      * OK
      */
-    200: Array<EventSignUp>;
+    200: Array<EventSignUpResponse>;
 };
 
 export type FindEventSignUpsByEventIdResponse = FindEventSignUpsByEventIdResponses[keyof FindEventSignUpsByEventIdResponses];
 
 export type CreateEventSignupData = {
-    body: EventSignUp;
-    path?: never;
+    body: CreateEventSignUpRequest;
+    path: {
+        eventId: number;
+    };
     query?: never;
     url: '/events/{eventId}/signups';
 };
@@ -2130,13 +2682,13 @@ export type CreateEventSignupResponses = {
     /**
      * Created
      */
-    201: EventSignUp;
+    201: EventSignUpResponse;
 };
 
 export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateEventSignupResponses];
 
 export type UpdateEventSignUpData = {
-    body: EventSignUp;
+    body: UpdateEventSignUpRequest;
     path: {
         eventId: number;
     };
@@ -2175,7 +2727,7 @@ export type UpdateEventSignUpResponses = {
     /**
      * OK
      */
-    200: EventSignUp;
+    200: EventSignUpResponse;
 };
 
 export type UpdateEventSignUpResponse = UpdateEventSignUpResponses[keyof UpdateEventSignUpResponses];
@@ -2218,13 +2770,13 @@ export type FindEventByIdResponses = {
     /**
      * OK
      */
-    200: Event;
+    200: EventResponse;
 };
 
 export type FindEventByIdResponse = FindEventByIdResponses[keyof FindEventByIdResponses];
 
 export type UpdateEventData = {
-    body: Event;
+    body: UpdateEventRequest;
     path: {
         id: number;
     };
@@ -2261,7 +2813,7 @@ export type UpdateEventResponses = {
     /**
      * OK
      */
-    200: Event;
+    200: EventResponse;
 };
 
 export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
@@ -2306,7 +2858,7 @@ export type ApproveEventResponses = {
     /**
      * OK
      */
-    200: Event;
+    200: EventResponse;
 };
 
 export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
@@ -2352,6 +2904,131 @@ export type HealthCheckResponses = {
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
 
+export type ListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/jobs';
+};
+
+export type ListErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListError = ListErrors[keyof ListErrors];
+
+export type ListResponses = {
+    /**
+     * OK
+     */
+    200: Array<JobExecution>;
+};
+
+export type ListResponse = ListResponses[keyof ListResponses];
+
+export type RetryData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/jobs/{id}/retry';
+};
+
+export type RetryErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RetryError = RetryErrors[keyof RetryErrors];
+
+export type RetryResponses = {
+    /**
+     * OK
+     */
+    200: JobExecution;
+};
+
+export type RetryResponse = RetryResponses[keyof RetryResponses];
+
+export type CreateMemberProfileData = {
+    body: CreateMemberProfileRequest;
+    path?: never;
+    query?: never;
+    url: '/memberProfiles';
+};
+
+export type CreateMemberProfileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateMemberProfileError = CreateMemberProfileErrors[keyof CreateMemberProfileErrors];
+
+export type CreateMemberProfileResponses = {
+    /**
+     * Created
+     */
+    201: MemberProfileResponse;
+};
+
+export type CreateMemberProfileResponse = CreateMemberProfileResponses[keyof CreateMemberProfileResponses];
+
 export type FindMembershipsData = {
     body?: never;
     path?: never;
@@ -2391,7 +3068,7 @@ export type FindMembershipsResponses = {
     /**
      * OK
      */
-    200: Array<Membership>;
+    200: Array<MembershipResponse>;
 };
 
 export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
@@ -2432,19 +3109,21 @@ export type CreateMembershipResponses = {
     /**
      * Created
      */
-    201: Membership;
+    201: MembershipResponse;
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
 
-export type BoardCreateMembershipData = {
-    body: Membership;
-    path?: never;
+export type FindMembershipByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
     query?: never;
-    url: '/memberships/member';
+    url: '/memberships/{id}';
 };
 
-export type BoardCreateMembershipErrors = {
+export type FindMembershipByIdErrors = {
     /**
      * Validation error
      */
@@ -2467,16 +3146,59 @@ export type BoardCreateMembershipErrors = {
     500: ApiError;
 };
 
-export type BoardCreateMembershipError = BoardCreateMembershipErrors[keyof BoardCreateMembershipErrors];
+export type FindMembershipByIdError = FindMembershipByIdErrors[keyof FindMembershipByIdErrors];
 
-export type BoardCreateMembershipResponses = {
+export type FindMembershipByIdResponses = {
     /**
-     * Created
+     * OK
      */
-    201: Membership;
+    200: MembershipResponse;
 };
 
-export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
+export type FindMembershipByIdResponse = FindMembershipByIdResponses[keyof FindMembershipByIdResponses];
+
+export type UpdateMembershipData = {
+    body: UpdateMembershipRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}';
+};
+
+export type UpdateMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
+
+export type UpdateMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
 
 export type MemberActivateData = {
     body: MemberActivationRequest;
@@ -2766,13 +3488,13 @@ export type FindSponsorsResponses = {
     /**
      * OK
      */
-    200: Array<Sponsor>;
+    200: Array<SponsorResponse>;
 };
 
 export type FindSponsorsResponse = FindSponsorsResponses[keyof FindSponsorsResponses];
 
 export type CreateSponsorData = {
-    body: Sponsor;
+    body: CreateSponsorRequest;
     path?: never;
     query?: never;
     url: '/sponsors';
@@ -2807,7 +3529,7 @@ export type CreateSponsorResponses = {
     /**
      * Created
      */
-    201: Sponsor;
+    201: SponsorResponse;
 };
 
 export type CreateSponsorResponse = CreateSponsorResponses[keyof CreateSponsorResponses];
@@ -2893,13 +3615,13 @@ export type FindSponsorByIdResponses = {
     /**
      * OK
      */
-    200: Sponsor;
+    200: SponsorResponse;
 };
 
 export type FindSponsorByIdResponse = FindSponsorByIdResponses[keyof FindSponsorByIdResponses];
 
 export type UpdateSponsorData = {
-    body: Sponsor;
+    body: UpdateSponsorRequest;
     path: {
         id: number;
     };
@@ -2936,18 +3658,15 @@ export type UpdateSponsorResponses = {
     /**
      * OK
      */
-    200: Sponsor;
+    200: SponsorResponse;
 };
 
 export type UpdateSponsorResponse = UpdateSponsorResponses[keyof UpdateSponsorResponses];
 
 export type CreateTelemetryData = {
-    body?: never;
+    body: CreateTelemetryRequest;
     path?: never;
-    query: {
-        platform: PlatformType;
-        url: string;
-    };
+    query?: never;
     url: '/telemetry';
 };
 
@@ -2980,7 +3699,7 @@ export type CreateTelemetryResponses = {
     /**
      * Created
      */
-    201: Telemetry;
+    201: TelemetryResponse;
 };
 
 export type CreateTelemetryResponse = CreateTelemetryResponses[keyof CreateTelemetryResponses];
@@ -3023,7 +3742,7 @@ export type FindTelemetryByIdResponses = {
     /**
      * OK
      */
-    200: Telemetry;
+    200: TelemetryResponse;
 };
 
 export type FindTelemetryByIdResponse = FindTelemetryByIdResponses[keyof FindTelemetryByIdResponses];
@@ -3032,7 +3751,8 @@ export type FindUsersData = {
     body?: never;
     path?: never;
     query?: {
-        isMember?: boolean;
+        username?: string;
+        enabled?: boolean;
         /**
          * Zero-based page index (0..N)
          */
@@ -3078,13 +3798,13 @@ export type FindUsersResponses = {
     /**
      * OK
      */
-    200: PagedModelAdvancedUser;
+    200: PagedModelUserDetailResponse;
 };
 
 export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
 
 export type CreateUserData = {
-    body: AdvancedUser;
+    body: CreateUserRequest;
     path?: never;
     query?: never;
     url: '/users';
@@ -3119,97 +3839,13 @@ export type CreateUserResponses = {
     /**
      * Created
      */
-    201: AdvancedUser;
+    201: UserDetailResponse;
 };
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
 
-export type CreateGuestUserData = {
-    body: SimpleUser;
-    path?: never;
-    query?: never;
-    url: '/users/guest';
-};
-
-export type CreateGuestUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateGuestUserError = CreateGuestUserErrors[keyof CreateGuestUserErrors];
-
-export type CreateGuestUserResponses = {
-    /**
-     * Created
-     */
-    201: SimpleUser;
-};
-
-export type CreateGuestUserResponse = CreateGuestUserResponses[keyof CreateGuestUserResponses];
-
-export type UpdateGuestUserData = {
-    body: SimpleUser;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/users/guest/{id}';
-};
-
-export type UpdateGuestUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateGuestUserError = UpdateGuestUserErrors[keyof UpdateGuestUserErrors];
-
-export type UpdateGuestUserResponses = {
-    /**
-     * OK
-     */
-    200: SimpleUser;
-};
-
-export type UpdateGuestUserResponse = UpdateGuestUserResponses[keyof UpdateGuestUserResponses];
-
 export type UpdateUserData = {
-    body: AdvancedUser;
+    body: UpdateUserRequest;
     path: {
         id: number;
     };
@@ -3246,7 +3882,7 @@ export type UpdateUserResponses = {
     /**
      * OK
      */
-    200: AdvancedUser;
+    200: UserDetailResponse;
 };
 
 export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
@@ -3332,21 +3968,21 @@ export type FindUserByIdResponses = {
     /**
      * OK
      */
-    200: AdvancedUser;
+    200: UserDetailResponse;
 };
 
 export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
 
-export type DeleteUserAddressData = {
+export type FindMemberProfileByUserIdData = {
     body?: never;
     path: {
         userId: number;
     };
     query?: never;
-    url: '/users/{userId}/addresses';
+    url: '/users/{userId}/memberProfiles';
 };
 
-export type DeleteUserAddressErrors = {
+export type FindMemberProfileByUserIdErrors = {
     /**
      * Validation error
      */
@@ -3369,27 +4005,27 @@ export type DeleteUserAddressErrors = {
     500: ApiError;
 };
 
-export type DeleteUserAddressError = DeleteUserAddressErrors[keyof DeleteUserAddressErrors];
+export type FindMemberProfileByUserIdError = FindMemberProfileByUserIdErrors[keyof FindMemberProfileByUserIdErrors];
 
-export type DeleteUserAddressResponses = {
+export type FindMemberProfileByUserIdResponses = {
     /**
-     * No Content
+     * OK
      */
-    204: void;
+    200: MemberProfileResponse;
 };
 
-export type DeleteUserAddressResponse = DeleteUserAddressResponses[keyof DeleteUserAddressResponses];
+export type FindMemberProfileByUserIdResponse = FindMemberProfileByUserIdResponses[keyof FindMemberProfileByUserIdResponses];
 
-export type CreateAddressData = {
-    body: Address;
+export type UpdateMemberProfileData = {
+    body: UpdateMemberProfileRequest;
     path: {
         userId: number;
     };
     query?: never;
-    url: '/users/{userId}/addresses';
+    url: '/users/{userId}/memberProfiles';
 };
 
-export type CreateAddressErrors = {
+export type UpdateMemberProfileErrors = {
     /**
      * Validation error
      */
@@ -3412,16 +4048,59 @@ export type CreateAddressErrors = {
     500: ApiError;
 };
 
-export type CreateAddressError = CreateAddressErrors[keyof CreateAddressErrors];
+export type UpdateMemberProfileError = UpdateMemberProfileErrors[keyof UpdateMemberProfileErrors];
 
-export type CreateAddressResponses = {
+export type UpdateMemberProfileResponses = {
+    /**
+     * OK
+     */
+    200: MemberProfileResponse;
+};
+
+export type UpdateMemberProfileResponse = UpdateMemberProfileResponses[keyof UpdateMemberProfileResponses];
+
+export type BoardCreateMembershipData = {
+    body: BoardCreateMembershipRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/memberships';
+};
+
+export type BoardCreateMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type BoardCreateMembershipError = BoardCreateMembershipErrors[keyof BoardCreateMembershipErrors];
+
+export type BoardCreateMembershipResponses = {
     /**
      * Created
      */
-    201: Address;
+    201: MembershipResponse;
 };
 
-export type CreateAddressResponse = CreateAddressResponses[keyof CreateAddressResponses];
+export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
 
 export type ToggleUserRoleData = {
     body?: never;
@@ -3463,134 +4142,7 @@ export type ToggleUserRoleResponses = {
     /**
      * OK
      */
-    200: AdvancedUser;
+    200: UserDetailResponse;
 };
 
 export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
-
-export type FindMembershipByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/{id}';
-};
-
-export type FindMembershipByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindMembershipByIdError = FindMembershipByIdErrors[keyof FindMembershipByIdErrors];
-
-export type FindMembershipByIdResponses = {
-    /**
-     * OK
-     */
-    200: Membership;
-};
-
-export type FindMembershipByIdResponse = FindMembershipByIdResponses[keyof FindMembershipByIdResponses];
-
-export type UpdateMembershipData = {
-    body: Membership;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/{id}';
-};
-
-export type UpdateMembershipErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
-
-export type UpdateMembershipResponses = {
-    /**
-     * OK
-     */
-    200: Membership;
-};
-
-export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
-
-export type ListJobExecutionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/management/jobs';
-};
-
-export type ListJobExecutionsResponses = {
-    /**
-     * OK
-     */
-    200: Array<JobExecution>;
-};
-
-export type ListJobExecutionsResponse = ListJobExecutionsResponses[keyof ListJobExecutionsResponses];
-
-export type RetryJobExecutionData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/jobs/{id}/retry';
-};
-
-export type RetryJobExecutionErrors = {
-    /**
-     * Not Found
-     */
-    404: unknown;
-};
-
-export type RetryJobExecutionResponses = {
-    /**
-     * OK
-     */
-    200: JobExecution;
-};
-
-export type RetryJobExecutionResponse = RetryJobExecutionResponses[keyof RetryJobExecutionResponses];

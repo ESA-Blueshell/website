@@ -273,7 +273,7 @@ export type UserSelectComponentResponse = {
     type: 5;
 };
 
-export type MessageComponentTypes = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18 | 19;
+export type MessageComponentTypes = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18 | 19 | 21 | 22 | 23;
 
 export type AvailableLocalesEnum = 'ar' | 'bg' | 'cs' | 'da' | 'de' | 'el' | 'en-GB' | 'en-US' | 'es-419' | 'es-ES' | 'fi' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ko' | 'lt' | 'nl' | 'no' | 'pl' | 'pt-BR' | 'ro' | 'ru' | 'sv-SE' | 'th' | 'tr' | 'uk' | 'vi' | 'zh-CN' | 'zh-TW';
 
@@ -3005,6 +3005,10 @@ export type BulkBanUsersFromGuildResponses = {
      * 200 response for bulk_ban_users_from_guild
      */
     200: BulkBanUsersResponse;
+    /**
+     * 204 response for bulk_ban_users_from_guild
+     */
+    204: void;
 };
 
 export type BulkBanUsersFromGuildResponse = BulkBanUsersFromGuildResponses[keyof BulkBanUsersFromGuildResponses];

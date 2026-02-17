@@ -20,6 +20,7 @@ import java.time.Instant
 class SponsorCommandHandlersTest {
 
     private val sponsorService = mock<SponsorService>()
+    private var sponsorIdSequence = 1L
 
     @Nested
     inner class FindSponsors {
@@ -116,6 +117,7 @@ class SponsorCommandHandlersTest {
         name = name,
         description = description
     ).apply {
+        setField(this, "id", sponsorIdSequence++)
         setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
         setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))
     }

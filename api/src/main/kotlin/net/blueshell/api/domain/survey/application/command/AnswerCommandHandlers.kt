@@ -15,10 +15,11 @@ class CreateAnswerHandler(
     override val commandType = CreateAnswerCommand::class
 
     override fun handle(command: CreateAnswerCommand): Answer {
-        val answer = Answer()
-        answer.optionSelections = command.optionSelections
-        answer.textResponse = command.textResponse
-        answer.question = questionService.findById(command.questionId)
+        val answer = Answer(
+            question = questionService.findById(command.questionId),
+            optionSelections = command.optionSelections,
+            textResponse = command.textResponse,
+        )
         return service.create(answer)
     }
 }

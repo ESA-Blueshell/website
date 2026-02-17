@@ -39,25 +39,24 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class EventSignUp : AuditedAutoIdEntity() {
+class EventSignUp(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
-    lateinit var event: Event
-        internal set
+    var event: Event,
 
+    @Column(name = "user_id")
+    var userId: Long? = null,
+
+    @ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
+    @JoinColumn(name = "guest_id")
+    var guest: Guest? = null,
+) : AuditedAutoIdEntity() {
     val eventId: Long
         get() = event.id ?: 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     var user: User? = null
-
-    @Column(name = "user_id")
-    var userId: Long? = null
-
-    @ManyToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH], fetch = FetchType.LAZY)
-    @JoinColumn(name = "guest_id")
-    var guest: Guest? = null
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(

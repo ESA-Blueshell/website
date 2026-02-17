@@ -8,6 +8,7 @@ import net.blueshell.api.domain.auth.application.exception.MalformedRecoveryToke
 import net.blueshell.api.domain.auth.application.exception.TokenVerificationFailedException
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.auth.persistence.repository.RecoveryTokenRepository
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.ResetType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -108,12 +109,13 @@ class RecoveryTokenValidatorTest {
         expiresAt: Instant = Instant.now().plusSeconds(3600),
         consumedAt: Instant? = null
     ): RecoveryToken {
-        return RecoveryToken().apply {
-            this.selector = selector
-            this.type = type
-            this.verifierHash = "hash"
-            this.expiresAt = expiresAt
-            this.consumedAt = consumedAt
-        }
+        return RecoveryToken(
+            user = mock<User>(),
+            type = type,
+            selector = selector,
+            verifierHash = "hash",
+            expiresAt = expiresAt,
+            consumedAt = consumedAt,
+        )
     }
 }

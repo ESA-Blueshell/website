@@ -61,11 +61,11 @@ class ContributionControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
             persist(
-                Contribution().apply {
-                    id = Contribution.Id(user.id, period.id)
-                    this.user = user
-                    this.contributionPeriod = period
-                }
+                Contribution(
+                    id = Contribution.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
             )
 
             mvc.perform(
@@ -101,11 +101,11 @@ class ContributionControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
             persist(
-                Contribution().apply {
-                    id = Contribution.Id(user.id, period.id)
-                    this.user = user
-                    this.contributionPeriod = period
-                }
+                Contribution(
+                    id = Contribution.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
             )
 
             mvc.perform(
@@ -138,11 +138,11 @@ class ContributionControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
             persist(
-                Contribution().apply {
-                    id = Contribution.Id(user.id, period.id)
-                    this.user = user
-                    this.contributionPeriod = period
-                }
+                Contribution(
+                    id = Contribution.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
             )
 
             mvc.perform(

@@ -97,14 +97,19 @@ class DeleteEventSignUpHandler(
 }
 
 private fun mapSignUp(data: EventSignUpData, eventRepository: EventRepository, questionService: QuestionService): EventSignUp {
-    val signUp = EventSignUp()
+    val signUp = EventSignUp(event = eventRepository.getReferenceById(data.eventId))
     applySignUp(data, signUp, eventRepository, questionService)
     return signUp
 }
 
-private fun applySignUp(data: EventSignUpData, signUp: EventSignUp, eventRepository: EventRepository, questionService: QuestionService) {
+private fun applySignUp(
+    data: EventSignUpData,
+    signUp: EventSignUp,
+    eventRepository: EventRepository,
+    questionService: QuestionService,
+) {
     signUp.event = eventRepository.getReferenceById(data.eventId)
-    data.userId?.let { signUp.userId = it }
+    signUp.userId = data.userId
     signUp.guest = data.guest?.let { mapGuest(it) }
 
     val mappedAnswers = data.answers.map { mapAnswer(it, questionService) }
@@ -116,27 +121,23 @@ private fun applySignUp(data: EventSignUpData, signUp: EventSignUp, eventReposit
 }
 
 private fun mapGuest(data: GuestData): Guest {
-    val guest = Guest()
-    guest.name = data.name
-    guest.discord = data.discord
-    guest.email = data.email
-    guest.phoneNumber = data.phoneNumber
+    val guest = Guest(
+        name = data.name,
+        discord = data.discord,
+        email = data.email,
+        phoneNumber = data.phoneNumber,
+        accessToken = data.accessToken ?: randomCapitalString(30),
+    )
     data.version?.let { guest.version = it }
-
-    // Generate access token if not provided or if guest is new
-    if (data.accessToken == null && guest.accessToken == null) {
-        guest.accessToken = randomCapitalString(30)
-    } else if (data.accessToken != null) {
-        guest.accessToken = data.accessToken
-    }
     return guest
 }
 
 private fun mapAnswer(data: AnswerData, questionService: QuestionService): Answer {
-    val answer = Answer()
-    answer.question = questionService.getReferenceById(data.questionId)
-    answer.optionSelections = data.optionSelections?.toMutableList()
-    answer.textResponse = data.textResponse
+    val answer = Answer(
+        question = questionService.getReferenceById(data.questionId),
+        optionSelections = data.optionSelections?.toMutableList(),
+        textResponse = data.textResponse,
+    )
     data.version?.let { answer.version = it }
     return answer
 }

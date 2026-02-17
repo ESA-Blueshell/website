@@ -198,27 +198,27 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
 
     private fun createEvent(committee: Committee, start: LocalDateTime, approved: Boolean): Event {
         return persist(
-            Event().apply {
-                this.committee = committee
-                this.title = "Event ${System.currentTimeMillis()}"
-                this.description = "Event description"
-                this.location = "Campus"
-                this.startTime = start.toInstant(ZoneOffset.UTC)
-                this.endTime = start.plusHours(2).toInstant(ZoneOffset.UTC)
-                this.approved = approved
-                this.membersOnly = false
-                this.signUp = true
-            }
+            Event(
+                committee = committee,
+                title = "Event ${System.currentTimeMillis()}",
+                description = "Event description",
+                location = "Campus",
+                startTime = start.toInstant(ZoneOffset.UTC),
+                endTime = start.plusHours(2).toInstant(ZoneOffset.UTC),
+                approved = approved,
+                membersOnly = false,
+                signUp = true,
+            )
         )
     }
 
     private fun createSignUp(event: Event, user: net.blueshell.api.domain.user.persistence.User = createUserWithRole(Role.MEMBER)): EventSignUp {
         return persist(
-            EventSignUp().apply {
-                this.event = event
-                this.user = user
-                this.userId = user.id
-            }
+            EventSignUp(
+                event = event,
+                userId = user.id,
+                guest = null,
+            )
         )
     }
 }

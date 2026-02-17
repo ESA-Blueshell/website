@@ -14,12 +14,12 @@ class CreateBlogHandler(
     override val commandType = CreateBlogCommand::class
 
     override fun handle(command: CreateBlogCommand): Blog {
-        var blog = Blog()
-        blog.title = command.title
-        blog.html = sanitizeBlogHtml(command.html)
-        blog.publishedAt = command.publishedAt
-        blog = service.create(blog)
-        return blog
+        val blog = Blog(
+            title = command.title,
+            html = sanitizeBlogHtml(command.html),
+            publishedAt = command.publishedAt,
+        )
+        return service.create(blog)
     }
 }
 

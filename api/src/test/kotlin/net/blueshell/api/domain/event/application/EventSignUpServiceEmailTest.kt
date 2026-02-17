@@ -54,12 +54,11 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         // Given: User and event signup with user only (no guest)
         val user = createAndSaveUser()
         val event = createAndSaveEvent()
-        val signUp = EventSignUp().apply {
-            this.event = event
-            this.user = user
-            this.userId = user.id
-            // No guest set
-        }
+        val signUp = EventSignUp(
+            event = event,
+            userId = user.id,
+            guest = null,
+        )
 
         // When: Creating signup via service (triggers event)
         eventSignUpService.create(signUp)
@@ -73,37 +72,32 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
 
     private fun createEventSignUpWithGuest(): EventSignUp {
         val event = createAndSaveEvent()
-        val guest = Guest().apply {
-            name = "Test Guest"
-            discord = "guest#1234"
-            email = "guest@example.com"
-            accessToken = "test-access-token-${System.currentTimeMillis()}"
-        }
+        val guest = Guest(
+            name = "Test Guest",
+            discord = "guest#1234",
+            email = "guest@example.com",
+            accessToken = "test-access-token-${System.currentTimeMillis()}",
+        )
 
-        return EventSignUp().apply {
-            this.event = event
-            this.guest = guest
-        }
+        return EventSignUp(event = event, guest = guest)
     }
 
     private fun createAndSaveEvent(): Event {
         val committee = createAndSaveCommittee()
-        val event = Event()
-        event.committee = committee
-        event.title = "Test Event"
-        event.location = "Test Location"
-        event.startTime = Instant.now().plus(7, ChronoUnit.DAYS)
-        event.endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS)
-        event.approved = true
-        event.signUp = true
+        val event = Event(
+            committee = committee,
+            title = "Test Event",
+            location = "Test Location",
+            startTime = Instant.now().plus(7, ChronoUnit.DAYS),
+            endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS),
+            approved = true,
+            signUp = true,
+        )
         return persist(event)
     }
 
     private fun createAndSaveCommittee(): Committee {
-        val committee = Committee()
-        committee.name = "Test Committee"
-        committee.description = "Test committee for event signup tests"
-        return persist(committee)
+        return persist(Committee(name = "Test Committee", description = "Test committee for event signup tests"))
     }
 
     private fun createAndSaveUser(): User {

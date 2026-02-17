@@ -21,14 +21,14 @@ import java.time.Instant
 )
 @SQLDelete(sql = "UPDATE blogs SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Blog : AuditedAutoIdEntity() {
+class Blog(
     @Column(name = "title", nullable = false)
-    lateinit var title: String
+    var title: String,
 
     @Lob
     @Column(name = "html", nullable = false)
-    lateinit var html: String
+    var html: String,
 
     @Column(name = "published_at", nullable = false)
-    lateinit var publishedAt: Instant
-}
+    var publishedAt: Instant
+) : AuditedAutoIdEntity()

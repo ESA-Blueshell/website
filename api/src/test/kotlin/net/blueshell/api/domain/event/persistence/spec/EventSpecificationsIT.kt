@@ -162,17 +162,17 @@ class EventSpecificationsIT : UserTestSupport() {
         approved: Boolean
     ): Event {
         return persist(
-            Event().apply {
-                this.committee = committee
-                this.title = title
-                this.description = "Event description"
-                this.location = "Campus"
-                this.startTime = start.toInstant(ZoneOffset.UTC)
-                this.endTime = start.plusHours(2).toInstant(ZoneOffset.UTC)
-                this.approved = approved
-                this.membersOnly = false
-                this.signUp = true
-            }
+            Event(
+                committee = committee,
+                title = title,
+                description = "Event description",
+                location = "Campus",
+                startTime = start.toInstant(ZoneOffset.UTC),
+                endTime = start.plusHours(2).toInstant(ZoneOffset.UTC),
+                approved = approved,
+                membersOnly = false,
+                signUp = true,
+            )
         )
     }
 }

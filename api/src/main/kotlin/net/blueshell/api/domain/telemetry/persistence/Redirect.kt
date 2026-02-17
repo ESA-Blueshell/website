@@ -16,16 +16,11 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE redirects SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Redirect() : AuditedAutoIdEntity() {
+class Redirect(
     @JoinColumn(name = "telemetry_id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
-    lateinit var telemetry: Telemetry
-        internal set
-
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    var telemetry: Telemetry,
+) : AuditedAutoIdEntity() {
     val telemetryId: Long
         get() = telemetry.id ?: 0
-
-    constructor(telemetry: Telemetry) : this() {
-        this.telemetry = telemetry
-    }
 }

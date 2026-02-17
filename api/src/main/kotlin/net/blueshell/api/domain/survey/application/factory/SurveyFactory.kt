@@ -10,13 +10,13 @@ class SurveyFactory {
     fun createFromData(data: SurveyData): Survey {
         val survey = Survey()
         val questions = data.questions.map { qData ->
-            Question().apply {
-                idx = qData.idx
-                type = qData.type
-                label = qData.label
-                choiceLabels = qData.choiceLabels?.toMutableList()
-                this.survey = survey
-            }
+            Question(
+                idx = qData.idx,
+                survey = survey,
+                type = qData.type,
+                label = qData.label,
+                choiceLabels = qData.choiceLabels?.toMutableList(),
+            )
         }
         survey.replaceQuestions(questions)
         return survey

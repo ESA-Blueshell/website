@@ -38,13 +38,14 @@ class CreateContributionPeriodHandler(
     override val commandType = CreateContributionPeriodCommand::class
 
     override fun handle(command: CreateContributionPeriodCommand): ContributionPeriodResult {
-        var contributionPeriod = ContributionPeriod()
-        contributionPeriod.startDate = command.startDate!!
-        contributionPeriod.endDate = command.endDate!!
-        contributionPeriod.halfYearFee = command.halfYearFee!!
-        contributionPeriod.fullYearFee = command.fullYearFee!!
-        contributionPeriod.alumniFee = command.alumniFee!!
-        contributionPeriod.listId = command.listId
+        var contributionPeriod = ContributionPeriod(
+            startDate = command.startDate!!,
+            endDate = command.endDate!!,
+            halfYearFee = command.halfYearFee!!,
+            fullYearFee = command.fullYearFee!!,
+            alumniFee = command.alumniFee!!,
+            listId = command.listId,
+        )
         contributionPeriod = service.create(contributionPeriod)
         return contributionPeriod.toResult()
     }

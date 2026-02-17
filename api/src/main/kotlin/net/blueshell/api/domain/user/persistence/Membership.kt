@@ -29,25 +29,24 @@ import java.time.LocalDate
 )
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Membership : AuditedAutoIdEntity() {
+class Membership(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    lateinit var user: User
-        internal set
-
-    val userId: Long
-        get() = user.id ?: 0
+    var user: User,
 
     @Column(name = "start_date", nullable = false)
-    var startDate: LocalDate = LocalDate.now()
+    var startDate: LocalDate,
 
     @Column(name = "end_date")
-    var endDate: LocalDate? = null
+    var endDate: LocalDate? = null,
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
-    var memberType = MemberType.REGULAR
+    var memberType: MemberType = MemberType.REGULAR,
 
     @Column(name = "incasso", nullable = false)
-    var incasso = false
+    var incasso: Boolean = false,
+) : AuditedAutoIdEntity() {
+    val userId: Long
+        get() = user.id ?: 0
 }

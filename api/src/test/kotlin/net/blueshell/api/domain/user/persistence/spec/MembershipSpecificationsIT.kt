@@ -138,14 +138,15 @@ class MembershipSpecificationsIT : UserTestSupport() {
     }
 
     private fun createMembership(startDate: LocalDate, endDate: LocalDate?): Membership {
+        val user = createUserWithRole(Role.MEMBER)
         return persist(
-            Membership().apply {
-                user = createUserWithRole(Role.MEMBER)
-                memberType = MemberType.REGULAR
-                incasso = true
-                this.startDate = startDate
-                this.endDate = endDate
-            }
+            Membership(
+                user = user,
+                memberType = MemberType.REGULAR,
+                incasso = true,
+                startDate = startDate,
+                endDate = endDate,
+            )
         )
     }
 }

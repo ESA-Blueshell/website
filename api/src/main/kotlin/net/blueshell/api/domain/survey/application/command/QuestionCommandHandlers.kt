@@ -15,12 +15,13 @@ class CreateQuestionHandler(
     override val commandType = CreateQuestionCommand::class
 
     override fun handle(command: CreateQuestionCommand): Question {
-        val question = Question()
-        question.idx = command.idx
-        question.type = command.type
-        question.label = command.label
-        question.choiceLabels = command.choiceLabels
-        question.survey = surveyService.findById(command.surveyId)
+        val question = Question(
+            idx = command.idx,
+            survey = surveyService.findById(command.surveyId),
+            type = command.type,
+            label = command.label,
+            choiceLabels = command.choiceLabels,
+        )
         return service.create(question)
     }
 }

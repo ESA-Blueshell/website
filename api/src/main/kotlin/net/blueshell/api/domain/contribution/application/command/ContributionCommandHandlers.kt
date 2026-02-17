@@ -23,9 +23,10 @@ class CreateContributionHandler(
     override val commandType = CreateContributionCommand::class
 
     override fun handle(command: CreateContributionCommand): ContributionResult {
-        var contribution = Contribution()
-        contribution.user = users.findById(command.userId!!)
-        contribution.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!)
+        var contribution = Contribution(
+            user = users.findById(command.userId!!),
+            contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!),
+        )
         contribution = service.create(contribution)
         return contribution.toResult()
     }

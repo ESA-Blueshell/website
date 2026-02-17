@@ -115,11 +115,13 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            persist(net.blueshell.api.domain.contribution.persistence.Contribution().apply {
-                id = net.blueshell.api.domain.contribution.persistence.Contribution.Id(user.id, period.id)
-                this.user = user
-                this.contributionPeriod = period
-            })
+            persist(
+                net.blueshell.api.domain.contribution.persistence.Contribution(
+                    id = net.blueshell.api.domain.contribution.persistence.Contribution.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
+            )
 
             mvc.perform(
                 delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)
@@ -133,11 +135,13 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            persist(net.blueshell.api.domain.contribution.persistence.Contribution().apply {
-                id = net.blueshell.api.domain.contribution.persistence.Contribution.Id(user.id, period.id)
-                this.user = user
-                this.contributionPeriod = period
-            })
+            persist(
+                net.blueshell.api.domain.contribution.persistence.Contribution(
+                    id = net.blueshell.api.domain.contribution.persistence.Contribution.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
+            )
 
             mvc.perform(
                 delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)

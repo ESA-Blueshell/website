@@ -40,12 +40,13 @@ class RecoveryTokenFactory(
         val selector = randomUrlSafe(16) // 128-bit
         val verifier = randomUrlSafe(32) // 256-bit
 
-        val token = RecoveryToken()
-        token.user = user
-        token.type = type
-        token.selector = selector
-        token.verifierHash = encoder.encode(verifier)
-        token.expiresAt = Instant.now().plus(ttl)
+        val token = RecoveryToken(
+            user = user,
+            type = type,
+            selector = selector,
+            verifierHash = encoder.encode(verifier),
+            expiresAt = Instant.now().plus(ttl),
+        )
 
         repository.save(token)
         return "$selector.$verifier"

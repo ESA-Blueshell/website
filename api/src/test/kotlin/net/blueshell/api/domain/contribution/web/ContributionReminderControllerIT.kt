@@ -98,11 +98,11 @@ class ContributionReminderControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
             persist(
-                ContributionReminder().apply {
-                    id = ContributionReminder.Id(user.id, period.id)
-                    this.user = user
-                    this.contributionPeriod = period
-                }
+                ContributionReminder(
+                    id = ContributionReminder.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
             )
 
             mvc.perform(

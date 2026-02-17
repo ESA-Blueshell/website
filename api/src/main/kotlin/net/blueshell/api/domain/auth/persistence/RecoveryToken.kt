@@ -21,30 +21,29 @@ import java.time.Instant
 )
 @SQLDelete(sql = "UPDATE recovery_tokens SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class RecoveryToken : AuditedAutoIdEntity() {
+class RecoveryToken(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    lateinit var user: User
-        internal set
-
-    val userId: Long
-        get() = user.id ?: 0
+    var user: User,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    lateinit var type: ResetType
+    var type: ResetType,
 
     @Column(name = "selector", nullable = false, length = 64)
-    lateinit var selector: String
+    var selector: String,
 
     @Column(name = "verifier_hash", nullable = false, length = 255)
-    lateinit var verifierHash: String
+    var verifierHash: String,
 
     @Column(name = "expires_at", nullable = false)
-    lateinit var expiresAt: Instant
+    var expiresAt: Instant,
 
     @Column(name = "consumed_at")
-    var consumedAt: Instant? = null
+    var consumedAt: Instant? = null,
+) : AuditedAutoIdEntity() {
+    val userId: Long
+        get() = user.id ?: 0
 
     val isExpired: Boolean
         get() = Instant.now().isAfter(expiresAt)

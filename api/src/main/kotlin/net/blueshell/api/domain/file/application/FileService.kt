@@ -8,6 +8,7 @@ import net.blueshell.api.domain.file.application.exception.FileStorageException
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.file.persistence.repository.FileRepository
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
@@ -100,13 +101,24 @@ class FileService @Autowired constructor(
                 }
             }
 
+            val mediaType = resolveMediaType(hashedFilename, fullPath, multipart.contentType ?: "")
+            val currentUserId = currentUserProvider.currentUser()?.id
+                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "No authenticated user")
+            val uploader = users.findById(currentUserId)
+
             var entity = repository.findByPath(path).orElse(null)
             if (entity == null) {
-                entity = File()
+                entity = File(
+                    name = multipart.originalFilename ?: "file",
+                    path = path,
+                    uploader = uploader,
+                    mediaType = mediaType,
+                    size = null,
+                    type = type,
+                )
             }
 
-            val mediaType = resolveMediaType(hashedFilename, fullPath, multipart.contentType ?: "")
-            populateAfterStore(entity, multipart.originalFilename ?: "file", fullPath, path, mediaType)
+            populateAfterStore(entity, uploader, multipart.originalFilename ?: "file", fullPath, path, mediaType)
             entity.type = type
 
             return if (entity.id != null) {
@@ -199,12 +211,10 @@ class FileService @Autowired constructor(
         }
     }
 
-    private fun populateAfterStore(file: File, name: String, fullPath: Path, path: String, mediaType: String) {
+    private fun populateAfterStore(file: File, uploader: User, name: String, fullPath: Path, path: String, mediaType: String) {
         file.name = name
         file.mediaType = mediaType
-        val currentUserId = currentUserProvider.currentUser()?.id
-            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "No authenticated user")
-        file.uploader = users.findById(currentUserId)
+        file.uploader = uploader
         try {
             file.size = Files.size(fullPath)
         } catch (e: IOException) {

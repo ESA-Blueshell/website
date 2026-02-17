@@ -24,27 +24,27 @@ import java.time.LocalDate
 )
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class ContributionPeriod : AuditedAutoIdEntity() {
+class ContributionPeriod(
+    @Column(name = "start_date", nullable = false)
+    var startDate: LocalDate,
+
+    @Column(name = "end_date")
+    var endDate: LocalDate,
+
+    @Column(name = "half_year_fee", nullable = false)
+    var halfYearFee: Double = 0.0,
+
+    @Column(name = "full_year_fee", nullable = false)
+    var fullYearFee: Double = 0.0,
+
+    @Column(name = "alumni_fee", nullable = false)
+    var alumniFee: Double = 0.0,
+
+    @Column(name = "list_id")
+    var listId: Long? = null,
+) : AuditedAutoIdEntity() {
     @OneToMany(mappedBy = "contributionPeriod", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _contributions: MutableSet<Contribution> = linkedSetOf()
     val contributions: Set<Contribution>
         get() = _contributions
-
-    @Column(name = "start_date", nullable = false)
-    lateinit var startDate: LocalDate
-
-    @Column(name = "end_date")
-    lateinit var endDate: LocalDate
-
-    @Column(name = "half_year_fee", nullable = false)
-    var halfYearFee = 0.0
-
-    @Column(name = "full_year_fee", nullable = false)
-    var fullYearFee = 0.0
-
-    @Column(name = "alumni_fee", nullable = false)
-    var alumniFee = 0.0
-
-    @Column(name = "list_id")
-    var listId: Long? = null
 }

@@ -38,28 +38,26 @@ import java.io.Serializable
 )
 class BoardDocument(
     @EmbeddedId
-    override var id: Id = Id()
-) : AuditedSoftDeleteEntity(), Identifiable<BoardDocument.Id> {
+    override var id: Id = Id(),
+
     @MapsId("boardId")
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    lateinit var board: Board
-        internal set
-
-    val boardId: Long
-        get() = id.boardId ?: 0
+    var board: Board,
 
     @MapsId("fileId")
     @JoinColumn(name = "file_id", nullable = false)
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    lateinit var file: File
-        internal set
-
-    val fileId: Long
-        get() = id.fileId ?: 0
+    var file: File,
 
     @Column(name = "name", nullable = false)
-    lateinit var name: String
+    var name: String,
+) : AuditedSoftDeleteEntity(), Identifiable<BoardDocument.Id> {
+    val boardId: Long
+        get() = id.boardId ?: board.id ?: 0
+
+    val fileId: Long
+        get() = id.fileId ?: file.id ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

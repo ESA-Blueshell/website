@@ -24,21 +24,17 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Telemetry() : AuditedAutoIdEntity() {
+class Telemetry(
     @field:Column(nullable = false)
     @field:Enumerated(EnumType.ORDINAL)
-    lateinit var platform: PlatformType
+    var platform: PlatformType,
 
     @field:Column(nullable = false)
-    lateinit var url: String
+    var url: String,
+) : AuditedAutoIdEntity() {
 
     @OneToMany(mappedBy = "telemetry", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _redirects: MutableSet<Redirect> = linkedSetOf()
     val redirects: Set<Redirect>
         get() = _redirects
-
-    constructor(platform: PlatformType, url: String) : this() {
-        this.platform = platform
-        this.url = url
-    }
 }

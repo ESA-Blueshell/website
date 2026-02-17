@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication
 class CompositePermissionEvaluatorTest {
 
     private val authentication = mock<Authentication>()
+    private val telemetry = Telemetry(platform = net.blueshell.api.shared.enums.PlatformType.TWITTER, url = "https://example.com")
 
     @Nested
     inner class HasPermissionByEntity {
@@ -23,7 +24,7 @@ class CompositePermissionEvaluatorTest {
             val sponsorEvaluator = RecordingSponsorEvaluator().apply { entityResult = false }
             val evaluator = CompositePermissionEvaluator(mutableListOf(sponsorEvaluator, telemetryEvaluator))
 
-            val allowed = evaluator.hasPermission(authentication, Telemetry(), "read")
+            val allowed = evaluator.hasPermission(authentication, telemetry, "read")
 
             assertThat(allowed).isTrue()
             assertThat(telemetryEvaluator.entityCalls).isEqualTo(1)
@@ -43,7 +44,7 @@ class CompositePermissionEvaluatorTest {
         fun `returns false when permission is null`() {
             val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
 
-            val allowed = evaluator.hasPermission(authentication, Telemetry(), null)
+            val allowed = evaluator.hasPermission(authentication, telemetry, null)
 
             assertThat(allowed).isFalse()
         }

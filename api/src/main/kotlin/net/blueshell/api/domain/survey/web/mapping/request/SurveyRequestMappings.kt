@@ -35,28 +35,39 @@ fun QuestionRequest.asDomainData(): QuestionData =
 
 fun SurveyDTO.asEntity(survey: Survey = Survey()): Survey {
     version?.let { survey.version = it }
-    val mappedQuestions = questions!!.map { it.asEntity() }
+    val mappedQuestions = questions!!.map { it.asEntity(survey = survey) }
     val questionsSet = survey.questions as MutableSet
     questionsSet.clear()
     questionsSet.addAll(mappedQuestions)
-    survey.questions.forEach { it.survey = survey }
     return survey
 }
 
-fun QuestionDTO.asEntity(question: Question = Question()): Question {
-    question.idx = idx!!
-    // Note: survey reference must be set by caller using surveyRepository.getReferenceById(surveyId!!)
-    question.type = type!!
-    question.label = label!!
-    question.choiceLabels = choiceLabels
-    version?.let { question.version = it }
-    return question
+fun QuestionDTO.asEntity(survey: Survey, question: Question? = null): Question {
+    val mappedQuestion = question ?: Question(
+        idx = idx!!,
+        survey = survey,
+        type = type!!,
+        label = label!!,
+        choiceLabels = choiceLabels,
+    )
+    mappedQuestion.idx = idx!!
+    mappedQuestion.survey = survey
+    mappedQuestion.type = type!!
+    mappedQuestion.label = label!!
+    mappedQuestion.choiceLabels = choiceLabels
+    version?.let { mappedQuestion.version = it }
+    return mappedQuestion
 }
 
-fun AnswerDTO.asEntity(answer: Answer = Answer()): Answer {
-    // Note: question reference must be set by caller using questionRepository.getReferenceById(questionId!!)
-    answer.optionSelections = optionSelections
-    answer.textResponse = textResponse
-    version?.let { answer.version = it }
-    return answer
+fun AnswerDTO.asEntity(question: Question, answer: Answer? = null): Answer {
+    val mappedAnswer = answer ?: Answer(
+        question = question,
+        optionSelections = optionSelections,
+        textResponse = textResponse,
+    )
+    mappedAnswer.question = question
+    mappedAnswer.optionSelections = optionSelections
+    mappedAnswer.textResponse = textResponse
+    version?.let { mappedAnswer.version = it }
+    return mappedAnswer
 }

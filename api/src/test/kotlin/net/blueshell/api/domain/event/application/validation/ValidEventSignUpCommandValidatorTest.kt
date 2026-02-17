@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.event.application.validation
 
 import jakarta.validation.ConstraintValidatorContext
+import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.command.EventSignUpCandidate
 import net.blueshell.api.domain.event.command.EventSignUpData
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.time.Instant
 
 class ValidEventSignUpCommandValidatorTest {
 
@@ -99,16 +101,25 @@ class ValidEventSignUpCommandValidatorTest {
         val form = Survey()
         questions.forEach(form::addQuestion)
 
-        return Event().apply {
+        return Event(
+            committee = Committee(name = "Committee", description = "Description"),
+            title = "Event",
+            startTime = Instant.now(),
+            endTime = Instant.now().plusSeconds(3600),
+            signUp = true,
+        ).apply {
             signUpForm = form
         }
     }
 
     private fun question(id: Long, type: QuestionType): Question {
-        return Question().apply {
+        return Question(
+            idx = 0L,
+            survey = Survey(),
+            type = type,
+            label = "Question $id",
+        ).apply {
             setEntityId(this, id)
-            this.type = type
-            this.label = "Question $id"
         }
     }
 

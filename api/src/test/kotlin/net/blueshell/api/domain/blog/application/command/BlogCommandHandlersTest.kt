@@ -128,9 +128,6 @@ class BlogCommandHandlersTest {
         }
     }
 
-    private fun blog(title: String, html: String, publishedAt: Instant): Blog = Blog().apply {
-        this.title = title
-        this.html = html
-        this.publishedAt = publishedAt
-    }
+    private fun blog(title: String, html: String, publishedAt: Instant): Blog =
+        Blog(title = title, html = html, publishedAt = publishedAt)
 }

@@ -40,7 +40,7 @@ class EventSignUpCommandHandlersTest {
         @Test
         fun `returns sign ups by filter`() {
             val filter = EventSignUpQuery(eventId = 5L)
-            val expected = mutableListOf(EventSignUp())
+            val expected = mutableListOf(emptySignUp())
             whenever(eventSignUpService.findByFilter(filter)).thenReturn(expected)
 
             val result = handler.handle(FindEventSignUpsCommand(filter))
@@ -57,7 +57,7 @@ class EventSignUpCommandHandlersTest {
 
         @Test
         fun `returns sign ups by guest access token`() {
-            val expected = mutableListOf(EventSignUp())
+            val expected = mutableListOf(emptySignUp())
             whenever(eventSignUpService.findByGuestAccessToken("TOKEN-1")).thenReturn(expected)
 
             val result = handler.handle(FindEventSignUpsByAccessTokenCommand("TOKEN-1"))
@@ -74,7 +74,7 @@ class EventSignUpCommandHandlersTest {
 
         @Test
         fun `returns sign ups by event id`() {
-            val expected = mutableListOf(EventSignUp())
+            val expected = mutableListOf(emptySignUp())
             whenever(eventSignUpService.findByEventId(8L)).thenReturn(expected)
 
             val result = handler.handle(FindEventSignUpsByEventIdCommand(8L))
@@ -172,7 +172,7 @@ class EventSignUpCommandHandlersTest {
 
         @Test
         fun `updates sign up resolved by principal when access token is missing`() {
-            val existing = EventSignUp()
+            val existing = emptySignUp()
             val eventRef = mock<Event>()
             val questionRef = mock<Question>()
             whenever(eventSignUpService.findByUserIdAndEventId(42L, 100L)).thenReturn(existing)
@@ -207,7 +207,7 @@ class EventSignUpCommandHandlersTest {
 
         @Test
         fun `updates sign up resolved by guest access token`() {
-            val existing = EventSignUp()
+            val existing = emptySignUp()
             val eventRef = mock<Event>()
             whenever(eventSignUpService.findByGuestAccessTokenAndEventId("TOKEN-2", 101L)).thenReturn(existing)
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
@@ -261,4 +261,6 @@ class EventSignUpCommandHandlersTest {
             verify(eventSignUpService).deleteById(eq(33L))
         }
     }
+
+    private fun emptySignUp(): EventSignUp = EventSignUp(event = mock())
 }

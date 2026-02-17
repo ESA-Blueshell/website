@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.event.application.email
 
+import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
@@ -122,10 +123,7 @@ class EventSignupEmailBuilderTest {
     @Test
     fun `throws exception when guest is null`() {
         // Given: Signup without guest
-        val signUp = EventSignUp().apply {
-            event = createTestEvent()
-            // guest is null
-        }
+        val signUp = EventSignUp(event = createTestEvent(), guest = null)
 
         // When/Then: Exception is thrown
         val exception = assertThrows<IllegalArgumentException> {
@@ -158,16 +156,14 @@ class EventSignupEmailBuilderTest {
         endTime: Instant = Instant.now().plus(3, ChronoUnit.HOURS)
     ): EventSignUp {
         val event = createTestEvent(eventTitle, location, startTime, endTime)
-        val guest = Guest().apply {
-            this.name = guestName
-            this.email = guestEmail
-            this.accessToken = accessToken
-        }
+        val guest = Guest(
+            name = guestName,
+            discord = "guest#0001",
+            email = guestEmail,
+            accessToken = accessToken,
+        )
 
-        return EventSignUp().apply {
-            this.event = event
-            this.guest = guest
-        }
+        return EventSignUp(event = event, guest = guest)
     }
 
     private fun createTestEvent(
@@ -176,12 +172,12 @@ class EventSignupEmailBuilderTest {
         startTime: Instant = Instant.now(),
         endTime: Instant = Instant.now().plus(3, ChronoUnit.HOURS)
     ): Event {
-        return Event().apply {
-            // Note: id will be null until persisted - this is fine for unit tests
-            this.title = title
-            this.location = location
-            this.startTime = startTime
-            this.endTime = endTime
-        }
+        return Event(
+            committee = Committee(name = "Committee", description = "Description"),
+            title = title,
+            location = location,
+            startTime = startTime,
+            endTime = endTime,
+        )
     }
 }

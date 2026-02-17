@@ -23,9 +23,10 @@ class SendContributionReminderHandler(
     override val commandType = SendContributionReminderCommand::class
 
     override fun handle(command: SendContributionReminderCommand): ContributionReminderResult {
-        var reminder = ContributionReminder()
-        reminder.user = users.findById(command.userId!!)
-        reminder.contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!)
+        var reminder = ContributionReminder(
+            user = users.findById(command.userId!!),
+            contributionPeriod = contributionPeriods.findById(command.contributionPeriodId!!),
+        )
         reminder = service.create(reminder)
         service.sendReminder(reminder)
         return reminder.toResult()
@@ -66,8 +67,8 @@ private fun buildReminder(
     users: UserService,
     contributionPeriods: ContributionPeriodService
 ): ContributionReminder {
-    val reminder = ContributionReminder()
-    reminder.user = users.findById(item.userId!!)
-    reminder.contributionPeriod = contributionPeriods.findById(item.contributionPeriodId!!)
-    return reminder
+    return ContributionReminder(
+        user = users.findById(item.userId!!),
+        contributionPeriod = contributionPeriods.findById(item.contributionPeriodId!!),
+    )
 }

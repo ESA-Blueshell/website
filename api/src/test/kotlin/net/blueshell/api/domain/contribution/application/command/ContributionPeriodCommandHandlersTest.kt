@@ -138,14 +138,15 @@ class ContributionPeriodCommandHandlersTest {
         }
     }
 
-    private fun contributionPeriod(id: Long): ContributionPeriod = ContributionPeriod().apply {
+    private fun contributionPeriod(id: Long): ContributionPeriod = ContributionPeriod(
+        startDate = LocalDate.of(2025, 1, 1),
+        endDate = LocalDate.of(2025, 12, 31),
+        halfYearFee = 10.0,
+        fullYearFee = 20.0,
+        alumniFee = 5.0,
+        listId = 99L,
+    ).apply {
         setField(this, "id", id)
-        startDate = LocalDate.of(2025, 1, 1)
-        endDate = LocalDate.of(2025, 12, 31)
-        halfYearFee = 10.0
-        fullYearFee = 20.0
-        alumniFee = 5.0
-        listId = 99L
         setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
         setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))
     }

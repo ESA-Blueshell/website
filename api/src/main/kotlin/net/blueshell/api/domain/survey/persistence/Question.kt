@@ -29,15 +29,28 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @DirtyModel
-class Question : DirtyAwareModel() {
+class Question(
     @Column(name = "idx", nullable = false)
-    var idx: Long = 0
+    var idx: Long,
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "survey_id", nullable = false)
-    lateinit var survey: Survey
-        internal set
+    var survey: Survey,
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    @field:DirtyField
+    var type: QuestionType,
+
+    @Column(name = "label", nullable = false, length = 2047)
+    @field:DirtyField
+    var label: String,
+
+    @Column(name = "choice_labels", columnDefinition = "JSON")
+    @Convert(converter = StringListConverter::class)
+    @field:DirtyField
+    var choiceLabels: MutableList<String>? = null,
+) : DirtyAwareModel() {
     val surveyId: Long
         get() = survey.id ?: 0
 
@@ -45,20 +58,6 @@ class Question : DirtyAwareModel() {
     private val _answers: MutableSet<Answer> = linkedSetOf()
     val answers: Set<Answer>
         get() = _answers
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    @DirtyField
-    lateinit var type: QuestionType
-
-    @Column(name = "label", nullable = false, length = 2047)
-    @DirtyField
-    lateinit var label: String
-
-    @Column(name = "choice_labels", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter::class)
-    @DirtyField
-    var choiceLabels: MutableList<String>? = null
 
     @Column(name = "answer_count", nullable = false, updatable = false, insertable = false)
     var answerCount: Long = 0

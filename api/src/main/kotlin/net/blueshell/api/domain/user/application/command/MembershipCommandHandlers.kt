@@ -40,8 +40,10 @@ class CreateMembershipHandler(
         if (!command.hasMemberProfile!!) {
             throw AccessDeniedException("Complete profile is required before applying for membership")
         }
-        val membership = Membership()
-        membership.user = users.findById(command.userId)
+        val membership = Membership(
+            user = users.findById(command.userId),
+            startDate = java.time.LocalDate.now(),
+        )
         service.create(membership)
         return membership
     }
@@ -55,13 +57,13 @@ class BoardCreateMembershipHandler(
     override val commandType = BoardCreateMembershipCommand::class
 
     override fun handle(command: BoardCreateMembershipCommand): Membership {
-        val membership = Membership().apply {
-            user = users.findById(command.userId!!)
-            memberType = command.memberType!!
-            startDate = command.startDate!!
-            endDate = command.endDate
-            incasso = command.incasso!!
-        }
+        val membership = Membership(
+            user = users.findById(command.userId!!),
+            memberType = command.memberType!!,
+            startDate = command.startDate!!,
+            endDate = command.endDate,
+            incasso = command.incasso!!,
+        )
         return service.create(membership)
     }
 }

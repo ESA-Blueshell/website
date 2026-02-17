@@ -2,6 +2,7 @@ package net.blueshell.api.domain.survey.web.validation
 
 import net.blueshell.api.domain.survey.application.QuestionService
 import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.domain.survey.web.dto.AnswerDTO
 import net.blueshell.api.shared.enums.QuestionType
 import org.assertj.core.api.Assertions.assertThat
@@ -73,10 +74,12 @@ class ValidAnswerValidatorTest {
     }
 
     private fun question(type: QuestionType, choices: MutableList<String>? = null): Question {
-        return Question().apply {
-            this.type = type
-            this.label = "Q"
-            this.choiceLabels = choices
-        }
+        return Question(
+            idx = 0L,
+            survey = Survey(),
+            type = type,
+            label = "Q",
+            choiceLabels = choices,
+        )
     }
 }

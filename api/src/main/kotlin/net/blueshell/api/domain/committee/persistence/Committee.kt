@@ -19,12 +19,13 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Committee : AuditedAutoIdEntity() {
+class Committee(
     @Column(name = "name", nullable = false)
-    lateinit var name: String
+    var name: String,
 
     @Column(name = "description", nullable = false, length = 4095)
-    lateinit var description: String
+    var description: String,
+) : AuditedAutoIdEntity() {
 
     @OneToMany(mappedBy = "committee", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     private val _members: MutableList<CommitteeMember> = mutableListOf()

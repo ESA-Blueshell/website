@@ -38,39 +38,50 @@ import java.time.Instant
 )
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Event : AuditedAutoIdEntity() {
+class Event(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "committee_id", nullable = false)
-    lateinit var committee: Committee
-        internal set
-
-    val committeeId: Long
-        get() = committee.id ?: 0
+    var committee: Committee,
 
     @Column(name = "title", nullable = false)
-    lateinit var title: String
+    var title: String,
 
     @Column(name = "description", length = 4095)
-    var description: String? = null
+    var description: String? = null,
 
     @Column(name = "location")
-    var location: String? = null
+    var location: String? = null,
 
     @Column(name = "start_time", nullable = false)
-    lateinit var startTime: Instant
+    var startTime: Instant,
 
     @Column(name = "end_time", nullable = false)
-    lateinit var endTime: Instant
+    var endTime: Instant,
+
+    @Column(name = "price_member")
+    var memberPrice: Double? = null,
+
+    @Column(name = "price_public")
+    var publicPrice: Double? = null,
+
+    @Column(name = "google_id")
+    var googleId: String? = null,
+
+    @Column(name = "approved", nullable = false)
+    var approved: Boolean = false,
+
+    @Column(name = "members_only", nullable = false)
+    var membersOnly: Boolean = false,
+
+    @Column(name = "sign_up", nullable = false)
+    var signUp: Boolean = false,
+) : AuditedAutoIdEntity() {
+    val committeeId: Long
+        get() = committee.id ?: 0
 
     @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true)
     var banner: EventBanner? = null
         internal set
-
-    @Column(name = "price_member")
-    var memberPrice: Double? = null
-
-    @Column(name = "price_public")
-    var publicPrice: Double? = null
 
     @OneToMany(cascade = [CascadeType.ALL], mappedBy = "event", fetch = FetchType.LAZY)
     private val _feedbacks: MutableSet<EventFeedback> = linkedSetOf()
@@ -81,18 +92,6 @@ class Event : AuditedAutoIdEntity() {
     private val _pictures: MutableSet<EventPicture> = linkedSetOf()
     val pictures: Set<EventPicture>
         get() = _pictures
-
-    @Column(name = "google_id")
-    var googleId: String? = null
-
-    @Column(name = "approved", nullable = false)
-    var approved = false
-
-    @Column(name = "members_only", nullable = false)
-    var membersOnly = false
-
-    @Column(name = "sign_up", nullable = false)
-    var signUp = false
 
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "survey_id")

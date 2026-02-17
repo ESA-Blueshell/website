@@ -33,10 +33,7 @@ class CommitteeService @Autowired constructor(
         description: String,
         members: List<CommitteeMemberData>
     ): Committee {
-        val committee = Committee().apply {
-            this.name = name
-            this.description = description
-        }
+        val committee = Committee(name = name, description = description)
         reconcileMembers(committee, members)
         val saved = super.create(committee)
         publishMembershipChanges(saved.id!!, saved.members.map { it.userId }.toSet())
@@ -73,11 +70,10 @@ class CommitteeService @Autowired constructor(
     private fun reconcileMembers(committee: Committee, members: List<CommitteeMemberData>) {
         val existingByUserId = committee.members.associateBy { it.userId }
         val mappedMembers = members.map { memberData ->
-            val member = existingByUserId[memberData.userId] ?: CommitteeMember().apply {
-                user = userService.findById(memberData.userId)
-                id.userId = memberData.userId
-                this.committee = committee
-            }
+            val member = existingByUserId[memberData.userId] ?: CommitteeMember(
+                committee = committee,
+                user = userService.findById(memberData.userId),
+            )
             member.role = memberData.role
             member
         }

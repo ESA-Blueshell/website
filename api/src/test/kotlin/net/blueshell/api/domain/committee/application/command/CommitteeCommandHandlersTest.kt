@@ -179,8 +179,6 @@ class CommitteeCommandHandlersTest {
         }
     }
 
-    private fun committee(name: String, description: String): Committee = Committee().apply {
-        this.name = name
-        this.description = description
-    }
+    private fun committee(name: String, description: String): Committee =
+        Committee(name = name, description = description)
 }

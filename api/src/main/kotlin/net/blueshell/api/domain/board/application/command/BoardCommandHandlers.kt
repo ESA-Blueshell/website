@@ -21,11 +21,12 @@ class CreateBoardHandler(
 
     @Transactional
     override fun handle(command: CreateBoardCommand): Board {
-        val board = Board()
-        board.name = command.name
-        board.candidate = command.candidate
-        board.startDate = command.startDate
-        board.endDate = command.endDate
+        val board = Board(
+            candidate = command.candidate,
+            startDate = command.startDate,
+            name = command.name,
+            endDate = command.endDate,
+        )
 
         command.pictureId?.let { pictureId ->
             val picture = fileService.findById(pictureId)

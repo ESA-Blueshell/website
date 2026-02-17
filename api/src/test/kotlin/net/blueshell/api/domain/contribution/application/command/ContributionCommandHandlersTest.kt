@@ -100,7 +100,9 @@ class ContributionCommandHandlersTest {
     }
 
     private fun contribution(userId: Long, periodId: Long): Contribution = Contribution(
-        id = Contribution.Id(userId, periodId)
+        id = Contribution.Id(userId, periodId),
+        user = mock(),
+        contributionPeriod = mock(),
     ).apply {
         setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
         setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))

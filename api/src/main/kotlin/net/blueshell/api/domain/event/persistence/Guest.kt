@@ -20,19 +20,19 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE guests SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class Guest : AuditedAutoIdEntity() {
+class Guest(
     @Column(nullable = false)
-    lateinit var name: String
+    var name: String,
 
     @Column(nullable = false)
-    lateinit var discord: String
+    var discord: String,
 
     @Column(nullable = false)
-    lateinit var email: String
+    var email: String,
 
     @Column
-    var phoneNumber: String? = null
+    var phoneNumber: String? = null,
 
     @Column(name = "access_token", nullable = false)
-    var accessToken: String? = null
-}
+    var accessToken: String,
+) : AuditedAutoIdEntity()

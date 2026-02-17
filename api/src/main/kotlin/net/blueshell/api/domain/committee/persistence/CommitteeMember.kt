@@ -29,28 +29,26 @@ import java.io.Serializable
 )
 class CommitteeMember(
     @EmbeddedId
-    @AttributeOverrides(AttributeOverride(name = "userId", column = Column(name = "user_id", nullable = false)))
     override var id: Id = Id(),
-) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMember.Id> {
+
     @MapsId("committeeId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "committee_id", nullable = false)
-    lateinit var committee: Committee
-        internal set
+    var committee: Committee,
 
-    val committeeId: Long
-        get() = id.committeeId ?: 0
-
+    @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
-    lateinit var user: User
-        internal set
-
-    val userId: Long
-        get() = id.userId ?: 0
+    @JoinColumn(name = "user_id", nullable = false)
+    var user: User,
 
     @Column(name = "role", length = 255)
-    var role: String? = null
+    var role: String? = null,
+) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMember.Id> {
+    val committeeId: Long
+        get() = id.committeeId ?: committee.id ?: 0
+
+    val userId: Long
+        get() = id.userId ?: user.id ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

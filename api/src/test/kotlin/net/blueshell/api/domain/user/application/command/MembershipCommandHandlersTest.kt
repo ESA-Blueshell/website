@@ -33,7 +33,7 @@ class MembershipCommandHandlersTest {
         @Test
         fun `returns memberships by query`() {
             val query = MembershipQuery(from = LocalDate.of(2025, 1, 1))
-            val expected = mutableListOf(Membership())
+            val expected = mutableListOf(Membership(user = testUser("expected"), startDate = LocalDate.now()))
             whenever(membershipService.findByQuery(query)).thenReturn(expected)
 
             val result = handler.handle(FindMembershipsCommand(query))
@@ -123,7 +123,7 @@ class MembershipCommandHandlersTest {
             whenever(userService.findById(2L)).thenReturn(user)
             val startDate = LocalDate.of(2025, 1, 1)
             val endDate = LocalDate.of(2025, 12, 31)
-            val expected = Membership()
+            val expected = Membership(user = user, startDate = startDate)
             whenever(membershipService.create(org.mockito.kotlin.any())).thenReturn(expected)
 
             val result = handler.handle(
@@ -155,14 +155,13 @@ class MembershipCommandHandlersTest {
         @Test
         fun `updates membership fields and version`() {
             val user = testUser("john")
-            val membership = Membership().apply {
-                this.user = user
-                memberType = MemberType.ALUMNI
-                startDate = LocalDate.of(2024, 1, 1)
-                endDate = null
-                incasso = false
-                version = 1L
-            }
+            val membership = Membership(
+                user = user,
+                startDate = LocalDate.of(2024, 1, 1),
+                memberType = MemberType.ALUMNI,
+                endDate = null,
+                incasso = false,
+            ).apply { version = 1L }
             whenever(membershipService.findById(3L)).thenReturn(membership)
             whenever(userService.findById(2L)).thenReturn(user)
             whenever(membershipService.update(membership)).thenReturn(membership)
@@ -196,7 +195,7 @@ class MembershipCommandHandlersTest {
 
         @Test
         fun `returns membership by id`() {
-            val expected = Membership()
+            val expected = Membership(user = testUser("found"), startDate = LocalDate.now())
             whenever(membershipService.findById(7L)).thenReturn(expected)
 
             val result = handler.handle(FindMembershipByIdCommand(7L))

@@ -62,7 +62,12 @@ class QuestionCommandHandlersTest {
 
         @Test
         fun `updates question with survey and fields`() {
-            val existing = Question()
+            val existing = Question(
+                idx = 1L,
+                survey = mock(),
+                type = QuestionType.OPEN,
+                label = "Existing",
+            )
             val survey = mock<Survey>()
             whenever(questionService.findById(7L)).thenReturn(existing)
             whenever(surveyService.findById(8L)).thenReturn(survey)
@@ -95,7 +100,14 @@ class QuestionCommandHandlersTest {
 
         @Test
         fun `returns all questions`() {
-            val expected = mutableListOf(Question())
+            val expected = mutableListOf(
+                Question(
+                    idx = 1L,
+                    survey = mock(),
+                    type = QuestionType.OPEN,
+                    label = "Q",
+                )
+            )
             whenever(questionService.findAll()).thenReturn(expected)
 
             val result = handler.handle(FindQuestionsCommand())
@@ -112,7 +124,12 @@ class QuestionCommandHandlersTest {
 
         @Test
         fun `returns question by id`() {
-            val expected = Question()
+            val expected = Question(
+                idx = 1L,
+                survey = mock(),
+                type = QuestionType.OPEN,
+                label = "Q",
+            )
             whenever(questionService.findById(9L)).thenReturn(expected)
 
             val result = handler.handle(FindQuestionByIdCommand(9L))

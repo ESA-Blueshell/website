@@ -227,11 +227,11 @@ class BoardCommandHandlersTest {
         }
     }
 
-    private fun boardEntity(): Board = Board().apply {
-        name = "Board"
-        candidate = "Candidate"
-        startDate = LocalDate.of(2026, 1, 1)
-    }
+    private fun boardEntity(): Board = Board(
+        candidate = "Candidate",
+        startDate = LocalDate.of(2026, 1, 1),
+        name = "Board",
+    )
 
     private fun userEntity(): User = User(
         username = "member_${System.nanoTime()}",

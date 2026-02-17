@@ -296,54 +296,52 @@ class EmailJobHandlersTest : ServiceTestSupport() {
     }
 
     private fun createAndSavePeriod(): ContributionPeriod {
-        val period = ContributionPeriod()
-        period.startDate = LocalDate.of(2024, 1, 1)
-        period.endDate = LocalDate.of(2024, 12, 31)
-        period.halfYearFee = 25.0
-        period.fullYearFee = 45.0
-        period.alumniFee = 10.0
+        val period = ContributionPeriod(
+            startDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 12, 31),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        )
         return persist(period)
     }
 
     private fun createAndSaveReminder(user: User, period: ContributionPeriod): ContributionReminder {
-        val reminder = ContributionReminder()
-        reminder.id = ContributionReminder.Id(user.id, period.id)
-        // Must set entity references for @MapsId to work
-        reminder.user = user
-        reminder.contributionPeriod = period
+        val reminder = ContributionReminder(
+            id = ContributionReminder.Id(user.id, period.id),
+            user = user,
+            contributionPeriod = period,
+        )
         return persist(reminder)
     }
 
     private fun createAndSaveEvent(title: String, location: String): Event {
         val committee = createAndSaveCommittee("Test Committee")
-        val event = Event()
-        event.committee = committee
-        event.title = title
-        event.location = location
-        event.startTime = Instant.now().plus(7, ChronoUnit.DAYS)
-        event.endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS)
-        event.approved = true
-        event.signUp = true
+        val event = Event(
+            committee = committee,
+            title = title,
+            location = location,
+            startTime = Instant.now().plus(7, ChronoUnit.DAYS),
+            endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS),
+            approved = true,
+            signUp = true,
+        )
         return persist(event)
     }
 
     private fun createAndSaveCommittee(name: String): Committee {
-        val committee = Committee()
-        committee.name = name
-        committee.description = "Test committee for integration tests"
-        return persist(committee)
+        return persist(Committee(name = name, description = "Test committee for integration tests"))
     }
 
     private fun createAndSaveSignUp(event: Event, guestName: String, guestEmail: String): EventSignUp {
-        val guest = Guest()
-        guest.name = guestName
-        guest.discord = "guest#1234"
-        guest.email = guestEmail
-        guest.accessToken = "test-token-${System.currentTimeMillis()}"
+        val guest = Guest(
+            name = guestName,
+            discord = "guest#1234",
+            email = guestEmail,
+            accessToken = "test-token-${System.currentTimeMillis()}",
+        )
 
-        val signUp = EventSignUp()
-        signUp.event = event
-        signUp.guest = guest
+        val signUp = EventSignUp(event = event, guest = guest)
         return persist(signUp)
     }
 

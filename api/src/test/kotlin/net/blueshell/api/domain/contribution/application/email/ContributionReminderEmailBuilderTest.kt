@@ -107,12 +107,12 @@ class ContributionReminderEmailBuilderTest {
         fullYearFee: Double = 45.0,
         alumniFee: Double = 10.0
     ): ContributionPeriod {
-        return ContributionPeriod().apply {
-            this.startDate = startDate
-            this.endDate = endDate
-            this.halfYearFee = halfYearFee
-            this.fullYearFee = fullYearFee
-            this.alumniFee = alumniFee
-        }
+        return ContributionPeriod(
+            startDate = startDate,
+            endDate = endDate,
+            halfYearFee = halfYearFee,
+            fullYearFee = fullYearFee,
+            alumniFee = alumniFee,
+        )
     }
 }

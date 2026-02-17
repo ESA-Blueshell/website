@@ -26,30 +26,30 @@ import org.hibernate.annotations.SQLRestriction
 )
 @SQLDelete(sql = "UPDATE files SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class File : AuditedAutoIdEntity() {
+class File(
     @Column(nullable = false)
-    lateinit var name: String
+    var name: String,
 
     @Column(nullable = false)
-    lateinit var path: String
+    var path: String,
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "uploader_id", nullable = false)
-    lateinit var uploader: User
-        internal set
-
-    val uploaderId: Long
-        get() = uploader.id ?: 0
+    var uploader: User,
 
     @Column(name = "media_type", nullable = false)
-    lateinit var mediaType: String
+    var mediaType: String,
 
     @Column(name = "size")
-    var size: Long? = null
+    var size: Long? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    lateinit var type: FileType
+    var type: FileType,
+) : AuditedAutoIdEntity() {
+
+    val uploaderId: Long
+        get() = uploader.id ?: 0
 
     @OneToMany(mappedBy = "file", fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)

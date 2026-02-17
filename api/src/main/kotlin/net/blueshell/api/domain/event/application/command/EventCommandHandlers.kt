@@ -6,6 +6,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.EventBanner
+import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
@@ -21,14 +22,27 @@ class CreateEventHandler(
     private val service: EventService,
     private val committeeService: CommitteeService,
     private val currentUserProvider: CurrentUserProvider,
-    private val surveyFactory: SurveyFactory
+    private val surveyFactory: SurveyFactory,
+    private val fileService: FileService,
 ) : CommandHandler<CreateEventCommand, Event> {
     override val commandType = CreateEventCommand::class
 
     override fun handle(command: CreateEventCommand): Event {
-        var event = Event()
+        var event = Event(
+            committee = committeeService.findById(command.committeeId),
+            title = command.title,
+            description = command.description,
+            location = command.location,
+            startTime = command.startTime,
+            endTime = command.endTime,
+            memberPrice = command.memberPrice,
+            publicPrice = command.publicPrice,
+            approved = false,
+            membersOnly = command.membersOnly,
+            signUp = command.signUp,
+        )
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard, committeeService, surveyFactory)
+        applyEventFields(event, command, isBoard, committeeService, surveyFactory, fileService)
         event = service.create(event)
         return event
     }
@@ -39,14 +53,15 @@ class UpdateEventHandler(
     private val service: EventService,
     private val committeeService: CommitteeService,
     private val currentUserProvider: CurrentUserProvider,
-    private val surveyFactory: SurveyFactory
+    private val surveyFactory: SurveyFactory,
+    private val fileService: FileService,
 ) : CommandHandler<UpdateEventCommand, Event> {
     override val commandType = UpdateEventCommand::class
 
     override fun handle(command: UpdateEventCommand): Event {
         var event = service.findById(command.id)
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard, committeeService, surveyFactory)
+        applyEventFields(event, command, isBoard, committeeService, surveyFactory, fileService)
         command.version?.let { event.version = it }
         event = service.update(event)
         return event
@@ -100,7 +115,14 @@ class DeleteEventByIdHandler(
     }
 }
 
-private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard: Boolean, committeeService: CommitteeService, surveyFactory: SurveyFactory) {
+private fun applyEventFields(
+    event: Event,
+    command: CreateEventCommand,
+    isBoard: Boolean,
+    committeeService: CommitteeService,
+    surveyFactory: SurveyFactory,
+    fileService: FileService,
+) {
     event.committee = committeeService.findById(command.committeeId)
     event.title = command.title
     event.description = command.description
@@ -111,12 +133,19 @@ private fun applyEventFields(event: Event, command: CreateEventCommand, isBoard:
     event.publicPrice = command.publicPrice
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
-    event.banner = command.banner?.let { mapBanner(it) }
+    event.banner = command.banner?.let { mapBanner(event, it, fileService) }
     event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
     event.approved = isBoard && command.approved
 }
 
-private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard: Boolean, committeeService: CommitteeService, surveyFactory: SurveyFactory) {
+private fun applyEventFields(
+    event: Event,
+    command: UpdateEventCommand,
+    isBoard: Boolean,
+    committeeService: CommitteeService,
+    surveyFactory: SurveyFactory,
+    fileService: FileService,
+) {
     event.committee = committeeService.findById(command.committeeId)
     event.title = command.title
     event.description = command.description
@@ -127,16 +156,16 @@ private fun applyEventFields(event: Event, command: UpdateEventCommand, isBoard:
     event.publicPrice = command.publicPrice
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
-    event.banner = command.banner?.let { mapBanner(it) }
+    event.banner = command.banner?.let { mapBanner(event, it, fileService) }
     event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
     event.approved = isBoard && command.approved
 }
 
-private fun mapBanner(data: EventBannerData): EventBanner {
-    val banner = EventBanner()
-    banner.id.fileId = data.fileId
-    return banner
-}
+private fun mapBanner(event: Event, data: EventBannerData, fileService: FileService): EventBanner =
+    EventBanner(
+        event = event,
+        file = fileService.findById(data.fileId),
+    )
 
 private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
     val inherited = user.roles.flatMap { it.allInheritedRoles }

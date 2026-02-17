@@ -129,13 +129,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
         html: String = "<p>Content</p>",
         publishedAt: Instant = Instant.now()
     ): Blog {
-        return persist(
-            Blog().apply {
-                this.title = title
-                this.html = html
-                this.publishedAt = publishedAt
-            }
-        )
+        return persist(Blog(title = title, html = html, publishedAt = publishedAt))
     }
 
     protected fun createBoardFixture(
@@ -144,11 +138,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         startDate: LocalDate = LocalDate.now().minusDays(1)
     ): Board {
         return persist(
-            Board().apply {
-                this.name = name
-                this.candidate = candidate
-                this.startDate = startDate
-            }
+            Board(
+                candidate = candidate,
+                startDate = startDate,
+                name = name,
+            )
         )
     }
 
@@ -168,21 +162,15 @@ abstract class UserTestSupport : ServiceTestSupport() {
         name: String = "Committee ${System.currentTimeMillis()}",
         description: String = "Committee description"
     ): Committee {
-        return persist(
-            Committee().apply {
-                this.name = name
-                this.description = description
-            }
-        )
+        return persist(Committee(name = name, description = description))
     }
 
     protected fun addCommitteeMember(committee: Committee, user: User, role: String = "Member"): Committee {
-        val member = CommitteeMember().apply {
-            id = CommitteeMember.Id(committee.id, user.id)
-            this.committee = committee
-            this.user = user
-            this.role = role
-        }
+        val member = CommitteeMember(
+            committee = committee,
+            user = user,
+            role = role,
+        )
         committee.replaceMembers(committee.members + member)
         return persist(committee)
     }
@@ -195,17 +183,17 @@ abstract class UserTestSupport : ServiceTestSupport() {
         title: String = "Event ${System.currentTimeMillis()}"
     ): Event {
         return persist(
-            Event().apply {
-                this.committee = committee
-                this.title = title
-                this.description = "Event description"
-                this.location = "Campus"
-                this.startTime = Instant.now().plusSeconds(3600)
-                this.endTime = Instant.now().plusSeconds(7200)
-                this.approved = approved
-                this.membersOnly = membersOnly
-                this.signUp = signUp
-            }
+            Event(
+                committee = committee,
+                title = title,
+                description = "Event description",
+                location = "Campus",
+                startTime = Instant.now().plusSeconds(3600),
+                endTime = Instant.now().plusSeconds(7200),
+                approved = approved,
+                membersOnly = membersOnly,
+                signUp = signUp,
+            )
         )
     }
 
@@ -260,13 +248,13 @@ abstract class UserTestSupport : ServiceTestSupport() {
         memberType: MemberType = MemberType.REGULAR
     ): Membership {
         return persist(
-            Membership().apply {
-                this.user = user
-                this.memberType = memberType
-                this.startDate = LocalDate.now().minusDays(30)
-                this.endDate = null
-                this.incasso = true
-            }
+            Membership(
+                user = user,
+                startDate = LocalDate.now().minusDays(30),
+                endDate = null,
+                memberType = memberType,
+                incasso = true,
+            )
         )
     }
 
@@ -275,13 +263,13 @@ abstract class UserTestSupport : ServiceTestSupport() {
         endDate: LocalDate = LocalDate.now().plusMonths(1)
     ): ContributionPeriod {
         return persist(
-            ContributionPeriod().apply {
-                this.startDate = startDate
-                this.endDate = endDate
-                this.halfYearFee = 25.0
-                this.fullYearFee = 45.0
-                this.alumniFee = 10.0
-            }
+            ContributionPeriod(
+                startDate = startDate,
+                endDate = endDate,
+                halfYearFee = 25.0,
+                fullYearFee = 45.0,
+                alumniFee = 10.0,
+            )
         )
     }
 
@@ -294,23 +282,19 @@ abstract class UserTestSupport : ServiceTestSupport() {
         val path = Path.of("/tmp", "$name-${System.currentTimeMillis()}")
         Files.writeString(path, "test-file")
         return persist(
-            File().apply {
-                this.name = name
-                this.path = path.toString()
-                this.uploader = uploader
-                this.mediaType = mediaType
-                this.size = 1024
-                this.type = type
-            }
+            File(
+                name = name,
+                path = path.toString(),
+                uploader = uploader,
+                mediaType = mediaType,
+                size = 1024,
+                type = type,
+            )
         )
     }
 
     protected fun attachEventBanner(event: Event, file: File = createFileFixture()): Event {
-        event.banner = EventBanner().apply {
-            this.event = event
-            this.id = EventBanner.Id(event.id, file.id)
-            this.fileId = file.id!!
-        }
+        event.banner = EventBanner(event = event, file = file)
         return persist(event)
     }
 
@@ -320,12 +304,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         guest: Guest? = null
     ): EventSignUp {
         return persist(
-            EventSignUp().apply {
-                this.event = event
-                this.user = user
-                this.userId = user?.id
-                this.guest = guest
-            }
+            EventSignUp(
+                event = event,
+                userId = user?.id,
+                guest = guest,
+            )
         )
     }
 
@@ -334,13 +317,13 @@ abstract class UserTestSupport : ServiceTestSupport() {
         accessToken: String = "guest-token-${System.currentTimeMillis()}"
     ): Guest {
         return persist(
-            Guest().apply {
-                this.name = name
-                this.discord = "guest#1234"
-                this.email = "guest-${System.currentTimeMillis()}@example.com"
-                this.phoneNumber = "+31612345678"
-                this.accessToken = accessToken
-            }
+            Guest(
+                name = name,
+                discord = "guest#1234",
+                email = "guest-${System.currentTimeMillis()}@example.com",
+                phoneNumber = "+31612345678",
+                accessToken = accessToken,
+            )
         )
     }
 

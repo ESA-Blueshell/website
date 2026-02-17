@@ -76,15 +76,14 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
     }
 
     private fun createContributionReminder(user: User, period: ContributionPeriod): ContributionReminder {
-        val reminder = ContributionReminder()
-        reminder.id = ContributionReminder.Id(
-            userId = user.id,
-            contributionPeriodId = period.id
+        return ContributionReminder(
+            id = ContributionReminder.Id(
+                userId = user.id,
+                contributionPeriodId = period.id
+            ),
+            user = user,
+            contributionPeriod = period,
         )
-        // Must set entity references for @MapsId to work
-        reminder.user = user
-        reminder.contributionPeriod = period
-        return reminder
     }
 
     private fun createAndSaveUser(username: String = "testuser"): User {
@@ -104,12 +103,13 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
     }
 
     private fun createAndSavePeriod(): ContributionPeriod {
-        val period = ContributionPeriod()
-        period.startDate = LocalDate.of(2024, 1, 1)
-        period.endDate = LocalDate.of(2024, 12, 31)
-        period.halfYearFee = 25.0
-        period.fullYearFee = 45.0
-        period.alumniFee = 10.0
+        val period = ContributionPeriod(
+            startDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 12, 31),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        )
         return persist(period)
     }
 }

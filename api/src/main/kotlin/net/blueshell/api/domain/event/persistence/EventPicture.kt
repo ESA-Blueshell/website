@@ -35,26 +35,24 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class EventPicture(
     @EmbeddedId
-    override var id: Id = Id()
-) : AuditedSoftDeleteEntity(), Identifiable<EventPicture.Id> {
-
-    val eventId: Long
-        get() = id.eventId ?: 0
-
-    val pictureId: Long
-        get() = id.pictureId ?: 0
-
-    @MapsId("pictureId")
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "picture_id", nullable = false)
-    lateinit var picture: File
-        internal set
+    override var id: Id = Id(),
 
     @MapsId("eventId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
-    lateinit var event: Event
-        internal set
+    var event: Event,
+
+    @MapsId("pictureId")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "picture_id", nullable = false)
+    var picture: File,
+) : AuditedSoftDeleteEntity(), Identifiable<EventPicture.Id> {
+
+    val eventId: Long
+        get() = id.eventId ?: event.id ?: 0
+
+    val pictureId: Long
+        get() = id.pictureId ?: picture.id ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -36,25 +36,23 @@ import org.hibernate.annotations.SQLRestriction
 class ContributionReminder(
     @EmbeddedId
     override var id: Id = Id(),
-) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
 
     @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    lateinit var user: User
-        internal set
-
-    val userId: Long
-        get() = id.userId ?: 0
+    var user: User,
 
     @MapsId("contributionPeriodId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contribution_period_id", nullable = false)
-    lateinit var contributionPeriod: ContributionPeriod
-        internal set
+    var contributionPeriod: ContributionPeriod,
+) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
+
+    val userId: Long
+        get() = id.userId ?: user.id ?: 0
 
     val contributionPeriodId: Long
-        get() = id.contributionPeriodId ?: 0
+        get() = id.contributionPeriodId ?: contributionPeriod.id ?: 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -29,7 +29,19 @@ import java.time.LocalDate
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-class Board : AuditedAutoIdEntity() {
+class Board(
+    @Column(name = "candidate", nullable = false)
+    var candidate: String,
+
+    @Column(name = "start_date", nullable = false)
+    var startDate: LocalDate,
+
+    @Column(name = "name", nullable = false)
+    var name: String,
+
+    @Column(name = "end_date")
+    var endDate: LocalDate? = null,
+) : AuditedAutoIdEntity() {
     @JoinColumn(name = "picture_id")
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     var picture: File? = null
@@ -48,18 +60,6 @@ class Board : AuditedAutoIdEntity() {
     val documents: Set<BoardDocument>
         get() = _documents
 
-    @Column(name = "candidate", nullable = false)
-    lateinit var candidate: String
-
-    @Column(name = "start_date", nullable = false)
-    lateinit var startDate: LocalDate
-
-    @Column(name = "end_date")
-    var endDate: LocalDate? = null
-
-    @Column(name = "name", nullable = false)
-    lateinit var name: String
-
     fun addMember(member: BoardMember) {
         _members.add(member)
     }
@@ -69,7 +69,6 @@ class Board : AuditedAutoIdEntity() {
     }
 
     fun addDocument(document: BoardDocument) {
-        document.board = this
         _documents.add(document)
     }
 

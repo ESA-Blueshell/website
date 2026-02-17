@@ -30,7 +30,6 @@ class Sponsor(
     var description: String
 
 ) : AuditedAutoIdEntity() {
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "logo_id", nullable = false)
     lateinit var picture: File

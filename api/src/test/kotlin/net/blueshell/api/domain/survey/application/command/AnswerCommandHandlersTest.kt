@@ -59,7 +59,7 @@ class AnswerCommandHandlersTest {
 
         @Test
         fun `updates answer with question and response fields`() {
-            val existing = Answer()
+            val existing = Answer(question = mock())
             val question = mock<Question>()
             whenever(answerService.findById(7L)).thenReturn(existing)
             whenever(questionService.findById(4L)).thenReturn(question)
@@ -88,7 +88,7 @@ class AnswerCommandHandlersTest {
 
         @Test
         fun `returns all answers`() {
-            val expected = mutableListOf(Answer())
+            val expected = mutableListOf(Answer(question = mock()))
             whenever(answerService.findAll()).thenReturn(expected)
 
             val result = handler.handle(FindAnswersCommand())
@@ -105,7 +105,7 @@ class AnswerCommandHandlersTest {
 
         @Test
         fun `returns answer by id`() {
-            val expected = Answer()
+            val expected = Answer(question = mock())
             whenever(answerService.findById(9L)).thenReturn(expected)
 
             val result = handler.handle(FindAnswerByIdCommand(9L))
@@ -122,7 +122,7 @@ class AnswerCommandHandlersTest {
 
         @Test
         fun `returns answers by survey id`() {
-            val expected = mutableSetOf(Answer())
+            val expected = mutableSetOf(Answer(question = mock()))
             whenever(answerService.findBySurveyId(10L)).thenReturn(expected)
 
             val result = handler.handle(FindAnswersBySurveyIdCommand(10L))
@@ -139,7 +139,7 @@ class AnswerCommandHandlersTest {
 
         @Test
         fun `returns answers by question id`() {
-            val expected = mutableSetOf(Answer())
+            val expected = mutableSetOf(Answer(question = mock()))
             whenever(answerService.findByQuestionId(11L)).thenReturn(expected)
 
             val result = handler.handle(FindAnswersByQuestionIdCommand(11L))

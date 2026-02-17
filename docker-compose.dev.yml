@@ -77,8 +77,9 @@ services:
       dockerfile: api/Dockerfile-dev
     volumes:
       - ./:/app
-      - gradle-cache:/root/.gradle
       - ./storage:/home/storage
+      - gradle-cache:/root/.gradle
+      - playwright-browsers:/ms-playwright
     ports:
       - "8080:8080"
       - "5005:5005"
@@ -108,5 +109,6 @@ networks:
 volumes:
   data:
   gradle-cache:
+  playwright-browsers:
   nginx_certs:
     driver: local

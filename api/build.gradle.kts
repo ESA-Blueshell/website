@@ -145,9 +145,30 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-parameters")
 }
 
+tasks.register<JavaExec>("installPlaywrightDeps") {
+    group = "playwright"
+    description = "Installs Playwright OS dependencies"
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.microsoft.playwright.CLI")
+    args("install-deps")
+}
+
+tasks.register<JavaExec>("installChromium") {
+    group = "playwright"
+    description = "Installs Chromium (Playwright)"
+    dependsOn("installPlaywrightDeps")
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.microsoft.playwright.CLI")
+    args("install", "chromium")
+}
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     systemProperty("spring.profiles.active", "test")
+}
+
+tasks.test {
+    dependsOn("installChromium")
 }
 
 tasks.withType<BootRun>().configureEach {
@@ -221,7 +242,8 @@ tasks.register<GenerateTask>("generateBrevoClient") {
 val classDependencyOutputDir = layout.buildDirectory.dir("reports/class-dependencies")
 
 tasks.register<JavaExec>("classDependencyGraph") {
-    description = "Generates a Graphviz dot file (and SVG if Graphviz is installed) for internal Blueshell API class dependencies."
+    description =
+        "Generates a Graphviz dot file (and SVG if Graphviz is installed) for internal Blueshell API class dependencies."
     group = "reporting"
     dependsOn(tasks.named("testClasses"))
     mainClass.set("net.blueshell.tools.ClassDependencyGraphKt")

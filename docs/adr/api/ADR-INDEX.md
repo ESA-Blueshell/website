@@ -37,7 +37,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [003](ADR-003-validation-layer-separation.md) | Validation Layer Separation | Accepted | Layered validation responsibilities |
-| [004](ADR-004-mapping-strategy-with-mappie.md) | Mapping Strategy with Mappie | Accepted | Mapping strategy at API boundaries and internal layers |
+| [004](ADR-004-manual-mapping-at-api-boundaries.md) | Manual Mapping at API Boundaries | Accepted | Explicit manual mapping strategy for request/response and command/entity boundaries |
 
 ### Patterns
 

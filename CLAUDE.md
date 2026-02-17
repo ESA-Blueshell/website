@@ -326,7 +326,7 @@ fun createUser(@Valid @RequestBody request: CreateUserRequest): UserResponse {
 - ❌ Don't put mapping logic in controllers or services
 - ❌ Don't mix Mappie and manual mapping inconsistently
 
-**📚 See:** [ADR-004: Mapping Strategy with Mappie](docs/adr/api/ADR-004-mapping-strategy-with-mappie.md)
+**📚 See:** [ADR-004: Manual Mapping at API Boundaries](docs/adr/api/ADR-004-manual-mapping-at-api-boundaries.md)
 
 ---
 
@@ -956,7 +956,7 @@ Architectural documentation is split by platform in `docs/adr/`:
 
 ### Validation & Mapping
 - **[ADR-003](docs/adr/api/ADR-003-validation-layer-separation.md)**: Validation Layer Separation
-- **[ADR-004](docs/adr/api/ADR-004-mapping-strategy-with-mappie.md)**: Mapping Strategy with Mappie
+- **[ADR-004](docs/adr/api/ADR-004-manual-mapping-at-api-boundaries.md)**: Manual Mapping at API Boundaries
 
 ### Patterns
 - **[ADR-005](docs/adr/api/ADR-005-factory-pattern-for-entity-creation.md)**: Factory Pattern for Entity Creation

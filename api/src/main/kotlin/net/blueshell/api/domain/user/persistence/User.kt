@@ -104,23 +104,23 @@ class User(
     ) : AuditedAutoIdEntity() {
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
-    final var address: Address? = null
-        private set
+    var address: Address? = null
+        internal set
 
     val addressId: Long?
         get() = address?.id
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_picture_id")
-    final var profilePicture: File? = null
-        private set
+    var profilePicture: File? = null
+        internal set
 
     val profilePictureId: Long?
         get() = profilePicture?.id
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    final var memberProfile: MemberProfile? = null
-        private set
+    var memberProfile: MemberProfile? = null
+        internal set
 
     val personDetailsId: Long?
         get() = memberProfile?.id

@@ -79,7 +79,7 @@ The backend follows **clean architecture** and **domain-driven design** principl
 - **Dependency Rule**: Dependencies point inward (web → command → application → domain → persistence)
 - **ArchUnit Enforcement**: Automated tests prevent architectural violations
 
-**📚 For detailed architecture documentation, see:** [`docs/ADR-INDEX.md`](docs/ADR-INDEX.md)
+**📚 For detailed architecture documentation, see:** [`docs/adr/ADR-INDEX.md`](docs/adr/ADR-INDEX.md)
 
 ## Layer Structure
 
@@ -132,9 +132,9 @@ platform/
 ```
 
 **📚 ADR References:**
-- **[ADR-001](docs/ADR-001-multi-layered-domain-driven-architecture.md)**: Complete layer structure and responsibilities
-- **[ADR-016](docs/ADR-016-layer-dependency-rules.md)**: Layer dependency rules and violations
-- **[ADR-022](docs/ADR-022-platform-infrastructure-shared-organization.md)**: Platform, infrastructure, and shared organization
+- **[ADR-001](docs/adr/api/ADR-001-multi-layered-domain-driven-architecture.md)**: Complete layer structure and responsibilities
+- **[ADR-016](docs/adr/api/ADR-016-layer-dependency-rules.md)**: Layer dependency rules and violations
+- **[ADR-022](docs/adr/api/ADR-022-platform-infrastructure-shared-organization.md)**: Platform, infrastructure, and shared organization
 
 ## Platform, Infrastructure, and Shared Organization
 
@@ -209,7 +209,7 @@ class EmailService(private val brevoClient: BrevoClient) {
 4. **Is it Spring configuration?** → `platform/config/`
    - Examples: SecurityConfig, JpaConfig, RabbitMqConfig
 
-**📚 See**: [ADR-022](docs/ADR-022-platform-infrastructure-shared-organization.md) for detailed guidance and examples
+**📚 See**: [ADR-022](docs/adr/api/ADR-022-platform-infrastructure-shared-organization.md) for detailed guidance and examples
 
 ---
 
@@ -244,7 +244,7 @@ Controller → Mapper → Command → CommandBus → Validator → Handler → S
 - ❌ Commands MUST NOT import from `application/` or `web/` layers
 - ❌ Commands MUST NOT import web DTOs
 
-**📚 See:** [ADR-002: Command Pattern](docs/ADR-002-command-pattern-with-command-bus.md)
+**📚 See:** [ADR-002: Command Pattern](docs/adr/api/ADR-002-command-pattern-with-command-bus.md)
 
 ---
 
@@ -283,7 +283,7 @@ Repository
 - ❌ Don't put business logic in web layer validators
 - ❌ Don't skip validation by calling services directly
 
-**📚 See:** [ADR-003: Validation Layer Separation](docs/ADR-003-validation-layer-separation.md)
+**📚 See:** [ADR-003: Validation Layer Separation](docs/adr/api/ADR-003-validation-layer-separation.md)
 
 ---
 
@@ -326,7 +326,7 @@ fun createUser(@Valid @RequestBody request: CreateUserRequest): UserResponse {
 - ❌ Don't put mapping logic in controllers or services
 - ❌ Don't mix Mappie and manual mapping inconsistently
 
-**📚 See:** [ADR-004: Mapping Strategy with Mappie](docs/ADR-004-mapping-strategy-with-mappie.md)
+**📚 See:** [ADR-004: Mapping Strategy with Mappie](docs/adr/api/ADR-004-mapping-strategy-with-mappie.md)
 
 ---
 
@@ -363,7 +363,7 @@ fun replaceMembers(newMembers: List<CommitteeMember>) {
 - ❌ Don't add `@Column` to computed ID properties
 - ❌ Don't clear/add collections directly (use aggregate methods)
 
-**📚 See:** [ADR-013: Entity Association Pattern](docs/ADR-013-entity-association-pattern.md)
+**📚 See:** [ADR-013: Entity Association Pattern](docs/adr/api/ADR-013-entity-association-pattern.md)
 
 ---
 
@@ -413,7 +413,7 @@ class RecoveryEventListener(
 - ❌ Don't include full entities in events (IDs only)
 - ❌ Don't depend on listener execution order
 
-**📚 See:** [ADR-006: Event-Driven Architecture](docs/ADR-006-event-driven-architecture.md)
+**📚 See:** [ADR-006: Event-Driven Architecture](docs/adr/api/ADR-006-event-driven-architecture.md)
 
 ---
 
@@ -478,7 +478,7 @@ HTTP Params → Query Object (application) → Specification (persistence) → D
 - ❌ Don't put query objects in persistence layer
 - ❌ Don't pass web DTOs to specifications
 
-**📚 See:** [ADR-015: JPA Specifications and Dynamic Queries](docs/ADR-015-jpa-specifications-dynamic-queries.md)
+**📚 See:** [ADR-015: JPA Specifications and Dynamic Queries](docs/adr/api/ADR-015-jpa-specifications-dynamic-queries.md)
 
 ---
 
@@ -527,7 +527,7 @@ fun update(@PathVariable id: Long, @RequestBody request: UpdateUserRequest): Use
 - ❌ Don't put in web layer (not a presentation concern)
 - ❌ Don't put complex business logic in evaluators
 
-**📚 See:** [ADR-014: Permission Evaluation Strategy](docs/ADR-014-permission-evaluation-strategy.md)
+**📚 See:** [ADR-014: Permission Evaluation Strategy](docs/adr/api/ADR-014-permission-evaluation-strategy.md)
 
 ---
 
@@ -575,7 +575,7 @@ class RecoveryTokenFactory(
 - ❌ Simple CRUD operations
 - ❌ Direct property assignment suffices
 
-**📚 See:** [ADR-005: Factory Pattern for Entity Creation](docs/ADR-005-factory-pattern-for-entity-creation.md)
+**📚 See:** [ADR-005: Factory Pattern for Entity Creation](docs/adr/api/ADR-005-factory-pattern-for-entity-creation.md)
 
 ---
 
@@ -619,7 +619,7 @@ fun `commands must not depend on application layer`(classes: JavaClasses) {
 }
 ```
 
-**📚 See:** [ADR-016: Layer Dependency Rules](docs/ADR-016-layer-dependency-rules.md)
+**📚 See:** [ADR-016: Layer Dependency Rules](docs/adr/api/ADR-016-layer-dependency-rules.md)
 
 ---
 
@@ -930,50 +930,66 @@ Required environment files in `env/`:
 
 ## Architecture Decision Records (ADRs)
 
-Complete architectural documentation is in `docs/ADR-INDEX.md`:
+Architectural documentation is split by platform in `docs/adr/`:
+- **API ADRs:** `docs/adr/api/ADR-INDEX.md`
+- **Frontend ADRs:** `docs/adr/frontend/ADR-INDEX.md`
+- **Umbrella index:** `docs/adr/ADR-INDEX.md`
 
-### Core Architecture
-- **[ADR-001](docs/ADR-001-multi-layered-domain-driven-architecture.md)**: Multi-Layered DDD Architecture
-- **[ADR-002](docs/ADR-002-command-pattern-with-command-bus.md)**: Command Pattern with CommandBus
-- **[ADR-013](docs/ADR-013-entity-association-pattern.md)**: Entity Association Pattern
-- **[ADR-016](docs/ADR-016-layer-dependency-rules.md)**: Layer Dependency Rules
+### API ADR Highlights
+
+- **[ADR-001](docs/adr/api/ADR-001-multi-layered-domain-driven-architecture.md)**: Multi-Layered DDD Architecture
+- **[ADR-002](docs/adr/api/ADR-002-command-pattern-with-command-bus.md)**: Command Pattern with CommandBus
+- **[ADR-013](docs/adr/api/ADR-013-entity-association-pattern.md)**: Entity Association Pattern
+- **[ADR-016](docs/adr/api/ADR-016-layer-dependency-rules.md)**: Layer Dependency Rules
 
 ### Strategic Domain-Driven Design
-- **[ADR-017](docs/ADR-017-bounded-context-relationships-and-context-map.md)**: Bounded Context Relationships and Context Map
-- **[ADR-018](docs/ADR-018-data-ownership-in-modular-monolith.md)**: Data Ownership in Modular Monolith
-- **[ADR-019](docs/ADR-019-anti-corruption-layers-for-external-integration.md)**: Anti-Corruption Layers for External Integration
-- **[ADR-020](docs/ADR-020-shared-kernel-governance.md)**: Shared Kernel Governance
-- **[ADR-021](docs/ADR-021-observability-and-distributed-tracing.md)**: Observability and Distributed Tracing (Proposed)
+- **[ADR-017](docs/adr/api/ADR-017-bounded-context-relationships-and-context-map.md)**: Bounded Context Relationships and Context Map
+- **[ADR-018](docs/adr/api/ADR-018-data-ownership-in-modular-monolith.md)**: Data Ownership in Modular Monolith
+- **[ADR-019](docs/adr/api/ADR-019-anti-corruption-layers-for-external-integration.md)**: Anti-Corruption Layers for External Integration
+- **[ADR-020](docs/adr/api/ADR-020-shared-kernel-governance.md)**: Shared Kernel Governance
+- **[ADR-021](docs/adr/api/ADR-021-observability-and-distributed-tracing.md)**: Observability and Distributed Tracing (Proposed)
 
 ### Data & Persistence
-- **[ADR-007](docs/ADR-007-repository-pattern-and-jpa.md)**: Repository Pattern and JPA
-- **[ADR-010](docs/ADR-010-database-migrations-with-flyway.md)**: Database Migrations with Flyway
-- **[ADR-015](docs/ADR-015-jpa-specifications-dynamic-queries.md)**: JPA Specifications and Dynamic Queries
+- **[ADR-007](docs/adr/api/ADR-007-repository-pattern-and-jpa.md)**: Repository Pattern and JPA
+- **[ADR-010](docs/adr/api/ADR-010-database-migrations-with-flyway.md)**: Database Migrations with Flyway
+- **[ADR-015](docs/adr/api/ADR-015-jpa-specifications-dynamic-queries.md)**: JPA Specifications and Dynamic Queries
 
 ### Validation & Mapping
-- **[ADR-003](docs/ADR-003-validation-layer-separation.md)**: Validation Layer Separation
-- **[ADR-004](docs/ADR-004-mapping-strategy-with-mappie.md)**: Mapping Strategy with Mappie
+- **[ADR-003](docs/adr/api/ADR-003-validation-layer-separation.md)**: Validation Layer Separation
+- **[ADR-004](docs/adr/api/ADR-004-mapping-strategy-with-mappie.md)**: Mapping Strategy with Mappie
 
 ### Patterns
-- **[ADR-005](docs/ADR-005-factory-pattern-for-entity-creation.md)**: Factory Pattern for Entity Creation
-- **[ADR-006](docs/ADR-006-event-driven-architecture.md)**: Event-Driven Architecture
+- **[ADR-005](docs/adr/api/ADR-005-factory-pattern-for-entity-creation.md)**: Factory Pattern for Entity Creation
+- **[ADR-006](docs/adr/api/ADR-006-event-driven-architecture.md)**: Event-Driven Architecture
 
 ### Security & API
-- **[ADR-008](docs/ADR-008-exception-handling-strategy.md)**: Exception Handling Strategy
-- **[ADR-009](docs/ADR-009-jwt-authentication-strategy.md)**: JWT Authentication Strategy
-- **[ADR-012](docs/ADR-012-api-documentation-with-openapi.md)**: API Documentation with OpenAPI
-- **[ADR-014](docs/ADR-014-permission-evaluation-strategy.md)**: Permission Evaluation Strategy
+- **[ADR-008](docs/adr/api/ADR-008-exception-handling-strategy.md)**: Exception Handling Strategy
+- **[ADR-009](docs/adr/api/ADR-009-jwt-authentication-strategy.md)**: JWT Authentication Strategy
+- **[ADR-012](docs/adr/api/ADR-012-api-documentation-with-openapi.md)**: API Documentation with OpenAPI
+- **[ADR-014](docs/adr/api/ADR-014-permission-evaluation-strategy.md)**: Permission Evaluation Strategy
 
 ### Testing
-- **[ADR-011](docs/ADR-011-testing-strategy.md)**: Testing Strategy
+- **[ADR-011](docs/adr/api/ADR-011-testing-strategy.md)**: Testing Strategy
 
-**📚 Full Index:** [`docs/ADR-INDEX.md`](docs/ADR-INDEX.md)
+### Frontend ADR Highlights
+- **[ADR-001](docs/adr/frontend/ADR-001-domain-feature-architecture.md)**: Domain Feature Architecture
+- **[ADR-002](docs/adr/frontend/ADR-002-api-client-boundary-and-domain-mapping.md)**: API Client Boundary and Domain Mapping
+- **[ADR-003](docs/adr/frontend/ADR-003-state-management-and-server-data.md)**: State Management and Server Data Ownership
+- **[ADR-004](docs/adr/frontend/ADR-004-form-validation-and-command-mapping.md)**: Form Validation and Command Mapping
+- **[ADR-005](docs/adr/frontend/ADR-005-routing-and-authorization.md)**: Routing and Authorization
+- **[ADR-006](docs/adr/frontend/ADR-006-component-and-composable-standards.md)**: Component and Composable Standards
+- **[ADR-007](docs/adr/frontend/ADR-007-testing-and-quality-gates.md)**: Testing and Quality Gates
+
+**📚 Full Index:** [`docs/adr/ADR-INDEX.md`](docs/adr/ADR-INDEX.md)
 
 ---
 
 ## Important Files & Resources
 
-- **`docs/ADR-INDEX.md`**: Complete architectural documentation
+- **`docs/adr/ADR-INDEX.md`**: Umbrella architecture documentation index
+- **`docs/adr/api/ADR-INDEX.md`**: API architecture decisions
+- **`docs/adr/frontend/ADR-INDEX.md`**: Frontend architecture decisions
+- **`AGENTS.md`**: Agent-facing summary aligned with this guide
 - **`docs/association-refactor-checklist.md`**: Entity association refactoring guide
 - **`api/openapi-overrides/`**: Manual overrides for generated Brevo client
 - **`openapi/`**: OpenAPI specifications (blueshell.json auto-generated, discord.json manual)
@@ -1010,4 +1026,4 @@ Complete architectural documentation is in `docs/ADR-INDEX.md`:
 
 ---
 
-**For any architectural questions, consult the ADRs in `docs/` or ask Claude Code to explain specific patterns.**
+**For any architectural questions, consult the ADRs in `docs/adr/` or ask Claude Code to explain specific patterns.**

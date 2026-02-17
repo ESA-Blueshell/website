@@ -2,7 +2,7 @@ package net.blueshell.api.domain.event.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
-import net.blueshell.api.domain.survey.web.dto.AnswerRequest
+import net.blueshell.api.domain.survey.web.dto.request.AnswerRequest
 
 @Schema(name = "CreateEventSignUpRequest")
 data class CreateEventSignUpRequest(

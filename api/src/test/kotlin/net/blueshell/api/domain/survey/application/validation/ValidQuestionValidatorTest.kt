@@ -1,7 +1,7 @@
-package net.blueshell.api.domain.survey.web.validation
+package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.survey.web.dto.QuestionDTO
+import net.blueshell.api.domain.survey.command.QuestionData
 import net.blueshell.api.shared.enums.QuestionType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -41,7 +41,12 @@ class ValidQuestionValidatorTest {
         assertThat(validator.isValid(null, context)).isTrue()
     }
 
-    private fun question(type: QuestionType?, choices: MutableList<String>?): QuestionDTO {
-        return QuestionDTO(type = type, choiceLabels = choices)
+    private fun question(type: QuestionType, choices: MutableList<String>?): QuestionData {
+        return QuestionData(
+            idx = 1,
+            type = type,
+            label = "Question",
+            choiceLabels = choices
+        )
     }
 }

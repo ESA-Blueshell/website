@@ -174,7 +174,8 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .and().resideOutsideOfPackages(
                     "${ArchitecturePackages.DOMAIN_EVENT}command..",  // Event domain - validation pattern accepted
                     "${ArchitecturePackages.DOMAIN_USER}command..",  // User domain - validation pattern accepted
-                    "${ArchitecturePackages.DOMAIN_AUTH}command.."  // Auth domain - uses User validation annotations
+                    "${ArchitecturePackages.DOMAIN_AUTH}command..",  // Auth domain - uses User validation annotations
+                    "${ArchitecturePackages.DOMAIN_SURVEY}command.."  // Survey domain - uses command validation annotations
                 )
                 .should().dependOnClassesThat()
                 .resideInAnyPackage(

@@ -43,11 +43,6 @@ class ValidEventSignUpCommandValidator @Autowired constructor(
 
         answers.forEachIndexed { index, answer ->
             val questionId = answer.questionId
-            if (questionId == null) {
-                violationAtQuestionId(ctx, index, "Question id is required.")
-                valid = false
-                return@forEachIndexed
-            }
 
             if (!formQuestionIds.contains(questionId)) {
                 violationAtQuestionId(

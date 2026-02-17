@@ -1,7 +1,7 @@
-package net.blueshell.api.domain.survey.web.validation
+package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.survey.web.dto.AnswerDTO
+import net.blueshell.api.domain.survey.command.AnswerData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -20,14 +20,14 @@ class ValidAnswerListValidatorTest {
 
     @Test
     fun `accepts unique question ids`() {
-        val answers = mutableListOf(AnswerDTO(questionId = 1), AnswerDTO(questionId = 2))
+        val answers = mutableListOf(AnswerData(questionId = 1), AnswerData(questionId = 2))
 
         assertThat(validator.isValid(answers, context)).isTrue()
     }
 
     @Test
     fun `rejects duplicate question ids`() {
-        val answers = mutableListOf(AnswerDTO(questionId = 1), AnswerDTO(questionId = 1))
+        val answers = mutableListOf(AnswerData(questionId = 1), AnswerData(questionId = 1))
 
         assertThat(validator.isValid(answers, context)).isFalse()
     }

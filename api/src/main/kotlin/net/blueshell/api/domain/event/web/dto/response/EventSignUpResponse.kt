@@ -3,7 +3,7 @@ package net.blueshell.api.domain.event.web.dto.response
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.domain.survey.web.dto.AnswerResponse
+import net.blueshell.api.domain.survey.web.dto.response.AnswerResponse
 import net.blueshell.api.domain.user.web.dto.response.UserSummaryResponse
 import java.time.Instant
 

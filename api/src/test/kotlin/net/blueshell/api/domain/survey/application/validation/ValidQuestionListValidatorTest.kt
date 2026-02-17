@@ -1,7 +1,8 @@
-package net.blueshell.api.domain.survey.web.validation
+package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.survey.web.dto.QuestionDTO
+import net.blueshell.api.domain.survey.command.QuestionData
+import net.blueshell.api.shared.enums.QuestionType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -20,15 +21,23 @@ class ValidQuestionListValidatorTest {
 
     @Test
     fun `accepts unique question indices`() {
-        val questions = mutableListOf(QuestionDTO(idx = 1), QuestionDTO(idx = 2))
+        val questions = mutableListOf(question(1), question(2))
 
         assertThat(validator.isValid(questions, context)).isTrue()
     }
 
     @Test
     fun `rejects duplicate question indices`() {
-        val questions = mutableListOf(QuestionDTO(idx = 1), QuestionDTO(idx = 1))
+        val questions = mutableListOf(question(1), question(1))
 
         assertThat(validator.isValid(questions, context)).isFalse()
     }
+
+    private fun question(idx: Long): QuestionData =
+        QuestionData(
+            idx = idx,
+            type = QuestionType.OPEN,
+            label = "Question $idx",
+            choiceLabels = null
+        )
 }

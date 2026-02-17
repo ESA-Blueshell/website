@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.survey.web.dto
+package net.blueshell.api.domain.survey.web.dto.response
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema

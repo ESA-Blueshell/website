@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.survey.web.validation
+package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
@@ -6,10 +6,9 @@ import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [ValidAnswerListValidator::class])
-annotation class ValidAnswerList(
-    val message: String = "Invalid list of answers",
+@Constraint(validatedBy = [ValidQuestionListValidator::class])
+annotation class ValidQuestionList(
+    val message: String = "Invalid list of questions",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )
-

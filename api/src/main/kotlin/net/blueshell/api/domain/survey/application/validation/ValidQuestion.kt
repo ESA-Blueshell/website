@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.survey.web.validation
+package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload

@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
@@ -45,6 +48,12 @@ configurations {
     }
 }
 
+val mockitoAgent by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+
 configurations.configureEach {
     attributes.attribute(
         TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
@@ -68,6 +77,7 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    mockitoAgent("org.mockito:mockito-core")
 
     implementation("com.nimbusds:nimbus-jose-jwt:10.5")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
@@ -162,13 +172,39 @@ tasks.register<JavaExec>("installChromium") {
     args("install", "chromium")
 }
 
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     systemProperty("spring.profiles.active", "test")
-}
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
+    }
 
-tasks.test {
-    dependsOn("installChromium")
+    testLogging {
+        events(
+            TestLogEvent.PASSED,
+            TestLogEvent.FAILED,
+            TestLogEvent.SKIPPED,
+        )
+
+        exceptionFormat = TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        showStandardStreams = true
+    }
+
+    afterSuite(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+        if (desc.parent == null) {
+            println(
+                "Test result: ${result.resultType} " +
+                        "(${result.testCount} tests, " +
+                        "${result.successfulTestCount} passed, " +
+                        "${result.failedTestCount} failed, " +
+                        "${result.skippedTestCount} skipped)"
+            )
+        }
+    }))
 }
 
 tasks.withType<BootRun>().configureEach {

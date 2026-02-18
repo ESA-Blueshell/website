@@ -80,6 +80,7 @@ services:
       - ./storage:/home/storage
       - gradle-cache:/root/.gradle
       - playwright-browsers:/ms-playwright
+      - playwright-browsers:/root/.cache/ms-playwright
     ports:
       - "8080:8080"
       - "5005:5005"
@@ -92,6 +93,7 @@ services:
       - TZ=Europe/Amsterdam
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
     depends_on:
       - db
       - rabbitmq

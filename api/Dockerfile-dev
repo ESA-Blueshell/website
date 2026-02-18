@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.gradle \
 # Install Playwright OS deps + Chromium during build
 RUN --mount=type=cache,target=/root/.gradle \
     --mount=type=cache,target=/ms-playwright \
-    ./gradlew --no-daemon :api:installPlaywrightDeps :api:installChromium -x test
+    ./gradlew --no-daemon :api:installChromium -x test
 
 EXPOSE ${PORT} 5005
 

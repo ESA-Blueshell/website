@@ -4,32 +4,27 @@ import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
+import com.microsoft.playwright.options.AriaRole
+import jakarta.mail.Multipart
+import jakarta.mail.Part
+import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TruncateTestDatabaseListener
-import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.job.EmailJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
-import org.opentest4j.TestAbortedException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
-import jakarta.mail.Multipart
-import jakarta.mail.Part
-import jakarta.mail.internet.MimeMessage
+import java.util.*
 
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -42,40 +37,24 @@ import jakarta.mail.internet.MimeMessage
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
     properties = ["server.port=8080"]
 )
-abstract class FrontendSystemTestBase {
+abstract class FrontendSystemTestBase @Autowired constructor(
+    val userRepository: UserRepository,
+    val mailSender: MockJavaMailSender,
+    val jobExecutionRepository: JobExecutionRepository,
+) {
 
-    protected val frontendBaseUrl = System.getProperty("system.frontend.url")
-        ?: System.getenv("SYSTEM_FRONTEND_URL")
-        ?: "http://frontend:3000"
-    protected val apiBaseUrl = System.getProperty("system.api.url")
-        ?: System.getenv("SYSTEM_API_URL")
-        ?: "http://localhost:8080"
+    @Value($$"${system.frontend.url}")
+    lateinit var frontendUrl: String
 
-    @Autowired
-    protected lateinit var userRepository: UserRepository
-
-    @Autowired
-    protected lateinit var mailSender: MockJavaMailSender
-
-    @Autowired
-    protected lateinit var jobExecutionRepository: JobExecutionRepository
-
-    private var playwright: Playwright? = null
-    private var browser: Browser? = null
+    private lateinit var playwright: Playwright
+    private lateinit var browser: Browser
 
     @BeforeAll
     fun setUpPlaywright() {
-        assumeTrue(waitUntilReachable("$frontendBaseUrl/"), "Frontend is not reachable at $frontendBaseUrl")
-        assumeTrue(waitUntilReachable("$apiBaseUrl/health"), "API is not reachable at $apiBaseUrl")
-
-        try {
-            playwright = Playwright.create()
-            browser = playwright!!.chromium().launch(
-                BrowserType.LaunchOptions().setHeadless(true)
-            )
-        } catch (e: Exception) {
-            throw TestAbortedException("Playwright browser setup failed: ${e.message}", e)
-        }
+        playwright = Playwright.create()
+        browser = playwright.chromium().launch(
+            BrowserType.LaunchOptions().setHeadless(true)
+        )
     }
 
     @BeforeEach
@@ -85,21 +64,24 @@ abstract class FrontendSystemTestBase {
 
     @AfterAll
     fun tearDownPlaywright() {
-        browser?.close()
-        playwright?.close()
+        browser.close()
+        playwright.close()
     }
 
     protected fun withPage(block: (Page) -> Unit) {
-        val context = checkNotNull(browser) { "Browser not initialized" }.newContext()
+        val context = browser.newContext()
         val page = context.newPage()
-        try {
+        context.use {
             block(page)
-        } finally {
-            context.close()
         }
     }
 
-    protected fun createAccountThroughUi(page: Page, url: String, submitButtonLabel: String, includeMemberProfile: Boolean): Credentials {
+    protected fun createAccountThroughUi(
+        page: Page,
+        url: String,
+        submitButtonLabel: String,
+        includeMemberProfile: Boolean
+    ): Credentials {
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         val username = "sysuser$suffix"
         val email = "sysuser$suffix@example.com"
@@ -123,24 +105,26 @@ abstract class FrontendSystemTestBase {
         }
 
         page.getByRole(
-            com.microsoft.playwright.options.AriaRole.BUTTON,
+            AriaRole.BUTTON,
             Page.GetByRoleOptions().setName(submitButtonLabel).setExact(false)
         ).click()
 
         return Credentials(username = username, email = email, password = password)
     }
 
-    protected fun waitForUserByUsername(username: String, retries: Int = 20, waitMillis: Long = 250): User {
+    protected fun <T> waitForOptional(
+        producer: () -> Optional<T>,
+        retries: Int = 10,
+        waitMillis: Long = 100,
+        onTimeoutMessage: () -> String = { "Expected value to be available" }
+    ): T {
         repeat(retries) { attempt ->
-            val found = userRepository.findByUsername(username)
-            if (found.isPresent) {
-                return found.get()
-            }
-            if (attempt < retries - 1) {
-                Thread.sleep(waitMillis)
-            }
+            val found = producer()
+            if (found.isPresent) return found.get()
+
+            if (attempt < retries - 1) Thread.sleep(waitMillis)
         }
-        throw AssertionError("Expected user '$username' to be persisted")
+        throw AssertionError(onTimeoutMessage())
     }
 
     protected fun assertActivationEmailSent(email: String, timeoutMs: Long = 10_000) {
@@ -192,33 +176,6 @@ abstract class FrontendSystemTestBase {
             is String -> content
             is Multipart -> extractFromMultipart(content)
             else -> null
-        }
-    }
-
-    private fun waitUntilReachable(url: String, retries: Int = 20, waitMillis: Long = 1_000): Boolean {
-        repeat(retries) { attempt ->
-            if (isReachableOnce(url)) {
-                return true
-            }
-
-            if (attempt < retries - 1) {
-                Thread.sleep(waitMillis)
-            }
-        }
-        return false
-    }
-
-    private fun isReachableOnce(url: String): Boolean {
-        return try {
-            val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
-            val req = HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofSeconds(5))
-                .GET()
-                .build()
-            val response = client.send(req, HttpResponse.BodyHandlers.discarding())
-            response.statusCode() in 200..399
-        } catch (_: Exception) {
-            false
         }
     }
 

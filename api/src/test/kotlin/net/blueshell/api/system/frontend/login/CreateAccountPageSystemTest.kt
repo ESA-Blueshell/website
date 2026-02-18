@@ -1,21 +1,33 @@
 package net.blueshell.api.system.frontend.login
 
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
+import net.blueshell.api.domain.user.persistence.repository.UserRepository
+import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
+import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
-class CreateAccountPageSystemTest : FrontendSystemTestBase() {
+class CreateAccountPageSystemTest @Autowired constructor(
+    userRepository: UserRepository,
+    mailSender: MockJavaMailSender,
+    jobExecutionRepository: JobExecutionRepository,
+) : FrontendSystemTestBase(
+    userRepository = userRepository,
+    mailSender = mailSender,
+    jobExecutionRepository = jobExecutionRepository
+) {
 
     @Test
     fun `account create page creates disabled user and sends activation email`() {
         withPage { page ->
             val credentials = createAccountThroughUi(
                 page = page,
-                url = "$frontendBaseUrl/account/create",
+                url = "$frontendUrl/account/create",
                 submitButtonLabel = "Create Account",
                 includeMemberProfile = false
             )
@@ -23,7 +35,7 @@ class CreateAccountPageSystemTest : FrontendSystemTestBase() {
             assertPw(page.getByText("Your account has successfully been created!"))
                 .isVisible()
 
-            val persisted = waitForUserByUsername(credentials.username)
+            val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.email).isEqualTo(credentials.email)
             assertThat(persisted.enabled).isFalse()
             assertThat(persisted.roles).contains(Role.GUEST)
@@ -38,12 +50,12 @@ class CreateAccountPageSystemTest : FrontendSystemTestBase() {
         withPage { page ->
             val credentials = createAccountThroughUi(
                 page = page,
-                url = "$frontendBaseUrl/account/create",
+                url = "$frontendUrl/account/create",
                 submitButtonLabel = "Create Account",
                 includeMemberProfile = false
             )
 
-            page.navigate("$frontendBaseUrl/login")
+            page.navigate("$frontendUrl/login")
             page.getByLabel("Username").fill(credentials.username)
             page.getByLabel("Password", com.microsoft.playwright.Page.GetByLabelOptions().setExact(false))
                 .fill(credentials.password)
@@ -55,7 +67,7 @@ class CreateAccountPageSystemTest : FrontendSystemTestBase() {
             assertPw(page.getByText("Incorrect login credentials. Please double check your username and password."))
                 .isVisible()
 
-            val persisted = waitForUserByUsername(credentials.username)
+            val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.enabled).isFalse()
             assertActivationEmailSent(credentials.email)
         }

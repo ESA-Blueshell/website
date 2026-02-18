@@ -7,6 +7,7 @@ import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.UserFormHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -50,12 +51,20 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             page.getByText("Non-members", Page.GetByTextOptions().setExact(true)).click()
             page.getByText("Add User", Page.GetByTextOptions().setExact(true)).click()
 
-            fillBoardCreateUserForm(
+            UserFormHelper.fill(
                 page = page,
-                username = username,
-                email = email,
-                discord = discord,
-                phone = phone
+                fields = UserFormHelper.Fields(
+                    initials = "BM",
+                    firstName = "Board",
+                    surname = "Member",
+                    username = username,
+                    discord = discord,
+                    email = email,
+                    phoneNumber = phone,
+                    dateOfBirth = "1999-04-12",
+                    gender = "X",
+                    studentNumber = "s$username"
+                )
             )
 
             val createResponse = page.waitForResponse(
@@ -93,8 +102,13 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                 Page.GetByRoleOptions().setName("Search for a user").setExact(false)
             ).first().fill(username)
             page.getByText(username, Page.GetByTextOptions().setExact(true)).first().click()
-            page.getByLabel("First Name*", Page.GetByLabelOptions().setExact(false)).fill(updatedFirstName)
-            page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(false)).fill(updatedDiscord)
+            UserFormHelper.fill(
+                page = page,
+                fields = UserFormHelper.Fields(
+                    firstName = updatedFirstName,
+                    discord = updatedDiscord
+                )
+            )
 
             val updateResponse = page.waitForResponse(
                 Predicate { response ->
@@ -255,25 +269,6 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             page.getByText(periodLabel, Page.GetByTextOptions().setExact(false)).count() > 0
         }
         page.getByText(periodLabel, Page.GetByTextOptions().setExact(false)).first().click()
-    }
-
-    private fun fillBoardCreateUserForm(
-        page: Page,
-        username: String,
-        email: String,
-        discord: String,
-        phone: String
-    ) {
-        page.getByLabel("Initials*", Page.GetByLabelOptions().setExact(false)).fill("BM")
-        page.getByLabel("First Name*", Page.GetByLabelOptions().setExact(false)).fill("Board")
-        page.getByLabel("Surname*", Page.GetByLabelOptions().setExact(false)).fill("Member")
-        page.getByLabel("Username*", Page.GetByLabelOptions().setExact(false)).fill(username)
-        page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(false)).fill(discord)
-        page.getByLabel("E-mail*", Page.GetByLabelOptions().setExact(false)).fill(email)
-        page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(phone)
-        page.getByLabel("Date of Birth*", Page.GetByLabelOptions().setExact(false)).fill("1999-04-12")
-        page.getByLabel("Gender*", Page.GetByLabelOptions().setExact(false)).fill("X")
-        page.getByLabel("Student Number*", Page.GetByLabelOptions().setExact(false)).fill("s$username")
     }
 
     private companion object {

@@ -6,6 +6,7 @@ import net.blueshell.api.domain.user.persistence.repository.AddressRepository
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -45,10 +46,15 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
 
             page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).first().click()
 
-            page.getByLabel("Street", Page.GetByLabelOptions().setExact(true)).fill("Campuslaan")
-            page.getByLabel("House Number", Page.GetByLabelOptions().setExact(true)).fill("12A")
-            page.getByLabel("Zipcode", Page.GetByLabelOptions().setExact(true)).fill("7522NB")
-            page.getByLabel("City", Page.GetByLabelOptions().setExact(true)).fill("Enschede")
+            AddressFormHelper.fill(
+                page = page,
+                fields = AddressFormHelper.Fields(
+                    street = "Campuslaan",
+                    houseNumber = "12A",
+                    zipCode = "7522NB",
+                    city = "Enschede"
+                )
+            )
 
             val createResponse = page.waitForResponse("**/addresses") {
                 page.getByRole(
@@ -98,10 +104,15 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 Page.GetByRoleOptions().setName("Search for a user").setExact(false)
             ).first().fill(guest.username)
             page.getByText("Add Address", Page.GetByTextOptions().setExact(false)).first().click()
-            page.getByLabel("Street", Page.GetByLabelOptions().setExact(true)).fill("DeleteStreet")
-            page.getByLabel("House Number", Page.GetByLabelOptions().setExact(true)).fill("77")
-            page.getByLabel("Zipcode", Page.GetByLabelOptions().setExact(true)).fill("1234AB")
-            page.getByLabel("City", Page.GetByLabelOptions().setExact(true)).fill("DeleteCity")
+            AddressFormHelper.fill(
+                page = page,
+                fields = AddressFormHelper.Fields(
+                    street = "DeleteStreet",
+                    houseNumber = "77",
+                    zipCode = "1234AB",
+                    city = "DeleteCity"
+                )
+            )
 
             val createResponse = page.waitForResponse({ response ->
                 response.request().method() == "POST" &&

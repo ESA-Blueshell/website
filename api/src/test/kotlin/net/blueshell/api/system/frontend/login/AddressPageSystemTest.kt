@@ -5,6 +5,7 @@ import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -26,10 +27,15 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
             page.navigate("$frontendUrl/account/addresses")
             page.waitForURL("**/account/addresses**")
 
-            page.getByLabel("Street").fill("Oude Markt")
-            page.getByLabel("House Number").fill("12")
-            page.getByLabel("Zipcode").fill("7511GA")
-            page.getByLabel("City").fill("Enschede")
+            AddressFormHelper.fill(
+                page = page,
+                fields = AddressFormHelper.Fields(
+                    street = "Oude Markt",
+                    houseNumber = "12",
+                    zipCode = "7511GA",
+                    city = "Enschede"
+                )
+            )
 
             val response = page.waitForResponse("**/addresses") {
                 page.getByRole(
@@ -83,10 +89,15 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
             assertThat(loadResponse.status()).isEqualTo(200)
             page.waitForURL("**/account/addresses/**")
 
-            page.getByLabel("Street").fill("Boddenkampsingel")
-            page.getByLabel("House Number").fill("80")
-            page.getByLabel("Zipcode").fill("7514AR")
-            page.getByLabel("City").fill("Enschede")
+            AddressFormHelper.fill(
+                page = page,
+                fields = AddressFormHelper.Fields(
+                    street = "Boddenkampsingel",
+                    houseNumber = "80",
+                    zipCode = "7514AR",
+                    city = "Enschede"
+                )
+            )
 
             val updateResponse = page.waitForResponse("**/addresses/$addressId") {
                 page.getByRole(

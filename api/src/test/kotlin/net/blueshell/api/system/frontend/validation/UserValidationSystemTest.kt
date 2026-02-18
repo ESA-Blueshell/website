@@ -6,6 +6,7 @@ import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.UserFormHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -29,13 +30,20 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
 
         withPage { page ->
             val candidateSuffix = System.currentTimeMillis().toString().takeLast(8)
-            fillCreateAccountForm(
+            page.navigate("$frontendUrl/account/create")
+            UserFormHelper.fill(
                 page = page,
-                username = existingGuest.username,
-                email = "unique$candidateSuffix@example.com",
-                discord = "unique$candidateSuffix",
-                phoneNumber = "+3161${candidateSuffix.takeLast(7)}",
-                password = "Passw0rd!$candidateSuffix"
+                fields = UserFormHelper.Fields(
+                    initials = "VA",
+                    firstName = "Validation",
+                    surname = "Case",
+                    username = existingGuest.username,
+                    discord = "unique$candidateSuffix",
+                    email = "unique$candidateSuffix@example.com",
+                    phoneNumber = "+3161${candidateSuffix.takeLast(7)}",
+                    password = "Passw0rd!$candidateSuffix",
+                    repeatedPassword = "Passw0rd!$candidateSuffix"
+                )
             )
 
             page.getByRole(
@@ -52,13 +60,20 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
     fun `create account blocks invalid input client side`() {
         withPage { page ->
             val suffix = System.currentTimeMillis().toString().takeLast(8)
-            fillCreateAccountForm(
+            page.navigate("$frontendUrl/account/create")
+            UserFormHelper.fill(
                 page = page,
-                username = "invalid-user-$suffix",
-                email = "not-an-email",
-                discord = "frontend$suffix",
-                phoneNumber = "+3164444$suffix",
-                password = "Password123"
+                fields = UserFormHelper.Fields(
+                    initials = "VA",
+                    firstName = "Validation",
+                    surname = "Case",
+                    username = "invalid-user-$suffix",
+                    discord = "frontend$suffix",
+                    email = "not-an-email",
+                    phoneNumber = "+3164444$suffix",
+                    password = "Password123",
+                    repeatedPassword = "Password123"
+                )
             )
 
             page.getByRole(
@@ -85,13 +100,20 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
 
         withPage { page ->
             val candidateSuffix = System.currentTimeMillis().toString().takeLast(8)
-            fillCreateAccountForm(
+            page.navigate("$frontendUrl/account/create")
+            UserFormHelper.fill(
                 page = page,
-                username = "uniquename$candidateSuffix",
-                email = "uniquephone$candidateSuffix@example.com",
-                discord = "uniquephone$candidateSuffix",
-                phoneNumber = existingGuest.phoneNumber,
-                password = "Passw0rd!$candidateSuffix"
+                fields = UserFormHelper.Fields(
+                    initials = "VA",
+                    firstName = "Validation",
+                    surname = "Case",
+                    username = "uniquename$candidateSuffix",
+                    discord = "uniquephone$candidateSuffix",
+                    email = "uniquephone$candidateSuffix@example.com",
+                    phoneNumber = existingGuest.phoneNumber,
+                    password = "Passw0rd!$candidateSuffix",
+                    repeatedPassword = "Passw0rd!$candidateSuffix"
+                )
             )
 
             page.getByRole(
@@ -150,26 +172,6 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
             ).click()
         }
         assertThat(response.status()).isEqualTo(200)
-    }
-
-    private fun fillCreateAccountForm(
-        page: Page,
-        username: String,
-        email: String,
-        discord: String,
-        phoneNumber: String,
-        password: String
-    ) {
-        page.navigate("$frontendUrl/account/create")
-        page.getByLabel("Initials*", Page.GetByLabelOptions().setExact(true)).fill("VA")
-        page.getByLabel("First Name*", Page.GetByLabelOptions().setExact(true)).fill("Validation")
-        page.getByLabel("Surname*", Page.GetByLabelOptions().setExact(true)).fill("Case")
-        page.getByLabel("Username*", Page.GetByLabelOptions().setExact(true)).fill(username)
-        page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true)).fill(discord)
-        page.getByLabel("E-mail*", Page.GetByLabelOptions().setExact(true)).fill(email)
-        page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(phoneNumber)
-        page.getByLabel("Password*", Page.GetByLabelOptions().setExact(true)).fill(password)
-        page.getByLabel("Password (repeated)", Page.GetByLabelOptions().setExact(true)).fill(password)
     }
 
     private companion object {

@@ -10,6 +10,7 @@ import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
+import net.blueshell.api.system.frontend.helper.UserFormHelper
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -86,21 +87,23 @@ abstract class FrontendSystemTestBase {
         val phoneNumber = "+3161${suffix.takeLast(7)}"
 
         page.navigate(url)
-        page.getByLabel("Initials*", Page.GetByLabelOptions().setExact(true)).fill("SU")
-        page.getByLabel("First Name*", Page.GetByLabelOptions().setExact(true)).fill("System")
-        page.getByLabel("Surname*", Page.GetByLabelOptions().setExact(true)).fill("User$suffix")
-        page.getByLabel("Username*", Page.GetByLabelOptions().setExact(true)).fill(username)
-        page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true)).fill("sysuser$suffix")
-        page.getByLabel("E-mail*", Page.GetByLabelOptions().setExact(true)).fill(email)
-        page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(phoneNumber)
-        page.getByLabel("Password*", Page.GetByLabelOptions().setExact(true)).fill(password)
-        page.getByLabel("Password (repeated)", Page.GetByLabelOptions().setExact(true)).fill(password)
-
-        if (includeMemberProfile) {
-            page.getByLabel("Date of Birth*", Page.GetByLabelOptions().setExact(true)).fill("1999-04-12")
-            page.getByLabel("Gender*", Page.GetByLabelOptions().setExact(true)).fill("X")
-            page.getByLabel("Student Number*", Page.GetByLabelOptions().setExact(true)).fill("s$suffix")
-        }
+        UserFormHelper.fill(
+            page = page,
+            fields = UserFormHelper.Fields(
+                initials = "SU",
+                firstName = "System",
+                surname = "User$suffix",
+                username = username,
+                discord = "sysuser$suffix",
+                email = email,
+                phoneNumber = phoneNumber,
+                password = password,
+                repeatedPassword = password,
+                dateOfBirth = if (includeMemberProfile) "1999-04-12" else null,
+                gender = if (includeMemberProfile) "X" else null,
+                studentNumber = if (includeMemberProfile) "s$suffix" else null
+            )
+        )
 
         page.getByRole(
             AriaRole.BUTTON,

@@ -17,6 +17,7 @@ export default defineConfig({
     {
       asClass: false,
       name: '@hey-api/sdk',
+      paramsStructure: 'grouped',
     },
   ],
 });

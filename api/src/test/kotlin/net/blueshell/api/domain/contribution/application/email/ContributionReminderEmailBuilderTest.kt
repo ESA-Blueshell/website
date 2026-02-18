@@ -14,7 +14,6 @@ import java.time.LocalDate
 class ContributionReminderEmailBuilderTest {
 
     private val frontendUrl = "https://test-frontend.com"
-    private val appUrl = "https://test-app.com"
 
     @Test
     fun `createContributionReminderEmail builds correct EmailContent`() {
@@ -29,7 +28,7 @@ class ContributionReminderEmailBuilderTest {
         )
 
         // When: Building contribution reminder email
-        val emailContent = createContributionReminderEmail(user, period, frontendUrl, appUrl)
+        val emailContent = createContributionReminderEmail(user, period, frontendUrl)
 
         // Then: EmailContent has correct fields
         assertThat(emailContent.recipientEmail).isEqualTo(user.email)
@@ -46,7 +45,7 @@ class ContributionReminderEmailBuilderTest {
             .contains("Half year fee: €25.00")
             .contains("Full year fee: €45.00")
             .contains("Alumni fee: €10.00")
-            .contains(appUrl)
+            .contains(frontendUrl)
     }
 
     @Test
@@ -56,7 +55,7 @@ class ContributionReminderEmailBuilderTest {
         val period = createTestPeriod()
 
         // When: Building email
-        val emailContent = createContributionReminderEmail(user, period, frontendUrl, appUrl)
+        val emailContent = createContributionReminderEmail(user, period, frontendUrl)
 
         // Then: Email has friendly tone
         assertThat(emailContent.markdownContent)
@@ -78,7 +77,7 @@ class ContributionReminderEmailBuilderTest {
         )
 
         // When: Building email
-        val emailContent = createContributionReminderEmail(user, period, frontendUrl, appUrl)
+        val emailContent = createContributionReminderEmail(user, period, frontendUrl)
 
         // Then: Currency is formatted with 2 decimals
         assertThat(emailContent.markdownContent)

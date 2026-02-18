@@ -11,8 +11,7 @@ import net.blueshell.api.shared.email.EmailContent
  */
 fun createEventSignupEmail(
     eventSignUp: EventSignUp,
-    frontendUrl: String,
-    appUrl: String
+    frontendUrl: String
 ): EmailContent {
     val event = eventSignUp.event
     val guest = requireNotNull(eventSignUp.guest) { "Event signup email requires a guest signup." }
@@ -51,7 +50,7 @@ fun createEventSignupEmail(
         **What's Next?**
         - Keep an eye on your email for any event updates
         - Join our [Discord community](https://discord.gg/dFam2yqXu7) to connect with other participants
-        - Visit our [website]($appUrl) for more upcoming events
+        - Visit our [website]($frontendUrl) for more upcoming events
 
         If you need to make changes to your registration or have any questions, please use the edit link above or contact us through our Discord server.
 

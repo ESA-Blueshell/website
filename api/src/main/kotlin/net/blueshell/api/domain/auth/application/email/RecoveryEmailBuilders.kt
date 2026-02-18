@@ -15,8 +15,7 @@ import java.nio.charset.StandardCharsets
 fun createPasswordResetEmail(
     recipient: User,
     token: String,
-    frontendUrl: String,
-    appUrl: String
+    frontendUrl: String
 ): EmailContent {
     val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
@@ -35,7 +34,7 @@ fun createPasswordResetEmail(
         - Your account remains secure and no changes have been made
         - Never share this reset link with anyone
 
-        If you continue to have issues accessing your account, please contact us via our [discord](https://discord.gg/dFam2yqXu7) or visit our [website]($appUrl).
+        If you continue to have issues accessing your account, please contact us via our [discord](https://discord.gg/dFam2yqXu7) or visit our [website]($frontendUrl).
 
         Please do not reply to this email, as this is a generated email. Any responses will be ignored.
 
@@ -54,8 +53,7 @@ fun createPasswordResetEmail(
 fun createUserActivationEmail(
     recipient: User,
     token: String,
-    frontendUrl: String,
-    appUrl: String
+    frontendUrl: String
 ): EmailContent {
     val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
@@ -68,7 +66,7 @@ fun createUserActivationEmail(
         Thank you for signing up to the Blueshell website!
 
         You can activate your account by clicking on [this link]($activationLink).
-        For information on events and our general community, check out our [discord](https://discord.gg/dFam2yqXu7) or [website]($appUrl).
+        For information on events and our general community, check out our [discord](https://discord.gg/dFam2yqXu7) or [website]($frontendUrl).
         Enjoy your stay!
 
         Please do not reply to this email, as this is a generated email. Any responses will be ignored.
@@ -88,8 +86,7 @@ fun createUserActivationEmail(
 fun createMemberActivationEmail(
     recipient: User,
     token: String,
-    frontendUrl: String,
-    appUrl: String
+    frontendUrl: String
 ): EmailContent {
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
     val activationLink = "$frontendUrl/account/activate/member?token=$encodedToken"

@@ -13,8 +13,7 @@ import net.blueshell.api.shared.email.EmailContent
 fun createContributionReminderEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
-    frontendUrl: String,
-    appUrl: String
+    frontendUrl: String
 ): EmailContent {
     val markdownContent = """
         Dear ${recipient.fullName},
@@ -26,7 +25,7 @@ fun createContributionReminderEmail(
         - Full year fee: €${"%.2f".format(contributionPeriod.fullYearFee)}
         - Alumni fee: €${"%.2f".format(contributionPeriod.alumniFee)}
 
-        Please make your payment at your earliest convenience via our [website]($appUrl).
+        Please make your payment at your earliest convenience via our [website]($frontendUrl).
 
         If you have already made your payment, please disregard this message.
 

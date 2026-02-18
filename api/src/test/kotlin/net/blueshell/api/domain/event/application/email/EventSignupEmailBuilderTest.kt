@@ -18,7 +18,6 @@ import java.time.temporal.ChronoUnit
 class EventSignupEmailBuilderTest {
 
     private val frontendUrl = "https://test-frontend.com"
-    private val appUrl = "https://test-app.com"
 
     @Test
     fun `createEventSignupEmail builds correct EmailContent`() {
@@ -32,7 +31,7 @@ class EventSignupEmailBuilderTest {
         )
 
         // When: Building event signup email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(signUp, frontendUrl)
 
         // Then: EmailContent has correct fields
         assertThat(emailContent.recipientEmail).isEqualTo("john@example.com")
@@ -62,7 +61,7 @@ class EventSignupEmailBuilderTest {
         )
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(signUp, frontendUrl)
 
         // Then: Email contains complete event info
         assertThat(emailContent.markdownContent)
@@ -79,7 +78,7 @@ class EventSignupEmailBuilderTest {
         val signUp = createTestSignUp(location = null)
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(signUp, frontendUrl)
 
         // Then: Default location message is shown
         assertThat(emailContent.markdownContent)
@@ -94,7 +93,7 @@ class EventSignupEmailBuilderTest {
         )
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(signUp, frontendUrl)
 
         // Then: Email includes edit link and event details link
         assertThat(emailContent.markdownContent)
@@ -109,14 +108,14 @@ class EventSignupEmailBuilderTest {
         val signUp = createTestSignUp()
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(signUp, frontendUrl)
 
         // Then: Email includes what's next and community links
         assertThat(emailContent.markdownContent)
             .contains("**What's Next?**")
             .contains("Keep an eye on your email")
             .contains("[Discord community](https://discord.gg/dFam2yqXu7)")
-            .contains(appUrl)
+            .contains(frontendUrl)
             .contains("We're excited to see you at the event!")
     }
 
@@ -127,7 +126,7 @@ class EventSignupEmailBuilderTest {
 
         // When/Then: Exception is thrown
         val exception = assertThrows<IllegalArgumentException> {
-            createEventSignupEmail(signUp, frontendUrl, appUrl)
+            createEventSignupEmail(signUp, frontendUrl)
         }
         assertThat(exception.message).contains("Event signup email requires a guest signup")
     }
@@ -139,7 +138,7 @@ class EventSignupEmailBuilderTest {
         val signUp = createTestSignUp(startTime = dateTime, endTime = dateTime)
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(signUp, frontendUrl)
 
         // Then: Date information is present (exact format depends on implementation)
         assertThat(emailContent.markdownContent)

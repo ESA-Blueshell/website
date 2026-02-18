@@ -23,7 +23,7 @@ class RecoveryEmailBuildersTest {
         val token = "test-token-123"
 
         // When: Building password reset email
-        val emailContent = createPasswordResetEmail(user, token, frontendUrl, appUrl)
+        val emailContent = createPasswordResetEmail(user, token, frontendUrl)
 
         // Then: EmailContent has correct fields
         assertThat(emailContent.recipientEmail).isEqualTo(user.email)
@@ -44,7 +44,7 @@ class RecoveryEmailBuildersTest {
         val token = "activation-token-456"
 
         // When: Building user activation email
-        val emailContent = createUserActivationEmail(user, token, frontendUrl, appUrl)
+        val emailContent = createUserActivationEmail(user, token, frontendUrl)
 
         // Then: EmailContent has correct fields
         assertThat(emailContent.recipientEmail).isEqualTo(user.email)
@@ -66,7 +66,7 @@ class RecoveryEmailBuildersTest {
         val token = "member-token-789"
 
         // When: Building member activation email
-        val emailContent = createMemberActivationEmail(user, token, frontendUrl, appUrl)
+        val emailContent = createMemberActivationEmail(user, token, frontendUrl)
 
         // Then: EmailContent has correct fields
         assertThat(emailContent.recipientEmail).isEqualTo(user.email)
@@ -88,8 +88,8 @@ class RecoveryEmailBuildersTest {
         val token = "token with spaces & special=chars"
 
         // When: Building emails
-        val passwordReset = createPasswordResetEmail(user, token, frontendUrl, appUrl)
-        val userActivation = createUserActivationEmail(user, token, frontendUrl, appUrl)
+        val passwordReset = createPasswordResetEmail(user, token, frontendUrl)
+        val userActivation = createUserActivationEmail(user, token, frontendUrl)
 
         // Then: URLs are properly encoded
         assertThat(passwordReset.markdownContent)

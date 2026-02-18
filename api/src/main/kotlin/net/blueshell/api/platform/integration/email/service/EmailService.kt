@@ -30,15 +30,14 @@ class EmailService(
         val emailContent = createContributionReminderEmail(
             reminder.user,
             reminder.contributionPeriod,
-            frontendUrl,
-            appUrl
+            frontendUrl
         )
         deliver(emailContent)
     }
 
     fun sendEventSignupEmail(eventSignUpId: Long) {
         val eventSignUp = eventSignUps.findById(eventSignUpId)
-        val emailContent = createEventSignupEmail(eventSignUp, frontendUrl, appUrl)
+        val emailContent = createEventSignupEmail(eventSignUp, frontendUrl)
         deliver(emailContent)
     }
 
@@ -67,9 +66,9 @@ class EmailService(
         log.info("Sending {} email for user={}", resetType, userId)
 
         val emailContent = when (resetType) {
-            ResetType.MEMBER_ACTIVATION -> createMemberActivationEmail(user, token, frontendUrl, appUrl)
-            ResetType.USER_ACTIVATION -> createUserActivationEmail(user, token, frontendUrl, appUrl)
-            ResetType.PASSWORD_RESET -> createPasswordResetEmail(user, token, frontendUrl, appUrl)
+            ResetType.MEMBER_ACTIVATION -> createMemberActivationEmail(user, token, frontendUrl)
+            ResetType.USER_ACTIVATION -> createUserActivationEmail(user, token, frontendUrl)
+            ResetType.PASSWORD_RESET -> createPasswordResetEmail(user, token, frontendUrl)
         }
 
         deliver(emailContent)

@@ -1,12 +1,14 @@
 package net.blueshell.api.domain.event.application.command
 
 import net.blueshell.api.domain.committee.application.CommitteeService
+import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
+import net.blueshell.api.domain.survey.command.SurveyData
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.enums.Role
@@ -26,7 +28,8 @@ class CreateEventHandler(
     override val commandType = CreateEventCommand::class
 
     override fun handle(command: CreateEventCommand): Event {
-        var event = Event(
+        val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
+        val event = Event(
             committee = committeeService.findById(command.committeeId),
             title = command.title,
             description = command.description,
@@ -35,14 +38,13 @@ class CreateEventHandler(
             endTime = command.endTime,
             memberPrice = command.memberPrice,
             publicPrice = command.publicPrice,
-            approved = false,
+            approved = isBoard && command.approved,
             membersOnly = command.membersOnly,
             signUp = command.signUp,
         )
-        val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard, committeeService, surveyFactory, fileService)
-        event = service.create(event)
-        return event
+        event.replaceBanner(command.banner?.toEntity(event, fileService))
+        event.replaceSignUpForm(command.signUpForm?.let(surveyFactory::createFromData))
+        return service.create(event)
     }
 }
 
@@ -57,12 +59,14 @@ class UpdateEventHandler(
     override val commandType = UpdateEventCommand::class
 
     override fun handle(command: UpdateEventCommand): Event {
-        var event = service.findById(command.id)
+        val event = service.findById(command.id)
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
-        applyEventFields(event, command, isBoard, committeeService, surveyFactory, fileService)
+        event.applyEditableFields(command, committeeService.findById(command.committeeId))
+        event.replaceBanner(command.banner?.toEntity(event, fileService))
+        applySignUpFormUpdate(event, command.signUpForm, surveyFactory)
+        event.approved = isBoard && command.approved
         event.version = command.version
-        event = service.update(event)
-        return event
+        return service.update(event)
     }
 }
 
@@ -73,10 +77,9 @@ class ApproveEventHandler(
     override val commandType = ApproveEventCommand::class
 
     override fun handle(command: ApproveEventCommand): Event {
-        var event = service.findById(command.id)
+        val event = service.findById(command.id)
         event.approved = command.approved
-        event = service.update(event)
-        return event
+        return service.update(event)
     }
 }
 
@@ -113,73 +116,36 @@ class DeleteEventByIdHandler(
     }
 }
 
-private fun applyEventFields(
-    event: Event,
-    command: CreateEventCommand,
-    isBoard: Boolean,
-    committeeService: CommitteeService,
-    surveyFactory: SurveyFactory,
-    fileService: FileService,
-) {
-    event.committee = committeeService.findById(command.committeeId)
-    event.title = command.title
-    event.description = command.description
-    event.location = command.location
-    event.startTime = command.startTime
-    event.endTime = command.endTime
-    event.memberPrice = command.memberPrice
-    event.publicPrice = command.publicPrice
-    event.membersOnly = command.membersOnly
-    event.signUp = command.signUp
-    event.replaceBanner(command.banner?.let {
-        EventBanner(
-            event = event,
-            file = fileService.findById(it.fileId),
-        )
-    })
-    event.replaceSignUpForm(command.signUpForm?.let { surveyFactory.createFromData(it) })
-    event.approved = isBoard && command.approved
-}
-
-private fun applyEventFields(
-    event: Event,
-    command: UpdateEventCommand,
-    isBoard: Boolean,
-    committeeService: CommitteeService,
-    surveyFactory: SurveyFactory,
-    fileService: FileService,
-) {
-    event.committee = committeeService.findById(command.committeeId)
-    event.title = command.title
-    event.description = command.description
-    event.location = command.location
-    event.startTime = command.startTime
-    event.endTime = command.endTime
-    event.memberPrice = command.memberPrice
-    event.publicPrice = command.publicPrice
-    event.membersOnly = command.membersOnly
-    event.signUp = command.signUp
-    event.replaceBanner(command.banner?.let {
-        EventBanner(
-            event = event,
-            file = fileService.findById(it.fileId),
-        )
-    })
-    applySignUpFormUpdate(event, command, surveyFactory)
-    event.approved = isBoard && command.approved
-}
-
 private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
     val inherited = user.roles.flatMap { it.allInheritedRoles }
     return inherited.any { it.matchesRole(role) }
 }
 
+private fun EventBannerData.toEntity(event: Event, fileService: FileService): EventBanner {
+    return EventBanner(
+        event = event,
+        file = fileService.findById(fileId),
+    )
+}
+
+private fun Event.applyEditableFields(command: UpdateEventCommand, committee: Committee) {
+    this.committee = committee
+    this.title = command.title
+    this.description = command.description
+    this.location = command.location
+    this.startTime = command.startTime
+    this.endTime = command.endTime
+    this.memberPrice = command.memberPrice
+    this.publicPrice = command.publicPrice
+    this.membersOnly = command.membersOnly
+    this.signUp = command.signUp
+}
+
 private fun applySignUpFormUpdate(
     event: Event,
-    command: UpdateEventCommand,
+    signUpFormData: SurveyData?,
     surveyFactory: SurveyFactory
 ) {
-    val signUpFormData = command.signUpForm
     if (signUpFormData == null) {
         event.replaceSignUpForm(null)
         return

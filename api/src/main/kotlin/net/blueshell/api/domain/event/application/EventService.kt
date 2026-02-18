@@ -31,41 +31,23 @@ class EventService @Autowired constructor(
     override fun create(entity: Event): Event {
         mergeAssociations(entity)
         val saved = super.create(entity)
-        trackedEvents.publish { actor ->
-            EventChanged(
-                saved.id!!,
-                EventChange.CREATED,
-                actor = actor
-            )
-        }
+        publishEventChanged(saved.id!!, EventChange.CREATED)
         return saved
     }
 
     @Transactional
     override fun update(entity: Event): Event {
-        val previous = findById(entity.id!!)
-        val previousBannerFileId = previous.banner?.file?.id
-        val previousNonDescriptionQuestions = previous.nonDescriptionQuestionKeys()
-        val hadSignUpForm = previous.signUpForm != null
+        val previous = findById(entity.id!!).toUpdateSnapshot()
 
         mergeAssociations(entity)
         val saved = super.update(entity)
 
-        val updatedBannerFileId = saved.banner?.file?.id
-        if (previousBannerFileId != null && previousBannerFileId != updatedBannerFileId) {
-            deleteBannerFileIfOrphaned(previousBannerFileId)
-        }
-        if (shouldInvalidateSignUps(hadSignUpForm, previousNonDescriptionQuestions, saved)) {
+        maybeDeleteReplacedBannerFile(previous.bannerFileId, saved.banner?.file?.id)
+        if (shouldInvalidateSignUps(previous, saved)) {
             clearSignUpsForEvent(saved.id!!)
         }
 
-        trackedEvents.publish { actor ->
-            EventChanged(
-                saved.id!!,
-                EventChange.UPDATED,
-                actor = actor
-            )
-        }
+        publishEventChanged(saved.id!!, EventChange.UPDATED)
         return saved
     }
 
@@ -73,25 +55,13 @@ class EventService @Autowired constructor(
     override fun delete(entity: Event) {
         val eventId = entity.id!!
         super.delete(entity)
-        trackedEvents.publish { actor ->
-            EventChanged(
-                eventId,
-                EventChange.DELETED,
-                actor = actor
-            )
-        }
+        publishEventChanged(eventId, EventChange.DELETED)
     }
 
     @Transactional
     override fun deleteById(id: Long) {
         super.deleteById(id)
-        trackedEvents.publish { actor ->
-            EventChanged(
-                id,
-                EventChange.DELETED,
-                actor = actor
-            )
-        }
+        publishEventChanged(id, EventChange.DELETED)
     }
 
     fun findByFilter(pageable: Pageable, filter: EventQuery): Page<Event> {
@@ -99,15 +69,20 @@ class EventService @Autowired constructor(
         return repository.findAll(spec, pageable)
     }
 
-    @Transactional
-    fun deleteBannerFileIfOrphaned(fileId: Long) {
+    private fun maybeDeleteReplacedBannerFile(previousFileId: Long?, updatedFileId: Long?) {
+        if (previousFileId == null || previousFileId == updatedFileId) {
+            return
+        }
+        deleteBannerFileIfOrphaned(previousFileId)
+    }
+
+    private fun deleteBannerFileIfOrphaned(fileId: Long) {
         if (eventBannerRepository.countByIdFileId(fileId) == 0L && fileService.existsById(fileId)) {
             fileService.deleteById(fileId)
         }
     }
 
-    @Transactional
-    fun clearSignUpsForEvent(eventId: Long) {
+    private fun clearSignUpsForEvent(eventId: Long) {
         val signUps = eventSignUpService.findByEventId(eventId).toSet()
         if (signUps.isNotEmpty()) {
             eventSignUpService.deleteAll(signUps)
@@ -115,17 +90,12 @@ class EventService @Autowired constructor(
     }
 
     private fun mergeAssociations(event: Event) {
-        // Set parent reference for one-to-one owned relationship
         event.banner?.let { banner ->
             banner.event = event
-            val fileId = banner.file.id ?: banner.id.fileId
-            // Replace transient file entity with managed reference inside this transaction
-            fileId?.let {
-                banner.file = fileService.findById(it)
-                banner.id.fileId = fileId
-            }
+            val fileId = requireNotNull(banner.file.id) { "Event banner file ID is required" }
+            banner.file = fileService.findById(fileId)
+            banner.id.fileId = fileId
         }
-        // Set parent references for one-to-many nested relationship
         event.signUpForm?.let { survey ->
             survey.questions.forEach { question ->
                 question.survey = survey
@@ -133,36 +103,51 @@ class EventService @Autowired constructor(
         }
     }
 
-    private fun shouldInvalidateSignUps(
-        hadSignUpForm: Boolean,
-        previousNonDescriptionQuestions: Set<QuestionKey>,
-        saved: Event
-    ): Boolean {
-        val currentSignUpForm = saved.signUpForm ?: return false
-        if (!hadSignUpForm) {
+    private fun shouldInvalidateSignUps(previous: EventUpdateSnapshot, updated: Event): Boolean {
+        val updatedForm = updated.signUpForm ?: return false
+        if (!previous.hadSignUpForm) {
             return true
         }
 
-        val currentNonDescriptionQuestions = saved.nonDescriptionQuestionKeys()
-        if (currentNonDescriptionQuestions.any { it !in previousNonDescriptionQuestions }) {
+        if ((updated.nonDescriptionQuestionKeys() - previous.nonDescriptionQuestionKeys).isNotEmpty()) {
             return true
         }
 
-        return currentSignUpForm.questions.any { question ->
+        return updatedForm.questions.any { question ->
             question.type != QuestionType.DESCRIPTION && question.dirty
         }
     }
 
-    private fun Event.nonDescriptionQuestionKeys(): Set<QuestionKey> {
+    private fun Event.nonDescriptionQuestionKeys(): Set<NonDescriptionQuestionKey> {
         return signUpForm?.questions
             ?.filter { it.type != QuestionType.DESCRIPTION }
-            ?.map { QuestionKey(idx = it.idx, type = it.type) }
+            ?.map { NonDescriptionQuestionKey(it.idx, it.type) }
             ?.toSet()
             ?: emptySet()
     }
 
-    private data class QuestionKey(
+    private fun publishEventChanged(eventId: Long, changeType: EventChange) {
+        trackedEvents.publish { actor ->
+            EventChanged(eventId, changeType, actor = actor)
+        }
+    }
+
+    private data class EventUpdateSnapshot(
+        val bannerFileId: Long?,
+        val hadSignUpForm: Boolean,
+        val nonDescriptionQuestionKeys: Set<NonDescriptionQuestionKey>
+    )
+
+    private data class NonDescriptionQuestionKey(
         val idx: Long,
         val type: QuestionType
     )
+
+    private fun Event.toUpdateSnapshot(): EventUpdateSnapshot {
+        return EventUpdateSnapshot(
+            bannerFileId = banner?.file?.id,
+            hadSignUpForm = signUpForm != null,
+            nonDescriptionQuestionKeys = nonDescriptionQuestionKeys(),
+        )
+    }
 }

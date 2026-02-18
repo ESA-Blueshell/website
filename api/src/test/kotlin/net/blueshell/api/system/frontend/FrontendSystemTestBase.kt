@@ -32,13 +32,16 @@ import java.util.*
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
     properties = ["server.port=8080"]
 )
-abstract class FrontendSystemTestBase @Autowired constructor(
-    val userRepository: UserRepository,
-    val mailSender: MockJavaMailSender,
-) {
+abstract class FrontendSystemTestBase {
 
     @Value($$"${system.frontend.url}")
     lateinit var frontendUrl: String
+
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var mailSender: MockJavaMailSender
 
     private lateinit var playwright: Playwright
     private lateinit var browser: Browser

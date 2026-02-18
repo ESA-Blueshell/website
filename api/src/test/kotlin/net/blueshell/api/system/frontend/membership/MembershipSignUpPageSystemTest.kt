@@ -2,24 +2,15 @@ package net.blueshell.api.system.frontend.membership
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
-import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
-class MembershipSignUpPageSystemTest @Autowired constructor(
-    userRepository: UserRepository,
-    mailSender: MockJavaMailSender,
-) : FrontendSystemTestBase(
-    userRepository = userRepository,
-    mailSender = mailSender,
-) {
+class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
 
     @Test
     fun `join now opens signup and creates disabled account`() {

@@ -2,23 +2,14 @@ package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
-import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 
 @Tag("system")
-class CreateAccountPageSystemTest @Autowired constructor(
-    userRepository: UserRepository,
-    mailSender: MockJavaMailSender,
-) : FrontendSystemTestBase(
-    userRepository = userRepository,
-    mailSender = mailSender,
-) {
+class CreateAccountPageSystemTest : FrontendSystemTestBase() {
 
     @Test
     fun `creates disabled account and sends activation email`() {

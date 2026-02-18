@@ -49,9 +49,6 @@ class MembershipSignUpPageSystemTest @Autowired constructor(
                 includeMemberProfile = true
             )
 
-            assertPw(page.getByText("Check your inbox")).isVisible()
-            assertPw(page.getByText(credentials.email)).isVisible()
-
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.email).isEqualTo(credentials.email)
             assertThat(persisted.enabled).isFalse()

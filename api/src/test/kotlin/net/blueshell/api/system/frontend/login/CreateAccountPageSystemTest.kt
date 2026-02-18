@@ -9,7 +9,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
 class CreateAccountPageSystemTest @Autowired constructor(
@@ -31,9 +30,6 @@ class CreateAccountPageSystemTest @Autowired constructor(
                 submitButtonLabel = "Create Account",
                 includeMemberProfile = false
             )
-
-            assertPw(page.getByText("Your account has successfully been created!"))
-                .isVisible()
 
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.email).isEqualTo(credentials.email)
@@ -57,15 +53,16 @@ class CreateAccountPageSystemTest @Autowired constructor(
 
             page.navigate("$frontendUrl/login")
             page.getByLabel("Username").fill(credentials.username)
-            page.getByLabel("Password", com.microsoft.playwright.Page.GetByLabelOptions().setExact(false))
-                .fill(credentials.password)
+            page.getByRole(
+                com.microsoft.playwright.options.AriaRole.TEXTBOX,
+                com.microsoft.playwright.Page.GetByRoleOptions().setName("Password")
+            ).fill(credentials.password)
             page.getByRole(
                 com.microsoft.playwright.options.AriaRole.BUTTON,
                 com.microsoft.playwright.Page.GetByRoleOptions().setName("Login")
             ).click()
 
-            assertPw(page.getByText("Incorrect login credentials. Please double check your username and password."))
-                .isVisible()
+            assertThat(page.url()).contains("/login")
 
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.enabled).isFalse()

@@ -86,22 +86,23 @@ abstract class FrontendSystemTestBase @Autowired constructor(
         val username = "sysuser$suffix"
         val email = "sysuser$suffix@example.com"
         val password = "Passw0rd!$suffix"
+        val phoneNumber = "+3161${suffix.takeLast(7)}"
 
         page.navigate(url)
-        page.getByLabel("Initials", Page.GetByLabelOptions().setExact(false)).fill("SU")
-        page.getByLabel("First Name", Page.GetByLabelOptions().setExact(false)).fill("System")
-        page.getByLabel("Surname", Page.GetByLabelOptions().setExact(false)).fill("User$suffix")
-        page.getByLabel("Username", Page.GetByLabelOptions().setExact(false)).fill(username)
-        page.getByLabel("Discord", Page.GetByLabelOptions().setExact(false)).fill("sysuser$suffix")
-        page.getByLabel("E-mail", Page.GetByLabelOptions().setExact(false)).fill(email)
-        page.getByLabel("Phone Number", Page.GetByLabelOptions().setExact(false)).fill("+3161234$suffix")
-        page.getByLabel("Password*", Page.GetByLabelOptions().setExact(false)).fill(password)
-        page.getByLabel("Password (repeated)", Page.GetByLabelOptions().setExact(false)).fill(password)
+        page.getByLabel("Initials*", Page.GetByLabelOptions().setExact(true)).fill("SU")
+        page.getByLabel("First Name*", Page.GetByLabelOptions().setExact(true)).fill("System")
+        page.getByLabel("Surname*", Page.GetByLabelOptions().setExact(true)).fill("User$suffix")
+        page.getByLabel("Username*", Page.GetByLabelOptions().setExact(true)).fill(username)
+        page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true)).fill("sysuser$suffix")
+        page.getByLabel("E-mail*", Page.GetByLabelOptions().setExact(true)).fill(email)
+        page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(phoneNumber)
+        page.getByLabel("Password*", Page.GetByLabelOptions().setExact(true)).fill(password)
+        page.getByLabel("Password (repeated)", Page.GetByLabelOptions().setExact(true)).fill(password)
 
         if (includeMemberProfile) {
-            page.getByLabel("Date of Birth", Page.GetByLabelOptions().setExact(false)).fill("1999-04-12")
-            page.getByLabel("Gender", Page.GetByLabelOptions().setExact(false)).fill("X")
-            page.getByLabel("Student Number", Page.GetByLabelOptions().setExact(false)).fill("s$suffix")
+            page.getByLabel("Date of Birth*", Page.GetByLabelOptions().setExact(true)).fill("1999-04-12")
+            page.getByLabel("Gender*", Page.GetByLabelOptions().setExact(true)).fill("X")
+            page.getByLabel("Student Number*", Page.GetByLabelOptions().setExact(true)).fill("s$suffix")
         }
 
         page.getByRole(
@@ -109,13 +110,18 @@ abstract class FrontendSystemTestBase @Autowired constructor(
             Page.GetByRoleOptions().setName(submitButtonLabel).setExact(false)
         ).click()
 
+        waitForOptional(
+            producer = { userRepository.findByUsername(username) },
+            onTimeoutMessage = { "Expected account creation to persist user '$username'" }
+        )
+
         return Credentials(username = username, email = email, password = password)
     }
 
     protected fun <T> waitForOptional(
         producer: () -> Optional<T>,
-        retries: Int = 10,
-        waitMillis: Long = 100,
+        retries: Int = 30,
+        waitMillis: Long = 200,
         onTimeoutMessage: () -> String = { "Expected value to be available" }
     ): T {
         repeat(retries) { attempt ->

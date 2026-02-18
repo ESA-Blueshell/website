@@ -54,7 +54,7 @@ data class BoardUpdateUserCommand(
     val version: Long,
     val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
-    override val subjectId: Long? = null
+    override val subjectId: Long = id
 }
 
 @UniqueUserCommand

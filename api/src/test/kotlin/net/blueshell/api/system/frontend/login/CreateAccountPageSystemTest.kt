@@ -1,5 +1,7 @@
 package net.blueshell.api.system.frontend.login
 
+import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
@@ -22,7 +24,7 @@ class CreateAccountPageSystemTest @Autowired constructor(
 ) {
 
     @Test
-    fun `account create page creates disabled user and sends activation email`() {
+    fun `creates disabled account and sends activation email`() {
         withPage { page ->
             val credentials = createAccountThroughUi(
                 page = page,
@@ -42,7 +44,7 @@ class CreateAccountPageSystemTest @Autowired constructor(
     }
 
     @Test
-    fun `account create page user cannot sign in before activation`() {
+    fun `blocks login before activation`() {
         withPage { page ->
             val credentials = createAccountThroughUi(
                 page = page,
@@ -54,12 +56,12 @@ class CreateAccountPageSystemTest @Autowired constructor(
             page.navigate("$frontendUrl/login")
             page.getByLabel("Username").fill(credentials.username)
             page.getByRole(
-                com.microsoft.playwright.options.AriaRole.TEXTBOX,
-                com.microsoft.playwright.Page.GetByRoleOptions().setName("Password")
+                AriaRole.TEXTBOX,
+                Page.GetByRoleOptions().setName("Password")
             ).fill(credentials.password)
             page.getByRole(
-                com.microsoft.playwright.options.AriaRole.BUTTON,
-                com.microsoft.playwright.Page.GetByRoleOptions().setName("Login")
+                AriaRole.BUTTON,
+                Page.GetByRoleOptions().setName("Login")
             ).click()
 
             assertThat(page.url()).contains("/login")

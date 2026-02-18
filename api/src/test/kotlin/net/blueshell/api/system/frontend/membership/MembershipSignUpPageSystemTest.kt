@@ -25,7 +25,7 @@ class MembershipSignUpPageSystemTest @Autowired constructor(
 ) {
 
     @Test
-    fun `home join now navigates to membership signup and allows account creation with activation email`() {
+    fun `join now opens signup and creates disabled account`() {
         withPage { page ->
             page.navigate("$frontendUrl/")
 

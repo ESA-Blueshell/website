@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
-import {type Blog, findBlogById} from "@/services/api"
+import {type BlogResponse, findBlogById} from "@/services/api"
 
 // Reactive reference to hold the single blog data
-const blog = ref<Blog | null>(null)
+const blog = ref<BlogResponse | null>(null)
 
 // Grab the "id" from the route (assuming your route is set up with :id)
 const route = useRoute()

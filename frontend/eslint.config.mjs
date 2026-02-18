@@ -12,6 +12,7 @@ export default [
             '**/.yarn/**',
             '.pnp*',
             'node_modules/**',
+            'dist/**',
             'src/assets/**',
             'src/services/api/blueshell/**',
             'src/services/api/discord/**'

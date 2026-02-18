@@ -13,6 +13,10 @@ Last updated: 2026-02-18
 - `[x] ✅` Identify routed pages that currently have no direct system test coverage.
 - `[x] ✅` Identify high-risk behavior gaps (auth guards, membership stepper, event sign-ups, job manager, blogs, app shell).
 
+## Frontend Type Rule
+- `[x] ✅` Do not create or maintain API type aliases in `frontend/src/services/api/index.ts`.
+- `[x] ✅` Use generated API transport type names directly in components/pages (e.g. `BlogResponse`, `CommitteeDetailResponse`, `MembershipResponse`, `ContributionPeriodResponse`).
+
 ## Route + Page Coverage Checklist
 
 ### Core/public pages
@@ -41,11 +45,11 @@ Last updated: 2026-02-18
 ### Auth/account/recovery pages
 - `[x] ✅` `/login`: disabled account error, wrong-password error, successful login, create-account navigation, forgot-password username carryover.
 - `[x] ✅` `/login/forgor`: reset request email flow.
-- `[ ]` `/account`: full account edit success path and persistence assertions.
+- `[x] ✅` `/account`: full account edit success path and persistence assertions.
 - `[x] ✅` `/account/create`: account creation + disabled account behavior + validation uniqueness cases.
 - `[x] ✅` `/account/reset-password`: reset password and authenticate with new password.
 - `[x] ✅` `/account/activate/member`: activation success + invalid token.
-- `[ ]` `/account/activate/user`: user activation success + invalid/missing token redirects.
+- `[x] ✅` `/account/activate/user`: user activation success + invalid/missing token flows.
 - `[x] ✅` `/account/addresses/:id?`: create + update own address.
 
 ### Event pages
@@ -121,13 +125,13 @@ Last updated: 2026-02-18
 ### Phase 1: App Shell + Route Guards
 - `[x] ✅` Implement `AppShellSystemTest` for nav, drawer, cookie banner, dark mode, logout, role menus, and guards.
 - `[x] ✅` Add redirect tests for all legacy auth/activation routes.
-- `[ ]` Run targeted system tests + frontend `eslint` + `typecheck`.
-  - Executed on 2026-02-18: targeted system tests passed; frontend static checks currently fail (see Quality Gates notes).
+- `[x] ✅` Run targeted system tests + frontend `eslint` + `typecheck`.
+  - Executed on 2026-02-18: targeted system tests passed and static checks are now green.
 
 ### Phase 2: Auth/Recovery/User Activation Completion
-- `[ ]` Extend account page tests for successful user updates.
-- `[ ]` Add `/account/activate/user` success and failure scenarios.
-- `[ ]` Run targeted system tests + frontend `eslint` + `typecheck`.
+- `[x] ✅` Extend account page tests for successful user updates.
+- `[x] ✅` Add `/account/activate/user` success and failure scenarios.
+- `[x] ✅` Run targeted system tests + frontend `eslint` + `typecheck`.
 
 ### Phase 3: Membership Full Flow
 - `[ ]` Add multi-step membership signup tests (steps 2/3/4 + resume-after-login + already-member branch).
@@ -155,8 +159,8 @@ Last updated: 2026-02-18
 
 ## Quality Gates (required per phase)
 - `[x] ✅` Run relevant frontend system test subset via API service (`docker compose -f docker-compose.dev.yml run --service-ports api ...`).
-- `[ ]` Run frontend lint for changed frontend scope.
-  - Executed on 2026-02-18 via `docker compose -f docker-compose.dev.yml exec -T frontend yarn eslint`; currently fails with large baseline issues including linting files under `dist/assets/*`.
-- `[ ]` Run frontend typecheck for changed frontend scope.
-  - Executed on 2026-02-18 via `docker compose -f docker-compose.dev.yml exec -T frontend yarn typecheck`; currently fails on missing exports from `@/services/api` (e.g. `ContributionPeriod`, `SimpleCommittee`, `Membership`, `Blog`).
+- `[x] ✅` Run frontend lint for changed frontend scope.
+  - Executed on 2026-02-18 via `docker compose -f docker-compose.dev.yml exec -T frontend yarn eslint`; passing after excluding `dist/**` in eslint ignores.
+- `[x] ✅` Run frontend typecheck for changed frontend scope.
+  - Executed on 2026-02-18 via `docker compose -f docker-compose.dev.yml exec -T frontend yarn typecheck`; resolve type issues in component imports/usages instead of adding aliases in `frontend/src/services/api/index.ts`.
 - `[ ]` Confirm no helper duplication and keep reusable helpers outside test base where appropriate.

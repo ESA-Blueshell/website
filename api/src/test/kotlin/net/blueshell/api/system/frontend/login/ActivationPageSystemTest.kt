@@ -91,6 +91,68 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
         assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isFalse()
     }
 
+    @Test
+    fun `user activation enables account and returns membership step redirect path`() {
+        val user = userFactory.createUserWithRole(Role.MEMBER, enabled = false)
+        user.replaceMemberProfile(userFactory.buildMemberProfile(user))
+        userRepository.saveAndFlush(user)
+        val rawToken = recoveryTokenFactory.issue(
+            user = user,
+            type = ResetType.USER_ACTIVATION,
+            ttl = Duration.ofHours(1)
+        )
+        val encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8)
+
+        withPage { page ->
+            val response = page.waitForResponse("**/recovery/user/activate") {
+                page.navigate("$frontendUrl/account/activate/user?token=$encodedToken")
+            }
+            assertThat(response.status()).isEqualTo(200)
+            assertThat(response.text()).contains("/membership/signUp?step=2")
+            assertThat(
+                page.getByText("Account activated! You will be redirected to the login page.").count()
+            ).isGreaterThan(0)
+        }
+
+        waitFor(
+            onTimeoutMessage = { "Expected user ${user.id} to be enabled after user activation" }
+        ) {
+            userRepository.findById(user.id!!).orElseThrow().enabled
+        }
+    }
+
+    @Test
+    fun `user activation with invalid token shows warning`() {
+        val user = userFactory.createUserWithRole(Role.GUEST, enabled = false)
+        val invalidToken = URLEncoder.encode("invalid-user-token", StandardCharsets.UTF_8)
+
+        withPage { page ->
+            val response = page.waitForResponse("**/recovery/user/activate") {
+                page.navigate("$frontendUrl/account/activate/user?token=$invalidToken")
+            }
+            assertThat(response.status()).isGreaterThanOrEqualTo(400)
+            assertThat(
+                page.getByText("You will be redirected to the login page.", Page.GetByTextOptions().setExact(false)).count()
+            ).isGreaterThan(0)
+        }
+
+        assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isFalse()
+    }
+
+    @Test
+    fun `user activation without token shows warning`() {
+        withPage { page ->
+            page.navigate("$frontendUrl/account/activate/user")
+
+            waitFor(
+                timeoutMs = 8_000,
+                onTimeoutMessage = { "Expected missing-token user activation flow to show warning message" }
+            ) {
+                page.getByText("invalid, expired, or already used.", Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+        }
+    }
+
     private fun submitMemberActivationForm(page: Page, username: String, password: String) {
         page.getByLabel("Username").fill(username)
         page.getByLabel("Password").first().fill(password)

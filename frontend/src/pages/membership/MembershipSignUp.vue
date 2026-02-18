@@ -251,8 +251,7 @@ const stepItems = computed(() => [
 const infoEmail = computed(() => user.value?.email ?? "")
 
 async function handleVerified() {
-  if (isLoggedIn.value) await fetchData()
-  else await router.push({name: "login", query: {redirect: "/membership/signUp?step=2"}})
+  await router.push({name: "login", query: {redirect: "/membership/signup?step=2"}})
 }
 
 async function fetchUser() {
@@ -369,8 +368,25 @@ watch(user, async (val) => {
   if (!val?.roles?.includes(Role.MEMBER)) return
 
   store.commit("setStatusSnackbarMessage", "you are already a member")
-  const backTarget = (window.history.state && window.history.state.back) as string | undefined
-  await router.replace(backTarget && backTarget !== route.fullPath ? backTarget : "/")
+  const rawBackTarget = (window.history.state && window.history.state.back) as string | undefined
+  let normalizedBackTarget: string | null = null
+
+  if (rawBackTarget) {
+    try {
+      const parsed = new URL(rawBackTarget, window.location.origin)
+      normalizedBackTarget = `${parsed.pathname}${parsed.search}${parsed.hash}`
+    } catch {
+      normalizedBackTarget = rawBackTarget.startsWith("/") ? rawBackTarget : null
+    }
+  }
+
+  const shouldUseBackTarget = Boolean(
+    normalizedBackTarget &&
+      normalizedBackTarget !== route.fullPath &&
+      !normalizedBackTarget.startsWith("/membership/signup")
+  )
+
+  await router.replace(shouldUseBackTarget ? normalizedBackTarget! : "/")
 })
 
 async function fetchData() {

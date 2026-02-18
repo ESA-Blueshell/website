@@ -1,0 +1,132 @@
+package net.blueshell.api.system.frontend.login
+
+import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.AriaRole
+import net.blueshell.api.factory.user.persistence.UserFactory
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+
+@Tag("system")
+class AddressPageSystemTest : FrontendSystemTestBase() {
+
+    @Autowired
+    private lateinit var userFactory: UserFactory
+
+    @Test
+    fun `creates address from account address page`() {
+        val user = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+
+        withPage { page ->
+            loginThroughUi(page, user.username, DEFAULT_PASSWORD)
+
+            page.navigate("$frontendUrl/account/addresses")
+            page.waitForURL("**/account/addresses**")
+
+            page.getByLabel("Street").fill("Oude Markt")
+            page.getByLabel("House Number").fill("12")
+            page.getByLabel("Zipcode").fill("7511GA")
+            page.getByLabel("City").fill("Enschede")
+
+            val response = page.waitForResponse("**/addresses") {
+                page.getByRole(
+                    AriaRole.BUTTON,
+                    Page.GetByRoleOptions().setName("Save address").setExact(false)
+                ).click()
+            }
+            assertThat(response.status()).isEqualTo(201)
+        }
+
+        val persisted = waitForOptional(
+            producer = { userRepository.findByUsername(user.username) },
+            onTimeoutMessage = { "Expected user ${user.username} to exist after creating address" }
+        )
+
+        assertThat(persisted.address).isNotNull
+        assertThat(persisted.address?.street).isEqualTo("Oude Markt")
+        assertThat(persisted.address?.houseNumber).isEqualTo("12")
+        assertThat(persisted.address?.zipCode).isEqualTo("7511GA")
+        assertThat(persisted.address?.city).isEqualTo("Enschede")
+        assertThat(persisted.address?.country).isEqualTo("NL")
+    }
+
+    @Test
+    fun `updates address from account address page`() {
+        val user = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        user.replaceAddress(
+            userFactory.buildAddress(
+                user = user,
+                country = "NL",
+                city = "Oldenzaal",
+                street = "Stationsstraat",
+                houseNumber = "1",
+                zipCode = "7571CE"
+            )
+        )
+        userRepository.saveAndFlush(user)
+
+        val withAddress = waitForOptional(
+            producer = { userRepository.findByUsername(user.username) },
+            onTimeoutMessage = { "Expected user ${user.username} with address before update test" }
+        )
+        val addressId = checkNotNull(withAddress.addressId) { "Expected persisted address id for ${user.username}" }
+
+        withPage { page ->
+            loginThroughUi(page, user.username, DEFAULT_PASSWORD)
+
+            val loadResponse = page.waitForResponse("**/addresses/$addressId") {
+                page.navigate("$frontendUrl/account/addresses/$addressId")
+            }
+            assertThat(loadResponse.status()).isEqualTo(200)
+            page.waitForURL("**/account/addresses/**")
+
+            page.getByLabel("Street").fill("Boddenkampsingel")
+            page.getByLabel("House Number").fill("80")
+            page.getByLabel("Zipcode").fill("7514AR")
+            page.getByLabel("City").fill("Enschede")
+
+            val updateResponse = page.waitForResponse("**/addresses/$addressId") {
+                page.getByRole(
+                    AriaRole.BUTTON,
+                    Page.GetByRoleOptions().setName("Save address").setExact(false)
+                ).click()
+            }
+            assertThat(updateResponse.status()).isEqualTo(200)
+        }
+
+        val updated = waitForOptional(
+            producer = { userRepository.findByUsername(user.username) },
+            onTimeoutMessage = { "Expected user ${user.username} after updating address" }
+        )
+
+        assertThat(updated.address).isNotNull
+        assertThat(updated.address?.street).isEqualTo("Boddenkampsingel")
+        assertThat(updated.address?.houseNumber).isEqualTo("80")
+        assertThat(updated.address?.zipCode).isEqualTo("7514AR")
+        assertThat(updated.address?.city).isEqualTo("Enschede")
+        assertThat(updated.address?.country).isEqualTo("NL")
+    }
+
+    private fun loginThroughUi(page: Page, username: String, password: String) {
+        page.navigate("$frontendUrl/login/")
+        page.getByLabel("Username").fill(username)
+        page.getByRole(
+            AriaRole.TEXTBOX,
+            Page.GetByRoleOptions().setName("Password")
+        ).fill(password)
+
+        page.waitForResponse("**/auth") {
+            page.getByRole(
+                AriaRole.BUTTON,
+                Page.GetByRoleOptions().setName("Login")
+            ).click()
+        }
+    }
+
+    private companion object {
+        const val DEFAULT_PASSWORD = "Password123!"
+    }
+}

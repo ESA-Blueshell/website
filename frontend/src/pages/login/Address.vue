@@ -29,10 +29,18 @@ import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {type AddressResponse, findAddressById} from "@/services/api"
+import {type AddressResponse, type CreateAddressRequest, findAddressById} from "@/services/api"
 import AddressForm from "@/components/form/AddressForm.vue"
 
-const address = ref<AddressResponse>()
+type AddressModel = Partial<CreateAddressRequest> & Partial<AddressResponse>
+
+const address = ref<AddressModel>({
+  country: "NL",
+  city: "",
+  street: "",
+  houseNumber: "",
+  zipCode: "",
+})
 const store = useStore()
 const route = useRoute()
 

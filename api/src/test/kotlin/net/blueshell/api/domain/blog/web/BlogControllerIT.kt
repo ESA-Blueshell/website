@@ -1,8 +1,11 @@
 package net.blueshell.api.domain.blog.web
 
+import net.blueshell.api.factory.blog.web.request.BlogRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -12,52 +15,146 @@ import java.time.Instant
 
 @SpringBootTest
 class BlogControllerIT : UserTestSupport() {
+    @Autowired
+    private lateinit var blogRequestFactory: BlogRequestFactory
 
-    @Test
-    fun `creates lists finds updates and deletes a blog`() {
-        val board = createUserWithRole(Role.BOARD)
-        val publishedAt = Instant.now().toString()
+    @Nested
+    inner class CreateBlog {
+        @Test
+        fun `creates blog`() {
+            val board = createUserWithRole(Role.BOARD)
+            val publishedAt = Instant.now().toString()
 
-        val createResult = mvc.perform(
-            post("/blogs")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Integration Blog","html":"<p>Body</p>","publishedAt":"$publishedAt"}""")
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.id").isNotEmpty)
-            .andExpect(jsonPath("$.title").value("Integration Blog"))
-            .andReturn()
+            mvc.perform(
+                post("/blogs")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(blogRequestFactory.createPayload("Integration Blog", "<p>Body</p>", publishedAt))
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.id").isNumber)
+                .andExpect(jsonPath("$.title").value("Integration Blog"))
+        }
 
-        val created = mapper.readTree(createResult.response.contentAsByteArray)
-        val id = created.path("id").asLong()
-        val version = created.path("version").asLong()
+        @Test
+        fun `returns bad request for invalid payload`() {
+            val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(get("/blogs"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].id").value(id))
+            mvc.perform(
+                post("/blogs")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"title":"","html":"","publishedAt":null}""")
+            )
+                .andExpect(status().isBadRequest)
+        }
+    }
 
-        mvc.perform(get("/blogs/{id}", id))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(id))
-            .andExpect(jsonPath("$.title").value("Integration Blog"))
+    @Nested
+    inner class UpdateBlog {
+        @Test
+        fun `updates blog`() {
+            val board = createUserWithRole(Role.BOARD)
+            val blog = createBlogFixture(title = "Original Blog")
+            val publishedAt = Instant.now().toString()
 
-        mvc.perform(
-            post("/blogs/{id}", id)
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """{"title":"Updated Integration Blog","html":"<p>Updated</p>","publishedAt":"$publishedAt","version":$version}"""
-                )
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(id))
-            .andExpect(jsonPath("$.title").value("Updated Integration Blog"))
+            mvc.perform(
+                post("/blogs/{id}", blog.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        blogRequestFactory.updatePayload(
+                            version = blog.version,
+                            title = "Updated Blog",
+                            html = "<p>Updated</p>",
+                            publishedAt = publishedAt
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(blog.id))
+                .andExpect(jsonPath("$.title").value("Updated Blog"))
+        }
 
-        mvc.perform(delete("/blogs/{id}", id).with(bearer(board)))
-            .andExpect(status().isNoContent)
+        @Test
+        fun `returns not found when blog does not exist`() {
+            val board = createUserWithRole(Role.BOARD)
+            val publishedAt = Instant.now().toString()
 
-        mvc.perform(get("/blogs/{id}", id))
-            .andExpect(status().isNotFound)
+            mvc.perform(
+                post("/blogs/{id}", 999999L)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        blogRequestFactory.updatePayload(
+                            version = 0,
+                            title = "Updated Blog",
+                            html = "<p>Updated</p>",
+                            publishedAt = publishedAt
+                        )
+                    )
+            )
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class FindBlogs {
+        @Test
+        fun `lists blogs`() {
+            val blog = createBlogFixture()
+
+            mvc.perform(get("/blogs"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].id").value(blog.id))
+        }
+    }
+
+    @Nested
+    inner class FindBlogById {
+        @Test
+        fun `finds blog by id`() {
+            val blog = createBlogFixture(title = "Lookup Blog")
+
+            mvc.perform(get("/blogs/{id}", blog.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(blog.id))
+                .andExpect(jsonPath("$.title").value("Lookup Blog"))
+        }
+
+        @Test
+        fun `returns not found when blog does not exist`() {
+            mvc.perform(get("/blogs/{id}", 999999L))
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class DeleteById {
+        @Test
+        fun `deletes blog`() {
+            val board = createUserWithRole(Role.BOARD)
+            val blog = createBlogFixture()
+
+            mvc.perform(
+                delete("/blogs/{id}", blog.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/blogs/{id}", blog.id))
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `returns not found when deleting missing blog`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                delete("/blogs/{id}", 999999L)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
     }
 }

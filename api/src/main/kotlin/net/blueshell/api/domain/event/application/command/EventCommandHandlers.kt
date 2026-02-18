@@ -1,17 +1,14 @@
 package net.blueshell.api.domain.event.application.command
 
+import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.committee.application.CommitteeService
-import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
-import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.Survey
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.command.CommandHandler
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import org.springframework.data.domain.Page
@@ -133,7 +130,12 @@ private fun applyEventFields(
     event.publicPrice = command.publicPrice
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
-    event.banner = command.banner?.let { mapBanner(event, it, fileService) }
+    event.banner = command.banner?.let {
+        EventBanner(
+            event = event,
+            file = fileService.findById(it.fileId),
+        )
+    }
     event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
     event.approved = isBoard && command.approved
 }
@@ -156,16 +158,15 @@ private fun applyEventFields(
     event.publicPrice = command.publicPrice
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
-    event.banner = command.banner?.let { mapBanner(event, it, fileService) }
+    event.banner = command.banner?.let {
+        EventBanner(
+            event = event,
+            file = fileService.findById(it.fileId),
+        )
+    }
     event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
     event.approved = isBoard && command.approved
 }
-
-private fun mapBanner(event: Event, data: EventBannerData, fileService: FileService): EventBanner =
-    EventBanner(
-        event = event,
-        file = fileService.findById(data.fileId),
-    )
 
 private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
     val inherited = user.roles.flatMap { it.allInheritedRoles }

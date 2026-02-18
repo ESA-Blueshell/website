@@ -4,32 +4,26 @@ import com.microsoft.playwright.Page
 import com.microsoft.playwright.Response
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import com.microsoft.playwright.options.AriaRole
+import net.blueshell.api.factory.user.persistence.UserFactory
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.security.crypto.password.PasswordEncoder
 
 @Tag("system")
 class LoginPageSystemTest : FrontendSystemTestBase() {
     @Autowired
-    private lateinit var passwordEncoder: PasswordEncoder
+    private lateinit var userFactory: UserFactory
+
+    private val loginPassword = "Password123!"
 
     @Test
     fun `disabled account shows login error`() {
         withPage { page ->
-            val credentials = createAccountThroughUi(
-                page = page,
-                url = "$frontendUrl/account/create",
-                submitButtonLabel = "Create Account",
-                includeMemberProfile = false
-            )
-
-            val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
-            assertThat(persisted.enabled).isFalse()
-
-            val status = submitLogin(page, credentials.username, credentials.password)
+            val user = createLoginUser(enabled = false)
+            val status = submitLogin(page, user.username, loginPassword)
             assertThat(status).isEqualTo(401)
             assertLoginError(page)
         }
@@ -38,18 +32,8 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
     @Test
     fun `wrong password shows login error`() {
         withPage { page ->
-            val credentials = createAccountThroughUi(
-                page = page,
-                url = "$frontendUrl/account/create",
-                submitButtonLabel = "Create Account",
-                includeMemberProfile = false
-            )
-
-            val user = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
-            user.enabled = true
-            userRepository.save(user)
-
-            val status = submitLogin(page, credentials.username, "${credentials.password}x")
+            val user = createLoginUser(enabled = true)
+            val status = submitLogin(page, user.username, "${loginPassword}x")
             assertThat(status).isEqualTo(401)
             assertLoginError(page)
         }
@@ -58,19 +42,8 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
     @Test
     fun `enabled account logs in with correct password`() {
         withPage { page ->
-            val credentials = createAccountThroughUi(
-                page = page,
-                url = "$frontendUrl/account/create",
-                submitButtonLabel = "Create Account",
-                includeMemberProfile = false
-            )
-            val loginPassword = "Passw0rd!Aa"
-            val user = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
-            user.enabled = true
-            user.password = passwordEncoder.encode(loginPassword)
-            userRepository.save(user)
-
-            val status = submitLogin(page, credentials.username, loginPassword)
+            val user = createLoginUser(enabled = true)
+            val status = submitLogin(page, user.username, loginPassword)
             assertThat(status).isEqualTo(200)
         }
     }
@@ -135,4 +108,6 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
             )
         ).isVisible()
     }
+
+    private fun createLoginUser(enabled: Boolean) = userFactory.createUserWithRole(Role.MEMBER, enabled)
 }

@@ -16,6 +16,7 @@ fun User.asDetailResponse(): UserDetailResponse =
         email = this.email,
         discord = this.discord,
         phoneNumber = this.phoneNumber,
+        addressId = this.addressId,
         version = this.version,
         roles = this.inheritedRoles,
         enabled = this.enabled,

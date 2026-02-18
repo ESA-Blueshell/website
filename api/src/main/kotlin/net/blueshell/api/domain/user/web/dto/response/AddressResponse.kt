@@ -12,6 +12,7 @@ data class AddressResponse(
     var zipCode: String? = null,
     var version: Long,
     var id: Long,
+    var userId: Long? = null,
     var createdAt: Instant,
     var updatedAt: Instant
 )

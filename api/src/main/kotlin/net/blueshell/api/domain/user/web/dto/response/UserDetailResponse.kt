@@ -19,6 +19,7 @@ data class UserDetailResponse(
     var email: String,
     var discord: String,
     var phoneNumber: String,
+    var addressId: Long? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
     var version: Long

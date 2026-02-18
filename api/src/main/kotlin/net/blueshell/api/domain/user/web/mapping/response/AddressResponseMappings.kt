@@ -12,6 +12,7 @@ fun Address.asResponse(): AddressResponse =
         zipCode = this.zipCode,
         version = this.version,
         id = this.id!!,
+        userId = this.user.id,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
     )

@@ -49,6 +49,7 @@
       <v-expand-transition>
         <div
           v-if="expanded === user.id"
+          class="mb-3"
           @click.stop
         >
           <!-- Writable v-model proxy pushes updates upward via emit -->

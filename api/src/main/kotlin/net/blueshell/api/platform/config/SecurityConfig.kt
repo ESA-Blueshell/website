@@ -50,6 +50,7 @@ class SecurityConfig(
         cfg.allowedOriginPatterns = mutableListOf(
             "http://localhost:*",
             "http://127.0.0.1:*",
+            "http://frontend:*",
             "https://localhost",
             "https://esa-blueshell.nl"
         )

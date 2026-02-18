@@ -8,6 +8,7 @@ import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.ContributionPeriodHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
@@ -29,6 +30,91 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
 
     @Autowired
     private lateinit var memberRepository: MemberRepository
+
+    @Test
+    fun `member visibility follows membership period when switching periods`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val stableMember = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val periodOnlyMember = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+
+        val uniqueOffset = System.currentTimeMillis() % 10_000
+        val initialStartDate = LocalDate.now().minusDays(360L + uniqueOffset)
+        val initialEndDate = initialStartDate.plusDays(30)
+        val addedStartDate = LocalDate.now().plusDays(360L + uniqueOffset)
+        val addedEndDate = addedStartDate.plusDays(30)
+
+        memberRepository.saveAndFlush(
+            userFactory.buildMembership(stableMember).apply {
+                startDate = initialStartDate.minusDays(10)
+                endDate = null
+            }
+        )
+        memberRepository.saveAndFlush(
+            userFactory.buildMembership(periodOnlyMember).apply {
+                startDate = initialStartDate.minusDays(10)
+                endDate = initialEndDate.minusDays(1)
+            }
+        )
+        contributionFactory.createPeriod(initialStartDate, initialEndDate)
+
+        val initialLabel = ContributionPeriodHelper.label(initialStartDate, initialEndDate)
+        val addedLabel = ContributionPeriodHelper.label(addedStartDate, addedEndDate)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            page.navigate("$frontendUrl/members/manage")
+            page.waitForURL("**/members/manage**")
+
+            waitFor(
+                onTimeoutMessage = { "Expected contribution period '$initialLabel' to be visible in member manager" }
+            ) {
+                page.getByText(initialLabel, Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+            val addStatus = ContributionPeriodHelper.createPeriod(page, addedStartDate, addedEndDate)
+            assertThat(addStatus).isEqualTo(201)
+            waitFor(
+                onTimeoutMessage = { "Expected contribution period '$addedLabel' to be visible in member manager" }
+            ) {
+                page.getByText(addedLabel, Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+
+            selectPeriod(page, initialLabel)
+            page.getByText("Members", Page.GetByTextOptions().setExact(true)).click()
+
+            UserListHelper.searchUser(page, stableMember.username)
+            waitFor(
+                onTimeoutMessage = { "Expected stable member ${stableMember.username} in initial period members list" }
+            ) {
+                page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+
+            UserListHelper.searchUser(page, periodOnlyMember.username)
+            waitFor(
+                onTimeoutMessage = { "Expected period-only member ${periodOnlyMember.username} in initial period members list" }
+            ) {
+                page.getByText(periodOnlyMember.username, Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+
+            selectPeriod(page, addedLabel)
+            page.getByText("Members", Page.GetByTextOptions().setExact(true)).click()
+
+            UserListHelper.searchUser(page, stableMember.username)
+            waitFor(
+                onTimeoutMessage = { "Expected stable member ${stableMember.username} in added period members list" }
+            ) {
+                page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+
+            UserListHelper.searchUser(page, periodOnlyMember.username)
+            waitFor(
+                onTimeoutMessage = { "Expected period-only member ${periodOnlyMember.username} to be absent in added period members list" }
+            ) {
+                page.getByText("No users found.", Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+        }
+    }
 
     @Test
     fun `board creates member, updates fields, and sends activation mail`() {

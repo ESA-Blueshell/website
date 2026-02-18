@@ -12,6 +12,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.ContributionManagerHelper
+import net.blueshell.api.system.frontend.helper.ContributionPeriodHelper
 import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
@@ -31,6 +32,82 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
 
     @Autowired
     private lateinit var contributionRepository: ContributionRepository
+
+    @Test
+    fun `board adds period and switches paid status between periods`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        userFactory.createMembership(member)
+
+        val uniqueOffset = System.currentTimeMillis() % 10_000
+        val initialStartDate = LocalDate.now().minusDays(300L + uniqueOffset)
+        val initialEndDate = initialStartDate.plusDays(30)
+        val addedStartDate = LocalDate.now().plusDays(300L + uniqueOffset)
+        val addedEndDate = addedStartDate.plusDays(30)
+
+        val initialPeriod = contributionFactory.createPeriod(initialStartDate, initialEndDate)
+        contributionRepository.saveAndFlush(
+            Contribution(
+                user = member,
+                contributionPeriod = initialPeriod
+            )
+        )
+
+        val initialPeriodLabel = ContributionPeriodHelper.label(initialStartDate, initialEndDate)
+        val addedPeriodLabel = ContributionPeriodHelper.label(addedStartDate, addedEndDate)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            ContributionManagerHelper.open(page, frontendUrl)
+            waitFor(
+                onTimeoutMessage = { "Expected contribution period '$initialPeriodLabel' to be visible" }
+            ) {
+                page.getByText(initialPeriodLabel, Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+
+            val addStatus = ContributionPeriodHelper.createPeriod(page, addedStartDate, addedEndDate)
+            assertThat(addStatus).isEqualTo(201)
+            waitFor(
+                onTimeoutMessage = { "Expected added contribution period '$addedPeriodLabel' to be visible" }
+            ) {
+                page.getByText(addedPeriodLabel, Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+
+            ContributionManagerHelper.selectPeriod(page, initialPeriodLabel)
+            ContributionManagerHelper.openSection(page, "Contribution paid")
+            waitFor(
+                onTimeoutMessage = { "Expected ${member.username} to be paid in initial period" }
+            ) {
+                page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+            waitFor(
+                onTimeoutMessage = { "Expected mark unpaid action for ${member.username} in initial period" }
+            ) {
+                page.getByRole(
+                    AriaRole.BUTTON,
+                    Page.GetByRoleOptions().setName("Mark unpaid").setExact(false)
+                ).count() > 0
+            }
+
+            ContributionManagerHelper.selectPeriod(page, addedPeriodLabel)
+            ContributionManagerHelper.openSection(page, "Contribution unpaid")
+            waitFor(
+                onTimeoutMessage = { "Expected ${member.username} to be unpaid in added period" }
+            ) {
+                page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+            waitFor(
+                onTimeoutMessage = { "Expected mark paid action for ${member.username} in added period" }
+            ) {
+                page.getByRole(
+                    AriaRole.BUTTON,
+                    Page.GetByRoleOptions().setName("Mark paid").setExact(false)
+                ).count() > 0
+            }
+        }
+    }
 
     @Test
     fun `board marks contribution paid and unpaid`() {

@@ -1,8 +1,12 @@
 package net.blueshell.api.domain.event.web
 
 import net.blueshell.api.factory.event.web.request.EventRequestFactory
+import net.blueshell.api.domain.event.persistence.repository.EventRepository
+import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
+import net.blueshell.api.domain.file.persistence.repository.FileRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,6 +20,15 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class EventControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var eventRequestFactory: EventRequestFactory
+
+    @Autowired
+    private lateinit var fileRepository: FileRepository
+
+    @Autowired
+    private lateinit var eventSignUpRepository: EventSignUpRepository
+
+    @Autowired
+    private lateinit var eventRepository: EventRepository
 
     @Nested
     inner class CreateEvent {
@@ -175,6 +188,182 @@ class EventControllerIT : UserTestSupport() {
                     .content(eventRequestFactory.updateEventPayload(committeeId = committee.id!!, version = 0))
             )
                 .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `replacing banner deletes old file when no other banner uses it`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val oldFile = createFileFixture(uploader = board, name = "banner-old.png")
+            val newFile = createFileFixture(uploader = board, name = "banner-new.png")
+            val event = attachEventBanner(createEventFixture(committee = committee), oldFile)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = event.version,
+                            bannerFileId = newFile.id
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.banner.fileId").value(newFile.id))
+
+            assertThat(fileRepository.existsById(newFile.id!!)).isTrue()
+            assertThat(fileRepository.existsById(oldFile.id!!)).isFalse()
+        }
+
+        @Test
+        fun `replacing banner keeps old file when another banner still uses it`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val sharedFile = createFileFixture(uploader = board, name = "banner-shared.png")
+            val replacementFile = createFileFixture(uploader = board, name = "banner-replacement.png")
+            val eventA = attachEventBanner(createEventFixture(committee = committee), sharedFile)
+            attachEventBanner(createEventFixture(committee = committee), sharedFile)
+
+            mvc.perform(
+                put("/events/{id}", eventA.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = eventA.version,
+                            bannerFileId = replacementFile.id
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.banner.fileId").value(replacementFile.id))
+
+            assertThat(fileRepository.existsById(sharedFile.id!!)).isTrue()
+            assertThat(fileRepository.existsById(replacementFile.id!!)).isTrue()
+        }
+
+        @Test
+        fun `adding sign up form removes existing signups`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val event = createEventFixture(committee = committee, signUp = true)
+            val member = createUserWithRole(Role.MEMBER)
+            createEventSignUpFixture(event = event, user = member)
+
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = event.version,
+                            signUpFormJson = signUpFormJson(
+                                questionJson(0, "DESCRIPTION", "Read this first")
+                            )
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `adding a non description question removes existing signups`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val event = createEventFixture(committee = committee, signUp = true)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = event.version,
+                            signUpFormJson = signUpFormJson(
+                                questionJson(0, "DESCRIPTION", "Read this first")
+                            )
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+
+            val eventWithForm = eventRepository.findById(event.id!!).orElseThrow()
+            createEventSignUpFixture(event = eventWithForm, user = createUserWithRole(Role.MEMBER))
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = eventWithForm.version,
+                            signUpFormJson = signUpFormJson(
+                                questionJson(0, "DESCRIPTION", "Read this first"),
+                                questionJson(1, "OPEN", "Any allergies?")
+                            )
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `adding only description questions keeps existing signups`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val event = createEventFixture(committee = committee, signUp = true)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = event.version,
+                            signUpFormJson = signUpFormJson(
+                                questionJson(0, "DESCRIPTION", "Base info")
+                            )
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+
+            val eventWithForm = eventRepository.findById(event.id!!).orElseThrow()
+            createEventSignUpFixture(event = eventWithForm, user = createUserWithRole(Role.MEMBER))
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = eventWithForm.version,
+                            signUpFormJson = signUpFormJson(
+                                questionJson(0, "DESCRIPTION", "Base info"),
+                                questionJson(1, "DESCRIPTION", "Extra note")
+                            )
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
         }
     }
 
@@ -367,5 +556,13 @@ class EventControllerIT : UserTestSupport() {
             .andReturn()
 
         return mapper.readTree(uploadResult.response.contentAsByteArray).path("id").asLong()
+    }
+
+    private fun questionJson(idx: Long, type: String, label: String): String {
+        return eventRequestFactory.questionJson(idx = idx, type = type, label = label)
+    }
+
+    private fun signUpFormJson(vararg questions: String): String {
+        return eventRequestFactory.signUpFormJson(*questions)
     }
 }

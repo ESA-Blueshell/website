@@ -7,6 +7,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
+import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
@@ -130,13 +131,13 @@ private fun applyEventFields(
     event.publicPrice = command.publicPrice
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
-    event.banner = command.banner?.let {
+    event.replaceBanner(command.banner?.let {
         EventBanner(
             event = event,
             file = fileService.findById(it.fileId),
         )
-    }
-    event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
+    })
+    event.replaceSignUpForm(command.signUpForm?.let { surveyFactory.createFromData(it) })
     event.approved = isBoard && command.approved
 }
 
@@ -158,17 +159,52 @@ private fun applyEventFields(
     event.publicPrice = command.publicPrice
     event.membersOnly = command.membersOnly
     event.signUp = command.signUp
-    event.banner = command.banner?.let {
+    event.replaceBanner(command.banner?.let {
         EventBanner(
             event = event,
             file = fileService.findById(it.fileId),
         )
-    }
-    event.signUpForm = command.signUpForm?.let { surveyFactory.createFromData(it) }
+    })
+    applySignUpFormUpdate(event, command, surveyFactory)
     event.approved = isBoard && command.approved
 }
 
 private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
     val inherited = user.roles.flatMap { it.allInheritedRoles }
     return inherited.any { it.matchesRole(role) }
+}
+
+private fun applySignUpFormUpdate(
+    event: Event,
+    command: UpdateEventCommand,
+    surveyFactory: SurveyFactory
+) {
+    val signUpFormData = command.signUpForm
+    if (signUpFormData == null) {
+        event.replaceSignUpForm(null)
+        return
+    }
+
+    val existingSurvey = event.signUpForm
+    if (existingSurvey == null) {
+        event.replaceSignUpForm(surveyFactory.createFromData(signUpFormData))
+        return
+    }
+
+    val questionsByIdx = existingSurvey.questions.associateBy { it.idx }
+    val mappedQuestions = signUpFormData.questions.map { incoming ->
+        questionsByIdx[incoming.idx]?.apply {
+            type = incoming.type
+            label = incoming.label
+            choiceLabels = incoming.choiceLabels?.toMutableList()
+        } ?: Question(
+            idx = incoming.idx,
+            survey = existingSurvey,
+            type = incoming.type,
+            label = incoming.label,
+            choiceLabels = incoming.choiceLabels?.toMutableList(),
+        )
+    }
+    existingSurvey.replaceQuestions(mappedQuestions)
+    event.replaceSignUpForm(existingSurvey)
 }

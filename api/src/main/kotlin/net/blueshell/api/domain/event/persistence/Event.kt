@@ -103,4 +103,13 @@ class Event(
 
     @Column(name = "sign_up_count", nullable = false, updatable = false, insertable = false)
     val signUpCount: Long = 0
+
+    fun replaceBanner(newBanner: EventBanner?) {
+        banner = newBanner
+        newBanner?.event = this
+    }
+
+    fun replaceSignUpForm(newSignUpForm: Survey?) {
+        signUpForm = newSignUpForm
+    }
 }

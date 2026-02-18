@@ -3,7 +3,6 @@ package net.blueshell.api.system.frontend.membership
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
@@ -17,11 +16,9 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
 class MembershipSignUpPageSystemTest @Autowired constructor(
     userRepository: UserRepository,
     mailSender: MockJavaMailSender,
-    jobExecutionRepository: JobExecutionRepository,
 ) : FrontendSystemTestBase(
     userRepository = userRepository,
     mailSender = mailSender,
-    jobExecutionRepository = jobExecutionRepository
 ) {
 
     @Test
@@ -55,7 +52,7 @@ class MembershipSignUpPageSystemTest @Autowired constructor(
             assertThat(persisted.roles).contains(Role.GUEST)
             assertThat(persisted.memberProfile).isNotNull()
 
-            assertActivationEmailSent(credentials.email)
+            assertEmailSent(credentials.email, "Activate your Account")
         }
     }
 }

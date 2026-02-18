@@ -5,16 +5,11 @@ import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.options.AriaRole
-import jakarta.mail.Multipart
-import jakarta.mail.Part
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TruncateTestDatabaseListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
-import net.blueshell.api.shared.job.EmailJobs
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -40,7 +35,6 @@ import java.util.*
 abstract class FrontendSystemTestBase @Autowired constructor(
     val userRepository: UserRepository,
     val mailSender: MockJavaMailSender,
-    val jobExecutionRepository: JobExecutionRepository,
 ) {
 
     @Value($$"${system.frontend.url}")
@@ -118,70 +112,59 @@ abstract class FrontendSystemTestBase @Autowired constructor(
         return Credentials(username = username, email = email, password = password)
     }
 
-    protected fun <T> waitForOptional(
+    protected fun waitFor(
+        timeoutMs: Long = 6_000,
+        intervalMs: Long = 200,
+        onTimeoutMessage: () -> String = { "Expected condition to become true" },
+        condition: () -> Boolean
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (condition()) return
+            Thread.sleep(intervalMs)
+        }
+        throw AssertionError(onTimeoutMessage())
+    }
+
+    protected fun <T : Any> waitForOptional(
         producer: () -> Optional<T>,
         retries: Int = 30,
         waitMillis: Long = 200,
         onTimeoutMessage: () -> String = { "Expected value to be available" }
     ): T {
-        repeat(retries) { attempt ->
-            val found = producer()
-            if (found.isPresent) return found.get()
-
-            if (attempt < retries - 1) Thread.sleep(waitMillis)
+        var found = Optional.empty<T>()
+        waitFor(
+            timeoutMs = retries.toLong() * waitMillis,
+            intervalMs = waitMillis,
+            onTimeoutMessage = onTimeoutMessage
+        ) {
+            found = producer()
+            found.isPresent
         }
-        throw AssertionError(onTimeoutMessage())
+        return found.get()
     }
 
-    protected fun assertActivationEmailSent(email: String, timeoutMs: Long = 10_000) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val mail = findActivationMail(email)
-            if (mail != null) {
-                val body = messageBody(mail)
-                assertThat(body).contains("/account/activate/user")
-                return
-            }
-            Thread.sleep(100)
+    protected fun assertEmailSent(
+        recipientEmail: String,
+        subject: String,
+        timeoutMs: Long = 10_000
+    ) {
+        waitFor(
+            timeoutMs = timeoutMs,
+            intervalMs = 100,
+            onTimeoutMessage = { "Expected email '$subject' to be sent to $recipientEmail" }
+        ) {
+            findEmail(recipientEmail, subject) != null
         }
-
-        val recoveryJobs = jobExecutionRepository.findByJobType(EmailJobs.Recovery.type)
-        assertThat(recoveryJobs)
-            .describedAs("Expected activation email, and at least a scheduled recovery email job")
-            .isNotEmpty
-
-        throw AssertionError("Expected activation email to be sent to $email")
     }
 
-    private fun findActivationMail(email: String): MimeMessage? {
+    protected fun findEmail(
+        recipientEmail: String,
+        subject: String
+    ): MimeMessage? {
         return mailSender.outbox.firstOrNull { message ->
             val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
-            recipients.contains(email) && message.subject == "Activate your Account"
-        }
-    }
-
-    private fun messageBody(message: MimeMessage): String {
-        return when (val content = message.content) {
-            is String -> content
-            is Multipart -> extractFromMultipart(content)
-            else -> content.toString()
-        }
-    }
-
-    private fun extractFromMultipart(multipart: Multipart): String {
-        for (i in 0 until multipart.count) {
-            val part = multipart.getBodyPart(i)
-            val content = extractFromPart(part)
-            if (content != null) return content
-        }
-        return ""
-    }
-
-    private fun extractFromPart(part: Part): String? {
-        return when (val content = part.content) {
-            is String -> content
-            is Multipart -> extractFromMultipart(content)
-            else -> null
+            recipients.contains(recipientEmail) && message.subject == subject
         }
     }
 

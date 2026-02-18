@@ -377,7 +377,7 @@ async function fetchData() {
   if (!login.value?.userId) return
   await fetchUser()
 
-  if (!user.value?.addressId && !address.value?.id) return
+  if (!login.value?.addressId && !address.value?.id) return
   await fetchAddress()
 }
 

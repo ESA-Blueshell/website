@@ -36,18 +36,6 @@
               />
             </v-col>
           </v-row>
-
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="membership.country"
-                :component="CountrySelect"
-                label="Country"
-                name="country"
-                rules="required"
-              />
-            </v-col>
-          </v-row>
         </Form>
       </v-card-text>
 
@@ -78,8 +66,7 @@ import {DateTime} from "luxon"
 import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
-import CountrySelect from "@/components/form/fields/CountrySelect.vue"
-import {boardCreateMembership, type Membership, MemberType} from "@/services/api"
+import {boardCreateMembership, type BoardCreateMembershipRequest, MemberType, type MembershipResponse} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
 
@@ -91,7 +78,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void;
-  (e: "update:membership", value: Membership): void;
+  (e: "update:membership", value: MembershipResponse): void;
 }>()
 
 const formRef = ref<FormContext>()
@@ -102,12 +89,10 @@ const open = computed({
 
 const maxDate = DateTime.now().toISODate()
 
-const membership = ref<Membership>({
+const membership = ref<BoardCreateMembershipRequest>({
   startDate: maxDate,
   memberType: MemberType.REGULAR,
   userId: props.userId,
-  city: "",
-  country: "NL",
   incasso: false,
 })
 
@@ -119,7 +104,11 @@ const confirm = async () => {
 
   isSubmitting.value = true
   try {
-    const response = await boardCreateMembership({body: membership.value, throwOnError: true})
+    const response = await boardCreateMembership({
+      path: {userId: props.userId},
+      body: membership.value,
+      throwOnError: true,
+    })
     if (response.data) {
       emit("update:membership", response.data)
       open.value = false

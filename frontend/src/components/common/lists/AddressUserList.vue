@@ -84,13 +84,16 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import AddressUserRow from "../rows/AddressUserRow.vue"
-import type {Address, AdvancedUser} from "@/services/api"
+import type {AddressResponse, UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
+
+type ManagedUser = UserDetailResponse & { addressId?: number }
+type ManagedAddress = AddressResponse & { userId?: number }
 
 const props = withDefaults(defineProps<{
   title: string
-  addresses?: Address[]
-  users: AdvancedUser[]
+  addresses?: ManagedAddress[]
+  users: ManagedUser[]
   expanded?: number | null
   allowCreate?: boolean
   enableDelete?: boolean
@@ -106,7 +109,7 @@ const props = withDefaults(defineProps<{
 const {title, users, addresses, expanded, allowCreate, enableDelete, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
-  (e: "update:address", address: Address): void
+  (e: "update:address", address: ManagedAddress): void
   (e: "delete:address", addressId: number): void
   (e: "update:expanded", userId: number): void
 }>()
@@ -124,6 +127,6 @@ const countLabel = computed(() =>
 )
 
 const updateExpanded = (userId: number) => emit("update:expanded", userId)
-const updateAddress = (address: Address) => emit("update:address", address)
+const updateAddress = (address: ManagedAddress) => emit("update:address", address)
 const deleteAddress = (addressId: number) => emit("delete:address", addressId)
 </script>

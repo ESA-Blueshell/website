@@ -44,12 +44,12 @@
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import {type AdvancedUser, type Contribution, createContribution, deleteContribution} from "@/services/api"
+import {type ContributionResponse, createContribution, deleteContribution, type UserDetailResponse} from "@/services/api"
 
 const props = withDefaults(defineProps<{
-  user: AdvancedUser
+  user: UserDetailResponse
   contributionPeriodId: number
-  contributions?: Array<Contribution>
+  contributions?: Array<ContributionResponse>
   disabled?: boolean
 }>(), {
   contributions: () => [],
@@ -57,15 +57,15 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: "update:contribution", contribution: Contribution): void
-  (e: "delete:contribution", id: number): void
+  (e: "update:contribution", contribution: ContributionResponse): void
+  (e: "delete:contribution", userId: number): void
 }>()
 
 const saving = ref(false)
 
-const contribution = computed<Contribution | undefined>(() =>
+const contribution = computed<ContributionResponse | undefined>(() =>
   props.contributions.find(
-    (c) => c.userId === props.user.id,
+    (c) => c.userId === props.user.id && c.contributionPeriodId === props.contributionPeriodId,
   ),
 )
 
@@ -93,8 +93,13 @@ const unmarkPaid = async () => {
   if (!contribution.value || props.disabled || saving.value) return
   saving.value = true
   try {
-    await deleteContribution({path: {id: contribution.value.id as number}})
-    emit("delete:contribution", contribution.value.id as number)
+    await deleteContribution({
+      path: {
+        contributionPeriodId: props.contributionPeriodId,
+        userId: props.user.id,
+      },
+    })
+    emit("delete:contribution", props.user.id)
   } catch (e) {
     console.error("Failed to unmark as paid:", e)
   } finally {

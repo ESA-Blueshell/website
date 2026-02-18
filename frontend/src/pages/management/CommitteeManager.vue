@@ -4,23 +4,48 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import CommitteeForm from "@/components/form/CommitteeForm.vue"
 import {$require} from "@/plugins/require.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {type AdvancedCommittee, type AdvancedUser, deleteCommitteeById, findCommittees, findUsers} from "@/services/api"
+import {
+  type CommitteeDetailResponse,
+  deleteCommitteeById,
+  findCommittees,
+  findUsers,
+  type UserDetailResponse,
+} from "@/services/api"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 
-const committees = ref<AdvancedCommittee[]>([])
-const committeeToDelete = ref<AdvancedCommittee | null>(null)
+type CommitteeModel = {
+  id?: number
+  name: string
+  description: string
+  members: Array<{ userId: number; role: string }>
+  version?: number
+}
+
+const toCommitteeModel = (committee: CommitteeDetailResponse): CommitteeModel => ({
+  id: committee.id,
+  name: committee.name,
+  description: committee.description,
+  version: committee.version,
+  members: committee.members.map((member) => ({
+    userId: member.userId,
+    role: member.role,
+  })),
+})
+
+const committees = ref<CommitteeModel[]>([])
+const committeeToDelete = ref<CommitteeModel | null>(null)
 const editingCommitteeId = ref<number | null>(null)
 const submittingId = ref<number | null>(null)
 const creatingCommittee = ref(false)
 const loading = ref(false)
 const noCommittees = ref(false)
-const users = ref<AdvancedUser[]>([])
+const users = ref<UserDetailResponse[]>([])
 
 async function fetchCommittees(): Promise<void> {
   try {
     const resp = await findCommittees()
     if (resp.data?.length) {
-      committees.value = (resp.data as AdvancedCommittee[]) ?? []
+      committees.value = (resp.data as CommitteeDetailResponse[]).map(toCommitteeModel)
     } else {
       noCommittees.value = true
     }
@@ -58,9 +83,9 @@ function toggleEditingCommittee(committeeId: number | undefined): void {
     editingCommitteeId.value === committeeId ? null : committeeId
 }
 
-function updateCommittee(committee: AdvancedCommittee) {
+function updateCommittee(committee: CommitteeModel) {
   const list = committees.value
-  const idx = list.findIndex(e => e.id === committee.id)
+  const idx = list.findIndex((e) => e.id === committee.id)
   committees.value =
     idx >= 0
       ? [...list.slice(0, idx), committee, ...list.slice(idx + 1)]

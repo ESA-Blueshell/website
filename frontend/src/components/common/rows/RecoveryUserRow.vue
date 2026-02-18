@@ -41,12 +41,12 @@
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import type {AdvancedUser} from "@/services/api"
+import type {UserDetailResponse} from "@/services/api"
 import {resendUserActivation, resetPassword} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const props = defineProps<{
-  user: AdvancedUser
+  user: UserDetailResponse
   actionType: "activation" | "password"
 }>()
 

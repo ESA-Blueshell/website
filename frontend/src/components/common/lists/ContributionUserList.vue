@@ -73,14 +73,14 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import ContributionUserRow from "../rows/ContributionUserRow.vue"
-import type {AdvancedUser, Contribution} from "@/services/api"
+import type {ContributionResponse, UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{
   title: string
-  users: AdvancedUser[]
+  users: UserDetailResponse[]
   contributionPeriodId: number
-  contributions?: Contribution[]
+  contributions?: ContributionResponse[]
   disabled?: boolean
   startOpen?: boolean
 }>(), {
@@ -92,8 +92,8 @@ const props = withDefaults(defineProps<{
 const {title, users, contributions, disabled, contributionPeriodId, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
-  (e: "delete:contribution", id: number): void
-  (e: "update:contribution", contribution: Contribution): void
+  (e: "delete:contribution", userId: number): void
+  (e: "update:contribution", contribution: ContributionResponse): void
 }>()
 
 const localSearch = ref("")
@@ -105,6 +105,6 @@ const countLabel = computed(() =>
   localSearch.value ? `${filtered.value.length} / ${users.value.length}` : `${users.value.length}`,
 )
 
-const contributionChanged = (c: Contribution) => emit("update:contribution", c)
-const contributionDeleted = (id: number) => emit("delete:contribution", id)
+const contributionChanged = (c: ContributionResponse) => emit("update:contribution", c)
+const contributionDeleted = (userId: number) => emit("delete:contribution", userId)
 </script>

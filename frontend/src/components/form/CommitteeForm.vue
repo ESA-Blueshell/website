@@ -6,18 +6,27 @@ import UserSelect from "@/components/form/fields/UserSelect.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
-  type AdvancedCommittee,
-  type AdvancedUser,
-  type CommitteeMember,
+  type CommitteeMemberRequest,
+  type CreateCommitteeRequest,
   createCommittee,
   Role,
+  type UpdateCommitteeRequest,
   updateCommittee,
+  type UserDetailResponse,
 } from "@/services/api"
 import {handleSubmitError, useReadonly, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 
+type CommitteeModel = {
+  id?: number
+  name: string
+  description: string
+  members: CommitteeMemberRequest[]
+  version?: number
+}
+
 const props = withDefaults(
   defineProps<{
-    users: AdvancedUser[]
+    users: UserDetailResponse[]
     showSubmit?: boolean
     submitText?: string
   }>(),
@@ -29,23 +38,22 @@ const props = withDefaults(
 
 const forceUpdateKey = ref(0)
 
-const getDefaultMember: () => CommitteeMember = () => ({
+const getDefaultMember: () => CommitteeMemberRequest = () => ({
   role: "",
-  userId: null as unknown as number,
-  committeeId: committee.value.id,
+  userId: 0,
 })
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
 }>()
 
-const committee = defineModel<AdvancedCommittee>({
+const committee = defineModel<CommitteeModel>({
   default: () =>
     ({
       name: "",
       description: "",
-      members: [{role: "", userId: null as unknown as number}],
-    } as AdvancedCommittee),
+      members: [getDefaultMember()],
+    } as CommitteeModel),
 })
 
 const {isReadonly} = useReadonly()
@@ -61,7 +69,7 @@ defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[]) => {
   if (!userId && userId !== 0) return true
   const i = Number(idx)
   const dup = committee.value.members.some(
-    (m: CommitteeMember, pos: number) => pos !== i && Number(m?.userId) === Number(userId),
+    (m: CommitteeMemberRequest, pos: number) => pos !== i && Number(m?.userId) === Number(userId),
   )
   return !dup || "Member already in this committee"
 })
@@ -77,11 +85,25 @@ function addMember() {
 }
 
 function removeMember(id: number) {
-  committee.value.members = committee.value.members.filter((m: CommitteeMember) => id !== m.userId)
+  committee.value.members = committee.value.members.filter((m: CommitteeMemberRequest) => id !== m.userId)
   forceUpdateKey.value++
 }
 
-const save = async (): Promise<AdvancedCommittee | null> => {
+const toCreateCommitteeRequest = (value: CommitteeModel): CreateCommitteeRequest => ({
+  name: value.name,
+  description: value.description,
+  members: value.members.map((member) => ({
+    role: member.role,
+    userId: Number(member.userId),
+  })),
+})
+
+const toUpdateCommitteeRequest = (value: CommitteeModel): UpdateCommitteeRequest => ({
+  ...toCreateCommitteeRequest(value),
+  version: value.version ?? 0,
+})
+
+const save = async (): Promise<CommitteeModel | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)
@@ -91,8 +113,12 @@ const save = async (): Promise<AdvancedCommittee | null> => {
     const resp = await withSaving(async () => {
       const hasId = Boolean(committee.value?.id)
       return hasId
-        ? await updateCommittee({path: {id: committee.value!.id!}, body: committee.value!, throwOnError: true})
-        : await createCommittee({body: committee.value!, throwOnError: true})
+        ? await updateCommittee({
+          path: {id: committee.value!.id!},
+          body: toUpdateCommitteeRequest(committee.value!),
+          throwOnError: true,
+        })
+        : await createCommittee({body: toCreateCommitteeRequest(committee.value!), throwOnError: true})
     })
     committee.value = resp.data!
     emit("submitted", true)

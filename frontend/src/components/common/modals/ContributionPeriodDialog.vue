@@ -92,21 +92,29 @@
 import {computed, reactive, ref, watch} from "vue"
 import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/services/api"
+import {
+  type ContributionPeriodResponse,
+  createContributionPeriod,
+  type CreateContributionPeriodRequest,
+  updateContributionPeriod,
+  type UpdateContributionPeriodRequest,
+} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
 defineOptions({name: "ContributionPeriodDialog"})
 
-const props = defineProps<{ contributionPeriod?: ContributionPeriod; showDialog: boolean }>()
+type PeriodFormModel = CreateContributionPeriodRequest & Partial<ContributionPeriodResponse>
+
+const props = defineProps<{ contributionPeriod?: ContributionPeriodResponse; showDialog: boolean }>()
 const emit = defineEmits<{
   (e: "update:showDialog", value: boolean): void;
-  (e: "changed", value: ContributionPeriod): void;
+  (e: "changed", value: ContributionPeriodResponse): void;
   (e: "delete", value: number): void;
 }>()
 
-const emptyPeriod = (): ContributionPeriod => ({
+const emptyPeriod = (): PeriodFormModel => ({
   startDate: "",
   endDate: "",
   halfYearFee: 0,
@@ -114,7 +122,7 @@ const emptyPeriod = (): ContributionPeriod => ({
   alumniFee: 0,
 })
 
-const periodForm = reactive<ContributionPeriod>(emptyPeriod())
+const periodForm = reactive<PeriodFormModel>(emptyPeriod())
 const formRef = ref<FormContext>()
 
 watch(
@@ -155,15 +163,32 @@ const saveContributionPeriod = async () => {
 
   try {
     if (periodForm?.id) {
+      const payload: UpdateContributionPeriodRequest = {
+        startDate: periodForm.startDate,
+        endDate: periodForm.endDate,
+        halfYearFee: periodForm.halfYearFee,
+        fullYearFee: periodForm.fullYearFee,
+        alumniFee: periodForm.alumniFee,
+        listId: periodForm.listId,
+        version: periodForm.version ?? 0,
+      }
       const resp = await updateContributionPeriod({
-        body: periodForm,
+        body: payload,
         path: {id: periodForm.id as number},
         throwOnError: true,
       })
       emit("changed", resp.data!)
       closeDialog()
     } else {
-      const resp = await createContributionPeriod({body: periodForm, throwOnError: true})
+      const payload: CreateContributionPeriodRequest = {
+        startDate: periodForm.startDate,
+        endDate: periodForm.endDate,
+        halfYearFee: periodForm.halfYearFee,
+        fullYearFee: periodForm.fullYearFee,
+        alumniFee: periodForm.alumniFee,
+        listId: periodForm.listId,
+      }
+      const resp = await createContributionPeriod({body: payload, throwOnError: true})
       emit("changed", resp.data!)
       closeDialog()
     }

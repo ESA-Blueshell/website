@@ -69,12 +69,12 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import RecoveryUserRow from "../rows/RecoveryUserRow.vue"
-import type {AdvancedUser} from "@/services/api"
+import type {UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{
   title: string
-  users: AdvancedUser[]
+  users: UserDetailResponse[]
   /** 'activation' => resend activation (inactive) | 'password' => password reset (active) */
   actionType: "activation" | "password"
   startOpen?: boolean

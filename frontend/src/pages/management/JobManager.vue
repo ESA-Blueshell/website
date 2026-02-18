@@ -2,7 +2,7 @@
 import {computed, onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {listJobExecutions, retryJobExecution, type JobExecution} from "@/services/api"
+import {type JobExecution, list, retry as retryJob} from "@/services/api"
 
 defineOptions({name: "JobManagerPage"})
 
@@ -10,13 +10,13 @@ const executions = ref<JobExecution[]>([])
 const loading = ref<boolean>(false)
 
 const sortedExecutions = computed<JobExecution[]>(() => {
-  return [...executions.value].sort((a, b) => b.id - a.id)
+  return [...executions.value].sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
 })
 
 const refresh = async () => {
   loading.value = true
   try {
-    const response = await listJobExecutions()
+    const response = await list()
     if (response.status === 200) {
       executions.value = response.data ?? []
     } else {
@@ -32,7 +32,7 @@ const refresh = async () => {
 const retry = async (execution: JobExecution) => {
   if (!execution?.id) return
   try {
-    const response = await retryJobExecution({path: {id: execution.id}})
+    const response = await retryJob({path: {id: execution.id}})
     if (response.status === 200 && response.data) {
       const idx = executions.value.findIndex((item) => item.id === response.data!.id)
       if (idx >= 0) executions.value.splice(idx, 1, response.data)

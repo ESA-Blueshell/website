@@ -113,13 +113,16 @@ const form = ref<PasswordResetRequest>({
 const {handleSubmit} = useForm()
 
 onMounted(() => {
-  form.value.token = (route.query.token as string) || ""
-  if (!form.value.token) {
+  const queryToken = (route.query.token as string) || ""
+  form.value.token = queryToken
+  token.value = queryToken
+
+  if (!queryToken) {
     router.replace({name: "home"})
     return
   }
 
-  router.replace({name: "resetPassword", query: {token: token.value}})
+  router.replace({name: "resetPassword", query: {token: queryToken}})
 })
 
 const onSubmit = handleSubmit(async () => {

@@ -11,6 +11,7 @@
           so please make sure it is correct before saving.
         </p>
         <address-form
+          v-if="login"
           v-model="address"
           :user-id="login.userId"
           show-submit
@@ -28,14 +29,14 @@ import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {type Address, findAddressById, type Login} from "@/services/api"
+import {type AddressResponse, findAddressById} from "@/services/api"
 import AddressForm from "@/components/form/AddressForm.vue"
 
-const address = ref<Address>()
+const address = ref<AddressResponse>()
 const store = useStore()
 const route = useRoute()
 
-const login = computed<Login>(() => store.getters.getLogin)
+const login = computed(() => store.getters.getLogin)
 
 onMounted(async () => {
   const login = store.getters.getLogin

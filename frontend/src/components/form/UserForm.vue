@@ -186,7 +186,7 @@ const toUpdateUserRequest = (model: CreateUserRequest & Partial<UserDetailRespon
   }
 
   if (effectiveUpdateKind.value === "board") {
-    const boardBody = {
+    return {
       kind: "board",
       username: model.username,
       initials: model.initials,
@@ -195,16 +195,13 @@ const toUpdateUserRequest = (model: CreateUserRequest & Partial<UserDetailRespon
       lastName: model.lastName,
       email: model.email,
       ...base,
-    }
-    return boardBody as unknown as UpdateUserRequest
+    } as UpdateUserRequest
   }
 
-  const userBody = {
+  return {
     kind: "user",
     ...base,
-  }
-
-  return userBody as unknown as UpdateUserRequest
+  } as UpdateUserRequest
 }
 
 const fromUserDetail = (

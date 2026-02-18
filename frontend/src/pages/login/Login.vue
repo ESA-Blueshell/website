@@ -42,7 +42,7 @@
             forgot password?
           </v-btn>
         </v-row>
-        <v-row>
+        <v-row class="mb-3">
           <v-col cols="auto">
             <v-btn
               color="accent"

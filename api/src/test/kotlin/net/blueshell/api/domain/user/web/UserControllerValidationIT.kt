@@ -1,10 +1,12 @@
 package net.blueshell.api.domain.user.web
 
+import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -14,17 +16,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class UserControllerValidationIT : UserTestSupport() {
-
-    private fun createPayload(
-        username: String,
-        email: String,
-        discord: String,
-        phoneNumber: String,
-    ): String =
-        """{"username":"$username","initials":"VU","firstName":"Validation","lastName":"User","newsletter":true,"password":"Password123!","email":"$email","discord":"$discord","phoneNumber":"$phoneNumber"}"""
-
-    private fun updatePayload(discord: String, phoneNumber: String, version: Long): String =
-        """{"kind":"user","discord":"$discord","phoneNumber":"$phoneNumber","newsletter":true,"version":$version}"""
+    @Autowired
+    private lateinit var userRequestFactory: UserRequestFactory
 
     @Nested
     inner class CreateUserUniqueness {
@@ -37,7 +30,7 @@ class UserControllerValidationIT : UserTestSupport() {
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        createPayload(
+                        userRequestFactory.createUserPayload(
                             username = existing.username,
                             email = "new_${System.currentTimeMillis()}@example.com",
                             discord = "newdiscord${System.currentTimeMillis()}",
@@ -58,7 +51,7 @@ class UserControllerValidationIT : UserTestSupport() {
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        createPayload(
+                        userRequestFactory.createUserPayload(
                             username = "new_${System.currentTimeMillis()}",
                             email = existing.email,
                             discord = "newdiscord${System.currentTimeMillis()}",
@@ -79,7 +72,7 @@ class UserControllerValidationIT : UserTestSupport() {
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        createPayload(
+                        userRequestFactory.createUserPayload(
                             username = "new_${System.currentTimeMillis()}",
                             email = "new_${System.currentTimeMillis()}@example.com",
                             discord = existing.discord,
@@ -100,7 +93,7 @@ class UserControllerValidationIT : UserTestSupport() {
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        createPayload(
+                        userRequestFactory.createUserPayload(
                             username = "new_${System.currentTimeMillis()}",
                             email = "new_${System.currentTimeMillis()}@example.com",
                             discord = "newdiscord${System.currentTimeMillis()}",
@@ -127,7 +120,7 @@ class UserControllerValidationIT : UserTestSupport() {
                     .with(bearer(primary))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        updatePayload(
+                        userRequestFactory.updateUserPayload(
                             discord = conflicting.discord,
                             phoneNumber = primary.phoneNumber,
                             version = primary.version
@@ -149,7 +142,7 @@ class UserControllerValidationIT : UserTestSupport() {
                     .with(bearer(primary))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        updatePayload(
+                        userRequestFactory.updateUserPayload(
                             discord = primary.discord,
                             phoneNumber = conflicting.phoneNumber,
                             version = primary.version

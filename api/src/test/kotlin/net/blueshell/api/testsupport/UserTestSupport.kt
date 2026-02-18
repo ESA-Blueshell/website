@@ -4,29 +4,34 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.mail.Multipart
 import jakarta.mail.Part
 import jakarta.mail.internet.MimeMessage
+import net.blueshell.api.factory.blog.persistence.BlogFactory
+import net.blueshell.api.factory.board.persistence.BoardFactory
+import net.blueshell.api.factory.committee.persistence.CommitteeFactory
+import net.blueshell.api.factory.contribution.persistence.ContributionFactory
+import net.blueshell.api.factory.event.persistence.EventFactory
+import net.blueshell.api.factory.file.persistence.FileFactory
+import net.blueshell.api.factory.job.persistence.JobExecutionFactory
+import net.blueshell.api.factory.sponsor.persistence.SponsorFactory
+import net.blueshell.api.factory.telemetry.persistence.TelemetryFactory
+import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.domain.blog.persistence.Blog
 import net.blueshell.api.domain.board.persistence.Board
-import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.file.persistence.File
-import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.persistence.MemberProfile
+import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
 import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.enums.Role
@@ -38,9 +43,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.RequestPostProcessor
-import java.nio.file.Files
-import java.nio.file.Path
-import java.sql.Date
 import java.time.Instant
 import java.time.LocalDate
 
@@ -75,6 +77,36 @@ abstract class UserTestSupport : ServiceTestSupport() {
     @Autowired
     protected lateinit var mailSender: MockJavaMailSender
 
+    @Autowired
+    protected lateinit var userFactory: UserFactory
+
+    @Autowired
+    protected lateinit var blogFactory: BlogFactory
+
+    @Autowired
+    protected lateinit var boardFactory: BoardFactory
+
+    @Autowired
+    protected lateinit var committeeFactory: CommitteeFactory
+
+    @Autowired
+    protected lateinit var eventFactory: EventFactory
+
+    @Autowired
+    protected lateinit var contributionFactory: ContributionFactory
+
+    @Autowired
+    protected lateinit var fileFactory: FileFactory
+
+    @Autowired
+    protected lateinit var sponsorFactory: SponsorFactory
+
+    @Autowired
+    protected lateinit var telemetryFactory: TelemetryFactory
+
+    @Autowired
+    protected lateinit var jobExecutionFactory: JobExecutionFactory
+
     @Value("\${app.frontend-url}")
     protected lateinit var frontendUrl: String
 
@@ -97,20 +129,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
      * Creates and persists a user with specific role.
      */
     protected fun createUserWithRole(role: Role, enabled: Boolean = true): User {
-        val username = "user_${role.name.lowercase()}_${System.currentTimeMillis()}"
-        val user = User(
-            username = username,
-            email = "$username@test.com",
-            password = passwordEncoder.encode("Password123!"),
-            initials = "TU",
-            firstName = "Test",
-            lastName = role.name,
-            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
-            discord = "$username#0001"
-        )
-        user.roles = mutableSetOf(role)
-        user.enabled = enabled
-        return userRepository.save(user)
+        return userFactory.createUserWithRole(role, enabled)
     }
 
     /**
@@ -129,7 +148,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
         html: String = "<p>Content</p>",
         publishedAt: Instant = Instant.now()
     ): Blog {
-        return persist(Blog(title = title, html = html, publishedAt = publishedAt))
+        return blogFactory.create(title, html, publishedAt)
     }
 
     protected fun createBoardFixture(
@@ -137,23 +156,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         candidate: String = "Candidate",
         startDate: LocalDate = LocalDate.now().minusDays(1)
     ): Board {
-        return persist(
-            Board(
-                candidate = candidate,
-                startDate = startDate,
-                name = name,
-            )
-        )
+        return boardFactory.create(name, candidate, startDate)
     }
 
     protected fun addBoardMember(board: Board, user: User, role: String = "CHAIR"): Board {
-        val member = BoardMember(
-            id = BoardMember.Id(board.id, user.id),
-            board = board,
-            user = user,
-            role = role,
-            startDate = LocalDate.now().minusDays(1)
-        )
+        val member = boardFactory.buildMember(board, user, role)
         board.addMember(member)
         return persist(board)
     }
@@ -162,15 +169,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         name: String = "Committee ${System.currentTimeMillis()}",
         description: String = "Committee description"
     ): Committee {
-        return persist(Committee(name = name, description = description))
+        return committeeFactory.create(name, description)
     }
 
     protected fun addCommitteeMember(committee: Committee, user: User, role: String = "Member"): Committee {
-        val member = CommitteeMember(
-            committee = committee,
-            user = user,
-            role = role,
-        )
+        val member = committeeFactory.buildMember(committee, user, role)
         committee.replaceMembers(committee.members + member)
         return persist(committee)
     }
@@ -182,19 +185,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
         signUp: Boolean = true,
         title: String = "Event ${System.currentTimeMillis()}"
     ): Event {
-        return persist(
-            Event(
-                committee = committee,
-                title = title,
-                description = "Event description",
-                location = "Campus",
-                startTime = Instant.now().plusSeconds(3600),
-                endTime = Instant.now().plusSeconds(7200),
-                approved = approved,
-                membersOnly = membersOnly,
-                signUp = signUp,
-            )
-        )
+        return eventFactory.create(committee, approved, membersOnly, signUp, title)
     }
 
     protected fun createAddressFixture(
@@ -202,42 +193,19 @@ abstract class UserTestSupport : ServiceTestSupport() {
         city: String = "Enschede",
         country: String = "NL"
     ): Address {
-        val address = Address(
-            user = user,
-            country = country,
-            city = city,
-            street = "Street",
-            houseNumber = "1",
-            zipCode = "1234AB"
-        )
+        val address = userFactory.buildAddress(user = user, country = country, city = city)
 
         val persistedUser = assignAddress(user, address)
         return refreshUser(persistedUser).address!!
     }
 
-    protected fun assignAddress(user: User, address: Address = Address(
-        user = user,
-        country = "NL",
-        city = "Enschede",
-        street = "Street",
-        houseNumber = "1",
-        zipCode = "1234AB"
-    )): User {
+    protected fun assignAddress(user: User, address: Address = userFactory.buildAddress(user = user)): User {
         user.replaceAddress(address)
         return persist(user)
     }
 
     protected fun assignMemberProfile(user: User): User {
-        val profile = MemberProfile(
-            user = user,
-            dateOfBirth = Date.valueOf(LocalDate.of(1998, 5, 5)),
-            studentNumber = "s${System.currentTimeMillis()}",
-            gender = "X",
-            photoConsent = true,
-            bhv = false,
-            ehbo = false,
-            nationality = "NL"
-        )
+        val profile = userFactory.buildMemberProfile(user)
 
         user.replaceMemberProfile(profile)
         return persist(user)
@@ -247,30 +215,14 @@ abstract class UserTestSupport : ServiceTestSupport() {
         user: User = createUserWithRole(Role.MEMBER),
         memberType: MemberType = MemberType.REGULAR
     ): Membership {
-        return persist(
-            Membership(
-                user = user,
-                startDate = LocalDate.now().minusDays(30),
-                endDate = null,
-                memberType = memberType,
-                incasso = true,
-            )
-        )
+        return userFactory.createMembership(user, memberType)
     }
 
     protected fun createContributionPeriodFixture(
         startDate: LocalDate = LocalDate.now().minusMonths(1),
         endDate: LocalDate = LocalDate.now().plusMonths(1)
     ): ContributionPeriod {
-        return persist(
-            ContributionPeriod(
-                startDate = startDate,
-                endDate = endDate,
-                halfYearFee = 25.0,
-                fullYearFee = 45.0,
-                alumniFee = 10.0,
-            )
-        )
+        return contributionFactory.createPeriod(startDate, endDate)
     }
 
     protected fun createFileFixture(
@@ -279,22 +231,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         mediaType: String = "image/png",
         type: FileType = FileType.EVENT_BANNER
     ): File {
-        val path = Path.of("/tmp", "$name-${System.currentTimeMillis()}")
-        Files.writeString(path, "test-file")
-        return persist(
-            File(
-                name = name,
-                path = path.toString(),
-                uploader = uploader,
-                mediaType = mediaType,
-                size = 1024,
-                type = type,
-            )
-        )
+        return fileFactory.create(uploader, name, mediaType, type)
     }
 
     protected fun attachEventBanner(event: Event, file: File = createFileFixture()): Event {
-        event.banner = EventBanner(event = event, file = file)
+        event.banner = eventFactory.buildBanner(event, file)
         return persist(event)
     }
 
@@ -303,57 +244,31 @@ abstract class UserTestSupport : ServiceTestSupport() {
         user: User? = createUserWithRole(Role.MEMBER),
         guest: Guest? = null
     ): EventSignUp {
-        return persist(
-            EventSignUp(
-                event = event,
-                userId = user?.id,
-                guest = guest,
-            )
-        )
+        return eventFactory.createSignUp(event, user, guest)
     }
 
     protected fun createGuestFixture(
         name: String = "Guest User",
         accessToken: String = "guest-token-${System.currentTimeMillis()}"
     ): Guest {
-        return persist(
-            Guest(
-                name = name,
-                discord = "guest#1234",
-                email = "guest-${System.currentTimeMillis()}@example.com",
-                phoneNumber = "+31612345678",
-                accessToken = accessToken,
-            )
-        )
+        return eventFactory.createGuest(name, accessToken)
     }
 
     protected fun createSponsorFixture(name: String = "Sponsor ${System.currentTimeMillis()}"): Sponsor {
         val uploader = createUserWithRole(Role.BOARD)
-        return persist(
-            Sponsor(
-                name = name,
-                description = "Sponsor description"
-            ).apply {
-                this.picture = createFileFixture(uploader = uploader, type = FileType.SPONSOR_PICTURE)
-            }
-        )
+        val picture = createFileFixture(uploader = uploader, type = FileType.SPONSOR_PICTURE)
+        return sponsorFactory.create(name, picture)
     }
 
     protected fun createTelemetryFixture(
         platform: PlatformType = PlatformType.TWITTER,
         url: String = "https://example.com/${System.currentTimeMillis()}"
     ): Telemetry {
-        return persist(Telemetry(platform = platform, url = url))
+        return telemetryFactory.create(platform, url)
     }
 
     protected fun createJobExecutionFixture(jobType: String = "test-job"): JobExecution {
-        return persist(
-            JobExecution(
-                jobType = jobType,
-                status = JobExecutionStatus.QUEUED,
-                payload = """{"key":"value"}"""
-            )
-        )
+        return jobExecutionFactory.create(jobType)
     }
 
     /**

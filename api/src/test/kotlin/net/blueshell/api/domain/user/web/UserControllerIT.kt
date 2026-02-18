@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.user.web
 
+import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
@@ -19,8 +20,8 @@ class UserControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var memberProfileRepository: MemberProfileRepository
 
-    private fun createGuestPayload(username: String, email: String): String =
-        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
+    @Autowired
+    private lateinit var userRequestFactory: UserRequestFactory
 
     @Nested
     inner class CreateUser {
@@ -32,7 +33,7 @@ class UserControllerIT : UserTestSupport() {
             mvc.perform(
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(createGuestPayload(guestUsername, guestEmail))
+                    .content(userRequestFactory.createUserPayload(guestUsername, guestEmail))
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").isNotEmpty)

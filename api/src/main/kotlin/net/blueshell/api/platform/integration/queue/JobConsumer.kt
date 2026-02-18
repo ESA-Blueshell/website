@@ -31,13 +31,13 @@ class JobConsumer(
     }
 
     private fun runJob(execution: JobExecution, handler: JobHandler, payload: String?) {
-        jobExecutionService.markRunning(execution)
+        val current = jobExecutionService.markRunning(execution)
         try {
             handler.handle(payload)
-            jobExecutionService.markSuccess(execution)
+            jobExecutionService.markSuccess(current)
         } catch (ex: Exception) {
             logger.error("Job execution {} failed.", execution.id, ex)
-            jobExecutionService.markFailed(execution, ex.message ?: "Unknown error")
+            jobExecutionService.markFailed(current, ex.message ?: "Unknown error")
         }
     }
 }

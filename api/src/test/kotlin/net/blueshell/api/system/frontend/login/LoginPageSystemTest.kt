@@ -1,12 +1,12 @@
 package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.Response
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -23,7 +23,7 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
     fun `disabled account shows login error`() {
         withPage { page ->
             val user = createLoginUser(enabled = false)
-            val status = submitLogin(page, user.username, loginPassword)
+            val status = AuthHelper.submitLogin(page, frontendUrl, user.username, loginPassword)
             assertThat(status).isEqualTo(401)
             assertLoginError(page)
         }
@@ -33,7 +33,7 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
     fun `wrong password shows login error`() {
         withPage { page ->
             val user = createLoginUser(enabled = true)
-            val status = submitLogin(page, user.username, "${loginPassword}x")
+            val status = AuthHelper.submitLogin(page, frontendUrl, user.username, "${loginPassword}x")
             assertThat(status).isEqualTo(401)
             assertLoginError(page)
         }
@@ -43,7 +43,7 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
     fun `enabled account logs in with correct password`() {
         withPage { page ->
             val user = createLoginUser(enabled = true)
-            val status = submitLogin(page, user.username, loginPassword)
+            val status = AuthHelper.submitLogin(page, frontendUrl, user.username, loginPassword)
             assertThat(status).isEqualTo(200)
         }
     }
@@ -81,23 +81,6 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
             assertPw(usernameField).isVisible()
             assertThat(usernameField.inputValue()).isEqualTo(username)
         }
-    }
-
-    private fun submitLogin(page: Page, username: String, password: String): Int {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response: Response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        return response.status()
     }
 
     private fun assertLoginError(page: Page) {

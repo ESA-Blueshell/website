@@ -6,6 +6,7 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.RecoveryManagerHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
@@ -24,7 +25,7 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
         val inactiveUser = userFactory.createUserWithRole(Role.GUEST, enabled = false)
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             RecoveryManagerHelper.open(page, frontendUrl)
@@ -56,7 +57,7 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
         val activeUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             RecoveryManagerHelper.open(page, frontendUrl)
@@ -96,7 +97,7 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
         val otherUser = userFactory.createUserWithRole(Role.GUEST, enabled = false)
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             RecoveryManagerHelper.open(page, frontendUrl)
@@ -126,7 +127,7 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
         val otherUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             RecoveryManagerHelper.open(page, frontendUrl)
@@ -140,23 +141,6 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
             }
             assertPw(page.getByText(otherUser.username, Page.GetByTextOptions().setExact(true))).hasCount(0)
         }
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String): Int {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        return response.status()
     }
 
     private companion object {

@@ -7,6 +7,7 @@ import net.blueshell.api.factory.committee.persistence.CommitteeFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -32,7 +33,7 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         val committeeName = "SiteCie$suffix"
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
             openCommitteeManager(page)
             page.getByText("Create new committee", Page.GetByTextOptions().setExact(false)).first().click()
@@ -80,7 +81,7 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         val committeeId = checkNotNull(committee.id) { "Expected persisted committee id" }
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
             openCommitteeManager(page)
             waitFor(
@@ -130,7 +131,7 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         val committeeId = checkNotNull(committee.id) { "Expected persisted committee id" }
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
             openCommitteeManager(page)
             waitFor(
@@ -214,23 +215,6 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         )
         assertThat(removedAfter.roles).doesNotContain(Role.COMMITTEE)
         assertThat(addedAfter.roles).contains(Role.COMMITTEE)
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String): Int {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        return response.status()
     }
 
     private fun openCommitteeManager(page: Page) {

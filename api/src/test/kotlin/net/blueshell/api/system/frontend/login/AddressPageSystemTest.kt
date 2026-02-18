@@ -6,6 +6,7 @@ import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -22,7 +23,8 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
         val user = userFactory.createUserWithRole(Role.GUEST, enabled = true)
 
         withPage { page ->
-            loginThroughUi(page, user.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, user.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/account/addresses")
             page.waitForURL("**/account/addresses**")
@@ -81,7 +83,8 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
         val addressId = checkNotNull(withAddress.addressId) { "Expected persisted address id for ${user.username}" }
 
         withPage { page ->
-            loginThroughUi(page, user.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, user.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
 
             val loadResponse = page.waitForResponse("**/addresses/$addressId") {
                 page.navigate("$frontendUrl/account/addresses/$addressId")
@@ -119,22 +122,6 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
         assertThat(updated.address?.zipCode).isEqualTo("7514AR")
         assertThat(updated.address?.city).isEqualTo("Enschede")
         assertThat(updated.address?.country).isEqualTo("NL")
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String) {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
     }
 
     private companion object {

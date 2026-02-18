@@ -7,7 +7,9 @@ import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
+import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -41,7 +43,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
         val updatedDiscord = "updated$suffix"
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/members/manage")
@@ -97,10 +99,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             selectPeriod(page, periodLabel)
             page.getByText("Non-members", Page.GetByTextOptions().setExact(true)).click()
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(username)
+            UserListHelper.searchUser(page, username)
             page.getByText(username, Page.GetByTextOptions().setExact(true)).first().click()
             UserFormHelper.fill(
                 page = page,
@@ -147,7 +146,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
         val guestId = checkNotNull(guest.id) { "Expected guest id" }
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/members/manage")
@@ -162,10 +161,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(guest.username)
+            UserListHelper.searchUser(page, guest.username)
 
             val response = page.waitForResponse(
                 Predicate { response ->
@@ -198,7 +194,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
         val periodLabel = createFuturePeriodLabel()
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/members/manage")
@@ -213,10 +209,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(member.username)
+            UserListHelper.searchUser(page, member.username)
 
             val endResponse = page.waitForResponse(
                 Predicate { response ->
@@ -235,23 +228,6 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             val current = memberRepository.findById(membershipId).orElse(null)
             current != null && current.endDate != null
         }
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String): Int {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        return response.status()
     }
 
     private fun createFuturePeriodLabel(): String {

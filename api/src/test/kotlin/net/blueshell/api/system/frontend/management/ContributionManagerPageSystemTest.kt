@@ -7,6 +7,8 @@ import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -41,7 +43,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
         val memberId = checkNotNull(member.id) { "Expected member id" }
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/contributions/manage")
@@ -62,10 +64,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(member.username)
+            UserListHelper.searchUser(page, member.username)
             val markPaidResponse = page.waitForResponse({ response ->
                 response.request().method() == "POST" &&
                     response.url().contains("/contributions")
@@ -85,7 +84,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
         }
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/contributions/manage")
@@ -106,10 +105,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(member.username)
+            UserListHelper.searchUser(page, member.username)
             val markUnpaidResponse = page.waitForResponse({ response ->
                 response.request().method() == "DELETE" &&
                     response.url().contains("/contributionPeriods/") &&
@@ -123,23 +119,6 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             assertThat(markUnpaidResponse.status()).isEqualTo(204)
         }
 
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String): Int {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        return response.status()
     }
 
     private companion object {

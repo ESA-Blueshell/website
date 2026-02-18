@@ -7,6 +7,8 @@ import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
+import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -27,7 +29,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
         val guest = userFactory.createUserWithRole(Role.GUEST, enabled = true)
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/addresses/manage")
@@ -82,7 +84,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
         var addressId: Long? = null
 
         withPage { page ->
-            val loginStatus = loginThroughUi(page, board.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/addresses/manage")
@@ -99,10 +101,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(guest.username)
+            UserListHelper.searchUser(page, guest.username)
             page.getByText("Add Address", Page.GetByTextOptions().setExact(false)).first().click()
             AddressFormHelper.fill(
                 page = page,
@@ -144,10 +143,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Search for a user").setExact(false)
-            ).first().fill(guest.username)
+            UserListHelper.searchUser(page, guest.username)
             page.getByText("Delete Address", Page.GetByTextOptions().setExact(false)).first().click()
 
             val deleteResponse = page.waitForResponse({ response ->
@@ -167,23 +163,6 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
         ) {
             addressRepository.findById(checkNotNull(addressId)).isEmpty
         }
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String): Int {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        return response.status()
     }
 
     private companion object {

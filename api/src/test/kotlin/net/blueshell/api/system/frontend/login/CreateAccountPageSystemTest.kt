@@ -1,9 +1,8 @@
 package net.blueshell.api.system.frontend.login
 
-import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -41,18 +40,10 @@ class CreateAccountPageSystemTest : FrontendSystemTestBase() {
                 includeMemberProfile = false
             )
 
-            page.navigate("$frontendUrl/login")
-            page.getByLabel("Username").fill(credentials.username)
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Password")
-            ).fill(credentials.password)
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, credentials.username, credentials.password)
 
             assertThat(page.url()).contains("/login")
+            assertThat(loginStatus).isEqualTo(401)
 
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.enabled).isFalse()

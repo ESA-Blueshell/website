@@ -6,6 +6,7 @@ import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
@@ -136,7 +137,8 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
         val discordBefore = primaryMember.discord
 
         withPage { page ->
-            loginThroughUi(page, primaryMember.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, primaryMember.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/account")
             page.waitForURL("**/account")
@@ -155,23 +157,6 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
             onTimeoutMessage = { "Expected member ${primaryMember.username} to exist after update attempt" }
         )
         assertThat(updated.discord).isEqualTo(discordBefore)
-    }
-
-    private fun loginThroughUi(page: Page, username: String, password: String) {
-        page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
-
-        val response = page.waitForResponse("**/auth") {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
-        }
-        assertThat(response.status()).isEqualTo(200)
     }
 
     private companion object {

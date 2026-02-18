@@ -2,6 +2,7 @@ package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -37,6 +38,14 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.id").isNotEmpty)
                 .andExpect(jsonPath("$.username").value(guestUsername))
                 .andExpect(jsonPath("$.email").value(guestEmail))
+
+            val persistedUser = userRepository.findByUsername(guestUsername).orElseThrow()
+            val jobs = findJobsByType(ContactJobs.SyncContact.type)
+            assertThat(jobs)
+                .describedAs("Should schedule contact sync job on user creation")
+                .anySatisfy {
+                    assertThat(it.payload).contains("\"userId\":${persistedUser.id}")
+                }
         }
 
         @Test
@@ -89,6 +98,13 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.username").value(updatedUsername))
                 .andExpect(jsonPath("$.firstName").value("Updated"))
                 .andExpect(jsonPath("$.discord").value("updated#1234"))
+
+            val jobs = findJobsByType(ContactJobs.SyncContact.type)
+            assertThat(jobs)
+                .describedAs("Should schedule contact sync job on user update")
+                .anySatisfy {
+                    assertThat(it.payload).contains("\"userId\":${guest.id}")
+                }
         }
 
         @Test
@@ -232,6 +248,12 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
 
             assertThat(userRepository.findById(createdUser.id!!).orElseThrow().roles).contains(Role.MEMBER)
+            val jobs = findJobsByType(ContactJobs.SyncContact.type)
+            assertThat(jobs)
+                .describedAs("Should schedule contact sync job on role toggle")
+                .anySatisfy {
+                    assertThat(it.payload).contains("\"userId\":${createdUser.id}")
+                }
         }
     }
 }

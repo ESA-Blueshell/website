@@ -1,7 +1,11 @@
 <script lang="ts" setup>
 import {useRoute} from "vue-router"
 import EventCard from "@/components/common/cards/EventCard.vue"
-import type {AdvancedCommittee, Event, EventSignUp} from "@/services/api"
+import type {CommitteeDetailResponse, EventResponse, EventSignUpResponse} from "@/services/api"
+
+type Event = EventResponse
+type EventSignUp = EventSignUpResponse
+type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
 
 interface Emits {
   (e: "delete:event", id: number): void
@@ -16,7 +20,7 @@ interface Emits {
 interface Props {
   events: Event[]
   eventSignUps: EventSignUp[]
-  committees: AdvancedCommittee[]
+  committees: CommitteeOption[]
 }
 
 const emit = defineEmits<Emits>()

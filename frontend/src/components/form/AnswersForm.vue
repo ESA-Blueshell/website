@@ -2,13 +2,13 @@
 import {computed, ref, watch} from "vue"
 import {Form, type FormContext} from "vee-validate"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
-import {type Answer, type Question, QuestionType, type Survey} from "@/services/api"
+import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/services/api"
 
-const props = defineProps<{ survey?: Survey | null }>()
-const answers = defineModel<Answer[]>({default: []})
+const props = defineProps<{ survey?: SurveyResponse | null }>()
+const answers = defineModel<AnswerRequest[]>({default: []})
 
 const formRef = ref<FormContext | undefined>()
-const questions = computed<Question[]>(() => props.survey?.questions ?? [])
+const questions = computed<QuestionResponse[]>(() => props.survey?.questions ?? [])
 
 const answerIndexByQuestionIdx = ref<Map<number, number>>(new Map())
 watch(

@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import {Field} from "vee-validate"
-import {type Question, QuestionType} from "@/services/api"
+import {type QuestionRequest, QuestionType} from "@/services/api"
 
 const props = withDefaults(defineProps<{ canMoveUp?: boolean; canMoveDown?: boolean }>(), {
   canMoveUp: true,
   canMoveDown: true,
 })
 const emit = defineEmits<{ (e: "moveUp"): void; (e: "moveDown"): void; (e: "remove"): void }>()
-const model = defineModel<Question>({required: true})
+const model = defineModel<QuestionRequest>({required: true})
 
 function setLabel(v: string) {
   model.value = {...model.value, label: v}

@@ -2,12 +2,13 @@
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {
-  type Answer,
+  type AnswerRequest,
+  type CreateEventSignUpRequest,
   createEventSignup,
   deleteEventSignup,
-  type Event,
-  type EventSignUp,
-  type Question,
+  type EventResponse,
+  type EventSignUpResponse,
+  type QuestionResponse,
   updateEventSignUp,
 } from "@/services/api"
 import AnswersForm from "@/components/form/AnswersForm.vue"
@@ -17,11 +18,11 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useSaving, useSubmitFeedback} from "@/composables/formUtils"
 
 const emit = defineEmits<{
-  (e: "update:signUp", value: EventSignUp): void
+  (e: "update:signUp", value: EventSignUpResponse): void
   (e: "delete:signUp", id: number): void // ⬅️ new emit
 }>()
 
-const props = defineProps<{ event: Event; buttonLoading?: boolean; initialSignUp?: EventSignUp }>()
+const props = defineProps<{ event: EventResponse; buttonLoading?: boolean; initialSignUp?: EventSignUpResponse }>()
 
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
@@ -33,7 +34,13 @@ const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "
 const guestRef = ref<InstanceType<typeof GuestForm>>()
 const answersRef = ref<InstanceType<typeof AnswersForm>>()
 
-const answers = ref<Answer[]>([...(props.initialSignUp?.answers ?? [])])
+const answers = ref<AnswerRequest[]>((
+  props.initialSignUp?.answers ?? []
+).map((answer) => ({
+  questionId: answer.questionId,
+  textResponse: answer.textResponse,
+  optionSelections: answer.optionSelections,
+})))
 
 function sortAnswersBySurveyIdx() {
   const qs = survey.value?.questions ?? []
@@ -53,10 +60,7 @@ function sortAnswersBySurveyIdx() {
 
 watch(survey, sortAnswersBySurveyIdx, {immediate: true})
 
-const signUp = computed<EventSignUp>(() => {
-  const s = props.initialSignUp
-  return {eventId: s?.eventId ?? props.event.id!, answers: answers.value ?? [], ...s}
-})
+const signUp = computed<EventSignUpResponse | undefined>(() => props.initialSignUp)
 
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
@@ -78,23 +82,32 @@ async function save() {
 
   try {
     await withSaving(async () => {
-      if (isLoggedIn.value) signUp.value.userId = login.value.userId
-      else signUp.value.guest = guest.value ?? {}
-
-      const eventId = props.event.id!
-
-      if (answers.value) {
-        signUp.value.answers = answers.value
+      const payload: CreateEventSignUpRequest = {
+        answers: answers.value,
+      }
+      if (isLoggedIn.value) {
+        payload.userId = login.value.userId
+      } else {
+        payload.guest = {
+          name: guest.value.name,
+          discord: guest.value.discord,
+          email: guest.value.email,
+          phoneNumber: guest.value.phoneNumber,
+        }
       }
 
-      const resp = signUp.value.id
+      const eventId = props.event.id!
+      const resp = signUp.value?.id
         ? await updateEventSignUp({
           path: {eventId},
           query: {accessToken: signUp.value.guest?.accessToken},
-          body: signUp.value,
+          body: {
+            ...payload,
+            version: signUp.value.version,
+          },
           throwOnError: true,
         })
-        : await createEventSignup({body: signUp.value, throwOnError: true})
+        : await createEventSignup({path: {eventId}, body: payload, throwOnError: true})
 
       const eventSignUp = resp.data!
       emit("update:signUp", eventSignUp)
@@ -108,18 +121,19 @@ async function save() {
 }
 
 async function removeSignUp() {
-  if (!signUp.value.id) return
+  const existingSignUp = signUp.value
+  if (!existingSignUp?.id) return
 
   try {
     await withSaving(async () => {
       await deleteEventSignup({
-        path: {eventSignupId: signUp.value.id as number},
-        query: {accessToken: signUp.value.guest?.accessToken},
+        path: {id: existingSignUp.id as number},
+        query: {accessToken: existingSignUp.guest?.accessToken},
         throwOnError: true,
       })
     })
 
-    emit("delete:signUp", signUp.value.id as number)
+    emit("delete:signUp", existingSignUp.id as number)
     setSubmitResult(true)
   } catch (e) {
     setSubmitResult(false)
@@ -141,7 +155,7 @@ defineExpose({save, validate})
 
     <answers-form
       v-if="survey"
-      :key="survey.questions.map((q: Question) => q.id).join('')"
+      :key="survey.questions.map((q: QuestionResponse) => q.id).join('')"
       ref="answersRef"
       v-model="answers"
       :survey="survey"
@@ -164,7 +178,7 @@ defineExpose({save, validate})
       justify="end"
     >
       <v-col
-        v-if="signUp.id"
+        v-if="signUp?.id"
         cols="auto"
       >
         <submit-button
@@ -184,11 +198,11 @@ defineExpose({save, validate})
         <submit-button
           :block="true"
           :disabled="isSaving || buttonLoading"
-          :icon="signUp.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
+          :icon="signUp?.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
           :loading="isSaving || buttonLoading"
           :show-submit-status="showSubmitStatus"
           :submit-state="submitState"
-          :text="`${signUp.id ? 'Update' : 'Save'} sign-up`"
+          :text="`${signUp?.id ? 'Update' : 'Save'} sign-up`"
           @click="save"
         />
       </v-col>

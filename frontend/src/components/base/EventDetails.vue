@@ -86,10 +86,10 @@ import {computed, onBeforeUnmount, ref, toRef, watch} from "vue"
 import MarqueeText from "vue-marquee-text-component"
 import {$goto} from "@/plugins/goto.ts"
 import markdownToHtml from "@/plugins/markdownToHtml.ts"
-import {downloadEventBanner, type Event} from "@/services/api"
+import {downloadEventBanner, type EventResponse} from "@/services/api"
 import {DateTime} from "luxon"
 
-const props = defineProps<{ modelValue: Event }>()
+const props = defineProps<{ modelValue: EventResponse }>()
 
 const event = toRef(props, "modelValue")
 
@@ -100,9 +100,10 @@ const bannerUrl = ref<string | null>(null)
 let lastBannerId: number | null = null
 
 async function loadBanner() {
-  const id = event.value?.banner?.id ?? null
+  const id = event.value?.id ?? null
+  const hasBanner = !!event.value?.banner
 
-  if (!id) {
+  if (!id || !hasBanner) {
     if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
     bannerUrl.value = null
     lastBannerId = null
@@ -112,7 +113,7 @@ async function loadBanner() {
   lastBannerId = id
   try {
     const resp = await downloadEventBanner({
-      path: {bannerId: id},
+      path: {eventId: id},
       throwOnError: true,
       responseType: "blob",
     })
@@ -126,7 +127,7 @@ async function loadBanner() {
   }
 }
 
-watch(() => event.value?.banner?.id, loadBanner, {immediate: true})
+watch(() => event.value?.id, loadBanner, {immediate: true})
 
 onBeforeUnmount(() => {
   if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)

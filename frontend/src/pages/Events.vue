@@ -5,15 +5,16 @@ import {DateTime} from "luxon"
 import EventCalendar from "@/components/base/EventCalendar.vue"
 
 import {
-  type AdvancedCommittee,
-  type Event,
-  type EventSignUp,
-  findCommitteesForCurrentUser,
+  findCommittees,
+  findCommitteesByUserId,
+  type CommitteeDetailResponse,
+  type EventResponse,
+  type EventSignUpResponse,
   findEvents,
   findEventSignUps,
   findEventSignUpsByAccessToken,
-  type Guest,
-  type Login,
+  type GuestResponse,
+  type LoginResponse,
 } from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
@@ -22,12 +23,19 @@ import EventList from "@/components/common/lists/EventList.vue"
 
 const store = useStore()
 
+type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
+type Event = EventResponse
+type EventSignUp = EventSignUpResponse
+type Login = LoginResponse
+type Guest = GuestResponse
+
 const events = ref<Event[]>([])
-const committees = ref<AdvancedCommittee[]>([])
+const committees = ref<CommitteeOption[]>([])
 const eventSignUps = ref<EventSignUp[]>([])
 const calendarRef = ref<InstanceType<typeof EventCalendar>>()
 
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const isBoard = computed<boolean>(() => store.getters.isBoard)
 const login = computed<Login | undefined>(() => store.getters.getLogin)
 const guest = computed<Guest | null>(() => store.getters.getGuestData)
 const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? null)
@@ -70,8 +78,18 @@ async function loadSignUps() {
 async function loadCommittees() {
   try {
     if (isLoggedIn.value) {
-      const resp = await findCommitteesForCurrentUser({throwOnError: true})
-      committees.value = (resp.data as AdvancedCommittee[]) ?? []
+      const resp = isBoard.value
+        ? await findCommittees({throwOnError: true})
+        : await findCommitteesByUserId({throwOnError: true})
+      committees.value = ((resp.data ?? []) as unknown[])
+        .map((committee) => {
+          const value = committee as Record<string, unknown>
+          const id = typeof value.id === "number" ? value.id : null
+          const name = typeof value.name === "string" ? value.name : null
+          if (id == null || name == null) return null
+          return {id, name}
+        })
+        .filter((committee): committee is CommitteeOption => committee != null)
     } else {
       committees.value = []
     }
@@ -156,7 +174,7 @@ const deleteSignUp = (id: number) => {
         <v-btn
           v-if="committees.length"
           block
-          to="events/create"
+          to="/events/create"
         >
           Create new event
         </v-btn>

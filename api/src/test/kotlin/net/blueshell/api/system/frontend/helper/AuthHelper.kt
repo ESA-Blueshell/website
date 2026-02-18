@@ -18,6 +18,16 @@ object AuthHelper {
                 Page.GetByRoleOptions().setName("Login")
             ).click()
         }
+
+        if (response.status() == 200) {
+            val deadline = System.currentTimeMillis() + 5_000
+            while (System.currentTimeMillis() < deadline) {
+                val hasLoginCookie = page.context().cookies().any { it.name == "login" }
+                val leftLoginPage = !page.url().contains("/login")
+                if (hasLoginCookie && leftLoginPage) break
+                Thread.sleep(100)
+            }
+        }
         return response.status()
     }
 }

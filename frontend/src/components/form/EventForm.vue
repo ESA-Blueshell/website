@@ -5,18 +5,21 @@ import {defineRule, Form} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
-import router from "@/plugins/router.ts"
 import {apply} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox, VFileInput, VSelect} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
-  type AdvancedCommittee,
+  type CommitteeDetailResponse,
   createEvent,
+  type CreateEventRequest,
   downloadEventBanner,
-  type Event,
-  type EventBanner,
-  findCommitteesForCurrentUser,
+  type EventBannerRequest,
+  findCommittees,
+  findCommitteesByUserId,
+  type QuestionRequest,
+  type SurveyRequest,
+  type UpdateEventRequest,
   updateEvent,
   uploadEventBanner,
 } from "@/services/api"
@@ -28,7 +31,17 @@ const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
 }>()
 
-const event = defineModel<Event>({
+type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
+type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpForm"> & {
+  committeeId?: number;
+  id?: number;
+  version?: number;
+  banner?: EventBannerRequest;
+  signUpForm?: SurveyRequest;
+  signUpCount?: number;
+}
+
+const event = defineModel<EventModel>({
   default: () => ({
     id: undefined,
     title: "",
@@ -45,11 +58,28 @@ const event = defineModel<Event>({
     committeeId: undefined,
   }),
 })
+if (!event.value) {
+  event.value = {
+    id: undefined,
+    title: "",
+    location: "",
+    description: "",
+    startTime: DateTime.now().plus({days: 1}).toISO(),
+    endTime: DateTime.now().plus({days: 1, hours: 3}).toISO(),
+    memberPrice: 0,
+    publicPrice: 0,
+    approved: false,
+    membersOnly: false,
+    signUp: false,
+    banner: undefined,
+    committeeId: undefined,
+  }
+}
 
 const store = useStore()
 const isBoard = computed<boolean>(() => store.getters.isBoard)
 
-const committees = ref<AdvancedCommittee[]>([])
+const committees = ref<CommitteeOption[]>([])
 const sameEndDate = ref(true)
 const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
@@ -99,13 +129,13 @@ async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
   try {
     const resp = await downloadEventBanner({
-      path: {bannerId: event.value.banner.id!},
+      path: {eventId: event.value.id},
       throwOnError: true,
       responseType: "blob",
     })
     const blob = resp?.data as Blob
     if (!blob) return
-    bannerFile.value = new File([blob], event.value.banner.file.name!, {
+    bannerFile.value = new File([blob], `event-banner-${event.value.id}`, {
       type: blob.type || "application/octet-stream",
       lastModified: Date.now(),
     })
@@ -126,8 +156,20 @@ async function onBannerChange(val: File | null, handleChange: (v: File | null) =
 }
 
 async function fetchCommittees() {
-  const resp = await findCommitteesForCurrentUser()
-  if (resp.status === 200) committees.value = (resp.data ?? []) as AdvancedCommittee[]
+  const resp = isBoard.value
+    ? await findCommittees()
+    : await findCommitteesByUserId()
+  if (resp.status === 200) {
+    committees.value = ((resp.data ?? []) as unknown[])
+      .map((committee) => {
+        const value = committee as Record<string, unknown>
+        const id = typeof value.id === "number" ? value.id : null
+        const name = typeof value.name === "string" ? value.name : null
+        if (id == null || name == null) return null
+        return {id, name}
+      })
+      .filter((committee): committee is CommitteeOption => committee != null)
+  }
   else handleSubmitError(formRef.value, resp)
 }
 
@@ -148,8 +190,11 @@ const save = async () => {
         if (bannerFile.value) {
           const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
           if (uploadResp.status === 201) {
-            if (event.value.banner?.file.id !== uploadResp.data?.id) {
-              event.value.banner = {file: uploadResp.data!} as EventBanner
+            if (event.value.banner?.fileId !== uploadResp.data?.id) {
+              event.value.banner = {
+                fileId: uploadResp.data!.id,
+                version: event.value.banner?.version,
+              } as EventBannerRequest
             }
           } else if (!apply(formRef.value!, uploadResp)) {
             handleSubmitError(formRef.value, uploadResp)
@@ -161,14 +206,54 @@ const save = async () => {
         }
       }
 
+      const surveyRequest: SurveyRequest | undefined = event.value.signUpForm
+        ? {
+          questions: event.value.signUpForm.questions.map(
+            (question): QuestionRequest => ({
+              idx: question.idx,
+              label: question.label,
+              type: question.type,
+              choiceLabels: question.choiceLabels,
+            }),
+          ),
+        }
+        : undefined
+
+      const bodyBase: CreateEventRequest = {
+        committeeId: event.value.committeeId!,
+        title: event.value.title,
+        description: event.value.description,
+        location: event.value.location,
+        startTime: event.value.startTime,
+        endTime: event.value.endTime,
+        memberPrice: event.value.memberPrice,
+        publicPrice: event.value.publicPrice,
+        approved: event.value.approved,
+        membersOnly: event.value.membersOnly,
+        signUp: event.value.signUp,
+        banner: event.value.banner
+          ? {
+            fileId: event.value.banner.fileId,
+            version: event.value.banner.version,
+          }
+          : undefined,
+        signUpForm: surveyRequest,
+      }
+
       const resp = event.value?.id
-        ? await updateEvent({path: {id: event.value.id!}, body: event.value, throwOnError: true})
-        : await createEvent({body: event.value, throwOnError: true})
+        ? await updateEvent({
+          path: {id: event.value.id},
+          body: {
+            ...(bodyBase as UpdateEventRequest),
+            version: event.value.version!,
+          },
+          throwOnError: true,
+        })
+        : await createEvent({body: bodyBase, throwOnError: true})
 
       event.value = resp.data!
       emit("submitted", true)
       setSubmitResult(true)
-      router.back()
     })
   } catch (e: unknown) {
     handleSubmitError(formRef.value, e)

@@ -72,7 +72,7 @@
 import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {type Event, findEvents} from "@/services/api"
+import {type EventResponse, findEvents} from "@/services/api"
 import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/base/EventDetails.vue"
@@ -81,14 +81,14 @@ const GOOGLE_CALENDAR_SUBSCRIBE_URL =
   "https://calendar.google.com/calendar/u/1/r?cid=87r5v7ep7k9ronlrg8n2q9033s@group.calendar.google.com"
 
 const displayedMonth = ref<string>(DateTime.now().toISODate()!)
-const selectedEvent = ref<Event | null>(null)
+const selectedEvent = ref<EventResponse | null>(null)
 const selectedElement = ref<HTMLElement | null>(null)
 const selectedOpen = ref(false)
-const events = ref<Event[]>([])
+const events = ref<EventResponse[]>([])
 const calendarEvents = ref<CalendarEvent[]>([])
 const collectedMonths = ref<string[]>([])
 
-type CalendarEventEx = CalendarEvent & { raw: Event }
+type CalendarEventEx = CalendarEvent & { raw: EventResponse }
 
 const {current: localeCurrent} = useLocale()
 localeCurrent.value = "en"
@@ -118,19 +118,19 @@ const loadEventsForMonth = async (month: DateTime) => {
   const page = (data ?? {})
 
   if (page.content) {
-    const newEvents = page.content.filter(e => !events.value.some(e2 => e2.id === e.id))
+    const newEvents = page.content.filter((e) => !events.value.some((e2) => e2.id === e.id))
     events.value = [...events.value, ...newEvents]
   }
 }
 
 
 function deleteEvent(id: number) {
-  events.value = events.value?.filter((e: Event) => e.id !== id) ?? []
+  events.value = events.value?.filter((e: EventResponse) => e.id !== id) ?? []
 }
 
-function updateEvent(event: Event): void {
+function updateEvent(event: EventResponse): void {
   const list = events.value
-  const idx = list.findIndex(e => e.id === event.id)
+  const idx = list.findIndex((e) => e.id === event.id)
   if (idx >= 0) {
     events.value = [
       ...list.slice(0, idx),
@@ -147,7 +147,7 @@ watch(displayedMonth, (d: string) => {
   loadEventsForMonth(first)
 })
 
-watch(events, (list: Event[]) => {
+watch(events, (list: EventResponse[]) => {
   calendarEvents.value = list
     .map((e): CalendarEventEx => {
       const start = DateTime.fromISO(e.startTime).toJSDate()!

@@ -8,6 +8,8 @@ import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.CommitteeFormHelper
+import net.blueshell.api.system.frontend.helper.CommitteeManagerHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -35,26 +37,18 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
-            openCommitteeManager(page)
-            page.getByText("Create new committee", Page.GetByTextOptions().setExact(false)).first().click()
+            CommitteeManagerHelper.open(page, frontendUrl)
+            CommitteeManagerHelper.openCreateForm(page)
 
-            page.getByLabel("Committee name").fill(committeeName)
-            page.getByLabel("Description").fill("Committee focused on testing management flows end-to-end.")
-            page.getByLabel("Role").fill("Chair")
-            page.getByRole(
-                AriaRole.COMBOBOX,
-                Page.GetByRoleOptions().setName("Member name").setExact(false)
-            ).first().fill(member.fullName)
-            page.getByRole(
-                AriaRole.COMBOBOX,
-                Page.GetByRoleOptions().setName("Member name").setExact(false)
-            ).first().press("Enter")
+            CommitteeFormHelper.fillCommittee(
+                page,
+                committeeName,
+                "Committee focused on testing management flows end-to-end."
+            )
+            CommitteeFormHelper.addMember(page, role = "Chair", fullName = member.fullName)
 
             val response = page.waitForResponse("**/committees") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Submit").setExact(false)
-                ).click()
+                CommitteeFormHelper.submit(page)
             }
             assertThat(response.status()).isEqualTo(201)
         }
@@ -83,7 +77,7 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
-            openCommitteeManager(page)
+            CommitteeManagerHelper.open(page, frontendUrl)
             waitFor(
                 onTimeoutMessage = { "Expected committee '${committee.name}' to be visible before deletion" }
             ) {
@@ -133,7 +127,7 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
-            openCommitteeManager(page)
+            CommitteeManagerHelper.open(page, frontendUrl)
             waitFor(
                 onTimeoutMessage = { "Expected committee '${committee.name}' to be visible before editing" }
             ) {
@@ -142,7 +136,7 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
 
             page.locator("button:has(i.mdi-pencil)").first().click()
 
-            page.locator(".my-3 button:has(i.mdi-close)").first().click()
+            CommitteeFormHelper.removeFirstMember(page)
             waitFor(
                 onTimeoutMessage = { "Expected existing committee member row to be removed before adding replacement" }
             ) {
@@ -152,26 +146,10 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
                 ).count() == 0
             }
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Add member").setExact(false)
-            ).first().click()
-
-            page.getByLabel("Role").first().fill("Secretary")
-            page.getByRole(
-                AriaRole.COMBOBOX,
-                Page.GetByRoleOptions().setName("Member name").setExact(false)
-            ).first().fill(addedMember.fullName)
-            page.getByRole(
-                AriaRole.COMBOBOX,
-                Page.GetByRoleOptions().setName("Member name").setExact(false)
-            ).first().press("Enter")
+            CommitteeFormHelper.addMember(page, role = "Secretary", fullName = addedMember.fullName)
 
             val response = page.waitForResponse("**/committees/$committeeId") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Submit").setExact(false)
-                ).click()
+                CommitteeFormHelper.submit(page)
             }
             assertThat(response.status())
                 .withFailMessage("Expected update to succeed but got %s, body=%s", response.status(), response.text())
@@ -217,9 +195,48 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
         assertThat(addedAfter.roles).contains(Role.COMMITTEE)
     }
 
-    private fun openCommitteeManager(page: Page) {
-        page.navigate("$frontendUrl/committees/manage")
-        page.waitForURL("**/committees/manage**")
+    @Test
+    fun `updates committee name and description`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val suffix = System.currentTimeMillis().toString().takeLast(6)
+        val committee = committeeFactory.create(
+            name = "MetaCommittee$suffix",
+            description = "Old description for metadata update test"
+        )
+        committeeFactory.createMember(committee = committee, user = member, role = "Chair")
+        val committeeId = checkNotNull(committee.id) { "Expected persisted committee id" }
+        val updatedName = "MetaCommitteeUpdated$suffix"
+        val updatedDescription = "Updated description for committee manager metadata flow."
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+            CommitteeManagerHelper.open(page, frontendUrl)
+
+            waitFor(
+                onTimeoutMessage = { "Expected committee '${committee.name}' before metadata update" }
+            ) {
+                page.getByText(committee.name, Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+
+            page.locator("button:has(i.mdi-pencil)").first().click()
+            CommitteeFormHelper.fillCommittee(page, updatedName, updatedDescription)
+
+            val response = page.waitForResponse("**/committees/$committeeId") {
+                CommitteeFormHelper.submit(page)
+            }
+            assertThat(response.status())
+                .withFailMessage("Expected committee metadata update to succeed but got %s, body=%s", response.status(), response.text())
+                .isEqualTo(200)
+        }
+
+        waitFor(
+            onTimeoutMessage = { "Expected committee metadata for id=$committeeId to be updated" }
+        ) {
+            val refreshed = committeeRepository.findById(committeeId).orElse(null)
+            refreshed != null && refreshed.name == updatedName && refreshed.description == updatedDescription
+        }
     }
 
     private companion object {

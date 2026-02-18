@@ -34,7 +34,7 @@ import java.util.function.Supplier
  * `pre…` / `post…` hook. Override these in a subclass when you need
  * extra logic (validation, auditing, events, etc.).
  */
-abstract class BaseModelService<T : Identifiable<ID>, ID, R : BaseRepository<T, ID>>(protected val repository: R) {
+abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseRepository<T, ID>>(protected val repository: R) {
     private val entityLabel: String
 
     @PersistenceContext

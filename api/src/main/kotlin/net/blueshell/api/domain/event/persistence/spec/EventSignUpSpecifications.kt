@@ -14,8 +14,8 @@ import java.time.LocalDateTime
 
 object EventSignUpSpecifications {
     private fun distinct(): Specification<EventSignUp> {
-        return Specification { root: Root<EventSignUp>, query: CriteriaQuery<*>, cb: CriteriaBuilder ->
-            query.distinct(true)
+        return Specification { _: Root<EventSignUp>, query: CriteriaQuery<*>?, cb: CriteriaBuilder ->
+            query?.distinct(true)
             cb.conjunction()
         }
     }

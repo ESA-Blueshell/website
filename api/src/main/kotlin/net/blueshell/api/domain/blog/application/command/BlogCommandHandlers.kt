@@ -34,7 +34,7 @@ class UpdateBlogHandler(
         blog.title = command.title
         blog.html = sanitizeBlogHtml(command.html)
         blog.publishedAt = command.publishedAt
-        command.version?.let { blog.version = it }
+        blog.version = command.version
         blog = service.update(blog)
         return blog
     }

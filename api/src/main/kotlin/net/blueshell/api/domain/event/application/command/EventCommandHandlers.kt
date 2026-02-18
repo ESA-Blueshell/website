@@ -59,7 +59,7 @@ class UpdateEventHandler(
         var event = service.findById(command.id)
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
         applyEventFields(event, command, isBoard, committeeService, surveyFactory, fileService)
-        command.version?.let { event.version = it }
+        event.version = command.version
         event = service.update(event)
         return event
     }

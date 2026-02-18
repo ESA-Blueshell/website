@@ -41,7 +41,7 @@ object MembershipSpecifications {
     }
 
     fun fromQuery(query: MembershipQuery, user: CurrentUser?): Specification<Membership> {
-        var spec = Specification { _: Root<Membership>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
+        var spec = Specification { _: Root<Membership>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         if (query.from != null || query.to != null) {
             spec = spec.and(timeOverlap(query.from, query.to))

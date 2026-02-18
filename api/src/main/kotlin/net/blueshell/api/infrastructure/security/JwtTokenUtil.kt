@@ -14,8 +14,8 @@ import javax.crypto.SecretKey
 
 @Component("commonJwtTokenUtil")
 class JwtTokenUtil(
-    @Value($$"${app.jwt.expiration}") private val expiration: Long,
-    @Value($$"${app.jwt.secret}") private val secret: String
+    @param:Value($$"${app.jwt.expiration}") private val expiration: Long,
+    @param:Value($$"${app.jwt.secret}") private val secret: String
 ) {
     data class JwtValidationResult(
         val username: String?,

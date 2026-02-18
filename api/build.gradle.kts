@@ -272,6 +272,24 @@ tasks.register<GenerateTask>("generateBrevoClient") {
         val overridesDestFile = overridesDestDir.resolve("TemplatePreviewRequestBody.kt")
         overridesDestDir.mkdirs()
         overridesSrc.copyTo(overridesDestFile, overwrite = true)
+
+        val generatedApiFiles = listOf(
+            "net/blueshell/clients/brevo/api/ContactsApi.kt",
+            "net/blueshell/clients/brevo/api/TransactionalEmailsApi.kt",
+        )
+        generatedApiFiles.forEach { relativePath ->
+            val apiFile = brevoOutputDir.get().file("src/main/kotlin/$relativePath").asFile
+            if (!apiFile.exists()) return@forEach
+
+            val content = apiFile.readText()
+            if (content.contains("\"REDUNDANT_CALL_OF_CONVERSION_METHOD\"")) return@forEach
+
+            val updated = content.replace(
+                "\"UnusedImport\"\n)",
+                "\"UnusedImport\",\n    \"REDUNDANT_CALL_OF_CONVERSION_METHOD\"\n)",
+            )
+            apiFile.writeText(updated)
+        }
     }
 }
 

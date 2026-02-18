@@ -82,7 +82,7 @@ class UpdateMembershipHandler(
         membership.startDate = command.startDate!!
         membership.endDate = command.endDate
         command.incasso?.let { membership.incasso = it }
-        command.version?.let { membership.version = it }
+        membership.version = command.version
         membership = service.update(membership)
         return membership
     }

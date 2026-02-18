@@ -65,7 +65,7 @@ class UpdateContributionPeriodHandler(
         contributionPeriod.fullYearFee = command.fullYearFee!!
         contributionPeriod.alumniFee = command.alumniFee!!
         contributionPeriod.listId = command.listId
-        command.version?.let { contributionPeriod.version = it }
+        contributionPeriod.version = command.version
         contributionPeriod = service.update(contributionPeriod)
         return contributionPeriod.toResult()
     }

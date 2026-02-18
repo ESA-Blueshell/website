@@ -84,7 +84,7 @@ class EventService @Autowired constructor(
         event.banner?.let { banner ->
             banner.event = event
             // Replace transient file entity with reference if it has an ID
-            banner.file?.id?.let { fileId ->
+            banner.file.id?.let { fileId ->
                 banner.id.fileId = fileId
             }
         }

@@ -6,12 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * Request body for previewing a template.
  */
 data class TemplatePreviewRequestBody(
-    @JsonProperty("templateId")
+    @field:JsonProperty("templateId")
     var templateId: kotlin.Long,
 
-    @JsonProperty("email")
+    @field:JsonProperty("email")
     var email: kotlin.String? = null,
 
-    @JsonProperty("params")
+    @field:JsonProperty("params")
     var params: kotlin.collections.MutableMap<kotlin.String, kotlin.Any?>? = null
 )

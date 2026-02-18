@@ -117,7 +117,7 @@ object EventSpecifications {
     }
 
     fun fromFilter(f: EventQuery, user: CurrentUser?): Specification<Event> {
-        var spec = Specification { _: Root<Event>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
+        var spec = Specification { _: Root<Event>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         val from = f.from
         if (from != null) {

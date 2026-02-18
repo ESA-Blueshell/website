@@ -5,7 +5,7 @@ import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.core.GenericTypeResolver
 import org.springframework.security.core.Authentication
 
-abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID, S : BaseModelService<T, ID, *>>(protected val service: S) {
+abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID : Any, S : BaseModelService<T, ID, *>>(protected val service: S) {
     val domainType: Class<T>
 
     init {

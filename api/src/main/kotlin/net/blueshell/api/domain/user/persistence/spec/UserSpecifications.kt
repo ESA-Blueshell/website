@@ -57,7 +57,7 @@ object UserSpecifications {
 
 
     fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
-        var spec = Specification { _: Root<User>, _: CriteriaQuery<*>, cb: CriteriaBuilder -> cb.conjunction() }
+        var spec = Specification { _: Root<User>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         val isMember = query.isMember
         if (isMember != null) {

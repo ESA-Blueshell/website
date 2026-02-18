@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 @Component
 class JwtTokenGenerator(
     private val jwtTokenUtil: JwtTokenUtil,
-    @Value($$"${app.jwt.expiration}") override val expirationMs: Long
+    @param:Value($$"${app.jwt.expiration}") override val expirationMs: Long
 ) : TokenGenerator {
 
     override fun generateToken(username: String): String {

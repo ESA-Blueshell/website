@@ -19,9 +19,9 @@ import org.springframework.web.client.RestClientResponseException
 @Component
 class BrevoContactClient(
     private val restClientBuilder: RestClient.Builder,
-    @Value("\${brevo.apiKey}") private val apiKey: String,
-    @Value("\${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
-    @Value("\${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long
+    @param:Value("\${brevo.apiKey}") private val apiKey: String,
+    @param:Value("\${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
+    @param:Value("\${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long
 ) {
     private val contactsApi: ContactsApi
         get() {

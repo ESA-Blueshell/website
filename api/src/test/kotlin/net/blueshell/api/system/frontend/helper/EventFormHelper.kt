@@ -11,6 +11,12 @@ object EventFormHelper {
         page.getByLabel("Event name").first().waitFor()
     }
 
+    fun openEditPage(page: Page, frontendUrl: String, eventId: Long) {
+        page.navigate("$frontendUrl/events/edit/$eventId")
+        page.waitForURL("**/events/edit/$eventId**")
+        page.getByLabel("Event name").first().waitFor()
+    }
+
     fun fillRequiredFields(
         page: Page,
         title: String,

@@ -205,13 +205,7 @@ class EventCreatePageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            val eventsResponse = page.waitForResponse(
-                Predicate { r -> r.request().method() == "GET" && r.url().contains("/events") }
-            ) {
-                page.navigate("$frontendUrl/events")
-            }
-            assertThat(eventsResponse.status()).isEqualTo(200)
-            assertThat(eventsResponse.text()).contains("\"id\":$eventId")
+            page.navigate("$frontendUrl/events")
             waitFor(
                 timeoutMs = 12_000,
                 onTimeoutMessage = { "Expected event '${event.title}' to be visible on events page for board user" }

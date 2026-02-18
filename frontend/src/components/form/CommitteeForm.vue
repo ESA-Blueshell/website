@@ -52,7 +52,12 @@ const committee = defineModel<CommitteeModel>({
     ({
       name: "",
       description: "",
-      members: [getDefaultMember()],
+      members: [
+        {
+          role: "",
+          userId: 0,
+        },
+      ],
     } as CommitteeModel),
 })
 

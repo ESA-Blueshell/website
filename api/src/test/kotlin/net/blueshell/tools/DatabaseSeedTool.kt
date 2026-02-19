@@ -2,12 +2,21 @@ package net.blueshell.tools
 
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.factory.board.persistence.BoardFactory
 import net.blueshell.api.factory.committee.persistence.CommitteeFactory
+import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.event.persistence.EventFactory
+import net.blueshell.api.factory.file.persistence.FileFactory
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.factory.user.persistence.UserFactory
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.getBean
@@ -20,6 +29,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 private val log = LoggerFactory.getLogger("DatabaseSeedTool")
@@ -55,8 +65,10 @@ fun main(args: Array<String>) {
         val seeder = DatabaseSeedRunner(
             userFactory = it.getBean<UserFactory>(),
             committeeFactory = it.getBean<CommitteeFactory>(),
+            contributionFactory = it.getBean<ContributionFactory>(),
             boardFactory = it.getBean<BoardFactory>(),
             eventFactory = it.getBean<EventFactory>(),
+            fileFactory = it.getBean<FileFactory>(),
             persistence = it.getBean<FactoryPersistenceSupport>(),
             passwordEncoder = it.getBean<PasswordEncoder>(),
         )
@@ -83,8 +95,10 @@ private fun applySeederSystemProperties(requestedProfile: String?) {
 private class DatabaseSeedRunner(
     private val userFactory: UserFactory,
     private val committeeFactory: CommitteeFactory,
+    private val contributionFactory: ContributionFactory,
     private val boardFactory: BoardFactory,
     private val eventFactory: EventFactory,
+    private val fileFactory: FileFactory,
     private val persistence: FactoryPersistenceSupport,
     private val passwordEncoder: PasswordEncoder,
 ) {
@@ -131,10 +145,17 @@ private class DatabaseSeedRunner(
             defaultPassword = config.users.defaultPassword,
         )
         val configuredUsers = createConfiguredUsers(config.users)
+        val allUsers = (members + committeeMembers + guests + boardMembers + admins + configuredUsers).distinctBy { it.id }
+        val nonGuestUsers = allUsers.filterNot { it.hasRole(Role.GUEST) }
 
         seedCommitteeMemberships(committees, committeeMembers)
         seedBoard(config, boardMembers, admins)
-        val seededEvents = seedEvents(config.events, committees, random)
+        val eventSummary = seedEvents(config.events, committees, nonGuestUsers, random)
+        val contributionSummary = seedMembershipAndContributionData(
+            config = config.contributions,
+            membershipCandidates = nonGuestUsers,
+            random = random,
+        )
 
         return SeedSummary(
             members = members.size,
@@ -144,7 +165,16 @@ private class DatabaseSeedRunner(
             admins = admins.size,
             configuredUsers = configuredUsers.size,
             committees = committees.size,
-            events = seededEvents,
+            events = eventSummary.seededEvents,
+            eventsWithSignUpForms = eventSummary.withSignUpForms,
+            eventsWithBanners = eventSummary.withBanners,
+            contributionPeriods = contributionSummary.periods,
+            activeMemberships = contributionSummary.activeMemberships,
+            pastMemberships = contributionSummary.pastMemberships,
+            neverMembers = contributionSummary.neverMembers,
+            paidPreviousYear = contributionSummary.paidPreviousYear,
+            paidCurrentYear = contributionSummary.paidCurrentYear,
+            neverPaidMembers = contributionSummary.neverPaidMembers,
         )
     }
 
@@ -245,10 +275,7 @@ private class DatabaseSeedRunner(
             user.replaceMemberProfile(memberProfile)
         }
 
-        val updated = persistence.persist(user)
-        if (includeMemberData) {
-            userFactory.createMembership(updated)
-        }
+        persistence.persist(user)
     }
 
     private fun seedCommitteeMemberships(
@@ -288,8 +315,9 @@ private class DatabaseSeedRunner(
     private fun seedEvents(
         config: EventSeedConfig,
         committees: List<Committee>,
+        bannerUploaders: List<User>,
         random: Random,
-    ): Int {
+    ): EventSeedResult {
         val now = Instant.now()
         val eventScenarios = listOf(
             EventScenario(
@@ -350,7 +378,7 @@ private class DatabaseSeedRunner(
             ),
         )
 
-        var seeded = 0
+        val persistedEvents = mutableListOf<net.blueshell.api.domain.event.persistence.Event>()
         eventScenarios.forEach { scenario ->
             repeat(scenario.count) { index ->
                 val committee = committees[random.nextInt(committees.size)]
@@ -374,11 +402,248 @@ private class DatabaseSeedRunner(
                     memberPrice = 5.0 + (index % 3)
                     publicPrice = if (membersOnly) null else 10.0 + (index % 4)
                 }
-                persistence.persist(event)
-                seeded++
+                persistedEvents += persistence.persist(event)
             }
         }
-        return seeded
+
+        val signUpCandidates = persistedEvents.filter { it.signUp }.shuffled(random)
+        val signUpFormTarget = targetCount(signUpCandidates.size, config.signUpFormRatio)
+        signUpCandidates.take(signUpFormTarget).forEach { event ->
+            event.replaceSignUpForm(buildEventSignUpForm(event.title))
+            persistence.persist(event)
+        }
+
+        val bannerCandidates = persistedEvents.shuffled(random)
+        val bannerTarget = if (bannerUploaders.isNotEmpty()) {
+            targetCount(bannerCandidates.size, config.bannerRatio)
+        } else {
+            0
+        }
+        bannerCandidates.take(bannerTarget).forEach { event ->
+            val uploader = bannerUploaders[random.nextInt(bannerUploaders.size)]
+            val file = fileFactory.create(
+                uploader = uploader,
+                name = "seed-banner-${nextSuffix()}.png",
+            )
+            eventFactory.createBanner(event, file)
+        }
+
+        return EventSeedResult(
+            seededEvents = persistedEvents.size,
+            withSignUpForms = signUpFormTarget,
+            withBanners = bannerTarget,
+        )
+    }
+
+    private fun buildEventSignUpForm(eventTitle: String): Survey {
+        val survey = Survey()
+        survey.addQuestion(
+            Question(
+                idx = 1L,
+                survey = survey,
+                type = QuestionType.DESCRIPTION,
+                label = "Sign-up info for $eventTitle",
+                choiceLabels = mutableListOf(),
+            )
+        )
+        survey.addQuestion(
+            Question(
+                idx = 2L,
+                survey = survey,
+                type = QuestionType.RADIO,
+                label = "Preferred meal option",
+                choiceLabels = mutableListOf("No preference", "Vegetarian", "Vegan"),
+            )
+        )
+        survey.addQuestion(
+            Question(
+                idx = 3L,
+                survey = survey,
+                type = QuestionType.CHECKBOX,
+                label = "Select applicable preferences",
+                choiceLabels = mutableListOf("Alcohol-free", "Lactose-free", "Wheelchair access"),
+            )
+        )
+        survey.addQuestion(
+            Question(
+                idx = 4L,
+                survey = survey,
+                type = QuestionType.OPEN,
+                label = "Anything else we should know?",
+            )
+        )
+        return survey
+    }
+
+    private fun seedMembershipAndContributionData(
+        config: ContributionSeedConfig,
+        membershipCandidates: List<User>,
+        random: Random,
+    ): ContributionSeedResult {
+        val currentYear = LocalDate.now().year
+        val periodShift = (runTag % 17).toInt()
+        val previousPeriod = createContributionPeriodWithRetry(
+            baseStart = LocalDate.of(currentYear - 1, 1, 1).plusDays(periodShift.toLong()),
+            baseEnd = LocalDate.of(currentYear - 1, 12, 31).minusDays(periodShift.toLong()),
+        )
+        val currentPeriod = createContributionPeriodWithRetry(
+            baseStart = LocalDate.of(currentYear, 1, 1).plusDays(periodShift.toLong()),
+            baseEnd = LocalDate.of(currentYear, 12, 31).minusDays(periodShift.toLong()),
+        )
+
+        val candidates = membershipCandidates.distinctBy { it.id }.shuffled(random).toMutableList()
+        if (candidates.isEmpty()) {
+            return ContributionSeedResult(
+                periods = 2,
+                activeMemberships = 0,
+                pastMemberships = 0,
+                neverMembers = 0,
+                paidPreviousYear = 0,
+                paidCurrentYear = 0,
+                neverPaidMembers = 0,
+            )
+        }
+
+        var activeTarget = targetCount(candidates.size, config.activeMemberRatio)
+        var pastTarget = targetCount(candidates.size, config.pastMemberRatio)
+        if (candidates.size >= 2 && pastTarget == 0) {
+            pastTarget = 1
+        }
+        if (candidates.size >= 2 && activeTarget == 0) {
+            activeTarget = 1
+        }
+        if (activeTarget + pastTarget > candidates.size) {
+            val overflow = activeTarget + pastTarget - candidates.size
+            if (pastTarget > activeTarget) {
+                pastTarget = max(0, pastTarget - overflow)
+            } else {
+                activeTarget = max(0, activeTarget - overflow)
+            }
+        }
+        if (candidates.size >= 3 && activeTarget + pastTarget >= candidates.size) {
+            if (pastTarget > 1) {
+                pastTarget -= 1
+            } else if (activeTarget > 1) {
+                activeTarget -= 1
+            }
+        }
+
+        val activeMembers = candidates.take(activeTarget)
+        val pastMembers = candidates.drop(activeTarget).take(pastTarget)
+        val neverMembers = candidates.drop(activeTarget + pastTarget)
+
+        activeMembers.forEach { user ->
+            persistence.persist(
+                Membership(
+                    user = user,
+                    startDate = currentPeriod.startDate.minusMonths(2),
+                    endDate = null,
+                    memberType = MemberType.REGULAR,
+                    incasso = true,
+                )
+            )
+        }
+        pastMembers.forEachIndexed { index, user ->
+            persistence.persist(
+                Membership(
+                    user = user,
+                    startDate = previousPeriod.startDate.minusMonths(2),
+                    endDate = previousPeriod.endDate.minusDays((index % 30 + 1).toLong()),
+                    memberType = MemberType.REGULAR,
+                    incasso = index % 2 == 0,
+                )
+            )
+        }
+
+        val membersWithMembership = (activeMembers + pastMembers).shuffled(random)
+        if (membersWithMembership.isEmpty()) {
+            return ContributionSeedResult(
+                periods = 2,
+                activeMemberships = activeMembers.size,
+                pastMemberships = pastMembers.size,
+                neverMembers = neverMembers.size,
+                paidPreviousYear = 0,
+                paidCurrentYear = 0,
+                neverPaidMembers = 0,
+            )
+        }
+
+        var previousPaidTarget = targetCount(membersWithMembership.size, config.previousYearPaidRatio)
+        var currentPaidTarget = targetCount(membersWithMembership.size, config.currentYearPaidRatio)
+        if (membersWithMembership.size >= 2 && previousPaidTarget == 0) previousPaidTarget = 1
+        if (membersWithMembership.size >= 2 && currentPaidTarget == 0) currentPaidTarget = 1
+        if (membersWithMembership.size >= 3) {
+            val maxPaidTotal = membersWithMembership.size - 1
+            while (previousPaidTarget + currentPaidTarget > maxPaidTotal) {
+                if (currentPaidTarget > previousPaidTarget && currentPaidTarget > 1) {
+                    currentPaidTarget -= 1
+                } else if (previousPaidTarget > 1) {
+                    previousPaidTarget -= 1
+                } else {
+                    break
+                }
+            }
+        } else if (membersWithMembership.size == 2) {
+            previousPaidTarget = 1
+            currentPaidTarget = 1
+        } else if (membersWithMembership.size == 1) {
+            previousPaidTarget = 1
+            currentPaidTarget = 0
+        }
+
+        val previousPaidMembers = membersWithMembership.take(previousPaidTarget)
+        val currentPaidMembers = membersWithMembership
+            .drop(previousPaidMembers.size)
+            .take(currentPaidTarget)
+
+        previousPaidMembers.forEach { user ->
+            persistence.persist(
+                Contribution(
+                    user = user,
+                    contributionPeriod = previousPeriod,
+                )
+            )
+        }
+        currentPaidMembers.forEach { user ->
+            persistence.persist(
+                Contribution(
+                    user = user,
+                    contributionPeriod = currentPeriod,
+                )
+            )
+        }
+
+        return ContributionSeedResult(
+            periods = 2,
+            activeMemberships = activeMembers.size,
+            pastMemberships = pastMembers.size,
+            neverMembers = neverMembers.size,
+            paidPreviousYear = previousPaidMembers.size,
+            paidCurrentYear = currentPaidMembers.size,
+            neverPaidMembers = membersWithMembership.size - previousPaidMembers.size - currentPaidMembers.size,
+        )
+    }
+
+    private fun createContributionPeriodWithRetry(baseStart: LocalDate, baseEnd: LocalDate): ContributionPeriod {
+        var attempt = 0L
+        while (attempt < 30) {
+            val start = baseStart.plusDays(attempt)
+            val end = baseEnd.minusDays(attempt)
+            if (!end.isAfter(start)) {
+                break
+            }
+            try {
+                return contributionFactory.createPeriod(startDate = start, endDate = end)
+            } catch (_: RuntimeException) {
+                attempt += 1
+            }
+        }
+        error("Unable to seed a unique contribution period based on $baseStart..$baseEnd")
+    }
+
+    private fun targetCount(total: Int, ratio: Double): Int {
+        if (total <= 0) return 0
+        return max(1, (total * ratio).roundToInt().coerceAtMost(total))
     }
 
     private fun nextSuffix(): String {
@@ -395,6 +660,22 @@ private data class EventScenario(
     val past: Boolean,
 )
 
+private data class EventSeedResult(
+    val seededEvents: Int,
+    val withSignUpForms: Int,
+    val withBanners: Int,
+)
+
+private data class ContributionSeedResult(
+    val periods: Int,
+    val activeMemberships: Int,
+    val pastMemberships: Int,
+    val neverMembers: Int,
+    val paidPreviousYear: Int,
+    val paidCurrentYear: Int,
+    val neverPaidMembers: Int,
+)
+
 private data class SeedSummary(
     val members: Int,
     val committeeMembers: Int,
@@ -404,6 +685,15 @@ private data class SeedSummary(
     val configuredUsers: Int,
     val committees: Int,
     val events: Int,
+    val eventsWithSignUpForms: Int,
+    val eventsWithBanners: Int,
+    val contributionPeriods: Int,
+    val activeMemberships: Int,
+    val pastMemberships: Int,
+    val neverMembers: Int,
+    val paidPreviousYear: Int,
+    val paidCurrentYear: Int,
+    val neverPaidMembers: Int,
 )
 
 private data class SeedParsedArgs(
@@ -483,6 +773,7 @@ private data class SeederConfig(
     val users: UserSeedConfig = UserSeedConfig(),
     val organization: OrganizationSeedConfig = OrganizationSeedConfig(),
     val events: EventSeedConfig = EventSeedConfig(),
+    val contributions: ContributionSeedConfig = ContributionSeedConfig(),
     val randomSeed: Long = 42L,
 ) {
     fun normalized(): SeederConfig {
@@ -490,6 +781,7 @@ private data class SeederConfig(
             users = users.normalized(),
             organization = organization.normalized(),
             events = events.normalized(),
+            contributions = contributions.normalized(),
             randomSeed = randomSeed,
         )
     }
@@ -499,6 +791,7 @@ private data class SeederConfig(
             val usersRaw = raw.child("users")
             val organizationRaw = raw.child("organization")
             val eventsRaw = raw.child("events")
+            val contributionsRaw = raw.child("contributions")
 
             return SeederConfig(
                 users = UserSeedConfig(
@@ -566,6 +859,32 @@ private data class SeederConfig(
                         default = EventSeedConfig().futureUnapprovedMembersOnly,
                         "futureUnapprovedMembersOnly"
                     ),
+                    signUpFormRatio = eventsRaw.double(
+                        default = EventSeedConfig().signUpFormRatio,
+                        "signUpFormRatio"
+                    ),
+                    bannerRatio = eventsRaw.double(
+                        default = EventSeedConfig().bannerRatio,
+                        "bannerRatio"
+                    ),
+                ),
+                contributions = ContributionSeedConfig(
+                    activeMemberRatio = contributionsRaw.double(
+                        default = ContributionSeedConfig().activeMemberRatio,
+                        "activeMemberRatio"
+                    ),
+                    pastMemberRatio = contributionsRaw.double(
+                        default = ContributionSeedConfig().pastMemberRatio,
+                        "pastMemberRatio"
+                    ),
+                    previousYearPaidRatio = contributionsRaw.double(
+                        default = ContributionSeedConfig().previousYearPaidRatio,
+                        "previousYearPaidRatio"
+                    ),
+                    currentYearPaidRatio = contributionsRaw.double(
+                        default = ContributionSeedConfig().currentYearPaidRatio,
+                        "currentYearPaidRatio"
+                    ),
                 ),
                 randomSeed = raw.long(default = 42L, "randomSeed"),
             )
@@ -632,6 +951,8 @@ private data class EventSeedConfig(
     val futureApprovedMembersOnly: Int = 2,
     val futureUnapprovedPublic: Int = 2,
     val futureUnapprovedMembersOnly: Int = 2,
+    val signUpFormRatio: Double = 0.45,
+    val bannerRatio: Double = 0.35,
 ) {
     fun normalized(): EventSeedConfig {
         return copy(
@@ -644,6 +965,24 @@ private data class EventSeedConfig(
             futureApprovedMembersOnly = max(1, futureApprovedMembersOnly),
             futureUnapprovedPublic = max(1, futureUnapprovedPublic),
             futureUnapprovedMembersOnly = max(1, futureUnapprovedMembersOnly),
+            signUpFormRatio = signUpFormRatio.clampRatio(),
+            bannerRatio = bannerRatio.clampRatio(),
+        )
+    }
+}
+
+private data class ContributionSeedConfig(
+    val activeMemberRatio: Double = 0.5,
+    val pastMemberRatio: Double = 0.3,
+    val previousYearPaidRatio: Double = 0.4,
+    val currentYearPaidRatio: Double = 0.35,
+) {
+    fun normalized(): ContributionSeedConfig {
+        return copy(
+            activeMemberRatio = activeMemberRatio.clampRatio(),
+            pastMemberRatio = pastMemberRatio.clampRatio(),
+            previousYearPaidRatio = previousYearPaidRatio.clampRatio(),
+            currentYearPaidRatio = currentYearPaidRatio.clampRatio(),
         )
     }
 }
@@ -680,10 +1019,21 @@ private fun Map<String, Any?>.long(default: Long, vararg keys: String): Long {
     }
 }
 
+private fun Map<String, Any?>.double(default: Double, vararg keys: String): Double {
+    val value = firstPresent(keys) ?: return default
+    return when (value) {
+        is Number -> value.toDouble()
+        is String -> value.toDoubleOrNull() ?: default
+        else -> default
+    }
+}
+
 private fun Map<String, Any?>.string(default: String, vararg keys: String): String {
     val value = firstPresent(keys) ?: return default
     return value.toString().takeIf { it.isNotBlank() } ?: default
 }
+
+private fun Double.clampRatio(): Double = coerceIn(0.0, 1.0)
 
 private fun Map<String, Any?>.stringOrNull(vararg keys: String): String? {
     val value = firstPresent(keys) ?: return null

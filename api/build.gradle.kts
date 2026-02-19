@@ -312,19 +312,19 @@ tasks.register<JavaExec>("classDependencyGraph") {
     )
 }
 
-tasks.register<JavaExec>("seedTestDatabase") {
+tasks.register<JavaExec>("seed") {
     description = "Seeds the currently configured database using factories and YAML configuration."
     group = "application"
     dependsOn(tasks.named("testClasses"))
     mainClass.set("net.blueshell.tools.DatabaseSeedToolKt")
     classpath = sourceSets["test"].runtimeClasspath
 
-    val seedConfigPath = findProperty("seedConfig")?.toString()
+    val seedConfigPath = findProperty("config")?.toString()
     if (!seedConfigPath.isNullOrBlank()) {
         args("--config", seedConfigPath)
     }
 
-    val seedProfile = findProperty("seedProfile")?.toString()
+    val seedProfile = findProperty("profile")?.toString()
     if (!seedProfile.isNullOrBlank()) {
         args("--profile", seedProfile)
     }

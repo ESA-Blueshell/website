@@ -31,5 +31,13 @@ events:
   futureApprovedMembersOnly: 2
   futureUnapprovedPublic: 2
   futureUnapprovedMembersOnly: 2
+  signUpFormRatio: 0.45
+  bannerRatio: 0.35
+
+contributions:
+  activeMemberRatio: 0.50
+  pastMemberRatio: 0.30
+  previousYearPaidRatio: 0.40
+  currentYearPaidRatio: 0.35
 
 randomSeed: 42

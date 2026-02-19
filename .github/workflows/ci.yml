@@ -437,6 +437,7 @@ jobs:
           test -n "$JACOCO_SYSTEM_XML"
           test -n "$FRONTEND_COVERAGE_JSON"
 
+          chmod +x ./scripts/merge-coverage.sh 
           ./scripts/merge-coverage.sh \
             --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
             --frontend-json "${FRONTEND_COVERAGE_JSON}" \
@@ -444,6 +445,7 @@ jobs:
 
       - name: Enforce merged coverage threshold
         run: |
+          chmod +x ./scripts/check-cobertura-threshold.sh 
           ./scripts/check-cobertura-threshold.sh \
             --file coverage/merged/Cobertura.xml \
             --min-line-rate "${COVERAGE_MIN_LINE_RATE}"

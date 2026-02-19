@@ -50,14 +50,31 @@ class JobExecutionService(
         execution.status = JobExecutionStatus.SUCCESS
         execution.finishedAt = Instant.now()
         execution.errorMessage = null
+        execution.errorType = null
+        execution.errorReason = null
         return super.update(execution)
     }
 
     @Transactional
-    fun markFailed(execution: JobExecution, error: String): JobExecution {
+    fun markFailed(execution: JobExecution, errorType: String, errorReason: String): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
-        execution.errorMessage = error
+        execution.errorType = errorType
+        execution.errorReason = errorReason
+        execution.errorMessage = "$errorType: $errorReason"
+        return super.update(execution)
+    }
+
+    @Transactional
+    fun markRetryQueued(execution: JobExecution, errorType: String, errorReason: String): JobExecution {
+        execution.status = JobExecutionStatus.QUEUED
+        execution.queuedAt = Instant.now()
+        execution.startedAt = null
+        execution.finishedAt = null
+        execution.errorType = errorType
+        execution.errorReason = errorReason
+        execution.errorMessage = "$errorType: $errorReason"
+        execution.attempts += 1
         return super.update(execution)
     }
 
@@ -68,6 +85,8 @@ class JobExecutionService(
         execution.startedAt = null
         execution.finishedAt = null
         execution.errorMessage = null
+        execution.errorType = null
+        execution.errorReason = null
         execution.attempts += 1
         return super.update(execution)
     }

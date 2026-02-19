@@ -38,6 +38,13 @@ class JobExecution(
     @Column(name = "error_message")
     var errorMessage: String? = null,
 
+    @Column(name = "error_type")
+    var errorType: String? = null,
+
+    @Lob
+    @Column(name = "error_reason")
+    var errorReason: String? = null,
+
     @Column(nullable = false)
     var attempts: Int = 0,
 

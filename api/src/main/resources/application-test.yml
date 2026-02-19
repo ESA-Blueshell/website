@@ -57,3 +57,9 @@ logging:
     # If you use Testcontainers
     org.testcontainers: WARN
     com.github.dockerjava: WARN
+
+app:
+  jobs:
+    max-retries: 3
+    initial-backoff-millis: 1
+    backoff-multiplier: 2.0

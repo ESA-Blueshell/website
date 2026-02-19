@@ -6,5 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class JobQueueProperties(
     val queueName: String = "jobs.queue",
     val exchangeName: String = "jobs.exchange",
-    val routingKey: String = "jobs.routing"
+    val routingKey: String = "jobs.routing",
+    val maxRetries: Int = 3,
+    val initialBackoffMillis: Long = 1000,
+    val backoffMultiplier: Double = 2.0
 )

@@ -21,6 +21,8 @@ data class JobExecutionDTO(
 
     val payload: String?,
     val errorMessage: String?,
+    val errorType: String?,
+    val errorReason: String?,
 
     @field:NotNull
     var attempts: Int?,

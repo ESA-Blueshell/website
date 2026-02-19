@@ -403,6 +403,8 @@ export type JobExecution = {
     attempts: number;
     createdAt?: string;
     errorMessage?: string;
+    errorReason?: string;
+    errorType?: string;
     finishedAt?: string;
     id?: number;
     initiatedByRole?: Role;

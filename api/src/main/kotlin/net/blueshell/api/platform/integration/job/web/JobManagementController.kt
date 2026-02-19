@@ -36,6 +36,8 @@ class JobManagementController(
         status = status,
         payload = payload,
         errorMessage = errorMessage,
+        errorType = errorType,
+        errorReason = errorReason,
         attempts = attempts,
         queuedAt = queuedAt,
         startedAt = startedAt,

@@ -13,6 +13,10 @@ const sortedExecutions = computed<JobExecution[]>(() => {
   return [...executions.value].sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
 })
 
+const errorReason = (execution: JobExecution): string => {
+  return execution.errorReason ?? execution.errorMessage ?? "-"
+}
+
 const refresh = async () => {
   loading.value = true
   try {
@@ -87,13 +91,14 @@ onMounted(async () => {
               <th>Started</th>
               <th>Finished</th>
               <th>Payload</th>
-              <th>Error</th>
+              <th>Error Type</th>
+              <th>Error Reason</th>
               <th />
             </tr>
           </thead>
           <tbody>
             <tr v-if="sortedExecutions.length === 0">
-              <td colspan="10">
+              <td colspan="11">
                 No job executions found.
               </td>
             </tr>
@@ -120,7 +125,10 @@ onMounted(async () => {
                 {{ execution.payload ?? "-" }}
               </td>
               <td class="cell">
-                {{ execution.errorMessage ?? "-" }}
+                {{ execution.errorType ?? "-" }}
+              </td>
+              <td class="cell">
+                {{ errorReason(execution) }}
               </td>
               <td>
                 <v-btn

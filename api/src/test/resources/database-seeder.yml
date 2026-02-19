@@ -1,0 +1,35 @@
+users:
+  defaultPassword: "Password123!"
+  members: 24
+  committeeMembers: 8
+  guestUsers: 12
+  boardMembers: 4
+  admins: 1
+  namedUsers:
+    - username: "admin"
+      role: "ADMIN"
+      includeMemberData: true
+      includeAddress: true
+    - username: "member"
+      role: "MEMBER"
+      includeMemberData: true
+      includeAddress: true
+    - username: "guest"
+
+organization:
+  committees: 4
+  boardName: "Seed Board"
+  boardCandidate: "Seed Candidate"
+
+events:
+  durationHours: 3
+  pastApprovedPublic: 2
+  pastApprovedMembersOnly: 2
+  pastUnapprovedPublic: 2
+  pastUnapprovedMembersOnly: 2
+  futureApprovedPublic: 2
+  futureApprovedMembersOnly: 2
+  futureUnapprovedPublic: 2
+  futureUnapprovedMembersOnly: 2
+
+randomSeed: 42

@@ -312,6 +312,19 @@ tasks.register<JavaExec>("classDependencyGraph") {
     )
 }
 
+tasks.register<JavaExec>("seedTestDatabase") {
+    description = "Seeds the test database using test factories and YAML configuration."
+    group = "application"
+    dependsOn(tasks.named("testClasses"))
+    mainClass.set("net.blueshell.tools.DatabaseSeedToolKt")
+    classpath = sourceSets["test"].runtimeClasspath
+
+    val seedConfigPath = findProperty("seedConfig")?.toString()
+    if (!seedConfigPath.isNullOrBlank()) {
+        args("--config", seedConfigPath)
+    }
+}
+
 tasks.named<JavaCompile>("compileJava") {
     options.annotationProcessorPath = configurations.annotationProcessor.get()
 }

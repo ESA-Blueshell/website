@@ -7,7 +7,7 @@ import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.options.AriaRole
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TruncateTestDatabaseListener
+import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.system.frontend.helper.UserFormHelper
@@ -25,7 +25,7 @@ import java.util.*
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestExecutionListeners(
-    listeners = [TruncateTestDatabaseListener::class],
+    listeners = [TestCleanUpListener::class],
     mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
 )
 @SpringBootTest(

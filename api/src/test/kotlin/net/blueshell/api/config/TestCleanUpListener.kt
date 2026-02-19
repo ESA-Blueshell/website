@@ -1,5 +1,9 @@
 package net.blueshell.api.config
 
+import net.blueshell.api.platform.config.JobQueueProperties
+import org.springframework.amqp.core.AmqpAdmin
+import org.springframework.beans.factory.getBean
+import org.springframework.beans.factory.getBeanProvider
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.jdbc.datasource.DataSourceUtils
@@ -12,7 +16,7 @@ import javax.sql.DataSource
  * Hard guards against accidental non-test schema truncation.
  */
 @Order(Ordered.HIGHEST_PRECEDENCE)
-class TruncateTestDatabaseListener : TestExecutionListener {
+class TestCleanUpListener : TestExecutionListener {
 
     override fun beforeTestMethod(testContext: TestContext) {
         val dataSource = testContext.applicationContext.getBean(DataSource::class.java)
@@ -56,6 +60,13 @@ class TruncateTestDatabaseListener : TestExecutionListener {
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource)
         }
+    }
+
+    override fun afterTestMethod(testContext: TestContext) {
+        val context = testContext.applicationContext
+        val amqpAdmin = context.getBeanProvider<AmqpAdmin>().ifAvailable ?: return
+        val queueName = context.getBean<JobQueueProperties>().queueName
+        amqpAdmin.purgeQueue(queueName, false)
     }
 
     private companion object {

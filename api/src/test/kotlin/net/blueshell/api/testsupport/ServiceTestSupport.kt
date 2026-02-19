@@ -1,7 +1,7 @@
 package net.blueshell.api.testsupport
 
 import jakarta.persistence.EntityManager
-import net.blueshell.api.config.TruncateTestDatabaseListener
+import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +29,7 @@ import org.springframework.transaction.support.TransactionTemplate
 @ActiveProfiles("test")
 @RecordApplicationEvents
 @TestExecutionListeners(
-    listeners = [TruncateTestDatabaseListener::class],
+    listeners = [TestCleanUpListener::class],
     mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
 )
 abstract class ServiceTestSupport {

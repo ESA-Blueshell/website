@@ -217,8 +217,8 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `returns 401 when unauthenticated`() {
-            val eventId = createEventFixture().id!!
+        fun `returns 401 when unauthenticated and signing up to a members only event`() {
+            val eventId = createEventFixture(membersOnly = true).id!!
 
             mvc.perform(
                 post("/events/{eventId}/signups", eventId)

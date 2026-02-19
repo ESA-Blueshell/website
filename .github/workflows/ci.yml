@@ -23,7 +23,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-  COVERAGE_MIN_LINE_RATE: "0.00"
+  COVERAGE_MIN_LINE_RATE: "0.80"
 
 permissions:
   contents: read

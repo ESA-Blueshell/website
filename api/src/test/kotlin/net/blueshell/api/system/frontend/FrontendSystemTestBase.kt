@@ -55,8 +55,8 @@ abstract class FrontendSystemTestBase {
     private lateinit var browser: Browser
     private val objectMapper = ObjectMapper()
     private val coverageArtifactsWritten = AtomicInteger(0)
-    private val frontendCoverageEnabled = System.getProperty("frontend.coverage.enabled", "false").toBoolean()
-    private val frontendCoverageRequired = System.getProperty("frontend.coverage.required", "false").toBoolean()
+    private val frontendCoverageEnabled = System.getProperty("frontend.coverage.enabled", "true").toBoolean()
+    private val frontendCoverageRequired = System.getProperty("frontend.coverage.required", "true").toBoolean()
     private val frontendCoverageRawDir = File(System.getProperty("frontend.coverage.rawDir", "build/coverage/frontend-system/raw"))
 
     @BeforeAll

@@ -253,8 +253,8 @@ val systemTest by tasks.registering(Test::class) {
     }
 
     systemProperty("frontend.coverage.rawDir", frontendCoverageRawDir.get().asFile.absolutePath)
-    systemProperty("frontend.coverage.enabled", System.getProperty("frontend.coverage.enabled", "false"))
-    systemProperty("frontend.coverage.required", System.getProperty("frontend.coverage.required", "false"))
+     systemProperty("frontend.coverage.enabled", System.getProperty("frontend.coverage.enabled", "true"))
+    systemProperty("frontend.coverage.required", System.getProperty("frontend.coverage.required", "true"))
 
     val frontendUrlOverride = System.getProperty("system.frontend.url")
     if (!frontendUrlOverride.isNullOrBlank()) {

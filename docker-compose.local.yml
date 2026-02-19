@@ -43,7 +43,7 @@ services:
       dockerfile: api/Dockerfile
     restart: unless-stopped
     env_file:
-      - ./env/.api.env.prod
+      - ./env/.api.env
     environment:
       - TZ=Europe/Amsterdam
       - APP_URL=https://localhost/api

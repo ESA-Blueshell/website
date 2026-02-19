@@ -42,11 +42,23 @@ function readCoverageFiles(rawDir) {
     throw new Error(`Raw coverage directory does not exist: ${rawDir}`)
   }
 
-  return fs
-    .readdirSync(rawDir)
-    .filter((name) => name.endsWith(".json"))
-    .sort()
-    .map((name) => path.join(rawDir, name))
+  const files = []
+  const queue = [rawDir]
+  while (queue.length > 0) {
+    const current = queue.pop()
+    for (const entry of fs.readdirSync(current, {withFileTypes: true})) {
+      const absolutePath = path.join(current, entry.name)
+      if (entry.isDirectory()) {
+        queue.push(absolutePath)
+        continue
+      }
+      if (entry.isFile() && entry.name.endsWith(".json")) {
+        files.push(absolutePath)
+      }
+    }
+  }
+
+  return files.sort()
 }
 
 function mergeCoverage(files) {
@@ -65,6 +77,57 @@ function mergeCoverage(files) {
   return coverageMap
 }
 
+function normalizeSourcePath(filePath, repoRoot) {
+  const normalized = filePath.replaceAll("\\", "/")
+  const repoRootPosix = repoRoot.replaceAll("\\", "/")
+  const frontendRootPosix = `${repoRootPosix}/frontend`
+
+  const containerPrefixes = [
+    "/usr/app/",
+    "/workspace/frontend/",
+  ]
+  for (const prefix of containerPrefixes) {
+    if (normalized.startsWith(prefix)) {
+      return `frontend/${normalized.slice(prefix.length)}`
+    }
+  }
+
+  const relativeContainerMatch = normalized.match(/^(\.\.\/)+usr\/app\/(.+)$/)
+  if (relativeContainerMatch) {
+    return `frontend/${relativeContainerMatch[2]}`
+  }
+
+  if (normalized.startsWith(`${frontendRootPosix}/`)) {
+    return `frontend/${normalized.slice(frontendRootPosix.length + 1)}`
+  }
+
+  if (normalized.startsWith("src/")) {
+    return `frontend/${normalized}`
+  }
+
+  const absolute = path.isAbsolute(filePath) ? filePath : path.resolve(filePath)
+  const relative = path.relative(repoRoot, absolute).replaceAll("\\", "/")
+  if (!relative.startsWith("..") && relative.length > 0) {
+    return relative
+  }
+
+  return normalized
+}
+
+function normalizeCoverageMapPaths(coverageMap) {
+  const cwd = process.cwd()
+  const repoRoot = path.basename(cwd) === "frontend" ? path.resolve(cwd, "..") : cwd
+  const normalizedMap = createCoverageMap({})
+
+  for (const filePath of coverageMap.files()) {
+    const json = coverageMap.fileCoverageFor(filePath).toJSON()
+    json.path = normalizeSourcePath(json.path ?? filePath, repoRoot)
+    normalizedMap.addFileCoverage(json)
+  }
+
+  return normalizedMap
+}
+
 function writeReports(coverageMap, outDir) {
   fs.mkdirSync(outDir, {recursive: true})
 
@@ -76,6 +139,7 @@ function writeReports(coverageMap, outDir) {
 
   istanbulReports.create("lcovonly", {file: "lcov.info"}).execute(context)
   istanbulReports.create("html", {subdir: "html"}).execute(context)
+  istanbulReports.create("json", {file: "coverage-final.json"}).execute(context)
   istanbulReports.create("json-summary", {file: "coverage-summary.json"}).execute(context)
 }
 
@@ -93,7 +157,8 @@ function main() {
     throw new Error(`Merged coverage map is empty. Raw files were found in: ${rawDir}`)
   }
 
-  writeReports(coverageMap, outDir)
+  const normalizedCoverageMap = normalizeCoverageMapPaths(coverageMap)
+  writeReports(normalizedCoverageMap, outDir)
   console.log(`Merged ${files.length} frontend coverage file(s) into: ${outDir}`)
 }
 

@@ -181,6 +181,17 @@ jacoco {
 
 val frontendCoverageRawDir = layout.buildDirectory.dir("coverage/frontend-system/raw")
 val jacocoExecDir = layout.buildDirectory.dir("jacoco")
+val backendCoveragePackagePath = "net/blueshell/api/**"
+val backendCoverageClassTree = files(sourceSets["main"].output.classesDirs).asFileTree.matching {
+    include(backendCoveragePackagePath)
+}
+val backendCoverageSourceDir = layout.projectDirectory.dir("src/main/kotlin/net/blueshell/api")
+
+fun JacocoReport.configureBackendCoverageLayout() {
+    classDirectories.setFrom(backendCoverageClassTree)
+    sourceDirectories.setFrom(files(backendCoverageSourceDir))
+    additionalSourceDirs.setFrom(files(backendCoverageSourceDir))
+}
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
@@ -250,6 +261,14 @@ val systemTest by tasks.registering(Test::class) {
         systemProperty("system.frontend.url", frontendUrlOverride)
     }
 
+    doFirst {
+        val rawDir = frontendCoverageRawDir.get().asFile
+        if (rawDir.exists()) {
+            rawDir.deleteRecursively()
+        }
+        rawDir.mkdirs()
+    }
+
     finalizedBy(tasks.named("jacocoSystemTestReport"))
 }
 
@@ -257,9 +276,7 @@ tasks.named<JacocoReport>("jacocoTestReport") {
     dependsOn(tasks.named("test"))
     executionData(jacocoExecDir.map { it.file("test.exec") })
 
-    classDirectories.setFrom(sourceSets["main"].output)
-    sourceDirectories.setFrom(sourceSets["main"].allSource.srcDirs)
-    additionalSourceDirs.setFrom(sourceSets["main"].allSource.srcDirs)
+    configureBackendCoverageLayout()
 
     reports {
         xml.required.set(true)
@@ -274,9 +291,7 @@ val jacocoSystemTestReport by tasks.registering(JacocoReport::class) {
     dependsOn(systemTest)
     executionData(jacocoExecDir.map { it.file("systemTest.exec") })
 
-    classDirectories.setFrom(sourceSets["main"].output)
-    sourceDirectories.setFrom(sourceSets["main"].allSource.srcDirs)
-    additionalSourceDirs.setFrom(sourceSets["main"].allSource.srcDirs)
+    configureBackendCoverageLayout()
 
     reports {
         xml.required.set(true)
@@ -294,9 +309,7 @@ val jacocoCombinedReport by tasks.registering(JacocoReport::class) {
         jacocoExecDir.map { it.file("systemTest.exec") },
     )
 
-    classDirectories.setFrom(sourceSets["main"].output)
-    sourceDirectories.setFrom(sourceSets["main"].allSource.srcDirs)
-    additionalSourceDirs.setFrom(sourceSets["main"].allSource.srcDirs)
+    configureBackendCoverageLayout()
 
     reports {
         xml.required.set(true)

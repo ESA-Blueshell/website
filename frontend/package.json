@@ -8,6 +8,7 @@
     "typecheck": "vue-tsc --noEmit",
     "dev": "vite --host",
     "coverage:system:report": "yarn node ./scripts/convert-frontend-coverage.mjs",
+    "coverage:system:merge": "yarn node ./scripts/merge-system-coverage.mjs",
     "lint": "eslint --fix",
     "preview": "tsc && vite preview",
     "gen:discord": "openapi-ts --file ./openapi-ts.discord.config.ts",

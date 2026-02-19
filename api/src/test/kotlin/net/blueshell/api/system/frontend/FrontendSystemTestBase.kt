@@ -99,10 +99,6 @@ abstract class FrontendSystemTestBase {
 
     private fun prepareCoverageOutputDir() {
         frontendCoverageRawDir.mkdirs()
-        frontendCoverageRawDir
-            .listFiles()
-            ?.filter { it.isFile && it.extension == "json" }
-            ?.forEach { it.delete() }
     }
 
     private fun captureFrontendCoverage(pages: List<Page>) {

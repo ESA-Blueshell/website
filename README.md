@@ -293,10 +293,11 @@ What this does:
 Coverage outputs:
 - API JaCoCo test XML: `api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml`
 - API JaCoCo system XML: `api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml`
+- Backend coverage scope in merged outputs: `api/src/main/kotlin/net/blueshell/api/**`
 - Frontend LCOV from API system tests: `api/build/coverage/frontend-system/lcov.info`
 - Merged HTML + Cobertura: `coverage/merged/`
 - Merged Cobertura XML: `coverage/merged/Cobertura.xml`
-- Merged LCOV: `coverage/merged/merged.lcov.info`
+- Merged LCOV: `coverage/merged/lcov.info`
 - IntelliJ: import JaCoCo XML suites for backend coverage and open `coverage/merged/index.html` for combined cross-stack coverage.
 
 Troubleshooting:

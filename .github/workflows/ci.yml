@@ -331,6 +331,7 @@ jobs:
           path: |
             api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
             api/build/reports/jacoco/jacocoSystemTestReport/html
+            api/build/coverage/frontend-system/coverage-final.json
             api/build/coverage/frontend-system/lcov.info
             api/build/coverage/frontend-system/html
             frontend-dev.log
@@ -364,21 +365,21 @@ jobs:
           node-version: '24'
           yarn-version: '4.10.3'
 
-      - name: Merge JaCoCo + LCOV into combined report
+      - name: Merge JaCoCo + frontend system coverage into combined report
         run: |
           set -euo pipefail
 
           JACOCO_TEST_XML="$(find coverage-inputs/api-test -name jacocoTestReport.xml -print -quit)"
           JACOCO_SYSTEM_XML="$(find coverage-inputs/api-system -name jacocoSystemTestReport.xml -print -quit)"
-          FRONTEND_LCOV="$(find coverage-inputs/api-system -name lcov.info -print -quit)"
+          FRONTEND_COVERAGE_JSON="$(find coverage-inputs/api-system -name coverage-final.json -print -quit)"
 
           test -n "$JACOCO_TEST_XML"
           test -n "$JACOCO_SYSTEM_XML"
-          test -n "$FRONTEND_LCOV"
+          test -n "$FRONTEND_COVERAGE_JSON"
 
           ./scripts/merge-coverage.sh \
             --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
-            --lcov "${FRONTEND_LCOV}" \
+            --frontend-json "${FRONTEND_COVERAGE_JSON}" \
             --out "coverage/merged"
 
       - name: Enforce merged coverage threshold

@@ -11,7 +11,6 @@ import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.getBean
-import org.springframework.boot.WebApplicationType
 import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.yaml.snakeyaml.Yaml
@@ -25,6 +24,11 @@ import kotlin.random.Random
 
 private val log = LoggerFactory.getLogger("DatabaseSeedTool")
 private const val DEFAULT_CONFIG_RESOURCE = "database-seeder.yml"
+private val SEEDER_SYSTEM_PROPERTIES = mapOf(
+    "server.port" to "0",
+    "management.server.port" to "0",
+)
+private const val DEFAULT_ACTIVE_PROFILE = "default"
 
 fun main(args: Array<String>) {
     val parsed = parseArgs(args)
@@ -33,11 +37,11 @@ fun main(args: Array<String>) {
         return
     }
 
+    applySeederSystemProperties(parsed.profile)
+
     val loadedConfig = loadConfig(parsed.configPath).normalized()
 
     val context = SpringApplicationBuilder(ApiApplication::class.java)
-        .profiles("test")
-        .web(WebApplicationType.NONE)
         .properties(
             "spring.main.banner-mode=off",
             "spring.main.log-startup-info=false",
@@ -59,6 +63,21 @@ fun main(args: Array<String>) {
         val summary = seeder.seed(loadedConfig)
         log.info("Database seeding completed: {}", summary)
     }
+}
+
+private fun applySeederSystemProperties(requestedProfile: String?) {
+    // Prevent the seeding process from trying to bind the API HTTP port.
+    SEEDER_SYSTEM_PROPERTIES.forEach { (key, value) ->
+        if (System.getProperty(key).isNullOrBlank()) {
+            System.setProperty(key, value)
+        }
+    }
+
+    val profile = requestedProfile?.trim().takeUnless { it.isNullOrEmpty() }
+        ?: System.getProperty("spring.profiles.active")?.trim().takeUnless { it.isNullOrEmpty() }
+        ?: System.getenv("SPRING_PROFILES_ACTIVE")?.trim().takeUnless { it.isNullOrEmpty() }
+        ?: DEFAULT_ACTIVE_PROFILE
+    System.setProperty("spring.profiles.active", profile)
 }
 
 private class DatabaseSeedRunner(
@@ -389,11 +408,13 @@ private data class SeedSummary(
 
 private data class SeedParsedArgs(
     val configPath: Path?,
+    val profile: String?,
     val showHelp: Boolean,
 )
 
 private fun parseArgs(args: Array<String>): SeedParsedArgs {
     var configPath: Path? = null
+    var profile: String? = null
     var showHelp = false
     var i = 0
 
@@ -409,9 +430,17 @@ private fun parseArgs(args: Array<String>): SeedParsedArgs {
                 i += 2
             }
 
+            "--profile" -> {
+                profile = args.getOrNull(i + 1) ?: error("Missing value for --profile")
+                i += 2
+            }
+
             else -> {
                 if (arg.startsWith("--config=")) {
                     configPath = Path.of(arg.substringAfter("="))
+                    i += 1
+                } else if (arg.startsWith("--profile=")) {
+                    profile = arg.substringAfter("=")
                     i += 1
                 } else {
                     error("Unknown argument: $arg")
@@ -420,12 +449,13 @@ private fun parseArgs(args: Array<String>): SeedParsedArgs {
         }
     }
 
-    return SeedParsedArgs(configPath = configPath, showHelp = showHelp)
+    return SeedParsedArgs(configPath = configPath, profile = profile, showHelp = showHelp)
 }
 
 private fun printUsage() {
-    println("Usage: seedTestDatabase [--config /path/to/database-seeder.yml]")
+    println("Usage: seedTestDatabase [--config /path/to/database-seeder.yml] [--profile dev]")
     println("When --config is omitted, classpath:$DEFAULT_CONFIG_RESOURCE is used.")
+    println("When --profile is omitted, spring.profiles.active / SPRING_PROFILES_ACTIVE is used, falling back to '$DEFAULT_ACTIVE_PROFILE'.")
 }
 
 private fun loadConfig(configPath: Path?): SeederConfig {

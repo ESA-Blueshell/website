@@ -14,9 +14,10 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.orm.ObjectOptimisticLockingFailureException
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.function.Predicate
+import kotlin.io.path.Path
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
@@ -32,7 +33,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     private lateinit var contributionFactory: ContributionFactory
 
     @Test
-    fun `join now opens signup and creates disabled account`() {
+    fun `join now opens membership signup page`() {
         withPage { page ->
             page.navigate("$frontendUrl/")
 
@@ -45,6 +46,46 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
 
             assertPw(page.getByText("MEMBERSHIP FORM", Page.GetByTextOptions().setExact(true))).isVisible()
             assertThat(page.url()).contains("/membership/signup")
+        }
+    }
+
+
+    @Test
+    fun `member users are redirected away from signup page`() {
+        contributionFactory.createPeriod()
+
+        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        member.replaceMemberProfile(userFactory.buildMemberProfile(member))
+        member.replaceAddress(userFactory.buildAddress(member))
+        userRepository.saveAndFlush(member)
+        userFactory.createMembership(member)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            page.navigate("$frontendUrl/membership/signup")
+
+            waitFor(
+                timeoutMs = 8_000,
+                onTimeoutMessage = { "Expected already-member flow to show snackbar message" }
+            ) {
+                page.getByText("you are already a member", Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+        }
+    }
+
+    @Test
+    fun `step 1 can create a user with personal info and continues to step 2`() {
+        withPage { page ->
+            page.navigate("$frontendUrl/membership/signup")
+
+            // Assert that we are on step=1 using playwright
+            waitFor(
+                onTimeoutMessage = { "Expected to be on step 1 of membership signup after initial navigation" }
+            ) {
+                page.url().contains("/membership/signup") && !page.url().contains("step=")
+            }
 
             val credentials = createAccountThroughUi(
                 page = page,
@@ -53,7 +94,14 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                 includeMemberProfile = true
             )
 
+            page.waitForURL("**/membership/signup?step=2")
+
+            assertThat(page.url()).contains("/membership/signup")
+            assertThat(page.url()).contains("step=2")
+
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
+            assertThat(persisted).isNotNull()
+
             assertThat(persisted.email).isEqualTo(credentials.email)
             assertThat(persisted.enabled).isFalse()
             assertThat(persisted.roles).contains(Role.GUEST)
@@ -64,7 +112,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     }
 
     @Test
-    fun `step two can resend activation email`() {
+    fun `step 2 can resend the activation email`() {
         withPage { page ->
             page.navigate("$frontendUrl/membership/signup")
 
@@ -89,7 +137,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     }
 
     @Test
-    fun `step two sign in returns to membership signup and advances to address`() {
+    fun `step 2 advances to step 3 when signing in through a separate window`() {
         withPage { page ->
             page.navigate("$frontendUrl/membership/signup")
 
@@ -100,52 +148,43 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                 includeMemberProfile = true
             )
 
-            enableUserByUsername(credentials.username)
+            page.waitForURL("**/membership/signup?step=2")
 
-            page.locator("[data-testid='membership-step2-signin']").first().click()
+            assertThat(page.url()).contains("/membership/signup")
+            assertThat(page.url()).contains("step=2")
 
-            waitFor(
-                timeoutMs = 12_000,
-                onTimeoutMessage = { "Expected to move to login flow or directly to membership step 3" }
-            ) {
-                page.url().contains("/login") || (page.url().contains("/membership/signup") && page.url().contains("step=3"))
-            }
-            if (page.url().contains("/login")) {
-                val decodedLoginUrl = URLDecoder.decode(page.url(), StandardCharsets.UTF_8)
-                assertThat(decodedLoginUrl).contains("redirect=/membership/signup?step=2")
+            val user = userRepository.findByUsername(credentials.username).get()
+            user.enabled = true
+            userRepository.saveAndFlush(user)
 
-                val authResponse = page.waitForResponse("**/auth") {
-                    page.getByLabel("Username").fill(credentials.username)
-                    page.getByRole(
-                        AriaRole.TEXTBOX,
-                        Page.GetByRoleOptions().setName("Password")
-                    ).fill(credentials.password)
-                    page.getByRole(
-                        AriaRole.BUTTON,
-                        Page.GetByRoleOptions().setName("Login")
-                    ).click()
-                }
-                assertThat(authResponse.status()).isEqualTo(200)
+            // We sign in through a separate page, after which step two should detect the authenticated session and
+            // advance to step three
+            val loginPage = page.context().newPage()
+            loginPage.use { loginPage ->
+                AuthHelper.submitLogin(loginPage, frontendUrl, credentials.username, credentials.password)
             }
 
-            waitFor(
-                timeoutMs = 12_000,
-                onTimeoutMessage = { "Expected successful login redirect to membership address step" }
-            ) {
-                page.url().contains("/membership/signup") && page.url().contains("step=3")
-            }
+            page.waitForURL("**/membership/signup?step=3")
+
+            assertThat(page.url()).contains("/membership/signup")
+            assertThat(page.url()).contains("step=3")
         }
     }
 
     @Test
-    fun `step three saves address for logged-in user`() {
+    fun `step 3 saves the address`() {
         contributionFactory.createPeriod()
 
         withPage { page ->
             val signupContext = createAndEnableMembershipSignupUser(page)
             val userId = signupContext.userId
 
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, signupContext.credentials.username, signupContext.credentials.password)
+            val loginStatus = AuthHelper.submitLogin(
+                page,
+                frontendUrl,
+                signupContext.credentials.username,
+                signupContext.credentials.password
+            )
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/membership/signup?step=3")
@@ -169,27 +208,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     }
 
     @Test
-    fun `step four completes membership with address pre-seeded after UI signup`() {
-        contributionFactory.createPeriod()
-
-        withPage { page ->
-            val signupContext = createAndEnableMembershipSignupUser(page)
-            val userId = signupContext.userId
-            seedAddress(userId)
-
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, signupContext.credentials.username, signupContext.credentials.password)
-            assertThat(loginStatus).isEqualTo(200)
-
-            page.navigate("$frontendUrl/membership/signup?step=4")
-            assertStepFourVisible(page, "Expected eligible user to access membership confirmation step")
-
-            completeMembershipAtStepFour(page)
-            assertMembershipPersisted(userId)
-        }
-    }
-
-    @Test
-    fun `step four completes membership with fully pre-seeded user`() {
+    fun `step 4 completes a membership`() {
         contributionFactory.createPeriod()
 
         val seededUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
@@ -206,38 +225,6 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
 
             completeMembershipAtStepFour(page)
             assertMembershipPersisted(persistedUser.id!!)
-        }
-    }
-
-    @Test
-    fun `already-member user is redirected away from signup with snackbar`() {
-        contributionFactory.createPeriod()
-
-        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
-        member.replaceMemberProfile(userFactory.buildMemberProfile(member))
-        member.replaceAddress(userFactory.buildAddress(member))
-        userRepository.saveAndFlush(member)
-        userFactory.createMembership(member)
-
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-
-            page.navigate("$frontendUrl/membership/signup?step=4")
-
-            waitFor(
-                timeoutMs = 8_000,
-                onTimeoutMessage = { "Expected already-member flow to show snackbar message" }
-            ) {
-                page.getByText("you are already a member", Page.GetByTextOptions().setExact(false)).count() > 0
-            }
-
-            waitFor(
-                timeoutMs = 12_000,
-                onTimeoutMessage = { "Expected already-member snackbar to remain visible long enough for user feedback" }
-            ) {
-                page.getByText("you are already a member", Page.GetByTextOptions().setExact(false)).count() > 0
-            }
         }
     }
 
@@ -294,7 +281,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
         val addressSaveResponse = page.waitForResponse(
             Predicate { response ->
                 (response.request().method() == "POST" || response.request().method() == "PUT") &&
-                    response.url().contains("/addresses")
+                        response.url().contains("/addresses")
             }
         ) {
             page.getByRole(

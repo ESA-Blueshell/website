@@ -105,21 +105,25 @@ function resolveBackendSourcePath(packageName, sourceName, repoRoot) {
   return normalizeCoveragePath(kotlinAbsolute, repoRoot)
 }
 
-function addLineHit(lineHitsByFile, filePath, lineNumber, hits) {
-  if (!lineHitsByFile.has(filePath)) {
-    lineHitsByFile.set(filePath, new Map())
+function getOrCreateFileCoverageEntry(coverageByFile, filePath) {
+  if (!coverageByFile.has(filePath)) {
+    coverageByFile.set(filePath, {
+      lineHits: new Map(),
+      branchByLine: new Map(),
+      methods: [],
+      methodSeen: new Set(),
+    })
   }
-  const lineHits = lineHitsByFile.get(filePath)
-  const existing = lineHits.get(lineNumber) ?? 0
-  lineHits.set(lineNumber, Math.max(existing, hits))
+  return coverageByFile.get(filePath)
 }
 
-function collectBackendLineHitsFromJacoco(jacocoPath, lineHitsByFile, repoRoot) {
+function collectBackendCoverageFromJacoco(jacocoPath, coverageByFile, repoRoot) {
   const xml = fs.readFileSync(jacocoPath, "utf8")
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "",
-    isArray: (name) => ["package", "sourcefile", "line"].includes(name),
+    isArray: (name) =>
+      ["package", "sourcefile", "class", "method", "counter", "line"].includes(name),
   })
   const parsed = parser.parse(xml)
   const packages = (parsed.report ?? parsed).package ?? []
@@ -128,26 +132,71 @@ function collectBackendLineHitsFromJacoco(jacocoPath, lineHitsByFile, repoRoot) 
     const packageName = pkg.name ?? ""
     if (!packageName.startsWith(BACKEND_PACKAGE_PREFIX)) continue
 
+    // Line hits and branch data from <sourcefile> elements
     for (const sourceFile of (pkg.sourcefile ?? [])) {
       const filePath = resolveBackendSourcePath(packageName, sourceFile.name ?? "", repoRoot)
+      const entry = getOrCreateFileCoverageEntry(coverageByFile, filePath)
+
       for (const line of (sourceFile.line ?? [])) {
         const lineNumber = Number.parseInt(line.nr, 10)
-        const hits = Number.parseInt(line.ci, 10) > 0 ? 1 : 0
-        if (!Number.isNaN(lineNumber)) {
-          addLineHit(lineHitsByFile, filePath, lineNumber, hits)
+        if (Number.isNaN(lineNumber)) continue
+
+        const ci = Number.parseInt(line.ci, 10)
+        const hits = ci > 0 ? 1 : 0
+        const existing = entry.lineHits.get(lineNumber) ?? 0
+        entry.lineHits.set(lineNumber, Math.max(existing, hits))
+
+        const mb = Number.parseInt(line.mb, 10) || 0
+        const cb = Number.parseInt(line.cb, 10) || 0
+        if (mb + cb > 0) {
+          const prev = entry.branchByLine.get(lineNumber)
+          if (!prev) {
+            entry.branchByLine.set(lineNumber, {covered: cb, missed: mb})
+          } else {
+            entry.branchByLine.set(lineNumber, {
+              covered: Math.max(prev.covered, cb),
+              missed: Math.max(prev.missed, mb),
+            })
+          }
+        }
+      }
+    }
+
+    // Method data from <class>/<method> elements
+    for (const cls of (pkg.class ?? [])) {
+      const sourceFileName = cls.sourcefilename ?? ""
+      if (!sourceFileName) continue
+      const filePath = resolveBackendSourcePath(packageName, sourceFileName, repoRoot)
+      const entry = getOrCreateFileCoverageEntry(coverageByFile, filePath)
+
+      for (const method of (cls.method ?? [])) {
+        const lineNumber = Number.parseInt(method.line, 10)
+        if (Number.isNaN(lineNumber)) continue
+        const methodCounter = (method.counter ?? []).find((c) => c.type === "METHOD")
+        const isCovered = methodCounter
+          ? Number.parseInt(methodCounter.covered, 10) > 0
+          : false
+        const methodKey = `${method.name ?? "?"}@${lineNumber}`
+        if (!entry.methodSeen.has(methodKey)) {
+          entry.methodSeen.add(methodKey)
+          entry.methods.push({name: method.name ?? "?", line: lineNumber, hits: isCovered ? 1 : 0})
         }
       }
     }
   }
 }
 
-function createIstanbulFileCoverage(filePath, lineHits) {
+function createIstanbulFileCoverage(filePath, entry) {
   const statementMap = {}
   const statements = {}
-  let statementId = 0
+  const branchMap = {}
+  const branchHits = {}
+  const fnMap = {}
+  const fnHits = {}
 
-  for (const [lineNumber, hits] of Array.from(lineHits.entries()).sort((a, b) => a[0] - b[0])) {
-    const id = String(statementId++)
+  let stmtId = 0
+  for (const [lineNumber, hits] of Array.from(entry.lineHits.entries()).sort((a, b) => a[0] - b[0])) {
+    const id = String(stmtId++)
     statementMap[id] = {
       start: {line: lineNumber, column: 0},
       end: {line: lineNumber, column: 0},
@@ -155,14 +204,41 @@ function createIstanbulFileCoverage(filePath, lineHits) {
     statements[id] = hits
   }
 
+  let branchId = 0
+  for (const [lineNumber, {covered, missed}] of entry.branchByLine.entries()) {
+    const id = String(branchId++)
+    const total = covered + missed
+    branchMap[id] = {
+      loc: {start: {line: lineNumber, column: 0}, end: {line: lineNumber, column: 0}},
+      type: "branch",
+      locations: Array.from({length: Math.max(2, total)}, () => ({
+        start: {line: lineNumber, column: 0},
+        end: {line: lineNumber, column: 0},
+      })),
+    }
+    // Approximate: first `covered` arms hit, remaining `missed` not hit
+    branchHits[id] = [...Array(covered).fill(1), ...Array(missed).fill(0)]
+  }
+
+  let fnId = 0
+  for (const {name, line, hits} of entry.methods) {
+    const id = String(fnId++)
+    fnMap[id] = {
+      name,
+      decl: {start: {line, column: 0}, end: {line, column: 0}},
+      loc: {start: {line, column: 0}, end: {line, column: 0}},
+    }
+    fnHits[id] = hits
+  }
+
   return {
     path: filePath,
     statementMap,
     s: statements,
-    fnMap: {},
-    f: {},
-    branchMap: {},
-    b: {},
+    fnMap,
+    f: fnHits,
+    branchMap,
+    b: branchHits,
   }
 }
 
@@ -290,13 +366,13 @@ function main() {
   const mergedCoverage = createCoverageMap({})
   mergedCoverage.merge(loadFrontendCoverage(frontendJson, repoRoot))
 
-  const lineHitsByFile = new Map()
+  const coverageByFile = new Map()
   for (const jacocoFile of jacocoFiles) {
-    collectBackendLineHitsFromJacoco(jacocoFile, lineHitsByFile, repoRoot)
+    collectBackendCoverageFromJacoco(jacocoFile, coverageByFile, repoRoot)
   }
 
-  for (const [filePath, lineHits] of lineHitsByFile.entries()) {
-    mergedCoverage.addFileCoverage(createIstanbulFileCoverage(filePath, lineHits))
+  for (const [filePath, entry] of coverageByFile.entries()) {
+    mergedCoverage.addFileCoverage(createIstanbulFileCoverage(filePath, entry))
   }
 
   const filteredCoverage = filterMergedCoverage(mergedCoverage, DEFAULT_BACKEND_PREFIX, repoRoot)

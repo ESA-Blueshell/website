@@ -287,10 +287,6 @@ class FileService @Autowired constructor(
         }
     }
 
-    fun deleteFromStorage(file: File) {
-        deleteFromStoragePath(file.path)
-    }
-
     companion object {
         private val log = LoggerFactory.getLogger(FileService::class.java)
     }

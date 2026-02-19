@@ -7,6 +7,7 @@ import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.io.Serializable
 
 @Entity
 @Table(
@@ -67,5 +68,5 @@ class Contribution(
     data class Id(
         var userId: Long? = null,
         var contributionPeriodId: Long? = null
-    ) : java.io.Serializable
+    ) : Serializable
 }

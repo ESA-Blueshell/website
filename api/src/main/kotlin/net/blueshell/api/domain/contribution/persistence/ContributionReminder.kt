@@ -11,10 +11,12 @@ import org.hibernate.annotations.SQLRestriction
 @Entity
 @Table(
     name = "contribution_reminders",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_contribution_reminders_user_period_deleted_at",
-        columnNames = ["user_id", "contribution_period_id", "deleted_at"]
-    )],
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_contribution_reminders_user_period_deleted_at",
+            columnNames = ["user_id", "contribution_period_id", "deleted_at"]
+        ),
+    ],
     indexes = [
         Index(name = "idx_contribution_reminders_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_contribution_reminders_created_at", columnList = "created_at"),

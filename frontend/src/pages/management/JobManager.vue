@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
+import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import store from "@/plugins/store"
 import {type JobExecution, list, retry as retryJob} from "@/services/api"
 
 defineOptions({name: "JobManagerPage"})
 
+const router = useRouter()
 const executions = ref<JobExecution[]>([])
 const loading = ref<boolean>(false)
 
@@ -50,6 +53,10 @@ const retry = async (execution: JobExecution) => {
 }
 
 onMounted(async () => {
+  if (!store.getters.isAdmin) {
+    await router.replace("/")
+    return
+  }
   await refresh()
 })
 </script>

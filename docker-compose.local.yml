@@ -23,9 +23,8 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    env_file:
+      - ./env/.rabbitmq.env
     networks:
       - database
     restart: unless-stopped

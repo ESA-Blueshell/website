@@ -30,9 +30,8 @@ services:
       - "15672:15672"
     networks:
       - global_network
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    env_file:
+      - ./env/.rabbitmq.env
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]

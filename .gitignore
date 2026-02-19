@@ -48,6 +48,7 @@ data
 /env/.app.env
 /env/.db.env
 /env/.api.env
+/env/.rabbitmq.env
 /env/.bot.env
 /env/.brevo.env
 /env/.google.env

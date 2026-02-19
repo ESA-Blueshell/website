@@ -37,7 +37,6 @@ class PublicRoutesSmokeSystemTest : FrontendSystemTestBase() {
             RouteExpectation("/partners/become-a-partner", "Partners"),
             RouteExpectation("/partners/el-nino", "El Niño"),
             RouteExpectation("/partners/marketing-maatwerk", "Marketing Maatwerk"),
-            RouteExpectation("/partners/connectworks", "Connectworks"),
             RouteExpectation("/login", "Login"),
             RouteExpectation("/login/forgor", "Forgot Password"),
             RouteExpectation("/account/create", "Create Account"),

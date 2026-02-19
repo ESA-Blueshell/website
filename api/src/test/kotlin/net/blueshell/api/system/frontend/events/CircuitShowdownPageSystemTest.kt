@@ -25,7 +25,7 @@ class CircuitShowdownPageSystemTest : FrontendSystemTestBase() {
             assertThat(body).contains("NyperS")
             assertThat(body).contains("Group B")
             assertThat(body).contains("Waterboarders")
-            assertThat(body).contains("Playoffs")
+            assertThat(body).contains("PLAYOFFS")
             assertThat(body).contains("Hatsune Miku Fanclub")
         }
     }

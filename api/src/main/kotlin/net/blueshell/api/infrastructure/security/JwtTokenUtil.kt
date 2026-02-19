@@ -47,15 +47,6 @@ class JwtTokenUtil(
             .payload
     }
 
-    fun isTokenExpired(token: String?): Boolean {
-        val tokenExpiration = getExpirationDateFromToken(token)
-        return tokenExpiration.before(Date())
-    }
-
-    fun generateToken(userDetails: UserPrincipal): String {
-        return generateToken(userDetails.username)
-    }
-
     fun generateToken(username: String): String {
         val claims: MutableMap<String, Any> = HashMap<String, Any>()
         return doGenerateToken(claims, username)

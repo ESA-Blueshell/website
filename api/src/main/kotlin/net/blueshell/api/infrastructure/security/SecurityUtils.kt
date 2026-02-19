@@ -13,7 +13,7 @@ object SecurityUtils {
 
     fun principalFrom(authentication: Authentication?): UserPrincipal? {
         val principal = authentication?.principal
-        return if (principal is UserPrincipal) principal else null
+        return principal as? UserPrincipal
     }
 
     fun hasAuthority(role: Role): Boolean {

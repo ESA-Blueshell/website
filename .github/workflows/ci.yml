@@ -78,6 +78,18 @@ jobs:
           --health-timeout=5s
           --health-retries=10
           --health-start-period=30s
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        ports: [ "5672:5672" ]
+        env:
+          RABBITMQ_DEFAULT_USER: "guest"
+          RABBITMQ_DEFAULT_PASS: "guest"
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
 
     env:
       MYSQL_ROOT_PASSWORD: blueshell
@@ -86,6 +98,10 @@ jobs:
       MYSQL_USER: blueshell
       MYSQL_PASSWORD: blueshell
       MYSQL_HOST: 127.0.0.1
+      RABBITMQ_HOST: 127.0.0.1
+      RABBITMQ_PORT: '5672'
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
 
       APP_URL: https://localhost/api
       FRONTEND_URL: https://localhost
@@ -145,6 +161,20 @@ jobs:
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
+
+      - name: Wait for RabbitMQ service
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            if (echo > /dev/tcp/127.0.0.1/5672) >/dev/null 2>&1; then
+              echo "RabbitMQ is ready!"
+              exit 0
+            fi
+            echo "Waiting for RabbitMQ... ($i/30)"
+            sleep 2
+          done
+          echo "RabbitMQ did not become ready in time."
+          exit 1
 
       - name: Set up Java Development Kit
         uses: actions/setup-java@v4
@@ -196,6 +226,18 @@ jobs:
           --health-timeout=5s
           --health-retries=10
           --health-start-period=30s
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        ports: [ "5672:5672" ]
+        env:
+          RABBITMQ_DEFAULT_USER: "guest"
+          RABBITMQ_DEFAULT_PASS: "guest"
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
 
     env:
       MYSQL_ROOT_PASSWORD: blueshell
@@ -204,6 +246,10 @@ jobs:
       MYSQL_USER: blueshell
       MYSQL_PASSWORD: blueshell
       MYSQL_HOST: 127.0.0.1
+      RABBITMQ_HOST: 127.0.0.1
+      RABBITMQ_PORT: '5672'
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
 
       APP_URL: https://localhost/api
       FRONTEND_URL: https://localhost
@@ -263,6 +309,20 @@ jobs:
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
           mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
+
+      - name: Wait for RabbitMQ service
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            if (echo > /dev/tcp/127.0.0.1/5672) >/dev/null 2>&1; then
+              echo "RabbitMQ is ready!"
+              exit 0
+            fi
+            echo "Waiting for RabbitMQ... ($i/30)"
+            sleep 2
+          done
+          echo "RabbitMQ did not become ready in time."
+          exit 1
 
       - name: Set up Java Development Kit
         uses: actions/setup-java@v4

@@ -56,7 +56,7 @@ jobs:
               - 'frontend/**'
 
   api-tests:
-    name: Run API tests (non-system) with JaCoCo
+    name: Run API tests
     needs: check-changes
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -203,8 +203,8 @@ jobs:
             api/build/reports/tests/test
           if-no-files-found: warn
 
-  api-system-coverage:
-    name: Run API frontend system tests with coverage
+  system-tests:
+    name: Run system tests
     needs: check-changes
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -397,9 +397,9 @@ jobs:
             frontend-dev.log
           if-no-files-found: warn
 
-  coverage-merge:
-    name: Merge backend + frontend coverage reports
-    needs: [ check-changes, api-tests, api-system-coverage ]
+  coverage:
+    name: Merge coverage reports
+    needs: [ check-changes, api-tests, system-tests ]
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -457,7 +457,7 @@ jobs:
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ check-changes, api-tests, coverage-merge ]
+    needs: [ check-changes, coverage ]
     if: needs.check-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -525,7 +525,7 @@ jobs:
 
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [ check-changes, fe-verify ]
+    needs: [ check-changes, fe-verify, coverage ]
     if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -620,7 +620,7 @@ jobs:
 
   deploy:
     name: Deploy to production
-    needs: [ check-changes, api-build-push, fe-build-push, openapi-sync, coverage-merge ]
+    needs: [ check-changes, api-build-push, fe-build-push, openapi-sync, coverage ]
     if: ${{
       always()
       && github.ref == 'refs/heads/main'

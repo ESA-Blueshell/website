@@ -69,6 +69,11 @@ class EventService @Autowired constructor(
         return repository.findAll(spec, pageable)
     }
 
+    @Transactional(readOnly = true)
+    fun findByIdIncludingDeletedOrNull(id: Long): Event? {
+        return repository.findByIdIncludingDeleted(id)
+    }
+
     private fun maybeDeleteReplacedBannerFile(previousFileId: Long?, updatedFileId: Long?) {
         if (previousFileId == null || previousFileId == updatedFileId) {
             return

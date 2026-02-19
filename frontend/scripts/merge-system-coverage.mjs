@@ -3,6 +3,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
+import {XMLParser} from "fast-xml-parser"
 import istanbulCoverage from "istanbul-lib-coverage"
 import istanbulReport from "istanbul-lib-report"
 import istanbulReports from "istanbul-reports"
@@ -18,7 +19,6 @@ function parseArgs(argv) {
     jacocoFiles: [],
     frontendJson: "",
     outDir: "",
-    backendPrefix: DEFAULT_BACKEND_PREFIX,
   }
 
   for (let i = 2; i < argv.length; i += 1) {
@@ -35,13 +35,9 @@ function parseArgs(argv) {
       options.outDir = argv[++i]
       continue
     }
-    if (arg === "--backend-prefix" && argv[i + 1]) {
-      options.backendPrefix = argv[++i]
-      continue
-    }
     if (arg === "-h" || arg === "--help") {
       console.log(
-        "Usage: merge-system-coverage.mjs --jacoco <a.xml;b.xml> --frontend-json <coverage-final.json> --out <dir> [--backend-prefix <prefix>]"
+        "Usage: merge-system-coverage.mjs --jacoco <a.xml;b.xml> --frontend-json <coverage-final.json> --out <dir>"
       )
       process.exit(0)
     }
@@ -59,6 +55,44 @@ function normalizePathToPosix(filePath) {
   return filePath.replaceAll("\\", "/")
 }
 
+function stripLeadingDotSlash(filePath) {
+  return filePath.replace(/^\.\/+/, "")
+}
+
+function toRepoRelativeFromAbsolute(absolutePath, repoRoot) {
+  const normalizedAbsolute = path.resolve(absolutePath)
+  const relativePath = normalizePathToPosix(path.relative(repoRoot, normalizedAbsolute))
+  if (!relativePath || relativePath === ".") {
+    return ""
+  }
+  if (relativePath === ".." || relativePath.startsWith("../")) {
+    return null
+  }
+  return stripLeadingDotSlash(relativePath)
+}
+
+function normalizeCoveragePath(filePath, repoRoot) {
+  const normalizedInput = normalizePathToPosix(filePath)
+
+  if (path.isAbsolute(filePath)) {
+    return toRepoRelativeFromAbsolute(filePath, repoRoot) ?? normalizedInput
+  }
+
+  const repoCandidate = path.resolve(repoRoot, normalizedInput)
+  const repoRelative = toRepoRelativeFromAbsolute(repoCandidate, repoRoot)
+  if (repoRelative) {
+    return repoRelative
+  }
+
+  const frontendCandidate = path.resolve(repoRoot, "frontend", normalizedInput)
+  const frontendRelative = toRepoRelativeFromAbsolute(frontendCandidate, repoRoot)
+  if (frontendRelative) {
+    return frontendRelative
+  }
+
+  return stripLeadingDotSlash(normalizedInput)
+}
+
 function resolveBackendSourcePath(packageName, sourceName, repoRoot) {
   const packagePath = packageName ? `${packageName}/` : ""
   const kotlinRelative = `api/src/main/kotlin/${packagePath}${sourceName}`
@@ -66,9 +100,9 @@ function resolveBackendSourcePath(packageName, sourceName, repoRoot) {
   const kotlinAbsolute = path.resolve(repoRoot, kotlinRelative)
   const javaAbsolute = path.resolve(repoRoot, javaRelative)
 
-  if (fs.existsSync(kotlinAbsolute)) return normalizePathToPosix(kotlinRelative)
-  if (fs.existsSync(javaAbsolute)) return normalizePathToPosix(javaRelative)
-  return normalizePathToPosix(kotlinRelative)
+  if (fs.existsSync(kotlinAbsolute)) return normalizeCoveragePath(kotlinAbsolute, repoRoot)
+  if (fs.existsSync(javaAbsolute)) return normalizeCoveragePath(javaAbsolute, repoRoot)
+  return normalizeCoveragePath(kotlinAbsolute, repoRoot)
 }
 
 function addLineHit(lineHitsByFile, filePath, lineNumber, hits) {
@@ -82,30 +116,23 @@ function addLineHit(lineHitsByFile, filePath, lineNumber, hits) {
 
 function collectBackendLineHitsFromJacoco(jacocoPath, lineHitsByFile, repoRoot) {
   const xml = fs.readFileSync(jacocoPath, "utf8")
-  const packageRegex = /<package name="([^"]*)">([\s\S]*?)<\/package>/g
-  const sourceFileRegex = /<sourcefile name="([^"]+)">([\s\S]*?)<\/sourcefile>/g
-  const lineRegex = /<line nr="(\d+)" mi="(\d+)" ci="(\d+)" mb="(\d+)" cb="(\d+)"\/>/g
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "",
+    isArray: (name) => ["package", "sourcefile", "line"].includes(name),
+  })
+  const parsed = parser.parse(xml)
+  const packages = (parsed.report ?? parsed).package ?? []
 
-  let packageMatch
-  while ((packageMatch = packageRegex.exec(xml)) !== null) {
-    const packageName = packageMatch[1]
-    if (!packageName.startsWith(BACKEND_PACKAGE_PREFIX)) {
-      continue
-    }
+  for (const pkg of packages) {
+    const packageName = pkg.name ?? ""
+    if (!packageName.startsWith(BACKEND_PACKAGE_PREFIX)) continue
 
-    const packageBody = packageMatch[2]
-
-    let sourceMatch
-    while ((sourceMatch = sourceFileRegex.exec(packageBody)) !== null) {
-      const sourceName = sourceMatch[1]
-      const sourceBody = sourceMatch[2]
-      const filePath = resolveBackendSourcePath(packageName, sourceName, repoRoot)
-
-      let lineMatch
-      while ((lineMatch = lineRegex.exec(sourceBody)) !== null) {
-        const lineNumber = Number.parseInt(lineMatch[1], 10)
-        const coveredInstructions = Number.parseInt(lineMatch[3], 10)
-        const hits = coveredInstructions > 0 ? 1 : 0
+    for (const sourceFile of (pkg.sourcefile ?? [])) {
+      const filePath = resolveBackendSourcePath(packageName, sourceFile.name ?? "", repoRoot)
+      for (const line of (sourceFile.line ?? [])) {
+        const lineNumber = Number.parseInt(line.nr, 10)
+        const hits = Number.parseInt(line.ci, 10) > 0 ? 1 : 0
         if (!Number.isNaN(lineNumber)) {
           addLineHit(lineHitsByFile, filePath, lineNumber, hits)
         }
@@ -139,42 +166,42 @@ function createIstanbulFileCoverage(filePath, lineHits) {
   }
 }
 
-function normalizeFrontendFilePath(filePath) {
+function normalizeFrontendFilePath(filePath, repoRoot) {
+  // coverage-final.json paths are already normalized to frontend/... by
+  // convert-frontend-coverage.mjs. Only handle: repo-relative and host-absolute.
   const normalized = normalizePathToPosix(filePath)
-
-  if (normalized.startsWith("frontend/")) {
-    return normalized
+  if (path.isAbsolute(filePath)) {
+    const repoRelative = toRepoRelativeFromAbsolute(filePath, repoRoot)
+    if (repoRelative) return repoRelative
   }
-  if (normalized.startsWith("src/")) {
-    return `frontend/${normalized}`
+  if (normalized.startsWith("frontend/") || normalized.startsWith("./frontend/")) {
+    return stripLeadingDotSlash(normalized)
   }
-  if (normalized.includes("/frontend/")) {
-    return normalized.slice(normalized.indexOf("/frontend/") + 1)
-  }
-  return normalized
+  return normalizeCoveragePath(normalized, repoRoot)
 }
 
-function loadFrontendCoverage(frontendJsonPath) {
+function loadFrontendCoverage(frontendJsonPath, repoRoot) {
   const raw = JSON.parse(fs.readFileSync(frontendJsonPath, "utf8"))
   const inputMap = createCoverageMap(raw)
   const normalizedMap = createCoverageMap({})
 
   for (const filePath of inputMap.files()) {
     const fileCoverage = inputMap.fileCoverageFor(filePath).toJSON()
-    fileCoverage.path = normalizeFrontendFilePath(fileCoverage.path ?? filePath)
+    fileCoverage.path = normalizeFrontendFilePath(fileCoverage.path ?? filePath, repoRoot)
     normalizedMap.addFileCoverage(fileCoverage)
   }
 
   return normalizedMap
 }
 
-function filterMergedCoverage(coverageMap, backendPrefix) {
-  const normalizedBackendPrefix = normalizePathToPosix(backendPrefix).replace(/\/+$/, "")
+function filterMergedCoverage(coverageMap, backendPrefix, repoRoot) {
+  const frontendPrefix = "frontend"
+  const normalizedBackendPrefix = normalizeCoveragePath(backendPrefix, repoRoot).replace(/\/+$/, "")
   const filtered = createCoverageMap({})
 
   for (const filePath of coverageMap.files()) {
-    const normalizedPath = normalizePathToPosix(filePath)
-    const isFrontend = normalizedPath.startsWith("frontend/")
+    const normalizedPath = normalizeCoveragePath(filePath, repoRoot)
+    const isFrontend = normalizedPath === frontendPrefix || normalizedPath.startsWith(`${frontendPrefix}/`)
     const isBackend = normalizedPath === normalizedBackendPrefix || normalizedPath.startsWith(`${normalizedBackendPrefix}/`)
     if (!isFrontend && !isBackend) {
       continue
@@ -188,21 +215,55 @@ function filterMergedCoverage(coverageMap, backendPrefix) {
   return filtered
 }
 
-function writeReports(coverageMap, outDir) {
+function resolveHtmlSource(filePath, repoRoot) {
+  const normalizedInput = normalizePathToPosix(filePath)
+  const normalizedCoveragePath = normalizeCoveragePath(filePath, repoRoot)
+  const candidates = []
+
+  if (path.isAbsolute(filePath)) {
+    candidates.push(path.resolve(filePath))
+  }
+  candidates.push(path.resolve(repoRoot, normalizedCoveragePath))
+  candidates.push(path.resolve(repoRoot, "frontend", normalizedInput))
+  candidates.push(path.resolve(repoRoot, normalizedInput))
+
+  const seen = new Set()
+  for (const candidate of candidates) {
+    const absoluteCandidate = path.resolve(candidate)
+    if (seen.has(absoluteCandidate)) {
+      continue
+    }
+    seen.add(absoluteCandidate)
+    if (fs.existsSync(absoluteCandidate)) {
+      return fs.readFileSync(absoluteCandidate, "utf8")
+    }
+  }
+
+  throw new Error(`Unable to lookup source: ${filePath}`)
+}
+
+function writeReports(coverageMap, outDir, repoRoot) {
   fs.rmSync(outDir, {recursive: true, force: true})
   fs.mkdirSync(outDir, {recursive: true})
 
-  const context = createContext({
+  const defaultContext = createContext({
     dir: outDir,
     coverageMap,
     defaultSummarizer: "nested",
   })
 
-  istanbulReports.create("lcovonly", {file: "lcov.info"}).execute(context)
-  istanbulReports.create("html", {subdir: "html"}).execute(context)
-  istanbulReports.create("cobertura", {file: "Cobertura.xml"}).execute(context)
-  istanbulReports.create("json", {file: "coverage-final.json"}).execute(context)
-  istanbulReports.create("json-summary", {file: "coverage-summary.json"}).execute(context)
+  const htmlContext = createContext({
+    dir: outDir,
+    coverageMap,
+    defaultSummarizer: "nested",
+    sourceFinder: (filePath) => resolveHtmlSource(filePath, repoRoot),
+  })
+
+  istanbulReports.create("lcovonly", {file: "lcov.info"}).execute(defaultContext)
+  istanbulReports.create("cobertura", {file: "Cobertura.xml"}).execute(defaultContext)
+  istanbulReports.create("json", {file: "coverage-final.json"}).execute(defaultContext)
+  istanbulReports.create("json-summary", {file: "coverage-summary.json"}).execute(defaultContext)
+  istanbulReports.create("html", {subdir: "html"}).execute(htmlContext)
 
   const htmlIndex = path.join(outDir, "html", "index.html")
   if (fs.existsSync(htmlIndex)) {
@@ -211,7 +272,7 @@ function writeReports(coverageMap, outDir) {
 }
 
 function main() {
-  const {jacocoFiles, frontendJson, outDir, backendPrefix} = parseArgs(process.argv)
+  const {jacocoFiles, frontendJson, outDir} = parseArgs(process.argv)
 
   for (const jacocoFile of jacocoFiles) {
     if (!fs.existsSync(jacocoFile)) {
@@ -227,7 +288,7 @@ function main() {
     : process.cwd()
 
   const mergedCoverage = createCoverageMap({})
-  mergedCoverage.merge(loadFrontendCoverage(frontendJson))
+  mergedCoverage.merge(loadFrontendCoverage(frontendJson, repoRoot))
 
   const lineHitsByFile = new Map()
   for (const jacocoFile of jacocoFiles) {
@@ -238,12 +299,12 @@ function main() {
     mergedCoverage.addFileCoverage(createIstanbulFileCoverage(filePath, lineHits))
   }
 
-  const filteredCoverage = filterMergedCoverage(mergedCoverage, backendPrefix)
+  const filteredCoverage = filterMergedCoverage(mergedCoverage, DEFAULT_BACKEND_PREFIX, repoRoot)
   if (filteredCoverage.files().length === 0) {
     throw new Error("Merged coverage is empty after filtering.")
   }
 
-  writeReports(filteredCoverage, outDir)
+  writeReports(filteredCoverage, outDir, repoRoot)
   console.log(
     `Merged coverage generated (${filteredCoverage.files().length} files):\n` +
       `- LCOV: ${path.join(outDir, "lcov.info")}\n` +

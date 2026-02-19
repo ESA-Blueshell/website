@@ -150,11 +150,13 @@ jobs:
           for i in {1..30}; do
             if mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SELECT 1;" >/dev/null 2>&1; then
               echo "Database is ready!"
-              break
+              exit 0
             fi
             echo "Waiting for database... ($i/30)"
             sleep 2
           done
+          echo "Database did not become ready in time."
+          exit 1
 
       - name: Prepare test database schema
         run: |
@@ -298,11 +300,13 @@ jobs:
           for i in {1..30}; do
             if mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SELECT 1;" >/dev/null 2>&1; then
               echo "Database is ready!"
-              break
+              exit 0
             fi
             echo "Waiting for database... ($i/30)"
             sleep 2
           done
+          echo "Database did not become ready in time."
+          exit 1
 
       - name: Prepare test database schema
         run: |
@@ -628,7 +632,7 @@ jobs:
       && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
       && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
       && needs.openapi-sync.result == 'success'
-      && (needs.coverage-merge.result == 'success' || needs.coverage-merge.result == 'skipped')
+      && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

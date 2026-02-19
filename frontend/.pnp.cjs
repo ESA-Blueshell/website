@@ -51,6 +51,7 @@ const RAW_RUNTIME_STATE =
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:9.39.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.5.1"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.5.3"],\
+          ["fast-xml-parser", "npm:4.5.3"],\
           ["flag-icons", "npm:7.5.0"],\
           ["globals", "npm:16.5.0"],\
           ["i18n-nationality", "npm:1.4.0"],\
@@ -2510,6 +2511,7 @@ const RAW_RUNTIME_STATE =
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:9.39.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.5.1"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.5.3"],\
+          ["fast-xml-parser", "npm:4.5.3"],\
           ["flag-icons", "npm:7.5.0"],\
           ["globals", "npm:16.5.0"],\
           ["i18n-nationality", "npm:1.4.0"],\
@@ -4038,6 +4040,16 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/fast-levenshtein-npm-2.0.6-fcd74b8df5-111972b373.zip/node_modules/fast-levenshtein/",\
         "packageDependencies": [\
           ["fast-levenshtein", "npm:2.0.6"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["fast-xml-parser", [\
+      ["npm:4.5.3", {\
+        "packageLocation": "./.yarn/cache/fast-xml-parser-npm-4.5.3-4c572a6316-bf9ccadacf.zip/node_modules/fast-xml-parser/",\
+        "packageDependencies": [\
+          ["fast-xml-parser", "npm:4.5.3"],\
+          ["strnum", "npm:1.1.2"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -6232,6 +6244,15 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/strip-json-comments-npm-3.1.1-dcb2324823-9681a6257b.zip/node_modules/strip-json-comments/",\
         "packageDependencies": [\
           ["strip-json-comments", "npm:3.1.1"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["strnum", [\
+      ["npm:1.1.2", {\
+        "packageLocation": "./.yarn/cache/strnum-npm-1.1.2-67427480d6-a0fce2498f.zip/node_modules/strnum/",\
+        "packageDependencies": [\
+          ["strnum", "npm:1.1.2"]\
         ],\
         "linkType": "HARD"\
       }]\

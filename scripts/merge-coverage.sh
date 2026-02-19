@@ -11,14 +11,12 @@ Arguments:
   --jacoco         Semicolon-separated list of JaCoCo XML paths.
   --frontend-json  Path to frontend Istanbul coverage JSON (coverage-final.json).
   --out            Output directory for merged reports.
-  --backend-prefix Backend file prefix to keep (default: api/src/main/kotlin/net/blueshell/api).
 USAGE
 }
 
 JACOCO_REPORTS=""
 FRONTEND_COVERAGE_JSON=""
 OUTPUT_DIR=""
-BACKEND_PREFIX="api/src/main/kotlin/net/blueshell/api"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,10 +30,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --out)
       OUTPUT_DIR="${2:-}"
-      shift 2
-      ;;
-    --backend-prefix)
-      BACKEND_PREFIX="${2:-}"
       shift 2
       ;;
     -h|--help)
@@ -95,5 +89,4 @@ ABS_OUTPUT_DIR="$(to_abs_path "$OUTPUT_DIR")"
 yarn --cwd frontend node ./scripts/merge-system-coverage.mjs \
   --jacoco "$ABS_JACOCO_REPORTS_JOINED" \
   --frontend-json "$ABS_FRONTEND_COVERAGE_JSON" \
-  --out "$ABS_OUTPUT_DIR" \
-  --backend-prefix "$BACKEND_PREFIX"
+  --out "$ABS_OUTPUT_DIR"

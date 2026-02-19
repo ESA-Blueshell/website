@@ -17,7 +17,6 @@ Options:
   --jacoco-system <file>  Path to jacocoSystemTestReport.xml
   --frontend-json <file>  Path to frontend coverage-final.json
   --out <dir>             Output directory (default: coverage/merged)
-  --backend-prefix <path> Backend prefix (default: api/src/main/kotlin/net/blueshell/api)
   -h, --help              Show help
 
 Environment overrides:
@@ -25,7 +24,6 @@ Environment overrides:
   JACOCO_SYSTEM_XML
   FRONTEND_COVERAGE_JSON
   MERGED_COVERAGE_OUT
-  BACKEND_PREFIX
 USAGE
 }
 
@@ -54,7 +52,6 @@ JACOCO_TEST_XML="${JACOCO_TEST_XML:-}"
 JACOCO_SYSTEM_XML="${JACOCO_SYSTEM_XML:-}"
 FRONTEND_COVERAGE_JSON="${FRONTEND_COVERAGE_JSON:-}"
 OUTPUT_DIR="${MERGED_COVERAGE_OUT:-coverage/merged}"
-BACKEND_PREFIX="${BACKEND_PREFIX:-api/src/main/kotlin/net/blueshell/api}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -72,10 +69,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --out)
       OUTPUT_DIR="${2:-}"
-      shift 2
-      ;;
-    --backend-prefix)
-      BACKEND_PREFIX="${2:-}"
       shift 2
       ;;
     -h|--help)
@@ -133,7 +126,6 @@ fi
 ./scripts/merge-coverage.sh \
   --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
   --frontend-json "$FRONTEND_COVERAGE_JSON" \
-  --out "$OUTPUT_DIR" \
-  --backend-prefix "$BACKEND_PREFIX"
+  --out "$OUTPUT_DIR"
 
 echo "Merged coverage written to: $OUTPUT_DIR"

@@ -12,8 +12,8 @@ const {createContext} = istanbulReport
 
 function parseArgs(argv) {
   const options = {
-    rawDir: "api/build/coverage/frontend-system/raw",
-    outDir: "api/build/coverage/frontend-system",
+    rawDir: "../api/build/coverage/frontend-system/raw",
+    outDir: "../api/build/coverage/frontend-system",
   }
 
   for (let i = 2; i < argv.length; i += 1) {

@@ -59,7 +59,7 @@ services:
     environment:
       - TZ=Europe/Amsterdam
       - VITE_APP_URL=http://localhost:8080
-      - VITE_COVERAGE=${VITE_COVERAGE:-false}
+      - VITE_COVERAGE=true
     depends_on:
       - api
     healthcheck:

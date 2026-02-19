@@ -398,7 +398,7 @@ jobs:
           if-no-files-found: warn
 
   coverage:
-    name: Merge coverage reports
+    name: Check code coverage and upload merged report
     needs: [ check-changes, api-tests, system-tests ]
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -457,8 +457,7 @@ jobs:
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ check-changes, coverage ]
-    if: needs.check-changes.outputs.api == 'true'
+    needs: [ coverage ]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -525,8 +524,7 @@ jobs:
 
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [ check-changes, fe-verify, coverage ]
-    if: needs.check-changes.outputs.frontend == 'true'
+    needs: [ coverage ]
     runs-on: ubuntu-latest
     permissions:
       contents: read

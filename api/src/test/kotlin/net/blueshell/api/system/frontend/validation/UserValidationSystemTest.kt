@@ -129,34 +129,33 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
 
     @Test
     fun `account update rejects duplicate discord`() {
-        val primaryMember = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
-        primaryMember.replaceMemberProfile(userFactory.buildMemberProfile(primaryMember))
-        userRepository.saveAndFlush(primaryMember)
-        userFactory.createMembership(primaryMember)
-        val conflictingGuest = userFactory.createUserWithRole(Role.GUEST, enabled = true)
-        val discordBefore = primaryMember.discord
+        val primaryUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        val secondaryUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
 
         withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, primaryMember.username, DEFAULT_PASSWORD)
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, secondaryUser.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
             page.navigate("$frontendUrl/account")
             page.waitForURL("**/account")
 
-            page.getByLabel("Discord", Page.GetByLabelOptions().setExact(false)).fill(conflictingGuest.discord)
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Submit").setExact(false)
-            ).click()
+            val discordField = page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true))
+            assertPw(discordField).hasValue(secondaryUser.discord)
 
+            val updateResponse = page.waitForResponse({ response ->
+                response.request().method() == "PUT" && response.url().contains("/users/")
+            }) {
+                discordField.fill(primaryUser.discord)
+                page.getByRole(
+                    AriaRole.BUTTON,
+                    Page.GetByRoleOptions().setName("Submit").setExact(true)
+                ).click()
+            }
+
+            assertThat(updateResponse.status()).isEqualTo(400)
             assertPw(page.getByText("Discord is taken.")).isVisible()
+            assertThat(page.getByText("Your account has successfully been created!").count()).isEqualTo(0)
         }
-
-        val updated = waitForOptional(
-            producer = { userRepository.findByUsername(primaryMember.username) },
-            onTimeoutMessage = { "Expected member ${primaryMember.username} to exist after update attempt" }
-        )
-        assertThat(updated.discord).isEqualTo(discordBefore)
     }
 
     private companion object {

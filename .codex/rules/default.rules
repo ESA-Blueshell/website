@@ -11,6 +11,11 @@ prefix_rule(
 )
 
 prefix_rule(
+  pattern=["/bin/zsh", "-lc", "docker logs --tail"],
+  decision="allow",
+)
+
+prefix_rule(
   pattern=["yarn"],
   decision="allow",
 )

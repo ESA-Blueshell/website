@@ -1,6 +1,7 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
 import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
+import {emitAuthChanged} from "@/plugins/authSync"
 
 export interface State {
   login: LoginResponse | null;
@@ -89,7 +90,7 @@ const store = createStore<State>({
       state.login = payload
       writeJsonCookie("login", payload)
       state.statusSnackbarMessage = `Welcome back ${payload.username}!`
-      localStorage.setItem("auth:ping", String(Date.now()))
+      emitAuthChanged()
     },
     setLoginState(state: State, payload: LoginResponse | null): void {
       state.login = payload
@@ -98,7 +99,7 @@ const store = createStore<State>({
       state.login = null
       deleteCookie("login")
       state.statusSnackbarMessage = "You are now logged out."
-      localStorage.setItem("auth:ping", String(Date.now()))
+      emitAuthChanged()
     },
     setRoles(state: State, roles: Role[]): void {
       if (state.login) {

@@ -269,14 +269,6 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
         throw IllegalStateException("Failed to enable user '$username' after retries")
     }
 
-    private fun seedAddress(userId: Long) {
-        val user = userRepository.findById(userId).orElseThrow()
-        if (user.address == null) {
-            user.replaceAddress(userFactory.buildAddress(user))
-            userRepository.saveAndFlush(user)
-        }
-    }
-
     private fun fillAddressAndContinue(page: Page) {
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         AddressFormHelper.fill(

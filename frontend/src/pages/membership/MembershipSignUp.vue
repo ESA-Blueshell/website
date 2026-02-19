@@ -252,6 +252,70 @@ const stepItems = computed(() => [
 
 const infoEmail = computed(() => user.value?.email ?? "")
 
+function parseStepQuery(rawStep: unknown): number {
+  const rawValue = Array.isArray(rawStep) ? rawStep[0] : rawStep
+  const parsed = Number(rawValue ?? Steps.Personal)
+  return Number.isFinite(parsed) ? parsed : Steps.Personal
+}
+
+function resolveStep(desiredStep: number): number {
+  if (desiredStep >= Steps.Done) return Steps.Done
+
+  let step = Math.max(Steps.Personal, Math.min(desiredStep, Steps.Membership))
+  const hasUser = Boolean(user.value?.id)
+  const hasAddress = Boolean(login.value?.addressId || address.value?.id)
+
+  if (step === Steps.Membership && (!isLoggedIn.value || !hasUser || !hasAddress)) {
+    step = Steps.Address
+  }
+
+  if (step === Steps.Address && (!isLoggedIn.value || !hasUser)) {
+    step = Steps.ConfirmEmail
+  }
+
+  if (step === Steps.ConfirmEmail) {
+    if (isLoggedIn.value && hasUser) {
+      step = Steps.Address
+    } else if (!hasUser) {
+      step = Steps.Personal
+    }
+  }
+
+  return step
+}
+
+function buildQueryForStep(step: number) {
+  const nextQuery = {...route.query}
+  if (step <= Steps.Personal || step >= Steps.Done) {
+    delete nextQuery.step
+  } else {
+    nextQuery.step = String(step)
+  }
+  return nextQuery
+}
+
+async function syncStep(desiredStep = currentStep.value) {
+  const resolvedStep = resolveStep(desiredStep)
+  const stepNeedsUpdate = currentStep.value !== resolvedStep
+
+  if (resolvedStep >= Steps.Done) {
+    if (stepNeedsUpdate) currentStep.value = resolvedStep
+    return
+  }
+
+  const currentHasStep = route.query.step != null
+  const targetHasStep = resolvedStep > Steps.Personal
+  const currentQueryStep = parseStepQuery(route.query.step)
+  const queryNeedsUpdate = targetHasStep !== currentHasStep || (targetHasStep && currentQueryStep !== resolvedStep)
+
+  if (queryNeedsUpdate) {
+    await router.replace({query: buildQueryForStep(resolvedStep)})
+  }
+  if (stepNeedsUpdate) {
+    currentStep.value = resolvedStep
+  }
+}
+
 async function handleVerified() {
   await router.push({name: "login", query: {redirect: "/membership/signup?step=2"}})
 }
@@ -283,21 +347,29 @@ const nextStep = async () => {
     submitting.value = true
     switch (currentStep.value) {
       case Steps.Personal: {
-        await userRef.value?.save()
-        currentStep.value = isLoggedIn.value ? Steps.Address : Steps.ConfirmEmail
+        const savedUser = await userRef.value?.save()
+        if (!savedUser) break
+        await syncStep(isLoggedIn.value ? Steps.Address : Steps.ConfirmEmail)
         break
       }
-      case Steps.ConfirmEmail:
-        if (isLoggedIn.value) currentStep.value = Steps.Address
+      case Steps.ConfirmEmail: {
+        if (!isLoggedIn.value) break
+        await fetchUser()
+        await syncStep(Steps.Address)
         break
+      }
       case Steps.Address: {
-        await addressRef.value?.save()
-        currentStep.value = Steps.Membership
+        const savedAddress = await addressRef.value?.save()
+        if (!savedAddress) break
+        await syncStep(Steps.Membership)
         break
       }
       case Steps.Membership: {
         const savedMembership = await membershipRef.value?.save()
-        if (savedMembership) currentStep.value = Steps.Done
+        if (savedMembership) {
+          await router.replace({query: buildQueryForStep(Steps.Done)})
+          currentStep.value = Steps.Done
+        }
         break
       }
     }
@@ -309,7 +381,8 @@ const nextStep = async () => {
 const previousStep = () => {
   if (currentStep.value <= Steps.Personal) return
   const target = currentStep.value - 1
-  currentStep.value = target === Steps.ConfirmEmail && isLoggedIn.value ? Steps.Personal : target
+  const desiredStep = target === Steps.ConfirmEmail && isLoggedIn.value ? Steps.Personal : target
+  void syncStep(desiredStep)
 }
 
 async function fetchAddress() {
@@ -323,47 +396,41 @@ async function fetchAddress() {
   }
 }
 
-// Keep URL in sync, redirect to correct steps based on state
-watch(currentStep, async (val) => {
-  let step = Math.max(0, Math.min(val, Steps.Membership))
-
-  const userValid = Boolean(user.value?.id && await userRef.value?.validate())
-  const addressValid = Boolean(address.value?.id && await addressRef.value?.validate())
-
-  switch (step) {
-    case Steps.Membership:
-      // It is only allowed to become a member if a user is signed in, is valid, and has a valid address
-      // if that is not the case go back by one step
-      if (!isLoggedIn.value || !userValid || !addressValid) {
-        step = Steps.Address
-      }
-      break
-
-    case Steps.Address:
-      // It is only allowed to modify an address if a user is signed in and is valid
-      // if that is not the case go back by one step
-      if (!isLoggedIn.value || !userValid) {
-        step = Steps.ConfirmEmail
-      }
-      break
-
-    case Steps.ConfirmEmail:
-      // One may only be on the confirm email page if they have done the initial account creation. but have not logged in
-
-      if (isLoggedIn.value && userValid) {
-        // If a user is logged in and has a valid user, then go to the address page
-        step = Steps.Address
-      } else if (!userValid) {
-        // If the user is not valid, go to personal to make it valid
-        step = Steps.Personal
-      }
-      // Otherwise, they are not logged in, but user is valid, they may stay on the page
-      break
-  }
-
-  await router.replace({query: {step}})
-  currentStep.value = step
+watch(currentStep, async (step) => {
+  await syncStep(step)
 })
+
+watch(
+  () => route.query.step,
+  async () => {
+    await syncStep(parseStepQuery(route.query.step))
+  }
+)
+
+watch(
+  () => login.value?.userId,
+  async (userId, previousUserId) => {
+    if (!userId) {
+      await syncStep(currentStep.value)
+      return
+    }
+
+    if (userId !== previousUserId || !user.value?.id) {
+      await fetchUser()
+    }
+
+    if (login.value?.addressId && !address.value?.id) {
+      await fetchAddress()
+    }
+
+    if (currentStep.value === Steps.ConfirmEmail) {
+      await syncStep(Steps.Address)
+      return
+    }
+
+    await syncStep(currentStep.value)
+  }
+)
 
 // If a user is already a member, then redirect them to a different page.
 watch(user, async (val) => {
@@ -401,7 +468,7 @@ async function fetchData() {
 
 onMounted(async () => {
   await fetchData()
-  currentStep.value = Number(route.query.step ?? 1)
+  await syncStep(parseStepQuery(route.query.step))
 })
 
 </script>

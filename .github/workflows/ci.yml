@@ -443,19 +443,19 @@ jobs:
             --frontend-json "${FRONTEND_COVERAGE_JSON}" \
             --out "coverage/merged"
 
-      - name: Enforce merged coverage threshold
-        run: |
-          chmod +x ./scripts/check-cobertura-threshold.sh 
-          ./scripts/check-cobertura-threshold.sh \
-            --file coverage/merged/Cobertura.xml \
-            --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
-
       - name: Upload merged coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: merged-coverage-report
           path: coverage/merged
           if-no-files-found: error
+
+      - name: Enforce merged coverage threshold
+        run: |
+          chmod +x ./scripts/check-cobertura-threshold.sh 
+          ./scripts/check-cobertura-threshold.sh \
+            --file coverage/merged/Cobertura.xml \
+            --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
 
   api-build-push:
     name: Build and publish API Docker image

@@ -5,6 +5,7 @@ import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.options.AriaRole
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TestCleanUpListener
@@ -20,7 +21,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
+import java.io.File
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -46,9 +49,17 @@ abstract class FrontendSystemTestBase {
 
     private lateinit var playwright: Playwright
     private lateinit var browser: Browser
+    private val objectMapper = ObjectMapper()
+    private val coverageArtifactsWritten = AtomicInteger(0)
+    private val frontendCoverageEnabled = System.getProperty("frontend.coverage.enabled", "false").toBoolean()
+    private val frontendCoverageRequired = System.getProperty("frontend.coverage.required", "false").toBoolean()
+    private val frontendCoverageRawDir = File(System.getProperty("frontend.coverage.rawDir", "build/coverage/frontend-system/raw"))
 
     @BeforeAll
     fun setUpPlaywright() {
+        if (frontendCoverageEnabled) {
+            prepareCoverageOutputDir()
+        }
         playwright = Playwright.create()
         browser = playwright.chromium().launch(
             BrowserType.LaunchOptions().setHeadless(true)
@@ -64,13 +75,47 @@ abstract class FrontendSystemTestBase {
     fun tearDownPlaywright() {
         browser.close()
         playwright.close()
+
+        if (frontendCoverageEnabled && frontendCoverageRequired && coverageArtifactsWritten.get() == 0) {
+            throw AssertionError(
+                "Frontend coverage collection was enabled, but no browser coverage artifacts were captured. " +
+                        "Ensure the frontend runs with VITE_COVERAGE=true."
+            )
+        }
     }
 
     protected fun withPage(block: (Page) -> Unit) {
         val context = browser.newContext()
         val page = context.newPage()
-        context.use {
+        try {
             block(page)
+        } finally {
+            if (frontendCoverageEnabled) {
+                captureFrontendCoverage(context.pages())
+            }
+            context.close()
+        }
+    }
+
+    private fun prepareCoverageOutputDir() {
+        frontendCoverageRawDir.mkdirs()
+        frontendCoverageRawDir
+            .listFiles()
+            ?.filter { it.isFile && it.extension == "json" }
+            ?.forEach { it.delete() }
+    }
+
+    private fun captureFrontendCoverage(pages: List<Page>) {
+        pages.forEach { page ->
+            if (page.isClosed) return@forEach
+            val coverage = runCatching {
+                page.evaluate("() => globalThis.__coverage__ || null")
+            }.getOrNull() ?: return@forEach
+
+            val filename = "frontend-coverage-${System.currentTimeMillis()}-${UUID.randomUUID()}.json"
+            val target = File(frontendCoverageRawDir, filename)
+            objectMapper.writeValue(target, coverage)
+            coverageArtifactsWritten.incrementAndGet()
         }
     }
 

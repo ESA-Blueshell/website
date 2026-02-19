@@ -4,11 +4,14 @@ import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
     id("org.springframework.boot") version "3.5.7"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.openapi.generator") version "7.15.0"
+    jacoco
 
     val kotlinVersion = "2.3.10"
     kotlin("jvm") version kotlinVersion
@@ -172,12 +175,23 @@ tasks.register<JavaExec>("installChromium") {
     args("install", "chromium")
 }
 
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+val frontendCoverageRawDir = layout.buildDirectory.dir("coverage/frontend-system/raw")
+val jacocoExecDir = layout.buildDirectory.dir("jacoco")
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     systemProperty("spring.profiles.active", "test")
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
+    }
+    extensions.configure(JacocoTaskExtension::class) {
+        destinationFile = jacocoExecDir.get().file("$name.exec").asFile
+        isIncludeNoLocationClasses = false
+        excludes = listOf("jdk.internal.*", "jdk.proxy*.*")
     }
 
     testLogging {
@@ -205,6 +219,92 @@ tasks.withType<Test>().configureEach {
             )
         }
     }))
+}
+
+tasks.named<Test>("test") {
+    description = "Runs API unit and integration tests excluding frontend system tests."
+    useJUnitPlatform {
+        excludeTags("system")
+    }
+    finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+val systemTest by tasks.registering(Test::class) {
+    description = "Runs API-owned frontend system tests tagged with @Tag(\"system\")."
+    group = "verification"
+
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.named("test"))
+
+    useJUnitPlatform {
+        includeTags("system")
+    }
+
+    systemProperty("frontend.coverage.rawDir", frontendCoverageRawDir.get().asFile.absolutePath)
+    systemProperty("frontend.coverage.enabled", System.getProperty("frontend.coverage.enabled", "false"))
+    systemProperty("frontend.coverage.required", System.getProperty("frontend.coverage.required", "false"))
+
+    val frontendUrlOverride = System.getProperty("system.frontend.url")
+    if (!frontendUrlOverride.isNullOrBlank()) {
+        systemProperty("system.frontend.url", frontendUrlOverride)
+    }
+
+    finalizedBy(tasks.named("jacocoSystemTestReport"))
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("test"))
+    executionData(jacocoExecDir.map { it.file("test.exec") })
+
+    classDirectories.setFrom(sourceSets["main"].output)
+    sourceDirectories.setFrom(sourceSets["main"].allSource.srcDirs)
+    additionalSourceDirs.setFrom(sourceSets["main"].allSource.srcDirs)
+
+    reports {
+        xml.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/jacocoTestReport/jacocoTestReport.xml"))
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/jacocoTestReport/html"))
+        csv.required.set(false)
+    }
+}
+
+val jacocoSystemTestReport by tasks.registering(JacocoReport::class) {
+    dependsOn(systemTest)
+    executionData(jacocoExecDir.map { it.file("systemTest.exec") })
+
+    classDirectories.setFrom(sourceSets["main"].output)
+    sourceDirectories.setFrom(sourceSets["main"].allSource.srcDirs)
+    additionalSourceDirs.setFrom(sourceSets["main"].allSource.srcDirs)
+
+    reports {
+        xml.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml"))
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/jacocoSystemTestReport/html"))
+        csv.required.set(false)
+    }
+}
+
+val jacocoCombinedReport by tasks.registering(JacocoReport::class) {
+    dependsOn(tasks.named("test"), systemTest)
+    executionData(
+        jacocoExecDir.map { it.file("test.exec") },
+        jacocoExecDir.map { it.file("systemTest.exec") },
+    )
+
+    classDirectories.setFrom(sourceSets["main"].output)
+    sourceDirectories.setFrom(sourceSets["main"].allSource.srcDirs)
+    additionalSourceDirs.setFrom(sourceSets["main"].allSource.srcDirs)
+
+    reports {
+        xml.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml"))
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/jacocoCombinedReport/html"))
+        csv.required.set(false)
+    }
 }
 
 tasks.withType<BootRun>().configureEach {

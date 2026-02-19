@@ -11,6 +11,8 @@ on:
       - '.github/workflows/**'
       - 'openapi/**'
       - 'docker-compose.yml'
+      - 'docker-compose.dev.yml'
+      - 'scripts/**'
       - 'nginx/**'
   workflow_dispatch:
 
@@ -21,6 +23,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
+  COVERAGE_MIN_LINE_RATE: "0.00"
 
 permissions:
   contents: read
@@ -47,13 +50,15 @@ jobs:
               - 'api/**'
               - 'pom.xml'
               - 'env/**'
+              - 'scripts/**'
+              - 'docker-compose.dev.yml'
             frontend:
               - 'frontend/**'
 
   api-tests:
-    name: Run API integration tests
+    name: Run API tests (non-system) with JaCoCo
     needs: check-changes
-    if: needs.check-changes.outputs.api == 'true'
+    if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -150,26 +155,248 @@ jobs:
 
       - name: Run API Gradle tests
         shell: bash
-        run:
+        run: |
           set -euo pipefail
 
-          ./gradlew --no-daemon :api:test
+          ./gradlew --no-daemon :api:test :api:jacocoTestReport
         env:
           GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
-      - name: Upload test reports
+      - name: Upload API test coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-test-reports
+          name: api-test-coverage
           path: |
-            api/build/reports
-            build/reports
+            api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+            api/build/reports/jacoco/jacocoTestReport/html
+            api/build/reports/tests/test
           if-no-files-found: warn
+
+  api-system-coverage:
+    name: Run API frontend system tests with coverage
+    needs: check-changes
+    if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports: [ "3306:3306" ]
+        env:
+          MYSQL_ROOT_PASSWORD: "blueshell"
+          MYSQL_DATABASE: "blueshell-test"
+          MYSQL_PORT: 3306
+          MYSQL_USER: "blueshell"
+          MYSQL_PASSWORD: "blueshell"
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+
+    env:
+      MYSQL_ROOT_PASSWORD: blueshell
+      MYSQL_DATABASE: blueshell-test
+      MYSQL_PORT: '3306'
+      MYSQL_USER: blueshell
+      MYSQL_PASSWORD: blueshell
+      MYSQL_HOST: 127.0.0.1
+
+      APP_URL: https://localhost/api
+      FRONTEND_URL: https://localhost
+
+      JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
+
+      SMTP_HOST: mail.blueshell.utwente.nl
+      SMTP_PORT: '465'
+      SMTP_USERNAME: your_smtp_username
+      SMTP_PASSWORD: your_smtp_password
+
+      STORAGE_LOCATION: ./storage
+
+      BREVO_API_KEY: something
+      BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
+
+      GOOGLE_CALENDAR_ID: something
+      GOOGLE_CALENDAR_CLIENT_ID: something
+      GOOGLE_CALENDAR_CLIENT_EMAIL: something
+      GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: |
+        -----BEGIN PRIVATE KEY-----
+        MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJNOI74ADXzV2H63
+        s/wyuR7hW61c0ORfHSBSSIgmdglGqtSb8ERzet79zodXvmeZu2Cl6phtEIsXZ0uF
+        dfNBmIFjI2i3LT9+7zb+n5OcwKgwSxyKCeL6sB4aOQ/gljH2mpsTFkk6UdoKZ0NH
+        4Kkmbq2qsMr1P0y1j3X0uXg+uGNhAgMBAAECgYAePOMPZJlgL9GSKYmT0qG3mhEk
+        pDHpPzEOanWjJSoDu3Lj0+LdWks1rSoRFEzsnV0eeNCQW4sS0koM8aeFuMhiLc8Q
+        KP7UecthtjLxzjqQPDwj5z90pkSg9GPKkoKC9h83Ioj6KqhvE3vN2NfGrWX/Gcmr
+        BvVnw+btaoFgxzjncQJBAOtwr4+8qTHVxDApKteymCljlli4hS3KQGOrPiQUtszl
+        HpckKJfFJeuvB8kLxPEdhKSegu1BCd7WCPbWPfiYL3UCQQCgKy3Dkx29PcP+O36m
+        aS9G2rvivUh0ceD3fIqeUuhcCa+Gd4JH4g3/HUpOj8lV8HacI+MM4B/DF46lbLoy
+        JrK9AkB3hY86kvX5vKGKKXv8YEfqywmqJJJHeqNRdb9oJbPfNHlhFRQeaBEmIob7
+        QyRJm0iZIXcp5piSLWoDlSOErg15AkARLlCMaB2KjTOW897UDvhpS1FYMyGwi/6r
+        zYo5DX+rT8aqT+uDtnX15bhw0O+x7kdq3FagrPH7RW2hxRX8BzapAkB8TTIWgCgu
+        YOYLy5TUv9YKShgfe50C6j1HyZajzJBV1PdS7298SB2n2dvbUGWvUohXXMCXVRdS
+        wRRHv41dPOIL
+        -----END PRIVATE KEY-----
+      GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Wait for database service
+        run: |
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
+          for i in {1..30}; do
+            if mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SELECT 1;" >/dev/null 2>&1; then
+              echo "Database is ready!"
+              break
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+
+      - name: Prepare test database schema
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
+          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
+          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
+
+      - name: Set up Java Development Kit
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 24
+          cache: gradle
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: '24'
+          yarn-version: '4.10.3'
+
+      - name: Start instrumented frontend for system tests
+        run: |
+          set -euo pipefail
+          VITE_COVERAGE=true VITE_APP_URL=http://127.0.0.1:8080 \
+            yarn --cwd frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
+          echo $! > frontend-dev.pid
+
+      - name: Wait for frontend readiness
+        run: |
+          set -euo pipefail
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1; then
+              echo "Frontend is ready."
+              exit 0
+            fi
+            echo "Waiting for frontend... ($i/60)"
+            sleep 2
+          done
+          echo "Frontend failed to start."
+          exit 1
+
+      - name: Run system tests and JaCoCo system report
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ./gradlew --no-daemon :api:systemTest :api:jacocoSystemTestReport \
+            -Dsystem.frontend.url=http://127.0.0.1:3000 \
+            -Dfrontend.coverage.enabled=true \
+            -Dfrontend.coverage.required=true
+        env:
+          GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+
+      - name: Convert frontend raw coverage to LCOV
+        run: |
+          yarn --cwd frontend coverage:system:report \
+            --raw-dir ../api/build/coverage/frontend-system/raw \
+            --out-dir ../api/build/coverage/frontend-system
+
+      - name: Stop frontend process
+        if: always()
+        run: |
+          if [ -f frontend-dev.pid ]; then
+            kill "$(cat frontend-dev.pid)" || true
+          fi
+
+      - name: Upload API system coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-system-coverage
+          path: |
+            api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
+            api/build/reports/jacoco/jacocoSystemTestReport/html
+            api/build/coverage/frontend-system/lcov.info
+            api/build/coverage/frontend-system/html
+            frontend-dev.log
+          if-no-files-found: warn
+
+  coverage-merge:
+    name: Merge backend + frontend coverage reports
+    needs: [ check-changes, api-tests, api-system-coverage ]
+    if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download API test coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-test-coverage
+          path: coverage-inputs/api-test
+
+      - name: Download API system coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-system-coverage
+          path: coverage-inputs/api-system
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: '24'
+          yarn-version: '4.10.3'
+
+      - name: Merge JaCoCo + LCOV into combined report
+        run: |
+          set -euo pipefail
+
+          JACOCO_TEST_XML="$(find coverage-inputs/api-test -name jacocoTestReport.xml -print -quit)"
+          JACOCO_SYSTEM_XML="$(find coverage-inputs/api-system -name jacocoSystemTestReport.xml -print -quit)"
+          FRONTEND_LCOV="$(find coverage-inputs/api-system -name lcov.info -print -quit)"
+
+          test -n "$JACOCO_TEST_XML"
+          test -n "$JACOCO_SYSTEM_XML"
+          test -n "$FRONTEND_LCOV"
+
+          ./scripts/merge-coverage.sh \
+            --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
+            --lcov "${FRONTEND_LCOV}" \
+            --out "coverage/merged"
+
+      - name: Enforce merged coverage threshold
+        run: |
+          ./scripts/check-cobertura-threshold.sh \
+            --file coverage/merged/Cobertura.xml \
+            --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
+
+      - name: Upload merged coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-coverage-report
+          path: coverage/merged
+          if-no-files-found: error
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ check-changes, api-tests ]
+    needs: [ check-changes, api-tests, coverage-merge ]
     if: needs.check-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -332,13 +559,14 @@ jobs:
 
   deploy:
     name: Deploy to production
-    needs: [ check-changes, api-build-push, fe-build-push, openapi-sync ]
+    needs: [ check-changes, api-build-push, fe-build-push, openapi-sync, coverage-merge ]
     if: ${{
       always()
       && github.ref == 'refs/heads/main'
       && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
       && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
       && needs.openapi-sync.result == 'success'
+      && (needs.coverage-merge.result == 'success' || needs.coverage-merge.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

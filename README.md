@@ -274,6 +274,37 @@ Connect to the database:
 docker compose exec db mysql -u <username> -p<password> blueshell
 ```
 
+### Full Test + Coverage (Docker, API-driven system tests)
+
+Run all API tests, API-owned frontend system tests, and generate merged coverage:
+
+```shell script
+./scripts/test-all-compose-coverage.sh
+```
+
+What this does:
+1. Starts `db`, `rabbitmq`, and an instrumented frontend (`VITE_COVERAGE=true`) with Docker Compose.
+2. Runs API non-system tests and API system tests (`@Tag("system")`) from Gradle.
+   The script forces `-Dsystem.frontend.url=http://frontend:3000` so API-driven system tests target the compose frontend service.
+3. Captures frontend coverage from Playwright browser sessions executed by API system tests.
+4. Converts frontend raw coverage to LCOV.
+5. Merges frontend LCOV + backend JaCoCo into a combined report (local Node/Bash merge, no Docker image for merge).
+
+Coverage outputs:
+- API JaCoCo test XML: `api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml`
+- API JaCoCo system XML: `api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml`
+- Frontend LCOV from API system tests: `api/build/coverage/frontend-system/lcov.info`
+- Merged HTML + Cobertura: `coverage/merged/`
+- Merged Cobertura XML: `coverage/merged/Cobertura.xml`
+- Merged LCOV: `coverage/merged/merged.lcov.info`
+- IntelliJ: import JaCoCo XML suites for backend coverage and open `coverage/merged/index.html` for combined cross-stack coverage.
+
+Troubleshooting:
+- If system tests fail with missing frontend coverage, ensure frontend is running with `VITE_COVERAGE=true`.
+- If frontend is not reachable, verify `system.frontend.url` resolves from the API test runtime.
+- If Playwright fails to launch browsers in Docker, rebuild API dev image to reinstall browser dependencies.
+- Do not run API system tests with `docker compose run --service-ports`; it can cause port collisions with this workflow.
+
 ## 📁 Project Structure
 
 ```

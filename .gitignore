@@ -3,6 +3,7 @@ target/
 !**/src/test/**/target/
 .gradle/
 build/
+/coverage/
 
 ### IntelliJ IDEA ###
 .idea

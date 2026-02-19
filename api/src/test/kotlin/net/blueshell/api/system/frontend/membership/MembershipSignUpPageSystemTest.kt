@@ -159,9 +159,19 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
 
             // We sign in through a separate page, after which step two should detect the authenticated session and
             // advance to step three
-            val loginPage = page.context().newPage()
-            loginPage.use { loginPage ->
-                AuthHelper.submitLogin(loginPage, frontendUrl, credentials.username, credentials.password)
+            page.context().newPage().use { loginPage ->
+                val loginStatus = AuthHelper.submitLogin(loginPage, frontendUrl, credentials.username, credentials.password)
+                assertThat(loginStatus).isEqualTo(200)
+
+                // Assert the login cookie has been set
+                loginPage.waitForCondition {
+                    loginPage.context().cookies(loginPage.url()).any { it.name == "login" }
+                }
+            }
+
+            // Assert the login cookie is also set on the main page
+            page.waitForCondition {
+                page.context().cookies(page.url()).any { it.name == "login" }
             }
 
             page.waitForURL("**/membership/signup?step=3")

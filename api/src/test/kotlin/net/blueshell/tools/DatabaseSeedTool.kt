@@ -1,5 +1,6 @@
 package net.blueshell.tools
 
+import com.github.javafaker.Faker
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.Contribution
@@ -28,6 +29,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -102,8 +104,10 @@ private class DatabaseSeedRunner(
     private val persistence: FactoryPersistenceSupport,
     private val passwordEncoder: PasswordEncoder,
 ) {
-    private val runTag = System.currentTimeMillis()
     private var sequence = 0L
+    private val faker = Faker(Locale.ENGLISH)
+    private val runToken = faker.bothify("??##").lowercase()
+    private val unsafeTokenRegex = Regex("[^a-z0-9]+")
 
     fun seed(config: SeederConfig): SeedSummary {
         val random = Random(config.randomSeed)
@@ -168,6 +172,7 @@ private class DatabaseSeedRunner(
             events = eventSummary.seededEvents,
             eventsWithSignUpForms = eventSummary.withSignUpForms,
             eventsWithBanners = eventSummary.withBanners,
+            eventSignUps = eventSummary.signUps,
             contributionPeriods = contributionSummary.periods,
             activeMemberships = contributionSummary.activeMemberships,
             pastMemberships = contributionSummary.pastMemberships,
@@ -179,10 +184,12 @@ private class DatabaseSeedRunner(
     }
 
     private fun createCommittees(count: Int): List<Committee> {
-        return (1..count).map { index ->
+        return (1..count).map {
+            val topic = shortNameWord()
+            val color = shortNameWord()
             committeeFactory.create(
-                name = "Seed Committee $index [$runTag]",
-                description = "Generated committee $index for seeded test data",
+                name = "$topic $color".take(28),
+                description = faker.company().catchPhrase().take(96),
             )
         }
     }
@@ -194,15 +201,20 @@ private class DatabaseSeedRunner(
         includeMemberData: Boolean,
         defaultPassword: String,
     ): List<User> {
-        return (1..count).map { index ->
+        return (1..count).map {
             val suffix = nextSuffix()
+            val firstName = faker.name().firstName().trim().ifBlank { usernamePrefix.replaceFirstChar { it.uppercase() } }
+            val lastName = faker.name().lastName().trim().ifBlank { role.name.lowercase().replaceFirstChar { it.uppercase() } }
+            val baseToken = sanitizeToken(faker.name().username()).take(16).ifBlank {
+                sanitizeToken("${firstName}_${lastName}")
+            }
             val user = userFactory.buildUserWithRole(role, enabled = true).apply {
-                username = "${usernamePrefix}_${suffix}_$index"
-                email = "${usernamePrefix}.${suffix}.${index}@example.test"
-                discord = "${usernamePrefix}_${suffix}_${index}"
-                firstName = usernamePrefix.replaceFirstChar { it.uppercase() }
-                lastName = role.name.lowercase().replaceFirstChar { it.uppercase() }
-                phoneNumber = "06${suffix.takeLast(8).padStart(8, '0')}"
+                username = "${usernamePrefix}_${baseToken}_$suffix"
+                email = "${baseToken}_$suffix@example.test"
+                discord = "${baseToken.take(10)}#${faker.number().digits(4)}"
+                this.firstName = firstName
+                this.lastName = lastName
+                phoneNumber = "06${sequence.toString().padStart(8, '0').takeLast(8)}"
                 password = passwordEncoder.encode(defaultPassword)
             }
 
@@ -215,12 +227,12 @@ private class DatabaseSeedRunner(
     }
 
     private fun createConfiguredUsers(config: UserSeedConfig): List<User> {
-        return config.namedUsers.mapIndexed { index, named ->
+        return config.namedUsers.map { named ->
             val suffix = nextSuffix()
             val user = userFactory.buildUserWithRole(named.role, enabled = true).apply {
                 username = named.username
-                email = "named.${runTag}.${index + 1}@example.test"
-                discord = "named_${runTag}_${index + 1}"
+                email = "${sanitizeToken(named.username)}@example.test"
+                discord = "${sanitizeToken(named.username).take(10)}#${faker.number().digits(4)}"
                 firstName = named.firstName ?: named.username
                 lastName = named.lastName ?: named.role.name.lowercase().replaceFirstChar { it.uppercase() }
                 phoneNumber = "06${suffix.takeLast(8).padStart(8, '0')}"
@@ -259,11 +271,17 @@ private class DatabaseSeedRunner(
     ) {
         val zipPrefix = suffix.takeLast(4).padStart(4, '0')
         if (includeAddress) {
+            val city = faker.address().cityName().trim().ifBlank { "Enschede" }
+            val street = faker.address().streetName().trim().ifBlank { "Seed Street" }
+            val houseNumber = faker.address().buildingNumber()
+                .trim()
+                .takeIf { it.isNotBlank() && it.any(Char::isDigit) }
+                ?: suffix.takeLast(3).padStart(3, '0')
             val address = userFactory.buildAddress(
                 user = user,
-                city = "Enschede",
-                street = "Seed Street",
-                houseNumber = suffix.takeLast(3).padStart(3, '0'),
+                city = city,
+                street = street,
+                houseNumber = houseNumber,
                 zipCode = "${zipPrefix}AB",
             )
             user.replaceAddress(address)
@@ -295,7 +313,7 @@ private class DatabaseSeedRunner(
         admins: List<User>,
     ) {
         val board = boardFactory.create(
-            name = "${config.organization.boardName} [$runTag]",
+            name = config.organization.boardName,
             candidate = config.organization.boardCandidate,
             startDate = LocalDate.now().minusMonths(2),
         )
@@ -315,7 +333,7 @@ private class DatabaseSeedRunner(
     private fun seedEvents(
         config: EventSeedConfig,
         committees: List<Committee>,
-        bannerUploaders: List<User>,
+        seedUsers: List<User>,
         random: Random,
     ): EventSeedResult {
         val now = Instant.now()
@@ -395,32 +413,34 @@ private class DatabaseSeedRunner(
                     approved = scenario.approved,
                     membersOnly = scenario.membersOnly,
                     signUp = signUp,
-                    title = "${scenario.name} #${index + 1} [$runTag]",
+                    title = buildEventTitle(),
                 ).apply {
                     startTime = start
                     endTime = start.plus(config.durationHours.toLong(), ChronoUnit.HOURS)
                     memberPrice = 5.0 + (index % 3)
                     publicPrice = if (membersOnly) null else 10.0 + (index % 4)
+                    description = faker.lorem().sentence(8).take(120)
+                    location = faker.address().cityName().ifBlank { "Campus" }
                 }
                 persistedEvents += persistence.persist(event)
             }
         }
 
-        val signUpCandidates = persistedEvents.filter { it.signUp }.shuffled(random)
-        val signUpFormTarget = targetCount(signUpCandidates.size, config.signUpFormRatio)
-        signUpCandidates.take(signUpFormTarget).forEach { event ->
-            event.replaceSignUpForm(buildEventSignUpForm(event.title))
+        val signUpFormCandidates = persistedEvents.filter { it.signUp }.shuffled(random)
+        val signUpFormTarget = targetCount(signUpFormCandidates.size, config.signUpFormRatio)
+        signUpFormCandidates.take(signUpFormTarget).forEach { event ->
+            event.replaceSignUpForm(buildEventSignUpForm())
             persistence.persist(event)
         }
 
         val bannerCandidates = persistedEvents.shuffled(random)
-        val bannerTarget = if (bannerUploaders.isNotEmpty()) {
+        val bannerTarget = if (seedUsers.isNotEmpty()) {
             targetCount(bannerCandidates.size, config.bannerRatio)
         } else {
             0
         }
         bannerCandidates.take(bannerTarget).forEach { event ->
-            val uploader = bannerUploaders[random.nextInt(bannerUploaders.size)]
+            val uploader = seedUsers[random.nextInt(seedUsers.size)]
             val file = fileFactory.create(
                 uploader = uploader,
                 name = "seed-banner-${nextSuffix()}.png",
@@ -428,21 +448,37 @@ private class DatabaseSeedRunner(
             eventFactory.createBanner(event, file)
         }
 
+        var seededSignUps = 0
+        val signUpUserCandidates = seedUsers.distinctBy { it.id }
+        persistedEvents
+            .filter { it.signUp }
+            .forEach { event ->
+                val targetSignUps = targetCount(signUpUserCandidates.size, config.signUpRatio)
+                signUpUserCandidates
+                    .shuffled(random)
+                    .take(targetSignUps)
+                    .forEach { user ->
+                        eventFactory.createSignUp(event = event, user = user)
+                        seededSignUps++
+                    }
+            }
+
         return EventSeedResult(
             seededEvents = persistedEvents.size,
             withSignUpForms = signUpFormTarget,
             withBanners = bannerTarget,
+            signUps = seededSignUps,
         )
     }
 
-    private fun buildEventSignUpForm(eventTitle: String): Survey {
+    private fun buildEventSignUpForm(): Survey {
         val survey = Survey()
         survey.addQuestion(
             Question(
                 idx = 1L,
                 survey = survey,
                 type = QuestionType.DESCRIPTION,
-                label = "Sign-up info for $eventTitle",
+                label = "Info",
                 choiceLabels = mutableListOf(),
             )
         )
@@ -451,8 +487,8 @@ private class DatabaseSeedRunner(
                 idx = 2L,
                 survey = survey,
                 type = QuestionType.RADIO,
-                label = "Preferred meal option",
-                choiceLabels = mutableListOf("No preference", "Vegetarian", "Vegan"),
+                label = "Meal",
+                choiceLabels = mutableListOf("Standard", "Vegetarian", "Vegan"),
             )
         )
         survey.addQuestion(
@@ -460,8 +496,8 @@ private class DatabaseSeedRunner(
                 idx = 3L,
                 survey = survey,
                 type = QuestionType.CHECKBOX,
-                label = "Select applicable preferences",
-                choiceLabels = mutableListOf("Alcohol-free", "Lactose-free", "Wheelchair access"),
+                label = "Preferences",
+                choiceLabels = mutableListOf("No alcohol", "Lactose free", "Accessibility"),
             )
         )
         survey.addQuestion(
@@ -469,7 +505,7 @@ private class DatabaseSeedRunner(
                 idx = 4L,
                 survey = survey,
                 type = QuestionType.OPEN,
-                label = "Anything else we should know?",
+                label = "Notes",
             )
         )
         return survey
@@ -481,7 +517,7 @@ private class DatabaseSeedRunner(
         random: Random,
     ): ContributionSeedResult {
         val currentYear = LocalDate.now().year
-        val periodShift = (runTag % 17).toInt()
+        val periodShift = faker.number().numberBetween(0, 17)
         val previousPeriod = createContributionPeriodWithRetry(
             baseStart = LocalDate.of(currentYear - 1, 1, 1).plusDays(periodShift.toLong()),
             baseEnd = LocalDate.of(currentYear - 1, 12, 31).minusDays(periodShift.toLong()),
@@ -642,13 +678,35 @@ private class DatabaseSeedRunner(
     }
 
     private fun targetCount(total: Int, ratio: Double): Int {
-        if (total <= 0) return 0
+        if (total <= 0 || ratio <= 0.0) return 0
         return max(1, (total * ratio).roundToInt().coerceAtMost(total))
+    }
+
+    private fun buildEventTitle(): String {
+        val a = shortNameWord()
+        val b = shortNameWord()
+        return "$a $b".take(28)
+    }
+
+    private fun sanitizeToken(raw: String): String {
+        return raw.lowercase()
+            .replace(unsafeTokenRegex, "_")
+            .trim('_')
+            .ifBlank { "seed" }
     }
 
     private fun nextSuffix(): String {
         sequence += 1
-        return "${runTag}${sequence}"
+        return "${runToken}${sequence.toString(36)}"
+    }
+
+    private fun shortNameWord(): String {
+        val word = faker.lorem().word()
+            .replace(Regex("[^a-zA-Z]"), "")
+            .take(12)
+            .lowercase()
+            .ifBlank { "seed" }
+        return word.replaceFirstChar { it.uppercase() }
     }
 }
 
@@ -664,6 +722,7 @@ private data class EventSeedResult(
     val seededEvents: Int,
     val withSignUpForms: Int,
     val withBanners: Int,
+    val signUps: Int,
 )
 
 private data class ContributionSeedResult(
@@ -687,6 +746,7 @@ private data class SeedSummary(
     val events: Int,
     val eventsWithSignUpForms: Int,
     val eventsWithBanners: Int,
+    val eventSignUps: Int,
     val contributionPeriods: Int,
     val activeMemberships: Int,
     val pastMemberships: Int,
@@ -867,6 +927,10 @@ private data class SeederConfig(
                         default = EventSeedConfig().bannerRatio,
                         "bannerRatio"
                     ),
+                    signUpRatio = eventsRaw.double(
+                        default = EventSeedConfig().signUpRatio,
+                        "signUpRatio"
+                    ),
                 ),
                 contributions = ContributionSeedConfig(
                     activeMemberRatio = contributionsRaw.double(
@@ -953,6 +1017,7 @@ private data class EventSeedConfig(
     val futureUnapprovedMembersOnly: Int = 2,
     val signUpFormRatio: Double = 0.45,
     val bannerRatio: Double = 0.35,
+    val signUpRatio: Double = 0.25,
 ) {
     fun normalized(): EventSeedConfig {
         return copy(
@@ -967,6 +1032,7 @@ private data class EventSeedConfig(
             futureUnapprovedMembersOnly = max(1, futureUnapprovedMembersOnly),
             signUpFormRatio = signUpFormRatio.clampRatio(),
             bannerRatio = bannerRatio.clampRatio(),
+            signUpRatio = signUpRatio.clampRatio(),
         )
     }
 }

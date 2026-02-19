@@ -1,8 +1,8 @@
 users:
   defaultPassword: "Password123!"
-  members: 24
+  members: 32
   committeeMembers: 8
-  guestUsers: 12
+  guestUsers: 32
   boardMembers: 4
   admins: 1
   namedUsers:
@@ -33,6 +33,7 @@ events:
   futureUnapprovedMembersOnly: 2
   signUpFormRatio: 0.45
   bannerRatio: 0.35
+  signUpRatio: 0.25
 
 contributions:
   activeMemberRatio: 0.50

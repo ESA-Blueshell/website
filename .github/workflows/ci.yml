@@ -205,7 +205,7 @@ jobs:
 
   system-tests:
     name: Run system tests
-    needs: check-changes
+    needs: [ check-changes, fe-verify ]
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45

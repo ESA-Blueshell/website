@@ -50,12 +50,13 @@
         class="mx-3 my-6"
       >
         <v-container class="pa-0">
-          <v-row dense>
-            <v-col
-              v-for="committee in committees"
-              :key="committee.id ?? committee.name"
-              cols="12"
-            >
+          <v-row
+            v-for="committee in committees"
+            :key="committee.id ?? committee.name"
+            class="my-3"
+            dense
+          >
+            <v-col cols="12">
               <committee-card :committee="committee" />
             </v-col>
           </v-row>
@@ -71,7 +72,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 
-import {findCommittees, type CommitteeDetailResponse} from "@/services/api"
+import {type CommitteeDetailResponse, findCommittees} from "@/services/api"
 import CommitteeCard from "@/components/common/cards/CommitteeCard.vue"
 
 const committees = ref<CommitteeDetailResponse[]>([])

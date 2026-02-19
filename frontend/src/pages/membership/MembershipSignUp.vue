@@ -100,6 +100,7 @@
 
                 <v-btn
                   color="primary"
+                  data-testid="membership-step2-signin"
                   prepend-icon="mdi-check-circle-outline"
                   @click="handleVerified"
                 >
@@ -162,6 +163,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
+                  data-testid="membership-complete-btn"
                   @click="nextStep"
                 >
                   Complete Membership

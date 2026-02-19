@@ -35,17 +35,17 @@ prefix_rule(
   decision="allow",
 )
 
-# --- ASK ---
+# --- PROMPT ---
 
 prefix_rule(
   pattern=["git", "pull"],
-  decision="ask",
+  decision="prompt",
   justification="Pull changes modifies local workspace state.",
 )
 
 prefix_rule(
   pattern=["docker", "compose", "down"],
-  decision="ask",
+  decision="prompt",
   justification="Can stop/remove running dev services.",
 )
 

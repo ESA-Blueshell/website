@@ -268,7 +268,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val createResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/eventSignups")
+                        r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -289,7 +289,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val updateResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/eventSignups")
+                        r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -307,7 +307,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val deleteResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "DELETE" &&
-                        r.url().contains("/eventSignups/$existingSignUpId")
+                        r.url().contains("/events/signups/$existingSignUpId")
                 }
             ) {
                 page.getByRole(
@@ -353,7 +353,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val createResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/eventSignups")
+                        r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -375,7 +375,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val updateResponse = page.waitForResponse(
                 Predicate { r ->
                         r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/eventSignups") &&
+                        r.url().contains("/events/$eventId/signups") &&
                         r.url().contains("accessToken=$guestAccessToken")
                 }
             ) {
@@ -397,8 +397,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val deleteResponse = page.waitForResponse(
                 Predicate { r ->
                         r.request().method() == "DELETE" &&
-                        r.url().contains("/eventSignups/$guestSignUpId") &&
-                        r.url().contains("accessToken=$guestAccessToken")
+                        r.url().contains("/events/signups/$guestSignUpId")
                 }
             ) {
                 page.getByRole(

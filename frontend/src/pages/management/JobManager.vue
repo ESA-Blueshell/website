@@ -80,7 +80,10 @@ onMounted(async () => {
           </span>
         </div>
 
-        <v-table density="compact">
+        <v-table
+          density="compact"
+          data-testid="job-manager-table"
+        >
           <thead>
             <tr>
               <th>ID</th>
@@ -124,10 +127,16 @@ onMounted(async () => {
               <td class="cell">
                 {{ execution.payload ?? "-" }}
               </td>
-              <td class="cell">
+              <td
+                :data-testid="`job-error-type-${execution.id}`"
+                class="cell"
+              >
                 {{ execution.errorType ?? "-" }}
               </td>
-              <td class="cell">
+              <td
+                :data-testid="`job-error-reason-${execution.id}`"
+                class="cell"
+              >
                 {{ errorReason(execution) }}
               </td>
               <td>

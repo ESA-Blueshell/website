@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.membership
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.Locator
 import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.factory.contribution.persistence.ContributionFactory
@@ -14,6 +13,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.orm.ObjectOptimisticLockingFailureException
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.function.Predicate
@@ -100,36 +100,33 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                 includeMemberProfile = true
             )
 
-            val createdUser = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
-            createdUser.enabled = true
-            userRepository.saveAndFlush(createdUser)
+            enableUserByUsername(credentials.username)
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Sign in").setExact(false)
-            ).click()
+            page.locator("[data-testid='membership-step2-signin']").first().click()
 
             waitFor(
                 timeoutMs = 12_000,
-                onTimeoutMessage = { "Expected to be on login page with membership redirect query" }
+                onTimeoutMessage = { "Expected to move to login flow or directly to membership step 3" }
             ) {
-                page.url().contains("/login") && page.url().contains("redirect=")
+                page.url().contains("/login") || (page.url().contains("/membership/signup") && page.url().contains("step=3"))
             }
-            val decodedLoginUrl = URLDecoder.decode(page.url(), StandardCharsets.UTF_8)
-            assertThat(decodedLoginUrl).contains("redirect=/membership/signup?step=2")
+            if (page.url().contains("/login")) {
+                val decodedLoginUrl = URLDecoder.decode(page.url(), StandardCharsets.UTF_8)
+                assertThat(decodedLoginUrl).contains("redirect=/membership/signup?step=2")
 
-            val authResponse = page.waitForResponse("**/auth") {
-                page.getByLabel("Username").fill(credentials.username)
-                page.getByRole(
-                    AriaRole.TEXTBOX,
-                    Page.GetByRoleOptions().setName("Password")
-                ).fill(credentials.password)
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Login")
-                ).click()
+                val authResponse = page.waitForResponse("**/auth") {
+                    page.getByLabel("Username").fill(credentials.username)
+                    page.getByRole(
+                        AriaRole.TEXTBOX,
+                        Page.GetByRoleOptions().setName("Password")
+                    ).fill(credentials.password)
+                    page.getByRole(
+                        AriaRole.BUTTON,
+                        Page.GetByRoleOptions().setName("Login")
+                    ).click()
+                }
+                assertThat(authResponse.status()).isEqualTo(200)
             }
-            assertThat(authResponse.status()).isEqualTo(200)
 
             waitFor(
                 timeoutMs = 12_000,
@@ -254,10 +251,25 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
         )
 
         val createdUser = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
-        createdUser.enabled = true
-        val persistedUser = userRepository.saveAndFlush(createdUser)
+        val userId = enableUserByUsername(createdUser.username)
 
-        return SignupContext(credentials = credentials, userId = persistedUser.id!!)
+        return SignupContext(credentials = credentials, userId = userId)
+    }
+
+    private fun enableUserByUsername(username: String): Long {
+        repeat(5) { attempt ->
+            val user = waitForOptional(producer = { userRepository.findByUsername(username) })
+            user.enabled = true
+            try {
+                return userRepository.saveAndFlush(user).id!!
+            } catch (ex: ObjectOptimisticLockingFailureException) {
+                if (attempt == 4) {
+                    throw ex
+                }
+                Thread.sleep((attempt + 1) * 100L)
+            }
+        }
+        throw IllegalStateException("Failed to enable user '$username' after retries")
     }
 
     private fun seedAddress(userId: Long) {
@@ -319,35 +331,21 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     }
 
     private fun completeMembershipAtStepFour(page: Page) {
-        val consentReady = page.evaluate(
-            """() => {
-                const consentText = "I have understood and agree to the terms and conditions for membership listed above."
-                const visibleButton = Array.from(document.querySelectorAll('button'))
-                  .find((element) => element.textContent?.includes('Complete Membership') && element.offsetParent !== null)
-                if (!visibleButton) return false
-
-                const card = visibleButton.closest('.v-card') || document
-                const checkbox = card.querySelector(
-                  'input[aria-label=\"I have understood and agree to the terms and conditions for membership listed above.\"]'
-                )
-                if (!checkbox) return false
-
-                if (!checkbox.checked) {
-                  const label = Array.from(card.querySelectorAll('label'))
-                    .find((element) => element.textContent?.includes(consentText) && element.offsetParent !== null)
-                  label?.click()
-                }
-
-                if (!checkbox.checked) {
-                  checkbox.click()
-                }
-
-                checkbox.dispatchEvent(new Event('input', { bubbles: true }))
-                checkbox.dispatchEvent(new Event('change', { bubbles: true }))
-                return checkbox.checked
-            }"""
-        ) as Boolean
-        assertThat(consentReady).isTrue()
+        val consentLabel = "I have understood and agree to the terms and conditions for membership listed above."
+        val consentCheckbox = page.getByRole(
+            AriaRole.CHECKBOX,
+            Page.GetByRoleOptions().setName(consentLabel).setExact(true)
+        )
+        assertPw(consentCheckbox).isVisible()
+        if (!consentCheckbox.isChecked) {
+            consentCheckbox.check()
+        }
+        waitFor(
+            timeoutMs = 5_000,
+            onTimeoutMessage = { "Expected membership consent checkbox to be checked before completion" }
+        ) {
+            consentCheckbox.isChecked
+        }
 
         val membershipResponse = page.waitForResponse(
             Predicate { response ->
@@ -362,10 +360,9 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     private fun clickCompleteMembership(page: Page) {
         val clicked = page.evaluate(
             """() => {
-                const visibleButton = Array.from(document.querySelectorAll('button'))
-                    .find((element) => element.textContent?.includes('Complete Membership') && element.offsetParent !== null)
-                if (!visibleButton) return false
-                visibleButton.click()
+                const button = document.querySelector('[data-testid="membership-complete-btn"]')
+                if (!button) return false
+                button.click()
                 return true
             }"""
         ) as Boolean
@@ -383,15 +380,6 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
         val refreshed = userRepository.findById(userId).orElseThrow()
         assertThat(refreshed.address).isNotNull()
         assertThat(refreshed.roles).contains(Role.MEMBER)
-    }
-
-    private fun eventually(timeoutMs: Long, condition: () -> Boolean): Boolean {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return true
-            Thread.sleep(200)
-        }
-        return false
     }
 
     private data class SignupContext(

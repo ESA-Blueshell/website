@@ -25,6 +25,7 @@ export type AddressResponse = {
     id: number;
     street?: string;
     updatedAt: string;
+    userId?: number;
     version: number;
     zipCode?: string;
 };
@@ -691,6 +692,7 @@ export type UserActivationRequest = {
 };
 
 export type UserDetailResponse = {
+    addressId?: number;
     createdAt: string;
     discord: string;
     email: string;

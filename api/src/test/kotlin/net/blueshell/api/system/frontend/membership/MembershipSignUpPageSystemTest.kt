@@ -137,7 +137,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     }
 
     @Test
-    fun `step 2 advances to step 3 when signing in through a separate window`() {
+    fun `step 2 advances to step 3 when signed in`() {
         withPage { page ->
             page.navigate("$frontendUrl/membership/signup")
 
@@ -174,6 +174,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                 page.context().cookies(page.url()).any { it.name == "login" }
             }
 
+            // Assert that we are also advanced to step 3 on the main page
             page.waitForURL("**/membership/signup?step=3")
 
             assertThat(page.url()).contains("/membership/signup")

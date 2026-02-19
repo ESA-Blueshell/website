@@ -12,6 +12,7 @@ import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.system.frontend.helper.UserFormHelper
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -47,6 +48,9 @@ abstract class FrontendSystemTestBase {
     @Autowired
     lateinit var mailSender: MockJavaMailSender
 
+    @Autowired(required = false)
+    var rabbitListenerRegistry: RabbitListenerEndpointRegistry? = null
+
     private lateinit var playwright: Playwright
     private lateinit var browser: Browser
     private val objectMapper = ObjectMapper()
@@ -69,6 +73,17 @@ abstract class FrontendSystemTestBase {
     @BeforeEach
     fun clearOutbox() {
         mailSender.clear()
+    }
+
+    @BeforeEach
+    fun startRabbitListeners() {
+        rabbitListenerRegistry?.listenerContainers?.forEach { container ->
+            if (!container.isRunning) {
+                runCatching {
+                    container.start()
+                }
+            }
+        }
     }
 
     @AfterAll

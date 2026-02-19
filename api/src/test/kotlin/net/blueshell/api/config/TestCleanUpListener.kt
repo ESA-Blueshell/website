@@ -2,14 +2,16 @@ package net.blueshell.api.config
 
 import net.blueshell.api.platform.config.JobQueueProperties
 import org.springframework.amqp.core.AmqpAdmin
+import org.springframework.amqp.core.Queue
+import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry
 import org.springframework.beans.factory.getBean
 import org.springframework.beans.factory.getBeanProvider
+import org.springframework.beans.factory.getBeansOfType
 import org.springframework.context.ApplicationContext
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.jdbc.datasource.DataSourceUtils
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry
-import org.springframework.beans.factory.getBean
 import org.springframework.test.context.TestContext
 import org.springframework.test.context.TestExecutionListener
 import java.util.concurrent.CountDownLatch
@@ -25,8 +27,7 @@ class TestCleanUpListener : TestExecutionListener {
 
     override fun beforeTestMethod(testContext: TestContext) {
         val context = testContext.applicationContext
-        stopRabbitListeners(context)
-        purgeJobQueue(context)
+        cleanRabbitState(context)
 
         val dataSource = context.getBean<DataSource>()
         val conn = DataSourceUtils.getConnection(dataSource)
@@ -69,20 +70,44 @@ class TestCleanUpListener : TestExecutionListener {
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource)
         }
-
-        startRabbitListeners(context)
     }
 
     override fun afterTestMethod(testContext: TestContext) {
         val context = testContext.applicationContext
-        stopRabbitListeners(context)
-        purgeJobQueue(context)
+        cleanRabbitState(context)
     }
 
-    private fun purgeJobQueue(context: ApplicationContext) {
+    private fun cleanRabbitState(context: ApplicationContext) {
+        stopRabbitListeners(context)
+        purgeKnownQueues(context)
+    }
+
+    private fun purgeKnownQueues(context: ApplicationContext) {
         val amqpAdmin = context.getBeanProvider<AmqpAdmin>().ifAvailable ?: return
-        val queueName = context.getBean<JobQueueProperties>().queueName
-        amqpAdmin.purgeQueue(queueName, false)
+        resolveQueueNames(context).forEach { queueName ->
+            runCatching {
+                amqpAdmin.purgeQueue(queueName, false)
+            }
+        }
+    }
+
+    private fun resolveQueueNames(context: ApplicationContext): Set<String> {
+        val queueNames = linkedSetOf<String>()
+        context.getBeanProvider<JobQueueProperties>().ifAvailable?.queueName?.let(queueNames::add)
+        context.getBeansOfType<Queue>().values.mapTo(queueNames) { it.name }
+        context.getBeanProvider<RabbitListenerEndpointRegistry>().ifAvailable
+            ?.listenerContainers
+            ?.forEach { container ->
+                if (container is AbstractMessageListenerContainer) {
+                    container.queueNames.forEach(queueNames::add)
+                }
+            }
+
+        return queueNames
+            .asSequence()
+            .map(String::trim)
+            .filter { it.isNotEmpty() && !it.startsWith("amq.") }
+            .toSet()
     }
 
     private fun stopRabbitListeners(context: ApplicationContext) {
@@ -105,17 +130,6 @@ class TestCleanUpListener : TestExecutionListener {
             }
         }
         stopLatch.await(RABBIT_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    }
-
-    private fun startRabbitListeners(context: ApplicationContext) {
-        val registry = context.getBeanProvider<RabbitListenerEndpointRegistry>().ifAvailable ?: return
-        registry.listenerContainers.forEach { container ->
-            if (!container.isRunning) {
-                runCatching {
-                    container.start()
-                }
-            }
-        }
     }
 
     private companion object {

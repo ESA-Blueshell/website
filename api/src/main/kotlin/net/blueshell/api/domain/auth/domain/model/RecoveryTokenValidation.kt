@@ -35,19 +35,3 @@ data class RecoveryTokenValidation(
         }
     }
 }
-
-/**
- * Result of token validation containing the outcome and details.
- */
-sealed class TokenValidationResult {
-    data class Valid(val tokenId: Long, val userId: Long) : TokenValidationResult()
-
-    sealed class Invalid : TokenValidationResult() {
-        object Malformed : Invalid()
-        object NotFound : Invalid()
-        object TypeMismatch : Invalid()
-        object Expired : Invalid()
-        object AlreadyConsumed : Invalid()
-        object VerifierMismatch : Invalid()
-    }
-}

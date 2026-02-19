@@ -23,7 +23,6 @@ class EventSignUpService @Autowired constructor(
 ) : BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
     @Transactional
     override fun create(entity: EventSignUp): EventSignUp {
-        mergeAssociations(entity)
         val saved = super.create(entity)
         trackedEvents.publish { actor ->
             EventSignUpCreated(
@@ -36,7 +35,6 @@ class EventSignUpService @Autowired constructor(
 
     @Transactional
     override fun update(entity: EventSignUp): EventSignUp {
-        mergeAssociations(entity)
         return super.update(entity)
     }
 
@@ -77,10 +75,5 @@ class EventSignUpService @Autowired constructor(
                     "EventSignUp not found for accessToken: $accessToken and event: $eventId"
                 )
             })
-    }
-
-    private fun mergeAssociations(signUp: EventSignUp) {
-        // No additional merging needed for many-to-one relationships
-        // They are already set as entity references in the mapper
     }
 }

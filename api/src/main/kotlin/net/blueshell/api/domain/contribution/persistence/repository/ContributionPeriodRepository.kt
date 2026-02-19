@@ -13,5 +13,5 @@ interface ContributionPeriodRepository : BaseRepository<ContributionPeriod, Long
                 "ORDER BY CASE WHEN CURRENT_DATE BETWEEN cp.startDate AND cp.endDate THEN 0 ELSE 1 END, cp.startDate DESC " +
                 "LIMIT 1"
     )
-    fun findCurrentOrLatestContributionPeriod(): ContributionPeriod
+    fun findCurrentOrLatestContributionPeriod(): ContributionPeriod?
 }

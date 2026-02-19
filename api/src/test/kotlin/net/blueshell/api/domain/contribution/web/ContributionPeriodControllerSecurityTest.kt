@@ -68,6 +68,12 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
     inner class FindCurrentContributionPeriod {
 
         @Test
+        fun `returns no content when no current period exists`() {
+            mvc.perform(get("/contributionPeriods/current"))
+                .andExpect(status().isNoContent)
+        }
+
+        @Test
         fun `allows anyone to get current period`() {
             createContributionPeriodFixture()
             mvc.perform(get("/contributionPeriods/current"))

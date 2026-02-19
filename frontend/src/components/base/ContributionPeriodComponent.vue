@@ -29,6 +29,11 @@ const formatPeriod = (period?: ContributionPeriodResponse) => {
 async function getContributionPeriod() {
   try {
     const response = await findCurrentContributionPeriod()
+    if (!response.data) {
+      contributionPeriod.value = undefined
+      currentPeriod.value = false
+      return
+    }
     contributionPeriod.value = response.data
 
     const now = DateTime.now()

@@ -51,7 +51,17 @@ class ContributionPeriodCommandHandlersTest {
 
             val result = handler.handle(FindCurrentContributionPeriodCommand())
 
-            assertThat(result.id).isEqualTo(5L)
+            assertThat(result).isNotNull
+            assertThat(result!!.id).isEqualTo(5L)
+        }
+
+        @Test
+        fun `returns null when no current contribution period exists`() {
+            whenever(contributionPeriodService.findLatest()).thenReturn(null)
+
+            val result = handler.handle(FindCurrentContributionPeriodCommand())
+
+            assertThat(result).isNull()
         }
     }
 

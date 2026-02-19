@@ -10,7 +10,7 @@ import java.time.LocalDate
 
 class FindContributionPeriodsCommand : Command<List<ContributionPeriodResult>>
 
-class FindCurrentContributionPeriodCommand : Command<ContributionPeriodResult>
+class FindCurrentContributionPeriodCommand : Command<ContributionPeriodResult?>
 
 data class CreateContributionPeriodCommand(
     @field:NotNull(message = "Start date is required")

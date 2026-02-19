@@ -14,6 +14,7 @@ import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
@@ -31,9 +32,13 @@ class ContributionPeriodController @Autowired constructor(
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
-    fun findCurrentContributionPeriod(): ContributionPeriodResponse {
+    fun findCurrentContributionPeriod(): ResponseEntity<ContributionPeriodResponse> {
         val contributionPeriod = commandBus.dispatch(FindCurrentContributionPeriodCommand())
-        return contributionPeriod.asResponse()
+        return if (contributionPeriod == null) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.ok(contributionPeriod.asResponse())
+        }
     }
 
     @PreAuthorize("hasPermission(null, 'ContributionPeriod', 'write')")

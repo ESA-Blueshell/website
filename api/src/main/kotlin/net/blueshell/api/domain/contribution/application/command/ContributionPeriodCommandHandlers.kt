@@ -23,11 +23,11 @@ class FindContributionPeriodsHandler(
 @Component
 class FindCurrentContributionPeriodHandler(
     private val service: ContributionPeriodService
-) : CommandHandler<FindCurrentContributionPeriodCommand, ContributionPeriodResult> {
+) : CommandHandler<FindCurrentContributionPeriodCommand, ContributionPeriodResult?> {
     override val commandType = FindCurrentContributionPeriodCommand::class
 
-    override fun handle(command: FindCurrentContributionPeriodCommand): ContributionPeriodResult {
-        return service.findLatest().toResult()
+    override fun handle(command: FindCurrentContributionPeriodCommand): ContributionPeriodResult? {
+        return service.findLatest()?.toResult()
     }
 }
 

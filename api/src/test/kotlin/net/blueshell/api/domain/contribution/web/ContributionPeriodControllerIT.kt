@@ -66,6 +66,12 @@ class ContributionPeriodControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.startDate").value(current.startDate.toString()))
                 .andExpect(jsonPath("$.endDate").value(current.endDate.toString()))
         }
+
+        @Test
+        fun `returns no content when no contribution period exists`() {
+            mvc.perform(get("/contributionPeriods/current"))
+                .andExpect(status().isNoContent)
+        }
     }
 
     @Nested

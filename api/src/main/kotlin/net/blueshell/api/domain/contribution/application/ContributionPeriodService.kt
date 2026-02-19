@@ -39,7 +39,7 @@ class ContributionPeriodService @Autowired constructor(
     }
 
     @Transactional(readOnly = true)
-    fun findLatest(): ContributionPeriod {
+    fun findLatest(): ContributionPeriod? {
         return repository.findCurrentOrLatestContributionPeriod()
     }
 

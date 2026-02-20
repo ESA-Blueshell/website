@@ -55,7 +55,7 @@ if ! [[ "$MIN_LINE_RATE" =~ ^(0(\.[0-9]+)?|1(\.0+)?)$ ]]; then
 fi
 
 ACTUAL_LINE_RATE="$(
-  sed -n 's/.*line-rate="\([0-9.]*\)".*/\1/p' "$COBERTURA_FILE" | head -n1
+  sed -n '/line-rate="/{s/.*line-rate="\([0-9.]*\)".*/\1/p;q;}' "$COBERTURA_FILE"
 )"
 
 if [[ -z "$ACTUAL_LINE_RATE" ]]; then

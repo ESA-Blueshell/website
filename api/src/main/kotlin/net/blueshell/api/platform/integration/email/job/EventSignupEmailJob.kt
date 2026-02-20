@@ -18,6 +18,6 @@ class EventSignupEmailJob(
     override val jobType: String = EmailJobs.EventSignup.type
 
     override fun handlePayload(payload: EmailJobs.EventSignupPayload) {
-        emails.sendEventSignupEmail(payload.eventSignUpId)
+        emails.sendEventSignupEmail(payload.eventSignUpId, payload.guestAccessToken)
     }
 }

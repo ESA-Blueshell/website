@@ -49,14 +49,18 @@ class EventSignUpControllerIT : UserTestSupport() {
                     .content(eventSignUpRequestFactory.createGuestSignUpPayload())
             )
                 .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.guest.accessToken").isNotEmpty)
                 .andReturn()
 
             val created = mapper.readTree(createResult.response.contentAsByteArray)
             val signUpId = created.path("id").asLong()
-            val accessToken = created.path("guest").path("accessToken").asText()
+            val accessToken = checkNotNull(
+                createResult.response.getHeader(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER)
+            ) { "Expected guest access token header on signup create response" }
 
-            mvc.perform(get("/events/signups/byAccessToken/{accessToken}", accessToken))
+            mvc.perform(
+                get("/events/signups/byAccessToken")
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
+            )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUpId))
         }
@@ -92,6 +96,32 @@ class EventSignUpControllerIT : UserTestSupport() {
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.eventId").value(event.id))
                 .andExpect(jsonPath("$.user.id").value(member.id))
+        }
+
+        @Test
+        fun `anonymous signup cannot spoof a user id`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "userId": ${member.id},
+                          "guest": {
+                            "name": "Spoof Attempt",
+                            "discord": "spoof#1234",
+                            "email": "spoof@example.com",
+                            "phoneNumber": "+31612345678"
+                          }
+                        }
+                        """.trimIndent()
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.user").doesNotExist())
         }
     }
 
@@ -141,12 +171,14 @@ class EventSignUpControllerIT : UserTestSupport() {
 
             val created = mapper.readTree(createResult.response.contentAsByteArray)
             val signUpId = created.path("id").asLong()
-            val accessToken = created.path("guest").path("accessToken").asText()
+            val accessToken = checkNotNull(
+                createResult.response.getHeader(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER)
+            ) { "Expected guest access token header on signup create response" }
             val version = created.path("version").asLong()
 
             mvc.perform(
                 put("/events/{eventId}/signups", event.id)
-                    .param("accessToken", accessToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventSignUpRequestFactory.updateGuestSignUpPayload(version))
             )
@@ -193,11 +225,13 @@ class EventSignUpControllerIT : UserTestSupport() {
 
             val created = mapper.readTree(createResult.response.contentAsByteArray)
             val signUpId = created.path("id").asLong()
-            val accessToken = created.path("guest").path("accessToken").asText()
+            val accessToken = checkNotNull(
+                createResult.response.getHeader(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER)
+            ) { "Expected guest access token header on signup create response" }
 
             mvc.perform(
                 delete("/events/signups/{id}", signUpId)
-                    .param("accessToken", accessToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
             )
                 .andExpect(status().isNoContent)
         }

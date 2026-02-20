@@ -363,10 +363,10 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             }
             assertThat(createResponse.status()).isEqualTo(201)
 
-            val persistedAfterCreate = waitForEventSignUpByEvent(eventId)
-            guestAccessToken = checkNotNull(persistedAfterCreate.guest?.accessToken) {
-                "Expected guest access token after guest sign-up create"
+            guestAccessToken = checkNotNull(createResponse.headerValue("x-guest-access-token")) {
+                "Expected guest access token header after guest sign-up create"
             }
+            val persistedAfterCreate = waitForEventSignUpByEvent(eventId)
             guestSignUpId = checkNotNull(persistedAfterCreate.id) { "Expected guest sign-up id" }
 
             eventCardSignUpButton(page, event.title, "Edit sign-up").click()
@@ -376,7 +376,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
                 Predicate { r ->
                         r.request().method() == "PUT" &&
                         r.url().contains("/events/$eventId/signups") &&
-                        r.url().contains("accessToken=$guestAccessToken")
+                        r.request().headers()["x-guest-access-token"] == guestAccessToken
                 }
             ) {
                 page.getByRole(

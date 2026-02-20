@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
+import type {GuestSessionData} from "@/plugins/store.ts"
 import {
   type AnswerRequest,
   type CreateEventSignUpRequest,
@@ -27,6 +28,7 @@ const props = defineProps<{ event: EventResponse; buttonLoading?: boolean; initi
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed(() => store.getters.getLogin)
+const guestAccessHeader = "X-Guest-Access-Token"
 
 const survey = computed(() => props.event.signUpForm ?? null)
 const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "", phoneNumber: ""})
@@ -65,6 +67,15 @@ const signUp = computed<EventSignUpResponse | undefined>(() => props.initialSign
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
+function extractGuestAccessToken(headers: unknown): string | null {
+  if (headers == null || typeof headers !== "object") return null
+  const values = headers as Record<string, string | string[] | undefined>
+  const raw = values["x-guest-access-token"] ?? values[guestAccessHeader]
+  if (typeof raw === "string") return raw
+  if (Array.isArray(raw) && raw.length > 0 && raw[0] != null) return raw[0]
+  return null
+}
+
 async function validate() {
   if (!isLoggedIn.value) {
     const guestFormValid = await guestRef.value?.validate?.()
@@ -97,10 +108,11 @@ async function save() {
       }
 
       const eventId = props.event.id!
+      const existingGuestToken = (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? null
       const resp = signUp.value?.id
         ? await updateEventSignUp({
           path: {eventId},
-          query: {accessToken: signUp.value.guest?.accessToken},
+          headers: existingGuestToken ? {[guestAccessHeader]: existingGuestToken} : undefined,
           body: {
             ...payload,
             version: signUp.value.version,
@@ -111,7 +123,15 @@ async function save() {
 
       const eventSignUp = resp.data!
       emit("update:signUp", eventSignUp)
-      if (!isLoggedIn.value) store.commit("saveGuestData", eventSignUp.guest!)
+      if (!isLoggedIn.value && eventSignUp.guest != null) {
+        const guestAccessToken = extractGuestAccessToken(resp.headers) ?? existingGuestToken
+        if (guestAccessToken != null) {
+          store.commit("saveGuestData", {
+            ...eventSignUp.guest,
+            accessToken: guestAccessToken,
+          } satisfies GuestSessionData)
+        }
+      }
     })
     setSubmitResult(true)
   } catch (e) {
@@ -126,9 +146,10 @@ async function removeSignUp() {
 
   try {
     await withSaving(async () => {
+      const guestAccessToken = (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? null
       await deleteEventSignup({
         path: {id: existingSignUp.id as number},
-        query: {accessToken: existingSignUp.guest?.accessToken},
+        headers: guestAccessToken ? {[guestAccessHeader]: guestAccessToken} : undefined,
         throwOnError: true,
       })
     })

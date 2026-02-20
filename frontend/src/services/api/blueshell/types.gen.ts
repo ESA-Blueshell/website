@@ -388,7 +388,6 @@ export enum FileType {
 }
 
 export type GuestResponse = {
-    accessToken: string;
     createdAt: string;
     discord: string;
     email: string;
@@ -2433,11 +2432,11 @@ export type FindEventSignUpsResponse = FindEventSignUpsResponses[keyof FindEvent
 
 export type FindEventSignUpsByAccessTokenData = {
     body?: never;
-    path: {
-        accessToken: string;
+    headers: {
+        'X-Guest-Access-Token': string;
     };
     query?: never;
-    url: '/events/signups/byAccessToken/{accessToken}';
+    url: '/events/signups/byAccessToken';
 };
 
 export type FindEventSignUpsByAccessTokenErrors = {
@@ -2476,12 +2475,13 @@ export type FindEventSignUpsByAccessTokenResponse = FindEventSignUpsByAccessToke
 
 export type DeleteEventSignupData = {
     body?: never;
+    headers?: {
+        'X-Guest-Access-Token'?: string;
+    };
     path: {
         id: number;
     };
-    query?: {
-        accessToken?: string;
-    };
+    query?: never;
     url: '/events/signups/{id}';
 };
 
@@ -2693,12 +2693,13 @@ export type CreateEventSignupResponse = CreateEventSignupResponses[keyof CreateE
 
 export type UpdateEventSignUpData = {
     body: UpdateEventSignUpRequest;
+    headers?: {
+        'X-Guest-Access-Token'?: string;
+    };
     path: {
         eventId: number;
     };
-    query?: {
-        accessToken?: string;
-    };
+    query?: never;
     url: '/events/{eventId}/signups';
 };
 

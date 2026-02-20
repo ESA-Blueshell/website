@@ -3,9 +3,13 @@ import {createStore, type Store} from "vuex"
 import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
 import {emitAuthChanged} from "@/plugins/authSync"
 
+export type GuestSessionData = GuestResponse & {
+  accessToken: string;
+}
+
 export interface State {
   login: LoginResponse | null;
-  guestData: GuestResponse | null;
+  guestData: GuestSessionData | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
   xsrfToken: string | null;
@@ -24,7 +28,7 @@ export interface Mutations {
 
   setStatusSnackbarMessage(state: State, message: string): void;
 
-  saveGuestData(state: State, data: Record<string, unknown>): void;
+  saveGuestData(state: State, data: GuestSessionData): void;
 
   setXsrfToken(state: State, token: string | null): void;
 }
@@ -58,6 +62,8 @@ export interface Getters {
 
   isMember(state: State): boolean;
 
+  getGuestData(state: State): GuestSessionData | null;
+
   getXsrfToken(state: State): string | null;
 }
 
@@ -79,7 +85,7 @@ const store = createStore<State>({
   state(): State {
       return {
       login: readJsonCookie<LoginResponse>("login"),
-      guestData: readJsonCookie("guestData"),
+      guestData: readJsonCookie<GuestSessionData>("guestData"),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
       xsrfToken: null,
@@ -120,7 +126,7 @@ const store = createStore<State>({
         state.statusSnackbarMessage = null
       }
     },
-    saveGuestData(state: State, data: GuestResponse): void {
+    saveGuestData(state: State, data: GuestSessionData): void {
       writeJsonCookie("guestData", data)
       state.guestData = data
     },
@@ -154,7 +160,7 @@ const store = createStore<State>({
       const roles = state.login?.roles ?? []
       return roles.some(r => `${r}` === `${Role.MEMBER}`)
     },
-    getGuestData(state: State): GuestResponse | null {
+    getGuestData(state: State): GuestSessionData | null {
       return state.guestData
     },
     getXsrfToken(state: State): string | null {

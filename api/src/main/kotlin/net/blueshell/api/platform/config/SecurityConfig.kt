@@ -2,8 +2,10 @@ package net.blueshell.api.platform.config
 
 import net.blueshell.api.infrastructure.security.JwtAuthFilter
 import net.blueshell.api.infrastructure.security.JwtAuthenticationEntryPoint
+import net.blueshell.api.infrastructure.security.PublicAuthRateLimitFilter
 import net.blueshell.api.infrastructure.security.permission.CompositePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -27,7 +29,8 @@ import java.util.*
 @EnableMethodSecurity
 class SecurityConfig(
     private val authenticationEntryPoint: JwtAuthenticationEntryPoint,
-    private val jwtAuthFilter: JwtAuthFilter
+    private val jwtAuthFilter: JwtAuthFilter,
+    private val publicAuthRateLimitFilterProvider: ObjectProvider<PublicAuthRateLimitFilter>
 ) {
     @Bean
     fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager {
@@ -55,7 +58,8 @@ class SecurityConfig(
             "https://esa-blueshell.nl"
         )
         cfg.allowedMethods = mutableListOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type")
+        cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type", "X-Guest-Access-Token")
+        cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
         cfg.allowCredentials = true
 
         val src = UrlBasedCorsConfigurationSource()
@@ -66,6 +70,10 @@ class SecurityConfig(
 
     @Bean
     fun authChain(http: HttpSecurity): SecurityFilterChain {
+        publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
+            http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
+        }
+
         http.securityMatcher("/**")
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
@@ -83,7 +91,7 @@ class SecurityConfig(
                     .requestMatchers(
                         HttpMethod.GET,
                         "/events/**",
-                        "/events/signups/byAccessToken/*",
+                        "/events/signups/byAccessToken",
                         "/blogs",
                         "/blogs/*",
                         "/boards",

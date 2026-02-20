@@ -7,5 +7,5 @@ import java.util.*
 
 @Repository
 interface GuestRepository : BaseRepository<Guest, Long> {
-    fun findByAccessToken(accessToken: String): Optional<Guest>
+    fun findByAccessTokenHash(accessTokenHash: String): Optional<Guest>
 }

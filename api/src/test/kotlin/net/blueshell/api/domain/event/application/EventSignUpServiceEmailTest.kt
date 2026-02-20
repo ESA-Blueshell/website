@@ -47,6 +47,7 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         assertThat(jobPayload)
             .describedAs("Job payload should contain signUpId")
             .contains("\"eventSignUpId\":${created.id}")
+            .contains("\"guestAccessToken\":\"")
     }
 
     @Test
@@ -72,7 +73,7 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
 
     private fun createEventSignUpWithGuest(): EventSignUp {
         val event = createAndSaveEvent()
-        val guest = Guest(
+        val guest = Guest.withRawToken(
             name = "Test Guest",
             discord = "guest#1234",
             email = "guest@example.com",

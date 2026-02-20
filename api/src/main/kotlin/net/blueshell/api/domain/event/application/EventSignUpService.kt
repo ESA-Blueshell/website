@@ -2,6 +2,7 @@ package net.blueshell.api.domain.event.application
 
 import net.blueshell.api.domain.event.application.event.EventSignUpCreated
 import net.blueshell.api.domain.event.persistence.EventSignUp
+import net.blueshell.api.domain.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.domain.event.application.query.EventSignUpQuery
 import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSignUpSpecifications
@@ -27,6 +28,7 @@ class EventSignUpService @Autowired constructor(
         trackedEvents.publish { actor ->
             EventSignUpCreated(
                 saved.id!!,
+                guestAccessToken = saved.guest?.accessTokenRaw,
                 actor = actor
             )
         }
@@ -51,7 +53,7 @@ class EventSignUpService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun findByGuestAccessToken(accessToken: String): MutableList<EventSignUp> {
-        return repository.findByGuestAccessToken(accessToken)
+        return repository.findByGuestAccessTokenHash(GuestAccessTokenCodec.hash(accessToken))
     }
 
     fun findByEventId(eventId: Long): MutableList<EventSignUp> {
@@ -68,11 +70,11 @@ class EventSignUpService @Autowired constructor(
     }
 
     fun findByGuestAccessTokenAndEventId(accessToken: String, eventId: Long): EventSignUp {
-        return repository.findByGuestAccessTokenAndEvent_Id(accessToken, eventId)
+        return repository.findByGuestAccessTokenHashAndEvent_Id(GuestAccessTokenCodec.hash(accessToken), eventId)
             .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "EventSignUp not found for accessToken: $accessToken and event: $eventId"
+                    "EventSignUp not found for provided guest token and event: $eventId"
                 )
             })
     }

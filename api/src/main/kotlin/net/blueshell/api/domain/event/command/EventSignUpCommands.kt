@@ -46,5 +46,6 @@ data class UpdateEventSignUpCommand(
 
 data class DeleteEventSignUpCommand(
     @field:NotNull(message = "EventSignUp ID is required")
-    var eventSignUpId: Long
+    var eventSignUpId: Long,
+    var accessToken: String? = null
 ) : Command<Unit>

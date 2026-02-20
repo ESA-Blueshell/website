@@ -35,9 +35,9 @@ class EmailService(
         deliver(emailContent)
     }
 
-    fun sendEventSignupEmail(eventSignUpId: Long) {
+    fun sendEventSignupEmail(eventSignUpId: Long, guestAccessToken: String) {
         val eventSignUp = eventSignUps.findById(eventSignUpId)
-        val emailContent = createEventSignupEmail(eventSignUp, frontendUrl)
+        val emailContent = createEventSignupEmail(eventSignUp, frontendUrl, guestAccessToken)
         deliver(emailContent)
     }
 

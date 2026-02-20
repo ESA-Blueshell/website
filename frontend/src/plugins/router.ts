@@ -194,9 +194,19 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true},
   },
   {
-    path: "/events/signups/edit/:accessToken",
+    path: "/events/signups/edit",
     name: "editSignUp",
-    component: () => import("@/components/form/EventSignUpForm.vue"),
+    redirect: (to) => ({
+      path: "/events",
+      hash: to.hash,
+    }),
+  },
+  {
+    path: "/events/signups/edit/:accessToken",
+    redirect: (to) => ({
+      path: "/events",
+      hash: `#accessToken=${String(to.params.accessToken ?? "")}`,
+    }),
   },
   {
     path: "/events/circuitShowdown",

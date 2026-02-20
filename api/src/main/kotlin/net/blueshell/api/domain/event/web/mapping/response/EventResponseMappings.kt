@@ -49,7 +49,6 @@ fun Guest.asResponse(): GuestResponse =
         email = this.email,
         discord = this.discord,
         phoneNumber = this.phoneNumber,
-        accessToken = this.accessToken,
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

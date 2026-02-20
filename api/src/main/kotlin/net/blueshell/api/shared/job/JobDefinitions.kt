@@ -25,7 +25,8 @@ object EmailJobs {
     )
 
     data class EventSignupPayload(
-        val eventSignUpId: Long
+        val eventSignUpId: Long,
+        val guestAccessToken: String
     )
 
     data class ContributionReminderPayload(

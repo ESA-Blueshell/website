@@ -31,7 +31,11 @@ class EventSignupEmailBuilderTest {
         )
 
         // When: Building event signup email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl)
+        val emailContent = createEventSignupEmail(
+            signUp,
+            frontendUrl,
+            checkNotNull(signUp.guest?.accessTokenRaw)
+        )
 
         // Then: EmailContent has correct fields
         assertThat(emailContent.recipientEmail).isEqualTo("john@example.com")
@@ -44,7 +48,7 @@ class EventSignupEmailBuilderTest {
             .contains("Dear John Doe")
             .contains("Summer Gaming Tournament")
             .contains("Campus Building A")
-            .contains("$frontendUrl/events/signups/edit/test-token-123")
+            .contains("$frontendUrl/events/signups/edit#accessToken=test-token-123")
             .contains("$frontendUrl/events#")
     }
 
@@ -61,7 +65,11 @@ class EventSignupEmailBuilderTest {
         )
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl)
+        val emailContent = createEventSignupEmail(
+            signUp,
+            frontendUrl,
+            checkNotNull(signUp.guest?.accessTokenRaw)
+        )
 
         // Then: Email contains complete event info
         assertThat(emailContent.markdownContent)
@@ -78,7 +86,11 @@ class EventSignupEmailBuilderTest {
         val signUp = createTestSignUp(location = null)
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl)
+        val emailContent = createEventSignupEmail(
+            signUp,
+            frontendUrl,
+            checkNotNull(signUp.guest?.accessTokenRaw)
+        )
 
         // Then: Default location message is shown
         assertThat(emailContent.markdownContent)
@@ -93,13 +105,17 @@ class EventSignupEmailBuilderTest {
         )
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl)
+        val emailContent = createEventSignupEmail(
+            signUp,
+            frontendUrl,
+            checkNotNull(signUp.guest?.accessTokenRaw)
+        )
 
         // Then: Email includes edit link and event details link
         assertThat(emailContent.markdownContent)
             .contains("**Important Links:**")
             .contains("[View full event details]($frontendUrl/events#")
-            .contains("[Edit your registration]($frontendUrl/events/signups/edit/unique-access-token)")
+            .contains("[Edit your registration]($frontendUrl/events/signups/edit#accessToken=unique-access-token)")
     }
 
     @Test
@@ -108,7 +124,11 @@ class EventSignupEmailBuilderTest {
         val signUp = createTestSignUp()
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl)
+        val emailContent = createEventSignupEmail(
+            signUp,
+            frontendUrl,
+            checkNotNull(signUp.guest?.accessTokenRaw)
+        )
 
         // Then: Email includes what's next and community links
         assertThat(emailContent.markdownContent)
@@ -126,7 +146,7 @@ class EventSignupEmailBuilderTest {
 
         // When/Then: Exception is thrown
         val exception = assertThrows<IllegalArgumentException> {
-            createEventSignupEmail(signUp, frontendUrl)
+            createEventSignupEmail(signUp, frontendUrl, "unused-token")
         }
         assertThat(exception.message).contains("Event signup email requires a guest signup")
     }
@@ -138,7 +158,11 @@ class EventSignupEmailBuilderTest {
         val signUp = createTestSignUp(startTime = dateTime, endTime = dateTime)
 
         // When: Building email
-        val emailContent = createEventSignupEmail(signUp, frontendUrl)
+        val emailContent = createEventSignupEmail(
+            signUp,
+            frontendUrl,
+            checkNotNull(signUp.guest?.accessTokenRaw)
+        )
 
         // Then: Date information is present (exact format depends on implementation)
         assertThat(emailContent.markdownContent)
@@ -155,7 +179,7 @@ class EventSignupEmailBuilderTest {
         endTime: Instant = Instant.now().plus(3, ChronoUnit.HOURS)
     ): EventSignUp {
         val event = createTestEvent(eventTitle, location, startTime, endTime)
-        val guest = Guest(
+        val guest = Guest.withRawToken(
             name = guestName,
             discord = "guest#0001",
             email = guestEmail,

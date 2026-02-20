@@ -15,8 +15,6 @@ data class GuestResponse(
     @field:NotNull
     var discord: String,
     var phoneNumber: String? = null,
-    @field:NotNull
-    var accessToken: String,
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant,

@@ -301,7 +301,7 @@ export const findEventSignUps = <ThrowOnError extends boolean = false>(options?:
 
 export const findEventSignUpsByAccessToken = <ThrowOnError extends boolean = false>(options: Options<FindEventSignUpsByAccessTokenData, ThrowOnError>) => (options.client ?? client).get<FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByAccessTokenErrors, ThrowOnError>({
     responseType: 'json',
-    url: '/events/signups/byAccessToken/{accessToken}',
+    url: '/events/signups/byAccessToken',
     ...options
 });
 

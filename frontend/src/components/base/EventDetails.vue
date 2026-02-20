@@ -127,7 +127,7 @@ async function loadBanner() {
   }
 }
 
-watch(() => event.value?.id, loadBanner, {immediate: true})
+watch(() => [event.value?.id, event.value?.banner], loadBanner, {immediate: true})
 
 onBeforeUnmount(() => {
   if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)

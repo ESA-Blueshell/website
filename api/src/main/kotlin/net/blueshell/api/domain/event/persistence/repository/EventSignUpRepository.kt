@@ -24,14 +24,14 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     fun findByUser_IdAndEvent_Id(userId: Long, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessToken = :accessToken")
-    fun findByGuestAccessToken(@Param("accessToken") accessToken: String): MutableList<EventSignUp>
+    @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessTokenHash = :accessTokenHash")
+    fun findByGuestAccessTokenHash(@Param("accessTokenHash") accessTokenHash: String): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findByEvent_Id(eventId: Long): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByGuestAccessTokenAndEvent_Id(accessToken: String, eventId: Long): Optional<EventSignUp>
+    fun findByGuestAccessTokenHashAndEvent_Id(accessTokenHash: String, eventId: Long): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findAllByEventSignUpForm_Id(surveyId: Long): MutableSet<EventSignUp>

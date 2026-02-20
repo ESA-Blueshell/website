@@ -70,3 +70,7 @@ app:
     max-retries: 3
     initial-backoff-millis: 1
     backoff-multiplier: 2.0
+
+security:
+  auth-rate-limit:
+    enabled: false

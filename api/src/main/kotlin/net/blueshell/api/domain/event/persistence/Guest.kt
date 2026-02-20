@@ -9,7 +9,7 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
     name = "guests",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_guests_access_token_deleted_at", columnNames = ["access_token", "deleted_at"])
+        UniqueConstraint(name = "uk_guests_access_token_hash_deleted_at", columnNames = ["access_token_hash", "deleted_at"])
     ],
     indexes = [
         Index(name = "idx_guests_deleted_at", columnList = "deleted_at"),
@@ -33,6 +33,31 @@ class Guest(
     @Column
     var phoneNumber: String? = null,
 
-    @Column(name = "access_token", nullable = false)
-    var accessToken: String,
-) : AuditedAutoIdEntity()
+    @Column(name = "access_token_hash", nullable = false, length = 64)
+    var accessTokenHash: String,
+) : AuditedAutoIdEntity() {
+    @Transient
+    var accessTokenRaw: String? = null
+
+    fun matchesAccessToken(rawToken: String): Boolean {
+        return accessTokenHash == GuestAccessTokenCodec.hash(rawToken)
+    }
+
+    companion object {
+        fun withRawToken(
+            name: String,
+            discord: String,
+            email: String,
+            phoneNumber: String? = null,
+            accessToken: String,
+        ): Guest {
+            return Guest(
+                name = name,
+                discord = discord,
+                email = email,
+                phoneNumber = phoneNumber,
+                accessTokenHash = GuestAccessTokenCodec.hash(accessToken),
+            ).also { it.accessTokenRaw = accessToken }
+        }
+    }
+}

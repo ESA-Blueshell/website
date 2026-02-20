@@ -83,12 +83,12 @@ class EventFactory(
         name: String = "Guest User",
         accessToken: String = "guest-token-${System.currentTimeMillis()}"
     ): Guest {
-        return Guest(
+        return Guest.withRawToken(
             name = name,
             discord = "guest#1234",
             email = "guest-${System.currentTimeMillis()}@example.com",
             phoneNumber = "+31612345678",
-            accessToken = accessToken,
+            accessToken = accessToken
         )
     }
 

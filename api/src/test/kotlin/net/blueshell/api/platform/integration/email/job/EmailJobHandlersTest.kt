@@ -136,8 +136,9 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `processes event signup job and sends email`() {
             // Given: Event signup in database and job
             val event = createAndSaveEvent("Test Tournament", "Campus Hall")
-            val signUp = createAndSaveSignUp(event, "Guest User", "guest@example.com")
-            val payload = EmailJobs.EventSignupPayload(eventSignUpId = signUp.id!!)
+            val guestAccessToken = "event-signup-token-${System.currentTimeMillis()}"
+            val signUp = createAndSaveSignUp(event, "Guest User", "guest@example.com", guestAccessToken)
+            val payload = EmailJobs.EventSignupPayload(eventSignUpId = signUp.id!!, guestAccessToken = guestAccessToken)
             val jobExecution = createJobExecution(EmailJobs.EventSignup.type, payload)
 
             // When: Handling job
@@ -225,10 +226,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `EventSignupEmailJob parses JSON payload correctly`() {
             // Given: Event signup and JSON payload
             val event = createAndSaveEvent("Parse Test", "Location")
-            val signUp = createAndSaveSignUp(event, "Guest", "guest@example.com")
+            val guestAccessToken = "parse-token-${System.currentTimeMillis()}"
+            val signUp = createAndSaveSignUp(event, "Guest", "guest@example.com", guestAccessToken)
             val payloadJson = """
                 {
-                    "eventSignUpId": ${signUp.id}
+                    "eventSignUpId": ${signUp.id},
+                    "guestAccessToken": "$guestAccessToken"
                 }
             """.trimIndent()
             val jobExecution = JobExecution().apply {
@@ -333,12 +336,17 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         return persist(Committee(name = name, description = "Test committee for integration tests"))
     }
 
-    private fun createAndSaveSignUp(event: Event, guestName: String, guestEmail: String): EventSignUp {
-        val guest = Guest(
+    private fun createAndSaveSignUp(
+        event: Event,
+        guestName: String,
+        guestEmail: String,
+        accessToken: String = "test-token-${System.currentTimeMillis()}"
+    ): EventSignUp {
+        val guest = Guest.withRawToken(
             name = guestName,
             discord = "guest#1234",
             email = guestEmail,
-            accessToken = "test-token-${System.currentTimeMillis()}",
+            accessToken = accessToken,
         )
 
         val signUp = EventSignUp(event = event, guest = guest)

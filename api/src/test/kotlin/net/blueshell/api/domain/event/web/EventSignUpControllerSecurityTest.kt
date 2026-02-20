@@ -105,19 +105,21 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows valid access token to view signups`() {
-            val guest = createGuestFixture()
+            val accessToken = "guest-token-view"
+            val guest = createGuestFixture(accessToken = accessToken)
             createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest)
 
             mvc.perform(
-                get("/events/signups/byAccessToken/{accessToken}", guest.accessToken)
+                get("/events/signups/byAccessToken")
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `denies without access token parameter`() {
-            mvc.perform(get("/events/signups/byAccessToken/{accessToken}", ""))
-                .andExpect(status().isNotFound)
+            mvc.perform(get("/events/signups/byAccessToken"))
+                .andExpect(status().isBadRequest)
         }
     }
 
@@ -268,12 +270,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
         fun `allows guest with valid access token to update signup`() {
             val event = createEventFixture()
             val eventId = event.id!!
-            val guest = createGuestFixture(accessToken = "validGuestToken123")
+            val accessToken = "validGuestToken123"
+            val guest = createGuestFixture(accessToken = accessToken)
             val signUp = createEventSignUpFixture(event = event, user = null, guest = guest)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
-                    .param("accessToken", guest.accessToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateSignUpGuestPayload(signUp.version, "Updated Guest Name"))
             )
@@ -361,12 +364,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows guest with valid access token to delete signup`() {
-            val guest = createGuestFixture(accessToken = "validGuestToken123")
+            val accessToken = "validGuestToken123"
+            val guest = createGuestFixture(accessToken = accessToken)
             val signupId = createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
-                    .param("accessToken", guest.accessToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
             )
                 .andExpect(status().isNoContent)
         }
@@ -395,9 +399,33 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
-                    .param("accessToken", invalidToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, invalidToken)
             )
                 .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `denies valid guest token when it belongs to a different signup`() {
+            val targetToken = "targetGuestToken"
+            val otherToken = "otherGuestToken"
+            val targetGuest = createGuestFixture(accessToken = targetToken)
+            val otherGuest = createGuestFixture(accessToken = otherToken)
+            val targetSignupId = createEventSignUpFixture(
+                event = createEventFixture(),
+                user = null,
+                guest = targetGuest
+            ).id!!
+            createEventSignUpFixture(
+                event = createEventFixture(),
+                user = null,
+                guest = otherGuest
+            )
+
+            mvc.perform(
+                delete("/events/signups/{eventSignupId}", targetSignupId)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, otherToken)
+            )
+                .andExpect(status().isForbidden)
         }
 
         @Test
@@ -417,25 +445,28 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows guest access token holder to view own signup`() {
-            val guest = createGuestFixture(accessToken = "guestToken123")
+            val accessToken = "guestToken123"
+            val guest = createGuestFixture(accessToken = accessToken)
             createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest)
 
             mvc.perform(
-                get("/events/signups/byAccessToken/{accessToken}", guest.accessToken)
+                get("/events/signups/byAccessToken")
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
             )
                 .andExpect(status().isOk)
         }
 
         @Test
         fun `allows guest access token holder to update signup`() {
-            val guest = createGuestFixture(accessToken = "guestToken123")
+            val accessToken = "guestToken123"
+            val guest = createGuestFixture(accessToken = accessToken)
             val event = createEventFixture()
             val eventId = event.id!!
             val signUp = createEventSignUpFixture(event = event, user = null, guest = guest)
 
             mvc.perform(
                 put("/events/{eventId}/signups", eventId)
-                    .param("accessToken", guest.accessToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateSignUpGuestPayload(signUp.version, "Guest Updated"))
             )
@@ -444,12 +475,13 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `allows guest access token holder to delete signup`() {
-            val guest = createGuestFixture(accessToken = "guestToken123")
+            val accessToken = "guestToken123"
+            val guest = createGuestFixture(accessToken = accessToken)
             val signupId = createEventSignUpFixture(event = createEventFixture(), user = null, guest = guest).id!!
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
-                    .param("accessToken", guest.accessToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, accessToken)
             )
                 .andExpect(status().isNoContent)
         }
@@ -465,7 +497,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/signups/{eventSignupId}", signupId)
-                    .param("accessToken", invalidToken)
+                    .header(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER, invalidToken)
             )
                 .andExpect(status().isNotFound)
         }

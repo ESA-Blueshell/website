@@ -130,6 +130,10 @@ server:
     include-stacktrace: never
     include-exception: false
 
+security:
+  auth-rate-limit:
+    enabled: true
+
 logging:
   level:
     org:

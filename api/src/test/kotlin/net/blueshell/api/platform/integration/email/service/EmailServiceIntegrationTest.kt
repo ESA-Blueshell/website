@@ -152,10 +152,11 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `sendEventSignupEmail sends confirmation to guest`() {
             // Given: Event signup with guest in database
             val event = createAndSaveEvent("Summer Tournament", "Campus Hall")
-            val signUp = createAndSaveSignUp(event, "Guest Name", "guest@example.com")
+            val guestAccessToken = "event-signup-token-${System.currentTimeMillis()}"
+            val signUp = createAndSaveSignUp(event, "Guest Name", "guest@example.com", guestAccessToken)
 
             // When: Sending event signup email
-            emailService.sendEventSignupEmail(signUp.id!!)
+            emailService.sendEventSignupEmail(signUp.id!!, guestAccessToken)
 
             // Then: Email is sent
             val emails = mailSender.outbox
@@ -285,12 +286,17 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         return persist(Committee(name = name, description = "Test committee for integration tests"))
     }
 
-    private fun createAndSaveSignUp(event: Event, guestName: String, guestEmail: String): EventSignUp {
-        val guest = Guest(
+    private fun createAndSaveSignUp(
+        event: Event,
+        guestName: String,
+        guestEmail: String,
+        accessToken: String = "test-token-${System.currentTimeMillis()}"
+    ): EventSignUp {
+        val guest = Guest.withRawToken(
             name = guestName,
             discord = "guest#1234",
             email = guestEmail,
-            accessToken = "test-token-${System.currentTimeMillis()}",
+            accessToken = accessToken,
         )
 
         val signUp = EventSignUp(event = event, guest = guest)

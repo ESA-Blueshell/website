@@ -287,6 +287,9 @@
           <v-list-item to="/documents">
             Documents
           </v-list-item>
+          <v-list-item to="/blogs">
+            Newsletters
+          </v-list-item>
           <v-divider class="mb-1" />
         </v-list-group>
 
@@ -328,6 +331,9 @@
           </v-list-item>
           <v-list-item to="/esports/rocketleague">
             Rocket League
+          </v-list-item>
+          <v-list-item to="/esports/geoguessr">
+            Geoguessr
           </v-list-item>
           <v-list-item to="/esports/trackmania">
             Trackmania

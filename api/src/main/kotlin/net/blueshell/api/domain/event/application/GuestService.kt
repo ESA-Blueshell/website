@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.event.application
 
 import net.blueshell.api.domain.event.persistence.Guest
+import net.blueshell.api.domain.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.domain.event.persistence.repository.GuestRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,7 +17,7 @@ class GuestService @Autowired constructor(repository: GuestRepository, events: A
     BaseModelService<Guest, Long, GuestRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByAccessToken(accessToken: String): Guest {
-        return repository.findByAccessToken(accessToken)
+        return repository.findByAccessTokenHash(GuestAccessTokenCodec.hash(accessToken))
             .orElseThrow(Supplier {
                 ResponseStatusException(
                     HttpStatus.NOT_FOUND,

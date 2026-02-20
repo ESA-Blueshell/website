@@ -3,6 +3,7 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {DateTime} from "luxon"
 import EventCalendar from "@/components/base/EventCalendar.vue"
+import type {GuestSessionData} from "@/plugins/store.ts"
 
 import {
   findCommittees,
@@ -13,7 +14,6 @@ import {
   findEvents,
   findEventSignUps,
   findEventSignUpsByAccessToken,
-  type GuestResponse,
   type LoginResponse,
 } from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
@@ -27,20 +27,21 @@ type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
 type Event = EventResponse
 type EventSignUp = EventSignUpResponse
 type Login = LoginResponse
-type Guest = GuestResponse
 
 const events = ref<Event[]>([])
 const committees = ref<CommitteeOption[]>([])
 const eventSignUps = ref<EventSignUp[]>([])
 const calendarRef = ref<InstanceType<typeof EventCalendar>>()
+const hashAccessToken = ref<string | null>(null)
 
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const isBoard = computed<boolean>(() => store.getters.isBoard)
 const login = computed<Login | undefined>(() => store.getters.getLogin)
-const guest = computed<Guest | null>(() => store.getters.getGuestData)
-const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? null)
+const guest = computed<GuestSessionData | null>(() => store.getters.getGuestData)
+const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? hashAccessToken.value)
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
+const guestAccessHeader = "X-Guest-Access-Token"
 
 async function loadEvents() {
   try {
@@ -63,10 +64,17 @@ async function loadSignUps() {
       eventSignUps.value = resp.data ?? []
     } else if (guestAccessToken.value) {
       const resp = await findEventSignUpsByAccessToken({
-        path: {accessToken: guestAccessToken.value},
+        headers: {[guestAccessHeader]: guestAccessToken.value},
         throwOnError: true,
       })
       eventSignUps.value = resp.data ?? []
+      const firstGuest = resp.data?.[0]?.guest
+      if (firstGuest != null) {
+        store.commit("saveGuestData", {
+          ...firstGuest,
+          accessToken: guestAccessToken.value,
+        } satisfies GuestSessionData)
+      }
     } else {
       eventSignUps.value = []
     }
@@ -105,6 +113,18 @@ watch([isLoggedIn, login, guestAccessToken], () => {
 }, {immediate: true})
 
 onMounted(() => {
+  const hash = window.location.hash
+  if (hash.startsWith("#")) {
+    const token = new URLSearchParams(hash.slice(1)).get("accessToken")
+    if (token) {
+      hashAccessToken.value = token
+      window.history.replaceState(
+        window.history.state,
+        document.title,
+        `${window.location.pathname}${window.location.search}`
+      )
+    }
+  }
   void loadEvents()
 })
 

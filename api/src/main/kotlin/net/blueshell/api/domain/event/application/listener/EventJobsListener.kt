@@ -69,11 +69,12 @@ class EventJobsListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onPersist(evt: EventSignUpCreated) {
+        val guestAccessToken = evt.guestAccessToken ?: return
         val e = signUps.findById(evt.signUpId)
         if (e.guest != null) {
             jobs.enqueueFromActor(
                 EmailJobs.EventSignup,
-                EmailJobs.EventSignupPayload(e.id!!),
+                EmailJobs.EventSignupPayload(e.id!!, guestAccessToken),
                 evt
             )
         }

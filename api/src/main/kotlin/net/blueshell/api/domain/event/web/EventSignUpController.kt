@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.event.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.command.*
@@ -26,6 +27,10 @@ class EventSignUpController @Autowired constructor(
     service: EventSignUpService,
     private val commandBus: CommandBus
 ) : BaseController<EventSignUpService>(service) {
+    companion object {
+        const val GUEST_ACCESS_TOKEN_HEADER = "X-Guest-Access-Token"
+    }
+
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
         "hasPermission(null, 'Event', 'signups') " +
@@ -37,9 +42,11 @@ class EventSignUpController @Autowired constructor(
         return eventSignUps.map { it.asResponse() }
     }
 
-    @GetMapping(value = ["/events/signups/byAccessToken/{accessToken}"])
+    @GetMapping(value = ["/events/signups/byAccessToken"])
     @PreAuthorize("hasPermission(#accessToken, 'Guest', 'read')")
-    fun findEventSignUpsByAccessToken(@PathVariable(required = true) accessToken: String): List<EventSignUpResponse> {
+    fun findEventSignUpsByAccessToken(
+        @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER) accessToken: String
+    ): List<EventSignUpResponse> {
         val signUps = commandBus.dispatch(FindEventSignUpsByAccessTokenCommand(accessToken))
         return signUps.map { it.asResponse() }
     }
@@ -58,26 +65,32 @@ class EventSignUpController @Autowired constructor(
     fun createEventSignup(
         @PathVariable eventId: Long,
         @Valid @RequestBody request: CreateEventSignUpRequest,
-        @AuthenticationPrincipal principal: UserPrincipal?
+        @AuthenticationPrincipal principal: UserPrincipal?,
+        response: HttpServletResponse
     ): EventSignUpResponse {
         val eventSignUp = commandBus.dispatch(request.asCommand(eventId, principal?.id))
+        eventSignUp.guest?.accessTokenRaw?.let { response.setHeader(GUEST_ACCESS_TOKEN_HEADER, it) }
         return eventSignUp.asResponse()
     }
 
     @PutMapping("/events/{eventId}/signups")
     @PreAuthorize(
         "hasPermission(#eventId, 'Event', 'signUp') " +
-                "or (#accessToken != null and hasPermission(#accessToken, 'Guest', 'write'))"
+                "or (#guestAccessToken != null and hasPermission(#guestAccessToken, 'Guest', 'write'))"
     )
     fun updateEventSignUp(
         @PathVariable eventId: Long,
         @Valid @RequestBody request: UpdateEventSignUpRequest,
-        @RequestParam(value = "accessToken", required = false) accessToken: String?,
-        @AuthenticationPrincipal principal: UserPrincipal?
+        @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER, required = false) guestAccessToken: String?,
+        @AuthenticationPrincipal principal: UserPrincipal?,
+        response: HttpServletResponse
     ): EventSignUpResponse {
         val updated = commandBus.dispatch(
-            request.asCommand(eventId, principal?.id, accessToken)
+            request.asCommand(eventId, principal?.id, guestAccessToken)
         )
+        if (!guestAccessToken.isNullOrBlank()) {
+            response.setHeader(GUEST_ACCESS_TOKEN_HEADER, guestAccessToken)
+        }
         return updated.asResponse()
     }
 
@@ -85,13 +98,13 @@ class EventSignUpController @Autowired constructor(
     @DeleteMapping(value = ["/events/signups/{id}"])
     @PreAuthorize(
         "hasPermission(#id, 'EventSignUp', 'delete') " +
-                "or hasPermission(#accessToken, 'Guest', 'write')"
+                "or T(org.springframework.util.StringUtils).hasText(#guestAccessToken)"
     )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteEventSignup(
         @PathVariable id: Long,
-        @RequestParam(value = "accessToken", required = false) accessToken: String?
+        @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER, required = false) guestAccessToken: String?
     ) {
-        commandBus.dispatch(DeleteEventSignUpCommand(id))
+        commandBus.dispatch(DeleteEventSignUpCommand(eventSignUpId = id, accessToken = guestAccessToken))
     }
 }

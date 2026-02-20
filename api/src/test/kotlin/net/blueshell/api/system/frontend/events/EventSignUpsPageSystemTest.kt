@@ -240,21 +240,18 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun questionTotals(page: Page, questionLabel: String): List<String> {
-        val rawResult = page.evaluate(
-            """
-            (label) => {
-              const cards = [...document.querySelectorAll('.v-card')]
-              const card = cards.find((candidate) => candidate.textContent?.includes(label))
-              if (!card) return []
-              const cells = [...card.querySelectorAll('tfoot td')].map((cell) => (cell.textContent || '').trim())
-              return cells.slice(1)
-            }
-            """.trimIndent(),
-            questionLabel
-        )
-        return (rawResult as? List<Any?>).orEmpty().map { it?.toString().orEmpty() }
+        val questionCard = page.locator(".v-card:has(.v-card-title:has-text(\"$questionLabel\"))").first()
+        val totalsCells = questionCard.locator(".radio-table tfoot tr td")
+
+        waitFor(
+            onTimeoutMessage = { "Expected totals row to be visible for question '$questionLabel'" }
+        ) {
+            totalsCells.count() > 1
+        }
+
+        return (1 until totalsCells.count())
+            .map { idx -> totalsCells.nth(idx).innerText().trim() }
     }
 
     private data class SeededSignUpsData(

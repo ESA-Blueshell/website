@@ -42,3 +42,4 @@ pnpm-debug.log*
 *.iml
 
 env/*.env
+.playwright-browsers

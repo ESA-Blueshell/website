@@ -115,7 +115,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/events/signups") {
       return fulfillJson(route, baseEventSignUps)
     }
-    if (method === "GET" && path.startsWith("/events/signups/byAccessToken/")) {
+    if (method === "GET" && (path === "/events/signups/byAccessToken" || path.startsWith("/events/signups/byAccessToken/"))) {
       return fulfillJson(route, baseEventSignUps)
     }
     if (method === "GET" && path === "/committees") {

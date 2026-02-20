@@ -28,5 +28,15 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
+    coverage: {
+      provider: "v8",
+      reportsDirectory: "./coverage/unit",
+      reporter: ["text", "html", "lcov"],
+      include: ["src/**/*.{ts,vue}"],
+      exclude: [
+        "src/services/api/**",
+        "src/main.ts",
+      ],
+    },
   },
 })

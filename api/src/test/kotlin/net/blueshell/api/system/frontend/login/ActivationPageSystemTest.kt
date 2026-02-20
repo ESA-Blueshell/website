@@ -139,20 +139,6 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
         assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isFalse()
     }
 
-    @Test
-    fun `user activation without token shows warning`() {
-        withPage { page ->
-            page.navigate("$frontendUrl/account/activate/user")
-
-            waitFor(
-                timeoutMs = 8_000,
-                onTimeoutMessage = { "Expected missing-token user activation flow to show warning message" }
-            ) {
-                page.getByText("invalid, expired, or already used.", Page.GetByTextOptions().setExact(false)).count() > 0
-            }
-        }
-    }
-
     private fun submitMemberActivationForm(page: Page, username: String, password: String) {
         page.getByLabel("Username").fill(username)
         page.getByLabel("Password").first().fill(password)

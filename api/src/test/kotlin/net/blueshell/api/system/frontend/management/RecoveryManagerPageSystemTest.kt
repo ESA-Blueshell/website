@@ -2,7 +2,6 @@ package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
@@ -81,66 +80,6 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
         }
 
         assertEmailSent(activeUser.email, "Reset Your Blueshell Account Password")
-    }
-
-    @Test
-    fun `recovery manager filters inactive accounts by multiple fields`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val suffix = System.currentTimeMillis().toString().takeLast(6)
-        val filteredUser = userFactory.createUserWithRole(Role.GUEST, enabled = false).apply {
-            firstName = "Inactive$suffix"
-            lastName = "Filter"
-            discord = "inactive-filter-$suffix"
-            email = "inactive.filter.$suffix@test.com"
-        }
-        userRepository.saveAndFlush(filteredUser)
-        val otherUser = userFactory.createUserWithRole(Role.GUEST, enabled = false)
-
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-
-            RecoveryManagerHelper.open(page, frontendUrl)
-            RecoveryManagerHelper.openSection(page, "Inactive accounts")
-            RecoveryManagerHelper.searchUser(page, "${filteredUser.firstName} inactive.filter.$suffix")
-
-            waitFor(
-                onTimeoutMessage = { "Expected filtered inactive user ${filteredUser.username} to be visible" }
-            ) {
-                page.getByText(filteredUser.username, Page.GetByTextOptions().setExact(true)).count() > 0
-            }
-            assertPw(page.getByText(otherUser.username, Page.GetByTextOptions().setExact(true))).hasCount(0)
-        }
-    }
-
-    @Test
-    fun `recovery manager filters active accounts by multiple fields`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val suffix = System.currentTimeMillis().toString().takeLast(6)
-        val filteredUser = userFactory.createUserWithRole(Role.GUEST, enabled = true).apply {
-            firstName = "Active$suffix"
-            lastName = "Filter"
-            discord = "active-filter-$suffix"
-            email = "active.filter.$suffix@test.com"
-        }
-        userRepository.saveAndFlush(filteredUser)
-        val otherUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
-
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-
-            RecoveryManagerHelper.open(page, frontendUrl)
-            RecoveryManagerHelper.openSection(page, "Active accounts")
-            RecoveryManagerHelper.searchUser(page, "${filteredUser.firstName} active.filter.$suffix")
-
-            waitFor(
-                onTimeoutMessage = { "Expected filtered active user ${filteredUser.username} to be visible" }
-            ) {
-                page.getByText(filteredUser.username, Page.GetByTextOptions().setExact(true)).count() > 0
-            }
-            assertPw(page.getByText(otherUser.username, Page.GetByTextOptions().setExact(true))).hasCount(0)
-        }
     }
 
     private companion object {

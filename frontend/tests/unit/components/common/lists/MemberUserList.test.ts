@@ -2,18 +2,6 @@ import {describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import MemberUserList from "@/components/common/lists/MemberUserList.vue"
 
-const {mockFilterUsers} = vi.hoisted(() => ({
-  mockFilterUsers: vi.fn((users: Array<{ fullName?: string; username?: string }>, query: string) => {
-    if (!query) return users
-    const q = query.toLowerCase()
-    return users.filter((u) => `${u.fullName} ${u.username}`.toLowerCase().includes(q))
-  }),
-}))
-
-vi.mock("@/plugins/userFilter", () => ({
-  filterUsers: mockFilterUsers,
-}))
-
 vi.mock("@/components/common/rows/MemberUserRow.vue", () => ({
   default: {
     name: "MemberUserRow",
@@ -29,8 +17,41 @@ vi.mock("@/components/form/UserForm.vue", () => ({
 }))
 
 const users = [
-  {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: false, roles: ["MEMBER"]},
+  {
+    id: 1,
+    fullName: "Emma Dokter",
+    firstName: "Emma",
+    username: "lyndisluna",
+    discord: "emma-filter",
+    enabled: false,
+    roles: ["MEMBER"],
+  },
+  {
+    id: 2,
+    fullName: "Viktor Petrov",
+    firstName: "Viktor",
+    username: "ariosfury",
+    discord: "viktor-filter",
+    enabled: true,
+    roles: ["USER"],
+  },
 ]
+
+const vuetifyStubs = {
+  VCard: {template: "<div><slot /></div>"},
+  VBadge: {template: "<div><slot /></div>"},
+  VIcon: {template: "<span><slot /></span>"},
+  VExpandTransition: {template: "<div><slot /></div>"},
+  VList: {template: "<div><slot /></div>"},
+  VListItem: {template: "<div><slot /></div>"},
+  VListItemTitle: {template: "<div><slot /></div>"},
+  VDivider: {template: "<hr />"},
+  VTextField: {
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+    template: "<input :value=\"modelValue\" @input=\"$emit('update:modelValue', $event.target.value)\" />",
+  },
+}
 
 describe("MemberUserList", () => {
   it("handles create draft and row delete events", async () => {
@@ -43,6 +64,7 @@ describe("MemberUserList", () => {
       },
       global: {
         stubs: {
+          ...vuetifyStubs,
           MemberUserRow: {
             template: "<button @click=\"$emit('delete:user', { id: 1 })\">member-row</button>",
           },
@@ -57,5 +79,34 @@ describe("MemberUserList", () => {
 
     await wrapper.find("button").trigger("click")
     expect(wrapper.emitted("delete:user")?.length).toBe(1)
+  })
+
+  it("filters users by multiple fields", async () => {
+    const wrapper = mount(MemberUserList, {
+      props: {
+        title: "Members",
+        users,
+        startOpen: true,
+      },
+      global: {
+        stubs: {
+          ...vuetifyStubs,
+          MemberUserRow: {
+            props: ["user"],
+            template: "<div class='row-username'>{{ user.username }}</div>",
+          },
+          UserForm: true,
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain("lyndisluna")
+    expect(wrapper.text()).toContain("ariosfury")
+
+    const search = wrapper.find("input")
+    await search.setValue("Emma emma-filter")
+
+    expect(wrapper.text()).toContain("lyndisluna")
+    expect(wrapper.text()).not.toContain("ariosfury")
   })
 })

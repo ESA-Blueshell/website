@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
+import {nextTick} from "vue"
 import Login from "@/pages/login/Login.vue"
 import {settle} from "../helpers"
 
@@ -108,5 +109,18 @@ describe("Login page", () => {
       "setStatusSnackbarMessage",
       "Incorrect login credentials. Please double check your username and password.",
     )
+  })
+
+  it("renders navigation links for create-account and forgot-password with typed username", async () => {
+    const wrapper = shallowMount(Login)
+    await settle()
+
+    expect(wrapper.find("[to='account/create']").exists()).toBe(true)
+
+    ;(wrapper.vm as any).username = "alice"
+    await nextTick()
+
+    const forgotLink = wrapper.find("[to='login/forgor?username=alice']")
+    expect(forgotLink.exists()).toBe(true)
   })
 })

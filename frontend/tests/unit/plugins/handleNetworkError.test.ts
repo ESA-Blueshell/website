@@ -61,6 +61,31 @@ describe("handleNetworkError plugin", () => {
     expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("404"))
   })
 
+  it("shows tailored messages for additional known status codes", () => {
+    $handleNetworkError(axiosStatusError(400))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("bad request"))
+
+    $handleNetworkError(axiosStatusError(408))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("request timeout"))
+
+    $handleNetworkError(axiosStatusError(409))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("Woopsie daysies"))
+
+    $handleNetworkError(axiosStatusError(413))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("file is too large"))
+
+    $handleNetworkError(axiosStatusError(500))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("error code 500"))
+
+    $handleNetworkError(axiosStatusError(502))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("error code 502"))
+  })
+
+  it("falls back to generic status message for unknown status codes", () => {
+    $handleNetworkError(axiosStatusError(418))
+    expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("error code 418"))
+  })
+
   it("handles no-response request errors", () => {
     $handleNetworkError({request: {}})
     expect(mockCommit).toHaveBeenCalledWith(

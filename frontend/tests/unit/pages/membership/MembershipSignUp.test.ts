@@ -104,6 +104,7 @@ describe("MembershipSignUp page", () => {
     mockStore.getters.isLoggedIn = false
     mockStore.getters.getLogin = null
     mockRoute.query = {}
+    mockRoute.fullPath = "/membership/signup"
     mockFindUserById.mockResolvedValue({data: null})
     mockFindAddressById.mockResolvedValue({data: null})
     mockResendUserActivation.mockResolvedValue({})
@@ -156,5 +157,34 @@ describe("MembershipSignUp page", () => {
       name: "login",
       query: {redirect: "/membership/signup?step=2"},
     })
+  })
+
+  it("redirects already-members away from signup", async () => {
+    mockStore.getters.isLoggedIn = true
+    mockStore.getters.getLogin = {userId: 42}
+    mockFindUserById.mockResolvedValue({
+      data: {id: 42, username: "member-user", roles: ["MEMBER"]},
+    })
+
+    shallowMount(MembershipSignUp)
+    await settle()
+
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "you are already a member")
+    expect(mockRouterReplace).toHaveBeenCalledWith("/")
+  })
+
+  it("advances from step 2 to step 3 when user is signed in", async () => {
+    mockStore.getters.isLoggedIn = true
+    mockStore.getters.getLogin = {userId: 21}
+    mockRoute.query = {step: "2"}
+    mockFindUserById.mockResolvedValue({
+      data: {id: 21, username: "active-user", roles: ["GUEST"]},
+    })
+
+    const wrapper = shallowMount(MembershipSignUp)
+    await settle()
+
+    expect((wrapper.vm as any).currentStep).toBe(3)
+    expect(mockRouterReplace).toHaveBeenCalledWith({query: {step: "3"}})
   })
 })

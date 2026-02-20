@@ -33,49 +33,6 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     private lateinit var contributionFactory: ContributionFactory
 
     @Test
-    fun `join now opens membership signup page`() {
-        withPage { page ->
-            page.navigate("$frontendUrl/")
-
-            val joinNowButton = page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("join now").setExact(false)
-            )
-            assertPw(joinNowButton).isVisible()
-            joinNowButton.click()
-
-            assertPw(page.getByText("MEMBERSHIP FORM", Page.GetByTextOptions().setExact(true))).isVisible()
-            assertThat(page.url()).contains("/membership/signup")
-        }
-    }
-
-
-    @Test
-    fun `member users are redirected away from signup page`() {
-        contributionFactory.createPeriod()
-
-        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
-        member.replaceMemberProfile(userFactory.buildMemberProfile(member))
-        member.replaceAddress(userFactory.buildAddress(member))
-        userRepository.saveAndFlush(member)
-        userFactory.createMembership(member)
-
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-
-            page.navigate("$frontendUrl/membership/signup")
-
-            waitFor(
-                timeoutMs = 8_000,
-                onTimeoutMessage = { "Expected already-member flow to show snackbar message" }
-            ) {
-                page.getByText("you are already a member", Page.GetByTextOptions().setExact(false)).count() > 0
-            }
-        }
-    }
-
-    @Test
     fun `step 1 can create a user with personal info and continues to step 2`() {
         withPage { page ->
             page.navigate("$frontendUrl/membership/signup")
@@ -133,52 +90,6 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
 
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
             assertThat(persisted.enabled).isFalse()
-        }
-    }
-
-    @Test
-    fun `step 2 advances to step 3 when signed in`() {
-        withPage { page ->
-            page.navigate("$frontendUrl/membership/signup")
-
-            val credentials = createAccountThroughUi(
-                page = page,
-                url = page.url(),
-                submitButtonLabel = "Next",
-                includeMemberProfile = true
-            )
-
-            page.waitForURL("**/membership/signup?step=2")
-
-            assertThat(page.url()).contains("/membership/signup")
-            assertThat(page.url()).contains("step=2")
-
-            val user = userRepository.findByUsername(credentials.username).get()
-            user.enabled = true
-            userRepository.saveAndFlush(user)
-
-            // We sign in through a separate page, after which step two should detect the authenticated session and
-            // advance to step three
-            page.context().newPage().use { loginPage ->
-                val loginStatus = AuthHelper.submitLogin(loginPage, frontendUrl, credentials.username, credentials.password)
-                assertThat(loginStatus).isEqualTo(200)
-
-                // Assert the login cookie has been set
-                loginPage.waitForCondition {
-                    loginPage.context().cookies(loginPage.url()).any { it.name == "login" }
-                }
-            }
-
-            // Assert the login cookie is also set on the main page
-            page.waitForCondition {
-                page.context().cookies(page.url()).any { it.name == "login" }
-            }
-
-            // Assert that we are also advanced to step 3 on the main page
-            page.waitForURL("**/membership/signup?step=3")
-
-            assertThat(page.url()).contains("/membership/signup")
-            assertThat(page.url()).contains("step=3")
         }
     }
 

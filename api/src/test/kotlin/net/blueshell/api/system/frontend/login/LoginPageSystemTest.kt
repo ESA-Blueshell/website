@@ -2,7 +2,6 @@ package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
@@ -45,41 +44,6 @@ class LoginPageSystemTest : FrontendSystemTestBase() {
             val user = createLoginUser(enabled = true)
             val status = AuthHelper.submitLogin(page, frontendUrl, user.username, loginPassword)
             assertThat(status).isEqualTo(200)
-        }
-    }
-
-    @Test
-    fun `create account button opens account creation page`() {
-        withPage { page ->
-            page.navigate("$frontendUrl/login/")
-            page.getByRole(
-                AriaRole.LINK,
-                Page.GetByRoleOptions().setName("Create Account").setExact(false)
-            ).click()
-
-            page.waitForURL("**/account/create**")
-            assertThat(page.url()).contains("/account/create")
-        }
-    }
-
-    @Test
-    fun `forgot password keeps typed username in the field`() {
-        withPage { page ->
-            val username = "forgot_${System.currentTimeMillis()}"
-            page.navigate("$frontendUrl/login/")
-            page.getByLabel("Username").fill(username)
-
-            val forgotPasswordButton = page.getByText(
-                "forgot password?",
-                Page.GetByTextOptions().setExact(false)
-            )
-            assertPw(forgotPasswordButton).isVisible()
-            forgotPasswordButton.click()
-            page.navigate("$frontendUrl/login/forgor?username=$username")
-
-            val usernameField = page.getByRole(AriaRole.TEXTBOX).first()
-            assertPw(usernameField).isVisible()
-            assertThat(usernameField.inputValue()).isEqualTo(username)
         }
     }
 

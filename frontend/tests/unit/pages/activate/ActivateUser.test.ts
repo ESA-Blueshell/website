@@ -61,9 +61,10 @@ describe("ActivateUser page", () => {
   it("redirects to login on missing token", async () => {
     mockRoute.query = {}
 
-    shallowMount(ActivateUser)
+    const wrapper = shallowMount(ActivateUser)
     await settle()
 
+    expect(wrapper.text()).toContain("invalid, expired, or already used")
     vi.advanceTimersByTime(2500)
     expect(mockRouterPush).toHaveBeenCalledWith({name: "login"})
   })

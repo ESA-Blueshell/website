@@ -18,10 +18,39 @@ describe("datetime utils", () => {
   })
 
   it("uses base dateTime when only date is provided", () => {
-    const result = toISO({date: "2026-03-01", dateTime: "2026-02-20T09:45:00.000Z"})
+    const base = "2026-02-20T09:45:00.000Z"
+    const result = toISO({date: "2026-03-01", dateTime: base})
     const dt = DateTime.fromISO(result)
     expect(dt.isValid).toBe(true)
     expect(dt.toFormat("yyyy-MM-dd")).toBe("2026-03-01")
+    expect(dt.toFormat("HH:mm")).toBe(DateTime.fromISO(base).toFormat("HH:mm"))
+  })
+
+  it("uses base date when only time is provided", () => {
+    const base = "2026-02-20T09:45:00.000Z"
+    const result = toISO({time: "14:15", dateTime: base})
+    const dt = DateTime.fromISO(result)
+    expect(dt.isValid).toBe(true)
+    expect(dt.toFormat("yyyy-MM-dd")).toBe(DateTime.fromISO(base).toFormat("yyyy-MM-dd"))
+    expect(dt.toFormat("HH:mm")).toBe("14:15")
+  })
+
+  it("creates midnight timestamp when only date is provided without a base", () => {
+    const result = toISO({date: "2026-03-01"})
+    const dt = DateTime.fromISO(result)
+    expect(dt.isValid).toBe(true)
+    expect(dt.toFormat("HH:mm")).toBe("00:00")
+  })
+
+  it("defaults missing minutes when only time hour is provided", () => {
+    const result = toISO({time: "07"})
+    const dt = DateTime.fromISO(result)
+    expect(dt.isValid).toBe(true)
+    expect(dt.toFormat("HH:mm")).toBe("07:00")
+  })
+
+  it("returns empty string for invalid base dateTime when no date/time override is provided", () => {
+    expect(toISO({dateTime: "bad-input"})).toBe("")
   })
 
   it("returns empty string when no inputs are provided", () => {

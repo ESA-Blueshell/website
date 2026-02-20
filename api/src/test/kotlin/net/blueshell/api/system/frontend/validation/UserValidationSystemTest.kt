@@ -58,38 +58,6 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
     }
 
     @Test
-    fun `create account blocks invalid input client side`() {
-        withPage { page ->
-            val suffix = System.currentTimeMillis().toString().takeLast(8)
-            page.navigate("$frontendUrl/account/create")
-            UserFormHelper.fill(
-                page = page,
-                fields = UserFormHelper.Fields(
-                    initials = "VA",
-                    firstName = "Validation",
-                    surname = "Case",
-                    username = "invalid-user-$suffix",
-                    discord = "frontend$suffix",
-                    email = "not-an-email",
-                    phoneNumber = "+3164444$suffix",
-                    password = "Password123",
-                    repeatedPassword = "Password123"
-                )
-            )
-
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Create Account").setExact(false)
-            ).click()
-
-            assertPw(page.getByText("Use only letters and numbers")).isVisible()
-            assertPw(page.getByText("Enter a valid e-mail address")).isVisible()
-            assertPw(page.getByText("Include a special char (@$!%*?&)")).isVisible()
-            assertThat(page.getByText("Your account has successfully been created!").count()).isEqualTo(0)
-        }
-    }
-
-    @Test
     fun `create account rejects duplicate phone number`() {
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         val existingGuest = userFactory.buildUserWithRole(Role.GUEST, enabled = true).apply {

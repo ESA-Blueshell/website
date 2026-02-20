@@ -57,4 +57,15 @@ describe("Committees page", () => {
     expect(wrapper.text()).toContain("No committees found")
     expect(mockHandleNetworkError).not.toHaveBeenCalled()
   })
+
+  it("falls back to empty state when committees request fails", async () => {
+    const error = new Error("boom")
+    mockFindCommittees.mockRejectedValue(error)
+
+    const wrapper = shallowMount(Committees)
+    await settle()
+
+    expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
+    expect(wrapper.text()).toContain("No committees found")
+  })
 })

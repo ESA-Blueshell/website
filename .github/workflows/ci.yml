@@ -411,7 +411,7 @@ jobs:
 
   coverage:
     name: Merge and enforce code coverage
-    needs: [ check-changes, api-tests, system-tests, fe-unit ]
+    needs: [ check-changes, api-tests, system-tests, fe-unit, fe-e2e ]
     if: >-
       ${{
         always()
@@ -419,6 +419,7 @@ jobs:
         && needs.api-tests.result == 'success'
         && needs.system-tests.result == 'success'
         && (needs.check-changes.outputs.frontend == 'false' || needs.fe-unit.result == 'success')
+        && (needs.check-changes.outputs.frontend == 'false' || needs.fe-e2e.result == 'success')
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -444,6 +445,13 @@ jobs:
         with:
           name: frontend-unit-coverage
           path: coverage-inputs/frontend-unit
+
+      - name: Download frontend e2e coverage artifact
+        if: needs.check-changes.outputs.frontend == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-e2e-coverage
+          path: coverage-inputs/frontend-e2e
 
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
@@ -597,6 +605,18 @@ jobs:
 
       - name: Run frontend end-to-end tests
         run: yarn test:e2e
+
+      - name: Upload frontend e2e coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-e2e-coverage
+          path: |
+            frontend/coverage/e2e/coverage-final.json
+            frontend/coverage/e2e/coverage-summary.json
+            frontend/coverage/e2e/lcov.info
+            frontend/coverage/e2e/html
+          if-no-files-found: error
 
   fe-build-push:
     name: Build and publish frontend Docker image

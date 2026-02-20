@@ -7,6 +7,6 @@ describe("NotFound page", () => {
     const wrapper = shallowMount(NotFound)
 
     expect(wrapper.text()).toContain("Uh oh, we made a fucky wucky")
-    expect(wrapper.get("a").attributes("href")).toBe("/frontend/public")
+    expect(wrapper.get("a").attributes("href")).toBe("/")
   })
 })

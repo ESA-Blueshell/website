@@ -20,7 +20,11 @@ Reach and sustain high frontend test coverage with deterministic, offline tests 
 - E2E (mocked Playwright): `34` tests, all passing.
 - Latest run status (2026-02-20):
 - `docker compose -f docker-compose.dev.yml run --rm --no-deps frontend yarn test:e2e`
-- `34/34` passing across `chromium` and `mobile-chrome` in `53.7s`.
+- `34/34` passing across `chromium` and `mobile-chrome` in `~1.5m` with instrumentation enabled.
+- E2E coverage is now emitted by default in frontend-only runs:
+- `frontend/coverage/e2e/coverage-summary.json`
+- `frontend/coverage/e2e/lcov.info`
+- `frontend/coverage/e2e/html/index.html`
 - Global coverage:
 - Line: `89.78%` (`9327/10389`)
 - Branch: `72.28%` (`962/1331`)
@@ -278,6 +282,21 @@ Behavior triage rule:
 
 ### Step 11: E2E Foundation Refactor
 - Status: In Progress
+- Completed (partial):
+- Fixed e2e coverage capture bug in `tests/e2e/coverage.ts` (coverage evaluation now executes in page context instead of serializing a function).
+- Simplified scripts in `frontend/package.json`:
+- `test:unit` always runs with coverage.
+- `test:e2e` always runs coverage capture + conversion via `scripts/run-e2e-with-coverage.mjs`.
+- Stabilized instrumented e2e runs by setting deterministic Playwright execution (`workers: 1`, `fullyParallel: false`, higher navigation/test timeouts).
+- Reworked e2e coverage collection in `tests/e2e/test.ts` to an auto fixture so coverage capture runs for every spec file (not only the first imported file in a worker).
+- Verified full frontend run (`yarn test`) produces:
+- unit coverage (`coverage/unit/**`)
+- e2e coverage with one raw artifact per test (`coverage/e2e/raw`, merged into `coverage/e2e/**`)
+- Why:
+- Coverage instrumentation increases module transform/runtime cost; parallel worker fan-out created avoidable flake and false negatives.
+- Shared `test.afterEach` hooks in imported modules are file-scoped in Playwright; fixture-based collection is the robust approach for cross-file coverage capture.
+- Learned:
+- For instrumented Vite+Playwright suites, deterministic worker settings produce reliable behavior/spec coverage with acceptable runtime and no dependency on external services.
 - Completed (partial):
 - Extended `tests/e2e/mocks.ts` into a broader deterministic fixture layer:
 - added role-based auth helpers (`loginAsBoard`, `loginAsAdmin`) through shared `loginAsRoles`,

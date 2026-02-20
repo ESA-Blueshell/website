@@ -116,9 +116,11 @@ discover_frontend_json_reports() {
     "coverage-inputs/api-system"
     "coverage-inputs/frontend-tests"
     "coverage-inputs/frontend-unit"
+    "coverage-inputs/frontend-e2e"
     "coverage-inputs"
     "api/build/coverage/frontend-system"
     "frontend/coverage/unit"
+    "frontend/coverage/e2e"
     "frontend/coverage"
   )
   local dir=""
@@ -242,7 +244,7 @@ if [[ ${#JACOCO_REPORT_PATHS[@]} -eq 0 ]]; then
 fi
 if [[ ${#FRONTEND_JSON_PATHS[@]} -eq 0 ]]; then
   echo "No frontend coverage JSON reports found." >&2
-  echo "Expected in coverage-inputs/*, api/build/coverage/frontend-system/, or frontend/coverage/unit/." >&2
+  echo "Expected in coverage-inputs/*, api/build/coverage/frontend-system/, frontend/coverage/unit/, or frontend/coverage/e2e/." >&2
   exit 1
 fi
 

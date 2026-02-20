@@ -1,4 +1,4 @@
-import {expect, test} from "@playwright/test"
+import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 test.describe("events page", () => {

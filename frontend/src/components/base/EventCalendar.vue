@@ -73,9 +73,16 @@ import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import {type EventResponse, findEvents} from "@/services/api"
-import type {CalendarEvent} from "vuetify/lib/labs/VCalendar/types"
 import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/base/EventDetails.vue"
+
+type CalendarEvent = {
+  name: string
+  start: Date
+  end: Date
+  color?: string
+  category?: string
+}
 
 const GOOGLE_CALENDAR_SUBSCRIBE_URL =
   "https://calendar.google.com/calendar/u/1/r?cid=87r5v7ep7k9ronlrg8n2q9033s@group.calendar.google.com"

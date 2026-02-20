@@ -76,7 +76,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import {authenticate, type LoginResponse} from "@/services/api"
 import type {State} from "@/plugins/store"
-import type {VForm} from "vuetify/lib/components"
+import type {VForm} from "vuetify/components"
 
 const router = useRouter()
 const route = useRoute()

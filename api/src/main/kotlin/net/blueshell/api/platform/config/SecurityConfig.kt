@@ -16,6 +16,7 @@ import org.springframework.security.access.expression.method.MethodSecurityExpre
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl
 import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -77,13 +78,8 @@ class SecurityConfig(
 
     @Bean
     fun authChain(http: HttpSecurity): SecurityFilterChain {
-        publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
-            http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
-        }
         if (requireHttps) {
-            http.requiresChannel { channels ->
-                channels.anyRequest().requiresSecure()
-            }
+            http.redirectToHttps(Customizer.withDefaults())
             http.headers { headers ->
                 headers.httpStrictTransportSecurity { hsts ->
                     hsts.includeSubDomains(true)
@@ -95,8 +91,11 @@ class SecurityConfig(
         http.securityMatcher("/**")
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
-            .authorizeHttpRequests { auth ->
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+        publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
+            http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
+        }
+        http.authorizeHttpRequests { auth ->
                 auth.requestMatchers(
                     HttpMethod.POST,
                     "/auth",

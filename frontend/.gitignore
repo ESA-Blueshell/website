@@ -1,6 +1,10 @@
 .DS_Store
 node_modules
 /dist
+playwright-report
+test-results
+.vitest
+coverage
 
 # Yarn Berry
 .yarn/*

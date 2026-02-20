@@ -17,7 +17,7 @@ const BACKEND_PACKAGE_PREFIX = "net/blueshell/api"
 function parseArgs(argv) {
   const options = {
     jacocoFiles: [],
-    frontendJson: "",
+    frontendJsonFiles: [],
     outDir: "",
   }
 
@@ -27,8 +27,9 @@ function parseArgs(argv) {
       options.jacocoFiles = argv[++i].split(";").filter(Boolean)
       continue
     }
-    if (arg === "--frontend-json" && argv[i + 1]) {
-      options.frontendJson = argv[++i]
+    if ((arg === "--frontend-json" || arg === "--frontend-jsons") && argv[i + 1]) {
+      const values = argv[++i].split(";").map((value) => value.trim()).filter(Boolean)
+      options.frontendJsonFiles.push(...values)
       continue
     }
     if ((arg === "--out" || arg === "--out-dir") && argv[i + 1]) {
@@ -37,16 +38,18 @@ function parseArgs(argv) {
     }
     if (arg === "-h" || arg === "--help") {
       console.log(
-        "Usage: merge-system-coverage.mjs --jacoco <a.xml;b.xml> --frontend-json <coverage-final.json> --out <dir>"
+        "Usage: merge-system-coverage.mjs --jacoco <a.xml;b.xml> --frontend-json <sys.json;frontend-tests.json> --out <dir>"
       )
       process.exit(0)
     }
     throw new Error(`Unknown argument: ${arg}`)
   }
 
-  if (options.jacocoFiles.length === 0 || !options.frontendJson || !options.outDir) {
+  if (options.jacocoFiles.length === 0 || options.frontendJsonFiles.length === 0 || !options.outDir) {
     throw new Error("Missing required arguments. Use --help for usage.")
   }
+
+  options.frontendJsonFiles = Array.from(new Set(options.frontendJsonFiles))
 
   return options
 }
@@ -348,15 +351,17 @@ function writeReports(coverageMap, outDir, repoRoot) {
 }
 
 function main() {
-  const {jacocoFiles, frontendJson, outDir} = parseArgs(process.argv)
+  const {jacocoFiles, frontendJsonFiles, outDir} = parseArgs(process.argv)
 
   for (const jacocoFile of jacocoFiles) {
     if (!fs.existsSync(jacocoFile)) {
       throw new Error(`Missing JaCoCo report: ${jacocoFile}`)
     }
   }
-  if (!fs.existsSync(frontendJson)) {
-    throw new Error(`Missing frontend coverage JSON: ${frontendJson}`)
+  for (const frontendJson of frontendJsonFiles) {
+    if (!fs.existsSync(frontendJson)) {
+      throw new Error(`Missing frontend coverage JSON: ${frontendJson}`)
+    }
   }
 
   const repoRoot = path.basename(process.cwd()) === "frontend"
@@ -364,7 +369,9 @@ function main() {
     : process.cwd()
 
   const mergedCoverage = createCoverageMap({})
-  mergedCoverage.merge(loadFrontendCoverage(frontendJson, repoRoot))
+  for (const frontendJson of frontendJsonFiles) {
+    mergedCoverage.merge(loadFrontendCoverage(frontendJson, repoRoot))
+  }
 
   const coverageByFile = new Map()
   for (const jacocoFile of jacocoFiles) {

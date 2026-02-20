@@ -14,7 +14,7 @@
     "test:e2e:headed": "yarn test:e2e --headed",
     "test": "yarn test:unit && yarn test:e2e",
     "coverage:system:report": "yarn node ./scripts/convert-frontend-coverage.mjs",
-    "lint": "eslint --fix src tests scripts vite.config.mjs vitest.config.ts playwright.config.ts eslint.config.mjs",
+    "lint": "eslint --fix --max-warnings 0 src tests scripts vite.config.mjs vitest.config.ts playwright.config.ts eslint.config.mjs",
     "preview": "tsc && vite preview",
     "gen:discord": "openapi-ts --file ./openapi-ts.discord.config.ts",
     "gen:blueshell": "openapi-ts --file ./openapi-ts.blueshell.config.ts",

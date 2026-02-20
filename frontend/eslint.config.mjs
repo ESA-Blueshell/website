@@ -50,8 +50,19 @@ export default [
 
             'vue/multi-word-component-names': 'off',
             'vue/no-v-html': 'off',
-            '@typescript-eslint/no-unused-vars': 'warn',
-            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': ['error', {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_',
+            }],
+            '@typescript-eslint/no-explicit-any': 'error',
+        },
+    },
+    {
+        files: ['tests/**/*.{ts,vue}'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            'vue/one-component-per-file': 'off',
         },
     },
 ]

@@ -23,11 +23,13 @@ UPDATE event_banners eb
     JOIN files f
     ON f.id = eb.file_id
         AND f.type = 'EVENT_BANNER'
-    JOIN (SELECT path, MIN(id) AS keep_id
-          FROM files
-          WHERE type = 'EVENT_BANNER'
-          GROUP BY path
-          HAVING COUNT(*) > 1) k
+    JOIN (
+        SELECT path, MIN(id) AS keep_id
+        FROM files
+        WHERE type = 'EVENT_BANNER'
+        GROUP BY path
+        HAVING COUNT(*) > 1
+    ) k
     ON k.path = f.path
 SET eb.file_id = k.keep_id
 WHERE eb.file_id <> k.keep_id;
@@ -49,8 +51,9 @@ ALTER TABLE committee_members
    ========================= */
 -- Repair the old events which had their times offset by 1 hour
 UPDATE events
-SET start_time = start_time + INTERVAL 1 HOUR,
-    end_time   = IF(end_time IS NULL, NULL, end_time + INTERVAL 1 HOUR)
+SET
+    start_time = start_time + INTERVAL 1 HOUR,
+    end_time = IF(end_time IS NULL, NULL, end_time + INTERVAL 1 HOUR)
 WHERE DATE(start_time) < '2024-04-01';
 
 -- Update events without an end date, to end at the end of the day of the event
@@ -77,8 +80,7 @@ WHERE users.id NOT IN (SELECT user_id FROM authorities WHERE authority = 'GUEST'
    (2/5/1/4) Contributions cleanup, constraint churn, and many structural changes
    ========================= */
 -- Clean contributions
-DELETE
-FROM contributions
+DELETE FROM contributions
 WHERE NOT paid;
 
 ALTER TABLE contributions

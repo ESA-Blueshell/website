@@ -16,6 +16,7 @@ import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -97,6 +98,30 @@ class UserCommandHandlersTest {
             assertThat(capturedPassword.firstValue).isNotNull
             assertThat(capturedPassword.firstValue.toString()).isNotBlank()
             assertThat(result.password).isEqualTo("encoded-board-pass")
+        }
+
+        @Test
+        fun `rejects non board create when password is missing`() {
+            val command = CreateUserCommand(
+                isBoard = false,
+                username = "john",
+                email = "john@example.com",
+                initials = "JD",
+                firstName = "John",
+                prefix = null,
+                lastName = "Doe",
+                newsletter = true,
+                password = null,
+                discord = "john#0001",
+                phoneNumber = "0612345678",
+                memberProfile = null
+            )
+
+            val thrown = assertThrows<IllegalArgumentException> {
+                handler.handle(command)
+            }
+
+            assertThat(thrown.message).contains("Password is required")
         }
     }
 

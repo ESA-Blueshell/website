@@ -13,3 +13,24 @@ logging:
     org.springframework.security: error
     org.springframework.expression: error
     org.springframework.web: debug
+
+app:
+  security:
+    require-https: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+security:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+      - http://frontend:5173
+      - https://localhost
+  openapi:
+    public:
+      enabled: true

@@ -32,7 +32,7 @@ class CreateUserHandler(
             password = if (command.isBoard) {
                 passwordEncoder.encode(MappingUtil.generateRandomString())
             } else {
-                passwordEncoder.encode(command.password)
+                passwordEncoder.encode(requireNotNull(command.password) { "Password is required for public user registration" })
             },
         ).apply {
             command.memberProfile?.let { replaceMemberProfile(it.toEntity(this)) }

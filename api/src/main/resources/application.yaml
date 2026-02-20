@@ -84,17 +84,24 @@ spring:
 
 springdoc:
   api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:false}
     path: /swagger-ui
     url: /api/v3/api-docs
   default-produces-media-type: application/json
 
 app:
   url: ${APP_URL}
+  security:
+    require-https: true
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
+    issuer: ${JWT_ISSUER:blueshell-api}
+    audience: ${JWT_AUDIENCE:blueshell-web}
+    revoked-jtis: ${JWT_REVOKED_JTIS:}
   jobs:
     queue-name: ${JOB_QUEUE_NAME:jobs.queue}
     exchange-name: ${JOB_EXCHANGE_NAME:jobs.exchange}
@@ -131,6 +138,12 @@ server:
     include-exception: false
 
 security:
+  cors:
+    allowed-origins:
+      - https://esa-blueshell.nl
+  openapi:
+    public:
+      enabled: false
   auth-rate-limit:
     enabled: true
 

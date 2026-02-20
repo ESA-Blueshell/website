@@ -75,6 +75,28 @@ class UserControllerIT : UserTestSupport() {
             assertThat(profile.ehbo).isFalse()
             assertThat(profile.dateOfBirth.toLocalDate().toString()).isEqualTo("1999-04-12")
         }
+
+        @Test
+        fun `board can create user without providing password`() {
+            val board = createUserWithRole(Role.BOARD)
+            val username = "board_created_${System.currentTimeMillis()}"
+            val payload =
+                """{"username":"$username","initials":"BC","firstName":"Board","lastName":"Created","newsletter":true,"email":"$username@example.com","discord":"boardcreated#1234","phoneNumber":"+31612345000"}"""
+
+            mvc.perform(
+                post("/users")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.username").value(username))
+
+            val persistedUser = userRepository.findByUsername(username).orElseThrow()
+            assertThat(persistedUser.password)
+                .describedAs("Board-created users should still receive a generated password hash")
+                .isNotBlank()
+        }
     }
 
     @Nested

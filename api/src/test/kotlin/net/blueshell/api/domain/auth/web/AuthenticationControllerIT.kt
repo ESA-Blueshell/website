@@ -43,9 +43,11 @@ class AuthenticationControllerIT : UserTestSupport() {
             val body = mapper.readTree(result.response.contentAsByteArray)
             val token = body.path("token").asText()
             val expiration = body.path("expiration").asLong()
+            val validation = jwtTokenUtil.parseAndValidate(token)
 
             assertThat(jwtTokenUtil.isTokenValid(token)).isTrue()
             assertThat(jwtTokenUtil.getUsernameFromToken(token)).isEqualTo(user.username)
+            assertThat(validation.jti).isNotBlank()
             assertThat(expiration).isGreaterThan(System.currentTimeMillis())
         }
 

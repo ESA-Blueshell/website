@@ -6,6 +6,7 @@ import net.blueshell.api.domain.user.application.validation.UserUniquenessCandid
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.Role
+import jakarta.validation.constraints.AssertTrue
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import java.time.LocalDate
@@ -37,6 +38,21 @@ data class CreateUserCommand(
     val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long? = null
+
+    @get:AssertTrue(message = "Password is required for public user registration.")
+    val isPasswordPresentForPublicRegistration: Boolean
+        get() = isBoard || !password.isNullOrBlank()
+
+    @get:AssertTrue(
+        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)."
+    )
+    val isPasswordComplexForPublicRegistration: Boolean
+        get() = isBoard || (password?.let(PASSWORD_COMPLEXITY_REGEX::matches) == true)
+
+    companion object {
+        private val PASSWORD_COMPLEXITY_REGEX =
+            Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$")
+    }
 }
 
 @UniqueUserCommand

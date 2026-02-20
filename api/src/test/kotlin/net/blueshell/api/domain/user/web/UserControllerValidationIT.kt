@@ -23,6 +23,40 @@ class UserControllerValidationIT : UserTestSupport() {
     inner class CreateUserUniqueness {
 
         @Test
+        fun `missing password for anonymous registration returns validation error`() {
+            val username = "nopass_${System.currentTimeMillis()}"
+            val payload =
+                """{"username":"$username","initials":"NP","firstName":"No","lastName":"Password","newsletter":false,"email":"$username@example.com","discord":"nopass#1234","phoneNumber":"+31699990000"}"""
+
+            mvc.perform(
+                post("/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.detail").value("Validation failed for request."))
+        }
+
+        @Test
+        fun `weak password for anonymous registration returns validation error`() {
+            val username = "weakpass_${System.currentTimeMillis()}"
+
+            mvc.perform(
+                post("/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        userRequestFactory.createUserPayload(
+                            username = username,
+                            email = "$username@example.com",
+                            password = "weakpass"
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.detail").value("Validation failed for request."))
+        }
+
+        @Test
         fun `duplicate username returns field validation error`() {
             val existing = createUserWithRole(Role.GUEST)
 

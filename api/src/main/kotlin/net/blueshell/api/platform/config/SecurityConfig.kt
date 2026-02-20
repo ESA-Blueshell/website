@@ -6,6 +6,8 @@ import net.blueshell.api.infrastructure.security.PublicAuthRateLimitFilter
 import net.blueshell.api.infrastructure.security.permission.CompositePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -27,10 +29,16 @@ import java.util.*
 
 @Configuration
 @EnableMethodSecurity
+@EnableConfigurationProperties(SecurityCorsProperties::class)
 class SecurityConfig(
     private val authenticationEntryPoint: JwtAuthenticationEntryPoint,
     private val jwtAuthFilter: JwtAuthFilter,
-    private val publicAuthRateLimitFilterProvider: ObjectProvider<PublicAuthRateLimitFilter>
+    private val publicAuthRateLimitFilterProvider: ObjectProvider<PublicAuthRateLimitFilter>,
+    private val securityCorsProperties: SecurityCorsProperties,
+    @param:Value($$"${security.openapi.public.enabled:false}")
+    private val openApiPublicEnabled: Boolean,
+    @param:Value($$"${app.security.require-https:true}")
+    private val requireHttps: Boolean
 ) {
     @Bean
     fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager {
@@ -50,17 +58,16 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val cfg = CorsConfiguration()
-        cfg.allowedOriginPatterns = mutableListOf(
-            "http://localhost:*",
-            "http://127.0.0.1:*",
-            "http://frontend:*",
-            "https://localhost",
-            "https://esa-blueshell.nl"
-        )
+        cfg.allowedOrigins = securityCorsProperties.allowedOrigins
+            .map { it.trim().removeSuffix("/") }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .toMutableList()
         cfg.allowedMethods = mutableListOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type", "X-Guest-Access-Token")
         cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
-        cfg.allowCredentials = true
+        cfg.allowCredentials = false
+        cfg.maxAge = 3600
 
         val src = UrlBasedCorsConfigurationSource()
         src.registerCorsConfiguration("/**", cfg)
@@ -73,13 +80,24 @@ class SecurityConfig(
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
             http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
         }
+        if (requireHttps) {
+            http.requiresChannel { channels ->
+                channels.anyRequest().requiresSecure()
+            }
+            http.headers { headers ->
+                headers.httpStrictTransportSecurity { hsts ->
+                    hsts.includeSubDomains(true)
+                    hsts.maxAgeInSeconds(31536000)
+                }
+            }
+        }
 
         http.securityMatcher("/**")
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
-            .authorizeHttpRequests {
-                it.requestMatchers(
+            .authorizeHttpRequests { auth ->
+                auth.requestMatchers(
                     HttpMethod.POST,
                     "/auth",
                     "/recovery/**",
@@ -87,8 +105,8 @@ class SecurityConfig(
                     "/users/guest",
                     "/events/*/signups"
                 ).permitAll()
-                    .requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
-                    .requestMatchers(
+                auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
+                auth.requestMatchers(
                         HttpMethod.GET,
                         "/events/**",
                         "/events/signups/byAccessToken",
@@ -99,15 +117,22 @@ class SecurityConfig(
                         "/telemetry/*",
                         "/committeeMembers/committees",
                         "/contributionPeriods",
-                        "/v3/api-docs**/**",
-                        "/swagger-ui**/**",
                         "/download/**",
                         "/committees/**",
                         "/contributionPeriods/current",
                         "/health"
                     ).permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
-                    .anyRequest().authenticated()
+
+                if (openApiPublicEnabled) {
+                    auth.requestMatchers(
+                        HttpMethod.GET,
+                        "/v3/api-docs**/**",
+                        "/swagger-ui**/**"
+                    ).permitAll()
+                }
+
+                auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
+                auth.anyRequest().authenticated()
             }
             .exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }
         return http.build()

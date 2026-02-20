@@ -14,7 +14,11 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
 @Component
-class JwtAuthFilter(private val jwtTokenUtil: JwtTokenUtil, private val userService: UserService) :
+class JwtAuthFilter(
+    private val jwtTokenUtil: JwtTokenUtil,
+    private val jwtRevocationService: JwtRevocationService,
+    private val userService: UserService
+) :
     OncePerRequestFilter() {
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(
@@ -31,6 +35,10 @@ class JwtAuthFilter(private val jwtTokenUtil: JwtTokenUtil, private val userServ
         val token = header.substring(7)
         val validation = jwtTokenUtil.parseAndValidate(token)
         if (!validation.isValid) {
+            filterChain.doFilter(request, response)
+            return
+        }
+        if (jwtRevocationService.isRevoked(validation.jti)) {
             filterChain.doFilter(request, response)
             return
         }

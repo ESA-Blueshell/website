@@ -63,4 +63,5 @@ private
 .playwright-mcp
 backups
 .kotlin
+*.md
 .idea

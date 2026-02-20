@@ -482,7 +482,7 @@ jobs:
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ check-changes, coverage ]
+    needs: [ check-changes, coverage, openapi-sync ]
     if: needs.check-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -620,7 +620,7 @@ jobs:
 
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [ check-changes, coverage, fe-static, fe-unit, fe-e2e ]
+    needs: [ check-changes, coverage, fe-static, fe-unit, fe-e2e, openapi-sync ]
     if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -718,13 +718,12 @@ jobs:
 
   deploy:
     name: Deploy to production
-    needs: [ check-changes, api-build-push, fe-build-push, openapi-sync, coverage ]
+    needs: [ check-changes, api-build-push, fe-build-push, coverage ]
     if: ${{
       always()
       && github.ref == 'refs/heads/main'
       && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
       && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
-      && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
       && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
       }}
     runs-on: ubuntu-latest

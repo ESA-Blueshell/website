@@ -423,28 +423,41 @@ jobs:
           name: api-system-coverage
           path: coverage-inputs/api-system
 
+      - name: Download frontend test coverage artifact
+        if: needs.check-changes.outputs.frontend == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-test-coverage
+          path: coverage-inputs/frontend-tests
+
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
         with:
           node-version: '24'
           yarn-version: '4.10.3'
 
-      - name: Merge JaCoCo + frontend system coverage into combined report
+      - name: Merge JaCoCo + frontend coverage into combined report
         run: |
           set -euo pipefail
 
           JACOCO_TEST_XML="$(find coverage-inputs/api-test -name jacocoTestReport.xml -print -quit)"
           JACOCO_SYSTEM_XML="$(find coverage-inputs/api-system -name jacocoSystemTestReport.xml -print -quit)"
-          FRONTEND_COVERAGE_JSON="$(find coverage-inputs/api-system -name coverage-final.json -print -quit)"
+          FRONTEND_SYSTEM_COVERAGE_JSON="$(find coverage-inputs/api-system -name coverage-final.json -print -quit)"
+          FRONTEND_TEST_COVERAGE_JSON="$(find coverage-inputs/frontend-tests -name coverage-final.json -print -quit || true)"
 
           test -n "$JACOCO_TEST_XML"
           test -n "$JACOCO_SYSTEM_XML"
-          test -n "$FRONTEND_COVERAGE_JSON"
+          test -n "$FRONTEND_SYSTEM_COVERAGE_JSON"
+
+          FRONTEND_COVERAGE_JSON_LIST="$FRONTEND_SYSTEM_COVERAGE_JSON"
+          if [ -n "$FRONTEND_TEST_COVERAGE_JSON" ]; then
+            FRONTEND_COVERAGE_JSON_LIST="$FRONTEND_COVERAGE_JSON_LIST;$FRONTEND_TEST_COVERAGE_JSON"
+          fi
 
           chmod +x ./scripts/merge-coverage.sh 
           ./scripts/merge-coverage.sh \
             --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
-            --frontend-json "${FRONTEND_COVERAGE_JSON}" \
+            --frontend-json "${FRONTEND_COVERAGE_JSON_LIST}" \
             --out "coverage/merged"
 
       - name: Upload merged coverage artifact
@@ -527,6 +540,26 @@ jobs:
 
       - name: Run ESLint
         run: yarn lint --max-warnings=0
+
+      - name: Install Playwright browser dependencies
+        run: yarn playwright install --with-deps chromium
+
+      - name: Run frontend unit tests with coverage
+        run: yarn test:unit:coverage
+
+      - name: Run frontend end-to-end tests
+        run: yarn test:e2e
+
+      - name: Upload frontend test coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-coverage
+          path: |
+            frontend/coverage/coverage-final.json
+            frontend/coverage/lcov.info
+            frontend/coverage
+          if-no-files-found: warn
 
   fe-build-push:
     name: Build and publish frontend Docker image

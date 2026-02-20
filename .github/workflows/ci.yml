@@ -35,6 +35,7 @@ jobs:
     outputs:
       api: ${{ steps.filter.outputs.api }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      openapi: ${{ steps.filter.outputs.openapi }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,6 +55,13 @@ jobs:
               - 'docker-compose.dev.yml'
             frontend:
               - 'frontend/**'
+            openapi:
+              - 'api/**'
+              - 'frontend/**'
+              - 'openapi/**'
+              - 'generate_openapi.sh'
+              - 'docker-compose.dev.yml'
+              - 'env/**'
 
   api-tests:
     name: Run API tests
@@ -207,7 +215,7 @@ jobs:
 
   system-tests:
     name: Run system tests
-    needs: [ check-changes, fe-verify ]
+    needs: check-changes
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -402,9 +410,16 @@ jobs:
           if-no-files-found: warn
 
   coverage:
-    name: Check code coverage and upload merged report
-    needs: [ check-changes, api-tests, system-tests ]
-    if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
+    name: Merge and enforce code coverage
+    needs: [ check-changes, api-tests, system-tests, fe-unit ]
+    if: >-
+      ${{
+        always()
+        && (needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true')
+        && needs.api-tests.result == 'success'
+        && needs.system-tests.result == 'success'
+        && (needs.check-changes.outputs.frontend == 'false' || needs.fe-unit.result == 'success')
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -423,12 +438,12 @@ jobs:
           name: api-system-coverage
           path: coverage-inputs/api-system
 
-      - name: Download frontend test coverage artifact
+      - name: Download frontend unit coverage artifact
         if: needs.check-changes.outputs.frontend == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: frontend-test-coverage
-          path: coverage-inputs/frontend-tests
+          name: frontend-unit-coverage
+          path: coverage-inputs/frontend-unit
 
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
@@ -436,29 +451,12 @@ jobs:
           node-version: '24'
           yarn-version: '4.10.3'
 
-      - name: Merge JaCoCo + frontend coverage into combined report
+      - name: Merge all discovered coverage reports
         run: |
           set -euo pipefail
 
-          JACOCO_TEST_XML="$(find coverage-inputs/api-test -name jacocoTestReport.xml -print -quit)"
-          JACOCO_SYSTEM_XML="$(find coverage-inputs/api-system -name jacocoSystemTestReport.xml -print -quit)"
-          FRONTEND_SYSTEM_COVERAGE_JSON="$(find coverage-inputs/api-system -name coverage-final.json -print -quit)"
-          FRONTEND_TEST_COVERAGE_JSON="$(find coverage-inputs/frontend-tests -name coverage-final.json -print -quit || true)"
-
-          test -n "$JACOCO_TEST_XML"
-          test -n "$JACOCO_SYSTEM_XML"
-          test -n "$FRONTEND_SYSTEM_COVERAGE_JSON"
-
-          FRONTEND_COVERAGE_JSON_LIST="$FRONTEND_SYSTEM_COVERAGE_JSON"
-          if [ -n "$FRONTEND_TEST_COVERAGE_JSON" ]; then
-            FRONTEND_COVERAGE_JSON_LIST="$FRONTEND_COVERAGE_JSON_LIST;$FRONTEND_TEST_COVERAGE_JSON"
-          fi
-
-          chmod +x ./scripts/merge-coverage.sh 
-          ./scripts/merge-coverage.sh \
-            --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
-            --frontend-json "${FRONTEND_COVERAGE_JSON_LIST}" \
-            --out "coverage/merged"
+          chmod +x ./merge-coverage.sh
+          ./merge-coverage.sh --out "coverage/merged"
 
       - name: Upload merged coverage artifact
         uses: actions/upload-artifact@v4
@@ -469,14 +467,15 @@ jobs:
 
       - name: Enforce merged coverage threshold
         run: |
-          chmod +x ./scripts/check-cobertura-threshold.sh 
+          chmod +x ./scripts/check-cobertura-threshold.sh
           ./scripts/check-cobertura-threshold.sh \
             --file coverage/merged/Cobertura.xml \
             --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ coverage ]
+    needs: [ check-changes, coverage ]
+    if: needs.check-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -517,8 +516,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  fe-verify:
-    name: Run frontend static checks
+  fe-static:
+    name: Frontend typecheck and lint
     needs: check-changes
     if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -541,29 +540,68 @@ jobs:
       - name: Run ESLint
         run: yarn lint --max-warnings=0
 
-      - name: Install Playwright browser dependencies
-        run: yarn playwright install --with-deps chromium
+  fe-unit:
+    name: Frontend unit tests with coverage
+    needs: check-changes
+    if: needs.check-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: '24'
+          yarn-version: '4.10.3'
 
       - name: Run frontend unit tests with coverage
         run: yarn test:unit:coverage
 
-      - name: Run frontend end-to-end tests
-        run: yarn test:e2e
-
-      - name: Upload frontend test coverage artifacts
+      - name: Upload frontend unit coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-test-coverage
+          name: frontend-unit-coverage
           path: |
-            frontend/coverage/coverage-final.json
-            frontend/coverage/lcov.info
-            frontend/coverage
-          if-no-files-found: warn
+            frontend/coverage/unit/coverage-final.json
+            frontend/coverage/unit/coverage-summary.json
+            frontend/coverage/unit/lcov.info
+            frontend/coverage/unit/lcov-report
+            frontend/coverage/unit/index.html
+          if-no-files-found: error
+
+  fe-e2e:
+    name: Frontend end-to-end tests
+    needs: check-changes
+    if: needs.check-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: '24'
+          yarn-version: '4.10.3'
+
+      - name: Install Playwright browser dependencies
+        run: yarn playwright install --with-deps chromium
+
+      - name: Run frontend end-to-end tests
+        run: yarn test:e2e
 
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [ coverage ]
+    needs: [ check-changes, coverage, fe-static, fe-unit, fe-e2e ]
+    if: needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -606,6 +644,8 @@ jobs:
 
   openapi-sync:
     name: Validate OpenAPI client generation
+    needs: check-changes
+    if: needs.check-changes.outputs.openapi == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -664,7 +704,7 @@ jobs:
       && github.ref == 'refs/heads/main'
       && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
       && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
-      && needs.openapi-sync.result == 'success'
+      && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
       && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
       }}
     runs-on: ubuntu-latest

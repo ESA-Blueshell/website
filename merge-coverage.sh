@@ -10,68 +10,129 @@ usage() {
 Usage:
   ./merge-coverage.sh [options]
 
-Finds CI-style coverage inputs and runs scripts/merge-coverage.sh.
+Compatibility wrapper around scripts/merge-coverage.sh.
+If no explicit inputs are provided, coverage reports are auto-discovered.
 
 Options:
-  --jacoco-test <file>    Path to jacocoTestReport.xml
-  --jacoco-system <file>  Path to jacocoSystemTestReport.xml
-  --frontend-json <file>  Path to frontend system-test coverage-final.json
-  --frontend-test-json <file>  Path to frontend test-suite coverage-final.json (optional)
-  --out <dir>             Output directory (default: coverage/merged)
-  -h, --help              Show help
+  --jacoco <file-or-list>         JaCoCo XML path or semicolon-separated list. Repeatable.
+  --jacoco-test <file>            Backward-compatible alias for JaCoCo unit/integration XML.
+  --jacoco-system <file>          Backward-compatible alias for JaCoCo system XML.
+  --jacoco-combined <file>        Optional JaCoCo combined XML input.
+  --frontend-json <file-or-list>  Frontend coverage-final.json path or semicolon-separated list. Repeatable.
+  --frontend-system-json <file>   Backward-compatible alias for frontend system coverage JSON.
+  --frontend-test-json <file>     Backward-compatible alias for frontend unit-test coverage JSON.
+  --out <dir>                     Output directory (default: coverage/merged)
+  -h, --help                      Show help
 
 Environment overrides:
+  JACOCO_REPORTS
   JACOCO_TEST_XML
   JACOCO_SYSTEM_XML
-  FRONTEND_COVERAGE_JSON       (frontend system-test coverage)
-  FRONTEND_TEST_COVERAGE_JSON  (frontend test-suite coverage, optional)
+  JACOCO_COMBINED_XML
+  FRONTEND_COVERAGE_JSON_LIST
+  FRONTEND_COVERAGE_JSON
+  FRONTEND_SYSTEM_COVERAGE_JSON
+  FRONTEND_TEST_COVERAGE_JSON
   MERGED_COVERAGE_OUT
 USAGE
 }
 
-find_artifact_file() {
-  local base_dir="$1"
-  local file_name="$2"
+JACOCO_INPUTS=()
+FRONTEND_INPUTS=()
+OUTPUT_DIR="${MERGED_COVERAGE_OUT:-coverage/merged}"
 
-  if [[ ! -d "$base_dir" ]]; then
-    return 1
-  fi
-
-  find "$base_dir" -name "$file_name" -print -quit
-}
-
-pick_first_existing_file() {
-  for candidate in "$@"; do
-    if [[ -f "$candidate" ]]; then
-      printf '%s\n' "$candidate"
+append_unique_jacoco() {
+  local candidate="$1"
+  local existing
+  for existing in "${JACOCO_INPUTS[@]-}"; do
+    if [[ "$existing" == "$candidate" ]]; then
       return 0
     fi
   done
-  return 1
+  JACOCO_INPUTS+=("$candidate")
 }
 
-JACOCO_TEST_XML="${JACOCO_TEST_XML:-}"
-JACOCO_SYSTEM_XML="${JACOCO_SYSTEM_XML:-}"
-FRONTEND_SYSTEM_COVERAGE_JSON="${FRONTEND_COVERAGE_JSON:-}"
-FRONTEND_TEST_COVERAGE_JSON="${FRONTEND_TEST_COVERAGE_JSON:-}"
-OUTPUT_DIR="${MERGED_COVERAGE_OUT:-coverage/merged}"
+append_unique_frontend() {
+  local candidate="$1"
+  local existing
+  for existing in "${FRONTEND_INPUTS[@]-}"; do
+    if [[ "$existing" == "$candidate" ]]; then
+      return 0
+    fi
+  done
+  FRONTEND_INPUTS+=("$candidate")
+}
+
+append_split_values() {
+  local callback="$1"
+  local raw_values="$2"
+  local split_values=()
+  local value=""
+  local trimmed=""
+  local old_ifs="$IFS"
+
+  IFS=';'
+  read -r -a split_values <<< "$raw_values"
+  IFS="$old_ifs"
+
+  for value in "${split_values[@]-}"; do
+    trimmed="${value#"${value%%[![:space:]]*}"}"
+    trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+    if [[ -n "$trimmed" ]]; then
+      "$callback" "$trimmed"
+    fi
+  done
+}
+
+if [[ -n "${JACOCO_REPORTS:-}" ]]; then
+  append_split_values append_unique_jacoco "${JACOCO_REPORTS}"
+fi
+if [[ -n "${JACOCO_TEST_XML:-}" ]]; then
+  append_unique_jacoco "${JACOCO_TEST_XML}"
+fi
+if [[ -n "${JACOCO_SYSTEM_XML:-}" ]]; then
+  append_unique_jacoco "${JACOCO_SYSTEM_XML}"
+fi
+if [[ -n "${JACOCO_COMBINED_XML:-}" ]]; then
+  append_unique_jacoco "${JACOCO_COMBINED_XML}"
+fi
+if [[ -n "${FRONTEND_COVERAGE_JSON_LIST:-}" ]]; then
+  append_split_values append_unique_frontend "${FRONTEND_COVERAGE_JSON_LIST}"
+fi
+if [[ -n "${FRONTEND_COVERAGE_JSON:-}" ]]; then
+  append_unique_frontend "${FRONTEND_COVERAGE_JSON}"
+fi
+if [[ -n "${FRONTEND_SYSTEM_COVERAGE_JSON:-}" ]]; then
+  append_unique_frontend "${FRONTEND_SYSTEM_COVERAGE_JSON}"
+fi
+if [[ -n "${FRONTEND_TEST_COVERAGE_JSON:-}" ]]; then
+  append_unique_frontend "${FRONTEND_TEST_COVERAGE_JSON}"
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --jacoco)
+      append_split_values append_unique_jacoco "${2:-}"
+      shift 2
+      ;;
     --jacoco-test)
-      JACOCO_TEST_XML="${2:-}"
+      append_unique_jacoco "${2:-}"
       shift 2
       ;;
     --jacoco-system)
-      JACOCO_SYSTEM_XML="${2:-}"
+      append_unique_jacoco "${2:-}"
       shift 2
       ;;
-    --frontend-json)
-      FRONTEND_SYSTEM_COVERAGE_JSON="${2:-}"
+    --jacoco-combined)
+      append_unique_jacoco "${2:-}"
+      shift 2
+      ;;
+    --frontend-json|--frontend-system-json)
+      append_split_values append_unique_frontend "${2:-}"
       shift 2
       ;;
     --frontend-test-json)
-      FRONTEND_TEST_COVERAGE_JSON="${2:-}"
+      append_unique_frontend "${2:-}"
       shift 2
       ;;
     --out)
@@ -90,67 +151,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$JACOCO_TEST_XML" ]]; then
-  JACOCO_TEST_XML="$(find_artifact_file "coverage-inputs/api-test" "jacocoTestReport.xml" || true)"
-fi
-if [[ -z "$JACOCO_TEST_XML" ]]; then
-  JACOCO_TEST_XML="$(pick_first_existing_file "api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml" || true)"
-fi
-
-if [[ -z "$JACOCO_SYSTEM_XML" ]]; then
-  JACOCO_SYSTEM_XML="$(find_artifact_file "coverage-inputs/api-system" "jacocoSystemTestReport.xml" || true)"
-fi
-if [[ -z "$JACOCO_SYSTEM_XML" ]]; then
-  JACOCO_SYSTEM_XML="$(pick_first_existing_file "api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml" || true)"
-fi
-
-if [[ -z "$FRONTEND_SYSTEM_COVERAGE_JSON" ]]; then
-  FRONTEND_SYSTEM_COVERAGE_JSON="$(find_artifact_file "coverage-inputs/api-system" "coverage-final.json" || true)"
-fi
-if [[ -z "$FRONTEND_SYSTEM_COVERAGE_JSON" ]]; then
-  FRONTEND_SYSTEM_COVERAGE_JSON="$(pick_first_existing_file "api/build/coverage/frontend-system/coverage-final.json" || true)"
-fi
-
-if [[ -z "$FRONTEND_TEST_COVERAGE_JSON" ]]; then
-  FRONTEND_TEST_COVERAGE_JSON="$(find_artifact_file "coverage-inputs/frontend-tests" "coverage-final.json" || true)"
-fi
-if [[ -z "$FRONTEND_TEST_COVERAGE_JSON" ]]; then
-  FRONTEND_TEST_COVERAGE_JSON="$(pick_first_existing_file "frontend/coverage/coverage-final.json" || true)"
-fi
-
-if [[ -z "$JACOCO_TEST_XML" || ! -f "$JACOCO_TEST_XML" ]]; then
-  echo "Could not find jacocoTestReport.xml" >&2
-  exit 1
-fi
-
-if [[ -z "$JACOCO_SYSTEM_XML" || ! -f "$JACOCO_SYSTEM_XML" ]]; then
-  echo "Could not find jacocoSystemTestReport.xml" >&2
-  exit 1
-fi
-
-if [[ -z "$FRONTEND_SYSTEM_COVERAGE_JSON" || ! -f "$FRONTEND_SYSTEM_COVERAGE_JSON" ]]; then
-  echo "Could not find frontend system coverage-final.json" >&2
-  exit 1
-fi
-
-if [[ -n "$FRONTEND_TEST_COVERAGE_JSON" && ! -f "$FRONTEND_TEST_COVERAGE_JSON" ]]; then
-  echo "Configured frontend test coverage file does not exist: $FRONTEND_TEST_COVERAGE_JSON" >&2
-  exit 1
-fi
-
 if [[ ! -x "scripts/merge-coverage.sh" ]]; then
   chmod +x "scripts/merge-coverage.sh"
 fi
 
-FRONTEND_COVERAGE_INPUTS=("$FRONTEND_SYSTEM_COVERAGE_JSON")
-if [[ -n "$FRONTEND_TEST_COVERAGE_JSON" ]]; then
-  FRONTEND_COVERAGE_INPUTS+=("$FRONTEND_TEST_COVERAGE_JSON")
-fi
-FRONTEND_COVERAGE_JSON_LIST="$(IFS=';'; echo "${FRONTEND_COVERAGE_INPUTS[*]}")"
+cmd=(./scripts/merge-coverage.sh --out "$OUTPUT_DIR")
+for report in "${JACOCO_INPUTS[@]-}"; do
+  cmd+=(--jacoco "$report")
+done
+for report in "${FRONTEND_INPUTS[@]-}"; do
+  cmd+=(--frontend-json "$report")
+done
 
-./scripts/merge-coverage.sh \
-  --jacoco "${JACOCO_TEST_XML};${JACOCO_SYSTEM_XML}" \
-  --frontend-json "$FRONTEND_COVERAGE_JSON_LIST" \
-  --out "$OUTPUT_DIR"
-
-echo "Merged coverage written to: $OUTPUT_DIR"
+"${cmd[@]}"

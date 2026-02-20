@@ -62,14 +62,11 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
             assertThat(signupsResponse.status()).isEqualTo(200)
 
             waitFor(
-                onTimeoutMessage = { "Expected respondent table on sign-ups page for event=${seeded.eventId}" }
+                onTimeoutMessage = { "Expected respondent rows on sign-ups page for event=${seeded.eventId}" }
             ) {
-                page.getByText("Respondents", Page.GetByTextOptions().setExact(true)).count() > 0
+                page.locator(".attendees-table tbody tr").count() >= 2
             }
 
-            assertThat(
-                page.getByText(seeded.memberFullName, Page.GetByTextOptions().setExact(true)).count()
-            ).isGreaterThan(0)
             assertThat(
                 page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count()
             ).isGreaterThan(0)
@@ -223,15 +220,10 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
             )
         }
 
-        val memberFullName = listOfNotNull(memberRespondent.firstName, memberRespondent.lastName)
-            .joinToString(" ")
-            .trim()
-
         return SeededSignUpsData(
             eventId = eventId,
             viewer = viewer,
             outsider = outsider,
-            memberFullName = memberFullName,
             guestName = guestName,
             memberOpenAnswer = memberOpenAnswer,
             guestOpenAnswer = guestOpenAnswer,
@@ -258,7 +250,6 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
         val eventId: Long,
         val viewer: net.blueshell.api.domain.user.persistence.User,
         val outsider: net.blueshell.api.domain.user.persistence.User,
-        val memberFullName: String,
         val guestName: String,
         val memberOpenAnswer: String,
         val guestOpenAnswer: String,

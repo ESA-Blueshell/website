@@ -9,6 +9,10 @@ type Fixtures = {
   events?: Array<Record<string, unknown>>
   eventSignUps?: Array<Record<string, unknown>>
   committees?: Array<Record<string, unknown>>
+  blogs?: Array<Record<string, unknown>>
+  blogsById?: Record<string, Record<string, unknown>>
+  blogStatusById?: Record<string, number>
+  jobs?: Array<Record<string, unknown>>
 }
 
 async function fulfillJson(route: Route, data: unknown, status = 200) {
@@ -19,12 +23,12 @@ async function fulfillJson(route: Route, data: unknown, status = 200) {
   })
 }
 
-export async function loginAsBoard(context: BrowserContext) {
+async function loginAsRoles(context: BrowserContext, roles: string[]) {
   const loginCookie = encodeURIComponent(JSON.stringify({
     userId: 1,
-    username: "board-user",
+    username: "mock-user",
     token: "mock-token",
-    roles: ["BOARD", "MEMBER"],
+    roles,
     expiration: Date.now() + 1000 * 60 * 60 * 24,
     addressId: 10,
   }))
@@ -38,7 +42,22 @@ export async function loginAsBoard(context: BrowserContext) {
   ])
 }
 
+export async function loginAsBoard(context: BrowserContext) {
+  await loginAsRoles(context, ["BOARD", "MEMBER"])
+}
+
+export async function loginAsAdmin(context: BrowserContext) {
+  await loginAsRoles(context, ["ADMIN", "MEMBER"])
+}
+
 export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
+  await page.addInitScript(() => {
+    localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
+    if (localStorage.getItem("esa-blueshell.nl:darkMode") == null) {
+      localStorage.setItem("esa-blueshell.nl:darkMode", "false")
+    }
+  })
+
   const baseUsers = fixtures.users ?? [
     {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]},
     {id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: false, roles: ["USER"]},
@@ -86,6 +105,36 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     {id: 900, name: "Events Committee"},
   ]
 
+  const baseBlogs = fixtures.blogs ?? [
+    {
+      id: 1,
+      title: "Mock Newsletter",
+      publishedAt: "2025-01-01T12:00:00.000Z",
+      html: "<h1>Mock Newsletter</h1><p>Welcome to Blueshell.</p>",
+    },
+  ]
+
+  const blogsById = fixtures.blogsById ?? Object.fromEntries(
+    baseBlogs
+      .filter((blog) => blog.id != null)
+      .map((blog) => [String(blog.id), blog]),
+  )
+
+  const baseJobs = fixtures.jobs ?? [
+    {
+      id: 700,
+      jobType: "SYNC_DISCORD",
+      status: "FAILED",
+      attempts: 1,
+      payload: "{\"scope\":\"members\"}",
+      errorType: "RuntimeException",
+      errorReason: "Temporary failure",
+      queuedAt: "2025-01-01T12:00:00.000Z",
+      startedAt: "2025-01-01T12:00:10.000Z",
+      finishedAt: "2025-01-01T12:00:11.000Z",
+    },
+  ]
+
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -96,6 +145,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
     if (method === "GET" && path === "/users") {
       return fulfillJson(route, {content: baseUsers})
+    }
+    if (method === "GET" && /^\/users\/\d+$/.test(path)) {
+      const id = Number(path.split("/").at(-1))
+      const user = baseUsers.find((candidate) => Number(candidate.id) === id)
+      if (user != null) {
+        return fulfillJson(route, user)
+      }
+      return fulfillJson(route, {id, roles: ["MEMBER"]})
     }
     if (method === "GET" && path === "/memberships") {
       return fulfillJson(route, baseMemberships)
@@ -123,6 +180,44 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/committeeMembers/committees") {
       return fulfillJson(route, baseCommittees)
+    }
+    if (method === "GET" && path === "/blogs") {
+      return fulfillJson(route, baseBlogs)
+    }
+    if (method === "GET" && /^\/blogs\/[^/]+$/.test(path)) {
+      const id = path.split("/").at(-1) ?? ""
+      const forcedStatus = fixtures.blogStatusById?.[id]
+      if (forcedStatus != null && forcedStatus !== 200) {
+        return fulfillJson(route, {status: forcedStatus, detail: "Blog request failed"}, forcedStatus)
+      }
+      const blog = blogsById[id]
+      if (blog != null) {
+        return fulfillJson(route, blog)
+      }
+      return fulfillJson(route, {status: 404, detail: "Blog not found"}, 404)
+    }
+    if (method === "GET" && path === "/management/jobs") {
+      return fulfillJson(route, baseJobs)
+    }
+    if (method === "POST" && /^\/management\/jobs\/\d+\/retry$/.test(path)) {
+      const rawId = path.split("/")[3]
+      const id = Number(rawId)
+      const index = baseJobs.findIndex((job) => Number(job.id) === id)
+      const existing = index >= 0 ? baseJobs[index] : undefined
+      const retried = {
+        ...(existing ?? {id, jobType: "SYNC_DISCORD"}),
+        status: "RUNNING",
+        attempts: Number(existing?.attempts ?? 0) + 1,
+        errorType: null,
+        errorReason: null,
+        errorMessage: null,
+      }
+      if (index >= 0) {
+        baseJobs.splice(index, 1, retried)
+      } else {
+        baseJobs.unshift(retried)
+      }
+      return fulfillJson(route, retried)
     }
     if (method === "PUT" && path.endsWith("/approve")) {
       return fulfillJson(route, {...baseEvents[0], approved: true})
@@ -162,6 +257,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         {username: "Emma", status: "online", avatar_url: "", channel_id: "1"},
         {username: "Viktor", status: "idle", avatar_url: "", channel_id: "1"},
       ],
+    })
+  })
+
+  await page.route("https://www.google.com/maps/embed**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<html><body>Mock map</body></html>",
     })
   })
 }

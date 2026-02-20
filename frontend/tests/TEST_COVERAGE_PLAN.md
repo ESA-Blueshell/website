@@ -15,10 +15,12 @@ Reach and sustain high frontend test coverage with deterministic, offline tests 
 - `frontend/coverage/unit/lcov.info`
 - `frontend/coverage/unit/lcov-report/index.html`
 
-## Current Snapshot (2026-02-20, post Step 8B+forms pass)
-- Unit: `90` files, `182` tests, all passing.
-- E2E (mocked Playwright): `8` tests.
-- Latest run status (2026-02-20): `mobile-chrome 4/4 pass`, `chromium 4/4 fail` due deterministic timeout issues now under active stabilization.
+## Current Snapshot (2026-02-20, post e2e expansion + stabilization)
+- Unit: `90` files, `182` tests, all passing (last run unchanged from prior snapshot).
+- E2E (mocked Playwright): `34` tests, all passing.
+- Latest run status (2026-02-20):
+- `docker compose -f docker-compose.dev.yml run --rm --no-deps frontend yarn test:e2e`
+- `34/34` passing across `chromium` and `mobile-chrome` in `53.7s`.
 - Global coverage:
 - Line: `89.78%` (`9327/10389`)
 - Branch: `72.28%` (`962/1331`)
@@ -88,10 +90,10 @@ Reach and sustain high frontend test coverage with deterministic, offline tests 
 - gating policy: no new e2e allowed without deterministic mocks and one negative-path assertion.
 
 ## E2E Milestones
-- E2E Milestone A: stabilize existing 8 tests across Chromium + mobile with zero flakes.
-- E2E Milestone B: at least one deterministic e2e spec for every major top-level page family (`home`, `events`, `membership`, `management`, `blogs`, `partners`, `auth`, `esports`).
-- E2E Milestone C: complete route/link integrity matrix in e2e (navbar + partners + footer + deprecated routes).
-- E2E Milestone D: full critical user-journey suite with positive and negative paths for each domain.
+- E2E Milestone A: Completed.
+- E2E Milestone B: Completed.
+- E2E Milestone C: In Progress (navbar + partners + deprecated routes complete; footer-link matrix still pending).
+- E2E Milestone D: In Progress.
 
 ## Execution Protocol
 After each implementation step:
@@ -200,7 +202,7 @@ Behavior triage rule:
 - App-level tests are high-leverage for line and branch improvements when they cover mounted lifecycle logic.
 
 ### Step 8: Form and Base Component Coverage Push
-- Status: In Progress
+- Status: Completed
 - Completed (8A):
 - Added focused base-component suites:
 - `tests/unit/components/base/EventDetails.test.ts`
@@ -237,13 +239,18 @@ Behavior triage rule:
 - Learned:
 - Rule-assertion tests with explicit `Form`/`VvField` stubs scale better for broad form coverage than trying to fully render every Vuetify control.
 - Explicit message assertions in a dedicated rules suite reduce duplication and prevent drift between form-level rules and user-visible error text.
-- Remaining (8C Planned):
-- Remaining (8C Planned):
-- Stabilize current Chromium e2e failures (`events`, `home-and-banners`, `management-lists`) by removing hidden test nondeterminism and strengthening readiness/navigation assertions.
+- Completed (8C):
+- Stabilized previously flaky e2e startup/navigation behavior by hardening shared mocks in `tests/e2e/mocks.ts`:
+- seeded deterministic local storage defaults (`cookiesAccepted`, `darkMode`),
+- added deterministic mock endpoints for `/management/jobs` and `/management/jobs/{id}/retry`,
+- added explicit blog error fixture support (`blogStatusById`) for negative-path assertions,
+- mocked external map embed request (`https://www.google.com/maps/embed**`) to keep tests offline.
 - Why:
 - E2E reliability is now the main blocker for scaling the suite.
-- Expected impact (8C):
-- Restores stable baseline so large e2e expansion can proceed safely.
+- Learned:
+- Explicit fixture-level failure injection (`blogStatusById`) is more stable than ad-hoc route overrides in individual tests.
+- Seeding local storage at startup removed cookie snackbar noise and reduced cross-spec nondeterminism.
+- Spec-first behavior correction identified and fixed a real implementation issue in `src/pages/NotFound.vue` (fallback link now points to `/` as intended).
 
 ### Step 9: Plugin/Utility Branch Hardening
 - Status: In Progress
@@ -270,48 +277,69 @@ Behavior triage rule:
 - Sustained coverage quality over future feature work.
 
 ### Step 11: E2E Foundation Refactor
-- Status: Pending
+- Status: In Progress
+- Completed (partial):
+- Extended `tests/e2e/mocks.ts` into a broader deterministic fixture layer:
+- added role-based auth helpers (`loginAsBoard`, `loginAsAdmin`) through shared `loginAsRoles`,
+- added domain fixtures for blogs, blog status injection, and job-execution APIs,
+- centralized deterministic app bootstrap defaults (cookie acceptance + theme seed).
 - Planned:
-- Restructure Playwright helpers into domain fixtures and deterministic mock builders.
-- Add reusable authenticated contexts for `guest`, `member`, `board`, and `admin` roles.
-- Add common readiness helper to assert app bootstrap complete before test interactions.
+- Continue splitting `tests/e2e/mocks.ts` into domain-focused fixtures (`auth`, `blogs`, `management`, `navigation`) as spec count grows.
+- Add common readiness helper to assert app bootstrap complete before interactions.
 - Why:
 - A scalable e2e suite requires clean fixture boundaries and repeatable setup.
-- Expected impact:
-- Lower e2e maintenance cost and fewer flaky startup/navigation failures.
+- Learned:
+- Centralized fixture injection reduced duplicate route wiring and made negative-path assertions cheap and consistent.
 
 ### Step 12: E2E Route and Link Matrix
-- Status: Pending
-- Planned:
-- Add e2e specs validating all navbar links and partner/footer links resolve correctly.
-- Include deprecated-route assertions (`/esports/trackmania` should resolve to NotFound and remain unreachable from nav).
+- Status: Completed (navbar + partner + deprecated routes)
+- Completed:
+- Added `tests/e2e/navigation-links.spec.ts` for navbar destination integrity across association/esports routes.
+- Added `tests/e2e/partners.spec.ts` for partner-route and outbound-link contracts.
+- Added `tests/e2e/deprecated-routes.spec.ts` for `/esports/trackmania` NotFound behavior and fallback-home flow.
+- Added direct assertion that `/esports/trackmania` is absent from navbar links.
+- Remaining:
+- Add footer-link matrix assertions (social/mail links) in dedicated e2e spec.
 - Why:
 - Link and route regressions are high-impact and often missed by isolated unit tests.
-- Expected impact:
-- Continuous detection of broken navigation and stale/deprecated routes.
+- Learned:
+- Route-matrix e2e tests catch stale/deprecated links quickly when product scope changes (Trackmania deprecation).
+- Link-role semantics differ by Vuetify component render path (`v-btn` + `href` => role `link`), so role-first selectors must account for that.
 
 ### Step 13: E2E Critical Journey Expansion
-- Status: Pending
+- Status: In Progress
+- Completed (partial):
+- Added `tests/e2e/auth-guards.spec.ts` covering:
+- unauthenticated redirects with `redirect` query preservation,
+- admin-route denial for non-admin users,
+- admin access and retry mutation flow on job manager.
+- Added `tests/e2e/membership-signup.spec.ts` covering:
+- membership landing to signup routing,
+- membership step-1 required-field validation message visibility.
+- Added `tests/e2e/blogs.spec.ts` covering list->detail navigation and state handling.
 - Planned:
-- Add full e2e user journeys for:
-- auth/login/logout + redirect behavior,
-- membership signup and form validation failures,
-- events create/edit/sign-up update flows (mocked APIs),
-- management mutation flows with confirmation dialogs.
+- Expand to deeper mutation journeys:
+- events create/edit/sign-up update paths with explicit payload assertions,
+- membership multi-step completion with mocked create/update APIs,
+- management mutation confirmations beyond retry.
 - Why:
 - Journey-level tests validate integration between router, state, forms, and rendering.
-- Expected impact:
-- Higher confidence in business-critical frontend behavior under realistic browser execution.
+- Learned:
+- Early journey tests exposed intent mismatches (e.g., broken NotFound fallback link), reinforcing the spec-first gate.
 
 ### Step 14: E2E Negative Paths and Loop Guards
-- Status: Pending
+- Status: In Progress
+- Completed (partial):
+- Added negative-path assertions for:
+- blog not-found and server-failure states (`tests/e2e/blogs.spec.ts`),
+- auth denial/redirect behavior (`tests/e2e/auth-guards.spec.ts`),
+- deprecated-route guard behavior (`tests/e2e/deprecated-routes.spec.ts`).
 - Planned:
-- Add explicit failure-path e2e specs for API errors, empty states, and auth denial.
-- Assert absence of runaway request loops by tracking intercepted API call counts on key pages.
+- Add intercepted call-count assertions on high-risk pages (`Events`, `MembershipSignUp`, management pages) to enforce no unintended request loops.
 - Why:
 - Prevents silent regressions in reactive effects and error handling.
-- Expected impact:
-- Better branch realism and improved production incident prevention.
+- Learned:
+- Injecting failure cases at fixture level makes negative-path tests deterministic and maintainable.
 
 ### Step 15: E2E Governance and Reporting
 - Status: Pending

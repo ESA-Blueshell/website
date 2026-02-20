@@ -31,7 +31,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage/unit",
-      reporter: ["text", "html", "lcov"],
+      reporter: ["text", "html", "lcov", "json", "json-summary"],
       include: ["src/**/*.{ts,vue}"],
       exclude: [
         "src/services/api/**",

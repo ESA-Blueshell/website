@@ -13,22 +13,11 @@ function resolveBaseURL(): string {
 
 type ApiErrorWithMaybeErrors = ApiErrorSchema & { errors?: unknown }
 type CsrfBootstrapResponse = { token?: string }
-const CSRF_COOKIE_NAME = "XSRF-TOKEN"
 const CSRF_HEADER_NAME = "X-XSRF-TOKEN"
 const CSRF_BOOTSTRAP_PATH = "/csrf"
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"])
 
 let csrfBootstrapPromise: Promise<string | null> | null = null
-
-function readCookieValue(name: string): string | null {
-  if (typeof document === "undefined") return null
-  const cookie = document.cookie
-    .split(";")
-    .map(part => part.trim())
-    .find(part => part.startsWith(`${name}=`))
-  if (!cookie) return null
-  return decodeURIComponent(cookie.substring(name.length + 1))
-}
 
 function isSafeMethod(method: string | undefined): boolean {
   return SAFE_METHODS.has((method ?? "GET").toUpperCase())
@@ -38,23 +27,15 @@ async function ensureCsrfToken(axiosInstance: AxiosInstance): Promise<string | n
   const storedToken = store.getters.getXsrfToken
   if (storedToken) return storedToken
 
-  const existing = readCookieValue(CSRF_COOKIE_NAME)
-  if (existing) {
-    store.commit("setXsrfToken", existing)
-    return existing
-  }
-
   if (!csrfBootstrapPromise) {
     csrfBootstrapPromise = axiosInstance
       .get<CsrfBootstrapResponse>(CSRF_BOOTSTRAP_PATH, {withCredentials: true})
       .then((response) => {
-        const cookieToken = readCookieValue(CSRF_COOKIE_NAME)
         const bodyToken = typeof response.data?.token === "string" && response.data.token.length > 0
           ? response.data.token
           : null
-        const token = cookieToken ?? bodyToken
-        store.commit("setXsrfToken", token)
-        return token
+        store.commit("setXsrfToken", bodyToken)
+        return bodyToken
       })
       .finally(() => {
         csrfBootstrapPromise = null

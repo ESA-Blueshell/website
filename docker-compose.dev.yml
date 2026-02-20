@@ -90,6 +90,7 @@ services:
       - ./env/.api.env
     environment:
       - TZ=Europe/Amsterdam
+      - SPRING_PROFILES_ACTIVE=dev
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright

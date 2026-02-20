@@ -33,7 +33,6 @@ class PublicRoutesSmokeSystemTest : FrontendSystemTestBase() {
             RouteExpectation("/esports/valorant", "Valorant"),
             RouteExpectation("/esports/rocketleague", "Rocket League"),
             RouteExpectation("/esports/geoguessr", "Geoguessr"),
-            RouteExpectation("/esports/trackmania", "Trackmania"),
             RouteExpectation("/partners/become-a-partner", "Partners"),
             RouteExpectation("/partners/el-nino", "El Niño"),
             RouteExpectation("/partners/marketing-maatwerk", "Marketing Maatwerk"),

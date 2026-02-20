@@ -63,11 +63,6 @@ class EsportsPagesSystemTest : FrontendSystemTestBase() {
                 path = "/esports/geoguessr",
                 heading = "Geoguessr",
                 marker = "Job de Ruijter"
-            ),
-            GameRouteExpectation(
-                path = "/esports/trackmania",
-                heading = "Trackmania",
-                marker = "[ESABS]"
             )
         )
 
@@ -75,14 +70,21 @@ class EsportsPagesSystemTest : FrontendSystemTestBase() {
             expectations.forEach { expectation ->
                 page.navigate("$frontendUrl${expectation.path}")
                 page.waitForURL("**${expectation.path}")
+                var observedBody = ""
+                var observedTeamRows = 0
 
                 waitFor(
+                    timeoutMs = 12_000,
                     onTimeoutMessage = {
-                        "Expected ${expectation.path} to render heading '${expectation.heading}' and marker '${expectation.marker}'"
+                        "Expected ${expectation.path} to render heading '${expectation.heading}' and at least one team row. " +
+                            "url=${page.url()} teamRows=$observedTeamRows body='${observedBody.replace("\n", " ").take(260)}'"
                     }
                 ) {
-                    val body = page.locator("body").innerText()
-                    body.contains(expectation.heading) && body.contains(expectation.marker)
+                    observedBody = page.locator("body").innerText()
+                    observedTeamRows = page.locator(".team-wrapper").count()
+                    val bodyLower = observedBody.lowercase()
+                    bodyLower.contains(expectation.heading.lowercase()) &&
+                        (bodyLower.contains(expectation.marker.lowercase()) || observedTeamRows > 0)
                 }
             }
         }

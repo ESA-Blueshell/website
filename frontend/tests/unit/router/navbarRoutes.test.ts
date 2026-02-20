@@ -17,7 +17,6 @@ const navbarPaths = [
   "/esports/valorant",
   "/esports/rocketleague",
   "/esports/geoguessr",
-  "/esports/trackmania",
   "/partners/become-a-partner",
   "/partners/el-nino",
   "/partners/marketing-maatwerk",

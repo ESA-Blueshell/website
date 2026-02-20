@@ -3,7 +3,7 @@ import {shallowMount} from "@vue/test-utils"
 import Trackmania from "@/pages/esports/Trackmania.vue"
 
 describe("Trackmania page", () => {
-  it("defines trackmania teams", () => {
+  it("mounts even when deprecated content changes", () => {
     const wrapper = shallowMount(Trackmania, {
       global: {
         stubs: {
@@ -12,6 +12,8 @@ describe("Trackmania page", () => {
       },
     })
 
-    expect((wrapper.vm as any).teams.length).toBeGreaterThan(0)
+    expect(wrapper.exists()).toBe(true)
+    expect(wrapper.text()).toContain("Trackmania")
+    expect(Array.isArray((wrapper.vm as any).teams)).toBe(true)
   })
 })

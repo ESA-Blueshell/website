@@ -43,3 +43,4 @@ pnpm-debug.log*
 
 env/*.env
 .playwright-browsers
+*.md

@@ -25,22 +25,18 @@ const {
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vue-router")>()
-  return {
-    ...actual,
-    useRoute: () => mockRoute,
-    useRouter: () => ({
+  const {withVueRouter} = await import("../../helpers/testUtils")
+  return withVueRouter(importOriginal, {
+    route: mockRoute,
+    router: {
       push: mockRouterPush,
-    }),
-  }
+    },
+  })
 })
 
 vi.mock("vuex", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vuex")>()
-  return {
-    ...actual,
-    useStore: () => mockStore,
-  }
+  const {withVuexUseStore} = await import("../../helpers/testUtils")
+  return withVuexUseStore(importOriginal, mockStore)
 })
 
 vi.mock("@/services/api", () => ({

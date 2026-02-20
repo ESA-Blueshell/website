@@ -129,8 +129,13 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
 
     @Test
     fun `account update rejects duplicate discord`() {
-        val primaryUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
-        val secondaryUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        val phoneSeed = System.currentTimeMillis() % 10_000_000
+        val primaryUser = userFactory.createUserWithRole(Role.GUEST, enabled = true).apply {
+            phoneNumber = "+3161${phoneSeed.toString().padStart(7, '0')}"
+        }.let(userRepository::saveAndFlush)
+        val secondaryUser = userFactory.createUserWithRole(Role.GUEST, enabled = true).apply {
+            phoneNumber = "+3161${((phoneSeed + 1) % 10_000_000).toString().padStart(7, '0')}"
+        }.let(userRepository::saveAndFlush)
 
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, secondaryUser.username, DEFAULT_PASSWORD)
@@ -143,7 +148,7 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
             assertPw(discordField).hasValue(secondaryUser.discord)
 
             val updateResponse = page.waitForResponse({ response ->
-                response.request().method() == "PUT" && response.url().contains("/users/")
+                response.request().method() == "PUT" && response.url().contains("/users/${secondaryUser.id}")
             }) {
                 discordField.fill(primaryUser.discord)
                 page.getByRole(

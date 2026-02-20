@@ -1,4 +1,4 @@
-import axios, {AxiosError, AxiosHeaders} from "axios"
+import axios, {AxiosError, AxiosHeaders, type AxiosInstance} from "axios"
 import type {Config} from "@/services/api/blueshell/client/types.gen.ts"
 import store from "@/plugins/store.ts"
 import type {ApiError as ApiErrorSchema} from "@/services/api/blueshell/types.gen.ts"
@@ -12,6 +12,57 @@ function resolveBaseURL(): string {
 }
 
 type ApiErrorWithMaybeErrors = ApiErrorSchema & { errors?: unknown }
+type CsrfBootstrapResponse = { token?: string }
+const CSRF_COOKIE_NAME = "XSRF-TOKEN"
+const CSRF_HEADER_NAME = "X-XSRF-TOKEN"
+const CSRF_BOOTSTRAP_PATH = "/csrf"
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"])
+
+let csrfBootstrapPromise: Promise<string | null> | null = null
+
+function readCookieValue(name: string): string | null {
+  if (typeof document === "undefined") return null
+  const cookie = document.cookie
+    .split(";")
+    .map(part => part.trim())
+    .find(part => part.startsWith(`${name}=`))
+  if (!cookie) return null
+  return decodeURIComponent(cookie.substring(name.length + 1))
+}
+
+function isSafeMethod(method: string | undefined): boolean {
+  return SAFE_METHODS.has((method ?? "GET").toUpperCase())
+}
+
+async function ensureCsrfToken(axiosInstance: AxiosInstance): Promise<string | null> {
+  const storedToken = store.getters.getXsrfToken
+  if (storedToken) return storedToken
+
+  const existing = readCookieValue(CSRF_COOKIE_NAME)
+  if (existing) {
+    store.commit("setXsrfToken", existing)
+    return existing
+  }
+
+  if (!csrfBootstrapPromise) {
+    csrfBootstrapPromise = axiosInstance
+      .get<CsrfBootstrapResponse>(CSRF_BOOTSTRAP_PATH, {withCredentials: true})
+      .then((response) => {
+        const cookieToken = readCookieValue(CSRF_COOKIE_NAME)
+        const bodyToken = typeof response.data?.token === "string" && response.data.token.length > 0
+          ? response.data.token
+          : null
+        const token = cookieToken ?? bodyToken
+        store.commit("setXsrfToken", token)
+        return token
+      })
+      .finally(() => {
+        csrfBootstrapPromise = null
+      })
+  }
+
+  return await csrfBootstrapPromise
+}
 
 function isValidationError(
   data: unknown,
@@ -29,10 +80,19 @@ export function createClientConfig(defaultConfig: Config): Config {
     baseURL: resolveBaseURL(),
   })
 
-  // Keep auth in sync per request (adds OR removes header)
-  axiosInstance.interceptors.request.use((cfg) => {
+  // Keep auth and CSRF in sync per request.
+  axiosInstance.interceptors.request.use(async (cfg) => {
     const token = store.getters.getLogin?.token
     const headers = cfg.headers ?? new AxiosHeaders()
+    cfg.withCredentials = true
+
+    if (!isSafeMethod(cfg.method)) {
+      const csrfToken = await ensureCsrfToken(axiosInstance)
+      if (csrfToken) {
+        if (headers instanceof AxiosHeaders) headers.set(CSRF_HEADER_NAME, csrfToken)
+        else (headers as AxiosHeaders)[CSRF_HEADER_NAME] = csrfToken
+      }
+    }
 
     if (token) {
       if (headers instanceof AxiosHeaders) headers.set("Authorization", `Bearer ${token}`)

@@ -23,6 +23,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -65,9 +66,9 @@ class SecurityConfig(
             .distinct()
             .toMutableList()
         cfg.allowedMethods = mutableListOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type", "X-Guest-Access-Token")
+        cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type", "X-Guest-Access-Token", "X-XSRF-TOKEN")
         cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
-        cfg.allowCredentials = false
+        cfg.allowCredentials = true
         cfg.maxAge = 3600
 
         val src = UrlBasedCorsConfigurationSource()
@@ -75,9 +76,22 @@ class SecurityConfig(
         return src
     }
 
+    @Bean
+    fun csrfTokenRepository(): CookieCsrfTokenRepository {
+        val tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse()
+        tokenRepository.setCookieCustomizer { cookie ->
+            cookie.path("/")
+            cookie.sameSite("None")
+            cookie.secure(true)
+        }
+        return tokenRepository
+    }
 
     @Bean
-    fun authChain(http: HttpSecurity): SecurityFilterChain {
+    fun authChain(
+        http: HttpSecurity,
+        csrfTokenRepository: CookieCsrfTokenRepository
+    ): SecurityFilterChain {
         if (requireHttps) {
             http.redirectToHttps(Customizer.withDefaults())
             http.headers { headers ->
@@ -89,7 +103,7 @@ class SecurityConfig(
         }
 
         http.securityMatcher("/**")
-            .csrf { it.disable() }
+            .csrf { it.csrfTokenRepository(csrfTokenRepository) }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
@@ -107,6 +121,7 @@ class SecurityConfig(
                 auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
                 auth.requestMatchers(
                         HttpMethod.GET,
+                        "/csrf",
                         "/events/**",
                         "/events/signups/byAccessToken",
                         "/blogs",
@@ -131,6 +146,7 @@ class SecurityConfig(
                 }
 
                 auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
+                auth.requestMatchers("/error").permitAll()
                 auth.anyRequest().authenticated()
             }
             .exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }

@@ -79,6 +79,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     mockitoAgent("org.mockito:mockito-core")
 

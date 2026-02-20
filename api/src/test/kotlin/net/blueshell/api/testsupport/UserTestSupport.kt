@@ -37,12 +37,19 @@ import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipalMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.FilterChainProxy
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.RequestPostProcessor
+import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.context.WebApplicationContext
 import java.time.Instant
 import java.time.LocalDate
 
@@ -61,6 +68,12 @@ abstract class UserTestSupport : ServiceTestSupport() {
 
     @Autowired
     protected lateinit var mvc: MockMvc
+
+    @Autowired
+    private lateinit var webApplicationContext: WebApplicationContext
+
+    @Autowired
+    private lateinit var springSecurityFilterChain: FilterChainProxy
 
     @Autowired
     protected lateinit var userRepository: UserRepository
@@ -113,6 +126,14 @@ abstract class UserTestSupport : ServiceTestSupport() {
     @Value("\${app.url}")
     protected lateinit var appUrl: String
 
+    @BeforeEach
+    fun configureMockMvcDefaultCsrf() {
+        val builder = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+        builder.addFilters<DefaultMockMvcBuilder>(springSecurityFilterChain)
+        builder.defaultRequest<DefaultMockMvcBuilder>(get("/").with(csrfToken()))
+        mvc = builder.build()
+    }
+
     /**
      * Creates bearer token authentication for a user.
      */
@@ -123,6 +144,10 @@ abstract class UserTestSupport : ServiceTestSupport() {
             request.addHeader("Authorization", "Bearer $token")
             request
         }
+    }
+
+    protected fun csrfToken(): RequestPostProcessor {
+        return csrf().asHeader()
     }
 
     /**

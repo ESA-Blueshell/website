@@ -12,7 +12,9 @@ object AuthHelper {
             Page.GetByRoleOptions().setName("Password")
         ).fill(password)
 
-        val response = page.waitForResponse("**/auth") {
+        val response = page.waitForResponse({ response ->
+            response.url().contains("/auth") && response.request().method() == "POST"
+        }) {
             page.getByRole(
                 AriaRole.BUTTON,
                 Page.GetByRoleOptions().setName("Login")

@@ -335,9 +335,6 @@
           <v-list-item to="/esports/geoguessr">
             Geoguessr
           </v-list-item>
-          <v-list-item to="/esports/trackmania">
-            Trackmania
-          </v-list-item>
           <v-divider class="mb-1" />
         </v-list-group>
 

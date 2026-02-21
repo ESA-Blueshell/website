@@ -155,6 +155,8 @@ defineExpose({validate, save})
           :show-submit-status="showSubmitStatus"
           :submit-state="submitState"
           :text="submitText"
+          data-testid="address-form-submit-btn"
+          :data-submit-mode="isCreating ? 'create' : 'update'"
           @click="save"
         />
       </v-col>

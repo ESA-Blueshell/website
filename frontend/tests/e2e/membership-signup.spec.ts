@@ -20,7 +20,7 @@ test.describe("membership signup", () => {
     await page.goto("/membership/signup")
     await expect(page.getByText("MEMBERSHIP FORM", {exact: true})).toBeVisible()
 
-    await page.getByRole("button", {name: "Next"}).click()
+    await page.getByTestId("membership-step1-next-btn").click()
 
     await expect(page.getByText("This field is required").first()).toBeVisible()
     await expect(page).toHaveURL(/\/membership\/signup$/)

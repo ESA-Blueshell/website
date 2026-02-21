@@ -8,6 +8,7 @@
     >
       <v-stepper
         v-model="currentStep"
+        data-testid="membership-signup-stepper"
         :items="stepItems"
         hide-actions
       >
@@ -26,6 +27,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
+                  data-testid="membership-step1-next-btn"
                   @click="nextStep"
                 >
                   Next
@@ -75,6 +77,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
+                  data-testid="membership-step2-previous-btn"
                   variant="outlined"
                   @click="previousStep"
                 >
@@ -91,6 +94,7 @@
                 <v-btn
                   :loading="resendBusy"
                   class="mr-2"
+                  data-testid="membership-step2-resend-btn"
                   prepend-icon="mdi-email-arrow-right-outline"
                   variant="outlined"
                   @click="resendActivation"
@@ -100,7 +104,7 @@
 
                 <v-btn
                   color="primary"
-                  data-testid="membership-step2-signin"
+                  data-testid="membership-step2-signin-btn"
                   prepend-icon="mdi-check-circle-outline"
                   @click="handleVerified"
                 >
@@ -122,6 +126,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
+                  data-testid="membership-step3-previous-btn"
                   variant="outlined"
                   @click="previousStep"
                 >
@@ -133,6 +138,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
+                  data-testid="membership-step3-next-btn"
                   @click="nextStep"
                 >
                   Next
@@ -152,6 +158,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
+                  data-testid="membership-step4-previous-btn"
                   variant="outlined"
                   @click="previousStep"
                 >
@@ -163,7 +170,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
-                  data-testid="membership-complete-btn"
+                  data-testid="membership-step4-complete-btn"
                   @click="nextStep"
                 >
                   Complete Membership

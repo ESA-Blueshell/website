@@ -9,6 +9,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.MembershipSignUpHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -35,7 +36,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     @Test
     fun `step 1 can create a user with personal info and continues to step 2`() {
         withPage { page ->
-            page.navigate("$frontendUrl/membership/signup")
+            MembershipSignUpHelper.open(page, frontendUrl)
 
             // Assert that we are on step=1 using playwright
             waitFor(
@@ -48,7 +49,8 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                 page = page,
                 url = page.url(),
                 submitButtonLabel = "Next",
-                includeMemberProfile = true
+                includeMemberProfile = true,
+                submitButtonTestId = "membership-step1-next-btn"
             )
 
             page.waitForURL("**/membership/signup?step=2")
@@ -71,20 +73,18 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     @Test
     fun `step 2 can resend the activation email`() {
         withPage { page ->
-            page.navigate("$frontendUrl/membership/signup")
+            MembershipSignUpHelper.open(page, frontendUrl)
 
             val credentials = createAccountThroughUi(
                 page = page,
                 url = page.url(),
                 submitButtonLabel = "Next",
-                includeMemberProfile = true
+                includeMemberProfile = true,
+                submitButtonTestId = "membership-step1-next-btn"
             )
 
             val resendResponse = page.waitForResponse("**/recovery/user/activate/resend/**") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Resend email").setExact(false)
-                ).click()
+                MembershipSignUpHelper.clickStepTwoResend(page)
             }
             assertThat(resendResponse.status()).isEqualTo(204)
 
@@ -156,7 +156,8 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
             page = page,
             url = page.url(),
             submitButtonLabel = "Next",
-            includeMemberProfile = true
+            includeMemberProfile = true,
+            submitButtonTestId = "membership-step1-next-btn"
         )
 
         val createdUser = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
@@ -198,10 +199,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                         response.url().contains("/addresses")
             }
         ) {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Next").setExact(true)
-            ).last().click()
+            MembershipSignUpHelper.clickStepThreeNext(page)
         }
         assertThat(addressSaveResponse.status()).isBetween(200, 299)
     }
@@ -224,10 +222,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
         ).isVisible()
 
         assertPw(
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Complete").setExact(false)
-            ).last()
+            MembershipSignUpHelper.stepFourCompleteButton(page)
         ).isVisible()
     }
 
@@ -253,21 +248,9 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
                 response.request().method() == "POST" && response.url().contains("/memberships")
             }
         ) {
-            clickCompleteMembership(page)
+            MembershipSignUpHelper.clickStepFourComplete(page)
         }
         assertThat(membershipResponse.status()).isEqualTo(201)
-    }
-
-    private fun clickCompleteMembership(page: Page) {
-        val clicked = page.evaluate(
-            """() => {
-                const button = document.querySelector('[data-testid="membership-complete-btn"]')
-                if (!button) return false
-                button.click()
-                return true
-            }"""
-        ) as Boolean
-        assertThat(clicked).isTrue()
     }
 
     private fun assertMembershipPersisted(userId: Long) {

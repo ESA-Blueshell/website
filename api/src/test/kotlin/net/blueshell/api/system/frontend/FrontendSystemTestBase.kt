@@ -134,7 +134,8 @@ abstract class FrontendSystemTestBase {
         page: Page,
         url: String,
         submitButtonLabel: String,
-        includeMemberProfile: Boolean
+        includeMemberProfile: Boolean,
+        submitButtonTestId: String? = null,
     ): Credentials {
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         val username = "sysuser$suffix"
@@ -161,10 +162,14 @@ abstract class FrontendSystemTestBase {
             )
         )
 
-        page.getByRole(
-            AriaRole.BUTTON,
-            Page.GetByRoleOptions().setName(submitButtonLabel).setExact(false)
-        ).click()
+        if (submitButtonTestId != null) {
+            page.locator("[data-testid='$submitButtonTestId']").first().click()
+        } else {
+            page.getByRole(
+                AriaRole.BUTTON,
+                Page.GetByRoleOptions().setName(submitButtonLabel).setExact(false)
+            ).click()
+        }
 
         waitForOptional(
             producer = { userRepository.findByUsername(username) },

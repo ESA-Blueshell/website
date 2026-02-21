@@ -56,6 +56,7 @@ import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {userActivate} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 
 const route = useRoute()
 const router = useRouter()
@@ -65,16 +66,18 @@ const succeeded = ref(false)
 const errorMessage = ref<string | null>(null)
 const defaultErrorMessage =
   "We couldn’t verify your activation link. It may be invalid, expired, or already used."
+const RECOVERY_TOKEN_STORAGE_KEY = "recovery:user-activation:token"
 
 function redirectToLogin(ms = 2000) {
   window.setTimeout(() => router.push({name: "login"}), ms)
 }
 
 onMounted(async () => {
-  const token = (route.query.token as string) || ""
+  const token = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
 
   if (!token) {
     loading.value = false
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     errorMessage.value = defaultErrorMessage
     redirectToLogin(2500)
     return
@@ -82,6 +85,7 @@ onMounted(async () => {
 
   try {
     const resp = await userActivate({body: {token}, throwOnError: true})
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
     const redirect = resp.data!.path
     window.setTimeout(

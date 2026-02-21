@@ -137,27 +137,21 @@ const routes: RouteRecordRaw[] = [
     path: "/account/reset-password/:username/:token",
     redirect: (to) => ({
       name: "resetPassword",
-      query: {
-        username: String(to.params.username ?? ""),
-        token: String(to.params.token ?? ""),
-      },
+      hash: `#token=${String(to.params.token ?? "")}`,
     }),
   },
   {
     path: "/account/activate/member/:token",
     redirect: (to) => ({
       name: "activateMember",
-      query: {token: String(to.params.token ?? "")},
+      hash: `#token=${String(to.params.token ?? "")}`,
     }),
   },
   {
     path: "/account/activate/user/:username/:token",
     redirect: (to) => ({
       name: "activateUser",
-      query: {
-        username: String(to.params.username ?? ""),
-        token: String(to.params.token ?? ""),
-      },
+      hash: `#token=${String(to.params.token ?? "")}`,
     }),
   },
   {

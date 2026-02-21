@@ -51,27 +51,6 @@
             />
           </v-row>
 
-
-          <v-row>
-            <Field
-              v-slot="{ value, errors }"
-              v-model="form.token"
-              name="token"
-              rules="required"
-            >
-              <v-text-field
-                :model-value="value"
-                disabled
-                label="Reset token"
-                name="token"
-              />
-              <br>
-              <span class="v-field--error">
-                {{ errors[0] }}
-              </span>
-            </Field>
-          </v-row>
-
           <v-row
             align="center"
             class="mt-2"
@@ -112,12 +91,13 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Field, Form, type FormContext, useForm} from "vee-validate"
+import {Form, type FormContext, useForm} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {memberActivate, type MemberActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
+import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 
 const route = useRoute()
 const router = useRouter()
@@ -134,15 +114,17 @@ const form = ref<MemberActivationRequest>({
 })
 
 const passwordAgain = ref("")
+const RECOVERY_TOKEN_STORAGE_KEY = "recovery:member-activation:token"
 
 const formRef = ref<FormContext>()
 
 const {handleSubmit, validate} = useForm()
 
 onMounted(() => {
-  form.value.token = (route.query.token as string) || ""
+  form.value.token = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
 
   if (!form.value.token) {
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     router.replace({name: "home"})
   }
 })
@@ -159,6 +141,7 @@ const onSubmit = handleSubmit(async () => {
 
   try {
     await memberActivate({body: form.value, throwOnError: true})
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
     redirectToLogin(2500)
   } catch (e: unknown) {

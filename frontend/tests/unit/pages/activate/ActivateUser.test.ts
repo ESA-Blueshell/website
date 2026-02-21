@@ -6,11 +6,13 @@ import {settle} from "../helpers"
 const {
   mockRoute,
   mockRouterPush,
+  mockRouterReplace,
   mockUserActivate,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
-  mockRoute: {query: {token: "user-token"}},
+  mockRoute: {query: {}, hash: "#token=user-token"},
   mockRouterPush: vi.fn(),
+  mockRouterReplace: vi.fn(),
   mockUserActivate: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
@@ -22,6 +24,7 @@ vi.mock("vue-router", async (importOriginal) => {
     useRoute: () => mockRoute,
     useRouter: () => ({
       push: mockRouterPush,
+      replace: mockRouterReplace,
     }),
   }
 })
@@ -38,7 +41,9 @@ describe("ActivateUser page", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
-    mockRoute.query = {token: "user-token"}
+    sessionStorage.clear()
+    mockRoute.query = {}
+    mockRoute.hash = "#token=user-token"
     mockUserActivate.mockResolvedValue({data: {path: "/membership/signup?step=2"}})
   })
 
@@ -60,6 +65,7 @@ describe("ActivateUser page", () => {
 
   it("redirects to login on missing token", async () => {
     mockRoute.query = {}
+    mockRoute.hash = ""
 
     const wrapper = shallowMount(ActivateUser)
     await settle()

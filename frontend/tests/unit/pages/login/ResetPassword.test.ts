@@ -10,7 +10,8 @@ const {
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockRoute: {
-    query: {token: "reset-token"},
+    query: {},
+    hash: "#token=reset-token",
   },
   mockRouterReplace: vi.fn(),
   mockSetPassword: vi.fn(),
@@ -48,11 +49,13 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
 describe("ResetPassword page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockRoute.query = {token: "reset-token"}
+    sessionStorage.clear()
+    mockRoute.query = {}
+    mockRoute.hash = "#token=reset-token"
     mockSetPassword.mockResolvedValue({})
   })
 
-  it("keeps token in route query and submits reset request", async () => {
+  it("reads token from hash, strips it from URL, and submits reset request", async () => {
     const wrapper = shallowMount(ResetPassword, {
       global: {
         stubs: {
@@ -64,8 +67,8 @@ describe("ResetPassword page", () => {
     await settle()
 
     expect(mockRouterReplace).toHaveBeenCalledWith({
-      name: "resetPassword",
-      query: {token: "reset-token"},
+      query: {},
+      hash: "",
     })
 
     ;(wrapper.vm as any).form.password = "NewPass123!"
@@ -84,6 +87,7 @@ describe("ResetPassword page", () => {
 
   it("redirects home when token is absent", async () => {
     mockRoute.query = {}
+    mockRoute.hash = ""
 
     shallowMount(ResetPassword)
     await settle()

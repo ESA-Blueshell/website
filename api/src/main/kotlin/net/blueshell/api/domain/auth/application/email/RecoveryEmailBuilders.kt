@@ -17,9 +17,8 @@ fun createPasswordResetEmail(
     token: String,
     frontendUrl: String
 ): EmailContent {
-    val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
-    val resetLink = "$frontendUrl/account/reset-password?username=$username&token=$encodedToken"
+    val resetLink = "$frontendUrl/account/reset-password#token=$encodedToken"
 
     val markdownContent = """
         Dear ${recipient.fullName},
@@ -55,10 +54,8 @@ fun createUserActivationEmail(
     token: String,
     frontendUrl: String
 ): EmailContent {
-    val username = URLEncoder.encode(recipient.username, StandardCharsets.UTF_8)
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
-    val redirectEnc = URLEncoder.encode("/membership/signup", StandardCharsets.UTF_8)
-    val activationLink = "$frontendUrl/account/activate/user?username=$username&token=$encodedToken&redirect=$redirectEnc"
+    val activationLink = "$frontendUrl/account/activate/user#token=$encodedToken"
 
     val markdownContent = """
         Dear ${recipient.fullName},
@@ -89,7 +86,7 @@ fun createMemberActivationEmail(
     frontendUrl: String
 ): EmailContent {
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
-    val activationLink = "$frontendUrl/account/activate/member?token=$encodedToken"
+    val activationLink = "$frontendUrl/account/activate/member#token=$encodedToken"
 
     val markdownContent = """
         Dear ${recipient.fullName},

@@ -38,7 +38,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
         val newPassword = "N3wMemberPass!"
 
         withPage { page ->
-            page.navigate("$frontendUrl/account/activate/member?token=$encodedToken")
+            page.navigate("$frontendUrl/account/activate/member#token=$encodedToken")
             submitMemberActivationForm(page, username = newUsername, password = newPassword)
 
             val response = page.waitForResponse("**/recovery/member/activate") {
@@ -73,7 +73,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
         val newPassword = "N3wMemberPass!"
 
         withPage { page ->
-            page.navigate("$frontendUrl/account/activate/member?token=$invalidToken")
+            page.navigate("$frontendUrl/account/activate/member#token=$invalidToken")
             submitMemberActivationForm(page, username = newUsername, password = newPassword)
 
             val response = page.waitForResponse("**/recovery/member/activate") {
@@ -105,7 +105,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
 
         withPage { page ->
             val response = page.waitForResponse("**/recovery/user/activate") {
-                page.navigate("$frontendUrl/account/activate/user?token=$encodedToken")
+                page.navigate("$frontendUrl/account/activate/user#token=$encodedToken")
             }
             assertThat(response.status()).isEqualTo(200)
             assertThat(response.text()).contains("/membership/signUp?step=2")
@@ -128,7 +128,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
 
         withPage { page ->
             val response = page.waitForResponse("**/recovery/user/activate") {
-                page.navigate("$frontendUrl/account/activate/user?token=$invalidToken")
+                page.navigate("$frontendUrl/account/activate/user#token=$invalidToken")
             }
             assertThat(response.status()).isGreaterThanOrEqualTo(400)
             assertThat(

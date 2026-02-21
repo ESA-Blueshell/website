@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 class RecoveryEmailBuildersTest {
 
     private val frontendUrl = "https://test-frontend.com"
-    private val appUrl = "https://test-app.com"
 
     @Test
     fun `createPasswordResetEmail builds correct EmailContent`() {
@@ -32,8 +31,8 @@ class RecoveryEmailBuildersTest {
 
         // And: Body contains reset link
         assertThat(emailContent.markdownContent)
-            .contains("/account/reset-password?username=")
-            .contains("token=")
+            .contains("/account/reset-password#token=")
+            .doesNotContain("?token=")
             .contains(user.fullName)
     }
 
@@ -53,8 +52,8 @@ class RecoveryEmailBuildersTest {
 
         // And: Body contains activation link
         assertThat(emailContent.markdownContent)
-            .contains("/account/activate/user?username=")
-            .contains("token=")
+            .contains("/account/activate/user#token=")
+            .doesNotContain("?token=")
             .contains(user.fullName)
             .contains("Thank you for signing up")
     }
@@ -76,7 +75,7 @@ class RecoveryEmailBuildersTest {
 
         // And: Body contains member-specific activation link
         assertThat(emailContent.markdownContent)
-            .contains("/account/activate/member?token=")
+            .contains("/account/activate/member#token=")
             .contains("board of Blueshell has created an account")
             .contains(user.fullName)
     }
@@ -94,11 +93,11 @@ class RecoveryEmailBuildersTest {
         // Then: URLs are properly encoded
         assertThat(passwordReset.markdownContent)
             .doesNotContain("user+test@special") // Should be URL encoded
-            .contains("username=")
+            .contains("/account/reset-password#token=")
 
         assertThat(userActivation.markdownContent)
             .doesNotContain("token with spaces") // Should be URL encoded
-            .contains("token=")
+            .contains("/account/activate/user#token=")
     }
 
     private fun createTestUser(username: String, email: String, fullName: String): User {

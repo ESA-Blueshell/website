@@ -93,6 +93,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {type PasswordResetRequest, setPassword} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 
 const route = useRoute()
 const router = useRouter()
@@ -102,8 +103,8 @@ const succeeded = ref(false)
 const showPass = ref(false)
 const errorMessage = ref<string | null>(null)
 
-const token = ref<string>("")
 const passwordAgain = ref<string>("")
+const RECOVERY_TOKEN_STORAGE_KEY = "recovery:password-reset:token"
 
 const form = ref<PasswordResetRequest>({
   password: "",
@@ -113,16 +114,14 @@ const form = ref<PasswordResetRequest>({
 const {handleSubmit} = useForm()
 
 onMounted(() => {
-  const queryToken = (route.query.token as string) || ""
-  form.value.token = queryToken
-  token.value = queryToken
+  const resolvedToken = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
+  form.value.token = resolvedToken
 
-  if (!queryToken) {
+  if (!resolvedToken) {
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     router.replace({name: "home"})
     return
   }
-
-  router.replace({name: "resetPassword", query: {token: queryToken}})
 })
 
 const onSubmit = handleSubmit(async () => {
@@ -131,6 +130,7 @@ const onSubmit = handleSubmit(async () => {
 
   try {
     await setPassword({body: form.value, throwOnError: true})
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
   } catch (e: unknown) {
     $handleNetworkError(e)

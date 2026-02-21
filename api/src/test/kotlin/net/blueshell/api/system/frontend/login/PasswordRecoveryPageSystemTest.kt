@@ -69,7 +69,7 @@ class PasswordRecoveryPageSystemTest : FrontendSystemTestBase() {
         val newPassword = "N3wPassw0rd!"
 
         withPage { page ->
-            page.navigate("$frontendUrl/account/reset-password?token=$encodedToken")
+            page.navigate("$frontendUrl/account/reset-password#token=$encodedToken")
             page.getByLabel("New Password").first().fill(newPassword)
             page.getByLabel("Repeat New Password").first().fill(newPassword)
             page.getByLabel("Repeat New Password").first().press("Tab")

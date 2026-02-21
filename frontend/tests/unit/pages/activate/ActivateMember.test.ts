@@ -12,7 +12,7 @@ const {
   mockApply,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
-  mockRoute: {query: {token: "member-token"}},
+  mockRoute: {query: {}, hash: "#token=member-token"},
   mockRouterPush: vi.fn(),
   mockRouterReplace: vi.fn(),
   mockMemberActivate: vi.fn(),
@@ -62,7 +62,9 @@ describe("ActivateMember page", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
-    mockRoute.query = {token: "member-token"}
+    sessionStorage.clear()
+    mockRoute.query = {}
+    mockRoute.hash = "#token=member-token"
     mockMemberActivate.mockResolvedValue({})
   })
 
@@ -95,6 +97,7 @@ describe("ActivateMember page", () => {
 
   it("redirects home when no token is present", async () => {
     mockRoute.query = {}
+    mockRoute.hash = ""
 
     shallowMount(ActivateMember)
     await settle()

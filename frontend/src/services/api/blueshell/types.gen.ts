@@ -294,6 +294,12 @@ export type CreateUserRequest = {
     username: string;
 };
 
+export type CsrfToken = {
+    headerName?: string;
+    parameterName?: string;
+    token?: string;
+};
+
 export type EventBannerRequest = {
     fileId: number;
     version?: number;
@@ -359,12 +365,6 @@ export type FieldValidationError = {
      * Object (target) name that failed validation.
      */
     objectName?: string;
-    /**
-     * Rejected value (may be omitted for security).
-     */
-    rejectedValue?: {
-        [key: string]: unknown;
-    };
 };
 
 export type FileResponse = {
@@ -972,6 +972,47 @@ export type AuthenticateResponses = {
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
+
+export type LogoutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/logout';
+};
+
+export type LogoutErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LogoutError = LogoutErrors[keyof LogoutErrors];
+
+export type LogoutResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
 
 export type FindBlogsData = {
     body?: never;
@@ -2239,6 +2280,51 @@ export type CreateContributionResponses = {
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
+export type CsrfData = {
+    body?: never;
+    path?: never;
+    query: {
+        csrfToken: CsrfToken;
+    };
+    url: '/csrf';
+};
+
+export type CsrfErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CsrfError = CsrfErrors[keyof CsrfErrors];
+
+export type CsrfResponses = {
+    /**
+     * OK
+     */
+    200: {
+        [key: string]: string;
+    };
+};
+
+export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
+
 export type FindEventsData = {
     body?: never;
     path?: never;
@@ -2435,6 +2521,7 @@ export type FindEventSignUpsByAccessTokenData = {
     headers: {
         'X-Guest-Access-Token': string;
     };
+    path?: never;
     query?: never;
     url: '/events/signups/byAccessToken';
 };

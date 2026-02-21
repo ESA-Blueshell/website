@@ -244,7 +244,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill(updatedGuestName)
 
             val updateResponse = page.waitForResponse(
-                Predicate { r ->
+                { r ->
                     r.request().method() == "PUT" &&
                             r.url().contains("/events/$eventId/signups")
                 }

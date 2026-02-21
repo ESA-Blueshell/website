@@ -121,12 +121,13 @@ class EventControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture()
             val eventId = event.id!!
+            val targetCommittee = createCommitteeFixture()
 
             mvc.perform(
                 put("/events/{id}", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateEventPayload(event.committee.id!!, event.version))
+                    .content(updateEventPayload(targetCommittee.id!!, event.version))
             )
                 .andExpect(status().isOk)
         }
@@ -146,6 +147,24 @@ class EventControllerSecurityTest : UserTestSupport() {
                     .content(updateEventPayload(committee.id!!, event.version))
             )
                 .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `denies committee member from reassigning event to committee they do not belong to`() {
+            val committeeUser = createUserWithRole(Role.COMMITTEE)
+            val ownCommittee = createCommitteeFixture(name = "Own Committee ${System.currentTimeMillis()}")
+            val otherCommittee = createCommitteeFixture(name = "Other Committee ${System.currentTimeMillis()}")
+            addCommitteeMember(ownCommittee, committeeUser)
+            val event = createEventFixture(committee = ownCommittee)
+            val eventId = event.id!!
+
+            mvc.perform(
+                put("/events/{id}", eventId)
+                    .with(bearer(committeeUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updateEventPayload(otherCommittee.id!!, event.version, "Cross Committee Move"))
+            )
+                .andExpect(status().isForbidden)
         }
 
         @Test

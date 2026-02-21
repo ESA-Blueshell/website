@@ -41,7 +41,7 @@ class EventController(
         return event.asResponse()
     }
 
-    @PreAuthorize("hasPermission(#id, 'Event', 'write')")
+    @PreAuthorize("hasPermission(#id, 'Event', 'write') and hasPermission(#request.committeeId, 'Committee', 'events')")
     @PutMapping("/events/{id}")
     fun updateEvent(@PathVariable id: Long, @Valid @RequestBody request: UpdateEventRequest): EventResponse {
         val event = commandBus.dispatch(request.asCommand(id))

@@ -146,6 +146,10 @@ security:
       enabled: false
   auth-rate-limit:
     enabled: true
+    trusted-proxy-cidrs: "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
+    max-buckets: 10000
+    bucket-idle-ttl: PT30M
+    cleanup-interval: 128
 
 logging:
   level:

@@ -6,7 +6,7 @@ import java.time.Duration
 
 class InMemoryRequestRateLimiterTest {
 
-    private val limiter = InMemoryRequestRateLimiter()
+    private val limiter = InMemoryRequestRateLimiter(cleanupInterval = 1)
 
     @Test
     fun `allows requests up to limit and blocks next request`() {
@@ -30,5 +30,20 @@ class InMemoryRequestRateLimiterTest {
 
         val otherKey = limiter.tryAcquire("auth|ip-b", 2, Duration.ofSeconds(5))
         assertThat(otherKey.allowed).isTrue()
+    }
+
+    @Test
+    fun `caps tracked buckets to configured maximum`() {
+        val boundedLimiter = InMemoryRequestRateLimiter(
+            maxBuckets = 3,
+            bucketIdleTtl = Duration.ofHours(1),
+            cleanupInterval = 1
+        )
+
+        repeat(20) { index ->
+            boundedLimiter.tryAcquire("key-$index", maxRequests = 1, window = Duration.ofMinutes(1))
+        }
+
+        assertThat(boundedLimiter.trackedBucketCount()).isLessThanOrEqualTo(3)
     }
 }

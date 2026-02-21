@@ -17,7 +17,8 @@ import java.io.IOException
 class JwtAuthFilter(
     private val jwtTokenUtil: JwtTokenUtil,
     private val jwtRevocationService: JwtRevocationService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val authTokenCookieService: AuthTokenCookieService
 ) :
     OncePerRequestFilter() {
     @Throws(ServletException::class, IOException::class)
@@ -26,13 +27,11 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val header = request.getHeader("Authorization")
-        if (header == null || !header.startsWith("Bearer ")) {
+        val token = resolveToken(request) ?: run {
             filterChain.doFilter(request, response)
             return
         }
 
-        val token = header.substring(7)
         val validation = jwtTokenUtil.parseAndValidate(token)
         if (!validation.isValid) {
             filterChain.doFilter(request, response)
@@ -63,5 +62,13 @@ class JwtAuthFilter(
         }
 
         filterChain.doFilter(request, response)
+    }
+
+    private fun resolveToken(request: HttpServletRequest): String? {
+        val header = request.getHeader("Authorization")
+        if (!header.isNullOrBlank() && header.startsWith("Bearer ")) {
+            return header.substring(7).trim().takeIf { it.isNotBlank() }
+        }
+        return authTokenCookieService.resolveToken(request)
     }
 }

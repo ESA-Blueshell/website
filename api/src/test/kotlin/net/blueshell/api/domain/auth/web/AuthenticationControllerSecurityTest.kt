@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -131,6 +132,16 @@ class AuthenticationControllerSecurityTest : UserTestSupport() {
                     .content("""{"username":"${user.username}","password":"Password123!"}""")
             )
                 .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `logout endpoint is public and clears auth cookie`() {
+            mvc.perform(
+                post("/auth/logout")
+            )
+                .andExpect(status().isNoContent)
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("BSH_AUTH=")))
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("Max-Age=0")))
         }
     }
 }

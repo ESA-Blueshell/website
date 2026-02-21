@@ -1,4 +1,4 @@
-import {readJsonCookie} from "@/plugins/cookies"
+import {deleteCookie, readJsonCookie} from "@/plugins/cookies"
 import type {LoginResponse} from "@/services/api"
 import type {TypedStore} from "@/plugins/store"
 
@@ -8,7 +8,18 @@ const AUTH_CHANNEL_NAME = "auth"
 let authChannel: BroadcastChannel | null = null
 
 function readLoginCookie(): LoginResponse | null {
-  return readJsonCookie<LoginResponse>("login") || null
+  const raw = readJsonCookie<LoginResponse>("login") || null
+  if (!raw) return null
+
+  if ((raw.token ?? "").length > 0) {
+    deleteCookie("login")
+    return null
+  }
+
+  return {
+    ...raw,
+    token: "",
+  }
 }
 
 function serializeLogin(login: LoginResponse | null): string {

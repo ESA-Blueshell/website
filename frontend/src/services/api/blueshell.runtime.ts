@@ -64,7 +64,7 @@ export function createClientConfig(defaultConfig: Config): Config {
 
   // Keep auth and CSRF in sync per request.
   axiosInstance.interceptors.request.use(async (cfg) => {
-    const token = store.getters.getLogin?.token
+    const token = store.getters.getAuthToken
     const headers = cfg.headers ?? new AxiosHeaders()
     cfg.withCredentials = true
 
@@ -79,9 +79,10 @@ export function createClientConfig(defaultConfig: Config): Config {
     if (token) {
       if (headers instanceof AxiosHeaders) headers.set("Authorization", `Bearer ${token}`)
       else (headers as AxiosHeaders)["Authorization"] = `Bearer ${token}`
+    } else if (headers instanceof AxiosHeaders) {
+      headers.delete("Authorization")
     } else {
-      if (headers instanceof AxiosHeaders) headers.delete("Authorization")
-      else delete (headers as AxiosHeaders)["Authorization"]
+      delete (headers as AxiosHeaders)["Authorization"]
     }
 
     cfg.headers = headers

@@ -36,6 +36,7 @@ describe("store plugin", () => {
 
   it("stores login in state and cookie", () => {
     store.commit("setLogin", {
+      token: "jwt-token",
       username: "emma",
       roles: ["MEMBER"],
       expiration: Date.now() + 100_000,
@@ -43,6 +44,7 @@ describe("store plugin", () => {
 
     expect(store.getters.isLoggedIn).toBe(true)
     expect(mockWriteJsonCookie).toHaveBeenCalledWith("login", expect.objectContaining({username: "emma"}))
+    expect(mockWriteJsonCookie).toHaveBeenCalledWith("login", expect.objectContaining({token: ""}))
     expect(mockEmitAuthChanged).toHaveBeenCalled()
   })
 

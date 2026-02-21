@@ -9,6 +9,7 @@ export type GuestSessionData = GuestResponse & {
 
 export interface State {
   login: LoginResponse | null;
+  authToken: string | null;
   guestData: GuestSessionData | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
@@ -64,6 +65,8 @@ export interface Getters {
 
   getGuestData(state: State): GuestSessionData | null;
 
+  getAuthToken(state: State): string | null;
+
   getXsrfToken(state: State): string | null;
 }
 
@@ -81,10 +84,25 @@ export type TypedStore = Store<State> & {
   };
 };
 
+function sanitizeLoginPayload(payload: LoginResponse | null): LoginResponse | null {
+  if (!payload) return null
+  return {
+    ...payload,
+    token: "",
+  }
+}
+
+function sanitizePersistedLoginState(payload: LoginResponse | null): LoginResponse | null {
+  if (!payload) return null
+  if ((payload.token ?? "").length > 0) return null
+  return sanitizeLoginPayload(payload)
+}
+
 const store = createStore<State>({
   state(): State {
       return {
-      login: readJsonCookie<LoginResponse>("login"),
+      login: sanitizePersistedLoginState(readJsonCookie<LoginResponse>("login")),
+      authToken: null,
       guestData: readJsonCookie<GuestSessionData>("guestData"),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
@@ -93,16 +111,21 @@ const store = createStore<State>({
   },
   mutations: {
     async setLogin(state: State, payload: LoginResponse) {
-      state.login = payload
-      writeJsonCookie("login", payload)
-      state.statusSnackbarMessage = `Welcome back ${payload.username}!`
+      const sanitized = sanitizeLoginPayload(payload)
+      if (!sanitized) return
+      state.login = sanitized
+      state.authToken = payload.token || null
+      writeJsonCookie("login", sanitized)
+      state.statusSnackbarMessage = `Welcome back ${sanitized.username}!`
       emitAuthChanged()
     },
     setLoginState(state: State, payload: LoginResponse | null): void {
-      state.login = payload
+      state.login = sanitizePersistedLoginState(payload)
+      state.authToken = null
     },
     async logout(state: State) {
       state.login = null
+      state.authToken = null
       deleteCookie("login")
       state.statusSnackbarMessage = "You are now logged out."
       emitAuthChanged()
@@ -162,6 +185,9 @@ const store = createStore<State>({
     },
     getGuestData(state: State): GuestSessionData | null {
       return state.guestData
+    },
+    getAuthToken(state: State): string | null {
+      return state.authToken
     },
     getXsrfToken(state: State): string | null {
       return state.xsrfToken

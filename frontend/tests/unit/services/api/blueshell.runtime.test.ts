@@ -11,6 +11,7 @@ const {
   mockStore: {
     getters: {
       getLogin: null as null | { token?: string },
+      getAuthToken: null as null | string,
       getXsrfToken: null as null | string,
     },
     commit: vi.fn(),
@@ -94,12 +95,13 @@ describe("blueshell runtime csrf behavior", () => {
     })
     document.cookie = "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
     mockStore.getters.getLogin = null
+    mockStore.getters.getAuthToken = null
     mockStore.getters.getXsrfToken = null
     runtimeState.requestInterceptor = null
   })
 
   it("bootstraps csrf token for mutating requests and sends csrf header", async () => {
-    mockStore.getters.getLogin = {token: "jwt-token"}
+    mockStore.getters.getAuthToken = "jwt-token"
     mockAxiosGet.mockImplementation(async () => {
       document.cookie = "XSRF-TOKEN=csrf-token"
       return {data: {token: "csrf-token"}}

@@ -221,9 +221,16 @@ describe("App navbar behavior", () => {
 
     mockRoute.meta.requiresAuth = true
 
-    ;(wrapper.vm as any).logOut()
+    const mockFetch = vi.fn().mockResolvedValue({ok: true})
+    vi.stubGlobal("fetch", mockFetch)
+
+    await (wrapper.vm as any).logOut()
 
     expect(mockStore.commit).toHaveBeenCalledWith("logout")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/logout"),
+      expect.objectContaining({method: "POST", credentials: "include"}),
+    )
     expect(mockGoto).toHaveBeenCalledWith("/")
   })
 

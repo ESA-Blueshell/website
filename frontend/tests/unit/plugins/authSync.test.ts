@@ -1,12 +1,14 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import type {TypedStore} from "@/plugins/store"
 
-const {mockReadJsonCookie} = vi.hoisted(() => ({
+const {mockReadJsonCookie, mockDeleteCookie} = vi.hoisted(() => ({
   mockReadJsonCookie: vi.fn(),
+  mockDeleteCookie: vi.fn(),
 }))
 
 vi.mock("@/plugins/cookies", () => ({
   readJsonCookie: mockReadJsonCookie,
+  deleteCookie: mockDeleteCookie,
 }))
 
 import {emitAuthChanged, reconcileAuthFromCookie, setupAuthSync} from "@/plugins/authSync"
@@ -39,20 +41,21 @@ describe("authSync plugin", () => {
   })
 
   it("reconciles auth state from cookie", () => {
-    mockReadJsonCookie.mockReturnValue({username: "cookie-user"})
+    mockReadJsonCookie.mockReturnValue({username: "cookie-user", token: "jwt-token"})
     const store = {
       getters: {getLogin: {username: "current-user"}},
       commit: vi.fn(),
     } as unknown as TypedStore
 
     reconcileAuthFromCookie(store)
-    expect(store.commit).toHaveBeenCalledWith("setLoginState", {username: "cookie-user"})
+    expect(store.commit).toHaveBeenCalledWith("setLoginState", null)
+    expect(mockDeleteCookie).toHaveBeenCalledWith("login")
   })
 
   it("does not commit when auth state matches", () => {
     mockReadJsonCookie.mockReturnValue({username: "same-user"})
     const store = {
-      getters: {getLogin: {username: "same-user"}},
+      getters: {getLogin: {username: "same-user", token: ""}},
       commit: vi.fn(),
     } as unknown as TypedStore
 

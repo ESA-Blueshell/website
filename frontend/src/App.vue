@@ -506,6 +506,11 @@ const login = computed(() => store.getters.getLogin)
 
 const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 
+const resolveApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL
+  return `${globalThis.location.origin}/api`
+}
+
 // Methods
 const checkPrefersColorScheme = (): void => {
   if (globalThis.matchMedia("(prefers-color-scheme: dark)").matches) {
@@ -524,8 +529,16 @@ const toggleDarkMode = (): void => {
   setDarkMode(!theme.global.current.value.dark)
 }
 
-const logOut = (): void => {
-  document.cookie = "login=;expires=Thu, 01 Jan 1970 00:00:01 GMT"
+const logOut = async (): Promise<void> => {
+  try {
+    await fetch(`${resolveApiBaseUrl()}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    })
+  } catch {
+    // Ignore network failures and still clear local auth state.
+  }
+
   store.commit("logout")
   if (route.meta.requiresAuth) {
     $goto("/")

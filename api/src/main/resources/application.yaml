@@ -141,6 +141,10 @@ security:
   cors:
     allowed-origins:
       - https://esa-blueshell.nl
+  auth-cookie:
+    name: BSH_AUTH
+    path: /
+    same-site: None
   openapi:
     public:
       enabled: false

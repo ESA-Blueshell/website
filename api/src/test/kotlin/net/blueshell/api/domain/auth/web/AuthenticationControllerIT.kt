@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -36,6 +38,8 @@ class AuthenticationControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.token").isNotEmpty)
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("BSH_AUTH=")))
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("HttpOnly")))
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.username").value(user.username))
                 .andReturn()
@@ -49,6 +53,30 @@ class AuthenticationControllerIT : UserTestSupport() {
             assertThat(jwtTokenUtil.getUsernameFromToken(token)).isEqualTo(user.username)
             assertThat(validation.jti).isNotBlank()
             assertThat(expiration).isGreaterThan(System.currentTimeMillis())
+        }
+
+        @Test
+        fun `auth cookie can authenticate protected endpoint without bearer header`() {
+            val user = createUserWithRole(Role.MEMBER)
+
+            val auth = mvc.perform(
+                post("/auth")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
+            )
+                .andExpect(status().isOk)
+                .andReturn()
+
+            val authCookie = auth.response.cookies.firstOrNull { it.name == "BSH_AUTH" }
+            assertThat(authCookie).isNotNull
+            assertThat(authCookie!!.value).isNotBlank()
+
+            mvc.perform(
+                get("/users/${user.id}")
+                    .cookie(authCookie)
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(user.id))
         }
 
         @Test

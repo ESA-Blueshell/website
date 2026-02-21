@@ -103,7 +103,7 @@ class SecurityConfig(
         }
 
         http.securityMatcher("/**")
-            .csrf { it.csrfTokenRepository(csrfTokenRepository) }
+            .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout") }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
@@ -113,6 +113,7 @@ class SecurityConfig(
                 auth.requestMatchers(
                     HttpMethod.POST,
                     "/auth",
+                    "/auth/logout",
                     "/recovery/**",
                     "/users",
                     "/users/guest",

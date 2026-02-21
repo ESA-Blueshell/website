@@ -9,11 +9,11 @@ object AddressManagerHelper {
     }
 
     fun openUsersWithAddress(page: Page) {
-        page.locator("[data-testid='address-user-list-toggle-with-address']").first().click()
+        TestIdLocatorHelper.byTestId(page, "address-user-list-toggle-with-address").click()
     }
 
     fun openUsersWithoutAddress(page: Page) {
-        page.locator("[data-testid='address-user-list-toggle-without-address']").first().click()
+        TestIdLocatorHelper.byTestId(page, "address-user-list-toggle-without-address").click()
     }
 
     fun searchUsersWithAddress(page: Page, query: String) {
@@ -25,10 +25,10 @@ object AddressManagerHelper {
     }
 
     fun clickEditAddress(page: Page, userId: Long) {
-        page.locator("[data-testid='address-user-edit-btn-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "address-user-edit-btn-$userId").click()
     }
 
     fun clickDeleteAddress(page: Page, userId: Long) {
-        page.locator("[data-testid='address-user-delete-btn-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "address-user-delete-btn-$userId").click()
     }
 }

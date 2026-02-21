@@ -9,7 +9,7 @@ object ContributionManagerHelper {
     }
 
     fun selectPeriodById(page: Page, periodId: Long) {
-        page.locator("[data-testid='contribution-period-select-btn-$periodId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "contribution-period-select-btn-$periodId").click()
     }
 
     fun selectPeriod(page: Page, periodLabel: String) {
@@ -17,7 +17,7 @@ object ContributionManagerHelper {
     }
 
     fun openSection(page: Page, panelKey: String) {
-        page.locator("[data-testid='contribution-user-list-toggle-$panelKey']").first().click()
+        TestIdLocatorHelper.byTestId(page, "contribution-user-list-toggle-$panelKey").click()
     }
 
     fun searchUser(page: Page, panelKey: String, query: String) {
@@ -25,6 +25,6 @@ object ContributionManagerHelper {
     }
 
     fun togglePaidButton(page: Page, userId: Long) {
-        page.locator("[data-testid='contribution-user-toggle-paid-btn-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "contribution-user-toggle-paid-btn-$userId").click()
     }
 }

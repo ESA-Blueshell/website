@@ -54,33 +54,36 @@ object EventPageHelper {
     }
 
     fun eventCard(page: Page, eventId: Long): Locator {
-        return page.locator("[data-testid='event-card-$eventId']").first()
+        return TestIdLocatorHelper.byTestId(page, "event-card-$eventId")
     }
 
     fun clickApproveButton(page: Page, eventId: Long) {
-        eventCard(page, eventId).locator("[data-testid='event-approve-btn-$eventId']").first().click()
+        TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-approve-btn-$eventId").click()
     }
 
     fun clickDeleteEventButton(page: Page, eventId: Long) {
-        eventCard(page, eventId).locator("[data-testid='event-delete-btn-$eventId']").first().click()
+        TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-delete-btn-$eventId").click()
     }
 
     fun clickSignUpToggleButton(page: Page, eventId: Long) {
-        eventCard(page, eventId).locator("[data-testid='event-signup-toggle-btn-$eventId']").first().click()
+        TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-signup-toggle-btn-$eventId").click()
     }
 
     fun signUpForm(page: Page, eventId: Long): Locator {
-        return eventCard(page, eventId).locator("[data-testid='event-signup-form']").first()
+        return TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-signup-form")
     }
 
     fun submitSignUpButton(page: Page, eventId: Long): Locator {
-        return signUpForm(page, eventId).locator("[data-testid='event-signup-submit-btn']").first()
+        return TestIdLocatorHelper.byTestId(signUpForm(page, eventId), "event-signup-submit-btn")
     }
 
     fun submitSignUpButtonForMode(page: Page, eventId: Long, mode: String): Locator {
-        return signUpForm(page, eventId).locator(
-            "[data-testid='event-signup-submit-btn'][data-signup-mode='$mode']"
-        ).first()
+        return TestIdLocatorHelper.byTestIdWithAttribute(
+            signUpForm(page, eventId),
+            "event-signup-submit-btn",
+            "data-signup-mode",
+            mode
+        )
     }
 
     fun waitForSignUpMode(page: Page, eventId: Long, mode: String) {
@@ -88,7 +91,7 @@ object EventPageHelper {
     }
 
     fun deleteSignUpButton(page: Page, eventId: Long): Locator {
-        return signUpForm(page, eventId).locator("[data-testid='event-signup-delete-btn']").first()
+        return TestIdLocatorHelper.byTestId(signUpForm(page, eventId), "event-signup-delete-btn")
     }
 
     fun clickSubmitSignUpButton(page: Page, eventId: Long) {

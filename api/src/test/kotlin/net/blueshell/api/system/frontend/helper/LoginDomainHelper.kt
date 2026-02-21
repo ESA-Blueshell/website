@@ -19,24 +19,16 @@ object LoginDomainHelper {
     private const val USER_FORM_SUBMIT_BUTTON_TEST_ID = "user-form-submit-btn"
     private const val ADDRESS_FORM_SUBMIT_BUTTON_TEST_ID = "address-form-submit-btn"
 
-    private fun field(page: Page, testId: String): Locator {
-        return page.locator("[data-testid='$testId']").first()
-    }
-
-    private fun textInput(page: Page, fieldTestId: String): Locator {
-        return field(page, fieldTestId).locator("input").first()
-    }
-
     fun loginUsernameInput(page: Page): Locator {
-        return textInput(page, LOGIN_USERNAME_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, LOGIN_USERNAME_FIELD_TEST_ID)
     }
 
     fun loginPasswordInput(page: Page): Locator {
-        return textInput(page, LOGIN_PASSWORD_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, LOGIN_PASSWORD_FIELD_TEST_ID)
     }
 
     fun loginSubmitButton(page: Page): Locator {
-        return field(page, LOGIN_SUBMIT_BUTTON_TEST_ID)
+        return TestIdLocatorHelper.byTestId(page, LOGIN_SUBMIT_BUTTON_TEST_ID)
     }
 
     fun fillLoginCredentials(page: Page, username: String, password: String) {
@@ -53,11 +45,11 @@ object LoginDomainHelper {
     }
 
     fun forgotPasswordUsernameInput(page: Page): Locator {
-        return textInput(page, FORGOT_PASSWORD_USERNAME_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, FORGOT_PASSWORD_USERNAME_FIELD_TEST_ID)
     }
 
     fun forgotPasswordSubmitButton(page: Page): Locator {
-        return field(page, FORGOT_PASSWORD_SUBMIT_BUTTON_TEST_ID)
+        return TestIdLocatorHelper.byTestId(page, FORGOT_PASSWORD_SUBMIT_BUTTON_TEST_ID)
     }
 
     fun clickForgotPasswordSubmit(page: Page) {
@@ -70,15 +62,15 @@ object LoginDomainHelper {
     }
 
     fun resetPasswordNewInput(page: Page): Locator {
-        return textInput(page, RESET_PASSWORD_NEW_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, RESET_PASSWORD_NEW_FIELD_TEST_ID)
     }
 
     fun resetPasswordRepeatInput(page: Page): Locator {
-        return textInput(page, RESET_PASSWORD_REPEAT_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, RESET_PASSWORD_REPEAT_FIELD_TEST_ID)
     }
 
     fun resetPasswordSubmitButton(page: Page): Locator {
-        return field(page, RESET_PASSWORD_SUBMIT_BUTTON_TEST_ID)
+        return TestIdLocatorHelper.byTestId(page, RESET_PASSWORD_SUBMIT_BUTTON_TEST_ID)
     }
 
     fun clickResetPasswordSubmit(page: Page) {
@@ -92,19 +84,19 @@ object LoginDomainHelper {
     }
 
     fun activateMemberUsernameInput(page: Page): Locator {
-        return textInput(page, ACTIVATE_MEMBER_USERNAME_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_USERNAME_FIELD_TEST_ID)
     }
 
     fun activateMemberPasswordInput(page: Page): Locator {
-        return textInput(page, ACTIVATE_MEMBER_PASSWORD_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_PASSWORD_FIELD_TEST_ID)
     }
 
     fun activateMemberRepeatPasswordInput(page: Page): Locator {
-        return textInput(page, ACTIVATE_MEMBER_REPEAT_PASSWORD_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_REPEAT_PASSWORD_FIELD_TEST_ID)
     }
 
     fun activateMemberSubmitButton(page: Page): Locator {
-        return field(page, ACTIVATE_MEMBER_SUBMIT_BUTTON_TEST_ID)
+        return TestIdLocatorHelper.byTestId(page, ACTIVATE_MEMBER_SUBMIT_BUTTON_TEST_ID)
     }
 
     fun clickActivateMemberSubmit(page: Page) {
@@ -112,7 +104,7 @@ object LoginDomainHelper {
     }
 
     fun accountSubmitButton(page: Page): Locator {
-        return field(page, USER_FORM_SUBMIT_BUTTON_TEST_ID)
+        return TestIdLocatorHelper.byTestId(page, USER_FORM_SUBMIT_BUTTON_TEST_ID)
     }
 
     fun clickAccountSubmit(page: Page) {
@@ -120,7 +112,7 @@ object LoginDomainHelper {
     }
 
     fun addressSubmitButton(page: Page): Locator {
-        return field(page, ADDRESS_FORM_SUBMIT_BUTTON_TEST_ID)
+        return TestIdLocatorHelper.byTestId(page, ADDRESS_FORM_SUBMIT_BUTTON_TEST_ID)
     }
 
     fun clickAddressSubmit(page: Page) {

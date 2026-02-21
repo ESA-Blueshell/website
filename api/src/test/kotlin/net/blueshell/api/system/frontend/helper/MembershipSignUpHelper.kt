@@ -15,7 +15,7 @@ object MembershipSignUpHelper {
     }
 
     fun stepOneNextButton(page: Page): Locator {
-        return page.locator("[data-testid='$STEP_ONE_NEXT_BUTTON_TEST_ID']").first()
+        return TestIdLocatorHelper.byTestId(page, STEP_ONE_NEXT_BUTTON_TEST_ID)
     }
 
     fun clickStepOneNext(page: Page) {
@@ -23,7 +23,7 @@ object MembershipSignUpHelper {
     }
 
     fun stepTwoResendButton(page: Page): Locator {
-        return page.locator("[data-testid='$STEP_TWO_RESEND_BUTTON_TEST_ID']").first()
+        return TestIdLocatorHelper.byTestId(page, STEP_TWO_RESEND_BUTTON_TEST_ID)
     }
 
     fun clickStepTwoResend(page: Page) {
@@ -31,7 +31,7 @@ object MembershipSignUpHelper {
     }
 
     fun stepThreeNextButton(page: Page): Locator {
-        return page.locator("[data-testid='$STEP_THREE_NEXT_BUTTON_TEST_ID']").first()
+        return TestIdLocatorHelper.byTestId(page, STEP_THREE_NEXT_BUTTON_TEST_ID)
     }
 
     fun clickStepThreeNext(page: Page) {
@@ -39,7 +39,7 @@ object MembershipSignUpHelper {
     }
 
     fun stepFourCompleteButton(page: Page): Locator {
-        return page.locator("[data-testid='$STEP_FOUR_COMPLETE_BUTTON_TEST_ID']").first()
+        return TestIdLocatorHelper.byTestId(page, STEP_FOUR_COMPLETE_BUTTON_TEST_ID)
     }
 
     fun clickStepFourComplete(page: Page) {

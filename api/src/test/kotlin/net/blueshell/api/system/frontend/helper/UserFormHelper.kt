@@ -33,40 +33,32 @@ object UserFormHelper {
         val studentNumber: String? = null
     )
 
-    private fun field(page: Page, testId: String): Locator {
-        return page.locator("[data-testid='$testId']").first()
-    }
-
-    private fun textInput(page: Page, fieldTestId: String): Locator {
-        return field(page, fieldTestId).locator("input").first()
-    }
-
     fun initialsInput(page: Page): Locator {
-        return textInput(page, INITIALS_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, INITIALS_FIELD_TEST_ID)
     }
 
     fun firstNameInput(page: Page): Locator {
-        return textInput(page, FIRST_NAME_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, FIRST_NAME_FIELD_TEST_ID)
     }
 
     fun surnameInput(page: Page): Locator {
-        return textInput(page, SURNAME_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, SURNAME_FIELD_TEST_ID)
     }
 
     fun usernameInput(page: Page): Locator {
-        return textInput(page, USERNAME_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, USERNAME_FIELD_TEST_ID)
     }
 
     fun discordInput(page: Page): Locator {
-        return textInput(page, DISCORD_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, DISCORD_FIELD_TEST_ID)
     }
 
     fun emailInput(page: Page): Locator {
-        return textInput(page, EMAIL_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, EMAIL_FIELD_TEST_ID)
     }
 
     fun phoneNumberInput(page: Page): Locator {
-        val phoneField = field(page, PHONE_NUMBER_FIELD_TEST_ID)
+        val phoneField = TestIdLocatorHelper.byTestId(page, PHONE_NUMBER_FIELD_TEST_ID)
         val byPlaceholder = phoneField.locator("input[placeholder='Phone Number']").first()
         if (byPlaceholder.count() > 0) {
             return byPlaceholder
@@ -79,27 +71,27 @@ object UserFormHelper {
     }
 
     fun passwordInput(page: Page): Locator {
-        return textInput(page, PASSWORD_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, PASSWORD_FIELD_TEST_ID)
     }
 
     fun repeatedPasswordInput(page: Page): Locator {
-        return textInput(page, PASSWORD_REPEAT_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, PASSWORD_REPEAT_FIELD_TEST_ID)
     }
 
     fun dateOfBirthInput(page: Page): Locator {
-        return textInput(page, DATE_OF_BIRTH_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, DATE_OF_BIRTH_FIELD_TEST_ID)
     }
 
     fun genderInput(page: Page): Locator {
-        return textInput(page, GENDER_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, GENDER_FIELD_TEST_ID)
     }
 
     fun studentNumberInput(page: Page): Locator {
-        return textInput(page, STUDENT_NUMBER_FIELD_TEST_ID)
+        return TestIdLocatorHelper.textInput(page, STUDENT_NUMBER_FIELD_TEST_ID)
     }
 
     fun submitButton(page: Page): Locator {
-        return page.locator("[data-testid='$SUBMIT_BUTTON_TEST_ID']").first()
+        return TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID)
     }
 
     fun fill(page: Page, fields: Fields) {

@@ -9,11 +9,11 @@ object MemberManagerHelper {
     }
 
     fun openNonMembers(page: Page) {
-        page.locator("[data-testid='member-user-list-toggle-non-members']").first().click()
+        TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-non-members").click()
     }
 
     fun openMembers(page: Page) {
-        page.locator("[data-testid='member-user-list-toggle-members']").first().click()
+        TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-members").click()
     }
 
     fun searchNonMembers(page: Page, query: String) {
@@ -25,18 +25,18 @@ object MemberManagerHelper {
     }
 
     fun clickAddUser(page: Page) {
-        page.locator("[data-testid='member-user-list-add-user-btn-non-members']").first().click()
+        TestIdLocatorHelper.byTestId(page, "member-user-list-add-user-btn-non-members").click()
     }
 
     fun clickUserRow(page: Page, userId: Long) {
-        page.locator("[data-testid='member-user-toggle-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "member-user-toggle-$userId").click()
     }
 
     fun clickStartMembership(page: Page, userId: Long) {
-        page.locator("[data-testid='member-user-start-membership-btn-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "member-user-start-membership-btn-$userId").click()
     }
 
     fun clickEndMembership(page: Page, userId: Long) {
-        page.locator("[data-testid='member-user-end-membership-btn-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "member-user-end-membership-btn-$userId").click()
     }
 }

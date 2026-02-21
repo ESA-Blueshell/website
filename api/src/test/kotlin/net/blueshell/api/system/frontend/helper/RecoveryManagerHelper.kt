@@ -9,7 +9,7 @@ object RecoveryManagerHelper {
     }
 
     fun openSection(page: Page, panelKey: String) {
-        page.locator("[data-testid='recovery-user-list-toggle-$panelKey']").first().click()
+        TestIdLocatorHelper.byTestId(page, "recovery-user-list-toggle-$panelKey").click()
     }
 
     fun searchUser(page: Page, panelKey: String, query: String) {
@@ -17,6 +17,6 @@ object RecoveryManagerHelper {
     }
 
     fun clickAction(page: Page, actionType: String, userId: Long) {
-        page.locator("[data-testid='recovery-user-action-btn-$actionType-$userId']").first().click()
+        TestIdLocatorHelper.byTestId(page, "recovery-user-action-btn-$actionType-$userId").click()
     }
 }

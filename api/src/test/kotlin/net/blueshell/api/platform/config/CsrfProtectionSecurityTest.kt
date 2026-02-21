@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.web.FilterChainProxy
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
@@ -37,11 +37,10 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
     }
 
     @Test
-    fun `csrf endpoint is public and returns csrf cookie`() {
+    fun `csrf endpoint is public and returns csrf token`() {
         rawMvc.perform(get("/csrf"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.token").isNotEmpty)
-            .andExpect(cookie().exists("XSRF-TOKEN"))
     }
 
     @Test
@@ -59,17 +58,10 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
     @Test
     fun `state changing request is rejected when csrf token is invalid`() {
         val user = createUserWithRole(Role.MEMBER)
-        val csrfBootstrap = rawMvc.perform(get("/csrf"))
-            .andExpect(status().isOk)
-            .andReturn()
-            .response
-        val csrfCookie = csrfBootstrap.getCookie("XSRF-TOKEN")
-            ?: throw IllegalStateException("Missing XSRF-TOKEN cookie in bootstrap response")
 
         rawMvc.perform(
             post("/auth")
-                .cookie(csrfCookie)
-                .header("X-XSRF-TOKEN", "wrong-token")
+                .with(csrf().asHeader().useInvalidToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"username":"${user.username}","password":"Password123!"}""")
         )
@@ -79,18 +71,10 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
     @Test
     fun `state changing request succeeds when csrf token matches cookie`() {
         val user = createUserWithRole(Role.MEMBER)
-        val csrfBootstrap = rawMvc.perform(get("/csrf"))
-            .andExpect(status().isOk)
-            .andReturn()
-            .response
-        val csrfCookie = csrfBootstrap.getCookie("XSRF-TOKEN")
-            ?: throw IllegalStateException("Missing XSRF-TOKEN cookie in bootstrap response")
-        val csrfToken = mapper.readTree(csrfBootstrap.contentAsString)["token"].asText()
 
         rawMvc.perform(
             post("/auth")
-                .cookie(csrfCookie)
-                .header("X-XSRF-TOKEN", csrfToken)
+                .with(csrf().asHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"username":"${user.username}","password":"Password123!"}""")
         )

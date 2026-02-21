@@ -24,9 +24,6 @@ function isSafeMethod(method: string | undefined): boolean {
 }
 
 async function ensureCsrfToken(axiosInstance: AxiosInstance): Promise<string | null> {
-  const storedToken = store.getters.getXsrfToken
-  if (storedToken) return storedToken
-
   if (!csrfBootstrapPromise) {
     csrfBootstrapPromise = axiosInstance
       .get<CsrfBootstrapResponse>(CSRF_BOOTSTRAP_PATH, {withCredentials: true})
@@ -36,6 +33,10 @@ async function ensureCsrfToken(axiosInstance: AxiosInstance): Promise<string | n
           : null
         store.commit("setXsrfToken", bodyToken)
         return bodyToken
+      })
+      .catch(() => {
+        // Fall back to the last known token if bootstrap transiently fails.
+        return store.getters.getXsrfToken
       })
       .finally(() => {
         csrfBootstrapPromise = null

@@ -190,8 +190,8 @@ describe("blueshell runtime csrf behavior", () => {
     )
   })
 
-  it("uses stored csrf token without bootstrapping", async () => {
-    mockStore.getters.getXsrfToken = "stored-token"
+  it("refreshes csrf token for each mutating request", async () => {
+    mockAxiosGet.mockResolvedValue({data: {token: "fresh-token"}})
 
     createClientConfig({} as never)
     const interceptor = runtimeState.requestInterceptor
@@ -202,10 +202,29 @@ describe("blueshell runtime csrf behavior", () => {
       headers: new AxiosHeaders(),
     } as Record<string, unknown>
 
+    await interceptor!(cfg)
+    await interceptor!(cfg)
+
+    expect(mockAxiosGet).toHaveBeenCalledTimes(2)
+  })
+
+  it("falls back to stored csrf token when bootstrap fails", async () => {
+    mockStore.getters.getXsrfToken = "stored-token"
+    mockAxiosGet.mockRejectedValue(new Error("bootstrap failed"))
+
+    createClientConfig({} as never)
+    const interceptor = runtimeState.requestInterceptor
+    expect(interceptor).toBeTypeOf("function")
+
+    const cfg = {
+      method: "put",
+      headers: new AxiosHeaders(),
+    } as Record<string, unknown>
+
     const updated = await interceptor!(cfg)
     const headers = (updated as { headers: AxiosHeaders }).headers
 
-    expect(mockAxiosGet).not.toHaveBeenCalled()
+    expect(mockAxiosGet).toHaveBeenCalledWith("/csrf", {withCredentials: true})
     expect(headers.get("X-XSRF-TOKEN")).toBe("stored-token")
   })
 

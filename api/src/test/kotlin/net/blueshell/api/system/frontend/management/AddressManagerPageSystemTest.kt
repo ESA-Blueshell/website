@@ -1,14 +1,13 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.system.frontend.helper.AddressManagerHelper
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import net.blueshell.api.system.frontend.helper.AuthHelper
-import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -32,13 +31,9 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/addresses/manage")
-            page.waitForURL("**/addresses/manage**")
+            AddressManagerHelper.open(page, frontendUrl)
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Users without address").setExact(false)
-            ).click()
+            AddressManagerHelper.openUsersWithoutAddress(page)
 
             waitFor(
                 onTimeoutMessage = { "Expected ${guest.username} in users without address list" }
@@ -46,7 +41,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).first().click()
+            AddressManagerHelper.clickEditAddress(page, guest.id!!)
 
             AddressFormHelper.fill(
                 page = page,
@@ -59,10 +54,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
             )
 
             val createResponse = page.waitForResponse("**/addresses") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Save Address").setExact(false)
-                ).click()
+                page.locator("[data-testid='address-form-submit-btn']").first().click()
             }
             assertThat(createResponse.status()).isEqualTo(201)
         }
@@ -87,13 +79,9 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/addresses/manage")
-            page.waitForURL("**/addresses/manage**")
+            AddressManagerHelper.open(page, frontendUrl)
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Users without address").setExact(false)
-            ).click()
+            AddressManagerHelper.openUsersWithoutAddress(page)
 
             waitFor(
                 onTimeoutMessage = { "Expected ${guest.username} in users without address list before creating address" }
@@ -101,8 +89,8 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, guest.username)
-            page.getByText("Add Address", Page.GetByTextOptions().setExact(false)).first().click()
+            AddressManagerHelper.searchUsersWithoutAddress(page, guest.username)
+            AddressManagerHelper.clickEditAddress(page, guest.id!!)
             AddressFormHelper.fill(
                 page = page,
                 fields = AddressFormHelper.Fields(
@@ -117,7 +105,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 response.request().method() == "POST" &&
                     response.url().contains("/addresses")
             }) {
-                page.getByText("Save Address", Page.GetByTextOptions().setExact(false)).first().click()
+                page.locator("[data-testid='address-form-submit-btn']").first().click()
             }
             assertThat(createResponse.status()).isEqualTo(201)
             waitFor(
@@ -129,13 +117,9 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 addressRepository.findAll().firstOrNull { it.user.id == guest.id }?.id
             ) { "Expected created address id for ${guest.username}" }
 
-            page.navigate("$frontendUrl/addresses/manage")
-            page.waitForURL("**/addresses/manage**")
+            AddressManagerHelper.open(page, frontendUrl)
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Users with address").setExact(false)
-            ).click()
+            AddressManagerHelper.openUsersWithAddress(page)
 
             waitFor(
                 onTimeoutMessage = { "Expected ${guest.username} in users with address list" }
@@ -143,17 +127,14 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, guest.username)
-            page.getByText("Delete Address", Page.GetByTextOptions().setExact(false)).first().click()
+            AddressManagerHelper.searchUsersWithAddress(page, guest.username)
+            AddressManagerHelper.clickDeleteAddress(page, guest.id!!)
 
             val deleteResponse = page.waitForResponse({ response ->
                 response.request().method() == "DELETE" &&
                     response.url().contains("/addresses/${checkNotNull(addressId)}")
             }) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Delete").setExact(true)
-                ).click()
+                page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
             }
             assertThat(deleteResponse.status()).isEqualTo(204)
         }

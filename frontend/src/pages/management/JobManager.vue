@@ -75,6 +75,7 @@ onMounted(async () => {
             :disabled="loading"
             class="mr-3"
             color="primary"
+            data-testid="job-manager-refresh-btn"
             @click="refresh"
           >
             Refresh
@@ -115,6 +116,7 @@ onMounted(async () => {
             <tr
               v-for="execution in sortedExecutions"
               :key="execution.id"
+              :data-testid="`job-row-${execution.id}`"
             >
               <td>{{ execution.id }}</td>
               <td>{{ execution.jobType }}</td>
@@ -149,6 +151,7 @@ onMounted(async () => {
               <td>
                 <v-btn
                   v-if="execution.status === 'FAILED'"
+                  :data-testid="`job-retry-btn-${execution.id}`"
                   size="small"
                   variant="outlined"
                   @click="retry(execution)"

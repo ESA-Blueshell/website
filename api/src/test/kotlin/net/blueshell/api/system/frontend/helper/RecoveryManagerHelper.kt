@@ -8,11 +8,15 @@ object RecoveryManagerHelper {
         page.waitForURL("**/recovery/manage**")
     }
 
-    fun openSection(page: Page, title: String) {
-        page.getByText(title, Page.GetByTextOptions().setExact(true)).click()
+    fun openSection(page: Page, panelKey: String) {
+        page.locator("[data-testid='recovery-user-list-toggle-$panelKey']").first().click()
     }
 
-    fun searchUser(page: Page, query: String) {
-        UserListHelper.searchUser(page, query)
+    fun searchUser(page: Page, panelKey: String, query: String) {
+        UserListHelper.searchUser(page, query, searchTestId = "recovery-user-list-search-$panelKey")
+    }
+
+    fun clickAction(page: Page, actionType: String, userId: Long) {
+        page.locator("[data-testid='recovery-user-action-btn-$actionType-$userId']").first().click()
     }
 }

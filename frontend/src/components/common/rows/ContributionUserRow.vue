@@ -1,8 +1,9 @@
 <template>
   <div>
-    <v-list-item>
+    <v-list-item :data-testid="`contribution-user-row-${user.id}`">
       <div
         class="d-flex justify-space-between align-center"
+        :data-testid="`contribution-user-toggle-${user.id}`"
         style="width: 100%;"
       >
         <div class="flex-grow-1">
@@ -28,6 +29,8 @@
 
             <v-btn
               :disabled="disabled || saving"
+              :data-contribution-action="hasContribution ? 'mark-unpaid' : 'mark-paid'"
+              :data-testid="`contribution-user-toggle-paid-btn-${user.id}`"
               :loading="saving"
               size="small"
               variant="tonal"

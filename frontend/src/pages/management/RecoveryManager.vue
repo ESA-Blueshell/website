@@ -8,12 +8,14 @@
         style="max-width: 800px"
       >
         <recovery-user-list
+          panel-key="inactive"
           :users="inactiveUsers"
           action-type="activation"
           title="Inactive accounts"
         />
 
         <recovery-user-list
+          panel-key="active"
           :users="activeUsers"
           action-type="password"
           class="mt-3"

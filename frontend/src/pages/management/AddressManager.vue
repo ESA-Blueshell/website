@@ -11,6 +11,7 @@
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
+          panel-key="with-address"
           :users="usersWithAddress"
           title="Users with address"
           @update:address="addressChanged"
@@ -21,6 +22,7 @@
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
+          panel-key="without-address"
           :users="usersWithoutAddress"
           allow-create
           class="mt-3"

@@ -96,9 +96,10 @@ const confirmDeleteUser = async () => {
 
 <template>
   <div>
-    <v-list-item>
+    <v-list-item :data-testid="`member-user-row-${user.id}`">
       <div
         class="d-flex justify-space-between align-center"
+        :data-testid="`member-user-toggle-${user.id}`"
         role="button"
         style="width: 100%;"
         @click="toggleExpanded"
@@ -137,6 +138,7 @@ const confirmDeleteUser = async () => {
             :disabled="user?.roles?.includes('ADMIN')"
             class="btn-tight"
             color="red"
+            :data-testid="`member-user-delete-btn-${user.id}`"
             variant="text"
             @click.stop="openDelete"
           >
@@ -147,6 +149,7 @@ const confirmDeleteUser = async () => {
             <v-btn
               v-if="membership.endDate"
               class="btn-tight"
+              :data-testid="`member-user-resume-membership-btn-${user.id}`"
               variant="text"
               @click.stop="resumeMembership"
             >
@@ -156,6 +159,7 @@ const confirmDeleteUser = async () => {
               v-else
               :disabled="user.roles?.includes('COMMITTEE')"
               class="btn-tight"
+              :data-testid="`member-user-end-membership-btn-${user.id}`"
               variant="text"
               @click.stop="endMembership"
             >
@@ -165,6 +169,7 @@ const confirmDeleteUser = async () => {
           <template v-else>
             <v-btn
               class="btn-tight"
+              :data-testid="`member-user-start-membership-btn-${user.id}`"
               variant="text"
               @click.stop="startMembership"
             >
@@ -177,12 +182,14 @@ const confirmDeleteUser = async () => {
       <v-expand-transition>
         <div
           v-if="expanded === user.id"
+          :data-testid="`member-user-form-${user.id}`"
           @click.stop
         >
           <user-form
             v-model="user"
             :options="{ includeMemberProfile: true, updateKind: 'board' }"
             class="mt-6"
+            :data-testid="`member-user-edit-form-${user.id}`"
             show-submit
             @submitted="onSubmitted"
           />

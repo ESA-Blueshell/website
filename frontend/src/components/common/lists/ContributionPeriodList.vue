@@ -1,5 +1,8 @@
 <template>
-  <v-card class="overflow-hidden">
+  <v-card
+    class="overflow-hidden"
+    data-testid="contribution-period-list"
+  >
     <div class="px-5 d-flex align-center justify-space-between">
       <div class="d-flex align-center">
         <h2 class="contrib-title">
@@ -40,6 +43,7 @@
                     'ma-2'
                   ]"
                   :elevation="isSelected ? 0 : 4"
+                  :data-testid="`contribution-period-select-btn-${period.id}`"
                   :variant="isSelected ? 'flat' : 'elevated'"
                   @click="toggle"
                 >
@@ -47,6 +51,7 @@
                   <v-icon
                     v-if="hoveredPeriodId === period.id"
                     class="edit-icon"
+                    :data-testid="`contribution-period-edit-btn-${period.id}`"
                     style="padding-left: 10px"
                     @click.stop="openEditPeriodDialog(period)"
                   >
@@ -63,6 +68,7 @@
           cols="auto"
         >
           <v-btn
+            data-testid="contribution-period-add-btn"
             icon
             @click="openAddPeriodDialog"
           >

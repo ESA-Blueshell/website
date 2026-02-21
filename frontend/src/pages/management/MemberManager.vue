@@ -125,6 +125,7 @@ onMounted(async () => {
           v-model:expanded="expanded"
           :contributions-by-user-id="contributionsByUserId"
           :memberships-by-user-id="membershipsByUserId"
+          panel-key="non-members"
           :users="nonMembers"
           allow-create
           class="mt-3"
@@ -139,6 +140,7 @@ onMounted(async () => {
           v-model:expanded="expanded"
           :contributions-by-user-id="contributionsByUserId"
           :memberships-by-user-id="membershipsByUserId"
+          panel-key="members"
           :users="members"
           class="mt-3"
           title="Members"

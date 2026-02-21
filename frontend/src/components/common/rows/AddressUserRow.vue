@@ -1,8 +1,10 @@
 <template>
   <div>
-    <v-list-item>
+    <v-list-item :data-testid="`address-user-row-${user.id}`">
       <div
         class="d-flex justify-space-between align-center"
+        :data-testid="`address-user-toggle-${user.id}`"
+        role="button"
         style="width: 100%;"
         @click="toggleExpanded"
       >
@@ -30,6 +32,7 @@
             :disabled="user?.roles?.includes('MEMBER')"
             class="btn-tight"
             color="red"
+            :data-testid="`address-user-delete-btn-${user.id}`"
             variant="text"
             @click.stop="openDelete"
           >
@@ -38,6 +41,7 @@
 
           <v-btn
             class="btn-tight"
+            :data-testid="`address-user-edit-btn-${user.id}`"
             variant="text"
             @click.stop="toggleExpanded"
           >
@@ -50,6 +54,7 @@
         <div
           v-if="expanded === user.id"
           class="mb-3"
+          :data-testid="`address-user-form-${user.id}`"
           @click.stop
         >
           <!-- Writable v-model proxy pushes updates upward via emit -->
@@ -57,6 +62,7 @@
             v-model="addressModel"
             :user-id="user.id"
             class="mt-6"
+            :data-testid="`address-user-edit-form-${user.id}`"
             show-submit
             submit-text="Save Address"
             @submitted="onSubmitted"

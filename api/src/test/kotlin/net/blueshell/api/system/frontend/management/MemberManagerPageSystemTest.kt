@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.user.persistence.repository.MemberRepository
 import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
@@ -9,8 +8,8 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.ContributionPeriodHelper
+import net.blueshell.api.system.frontend.helper.MemberManagerHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
-import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -64,8 +63,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/members/manage")
-            page.waitForURL("**/members/manage**")
+            MemberManagerHelper.open(page, frontendUrl)
 
             waitFor(
                 onTimeoutMessage = { "Expected contribution period '$initialLabel' to be visible in member manager" }
@@ -81,16 +79,16 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             }
 
             selectPeriod(page, initialLabel)
-            page.getByText("Members", Page.GetByTextOptions().setExact(true)).click()
+            MemberManagerHelper.openMembers(page)
 
-            UserListHelper.searchUser(page, stableMember.username)
+            MemberManagerHelper.searchMembers(page, stableMember.username)
             waitFor(
                 onTimeoutMessage = { "Expected stable member ${stableMember.username} in initial period members list" }
             ) {
                 page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, periodOnlyMember.username)
+            MemberManagerHelper.searchMembers(page, periodOnlyMember.username)
             waitFor(
                 onTimeoutMessage = { "Expected period-only member ${periodOnlyMember.username} in initial period members list" }
             ) {
@@ -98,16 +96,16 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             }
 
             selectPeriod(page, addedLabel)
-            page.getByText("Members", Page.GetByTextOptions().setExact(true)).click()
+            MemberManagerHelper.openMembers(page)
 
-            UserListHelper.searchUser(page, stableMember.username)
+            MemberManagerHelper.searchMembers(page, stableMember.username)
             waitFor(
                 onTimeoutMessage = { "Expected stable member ${stableMember.username} in added period members list" }
             ) {
                 page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, periodOnlyMember.username)
+            MemberManagerHelper.searchMembers(page, periodOnlyMember.username)
             waitFor(
                 onTimeoutMessage = { "Expected period-only member ${periodOnlyMember.username} to be absent in added period members list" }
             ) {
@@ -132,12 +130,11 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/members/manage")
-            page.waitForURL("**/members/manage**")
+            MemberManagerHelper.open(page, frontendUrl)
             selectPeriod(page, periodLabel)
 
-            page.getByText("Non-members", Page.GetByTextOptions().setExact(true)).click()
-            page.getByText("Add User", Page.GetByTextOptions().setExact(true)).click()
+            MemberManagerHelper.openNonMembers(page)
+            MemberManagerHelper.clickAddUser(page)
 
             UserFormHelper.fill(
                 page = page,
@@ -161,10 +158,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                         response.url().contains("/users")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Submit").setExact(true)
-                ).click()
+                page.locator("[data-testid='user-form-submit-btn']").first().click()
             }
             assertThat(createResponse.status()).isEqualTo(201)
 
@@ -180,13 +174,16 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                 (userRepository.findByUsername(username).orElse(null)?.version ?: 0L) > 0L
             }
 
-            page.navigate("$frontendUrl/members/manage")
-            page.waitForURL("**/members/manage**")
+            MemberManagerHelper.open(page, frontendUrl)
             selectPeriod(page, periodLabel)
-            page.getByText("Non-members", Page.GetByTextOptions().setExact(true)).click()
+            MemberManagerHelper.openNonMembers(page)
 
-            UserListHelper.searchUser(page, username)
-            page.getByText(username, Page.GetByTextOptions().setExact(true)).first().click()
+            MemberManagerHelper.searchNonMembers(page, username)
+            val createdUserId = waitForOptional(
+                producer = { userRepository.findByUsername(username) },
+                onTimeoutMessage = { "Expected board-created user '$username' to exist before update flow" }
+            ).id!!
+            MemberManagerHelper.clickUserRow(page, createdUserId)
             UserFormHelper.fill(
                 page = page,
                 fields = UserFormHelper.Fields(
@@ -201,10 +198,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                         response.url().contains("/users/")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Submit").setExact(true)
-                ).click()
+                page.locator("[data-testid='user-form-submit-btn']").first().click()
             }
             assertThat(updateResponse.status())
                 .withFailMessage(
@@ -235,11 +229,10 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/members/manage")
-            page.waitForURL("**/members/manage**")
+            MemberManagerHelper.open(page, frontendUrl)
             selectPeriod(page, periodLabel)
 
-            page.getByText("Non-members", Page.GetByTextOptions().setExact(true)).click()
+            MemberManagerHelper.openNonMembers(page)
 
             waitFor(
                 onTimeoutMessage = { "Expected non-member ${guest.username} to be visible" }
@@ -247,7 +240,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(guest.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, guest.username)
+            MemberManagerHelper.searchNonMembers(page, guest.username)
 
             val response = page.waitForResponse(
                 Predicate { response ->
@@ -255,11 +248,8 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                         response.url().contains("/users/$guestId/memberships")
                 }
             ) {
-                page.getByText("Start Membership", Page.GetByTextOptions().setExact(false)).first().click()
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Confirm").setExact(true)
-                ).click()
+                MemberManagerHelper.clickStartMembership(page, guestId)
+                page.locator("[data-testid='start-membership-confirm-btn']").first().click()
             }
             assertThat(response.status()).isEqualTo(201)
         }
@@ -283,11 +273,10 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
             assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/members/manage")
-            page.waitForURL("**/members/manage**")
+            MemberManagerHelper.open(page, frontendUrl)
             selectPeriod(page, periodLabel)
 
-            page.getByText("Members", Page.GetByTextOptions().setExact(true)).click()
+            MemberManagerHelper.openMembers(page)
 
             waitFor(
                 onTimeoutMessage = { "Expected member ${member.username} to be visible in members list" }
@@ -295,7 +284,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, member.username)
+            MemberManagerHelper.searchMembers(page, member.username)
 
             val endResponse = page.waitForResponse(
                 Predicate { response ->
@@ -303,7 +292,7 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
                         response.url().contains("/memberships/$membershipId")
                 }
             ) {
-                page.getByText("End Membership", Page.GetByTextOptions().setExact(false)).first().click()
+                MemberManagerHelper.clickEndMembership(page, member.id!!)
             }
             assertThat(endResponse.status()).isEqualTo(200)
         }

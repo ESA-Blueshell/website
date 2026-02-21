@@ -6,24 +6,26 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\
 
 const exactText = (value: string) => new RegExp(`^${escapeRegExp(value)}$`)
 
-const listCard = (page: Page, title: string): Locator =>
-  page
-    .locator(".v-card")
-    .filter({has: page.getByRole("heading", {level: 2, name: exactText(title)})})
-    .first()
+const listCard = (page: Page, cardTestId: string): Locator =>
+  page.getByTestId(cardTestId).first()
 
-const searchInput = (card: Locator): Locator =>
-  card.getByRole("textbox", {name: /Search for a user/})
+const searchInput = (page: Page, searchTestId: string): Locator =>
+  page.getByTestId(searchTestId).locator("input").first()
 
-const ensureListOpen = async (page: Page, title: string): Promise<Locator> => {
-  const card = listCard(page, title)
-  const headerToggle = card.locator("[role='button']").first()
+const ensureListOpen = async (
+  page: Page,
+  cardTestId: string,
+  toggleTestId: string,
+  searchTestId: string,
+): Promise<Locator> => {
+  const card = listCard(page, cardTestId)
+  const headerToggle = page.getByTestId(toggleTestId).first()
 
   if (await headerToggle.getAttribute("aria-expanded") !== "true") {
     await headerToggle.click()
   }
 
-  await expect(searchInput(card)).toBeVisible()
+  await expect(page.getByTestId(searchTestId)).toBeVisible()
   return card
 }
 
@@ -79,22 +81,32 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/members/manage")
-    await expect(page.getByText(/member manager/i).first()).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("member-user-list-non-members")).toBeVisible({timeout: 30_000})
 
-    const nonMembersCard = await ensureListOpen(page, "Non-members")
+    const nonMembersCard = await ensureListOpen(
+      page,
+      "member-user-list-non-members",
+      "member-user-list-toggle-non-members",
+      "member-user-list-search-non-members",
+    )
     await expect(nonMembersCard.getByText(exactText("nonmember-target"))).toBeVisible()
     await expect(nonMembersCard.getByText(exactText("nonmember-other"))).toBeVisible()
 
-    await searchInput(nonMembersCard).fill("NonTarget nonmember-discord")
+    await searchInput(page, "member-user-list-search-non-members").fill("NonTarget nonmember-discord")
     await expect(nonMembersCard.getByText(exactText("nonmember-target"))).toBeVisible()
     await expect(nonMembersCard.getByText(exactText("nonmember-other"))).toHaveCount(0)
 
-    await searchInput(nonMembersCard).fill("")
-    const membersCard = await ensureListOpen(page, "Members")
+    await searchInput(page, "member-user-list-search-non-members").fill("")
+    const membersCard = await ensureListOpen(
+      page,
+      "member-user-list-members",
+      "member-user-list-toggle-members",
+      "member-user-list-search-members",
+    )
     await expect(membersCard.getByText(exactText("member-target"))).toBeVisible()
     await expect(membersCard.getByText(exactText("member-other"))).toBeVisible()
 
-    await searchInput(membersCard).fill("MemberTarget member-discord")
+    await searchInput(page, "member-user-list-search-members").fill("MemberTarget member-discord")
     await expect(membersCard.getByText(exactText("member-target"))).toBeVisible()
     await expect(membersCard.getByText(exactText("member-other"))).toHaveCount(0)
   })
@@ -149,22 +161,32 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/addresses/manage")
-    await expect(page.getByText(/address manager/i).first()).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible({timeout: 30_000})
 
-    const withAddressCard = await ensureListOpen(page, "Users with address")
+    const withAddressCard = await ensureListOpen(
+      page,
+      "address-user-list-with-address",
+      "address-user-list-toggle-with-address",
+      "address-user-list-search-with-address",
+    )
     await expect(withAddressCard.getByText(exactText("address-target"))).toBeVisible()
     await expect(withAddressCard.getByText(exactText("address-other"))).toBeVisible()
 
-    await searchInput(withAddressCard).fill("AddressTarget address.target@test.com")
+    await searchInput(page, "address-user-list-search-with-address").fill("AddressTarget address.target@test.com")
     await expect(withAddressCard.getByText(exactText("address-target"))).toBeVisible()
     await expect(withAddressCard.getByText(exactText("address-other"))).toHaveCount(0)
 
-    await searchInput(withAddressCard).fill("")
-    const withoutAddressCard = await ensureListOpen(page, "Users without address")
+    await searchInput(page, "address-user-list-search-with-address").fill("")
+    const withoutAddressCard = await ensureListOpen(
+      page,
+      "address-user-list-without-address",
+      "address-user-list-toggle-without-address",
+      "address-user-list-search-without-address",
+    )
     await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
     await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toBeVisible()
 
-    await searchInput(withoutAddressCard).fill("NoAddressTarget no.address.target@test.com")
+    await searchInput(page, "address-user-list-search-without-address").fill("NoAddressTarget no.address.target@test.com")
     await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
     await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toHaveCount(0)
   })
@@ -226,22 +248,32 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/contributions/manage")
-    await expect(page.getByText(/contribution manager/i).first()).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("contribution-user-list-unpaid")).toBeVisible({timeout: 30_000})
 
-    const unpaidCard = await ensureListOpen(page, "Contribution unpaid")
+    const unpaidCard = await ensureListOpen(
+      page,
+      "contribution-user-list-unpaid",
+      "contribution-user-list-toggle-unpaid",
+      "contribution-user-list-search-unpaid",
+    )
     await expect(unpaidCard.getByText(exactText("unpaid-target"))).toBeVisible()
     await expect(unpaidCard.getByText(exactText("unpaid-other"))).toBeVisible()
 
-    await searchInput(unpaidCard).fill("UnpaidTarget unpaid-discord")
+    await searchInput(page, "contribution-user-list-search-unpaid").fill("UnpaidTarget unpaid-discord")
     await expect(unpaidCard.getByText(exactText("unpaid-target"))).toBeVisible()
     await expect(unpaidCard.getByText(exactText("unpaid-other"))).toHaveCount(0)
 
-    await searchInput(unpaidCard).fill("")
-    const paidCard = await ensureListOpen(page, "Contribution paid")
+    await searchInput(page, "contribution-user-list-search-unpaid").fill("")
+    const paidCard = await ensureListOpen(
+      page,
+      "contribution-user-list-paid",
+      "contribution-user-list-toggle-paid",
+      "contribution-user-list-search-paid",
+    )
     await expect(paidCard.getByText(exactText("paid-target"))).toBeVisible()
     await expect(paidCard.getByText(exactText("paid-other"))).toBeVisible()
 
-    await searchInput(paidCard).fill("PaidTarget paid-discord")
+    await searchInput(page, "contribution-user-list-search-paid").fill("PaidTarget paid-discord")
     await expect(paidCard.getByText(exactText("paid-target"))).toBeVisible()
     await expect(paidCard.getByText(exactText("paid-other"))).toHaveCount(0)
   })
@@ -290,22 +322,32 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/recovery/manage")
-    await expect(page.getByText(/recovery manager/i).first()).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible({timeout: 30_000})
 
-    const inactiveCard = await ensureListOpen(page, "Inactive accounts")
+    const inactiveCard = await ensureListOpen(
+      page,
+      "recovery-user-list-inactive",
+      "recovery-user-list-toggle-inactive",
+      "recovery-user-list-search-inactive",
+    )
     await expect(inactiveCard.getByText(exactText("inactive-target"))).toBeVisible()
     await expect(inactiveCard.getByText(exactText("inactive-other"))).toBeVisible()
 
-    await searchInput(inactiveCard).fill("InactiveTarget inactive.target@test.com")
+    await searchInput(page, "recovery-user-list-search-inactive").fill("InactiveTarget inactive.target@test.com")
     await expect(inactiveCard.getByText(exactText("inactive-target"))).toBeVisible()
     await expect(inactiveCard.getByText(exactText("inactive-other"))).toHaveCount(0)
 
-    await searchInput(inactiveCard).fill("")
-    const activeCard = await ensureListOpen(page, "Active accounts")
+    await searchInput(page, "recovery-user-list-search-inactive").fill("")
+    const activeCard = await ensureListOpen(
+      page,
+      "recovery-user-list-active",
+      "recovery-user-list-toggle-active",
+      "recovery-user-list-search-active",
+    )
     await expect(activeCard.getByText(exactText("active-target"))).toBeVisible()
     await expect(activeCard.getByText(exactText("active-other"))).toBeVisible()
 
-    await searchInput(activeCard).fill("ActiveTarget active.target@test.com")
+    await searchInput(page, "recovery-user-list-search-active").fill("ActiveTarget active.target@test.com")
     await expect(activeCard.getByText(exactText("active-target"))).toBeVisible()
     await expect(activeCard.getByText(exactText("active-other"))).toHaveCount(0)
   })

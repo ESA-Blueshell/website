@@ -7,14 +7,12 @@ test.describe("management pages", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/members/manage")
-    await expect(page.getByText(/member manager/i).first()).toBeVisible({timeout: 30_000})
-    await expect(page.getByRole("heading", {name: /^Members$/i})).toBeVisible()
-    await expect(page.getByRole("heading", {name: /^Non-members$/i})).toBeVisible()
+    await expect(page.getByTestId("member-user-list-members")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("member-user-list-non-members")).toBeVisible()
 
     await page.goto("/contributions/manage")
-    await expect(page.getByText(/contribution manager/i).first()).toBeVisible({timeout: 30_000})
-    await expect(page.getByRole("heading", {name: /^Contribution paid$/i})).toBeVisible()
-    await expect(page.getByRole("heading", {name: /^Contribution unpaid$/i})).toBeVisible()
+    await expect(page.getByTestId("contribution-user-list-paid")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("contribution-user-list-unpaid")).toBeVisible()
   })
 
   test("renders address and recovery manager lists", async ({page}) => {
@@ -22,13 +20,11 @@ test.describe("management pages", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/addresses/manage")
-    await expect(page.getByText(/address manager/i).first()).toBeVisible({timeout: 30_000})
-    await expect(page.getByRole("heading", {name: /^Users with address$/i})).toBeVisible()
-    await expect(page.getByRole("heading", {name: /^Users without address$/i})).toBeVisible()
+    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("address-user-list-without-address")).toBeVisible()
 
     await page.goto("/recovery/manage")
-    await expect(page.getByText(/recovery manager/i).first()).toBeVisible({timeout: 30_000})
-    await expect(page.getByRole("heading", {name: /^Inactive accounts$/i})).toBeVisible()
-    await expect(page.getByRole("heading", {name: /^Active accounts$/i})).toBeVisible()
+    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("recovery-user-list-active")).toBeVisible()
   })
 })

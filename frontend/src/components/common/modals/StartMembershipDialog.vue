@@ -1,6 +1,7 @@
 <template>
   <v-dialog
     v-model="open"
+    data-testid="start-membership-dialog"
     max-width="500"
   >
     <v-card>
@@ -17,7 +18,7 @@
             <v-col cols="12">
               <VvField
                 v-model="membership.startDate"
-                :component-props="{ type: 'date', max: maxDate }"
+                :component-props="{ type: 'date', max: maxDate, 'data-testid': 'start-membership-start-date-field' }"
                 label="Start Date"
                 name="startDate"
                 rules="required"
@@ -30,6 +31,7 @@
               <VvField
                 v-model="membership.memberType"
                 :component="MemberTypeSelect"
+                :component-props="{ 'data-testid': 'start-membership-member-type-field' }"
                 label="Member Type"
                 name="memberType"
                 rules="required"
@@ -44,6 +46,7 @@
         <v-btn
           :disabled="isSubmitting"
           color="secondary"
+          data-testid="start-membership-cancel-btn"
           @click="open = false"
         >
           Cancel
@@ -51,6 +54,7 @@
         <v-btn
           :loading="isSubmitting"
           color="primary"
+          data-testid="start-membership-confirm-btn"
           @click="confirm"
         >
           Confirm

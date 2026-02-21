@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.function.Predicate
@@ -20,16 +19,18 @@ object ContributionPeriodHelper {
                     resp.url().contains("/contributionPeriods")
             }
         ) {
-            page.locator("button:has(i.mdi-plus)").first().click()
-            page.getByLabel("Start Date").fill(startDate.toString())
-            page.getByLabel("End Date").fill(endDate.toString())
-            page.getByLabel("Half Year Fee").fill("25")
-            page.getByLabel("Full Year Fee").fill("45")
-            page.getByLabel("Alumni Fee").fill("10")
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Create").setExact(true)
-            ).click()
+            page.locator("[data-testid='contribution-period-add-btn']").first().click()
+            page.locator("[data-testid='contribution-period-start-date-field']").first().locator("input").first()
+                .fill(startDate.toString())
+            page.locator("[data-testid='contribution-period-end-date-field']").first().locator("input").first()
+                .fill(endDate.toString())
+            page.locator("[data-testid='contribution-period-half-year-fee-field']").first().locator("input").first()
+                .fill("25")
+            page.locator("[data-testid='contribution-period-full-year-fee-field']").first().locator("input").first()
+                .fill("45")
+            page.locator("[data-testid='contribution-period-alumni-fee-field']").first().locator("input").first()
+                .fill("10")
+            page.locator("[data-testid='contribution-period-submit-btn']").first().click()
         }
         return response.status()
     }

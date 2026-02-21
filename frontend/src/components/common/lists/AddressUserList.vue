@@ -1,9 +1,13 @@
 <template>
-  <v-card class="overflow-hidden">
+  <v-card
+    :data-testid="`address-user-list-${resolvedPanelKey}`"
+    class="overflow-hidden"
+  >
     <div
       :aria-controls="panelId"
       :aria-expanded="String(isOpen)"
       class="px-5 py-3 d-flex align-center justify-space-between"
+      :data-testid="`address-user-list-toggle-${resolvedPanelKey}`"
       role="button"
       tabindex="0"
       @click="isOpen = !isOpen"
@@ -45,6 +49,7 @@
         <v-text-field
           v-model="localSearch"
           clearable
+          :data-testid="`address-user-list-search-${resolvedPanelKey}`"
           density="comfortable"
           hide-details
           label="Search for a user"
@@ -71,6 +76,7 @@
 
           <div
             v-if="filtered.length === 0"
+            :data-testid="`address-user-list-empty-${resolvedPanelKey}`"
             class="text-medium-emphasis text-center py-6"
           >
             No users found.
@@ -92,6 +98,7 @@ type ManagedAddress = AddressResponse & { userId?: number }
 
 const props = withDefaults(defineProps<{
   title: string
+  panelKey?: string
   addresses?: ManagedAddress[]
   users: ManagedUser[]
   expanded?: number | null
@@ -99,6 +106,7 @@ const props = withDefaults(defineProps<{
   enableDelete?: boolean
   startOpen?: boolean
 }>(), {
+  panelKey: "",
   addresses: () => [],
   expanded: null,
   allowCreate: false,
@@ -106,7 +114,7 @@ const props = withDefaults(defineProps<{
   startOpen: false,
 })
 
-const {title, users, addresses, expanded, allowCreate, enableDelete, startOpen} = toRefs(props)
+const {title, panelKey, users, addresses, expanded, allowCreate, enableDelete, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
   (e: "update:address", address: ManagedAddress): void
@@ -117,6 +125,7 @@ const emit = defineEmits<{
 const localSearch = ref("")
 const isOpen = ref<boolean>(startOpen.value)
 const panelId = `aul-${Math.random().toString(36).slice(2)}`
+const resolvedPanelKey = computed(() => panelKey.value || title.value.toLowerCase().replace(/\s+/g, "-"))
 
 const filtered = computed(() => filterUsers(users.value, localSearch.value))
 

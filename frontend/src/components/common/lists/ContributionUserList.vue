@@ -1,9 +1,13 @@
 <template>
-  <v-card class="overflow-hidden">
+  <v-card
+    :data-testid="`contribution-user-list-${resolvedPanelKey}`"
+    class="overflow-hidden"
+  >
     <div
       :aria-controls="panelId"
       :aria-expanded="String(isOpen)"
       class="px-5 py-3 d-flex align-center justify-space-between"
+      :data-testid="`contribution-user-list-toggle-${resolvedPanelKey}`"
       role="button"
       tabindex="0"
       @click="isOpen = !isOpen"
@@ -36,6 +40,7 @@
         <v-text-field
           v-model="localSearch"
           clearable
+          :data-testid="`contribution-user-list-search-${resolvedPanelKey}`"
           density="comfortable"
           hide-details
           label="Search for a user"
@@ -60,6 +65,7 @@
 
           <div
             v-if="filtered.length === 0"
+            :data-testid="`contribution-user-list-empty-${resolvedPanelKey}`"
             class="text-medium-emphasis text-center py-6"
           >
             No users found.
@@ -78,18 +84,20 @@ import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{
   title: string
+  panelKey?: string
   users: UserDetailResponse[]
   contributionPeriodId: number
   contributions?: ContributionResponse[]
   disabled?: boolean
   startOpen?: boolean
 }>(), {
+  panelKey: "",
   contributions: () => [],
   disabled: false,
   startOpen: false,
 })
 
-const {title, users, contributions, disabled, contributionPeriodId, startOpen} = toRefs(props)
+const {title, panelKey, users, contributions, disabled, contributionPeriodId, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
   (e: "delete:contribution", userId: number): void
@@ -99,6 +107,7 @@ const emit = defineEmits<{
 const localSearch = ref("")
 const isOpen = ref<boolean>(startOpen.value)
 const panelId = `cul-${Math.random().toString(36).slice(2)}`
+const resolvedPanelKey = computed(() => panelKey.value || title.value.toLowerCase().replace(/\s+/g, "-"))
 
 const filtered = computed(() => filterUsers(users.value, localSearch.value))
 const countLabel = computed(() =>

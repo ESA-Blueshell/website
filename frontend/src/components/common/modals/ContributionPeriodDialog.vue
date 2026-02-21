@@ -1,6 +1,7 @@
 <template>
   <v-dialog
     v-model="showDialog"
+    data-testid="contribution-period-dialog"
     max-width="600"
   >
     <v-card>
@@ -19,7 +20,7 @@
             <v-col cols="6">
               <VvField
                 v-model="periodForm.startDate"
-                :component-props="{ type: 'date' }"
+                :component-props="{ type: 'date', 'data-testid': 'contribution-period-start-date-field' }"
                 label="Start Date"
                 name="startDate"
                 rules="required|dateBefore:@endDate"
@@ -28,7 +29,7 @@
             <v-col cols="6">
               <VvField
                 v-model="periodForm.endDate"
-                :component-props="{ type: 'date' }"
+                :component-props="{ type: 'date', 'data-testid': 'contribution-period-end-date-field' }"
                 label="End Date"
                 name="endDate"
                 rules="required|dateAfter:@startDate"
@@ -36,29 +37,29 @@
             </v-col>
           </v-row>
 
-          <VvField
-            v-model="periodForm.halfYearFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
-            label="Half Year Fee"
+            <VvField
+              v-model="periodForm.halfYearFee"
+              :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-half-year-fee-field' }"
+              :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+              label="Half Year Fee"
             name="halfYearFee"
             rules="required|minValue:0"
           />
 
-          <VvField
-            v-model="periodForm.fullYearFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
-            label="Full Year Fee"
+            <VvField
+              v-model="periodForm.fullYearFee"
+              :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-full-year-fee-field' }"
+              :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+              label="Full Year Fee"
             name="fullYearFee"
             rules="required|minValue:0"
           />
 
-          <VvField
-            v-model="periodForm.alumniFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
-            label="Alumni Fee"
+            <VvField
+              v-model="periodForm.alumniFee"
+              :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-alumni-fee-field' }"
+              :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
+              label="Alumni Fee"
             name="alumniFee"
             rules="required|minValue:0"
           />
@@ -70,17 +71,23 @@
         <v-btn
           v-if="contributionPeriod?.id"
           color="red"
+          data-testid="contribution-period-delete-btn"
           @click="confirmDeletePeriod"
         >
           Delete
         </v-btn>
         <v-btn
           color="primary"
+          :data-submit-mode="contributionPeriod?.id ? 'update' : 'create'"
+          data-testid="contribution-period-submit-btn"
           @click="saveContributionPeriod"
         >
           {{ contributionPeriod?.id ? "Save" : "Create" }}
         </v-btn>
-        <v-btn @click="closeDialog">
+        <v-btn
+          data-testid="contribution-period-cancel-btn"
+          @click="closeDialog"
+        >
           Cancel
         </v-btn>
       </v-card-actions>

@@ -12,10 +12,7 @@ object CommitteeFormHelper {
     fun addMember(page: Page, role: String, fullName: String, index: Int = 0) {
         val hasRoleRows = page.getByLabel("Role").count() > 0
         if (index > 0 || !hasRoleRows) {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Add member").setExact(false)
-            ).first().click()
+            page.locator("[data-testid='committee-form-add-member-btn']").first().click()
         }
         page.getByLabel("Role").nth(index).fill(role)
         page.getByRole(
@@ -29,13 +26,10 @@ object CommitteeFormHelper {
     }
 
     fun removeFirstMember(page: Page) {
-        page.locator(".my-3 button:has(i.mdi-close)").first().click()
+        page.locator("[data-testid^='committee-form-remove-member-btn-']").first().click()
     }
 
     fun submit(page: Page) {
-        page.getByRole(
-            AriaRole.BUTTON,
-            Page.GetByRoleOptions().setName("Submit").setExact(false)
-        ).click()
+        page.locator("[data-testid='committee-form-submit-btn']").first().click()
     }
 }

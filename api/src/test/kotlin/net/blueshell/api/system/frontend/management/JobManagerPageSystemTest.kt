@@ -63,7 +63,7 @@ class JobManagerPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected failed job type ${failed.jobType} to appear in job manager table" }
             ) {
-                page.getByText(failed.jobType, com.microsoft.playwright.Page.GetByTextOptions().setExact(true)).count() > 0
+                page.locator("[data-testid='job-row-$failedId']").count() > 0
             }
 
             assertThat(
@@ -76,10 +76,7 @@ class JobManagerPageSystemTest : FrontendSystemTestBase() {
                         response.url().contains("/management/jobs/$failedId/retry")
                 }
             ) {
-                page.getByRole(
-                    com.microsoft.playwright.options.AriaRole.BUTTON,
-                    com.microsoft.playwright.Page.GetByRoleOptions().setName("Retry").setExact(true)
-                ).first().click()
+                page.locator("[data-testid='job-retry-btn-$failedId']").first().click()
             }
             assertThat(retryResponse.status()).isEqualTo(200)
 

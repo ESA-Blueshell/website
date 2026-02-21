@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.committee.persistence.repository.CommitteeRepository
 import net.blueshell.api.factory.committee.persistence.CommitteeFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
@@ -81,16 +80,13 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected committee '${committee.name}' to be visible before deletion" }
             ) {
-                page.getByText(committee.name, Page.GetByTextOptions().setExact(true)).count() > 0
+                CommitteeManagerHelper.committeeRow(page, committeeId).count() > 0
             }
 
-            page.locator("button:has(i.mdi-delete)").first().click()
+            CommitteeManagerHelper.openDeleteDialog(page, committeeId)
 
             val response = page.waitForResponse("**/committees/$committeeId") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Delete").setExact(true)
-                ).click()
+                page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
             }
             assertThat(response.status()).isEqualTo(204)
         }
@@ -131,19 +127,16 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected committee '${committee.name}' to be visible before editing" }
             ) {
-                page.getByText(committee.name, Page.GetByTextOptions().setExact(true)).count() > 0
+                CommitteeManagerHelper.committeeRow(page, committeeId).count() > 0
             }
 
-            page.locator("button:has(i.mdi-pencil)").first().click()
+            CommitteeManagerHelper.openEditForm(page, committeeId)
 
             CommitteeFormHelper.removeFirstMember(page)
             waitFor(
                 onTimeoutMessage = { "Expected existing committee member row to be removed before adding replacement" }
             ) {
-                page.getByRole(
-                    AriaRole.COMBOBOX,
-                    Page.GetByRoleOptions().setName("Member name").setExact(false)
-                ).count() == 0
+                page.locator("[data-testid^='committee-form-remove-member-btn-']").count() == 0
             }
 
             CommitteeFormHelper.addMember(page, role = "Secretary", fullName = addedMember.fullName)
@@ -217,10 +210,10 @@ class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected committee '${committee.name}' before metadata update" }
             ) {
-                page.getByText(committee.name, Page.GetByTextOptions().setExact(true)).count() > 0
+                CommitteeManagerHelper.committeeRow(page, committeeId).count() > 0
             }
 
-            page.locator("button:has(i.mdi-pencil)").first().click()
+            CommitteeManagerHelper.openEditForm(page, committeeId)
             CommitteeFormHelper.fillCommittee(page, updatedName, updatedDescription)
 
             val response = page.waitForResponse("**/committees/$committeeId") {

@@ -145,6 +145,7 @@ defineExpose({validate, save})
     <Form
       ref="formRef"
       as="div"
+      data-testid="committee-form"
     >
       <v-container>
         <v-row class="mt-1">
@@ -203,6 +204,7 @@ defineExpose({validate, save})
             <v-col cols="1">
               <v-btn
                 :disabled="isReadonly"
+                :data-testid="`committee-form-remove-member-btn-${i}`"
                 icon="mdi-close"
                 variant="plain"
                 @click="removeMember(committee.members[i].userId as number)"
@@ -214,6 +216,7 @@ defineExpose({validate, save})
             v-if="!isReadonly"
             block
             class="mt-4"
+            data-testid="committee-form-add-member-btn"
             variant="outlined"
             @click.prevent="addMember()"
           >
@@ -234,10 +237,12 @@ defineExpose({validate, save})
           <submit-button
             :disabled="isSaving"
             :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
+            :data-submit-mode="isCreating ? 'create' : 'update'"
             :loading="isSaving"
             :show-submit-status="showSubmitStatus"
             :submit-state="submitState"
             :text="props.submitText"
+            data-testid="committee-form-submit-btn"
             @click="save"
           />
         </v-col>

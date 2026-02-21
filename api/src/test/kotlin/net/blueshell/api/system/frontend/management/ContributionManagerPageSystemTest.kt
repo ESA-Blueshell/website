@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
@@ -12,7 +11,6 @@ import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.ContributionManagerHelper
 import net.blueshell.api.system.frontend.helper.ContributionPeriodHelper
-import net.blueshell.api.system.frontend.helper.UserListHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -36,6 +34,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
     fun `board adds period and switches paid status between periods`() {
         val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
         val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val memberId = checkNotNull(member.id) { "Expected member id" }
         userFactory.createMembership(member)
 
         val uniqueOffset = System.currentTimeMillis() % 10_000
@@ -75,7 +74,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             }
 
             ContributionManagerHelper.selectPeriod(page, initialPeriodLabel)
-            ContributionManagerHelper.openSection(page, "Contribution paid")
+            ContributionManagerHelper.openSection(page, "paid")
             waitFor(
                 onTimeoutMessage = { "Expected ${member.username} to be paid in initial period" }
             ) {
@@ -84,14 +83,13 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected mark unpaid action for ${member.username} in initial period" }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Mark unpaid").setExact(false)
+                page.locator(
+                    "[data-testid='contribution-user-toggle-paid-btn-$memberId'][data-contribution-action='mark-unpaid']"
                 ).count() > 0
             }
 
             ContributionManagerHelper.selectPeriod(page, addedPeriodLabel)
-            ContributionManagerHelper.openSection(page, "Contribution unpaid")
+            ContributionManagerHelper.openSection(page, "unpaid")
             waitFor(
                 onTimeoutMessage = { "Expected ${member.username} to be unpaid in added period" }
             ) {
@@ -100,9 +98,8 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected mark paid action for ${member.username} in added period" }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Mark paid").setExact(false)
+                page.locator(
+                    "[data-testid='contribution-user-toggle-paid-btn-$memberId'][data-contribution-action='mark-paid']"
                 ).count() > 0
             }
         }
@@ -132,7 +129,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             }
             ContributionManagerHelper.selectPeriod(page, periodLabel)
 
-            ContributionManagerHelper.openSection(page, "Contribution unpaid")
+            ContributionManagerHelper.openSection(page, "unpaid")
 
             waitFor(
                 onTimeoutMessage = { "Expected ${member.username} in unpaid contribution list" }
@@ -140,15 +137,12 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, member.username)
+            ContributionManagerHelper.searchUser(page, "unpaid", member.username)
             val markPaidResponse = page.waitForResponse({ response ->
                 response.request().method() == "POST" &&
                     response.url().contains("/contributions")
             }) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Mark paid").setExact(false)
-                ).first().click()
+                ContributionManagerHelper.togglePaidButton(page, memberId)
             }
             assertThat(markPaidResponse.status()).isEqualTo(201)
         }
@@ -172,7 +166,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             }
             ContributionManagerHelper.selectPeriod(page, periodLabel)
 
-            ContributionManagerHelper.openSection(page, "Contribution paid")
+            ContributionManagerHelper.openSection(page, "paid")
 
             waitFor(
                 onTimeoutMessage = { "Expected ${member.username} in paid contribution list" }
@@ -180,16 +174,13 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
                 page.getByText(member.username, Page.GetByTextOptions().setExact(true)).count() > 0
             }
 
-            UserListHelper.searchUser(page, member.username)
+            ContributionManagerHelper.searchUser(page, "paid", member.username)
             val markUnpaidResponse = page.waitForResponse({ response ->
                 response.request().method() == "DELETE" &&
                     response.url().contains("/contributionPeriods/") &&
                     response.url().contains("/contributions")
             }) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Mark unpaid").setExact(false)
-                ).first().click()
+                ContributionManagerHelper.togglePaidButton(page, memberId)
             }
             assertThat(markUnpaidResponse.status()).isEqualTo(204)
         }

@@ -1,6 +1,7 @@
 <template>
   <v-dialog
     v-model="showDialog"
+    data-testid="deletion-confirmation-dialog"
     max-width="400"
   >
     <v-card>
@@ -14,11 +15,15 @@
         <v-spacer />
         <v-btn
           color="red"
+          data-testid="deletion-confirmation-confirm-btn"
           @click="confirm"
         >
           Delete
         </v-btn>
-        <v-btn @click="closeDialog">
+        <v-btn
+          data-testid="deletion-confirmation-cancel-btn"
+          @click="closeDialog"
+        >
           Cancel
         </v-btn>
       </v-card-actions>

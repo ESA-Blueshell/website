@@ -113,6 +113,7 @@ onMounted(async () => {
           :loading="loading"
           :variant="creatingCommittee ? 'outlined' : 'text'"
           block
+          data-testid="committee-manager-create-toggle-btn"
           @click="creatingCommittee = !creatingCommittee"
         >
           {{ creatingCommittee ? "Stop creating committee" : "Create new committee" }}
@@ -122,6 +123,7 @@ onMounted(async () => {
           <div
             v-if="creatingCommittee"
             class="form-border mx-auto rounded-b"
+            data-testid="committee-manager-create-form"
             style="border-top-width: 0"
           >
             <committee-form
@@ -139,7 +141,7 @@ onMounted(async () => {
             v-for="(committee, i) in committees"
             :key="committee.id || committee.name"
           >
-            <v-list-item>
+            <v-list-item :data-testid="`committee-row-${committee.id}`">
               <v-list-item-title class="text-h6">
                 {{ committee.name }}
               </v-list-item-title>
@@ -156,6 +158,7 @@ onMounted(async () => {
                   <template #activator="{ props: tooltip }">
                     <v-btn
                       :loading="submittingId === committee.id"
+                      :data-testid="`committee-edit-btn-${committee.id}`"
                       icon="mdi-pencil"
                       v-bind="tooltip"
                       variant="plain"
@@ -172,6 +175,7 @@ onMounted(async () => {
                   <template #activator="{ props: tooltip }">
                     <v-btn
                       icon="mdi-delete"
+                      :data-testid="`committee-delete-btn-${committee.id}`"
                       v-bind="tooltip"
                       variant="plain"
                       @click="committeeToDelete = committee"
@@ -185,6 +189,7 @@ onMounted(async () => {
               <div
                 v-if="editingCommitteeId === committee.id"
                 class="form-border mx-auto rounded-b"
+                :data-testid="`committee-manager-edit-form-${committee.id}`"
               >
                 <committee-form
                   :model-value="committee"

@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
@@ -29,8 +28,8 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
 
             RecoveryManagerHelper.open(page, frontendUrl)
 
-            RecoveryManagerHelper.openSection(page, "Inactive accounts")
-            RecoveryManagerHelper.searchUser(page, inactiveUser.username)
+            RecoveryManagerHelper.openSection(page, "inactive")
+            RecoveryManagerHelper.searchUser(page, "inactive", inactiveUser.username)
 
             waitFor(
                 onTimeoutMessage = { "Expected inactive user ${inactiveUser.username} to be visible" }
@@ -39,10 +38,7 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
             }
 
             val response = page.waitForResponse("**/recovery/user/activate/resend/**") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Resend Activation Email").setExact(false)
-                ).click()
+                RecoveryManagerHelper.clickAction(page, "activation", inactiveUser.id!!)
             }
             assertThat(response.status()).isEqualTo(204)
         }
@@ -61,8 +57,8 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
 
             RecoveryManagerHelper.open(page, frontendUrl)
 
-            RecoveryManagerHelper.openSection(page, "Active accounts")
-            RecoveryManagerHelper.searchUser(page, activeUser.username)
+            RecoveryManagerHelper.openSection(page, "active")
+            RecoveryManagerHelper.searchUser(page, "active", activeUser.username)
 
             waitFor(
                 onTimeoutMessage = { "Expected active user ${activeUser.username} to be visible" }
@@ -71,10 +67,7 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
             }
 
             val response = page.waitForResponse("**/recovery/password/reset/**") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Send Password Reset Email").setExact(false)
-                ).click()
+                RecoveryManagerHelper.clickAction(page, "password", activeUser.id!!)
             }
             assertThat(response.status()).isEqualTo(204)
         }

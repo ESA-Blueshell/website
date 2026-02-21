@@ -11,12 +11,13 @@
           ref="formRef"
           v-slot="{ meta }"
           as="form"
+          data-testid="activate-member-form"
           @submit="onSubmit"
         >
           <v-row>
             <VvField
               v-model="form.username"
-              :component-props="{ label: 'Username', autocomplete: 'username' }"
+              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
               name="username"
               rules="required|alphaNum"
             />
@@ -29,6 +30,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 label: 'Password',
                 autocomplete: 'new-password',
+                'data-testid': 'activate-member-password-field',
                 'onClick:append-inner': () => (showPass.value = !showPass.value)
               }"
               name="password"
@@ -44,6 +46,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 label: 'Repeat Password',
                 autocomplete: 'new-password',
+                'data-testid': 'activate-member-repeat-password-field',
                 'onClick:append-inner': () => (showPass.value = !showPass.value)
               }"
               name="passwordAgain"
@@ -60,6 +63,7 @@
               :disabled="!meta.valid || loading"
               :loading="loading"
               color="primary"
+              data-testid="activate-member-submit-btn"
               type="submit"
             >
               Activate Member
@@ -69,6 +73,7 @@
           <v-alert
             v-if="errorMessage"
             class="mt-4"
+            data-testid="activate-member-error-alert"
             type="error"
             variant="tonal"
           >
@@ -78,6 +83,7 @@
           <v-alert
             v-if="succeeded"
             class="mb-2"
+            data-testid="activate-member-success-alert"
             type="success"
           >
             Account activated! You will be redirected to the login page.

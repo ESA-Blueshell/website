@@ -1,13 +1,13 @@
 package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -42,14 +42,11 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
             submitMemberActivationForm(page, username = newUsername, password = newPassword)
 
             val response = page.waitForResponse("**/recovery/member/activate") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Activate Member").setExact(true)
-                ).click()
+                LoginDomainHelper.clickActivateMemberSubmit(page)
             }
             assertThat(response.status()).isEqualTo(200)
             assertThat(
-                page.getByText("Account activated! You will be redirected to the login page.").count()
+                page.locator("[data-testid='activate-member-success-alert']").count()
             ).isGreaterThan(0)
         }
 
@@ -77,14 +74,11 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
             submitMemberActivationForm(page, username = newUsername, password = newPassword)
 
             val response = page.waitForResponse("**/recovery/member/activate") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Activate Member").setExact(true)
-                ).click()
+                LoginDomainHelper.clickActivateMemberSubmit(page)
             }
             assertThat(response.status()).isGreaterThanOrEqualTo(400)
             assertThat(
-                page.getByText("We couldn’t activate your membership. The link may be invalid or expired.").count()
+                page.locator("[data-testid='activate-member-error-alert']").count()
             ).isGreaterThan(0)
         }
 
@@ -110,7 +104,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
             assertThat(response.status()).isEqualTo(200)
             assertThat(response.text()).contains("/membership/signUp?step=2")
             assertThat(
-                page.getByText("Account activated! You will be redirected to the login page.").count()
+                page.locator("[data-testid='activate-user-success-state']").count()
             ).isGreaterThan(0)
         }
 
@@ -132,7 +126,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
             }
             assertThat(response.status()).isGreaterThanOrEqualTo(400)
             assertThat(
-                page.getByText("You will be redirected to the login page.", Page.GetByTextOptions().setExact(false)).count()
+                page.locator("[data-testid='activate-user-error-alert']").count()
             ).isGreaterThan(0)
         }
 
@@ -140,9 +134,7 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
     }
 
     private fun submitMemberActivationForm(page: Page, username: String, password: String) {
-        page.getByLabel("Username").fill(username)
-        page.getByLabel("Password").first().fill(password)
-        page.getByLabel("Repeat Password").first().fill(password)
-        page.getByLabel("Repeat Password").first().press("Tab")
+        LoginDomainHelper.fillActivateMemberForm(page, username, password)
+        LoginDomainHelper.activateMemberRepeatPasswordInput(page).press("Tab")
     }
 }

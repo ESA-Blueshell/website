@@ -37,6 +37,7 @@
           <v-form ref="form">
             <user-form
               v-model="user"
+              data-testid="account-user-form"
               :options="{ includeMemberProfile: isMember }"
               show-submit
             />

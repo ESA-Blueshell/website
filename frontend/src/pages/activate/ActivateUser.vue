@@ -10,6 +10,7 @@
         <div
           v-if="loading"
           class="d-flex align-center justify-center"
+          data-testid="activate-user-loading-state"
         >
           <v-progress-circular
             class="mr-3"
@@ -21,7 +22,10 @@
           </p>
         </div>
 
-        <div v-else-if="succeeded">
+        <div
+          v-else-if="succeeded"
+          data-testid="activate-user-success-state"
+        >
           <v-icon
             class="mb-2"
             color="success"
@@ -37,6 +41,7 @@
         <!-- Error -->
         <v-alert
           v-else
+          data-testid="activate-user-error-alert"
           type="warning"
           variant="tonal"
         >

@@ -7,19 +7,23 @@
       style="max-width: 600px"
     >
       <v-card class="pa-6">
-        <div v-if="!succeeded">
+        <div
+          v-if="!succeeded"
+          data-testid="forgot-password-form-state"
+        >
           <p>Enter your username, and we’ll email you a link to reset your password.</p>
 
           <Form
             v-slot="{ meta }"
             as="form"
+            data-testid="forgot-password-form"
             @submit="onSubmit"
           >
             <v-row>
               <v-col cols="12">
                 <VvField
                   v-model="form.username"
-                  :component-props="{ label: 'Username', autocomplete: 'username' }"
+                  :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'forgot-password-username-field' }"
                   name="username"
                   rules="required|alphaNum"
                 />
@@ -33,6 +37,7 @@
                   :disabled="!meta.valid || loading"
                   :loading="loading"
                   color="primary"
+                  data-testid="forgot-password-submit-btn"
                   type="submit"
                 >
                   Send reset mail
@@ -42,7 +47,10 @@
           </Form>
         </div>
 
-        <div v-else>
+        <div
+          v-else
+          data-testid="forgot-password-success-state"
+        >
           <p>
             If an account with that username exists, you’ll receive an email with a password reset link.
             Didn’t get it? Check your spam folder or try again later.

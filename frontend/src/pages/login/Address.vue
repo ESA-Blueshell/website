@@ -13,6 +13,7 @@
         <address-form
           v-if="login"
           v-model="address"
+          data-testid="account-address-form"
           :user-id="login.userId"
           show-submit
           submit-text="Save address"

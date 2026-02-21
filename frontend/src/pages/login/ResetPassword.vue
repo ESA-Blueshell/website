@@ -10,6 +10,7 @@
         <Form
           v-slot="{ meta }"
           as="form"
+          data-testid="reset-password-form"
           @submit="onSubmit"
         >
           <v-row>
@@ -20,6 +21,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 autocomplete: 'new-password',
                 label: 'New Password',
+                'data-testid': 'reset-password-new-password-field',
                 'onClick:append-inner': () => (showPass = !showPass)
               }"
               name="password"
@@ -34,6 +36,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 autocomplete: 'new-password',
                 label: 'Repeat New Password',
+                'data-testid': 'reset-password-repeat-password-field',
                 'onClick:append-inner': () => (showPass = !showPass)
               }"
               name="passwordAgain"
@@ -50,6 +53,7 @@
               :disabled="!meta.valid || loading"
               :loading="loading"
               color="primary"
+              data-testid="reset-password-submit-btn"
               type="submit"
             >
               Reset Password
@@ -59,6 +63,7 @@
           <v-alert
             v-if="errorMessage"
             class="mt-4"
+            data-testid="reset-password-error-alert"
             type="error"
             variant="tonal"
           >
@@ -68,6 +73,7 @@
           <div
             v-if="succeeded"
             class="mt-6"
+            data-testid="reset-password-success-state"
           >
             <p class="text-subtitle-1">
               Your password has been reset successfully.

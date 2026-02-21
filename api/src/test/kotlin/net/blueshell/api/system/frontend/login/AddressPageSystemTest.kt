@@ -1,12 +1,12 @@
 package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -40,10 +40,7 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
             )
 
             val response = page.waitForResponse("**/addresses") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Save address").setExact(false)
-                ).click()
+                LoginDomainHelper.clickAddressSubmit(page)
             }
             assertThat(response.status()).isEqualTo(201)
         }
@@ -103,10 +100,7 @@ class AddressPageSystemTest : FrontendSystemTestBase() {
             )
 
             val updateResponse = page.waitForResponse("**/addresses/$addressId") {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Save address").setExact(false)
-                ).click()
+                LoginDomainHelper.clickAddressSubmit(page)
             }
             assertThat(updateResponse.status()).isEqualTo(200)
         }

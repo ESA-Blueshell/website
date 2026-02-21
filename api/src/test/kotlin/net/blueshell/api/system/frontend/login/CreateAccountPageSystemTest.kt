@@ -17,7 +17,8 @@ class CreateAccountPageSystemTest : FrontendSystemTestBase() {
                 page = page,
                 url = "$frontendUrl/account/create",
                 submitButtonLabel = "Create Account",
-                includeMemberProfile = false
+                includeMemberProfile = false,
+                submitButtonTestId = "user-form-submit-btn"
             )
 
             val persisted = waitForOptional(producer = { userRepository.findByUsername(credentials.username) })
@@ -37,7 +38,8 @@ class CreateAccountPageSystemTest : FrontendSystemTestBase() {
                 page = page,
                 url = "$frontendUrl/account/create",
                 submitButtonLabel = "Create Account",
-                includeMemberProfile = false
+                includeMemberProfile = false,
+                submitButtonTestId = "user-form-submit-btn"
             )
 
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, credentials.username, credentials.password)

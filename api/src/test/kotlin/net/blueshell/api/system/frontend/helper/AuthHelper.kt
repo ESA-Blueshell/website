@@ -1,24 +1,16 @@
 package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 
 object AuthHelper {
     fun submitLogin(page: Page, frontendUrl: String, username: String, password: String): Int {
         page.navigate("$frontendUrl/login/")
-        page.getByLabel("Username").fill(username)
-        page.getByRole(
-            AriaRole.TEXTBOX,
-            Page.GetByRoleOptions().setName("Password")
-        ).fill(password)
+        LoginDomainHelper.fillLoginCredentials(page, username, password)
 
         val response = page.waitForResponse({ response ->
             response.url().contains("/auth") && response.request().method() == "POST"
         }) {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Login")
-            ).click()
+            LoginDomainHelper.clickLoginSubmit(page)
         }
 
         if (response.status() == 200) {

@@ -7,6 +7,7 @@
         ref="form"
         v-model="valid"
         class="mx-auto mt-10"
+        data-testid="login-form"
         style="max-width: 500px"
         @submit.prevent
       >
@@ -14,7 +15,9 @@
           <v-text-field
             ref="usernameField"
             v-model="username"
+            :input-props="{ 'data-testid': 'login-username-input' }"
             :rules="usernameRules"
+            data-testid="login-username-field"
             label="Username"
             required
             @keydown.enter="login"
@@ -24,8 +27,10 @@
           <v-text-field
             v-model="password"
             :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+            :input-props="{ 'data-testid': 'login-password-input' }"
             :rules="passwordRules"
             :type="showPass ? 'text' : 'password'"
+            data-testid="login-password-field"
             hide-details
             label="Password"
             required
@@ -36,6 +41,7 @@
         <v-row class="justify-end">
           <v-btn
             :to="`login/forgor?username=${username}`"
+            data-testid="login-forgot-password-btn"
             size="small"
             variant="text"
           >
@@ -46,6 +52,7 @@
           <v-col cols="auto">
             <v-btn
               color="accent"
+              data-testid="login-create-account-btn"
               to="account/create"
               variant="outlined"
             >
@@ -56,7 +63,9 @@
           <v-col cols="auto">
             <v-btn
               :disabled="!valid"
+              :loading="loading"
               color="primary"
+              data-testid="login-submit-btn"
               @click="login"
             >
               Login

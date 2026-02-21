@@ -18,7 +18,7 @@ test.describe("create account validation", () => {
     await page.getByLabel("Password*").first().fill("Password123")
     await page.getByLabel("Password (repeated)").fill("Password123")
 
-    await page.getByRole("button", {name: "Create Account"}).click()
+    await page.getByTestId("user-form-submit-btn").click()
 
     await expect(page.getByText("Use only letters and numbers")).toBeVisible()
     await expect(page.getByText("Enter a valid e-mail address")).toBeVisible()

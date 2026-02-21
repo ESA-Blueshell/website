@@ -1,13 +1,12 @@
 package net.blueshell.api.system.frontend.login
 
-import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -32,13 +31,10 @@ class PasswordRecoveryPageSystemTest : FrontendSystemTestBase() {
 
         withPage { page ->
             page.navigate("$frontendUrl/login/forgor")
-            page.getByLabel("Username").fill(user.username)
-            page.getByLabel("Username").press("Tab")
+            LoginDomainHelper.fillForgotPasswordUsername(page, user.username)
+            LoginDomainHelper.forgotPasswordUsernameInput(page).press("Tab")
 
-            val sendResetButton = page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Send reset mail").setExact(false)
-            )
+            val sendResetButton = LoginDomainHelper.forgotPasswordSubmitButton(page)
             waitFor(
                 onTimeoutMessage = { "Expected forgot-password submit button to become enabled" }
             ) {
@@ -50,7 +46,7 @@ class PasswordRecoveryPageSystemTest : FrontendSystemTestBase() {
             }
 
             assertThat(
-                page.getByText("If an account with that username exists, you’ll receive an email").count()
+                page.locator("[data-testid='forgot-password-success-state']").count()
             ).isGreaterThan(0)
         }
 
@@ -70,14 +66,10 @@ class PasswordRecoveryPageSystemTest : FrontendSystemTestBase() {
 
         withPage { page ->
             page.navigate("$frontendUrl/account/reset-password#token=$encodedToken")
-            page.getByLabel("New Password").first().fill(newPassword)
-            page.getByLabel("Repeat New Password").first().fill(newPassword)
-            page.getByLabel("Repeat New Password").first().press("Tab")
+            LoginDomainHelper.fillResetPasswordForm(page, newPassword)
+            LoginDomainHelper.resetPasswordRepeatInput(page).press("Tab")
 
-            val resetPasswordButton = page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Reset Password").setExact(false)
-            )
+            val resetPasswordButton = LoginDomainHelper.resetPasswordSubmitButton(page)
             waitFor(
                 onTimeoutMessage = { "Expected reset-password submit button to become enabled" }
             ) {
@@ -89,7 +81,7 @@ class PasswordRecoveryPageSystemTest : FrontendSystemTestBase() {
             }
 
             assertThat(
-                page.getByText("Your password has been reset successfully.").count()
+                page.locator("[data-testid='reset-password-success-state']").count()
             ).isGreaterThan(0)
         }
 

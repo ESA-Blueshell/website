@@ -1,11 +1,11 @@
 package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -37,10 +37,7 @@ class AccountPageSystemTest : FrontendSystemTestBase() {
 
             page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true)).fill(updatedDiscord)
             page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(updatedPhone)
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Submit").setExact(true)
-            ).click()
+            LoginDomainHelper.clickAccountSubmit(page)
 
             waitFor(
                 timeoutMs = 10_000,

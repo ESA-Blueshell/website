@@ -21,16 +21,16 @@ test.describe("events page", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/events")
-    const eventCard = page.locator(".v-card").filter({hasText: "Mock Event"}).first()
+    const eventCard = page.getByTestId("event-card-500").first()
     await expect(eventCard).toBeVisible()
 
-    await eventCard.locator("button:has(i.mdi-list-status)").first().click()
+    await eventCard.getByTestId("event-signups-btn-500").click()
     await expect(page).toHaveURL(/\/events\/signups\/500/)
 
     await page.goto("/events")
-    const eventCardAfterReturn = page.locator(".v-card").filter({hasText: "Mock Event"}).first()
+    const eventCardAfterReturn = page.getByTestId("event-card-500").first()
     await expect(eventCardAfterReturn).toBeVisible()
-    await eventCardAfterReturn.locator("button:has(i.mdi-pencil)").first().click()
+    await eventCardAfterReturn.getByTestId("event-edit-btn-500").click()
     await expect(page).toHaveURL(/\/events\/edit\/500/)
   })
 })

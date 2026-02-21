@@ -166,7 +166,7 @@ defineExpose({save, validate})
 </script>
 
 <template>
-  <div>
+  <div data-testid="event-signup-form">
     <guest-form
       v-if="!isLoggedIn"
       ref="guestRef"
@@ -203,6 +203,7 @@ defineExpose({save, validate})
         cols="auto"
       >
         <submit-button
+          data-testid="event-signup-delete-btn"
           :block="true"
           :disabled="isSaving || buttonLoading"
           :loading="isSaving || buttonLoading"
@@ -217,6 +218,8 @@ defineExpose({save, validate})
       </v-col>
       <v-col cols="auto">
         <submit-button
+          data-testid="event-signup-submit-btn"
+          :data-signup-mode="signUp?.id ? 'update' : 'create'"
           :block="true"
           :disabled="isSaving || buttonLoading"
           :icon="signUp?.id ? 'mdi-content-save-edit' : 'mdi-content-save'"

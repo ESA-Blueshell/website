@@ -54,7 +54,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             assertThat(loginStatus).isEqualTo(200)
 
             EventPageHelper.open(page, frontendUrl)
-            EventPageHelper.waitForEventVisible(page, event.title)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
 
             val response = page.waitForResponse(
                 { r ->
@@ -63,7 +63,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
                             r.url().contains("approved=true")
                 }
             ) {
-                EventPageHelper.clickApproveButton(page, event.title, "Awaiting approval")
+                EventPageHelper.clickApproveButton(page, eventId)
             }
             assertThat(response.status()).isEqualTo(200)
         }
@@ -93,12 +93,12 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             assertThat(loginStatus).isEqualTo(200)
 
             EventPageHelper.open(page, frontendUrl)
-            EventPageHelper.waitForEventVisible(page, event.title)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
 
             val response = page.waitForResponse(
                 { r -> r.request().method() == "DELETE" && r.url().contains("/events/$eventId") }
             ) {
-                EventPageHelper.clickCardIcon(page, event.title, "mdi-delete")
+                EventPageHelper.clickDeleteEventButton(page, eventId)
                 page.getByRole(
                     AriaRole.BUTTON,
                     Page.GetByRoleOptions().setName("Delete").setExact(true)
@@ -115,14 +115,14 @@ class EventPageSystemTest : FrontendSystemTestBase() {
     }
 
     @Test
-    fun `logged-in user can create update and delete event sign-up`() {
+    fun `logged-in user can create event sign-up`() {
         val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
-        val committee = committeeFactory.create(name = "Signup Member Committee ${System.currentTimeMillis()}")
+        val committee = committeeFactory.create(name = "Signup Member Create Committee ${System.currentTimeMillis()}")
         val event = createCurrentMonthEvent(
             committee = committee,
             approved = true,
             signUp = true,
-            title = "Member Signup Event ${System.currentTimeMillis()}"
+            title = "Member Signup Create Event ${System.currentTimeMillis()}"
         )
         val eventId = checkNotNull(event.id) { "Expected event id" }
         val memberId = checkNotNull(member.id) { "Expected member id" }
@@ -132,9 +132,8 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             assertThat(loginStatus).isEqualTo(200)
 
             EventPageHelper.open(page, frontendUrl)
-            EventPageHelper.waitForEventVisible(page, event.title)
-
-            eventCardSignUpButton(page, event.title, "Sign up").click()
+            EventPageHelper.waitForEventCardVisible(page, eventId)
+            openSignUpForm(page, eventId)
 
             val createResponse = page.waitForResponse(
                 Predicate { r ->
@@ -142,20 +141,41 @@ class EventPageSystemTest : FrontendSystemTestBase() {
                             r.url().contains("/events/$eventId/signups")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Save sign-up").setExact(false)
-                ).click()
+                EventPageHelper.clickSubmitSignUpButton(page, eventId)
             }
             assertThat(createResponse.status()).isEqualTo(201)
+        }
 
-            waitFor(
-                onTimeoutMessage = { "Expected user sign-up to be persisted for user=$memberId event=$eventId" }
-            ) {
-                eventSignUpRepository.findByUser_IdAndEvent_Id(memberId, eventId).isPresent
-            }
+        waitFor(
+            onTimeoutMessage = { "Expected user sign-up to be persisted for user=$memberId event=$eventId" }
+        ) {
+            eventSignUpRepository.findByUser_IdAndEvent_Id(memberId, eventId).isPresent
+        }
+    }
 
-            eventCardSignUpButton(page, event.title, "Edit sign-up").click()
+    @Test
+    fun `logged-in user can update existing event sign-up`() {
+        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val committee = committeeFactory.create(name = "Signup Member Update Committee ${System.currentTimeMillis()}")
+        val event = createCurrentMonthEvent(
+            committee = committee,
+            approved = true,
+            signUp = true,
+            title = "Member Signup Update Event ${System.currentTimeMillis()}"
+        )
+        val eventId = checkNotNull(event.id) { "Expected event id" }
+        val memberId = checkNotNull(member.id) { "Expected member id" }
+        val existingSignUp = eventFactory.createSignUp(event = event, user = member)
+        val existingSignUpId = checkNotNull(existingSignUp.id) { "Expected existing member sign-up id" }
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            EventPageHelper.open(page, frontendUrl)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
+            openSignUpForm(page, eventId)
+            EventPageHelper.waitForSignUpMode(page, eventId, "update")
 
             val updateResponse = page.waitForResponse(
                 Predicate { r ->
@@ -163,17 +183,45 @@ class EventPageSystemTest : FrontendSystemTestBase() {
                             r.url().contains("/events/$eventId/signups")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Update sign-up").setExact(false)
-                ).click()
+                EventPageHelper.clickSubmitSignUpButton(page, eventId)
             }
             assertThat(updateResponse.status()).isEqualTo(200)
+        }
 
-            val existingSignUpId = eventSignUpRepository.findByUser_IdAndEvent_Id(memberId, eventId).orElseThrow().id
-            checkNotNull(existingSignUpId) { "Expected persisted sign-up id after update" }
+        waitFor(
+            onTimeoutMessage = {
+                "Expected updated user sign-up to remain persisted for user=$memberId event=$eventId signUp=$existingSignUpId"
+            }
+        ) {
+            eventSignUpRepository.findByUser_IdAndEvent_Id(memberId, eventId)
+                .map { it.id == existingSignUpId }
+                .orElse(false)
+        }
+    }
 
-            eventCardSignUpButton(page, event.title, "Edit sign-up").click()
+    @Test
+    fun `logged-in user can delete existing event sign-up`() {
+        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val committee = committeeFactory.create(name = "Signup Member Delete Committee ${System.currentTimeMillis()}")
+        val event = createCurrentMonthEvent(
+            committee = committee,
+            approved = true,
+            signUp = true,
+            title = "Member Signup Delete Event ${System.currentTimeMillis()}"
+        )
+        val eventId = checkNotNull(event.id) { "Expected event id" }
+        val existingSignUp = eventFactory.createSignUp(event = event, user = member)
+        val existingSignUpId = checkNotNull(existingSignUp.id) { "Expected existing member sign-up id" }
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            EventPageHelper.open(page, frontendUrl)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
+            openSignUpForm(page, eventId)
+            EventPageHelper.waitForSignUpMode(page, eventId, "update")
+            EventPageHelper.deleteSignUpButton(page, eventId).waitFor()
 
             val deleteResponse = page.waitForResponse(
                 Predicate { r ->
@@ -181,42 +229,38 @@ class EventPageSystemTest : FrontendSystemTestBase() {
                             r.url().contains("/events/signups/$existingSignUpId")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Delete sign-up").setExact(false)
-                ).click()
+                EventPageHelper.clickDeleteSignUpButton(page, eventId)
             }
             assertThat(deleteResponse.status()).isEqualTo(204)
         }
 
         waitFor(
-            onTimeoutMessage = { "Expected user sign-up to be deleted for user=$memberId event=$eventId" }
+            onTimeoutMessage = { "Expected user sign-up to be deleted for signUp=$existingSignUpId" }
         ) {
-            eventSignUpRepository.findByUser_IdAndEvent_Id(memberId, eventId).isEmpty
+            eventSignUpRepository.findById(existingSignUpId).isEmpty
         }
     }
 
     @Test
-    fun `guest can create update and delete event sign-up`() {
-        val committee = committeeFactory.create(name = "Signup Guest Committee ${System.currentTimeMillis()}")
+    fun `guest can create event sign-up`() {
+        val committee = committeeFactory.create(name = "Signup Guest Create Committee ${System.currentTimeMillis()}")
         val event = createCurrentMonthEvent(
             committee = committee,
             approved = true,
             signUp = true,
-            title = "Guest Signup Event ${System.currentTimeMillis()}"
+            title = "Guest Signup Create Event ${System.currentTimeMillis()}"
         )
         val eventId = checkNotNull(event.id) { "Expected event id" }
-        val updatedGuestName = "Guest Updated ${System.currentTimeMillis()}"
-        var guestSignUpId: Long? = null
+        val guestName = "Guest Original"
+        val guestDiscord = "guest_original"
 
         withPage { page ->
             EventPageHelper.open(page, frontendUrl)
-            EventPageHelper.waitForEventVisible(page, event.title)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
+            openSignUpForm(page, eventId)
 
-            eventCardSignUpButton(page, event.title, "Sign up").click()
-
-            page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill("Guest Original")
-            page.getByLabel("Discord username*", Page.GetByLabelOptions().setExact(true)).fill("guest_original")
+            page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill(guestName)
+            page.getByLabel("Discord username*", Page.GetByLabelOptions().setExact(true)).fill(guestDiscord)
             page.getByLabel("Email*", Page.GetByLabelOptions().setExact(true))
                 .fill("guest${System.currentTimeMillis()}@example.com")
             page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill("+31612345678")
@@ -227,62 +271,155 @@ class EventPageSystemTest : FrontendSystemTestBase() {
                             r.url().contains("/events/$eventId/signups")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Save sign-up").setExact(false)
-                ).click()
+                EventPageHelper.clickSubmitSignUpButton(page, eventId)
             }
             assertThat(createResponse.status()).isEqualTo(201)
-
             checkNotNull(createResponse.headerValue("x-guest-access-token")) {
                 "Expected guest access token header after guest sign-up create"
             }
-            val persistedAfterCreate = waitForEventSignUpByEvent(eventId)
-            guestSignUpId = checkNotNull(persistedAfterCreate.id) { "Expected guest sign-up id" }
+        }
 
-            eventCardSignUpButton(page, event.title, "Edit sign-up").click()
-            page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill(updatedGuestName)
+        waitFor(
+            onTimeoutMessage = { "Expected at least one guest sign-up for event=$eventId" }
+        ) {
+            val signUp = eventSignUpRepository.findByEvent_Id(eventId).stream().findFirst()
+            signUp.isPresent && signUp.get().guest?.name == guestName && signUp.get().guest?.discord == guestDiscord
+        }
+    }
+
+    @Test
+    fun `guest can update existing event sign-up`() {
+        val committee = committeeFactory.create(name = "Signup Guest Update Committee ${System.currentTimeMillis()}")
+        val event = createCurrentMonthEvent(
+            committee = committee,
+            approved = true,
+            signUp = true,
+            title = "Guest Signup Update Event ${System.currentTimeMillis()}"
+        )
+        val eventId = checkNotNull(event.id) { "Expected event id" }
+        val originalGuestName = "Guest Original"
+        val originalGuestDiscord = "guest_original"
+        val originalGuestEmail = "guest-original-${System.currentTimeMillis()}@example.com"
+        val originalGuestPhone = "+31612345678"
+        val updatedGuestName = "Guest Updated ${System.currentTimeMillis()}"
+        val updatedGuestDiscord = "guest_updated_${System.currentTimeMillis()}"
+        val updatedGuestEmail = "guest-updated-${System.currentTimeMillis()}@example.com"
+        val updatedGuestPhone = "+31687654321"
+
+        withPage { page ->
+            EventPageHelper.open(page, frontendUrl)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
+            openSignUpForm(page, eventId)
+            fillGuestDetails(
+                page = page,
+                name = originalGuestName,
+                discord = originalGuestDiscord,
+                email = originalGuestEmail,
+                phoneNumber = originalGuestPhone
+            )
+
+            val createResponse = page.waitForResponse(
+                Predicate { r ->
+                    r.request().method() == "POST" &&
+                            r.url().contains("/events/$eventId/signups")
+                }
+            ) {
+                EventPageHelper.clickSubmitSignUpButton(page, eventId)
+            }
+            assertThat(createResponse.status()).isEqualTo(201)
+            checkNotNull(createResponse.headerValue("x-guest-access-token")) {
+                "Expected guest access token header after guest sign-up create"
+            }
+
+            openSignUpForm(page, eventId)
+            EventPageHelper.waitForSignUpMode(page, eventId, "update")
+            fillGuestDetails(
+                page = page,
+                name = updatedGuestName,
+                discord = updatedGuestDiscord,
+                email = updatedGuestEmail,
+                phoneNumber = updatedGuestPhone
+            )
 
             val updateResponse = page.waitForResponse(
-                { r ->
+                Predicate { r ->
                     r.request().method() == "PUT" &&
                             r.url().contains("/events/$eventId/signups")
                 }
             ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Update sign-up").setExact(false)
-                ).click()
+                EventPageHelper.clickSubmitSignUpButton(page, eventId)
             }
             assertThat(updateResponse.status()).isEqualTo(200)
-
-            waitFor(
-                onTimeoutMessage = { "Expected guest sign-up name update to be persisted" }
-            ) {
-                eventSignUpRepository.findById(checkNotNull(guestSignUpId)).map { it.guest?.name == updatedGuestName }
-                    .orElse(false)
-            }
-
-            eventCardSignUpButton(page, event.title, "Edit sign-up").click()
-
-            val deleteResponse = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "DELETE" &&
-                            r.url().contains("/events/signups/$guestSignUpId")
-                }
-            ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Delete sign-up").setExact(false)
-                ).click()
-            }
-            assertThat(deleteResponse.status()).isEqualTo(204)
         }
 
         waitFor(
-            onTimeoutMessage = { "Expected guest sign-up to be deleted for event=$eventId" }
+            onTimeoutMessage = { "Expected guest sign-up name update to be persisted for event=$eventId" }
         ) {
-            eventSignUpRepository.findById(checkNotNull(guestSignUpId)).isEmpty
+            eventSignUpRepository.findByEvent_Id(eventId).stream().findFirst()
+                .map { signUp ->
+                    signUp.guest?.name == updatedGuestName &&
+                            signUp.guest?.discord == updatedGuestDiscord &&
+                            signUp.guest?.email == updatedGuestEmail &&
+                            signUp.guest?.phoneNumber == updatedGuestPhone
+                }
+                .orElse(false)
+        }
+    }
+
+    @Test
+    fun `guest can delete existing event sign-up`() {
+        val committee = committeeFactory.create(name = "Signup Guest Delete Committee ${System.currentTimeMillis()}")
+        val event = createCurrentMonthEvent(
+            committee = committee,
+            approved = true,
+            signUp = true,
+            title = "Guest Signup Delete Event ${System.currentTimeMillis()}"
+        )
+        val eventId = checkNotNull(event.id) { "Expected event id" }
+        val originalGuestName = "Guest Delete"
+        val originalGuestDiscord = "guest_delete"
+        val originalGuestEmail = "guest-delete-${System.currentTimeMillis()}@example.com"
+        var existingSignUpId: Long? = null
+
+        withPage { page ->
+            EventPageHelper.open(page, frontendUrl)
+            EventPageHelper.waitForEventCardVisible(page, eventId)
+            openSignUpForm(page, eventId)
+            fillGuestDetails(
+                page = page,
+                name = originalGuestName,
+                discord = originalGuestDiscord,
+                email = originalGuestEmail,
+                phoneNumber = "+31612345678"
+            )
+
+            val createResponse = page.waitForResponse(
+                Predicate { r ->
+                    r.request().method() == "POST" &&
+                            r.url().contains("/events/$eventId/signups")
+                }
+            ) {
+                EventPageHelper.clickSubmitSignUpButton(page, eventId)
+            }
+            assertThat(createResponse.status()).isEqualTo(201)
+            checkNotNull(createResponse.headerValue("x-guest-access-token")) {
+                "Expected guest access token header after guest sign-up create"
+            }
+            existingSignUpId = waitForOptional(
+                producer = { eventSignUpRepository.findByEvent_Id(eventId).stream().findFirst() },
+                onTimeoutMessage = { "Expected persisted guest sign-up for event=$eventId before delete" }
+            ).id
+
+            openSignUpForm(page, eventId)
+            EventPageHelper.waitForSignUpMode(page, eventId, "update")
+            EventPageHelper.deleteSignUpButton(page, eventId).waitFor()
+            EventPageHelper.clickDeleteSignUpButton(page, eventId)
+        }
+
+        waitFor(
+            onTimeoutMessage = { "Expected guest sign-up to be deleted for signUp=$existingSignUpId" }
+        ) {
+            eventSignUpRepository.findById(checkNotNull(existingSignUpId)).isEmpty
         }
     }
 
@@ -303,14 +440,23 @@ class EventPageSystemTest : FrontendSystemTestBase() {
         return eventRepository.saveAndFlush(event)
     }
 
-    private fun eventCardSignUpButton(page: Page, eventTitle: String, labelContains: String) =
-        EventPageHelper.eventCard(page, eventTitle).locator("button[aria-label*='$labelContains']").first()
+    private fun openSignUpForm(page: Page, eventId: Long) {
+        EventPageHelper.clickSignUpToggleButton(page, eventId)
+        EventPageHelper.signUpForm(page, eventId).waitFor()
+    }
 
-    private fun waitForEventSignUpByEvent(eventId: Long) =
-        waitForOptional(
-            producer = { eventSignUpRepository.findByEvent_Id(eventId).stream().findFirst() },
-            onTimeoutMessage = { "Expected at least one sign-up for event=$eventId" }
-        )
+    private fun fillGuestDetails(
+        page: Page,
+        name: String,
+        discord: String,
+        email: String,
+        phoneNumber: String
+    ) {
+        page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill(name)
+        page.getByLabel("Discord username*", Page.GetByLabelOptions().setExact(true)).fill(discord)
+        page.getByLabel("Email*", Page.GetByLabelOptions().setExact(true)).fill(email)
+        page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(phoneNumber)
+    }
 
     private companion object {
         const val DEFAULT_PASSWORD = "Password123!"

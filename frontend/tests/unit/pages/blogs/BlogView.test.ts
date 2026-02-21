@@ -37,7 +37,7 @@ describe("BlogView page", () => {
     mockRoute.params = {id: "9"}
   })
 
-  it("renders iframe when blog is returned", async () => {
+  it("renders hardened iframe when blog is returned", async () => {
     mockFindBlogById.mockResolvedValue({
       data: {
         id: 9,
@@ -52,7 +52,10 @@ describe("BlogView page", () => {
       path: {id: 9},
       throwOnError: true,
     })
-    expect(wrapper.get("iframe").attributes("srcdoc")).toContain("<h1>Blog</h1>")
+    const iframe = wrapper.get("iframe")
+    expect(iframe.attributes("srcdoc")).toContain("<h1>Blog</h1>")
+    expect(iframe.attributes("sandbox")).toBe("")
+    expect(iframe.attributes("referrerpolicy")).toBe("no-referrer")
   })
 
   it("shows not-found state on 404", async () => {

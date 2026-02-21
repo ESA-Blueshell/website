@@ -35,16 +35,25 @@ class BlogCommandHandlersTest {
             val result = handler.handle(
                 CreateBlogCommand(
                     title = "Blog title",
-                    html = "<div><a>Unsubscribe</a></div><p>Hello world</p>",
+                    html = """
+                        <div><a>Unsubscribe</a></div>
+                        <p>Hello world</p>
+                        <script>alert('xss')</script>
+                        <img src="https://example.com/image.png" onerror="alert('xss')" />
+                    """.trimIndent(),
                     publishedAt = publishedAt
                 )
             )
 
             assertThat(captured.firstValue.title).isEqualTo("Blog title")
             assertThat(captured.firstValue.html).doesNotContain("Unsubscribe")
+            assertThat(captured.firstValue.html).doesNotContain("<script")
+            assertThat(captured.firstValue.html).doesNotContain("onerror")
             assertThat(captured.firstValue.publishedAt).isEqualTo(publishedAt)
             assertThat(result.title).isEqualTo("Blog title")
             assertThat(result.html).doesNotContain("Unsubscribe")
+            assertThat(result.html).doesNotContain("<script")
+            assertThat(result.html).doesNotContain("onerror")
         }
     }
 
@@ -64,7 +73,11 @@ class BlogCommandHandlersTest {
                 UpdateBlogCommand(
                     id = 11L,
                     title = "New",
-                    html = "<div><a>Unsubscribe</a></div><p>New</p>",
+                    html = """
+                        <div><a>Unsubscribe</a></div>
+                        <p>New</p>
+                        <a href="javascript:alert('xss')">Click me</a>
+                    """.trimIndent(),
                     publishedAt = newPublishedAt,
                     version = 4L
                 )
@@ -72,6 +85,7 @@ class BlogCommandHandlersTest {
 
             assertThat(existing.title).isEqualTo("New")
             assertThat(existing.html).doesNotContain("Unsubscribe")
+            assertThat(existing.html).doesNotContain("javascript:")
             assertThat(existing.publishedAt).isEqualTo(newPublishedAt)
             assertThat(existing.version).isEqualTo(4L)
             assertThat(result).isSameAs(existing)

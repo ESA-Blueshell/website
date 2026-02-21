@@ -51,6 +51,8 @@ onMounted(async () => {
     >
       <iframe
         :srcdoc="blog.html"
+        referrerpolicy="no-referrer"
+        sandbox=""
         style="width: 100%; height: 100vh;"
         title="Blog content"
       />

@@ -57,10 +57,10 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             EventPageHelper.waitForEventVisible(page, event.title)
 
             val response = page.waitForResponse(
-                Predicate { r ->
+                { r ->
                     r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/approve") &&
-                        r.url().contains("approved=true")
+                            r.url().contains("/events/$eventId/approve") &&
+                            r.url().contains("approved=true")
                 }
             ) {
                 EventPageHelper.clickApproveButton(page, event.title, "Awaiting approval")
@@ -96,7 +96,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             EventPageHelper.waitForEventVisible(page, event.title)
 
             val response = page.waitForResponse(
-                Predicate { r -> r.request().method() == "DELETE" && r.url().contains("/events/$eventId") }
+                { r -> r.request().method() == "DELETE" && r.url().contains("/events/$eventId") }
             ) {
                 EventPageHelper.clickCardIcon(page, event.title, "mdi-delete")
                 page.getByRole(
@@ -139,7 +139,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val createResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/signups")
+                            r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -160,7 +160,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val updateResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/signups")
+                            r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -178,7 +178,7 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             val deleteResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "DELETE" &&
-                        r.url().contains("/events/signups/$existingSignUpId")
+                            r.url().contains("/events/signups/$existingSignUpId")
                 }
             ) {
                 page.getByRole(
@@ -217,13 +217,14 @@ class EventPageSystemTest : FrontendSystemTestBase() {
 
             page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill("Guest Original")
             page.getByLabel("Discord username*", Page.GetByLabelOptions().setExact(true)).fill("guest_original")
-            page.getByLabel("Email*", Page.GetByLabelOptions().setExact(true)).fill("guest${System.currentTimeMillis()}@example.com")
+            page.getByLabel("Email*", Page.GetByLabelOptions().setExact(true))
+                .fill("guest${System.currentTimeMillis()}@example.com")
             page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill("+31612345678")
 
             val createResponse = page.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/signups")
+                            r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -244,8 +245,8 @@ class EventPageSystemTest : FrontendSystemTestBase() {
 
             val updateResponse = page.waitForResponse(
                 Predicate { r ->
-                        r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/signups")
+                    r.request().method() == "PUT" &&
+                            r.url().contains("/events/$eventId/signups")
                 }
             ) {
                 page.getByRole(
@@ -258,15 +259,16 @@ class EventPageSystemTest : FrontendSystemTestBase() {
             waitFor(
                 onTimeoutMessage = { "Expected guest sign-up name update to be persisted" }
             ) {
-                eventSignUpRepository.findById(checkNotNull(guestSignUpId)).map { it.guest?.name == updatedGuestName }.orElse(false)
+                eventSignUpRepository.findById(checkNotNull(guestSignUpId)).map { it.guest?.name == updatedGuestName }
+                    .orElse(false)
             }
 
             eventCardSignUpButton(page, event.title, "Edit sign-up").click()
 
             val deleteResponse = page.waitForResponse(
                 Predicate { r ->
-                        r.request().method() == "DELETE" &&
-                        r.url().contains("/events/signups/$guestSignUpId")
+                    r.request().method() == "DELETE" &&
+                            r.url().contains("/events/signups/$guestSignUpId")
                 }
             ) {
                 page.getByRole(

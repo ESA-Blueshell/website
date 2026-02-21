@@ -3,6 +3,8 @@ package net.blueshell.api.domain.blog.web
 import net.blueshell.api.factory.blog.web.request.BlogRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -47,6 +49,29 @@ class BlogControllerIT : UserTestSupport() {
                     .content("""{"title":"","html":"","publishedAt":null}""")
             )
                 .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `strips dangerous blog html during create`() {
+            val board = createUserWithRole(Role.BOARD)
+            val publishedAt = Instant.now().toString()
+
+            mvc.perform(
+                post("/blogs")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        blogRequestFactory.createPayload(
+                            "Sanitized Blog",
+                            "<p>Body</p><script>alert(1)</script><a href='javascript:alert(1)'>Click</a>",
+                            publishedAt
+                        )
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.html").value(containsString("<p>Body</p>")))
+                .andExpect(jsonPath("$.html").value(not(containsString("<script"))))
+                .andExpect(jsonPath("$.html").value(not(containsString("javascript:"))))
         }
     }
 

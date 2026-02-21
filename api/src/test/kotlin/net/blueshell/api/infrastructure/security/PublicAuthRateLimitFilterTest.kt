@@ -29,6 +29,24 @@ class PublicAuthRateLimitFilterTest {
     }
 
     @Test
+    fun `rate limits public user registration endpoint`() {
+        val limiter = InMemoryRequestRateLimiter(cleanupInterval = 1)
+        val filter = PublicAuthRateLimitFilter(limiter)
+        val chainCalls = AtomicInteger(0)
+
+        repeat(10) {
+            val response = invoke(filter, "POST", "/users", chainCalls)
+            assertThat(response.status).isEqualTo(200)
+        }
+
+        val blocked = invoke(filter, "POST", "/users", chainCalls)
+
+        assertThat(blocked.status).isEqualTo(429)
+        assertThat(blocked.getHeader("Retry-After")).isNotBlank
+        assertThat(chainCalls.get()).isEqualTo(10)
+    }
+
+    @Test
     fun `does not rate limit unrelated endpoints`() {
         val limiter = InMemoryRequestRateLimiter(cleanupInterval = 1)
         val filter = PublicAuthRateLimitFilter(limiter)

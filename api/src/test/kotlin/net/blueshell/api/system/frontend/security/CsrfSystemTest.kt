@@ -1,12 +1,11 @@
 package net.blueshell.api.system.frontend.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -77,19 +76,12 @@ class CsrfSystemTest : FrontendSystemTestBase() {
             }
 
             page.navigate("$frontendUrl/login/")
-            page.getByLabel("Username").fill(user.username)
-            page.getByRole(
-                AriaRole.TEXTBOX,
-                Page.GetByRoleOptions().setName("Password")
-                ).fill(DEFAULT_PASSWORD)
+            LoginDomainHelper.fillLoginCredentials(page, user.username, DEFAULT_PASSWORD)
 
             val authResponse = page.waitForResponse({ response ->
                 response.request().method() == "POST" && response.url().contains("/auth")
             }) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Login")
-                ).click()
+                LoginDomainHelper.clickLoginSubmit(page)
             }
 
             val csrfBody = csrfBodyToken ?: "<missing>"

@@ -161,14 +161,12 @@ class OpenApiErrorConfig {
                     {
                       "objectName": "createUserRequest",
                       "field": "email",
-                      "rejectedValue": "not-an-email",
                       "message": "must be a well-formed email address",
                       "code": "Email"
                     },
                     {
                       "objectName": "createUserRequest",
                       "field": "age",
-                      "rejectedValue": -1,
                       "message": "must be greater than or equal to 0",
                       "code": "Min"
                     }

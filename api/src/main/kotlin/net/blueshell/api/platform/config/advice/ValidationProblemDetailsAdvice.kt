@@ -31,7 +31,6 @@ class ValidationProblemDetailsAdvice {
                 errorMap(
                     fe!!.objectName,
                     fe.field,
-                    fe.rejectedValue,
                     fe.defaultMessage,
                     fe.code
                 )
@@ -58,7 +57,6 @@ class ValidationProblemDetailsAdvice {
                 errorMap(
                     cv!!.rootBeanClass.simpleName,
                     cv.propertyPath.toString(),
-                    cv.invalidValue,
                     cv.message,
                     cv.constraintDescriptor.annotation.annotationClass.simpleName
                 )
@@ -81,14 +79,12 @@ class ValidationProblemDetailsAdvice {
         private fun errorMap(
             objectName: String?,
             field: String?,
-            rejectedValue: Any?,
             message: String?,
             code: String?
-        ): MutableMap<String?, Any?> {
-            val m: MutableMap<String?, Any?> = LinkedHashMap()
+        ): MutableMap<String, Any?> {
+            val m: MutableMap<String, Any?> = LinkedHashMap()
             m["objectName"] = objectName
             m["field"] = field
-            m["rejectedValue"] = rejectedValue
             m["message"] = message
             m["code"] = code
             return m

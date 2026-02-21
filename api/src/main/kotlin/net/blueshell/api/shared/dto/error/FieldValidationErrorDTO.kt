@@ -16,10 +16,6 @@ data class FieldValidationErrorDTO(
     var field: String? = null,
 
     @JvmField
-    @field:Schema(description = "Rejected value (may be omitted for security).", example = "not-an-email")
-    var rejectedValue: Any? = null,
-
-    @JvmField
     @field:Schema(description = "Human-readable validation message.", example = "must be a well-formed email address")
     var message: String? = null,
 

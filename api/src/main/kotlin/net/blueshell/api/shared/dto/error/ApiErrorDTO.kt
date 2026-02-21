@@ -5,12 +5,8 @@ import net.blueshell.api.shared.dto.BaseDTO
 import java.net.URI
 
 /**
- * Mirrors Spring Boot 3.x ProblemDetail JSON with binding errors included.
- * This matches the effect of:
- * include-message: always
- * include-binding-errors: always
- * include-stacktrace: never
- * include-exception: false
+ * Mirrors Spring Boot 3.x ProblemDetail JSON, with optional validation errors.
+ * The `errors` extension is produced by controller advice for validation failures.
  */
 @Schema(name = "ApiError", description = "Problem Details for HTTP APIs including validation errors.")
 data class ApiErrorDTO(

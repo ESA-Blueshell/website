@@ -3,6 +3,7 @@ package net.blueshell.api.domain.user.web
 import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -40,20 +41,26 @@ class UserControllerValidationIT : UserTestSupport() {
         @Test
         fun `weak password for anonymous registration returns validation error`() {
             val username = "weakpass_${System.currentTimeMillis()}"
+            val weakPassword = "WeakPass12"
 
-            mvc.perform(
+            val result = mvc.perform(
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(
                             username = username,
                             email = "$username@example.com",
-                            password = "weakpass"
+                            password = weakPassword
                         )
                     )
             )
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.detail").value("Validation failed for request."))
+                .andReturn()
+
+            assertThat(result.response.contentAsString)
+                .doesNotContain("\"rejectedValue\"")
+                .doesNotContain(weakPassword)
         }
 
         @Test

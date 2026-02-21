@@ -77,12 +77,15 @@ class AuthenticationControllerIT : UserTestSupport() {
 
         @Test
         fun `returns bad request for blank username`() {
-            mvc.perform(
+            val result = mvc.perform(
                 post("/auth")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(authRequestFactory.authenticatePayload("", "Password123!"))
             )
                 .andExpect(status().isBadRequest)
+                .andReturn()
+
+            assertThat(result.response.contentAsString).doesNotContain("\"rejectedValue\"")
         }
     }
 }

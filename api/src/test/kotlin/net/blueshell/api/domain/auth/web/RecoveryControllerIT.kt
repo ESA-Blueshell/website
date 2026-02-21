@@ -73,13 +73,19 @@ class RecoveryControllerIT : UserTestSupport() {
         fun `returns bad request for invalid password format`() {
             val user = createUserWithRole(Role.MEMBER)
             val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
+            val weakPassword = "WeakPass12"
 
-            mvc.perform(
+            val result = mvc.perform(
                 post("/recovery/password")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.passwordResetPayload(token, "weak"))
+                    .content(authRequestFactory.passwordResetPayload(token, weakPassword))
             )
                 .andExpect(status().isBadRequest)
+                .andReturn()
+
+            assertThat(result.response.contentAsString)
+                .doesNotContain("\"rejectedValue\"")
+                .doesNotContain(weakPassword)
         }
     }
 

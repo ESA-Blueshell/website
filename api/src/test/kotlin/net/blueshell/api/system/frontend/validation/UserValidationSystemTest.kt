@@ -1,8 +1,6 @@
 package net.blueshell.api.system.frontend.validation
 
-import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
@@ -47,13 +45,20 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
                 )
             )
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Create Account").setExact(false)
-            ).click()
+            val createResponse = page.waitForResponse({ response ->
+                response.request().method() == "POST" && response.url().contains("/users")
+            }) {
+                UserFormHelper.submitButton(page).click()
+            }
 
-            assertPw(page.getByText("Username is taken.")).isVisible()
-            assertThat(page.getByText("Your account has successfully been created!").count()).isEqualTo(0)
+            assertThat(createResponse.status()).isEqualTo(400)
+            assertThat(page.locator("[data-testid='user-form-username-field']").count()).isGreaterThan(0)
+            waitFor(
+                timeoutMs = 10_000,
+                intervalMs = 200,
+                onTimeoutMessage = { "Expected username duplicate validation message" }
+            ) { page.getByText("Username is taken.").count() > 0 }
+            assertThat(page.locator("[data-testid='create-account-success-state']").count()).isEqualTo(0)
         }
     }
 
@@ -85,13 +90,20 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
                 )
             )
 
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Create Account").setExact(false)
-            ).click()
+            val createResponse = page.waitForResponse({ response ->
+                response.request().method() == "POST" && response.url().contains("/users")
+            }) {
+                UserFormHelper.submitButton(page).click()
+            }
 
-            assertPw(page.getByText("Phone number is taken.")).isVisible()
-            assertThat(page.getByText("Your account has successfully been created!").count()).isEqualTo(0)
+            assertThat(createResponse.status()).isEqualTo(400)
+            assertThat(page.locator("[data-testid='user-form-phone-number-field']").count()).isGreaterThan(0)
+            waitFor(
+                timeoutMs = 10_000,
+                intervalMs = 200,
+                onTimeoutMessage = { "Expected phone duplicate validation message" }
+            ) { page.getByText("Phone number is taken.").count() > 0 }
+            assertThat(page.locator("[data-testid='create-account-success-state']").count()).isEqualTo(0)
         }
     }
 
@@ -112,22 +124,18 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
             page.navigate("$frontendUrl/account")
             page.waitForURL("**/account")
 
-            val discordField = page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true))
+            val discordField = UserFormHelper.discordInput(page)
             assertPw(discordField).hasValue(secondaryUser.discord)
 
             val updateResponse = page.waitForResponse({ response ->
                 response.request().method() == "PUT" && response.url().contains("/users/${secondaryUser.id}")
             }) {
                 discordField.fill(primaryUser.discord)
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Submit").setExact(true)
-                ).click()
+                UserFormHelper.submitButton(page).click()
             }
 
             assertThat(updateResponse.status()).isEqualTo(400)
-            assertPw(page.getByText("Discord is taken.")).isVisible()
-            assertThat(page.getByText("Your account has successfully been created!").count()).isEqualTo(0)
+            assertPw(page.locator("[data-testid='user-form-discord-field']").getByText("Discord is taken.")).isVisible()
         }
     }
 

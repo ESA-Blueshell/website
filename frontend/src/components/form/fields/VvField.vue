@@ -13,6 +13,7 @@ withDefaults(
     name: string
     label?: string
     rules?: Rules
+    testId?: string
     component?: DefineComponent | string
     componentProps?: Record<string, unknown>
     disabled?: boolean
@@ -22,6 +23,7 @@ withDefaults(
   {
     label: "",
     rules: "",
+    testId: undefined,
     component: () => VTextField as unknown as DefineComponent,
     componentProps: () => ({}),
     disabled: false,
@@ -42,16 +44,17 @@ const model = defineModel<T>()
     :name="name"
     :rules="disabled ? undefined : rules"
   >
-    <component
-      :is="component"
-      :disabled="disabled"
-      :error-messages="errors"
-      :label="label"
-      :model-value="display(value as T)"
-      v-bind="componentProps"
-      @blur="handleBlur"
-      v-on="$attrs"
-      @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
-    />
+    <div :data-testid="testId">
+      <component
+        :is="component"
+        :disabled="disabled"
+        :error-messages="errors"
+        :label="label"
+        :model-value="display(value as T)"
+        v-bind="{...componentProps, ...$attrs}"
+        @blur="handleBlur"
+        @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
+      />
+    </div>
   </Field>
 </template>

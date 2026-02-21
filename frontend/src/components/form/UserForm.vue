@@ -270,6 +270,7 @@ defineExpose({validate, save})
         <v-col cols="4">
           <VvField
             v-model="user.initials"
+            test-id="user-form-initials-field"
             :disabled="isReadonly || !canEditIdentity"
             label="Initials*"
             name="initials"
@@ -279,6 +280,7 @@ defineExpose({validate, save})
         <v-col cols="8">
           <VvField
             v-model="user.firstName"
+            test-id="user-form-first-name-field"
             :disabled="isReadonly || !canEditIdentity"
             label="First Name*"
             name="firstName"
@@ -291,6 +293,7 @@ defineExpose({validate, save})
         <v-col cols="4">
           <VvField
             v-model="user.prefix"
+            test-id="user-form-prefix-field"
             :disabled="isReadonly || !canEditIdentity"
             label="Surname Prefix"
             name="prefix"
@@ -299,6 +302,7 @@ defineExpose({validate, save})
         <v-col cols="8">
           <VvField
             v-model="user.lastName"
+            test-id="user-form-last-name-field"
             :disabled="isReadonly || !canEditIdentity"
             label="Surname*"
             name="lastName"
@@ -311,6 +315,7 @@ defineExpose({validate, save})
         <v-col cols="6">
           <VvField
             v-model="user.username"
+            test-id="user-form-username-field"
             :disabled="isReadonly || !canEditIdentity"
             label="Username*"
             name="username"
@@ -320,6 +325,7 @@ defineExpose({validate, save})
         <v-col cols="6">
           <VvField
             v-model="user.discord"
+            test-id="user-form-discord-field"
             label="Discord*"
             name="discord"
             rules="required"
@@ -331,6 +337,7 @@ defineExpose({validate, save})
         <v-col cols="6">
           <VvField
             v-model="user.email"
+            test-id="user-form-email-field"
             :disabled="isReadonly || !canEditIdentity"
             :rules="canEditIdentity ? 'required|email|noStudentEmail' : ''"
             label="E-mail*"
@@ -340,6 +347,7 @@ defineExpose({validate, save})
         <v-col cols="6">
           <VvField
             v-model="user.phoneNumber"
+            test-id="user-form-phone-number-field"
             :component="VPhoneInput"
             :component-props="{
               defaultCountry: 'NL',
@@ -359,6 +367,7 @@ defineExpose({validate, save})
         <v-col cols="6">
           <VvField
             v-model="user.password"
+            test-id="user-form-password-field"
             :component-props="passwordFieldProps"
             label="Password*"
             name="password"
@@ -369,6 +378,7 @@ defineExpose({validate, save})
         <v-col cols="6">
           <VvField
             v-model="confirmPassword"
+            test-id="user-form-password-repeat-field"
             :component-props="passwordFieldProps"
             label="Password (repeated)"
             name="confirmPassword"
@@ -382,6 +392,7 @@ defineExpose({validate, save})
           <v-col cols="6">
             <VvField
               v-model="memberProfileModel.dateOfBirth"
+              test-id="user-form-date-of-birth-field"
               :component-props="{ type: 'date' }"
               label="Date of Birth*"
               name="dateOfBirth"
@@ -391,6 +402,7 @@ defineExpose({validate, save})
           <v-col cols="6">
             <VvField
               v-model="memberProfileModel.nationality"
+              test-id="user-form-nationality-field"
               :component="NationalitySelect"
               label="Nationality*"
               name="nationality"
@@ -403,6 +415,7 @@ defineExpose({validate, save})
           <v-col cols="6">
             <VvField
               v-model="memberProfileModel.gender"
+              test-id="user-form-gender-field"
               label="Gender*"
               name="gender"
               rules="required"
@@ -411,6 +424,7 @@ defineExpose({validate, save})
           <v-col cols="6">
             <VvField
               v-model="memberProfileModel.studentNumber"
+              test-id="user-form-student-number-field"
               label="Student Number*"
               name="studentNumber"
               rules="required"
@@ -425,6 +439,7 @@ defineExpose({validate, save})
           <v-col cols="auto">
             <VvField
               v-model="memberProfileModel.ehbo"
+              test-id="user-form-ehbo-field"
               :component="VCheckbox"
               :component-props="{ hideDetails: true }"
               label="EHBO Diploma"
@@ -434,6 +449,7 @@ defineExpose({validate, save})
           <v-col cols="auto">
             <VvField
               v-model="memberProfileModel.bhv"
+              test-id="user-form-bhv-field"
               :component="VCheckbox"
               :component-props="{ hideDetails: true }"
               label="BHV Diploma"
@@ -449,6 +465,7 @@ defineExpose({validate, save})
           <v-col cols="auto">
             <VvField
               v-model="memberProfileModel.photoConsent"
+              test-id="user-form-photo-consent-field"
               :component="VCheckbox"
               :component-props="{ hideDetails: true }"
               label="Consent to pictures being taken at event"
@@ -465,6 +482,7 @@ defineExpose({validate, save})
         <v-col cols="auto">
           <VvField
             v-model="user.newsletter"
+            test-id="user-form-newsletter-field"
             :component="VCheckbox"
             :component-props="{ hideDetails: true }"
             label="Newsletter"

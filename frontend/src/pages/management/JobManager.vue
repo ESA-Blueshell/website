@@ -295,7 +295,7 @@ const looksLikeStackTrace = (value?: string | null): boolean => {
 
 const titleCase = (value: string): string => {
   return value
-    .replace(/[_.\-]/g, " ")
+    .replace(/[_.-]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())

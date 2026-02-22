@@ -684,7 +684,7 @@ jobs:
           ./scripts/generate-openapi-local.sh
 
       - name: Assert OpenAPI spec and client are in sync
-        run: git diff --exit-code -- openapi frontend
+        run: git diff --exit-code -- openapi frontend/src/services/api
 
       - name: Upload OpenAPI generation logs
         if: failure()

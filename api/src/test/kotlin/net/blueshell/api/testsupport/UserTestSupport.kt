@@ -29,7 +29,7 @@ import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.MemberType

@@ -1,7 +1,7 @@
 package net.blueshell.api.infrastructure.security.permission
 
 import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired

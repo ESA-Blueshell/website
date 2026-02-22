@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.job.model
+package net.blueshell.api.platform.integration.job.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.shared.enums.ActionActorType

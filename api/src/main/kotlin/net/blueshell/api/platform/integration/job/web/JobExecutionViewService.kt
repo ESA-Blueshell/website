@@ -2,28 +2,30 @@ package net.blueshell.api.platform.integration.job.web
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.persistence.repository.ContributionPeriodRepository
+import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
-import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.job.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.dto.JobExecutionRelatedEntityDTO
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionCategory
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class JobExecutionViewService(
     private val objectMapper: ObjectMapper,
-    private val userRepository: UserRepository,
+    private val userService: UserService,
     private val eventService: EventService,
-    private val eventSignUpRepository: EventSignUpRepository,
-    private val contributionPeriodRepository: ContributionPeriodRepository
+    private val eventSignUpService: EventSignUpService,
+    private val contributionPeriodService: ContributionPeriodService
 ) {
 
     fun toDtos(executions: List<JobExecution>): List<JobExecutionDTO> {
@@ -64,7 +66,7 @@ class JobExecutionViewService(
         )
         val initiatedByUser = execution.initiatedByUserId?.let { userId ->
             getOrPutNullable(userCache, userId) {
-                userRepository.findById(userId).orElse(null)
+                findUserOrNull(userId)
             }
         }
         val stackTrace = extractStackTrace(execution.errorReason)
@@ -119,7 +121,7 @@ class JobExecutionViewService(
 
         payload.userId?.let { userId ->
             val user = getOrPutNullable(userCache, userId) {
-                userRepository.findById(userId).orElse(null)
+                findUserOrNull(userId)
             }
             add(type = "USER", id = userId, label = userLabel(userId, user))
         }
@@ -133,14 +135,14 @@ class JobExecutionViewService(
 
         payload.eventSignUpId?.let { signUpId ->
             val signUp = getOrPutNullable(signUpCache, signUpId) {
-                eventSignUpRepository.findById(signUpId).orElse(null)
+                findEventSignUpOrNull(signUpId)
             }
             add(type = "EVENT_SIGNUP", id = signUpId, label = "Event sign-up #$signUpId")
 
             val signUpUserId = signUp?.userId
             if (signUpUserId != null) {
                 val user = getOrPutNullable(userCache, signUpUserId) {
-                    userRepository.findById(signUpUserId).orElse(null)
+                    findUserOrNull(signUpUserId)
                 }
                 add(type = "USER", id = signUpUserId, label = userLabel(signUpUserId, user))
             }
@@ -156,7 +158,7 @@ class JobExecutionViewService(
 
         payload.contributionPeriodId?.let { periodId ->
             val period = getOrPutNullable(periodCache, periodId) {
-                contributionPeriodRepository.findById(periodId).orElse(null)
+                findContributionPeriodOrNull(periodId)
             }
             add(type = "CONTRIBUTION_PERIOD", id = periodId, label = periodLabel(periodId, period))
         }
@@ -278,6 +280,30 @@ class JobExecutionViewService(
         val node = get(field) ?: return null
         if (node.isNull) return null
         return if (node.canConvertToLong()) node.asLong() else null
+    }
+
+    private fun findUserOrNull(userId: Long): User? {
+        return findOrNull { userService.findById(userId) }
+    }
+
+    private fun findEventSignUpOrNull(signUpId: Long): EventSignUp? {
+        return findOrNull { eventSignUpService.findById(signUpId) }
+    }
+
+    private fun findContributionPeriodOrNull(periodId: Long): ContributionPeriod? {
+        return findOrNull { contributionPeriodService.findById(periodId) }
+    }
+
+    private fun <T> findOrNull(fetcher: () -> T): T? {
+        return try {
+            fetcher()
+        } catch (error: ResponseStatusException) {
+            if (error.statusCode == HttpStatus.NOT_FOUND) {
+                null
+            } else {
+                throw error
+            }
+        }
     }
 
     private fun <K, V> getOrPutNullable(cache: MutableMap<K, V?>, key: K, supplier: () -> V?): V? {

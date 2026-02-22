@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.queue
 
 import net.blueshell.api.platform.config.JobQueueProperties
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.annotation.RabbitListener

@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.job.service
 
 import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.persistence.spec.JobExecutionSpecifications
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus

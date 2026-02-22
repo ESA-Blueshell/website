@@ -10,7 +10,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role

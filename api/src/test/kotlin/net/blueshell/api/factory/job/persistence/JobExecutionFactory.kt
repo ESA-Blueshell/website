@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.job.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springframework.stereotype.Component
 

@@ -5,7 +5,7 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
-import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus

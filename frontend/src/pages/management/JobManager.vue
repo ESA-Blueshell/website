@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -57,6 +57,13 @@ const page = ref<number>(1)
 const totalPages = ref<number>(1)
 const totalElements = ref<number>(0)
 let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
+
+const clearSearchDebounce = () => {
+  if (searchDebounceHandle) {
+    clearTimeout(searchDebounceHandle)
+    searchDebounceHandle = undefined
+  }
+}
 
 const statusCounts = computed(() => {
   const counts: Record<string, number> = {
@@ -215,12 +222,15 @@ watch([selectedCategory, selectedStatus], () => {
 })
 
 watch(searchQuery, () => {
-  if (searchDebounceHandle) {
-    clearTimeout(searchDebounceHandle)
-  }
+  clearSearchDebounce()
   searchDebounceHandle = setTimeout(() => {
+    searchDebounceHandle = undefined
     resetToFirstPageAndRefresh()
   }, 250)
+})
+
+onBeforeUnmount(() => {
+  clearSearchDebounce()
 })
 
 watch(page, () => {

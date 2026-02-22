@@ -1,5 +1,5 @@
-import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {type VueWrapper, shallowMount} from "@vue/test-utils"
 import JobManager from "@/pages/management/JobManager.vue"
 import {settle} from "../helpers"
 
@@ -51,6 +51,14 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 }))
 
 describe("JobManager page", () => {
+  const wrappers: VueWrapper[] = []
+
+  const mountJobManager = () => {
+    const wrapper = shallowMount(JobManager)
+    wrappers.push(wrapper)
+    return wrapper
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     mockStore.getters.isAdmin = true
@@ -68,6 +76,12 @@ describe("JobManager page", () => {
       status: 200,
       data: {id: 1, status: "SUCCESS", jobType: "SYNC", attempts: 2},
     })
+  })
+
+  afterEach(() => {
+    while (wrappers.length > 0) {
+      wrappers.pop()?.unmount()
+    }
   })
 
   it("loads and retries jobs for admins", async () => {
@@ -93,7 +107,7 @@ describe("JobManager page", () => {
         },
       })
 
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountJobManager()
     await settle()
 
     expect(mockList).toHaveBeenCalledTimes(1)
@@ -113,7 +127,7 @@ describe("JobManager page", () => {
   })
 
   it("applies selected filters as backend query params", async () => {
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountJobManager()
     await settle()
     mockList.mockClear()
 
@@ -133,7 +147,7 @@ describe("JobManager page", () => {
   })
 
   it("shows all category options from enum, not from current page rows", async () => {
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountJobManager()
     await settle()
 
     expect((wrapper.vm as any).categoryOptions).toEqual([
@@ -146,7 +160,7 @@ describe("JobManager page", () => {
   })
 
   it("handles cleared search filter value without trim error", async () => {
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountJobManager()
     await settle()
     mockList.mockClear()
     mockHandleNetworkError.mockClear()
@@ -189,7 +203,7 @@ describe("JobManager page", () => {
       })
     })
 
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountJobManager()
     await settle()
 
     expect((wrapper.vm as any).totalPages).toBe(2)
@@ -218,7 +232,7 @@ describe("JobManager page", () => {
       })),
     })
 
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountJobManager()
     await settle()
 
     expect((wrapper.vm as any).totalPages).toBe(1)
@@ -228,7 +242,7 @@ describe("JobManager page", () => {
   it("redirects non-admins", async () => {
     mockStore.getters.isAdmin = false
 
-    shallowMount(JobManager)
+    mountJobManager()
     await settle()
 
     expect(mockRouterReplace).toHaveBeenCalledWith("/")

@@ -5,6 +5,7 @@ import net.blueshell.clients.brevo.model.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
@@ -42,6 +43,10 @@ class BrevoContactClient(
             log.debug("Found Brevo contact for email {}: contactId={}", email, details.id)
             details.id
         } catch (e: HttpClientErrorException) {
+            if (e.statusCode != HttpStatus.NOT_FOUND) {
+                log.error("Brevo lookup failed for email {} with status {}", email, e.statusCode, e)
+                throw e
+            }
             log.debug("Brevo contact not found for email: {}", email)
             null
         }

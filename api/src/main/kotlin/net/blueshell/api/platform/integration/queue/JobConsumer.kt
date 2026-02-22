@@ -50,6 +50,7 @@ class JobConsumer(
             } catch (ex: Exception) {
                 val errorType = ex::class.java.name
                 val errorReason = ex.message ?: "Unknown error"
+                val stackTrace = ex.stackTraceToString()
                 if (current.attempts >= maxRetries) {
                     logger.error(
                         "Job execution {} failed after {} retries. errorType={}, errorReason={}.",
@@ -59,7 +60,12 @@ class JobConsumer(
                         errorReason,
                         ex
                     )
-                    jobExecutionService.markFailed(current, errorType, errorReason)
+                    jobExecutionService.markFailed(
+                        current,
+                        errorType,
+                        errorReason,
+                        stackTrace = stackTrace
+                    )
                     return
                 }
 
@@ -75,7 +81,12 @@ class JobConsumer(
                     errorReason,
                     ex
                 )
-                current = jobExecutionService.markRetryQueued(current, errorType, errorReason)
+                current = jobExecutionService.markRetryQueued(
+                    current,
+                    errorType,
+                    errorReason,
+                    stackTrace = stackTrace
+                )
                 sleep(backoffMillis)
             }
         }

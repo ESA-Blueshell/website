@@ -1,10 +1,17 @@
 package net.blueshell.api.platform.integration.job.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
 import net.blueshell.api.platform.integration.job.dto.JobExecutionDTO
-import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.platform.integration.queue.JobDispatcher
+import org.springdoc.core.annotations.ParameterObject
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
@@ -13,12 +20,20 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Job Management", description = "API for managing job executions")
 class JobManagementController(
     private val jobExecutionService: JobExecutionService,
-    private val jobDispatcher: JobDispatcher
+    private val jobDispatcher: JobDispatcher,
+    private val views: JobExecutionViewService
 ) {
     @GetMapping
     @PreAuthorize("hasPermission(null, 'JobExecution', 'read')")
-    fun list(): List<JobExecutionDTO> {
-        return jobExecutionService.findRecent().map { it.toDto() }
+    fun list(
+        @ParameterObject
+        @PageableDefault(size = PAGE_SIZE, sort = ["createdAt"], direction = Sort.Direction.DESC)
+        pageable: Pageable,
+        @ParameterObject filter: JobExecutionQuery = JobExecutionQuery()
+    ): Page<JobExecutionDTO> {
+        val page = jobExecutionService.findByFilter(normalizePageable(pageable), filter)
+        val content = views.toDtos(page.content)
+        return PageImpl(content, page.pageable, page.totalElements)
     }
 
     @PostMapping("/{id}/retry")
@@ -27,26 +42,20 @@ class JobManagementController(
         val execution = jobExecutionService.findById(id)
         val requeued = jobExecutionService.requeue(execution)
         jobDispatcher.requeue(requeued)
-        return requeued.toDto()
+        return views.toDto(requeued)
     }
 
-    private fun JobExecution.toDto(): JobExecutionDTO = JobExecutionDTO(
-        id = id,
-        jobType = jobType,
-        status = status,
-        payload = payload,
-        errorMessage = errorMessage,
-        errorType = errorType,
-        errorReason = errorReason,
-        attempts = attempts,
-        queuedAt = queuedAt,
-        startedAt = startedAt,
-        finishedAt = finishedAt,
-        actor = actor,
-        initiatedByUserId = initiatedByUserId,
-        initiatedByType = initiatedByType,
-        initiatedByRole = initiatedByRole,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
+    private fun normalizePageable(pageable: Pageable): Pageable {
+        val sort = if (pageable.sort.isSorted) pageable.sort else DEFAULT_SORT
+        val pageNumber = if (pageable.isPaged) pageable.pageNumber else 0
+        return PageRequest.of(pageNumber, PAGE_SIZE, sort)
+    }
+
+    companion object {
+        private const val PAGE_SIZE = 50
+        private val DEFAULT_SORT: Sort = Sort.by(
+            Sort.Order.desc("createdAt"),
+            Sort.Order.desc("id")
+        )
+    }
 }

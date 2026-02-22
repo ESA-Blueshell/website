@@ -59,7 +59,8 @@ class JobConsumerIT : ServiceTestSupport() {
         assertThat(updated.attempts).isEqualTo(jobQueueProperties.maxRetries)
         assertThat(updated.errorType).isEqualTo(IllegalStateException::class.java.name)
         assertThat(updated.errorReason).contains("planned failure")
-        assertThat(updated.errorMessage).isEqualTo("${updated.errorType}: ${updated.errorReason}")
+        assertThat(updated.errorReason).contains("RetryingTestJobHandler.handle")
+        assertThat(updated.errorMessage).contains("planned failure")
         assertThat(retryingHandler.invocations()).isEqualTo(jobQueueProperties.maxRetries + 1)
     }
 

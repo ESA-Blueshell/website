@@ -68,9 +68,12 @@ class MockCalendarAdapter : CalendarAdapter {
                 eventId, externalId, eventData.title
             )
         } else {
-            log.warn(
-                "[mock-calendar] Attempted to update non-existent event eventId={} externalId={}",
+            log.error(
+                "[mock-calendar] Cannot update missing event eventId={} externalId={}",
                 eventId, externalId
+            )
+            throw IllegalStateException(
+                "[mock-calendar] Cannot update missing event eventId=$eventId externalId=$externalId"
             )
         }
     }
@@ -80,9 +83,12 @@ class MockCalendarAdapter : CalendarAdapter {
         if (removed != null) {
             log.info("[mock-calendar] Removed event eventId={} externalId={}", eventId, externalId)
         } else {
-            log.warn(
-                "[mock-calendar] Attempted to remove non-existent event eventId={} externalId={}",
+            log.error(
+                "[mock-calendar] Cannot remove missing event eventId={} externalId={}",
                 eventId, externalId
+            )
+            throw IllegalStateException(
+                "[mock-calendar] Cannot remove missing event eventId=$eventId externalId=$externalId"
             )
         }
     }

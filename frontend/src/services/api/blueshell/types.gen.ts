@@ -489,6 +489,11 @@ export type PagedModelUserDetailResponse = {
     page?: PageMetadata;
 };
 
+export type PagedModelJobExecution = {
+    content?: Array<JobExecution>;
+    page?: PageMetadata;
+};
+
 export type PasswordResetRequest = {
     password: string;
     token: string;
@@ -2999,7 +3004,25 @@ export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponse
 export type ListData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+        status?: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+        category?: string;
+        search?: string;
+        initiatedByType?: 'USER' | 'SYSTEM';
+        jobType?: string;
+    };
     url: '/management/jobs';
 };
 
@@ -3032,7 +3055,7 @@ export type ListResponses = {
     /**
      * OK
      */
-    200: Array<JobExecution>;
+    200: PagedModelJobExecution;
 };
 
 export type ListResponse = ListResponses[keyof ListResponses];

@@ -66,9 +66,11 @@ class JobManagerPageSystemTest : FrontendSystemTestBase() {
                 page.locator("[data-testid='job-row-$failedId']").count() > 0
             }
 
+            page.locator("[data-testid='job-row-$failedId']").first().click()
+
             assertThat(
-                page.locator("[data-testid='job-error-type-$failedId']").innerText()
-            ).contains("RuntimeException")
+                page.locator("[data-testid='job-error-reason-$failedId']").innerText()
+            ).contains("Transient failure")
 
             val retryResponse = page.waitForResponse(
                 Predicate { response ->

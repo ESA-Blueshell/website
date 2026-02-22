@@ -56,7 +56,8 @@ class JobDispatcher(
     }
 
     private fun sendMessage(execution: JobExecution) {
-        val executionId = execution.id ?: return
+        val executionId = execution.id
+            ?: throw IllegalStateException("Cannot dispatch job ${execution.jobType} without persisted execution id")
         val message = JobMessage(executionId, execution.jobType, execution.payload)
         rabbitTemplate.convertAndSend(
             jobQueueProperties.exchangeName,

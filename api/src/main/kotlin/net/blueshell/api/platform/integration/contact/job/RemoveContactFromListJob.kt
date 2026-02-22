@@ -25,8 +25,10 @@ class RemoveContactFromListJob(
     override fun handlePayload(payload: ContactJobs.RemoveFromListPayload) {
         val user = users.findById(payload.userId)
         val period = periods.findById(payload.periodId)
-        val contactId = user.contactId ?: return
-        val listId = period.listId ?: return
+        val contactId = user.contactId
+            ?: throw IllegalStateException("Cannot remove contact from list: user ${payload.userId} has no contactId")
+        val listId = period.listId
+            ?: throw IllegalStateException("Cannot remove contact from list: period ${payload.periodId} has no listId")
 
         // Remove contact from list
         contactAdapter.removeFromList(listId.toString(), contactId.toString())

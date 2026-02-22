@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -43,22 +44,27 @@ class MockCalendarAdapterTest {
     }
 
     @Test
-    fun `updateEvent ignores unknown external id`() {
-        adapter.updateEvent(3L, "missing-id", eventData(title = "Ignored", approved = true))
-
-        assertThat(adapter.getEventCount()).isZero()
+    fun `updateEvent throws for unknown external id`() {
+        assertThatThrownBy {
+            adapter.updateEvent(3L, "missing-id", eventData(title = "Ignored", approved = true))
+        }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Cannot update missing event")
     }
 
     @Test
-    fun `removeEvent deletes known id and ignores unknown id`() {
+    fun `removeEvent deletes known id and throws for unknown id`() {
         val ref = adapter.addEvent(4L, eventData(title = "To Remove", approved = true))
         assertThat(adapter.getEventCount()).isEqualTo(1)
 
         adapter.removeEvent(4L, ref.externalId)
         assertThat(adapter.getEventCount()).isZero()
 
-        adapter.removeEvent(4L, "missing-id")
-        assertThat(adapter.getEventCount()).isZero()
+        assertThatThrownBy {
+            adapter.removeEvent(4L, "missing-id")
+        }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Cannot remove missing event")
     }
 
     @Test

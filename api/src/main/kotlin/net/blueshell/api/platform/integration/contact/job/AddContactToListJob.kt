@@ -28,8 +28,7 @@ class AddContactToListJob(
         val user = users.findById(payload.userId)
         val period = periods.findById(payload.periodId)
 
-        // Ensure the list exists
-        if (period.listId == null) {
+        val listId = if (period.listId == null) {
             val listName = String.format(
                 "Contribution Paid %d - %d",
                 period.startDate.year,
@@ -37,10 +36,12 @@ class AddContactToListJob(
             )
             val listId = contactAdapter.createList(listName, "contributionPeriods")
             periods.updateListId(period.id!!, listId.toLong())
+            listId
+        } else {
+            period.listId.toString()
         }
 
-        // Ensure the user has a contact ID
-        if (user.contactId == null) {
+        val contactId = if (user.contactId == null) {
             val contactData = ContactData(
                 email = user.email,
                 firstName = user.firstName,
@@ -49,12 +50,15 @@ class AddContactToListJob(
                 newsletter = user.newsletter,
                 isMember = user.hasRole(Role.MEMBER)
             )
-            val contactId = contactAdapter.syncContact(user.id!!, contactData)
-            users.updateContactId(user.id!!, contactId!!.toLong())
+            val syncedContactId = contactAdapter.syncContact(user.id!!, contactData)
+            users.updateContactId(user.id!!, syncedContactId.toLong())
+            syncedContactId
+        } else {
+            user.contactId.toString()
         }
 
         // Add contact to list
-        contactAdapter.addToList(period.listId.toString(), user.contactId.toString())
+        contactAdapter.addToList(listId, contactId)
     }
 
 }

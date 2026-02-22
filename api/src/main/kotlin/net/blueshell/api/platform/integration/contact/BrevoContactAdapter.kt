@@ -34,7 +34,7 @@ class BrevoContactAdapter(
     private val brevoClient: BrevoContactClient
 ) : ContactSyncAdapter {
 
-    override fun syncContact(userId: Long, contactData: ContactData): String? {
+    override fun syncContact(userId: Long, contactData: ContactData): String {
         log.info("Syncing contact for user {}: {}", userId, contactData.email)
 
         return try {

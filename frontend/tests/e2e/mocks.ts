@@ -135,6 +135,48 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     },
   ]
 
+  const toSearchableString = (value: unknown): string => {
+    if (typeof value === "string") return value
+    if (typeof value === "number") return String(value)
+    return ""
+  }
+
+  const jobCategory = (job: Record<string, unknown>): string => {
+    const raw = toSearchableString(job.category).trim().toLowerCase()
+    if (raw) return raw
+
+    const type = toSearchableString(job.jobType).trim().toLowerCase()
+    if (!type) return "other"
+    const separatorPositions = [type.indexOf("."), type.indexOf("_"), type.indexOf("-")].filter((idx) => idx > 0)
+    if (separatorPositions.length === 0) return type
+    return type.slice(0, Math.min(...separatorPositions))
+  }
+
+  const matchesSearch = (job: Record<string, unknown>, query: string): boolean => {
+    const relatedEntities = Array.isArray(job.relatedEntities)
+      ? job.relatedEntities
+        .map((value) => {
+          if (value == null || typeof value !== "object") return ""
+          return toSearchableString((value as Record<string, unknown>).label)
+        })
+        .join(" ")
+      : ""
+
+    const haystack = [
+      toSearchableString(job.summary),
+      toSearchableString(job.jobType),
+      toSearchableString(job.errorType),
+      toSearchableString(job.errorMessage),
+      toSearchableString(job.errorReason),
+      toSearchableString(job.initiatedByDisplay),
+      relatedEntities,
+    ]
+      .join(" ")
+      .toLowerCase()
+
+    return haystack.includes(query)
+  }
+
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -197,7 +239,44 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {status: 404, detail: "Blog not found"}, 404)
     }
     if (method === "GET" && path === "/management/jobs") {
-      return fulfillJson(route, baseJobs)
+      const page = Number(url.searchParams.get("page") ?? "0")
+      const size = Number(url.searchParams.get("size") ?? "50")
+      const category = (url.searchParams.get("category") ?? "").trim().toLowerCase()
+      const status = (url.searchParams.get("status") ?? "").trim().toUpperCase()
+      const search = (url.searchParams.get("search") ?? "").trim().toLowerCase()
+
+      let filtered = [...baseJobs]
+
+      if (category && category !== "all") {
+        filtered = filtered.filter((job) => jobCategory(job) === category)
+      }
+
+      if (status && status !== "ALL") {
+        filtered = filtered.filter((job) => toSearchableString(job.status).toUpperCase() === status)
+      }
+
+      if (search) {
+        filtered = filtered.filter((job) => matchesSearch(job, search))
+      }
+
+      filtered.sort((a, b) => Number(b.id ?? 0) - Number(a.id ?? 0))
+
+      const safePage = Number.isFinite(page) && page >= 0 ? page : 0
+      const safeSize = Number.isFinite(size) && size > 0 ? size : 50
+      const totalElements = filtered.length
+      const totalPages = Math.max(1, Math.ceil(totalElements / safeSize))
+      const start = safePage * safeSize
+      const content = filtered.slice(start, start + safeSize)
+
+      return fulfillJson(route, {
+        content,
+        page: {
+          number: safePage,
+          size: safeSize,
+          totalElements,
+          totalPages,
+        },
+      })
     }
     if (method === "POST" && /^\/management\/jobs\/\d+\/retry$/.test(path)) {
       const rawId = path.split("/")[3]

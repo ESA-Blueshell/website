@@ -1,10 +1,14 @@
 package net.blueshell.api.platform.integration.job.service
 
+import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
 import net.blueshell.api.platform.integration.job.model.JobExecution
+import net.blueshell.api.platform.integration.job.persistence.spec.JobExecutionSpecifications
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -33,7 +37,10 @@ class JobExecutionService(
     }
 
     @Transactional(readOnly = true)
-    fun findRecent(): List<JobExecution> = jobExecutionRepository.findTop200ByOrderByCreatedAtDesc()
+    fun findByFilter(pageable: Pageable, filter: JobExecutionQuery): Page<JobExecution> {
+        val spec = JobExecutionSpecifications.fromFilter(filter)
+        return jobExecutionRepository.findAll(spec, pageable)
+    }
 
     @Transactional(readOnly = true)
     fun findByIdOrNull(id: Long): JobExecution? = jobExecutionRepository.findById(id).orElse(null)
@@ -56,23 +63,33 @@ class JobExecutionService(
     }
 
     @Transactional
-    fun markFailed(execution: JobExecution, errorType: String, errorReason: String): JobExecution {
+    fun markFailed(
+        execution: JobExecution,
+        errorType: String,
+        errorReason: String,
+        stackTrace: String? = null
+    ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
         execution.errorType = errorType
-        execution.errorReason = errorReason
+        execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
         execution.errorMessage = "$errorType: $errorReason"
         return super.update(execution)
     }
 
     @Transactional
-    fun markRetryQueued(execution: JobExecution, errorType: String, errorReason: String): JobExecution {
+    fun markRetryQueued(
+        execution: JobExecution,
+        errorType: String,
+        errorReason: String,
+        stackTrace: String? = null
+    ): JobExecution {
         execution.status = JobExecutionStatus.QUEUED
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
         execution.errorType = errorType
-        execution.errorReason = errorReason
+        execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
         execution.errorMessage = "$errorType: $errorReason"
         execution.attempts += 1
         return super.update(execution)

@@ -25,7 +25,7 @@ class MockContactAdapter : ContactSyncAdapter {
     private val contactIdSequence = AtomicLong(1000)
     private val listIdSequence = AtomicLong(2000)
 
-    override fun syncContact(userId: Long, contactData: ContactData): String? {
+    override fun syncContact(userId: Long, contactData: ContactData): String {
         log.info("Mock: Syncing contact for user {}: {}", userId, contactData.email)
 
         val existingContact = contacts.values.find { it.email == contactData.email }
@@ -86,7 +86,8 @@ class MockContactAdapter : ContactSyncAdapter {
         if (list.contactIds.remove(contactId)) {
             log.info("Mock: Contact {} removed from list {} (now {} contacts)", contactId, listId, list.contactIds.size)
         } else {
-            log.warn("Mock: Contact {} was not in list {}", contactId, listId)
+            log.error("Mock: Contact {} is not in list {}", contactId, listId)
+            throw IllegalStateException("Contact $contactId is not in list $listId")
         }
     }
 

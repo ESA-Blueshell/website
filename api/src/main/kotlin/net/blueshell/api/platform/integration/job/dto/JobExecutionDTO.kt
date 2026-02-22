@@ -15,14 +15,16 @@ data class JobExecutionDTO(
 
     @field:NotBlank
     var jobType: String?,
+    val category: String?,
+    val summary: String?,
 
     @field:NotNull
     var status: JobExecutionStatus?,
 
-    val payload: String?,
     val errorMessage: String?,
     val errorType: String?,
     val errorReason: String?,
+    val stackTrace: String?,
 
     @field:NotNull
     var attempts: Int?,
@@ -34,6 +36,17 @@ data class JobExecutionDTO(
     val initiatedByUserId: Long?,
     val initiatedByType: ActionActorType?,
     val initiatedByRole: Role?,
+    val initiatedByDisplay: String?,
+    val initiatedByUsername: String?,
+    val initiatedByFullName: String?,
+    val relatedEntities: List<JobExecutionRelatedEntityDTO>,
     val createdAt: Instant?,
     val updatedAt: Instant?
+)
+
+@Schema(name = "JobExecutionRelatedEntity")
+data class JobExecutionRelatedEntityDTO(
+    val type: String,
+    val id: Long?,
+    val label: String
 )

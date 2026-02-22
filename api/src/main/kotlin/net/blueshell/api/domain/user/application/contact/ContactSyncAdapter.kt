@@ -16,10 +16,10 @@ interface ContactSyncAdapter {
      *
      * @param userId The domain user ID (for tracking)
      * @param contactData The contact data to sync
-     * @return External contact ID (null if sync failed but should continue)
-     * @throws ContactServiceException if the operation fails critically
+     * @return External contact ID
+     * @throws ContactServiceException if the operation fails
      */
-    fun syncContact(userId: Long, contactData: ContactData): String?
+    fun syncContact(userId: Long, contactData: ContactData): String
 
     /**
      * Get and update the external contact ID for a user.

@@ -81,7 +81,7 @@ class MockContactAdapterTest {
         val contactId = adapter.syncContact(4L, contactData(email = "list@example.com"))
         val listId = adapter.createList("Members", "Main")
 
-        adapter.addToList(listId, contactId!!)
+        adapter.addToList(listId, contactId)
 
         assertThat(adapter.getAllLists()[listId]!!.contactIds).containsExactly(contactId)
     }
@@ -90,7 +90,7 @@ class MockContactAdapterTest {
     fun `addToList throws when list does not exist`() {
         val contactId = adapter.syncContact(5L, contactData(email = "missing-list@example.com"))
 
-        assertThatThrownBy { adapter.addToList("missing-list", contactId!!) }
+        assertThatThrownBy { adapter.addToList("missing-list", contactId) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("List not found")
     }
@@ -108,7 +108,7 @@ class MockContactAdapterTest {
     fun `removeFromList removes existing relation and keeps list`() {
         val contactId = adapter.syncContact(6L, contactData(email = "remove@example.com"))
         val listId = adapter.createList("Participants", "Main")
-        adapter.addToList(listId, contactId!!)
+        adapter.addToList(listId, contactId)
         assertThat(adapter.getAllLists()[listId]!!.contactIds).contains(contactId)
 
         adapter.removeFromList(listId, contactId)
@@ -117,13 +117,13 @@ class MockContactAdapterTest {
     }
 
     @Test
-    fun `removeFromList ignores contact that is not in the list`() {
+    fun `removeFromList throws when contact is not in the list`() {
         val contactId = adapter.syncContact(7L, contactData(email = "other@example.com"))
         val listId = adapter.createList("NotJoined", "Main")
 
-        adapter.removeFromList(listId, contactId!!)
-
-        assertThat(adapter.getAllLists()[listId]!!.contactIds).isEmpty()
+        assertThatThrownBy { adapter.removeFromList(listId, contactId) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("is not in list")
     }
 
     @Test

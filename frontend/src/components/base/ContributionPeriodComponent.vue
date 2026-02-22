@@ -2,7 +2,7 @@
 import {onMounted, ref} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
-import {type ContributionPeriod, findCurrentContributionPeriod} from "@/services/api"
+import {type ContributionPeriodResponse, findCurrentContributionPeriod} from "@/services/api"
 
 const props = withDefaults(defineProps<{
   isForm?: boolean
@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<{
   isForm: false,
 })
 
-const contributionPeriod = ref<ContributionPeriod>()
+const contributionPeriod = ref<ContributionPeriodResponse>()
 const currentPeriod = ref(false)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -19,7 +19,7 @@ const euros = new Intl.NumberFormat("nl-NL", {style: "currency", currency: "EUR"
 
 const formatCurrency = (amount?: number) => euros.format(amount ?? 0)
 
-const formatPeriod = (period?: ContributionPeriod) => {
+const formatPeriod = (period?: ContributionPeriodResponse) => {
   if (!period?.startDate || !period?.endDate) return "N/A"
   const start = DateTime.fromISO(period.startDate).toFormat("yyyy")
   const end = DateTime.fromISO(period.endDate).toFormat("yyyy")
@@ -29,6 +29,11 @@ const formatPeriod = (period?: ContributionPeriod) => {
 async function getContributionPeriod() {
   try {
     const response = await findCurrentContributionPeriod()
+    if (!response.data) {
+      contributionPeriod.value = undefined
+      currentPeriod.value = false
+      return
+    }
     contributionPeriod.value = response.data
 
     const now = DateTime.now()

@@ -1,0 +1,40 @@
+package net.blueshell.api.domain.contribution.web.mapping.response
+
+import net.blueshell.api.domain.contribution.command.result.ContributionPeriodResult
+import net.blueshell.api.domain.contribution.command.result.ContributionReminderResult
+import net.blueshell.api.domain.contribution.command.result.ContributionResult
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionPeriodResponse
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
+import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
+
+fun ContributionResult.asResponse(): ContributionResponse =
+    ContributionResponse(
+        userId = this.userId,
+        contributionPeriodId = this.contributionPeriodId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
+
+fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
+    ContributionPeriodResponse(
+        id = this.id,
+        startDate = this.startDate,
+        endDate = this.endDate,
+        halfYearFee = this.halfYearFee,
+        fullYearFee = this.fullYearFee,
+        alumniFee = this.alumniFee,
+        listId = this.listId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
+
+fun ContributionReminderResult.asResponse(): ContributionReminderResponse =
+    ContributionReminderResponse(
+        userId = this.userId,
+        contributionPeriodId = this.contributionPeriodId,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )

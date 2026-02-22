@@ -8,12 +8,14 @@
         style="max-width: 800px"
       >
         <recovery-user-list
+          panel-key="inactive"
           :users="inactiveUsers"
           action-type="activation"
           title="Inactive accounts"
         />
 
         <recovery-user-list
+          panel-key="active"
           :users="activeUsers"
           action-type="password"
           class="mt-3"
@@ -29,11 +31,11 @@ import {onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import RecoveryUserList from "@/components/common/lists/RecoveryUserList.vue"
 
-import {type AdvancedUser, findUsers} from "@/services/api"
+import {type UserDetailResponse, findUsers} from "@/services/api"
 
-const users = ref<AdvancedUser[]>([])
-const activeUsers = ref<AdvancedUser[]>([])
-const inactiveUsers = ref<AdvancedUser[]>([])
+const users = ref<UserDetailResponse[]>([])
+const activeUsers = ref<UserDetailResponse[]>([])
+const inactiveUsers = ref<UserDetailResponse[]>([])
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"

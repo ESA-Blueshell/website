@@ -6,8 +6,7 @@ import vuetify from "@/plugins/vuetify.ts"
 import {loadFonts} from "@/plugins/webfontloader.ts"
 import "@/plugins/validation.ts"
 import store from "@/plugins/store"
-import {readJsonCookie} from "@/plugins/cookies"
-import type {Login} from "@/services/api"
+import {setupAuthSync} from "@/plugins/authSync"
 
 const app = createApp(App)
 app.use(store)
@@ -16,10 +15,4 @@ app.use(VueSignaturePad)
 app.use(vuetify)
 loadFonts()
 app.mount("#app")
-
-window.addEventListener("storage", (e) => {
-  if (e.key !== "auth:ping") return
-  const login = readJsonCookie<Login>("login") || null
-  store.commit("setLoginState", login)
-  window.location.reload()
-})
+setupAuthSync(store)

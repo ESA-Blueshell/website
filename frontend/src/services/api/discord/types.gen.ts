@@ -273,7 +273,7 @@ export type UserSelectComponentResponse = {
     type: 5;
 };
 
-export type MessageComponentTypes = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18 | 19;
+export type MessageComponentTypes = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18 | 19 | 21 | 22 | 23;
 
 export type AvailableLocalesEnum = 'ar' | 'bg' | 'cs' | 'da' | 'de' | 'el' | 'en-GB' | 'en-US' | 'es-419' | 'es-ES' | 'fi' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ko' | 'lt' | 'nl' | 'no' | 'pl' | 'pt-BR' | 'ro' | 'ru' | 'sv-SE' | 'th' | 'tr' | 'uk' | 'vi' | 'zh-CN' | 'zh-TW';
 
@@ -1367,7 +1367,7 @@ export type ResourceChannelResponse = {
 /**
  * Ratelimit error object returned by the Discord API
  */
-export type RatelimitedResponse = _Error & {
+export type RatelimitedResponse = Error & {
     /**
      * Whether you are being ratelimited by the global ratelimit or a per-endpoint ratelimit
      */
@@ -1381,7 +1381,7 @@ export type RatelimitedResponse = _Error & {
 /**
  * A single error, either for an API response or a specific field.
  */
-export type _Error = {
+export type Error = {
     /**
      * Discord internal error code. See error code reference
      */
@@ -1732,7 +1732,7 @@ export type InnerErrors = {
     /**
      * The list of errors for this field
      */
-    _errors: Array<_Error>;
+    _errors: Array<Error>;
 };
 
 export type IconEmojiResponse = {
@@ -2446,7 +2446,7 @@ export type ExternalConnectionIntegrationResponse = {
 /**
  * Errors object returned by the Discord API
  */
-export type ErrorResponse = _Error & {
+export type ErrorResponse = Error & {
     errors?: ErrorDetails;
 };
 
@@ -3005,6 +3005,10 @@ export type BulkBanUsersFromGuildResponses = {
      * 200 response for bulk_ban_users_from_guild
      */
     200: BulkBanUsersResponse;
+    /**
+     * 204 response for bulk_ban_users_from_guild
+     */
+    204: void;
 };
 
 export type BulkBanUsersFromGuildResponse = BulkBanUsersFromGuildResponses[keyof BulkBanUsersFromGuildResponses];

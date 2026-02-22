@@ -1,6 +1,7 @@
 <template>
   <v-dialog
     v-model="showDialog"
+    data-testid="contribution-period-dialog"
     max-width="600"
   >
     <v-card>
@@ -19,7 +20,7 @@
             <v-col cols="6">
               <VvField
                 v-model="periodForm.startDate"
-                :component-props="{ type: 'date' }"
+                :component-props="{ type: 'date', 'data-testid': 'contribution-period-start-date-field' }"
                 label="Start Date"
                 name="startDate"
                 rules="required|dateBefore:@endDate"
@@ -28,7 +29,7 @@
             <v-col cols="6">
               <VvField
                 v-model="periodForm.endDate"
-                :component-props="{ type: 'date' }"
+                :component-props="{ type: 'date', 'data-testid': 'contribution-period-end-date-field' }"
                 label="End Date"
                 name="endDate"
                 rules="required|dateAfter:@startDate"
@@ -38,7 +39,7 @@
 
           <VvField
             v-model="periodForm.halfYearFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-half-year-fee-field' }"
             :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
             label="Half Year Fee"
             name="halfYearFee"
@@ -47,7 +48,7 @@
 
           <VvField
             v-model="periodForm.fullYearFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-full-year-fee-field' }"
             :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
             label="Full Year Fee"
             name="fullYearFee"
@@ -56,7 +57,7 @@
 
           <VvField
             v-model="periodForm.alumniFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal' }"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-alumni-fee-field' }"
             :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
             label="Alumni Fee"
             name="alumniFee"
@@ -70,17 +71,23 @@
         <v-btn
           v-if="contributionPeriod?.id"
           color="red"
+          data-testid="contribution-period-delete-btn"
           @click="confirmDeletePeriod"
         >
           Delete
         </v-btn>
         <v-btn
           color="primary"
+          :data-submit-mode="contributionPeriod?.id ? 'update' : 'create'"
+          data-testid="contribution-period-submit-btn"
           @click="saveContributionPeriod"
         >
           {{ contributionPeriod?.id ? "Save" : "Create" }}
         </v-btn>
-        <v-btn @click="closeDialog">
+        <v-btn
+          data-testid="contribution-period-cancel-btn"
+          @click="closeDialog"
+        >
           Cancel
         </v-btn>
       </v-card-actions>
@@ -92,21 +99,29 @@
 import {computed, reactive, ref, watch} from "vue"
 import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-import {type ContributionPeriod, createContributionPeriod, updateContributionPeriod} from "@/services/api"
+import {
+  type ContributionPeriodResponse,
+  createContributionPeriod,
+  type CreateContributionPeriodRequest,
+  updateContributionPeriod,
+  type UpdateContributionPeriodRequest,
+} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
 defineOptions({name: "ContributionPeriodDialog"})
 
-const props = defineProps<{ contributionPeriod?: ContributionPeriod; showDialog: boolean }>()
+type PeriodFormModel = CreateContributionPeriodRequest & Partial<ContributionPeriodResponse>
+
+const props = defineProps<{ contributionPeriod?: ContributionPeriodResponse; showDialog: boolean }>()
 const emit = defineEmits<{
   (e: "update:showDialog", value: boolean): void;
-  (e: "changed", value: ContributionPeriod): void;
+  (e: "changed", value: ContributionPeriodResponse): void;
   (e: "delete", value: number): void;
 }>()
 
-const emptyPeriod = (): ContributionPeriod => ({
+const emptyPeriod = (): PeriodFormModel => ({
   startDate: "",
   endDate: "",
   halfYearFee: 0,
@@ -114,7 +129,7 @@ const emptyPeriod = (): ContributionPeriod => ({
   alumniFee: 0,
 })
 
-const periodForm = reactive<ContributionPeriod>(emptyPeriod())
+const periodForm = reactive<PeriodFormModel>(emptyPeriod())
 const formRef = ref<FormContext>()
 
 watch(
@@ -155,15 +170,32 @@ const saveContributionPeriod = async () => {
 
   try {
     if (periodForm?.id) {
+      const payload: UpdateContributionPeriodRequest = {
+        startDate: periodForm.startDate,
+        endDate: periodForm.endDate,
+        halfYearFee: periodForm.halfYearFee,
+        fullYearFee: periodForm.fullYearFee,
+        alumniFee: periodForm.alumniFee,
+        listId: periodForm.listId,
+        version: periodForm.version ?? 0,
+      }
       const resp = await updateContributionPeriod({
-        body: periodForm,
+        body: payload,
         path: {id: periodForm.id as number},
         throwOnError: true,
       })
       emit("changed", resp.data!)
       closeDialog()
     } else {
-      const resp = await createContributionPeriod({body: periodForm, throwOnError: true})
+      const payload: CreateContributionPeriodRequest = {
+        startDate: periodForm.startDate,
+        endDate: periodForm.endDate,
+        halfYearFee: periodForm.halfYearFee,
+        fullYearFee: periodForm.fullYearFee,
+        alumniFee: periodForm.alumniFee,
+        listId: periodForm.listId,
+      }
+      const resp = await createContributionPeriod({body: payload, throwOnError: true})
       emit("changed", resp.data!)
       closeDialog()
     }

@@ -1,0 +1,261 @@
+import {beforeEach, describe, expect, it, vi} from "vitest"
+import {shallowMount} from "@vue/test-utils"
+import App from "@/App.vue"
+import {settle} from "../helpers/testUtils"
+
+const {
+  mockDisplay,
+  mockTheme,
+  mockRoute,
+  mockStore,
+  mockGoto,
+  mockFindUserById,
+  mockHandleNetworkError,
+  mockAlert,
+  matchMediaState,
+} = vi.hoisted(() => {
+  const mockTheme = {
+    global: {
+      current: {
+        value: {
+          dark: false,
+        },
+      },
+    },
+    change: vi.fn((name: string) => {
+      mockTheme.global.current.value.dark = name === "dark"
+    }),
+  }
+
+  return {
+    mockDisplay: {
+      mdAndDown: {value: false},
+    },
+    mockTheme,
+    mockRoute: {
+      meta: {
+        requiresAuth: false,
+      },
+    },
+    mockStore: {
+      state: {
+        statusSnackbarMessage: "",
+      },
+      getters: {
+        isLoggedIn: true,
+        isBoard: true,
+        isAdmin: true,
+        getLogin: {
+          userId: 42,
+          addressId: 7,
+        },
+      },
+      commit: vi.fn(),
+    },
+    mockGoto: vi.fn(),
+    mockFindUserById: vi.fn(),
+    mockHandleNetworkError: vi.fn(),
+    mockAlert: vi.fn(),
+    matchMediaState: {
+      dark: false,
+      light: false,
+    },
+  }
+})
+
+vi.mock("vuetify", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vuetify")>()
+  return {
+    ...actual,
+    useDisplay: () => mockDisplay,
+    useTheme: () => mockTheme,
+  }
+})
+
+vi.mock("vue-router", async (importOriginal) => {
+  const {withVueRouter} = await import("../helpers/testUtils")
+  return withVueRouter(importOriginal, {
+    route: mockRoute,
+  })
+})
+
+vi.mock("vuex", async (importOriginal) => {
+  const {withVuexUseStore} = await import("../helpers/testUtils")
+  return withVuexUseStore(importOriginal, mockStore)
+})
+
+vi.mock("@/plugins/goto", () => ({
+  $goto: mockGoto,
+}))
+
+vi.mock("@/plugins/handleNetworkError", () => ({
+  $handleNetworkError: mockHandleNetworkError,
+}))
+
+vi.mock("@/services/api", () => ({
+  findUserById: mockFindUserById,
+}))
+
+vi.mock("@/components/common/banners/FooterBanner.vue", () => ({
+  default: {
+    name: "FooterBanner",
+    template: "<div data-test='footer-banner' />",
+  },
+}))
+
+describe("App navbar behavior", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+
+    mockDisplay.mdAndDown.value = false
+    mockTheme.global.current.value.dark = false
+
+    mockStore.state.statusSnackbarMessage = ""
+    mockStore.getters.isLoggedIn = true
+    mockStore.getters.isBoard = true
+    mockStore.getters.isAdmin = true
+    mockStore.getters.getLogin = {userId: 42, addressId: 7}
+    mockStore.commit.mockImplementation((mutation: string, payload?: unknown) => {
+      if (mutation === "setStatusSnackbarMessage") {
+        mockStore.state.statusSnackbarMessage = String(payload ?? "")
+      }
+    })
+
+    mockRoute.meta.requiresAuth = false
+
+    mockFindUserById.mockResolvedValue({
+      data: {
+        id: 42,
+        roles: ["MEMBER", "BOARD"],
+      },
+    })
+
+    vi.stubGlobal("alert", mockAlert)
+    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("dark") ? matchMediaState.dark : matchMediaState.light,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })))
+  })
+
+  it("shows full desktop navigation and management links for board/admin users", async () => {
+    const wrapper = shallowMount(App)
+    await settle()
+
+    expect(wrapper.find('[icon="mdi-menu"]').exists()).toBe(false)
+    expect(wrapper.find('[to="/login"]').exists()).toBe(false)
+
+    expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
+    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(false)
+    expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
+    expect(wrapper.find('[to="/management/jobs"]').exists()).toBe(true)
+  })
+
+  it("shows mobile menu toggle and contains the same key esports and association links", async () => {
+    mockDisplay.mdAndDown.value = true
+
+    const wrapper = shallowMount(App)
+    await settle()
+
+    expect(wrapper.find('[icon="mdi-menu"]').exists()).toBe(true)
+    expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
+    expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
+    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(false)
+  })
+
+  it("loads roles for the logged-in user on mount", async () => {
+    shallowMount(App)
+    await settle()
+
+    expect(mockFindUserById).toHaveBeenCalledWith({
+      path: {
+        userId: 42,
+      },
+      throwOnError: true,
+    })
+    expect(mockStore.commit).toHaveBeenCalledWith("setRoles", ["MEMBER", "BOARD"])
+  })
+
+  it("passes user-loading failures to network error handling", async () => {
+    const error = new Error("load failed")
+    mockFindUserById.mockRejectedValue(error)
+
+    shallowMount(App)
+    await settle()
+
+    expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
+  })
+
+  it("toggles dark mode and persists the preference", async () => {
+    localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
+    const wrapper = shallowMount(App)
+    await settle()
+
+    mockTheme.change.mockClear()
+    ;(wrapper.vm as any).toggleDarkMode()
+
+    expect(localStorage.getItem("esa-blueshell.nl:darkMode")).toBe("true")
+    expect(mockTheme.change).toHaveBeenCalledWith("dark")
+  })
+
+  it("accepts cookies and closes the cookie snackbar", async () => {
+    const wrapper = shallowMount(App)
+    await settle()
+
+    expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
+    ;(wrapper.vm as any).acceptCookies()
+
+    expect(localStorage.getItem("esa-blueshell.nl:cookiesAccepted")).toBe("true")
+    expect((wrapper.vm as any).showCookieSnackbar).toBe(false)
+  })
+
+  it("logs out and redirects to home when the active route requires auth", async () => {
+    const wrapper = shallowMount(App)
+    await settle()
+
+    mockRoute.meta.requiresAuth = true
+
+    const mockFetch = vi.fn().mockResolvedValue({ok: true})
+    vi.stubGlobal("fetch", mockFetch)
+
+    await (wrapper.vm as any).logOut()
+
+    expect(mockStore.commit).toHaveBeenCalledWith("logout")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/logout"),
+      expect.objectContaining({method: "POST", credentials: "include"}),
+    )
+    expect(mockGoto).toHaveBeenCalledWith("/")
+  })
+
+  it("unlocks the konami-code snackbar and alert", async () => {
+    const wrapper = shallowMount(App)
+    await settle()
+
+    const sequence = [
+      "ArrowUp",
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowLeft",
+      "ArrowRight",
+      "b",
+      "a",
+      "Enter",
+    ]
+    for (const key of sequence) {
+      globalThis.dispatchEvent(new KeyboardEvent("keydown", {key}))
+    }
+
+    expect((wrapper.vm as any).poggers).toBe(true)
+    expect(mockAlert).toHaveBeenCalledWith("BIG SITECIE ENERGY")
+  })
+})

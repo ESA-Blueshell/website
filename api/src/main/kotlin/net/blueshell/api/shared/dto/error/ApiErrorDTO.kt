@@ -1,0 +1,46 @@
+package net.blueshell.api.shared.dto.error
+
+import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.shared.dto.BaseDTO
+import java.net.URI
+
+/**
+ * Mirrors Spring Boot 3.x ProblemDetail JSON, with optional validation errors.
+ * The `errors` extension is produced by controller advice for validation failures.
+ */
+@Schema(name = "ApiError", description = "Problem Details for HTTP APIs including validation errors.")
+data class ApiErrorDTO(
+    @JvmField
+    @field:Schema(description = "Problem type URI (RFC 7807).", example = "about:blank")
+    var type: String? = null,
+
+    @JvmField
+    @field:Schema(description = "Short, human-readable summary of the problem.", example = "Bad Request")
+    var title: String? = null,
+
+    @JvmField
+    @field:Schema(description = "HTTP status code.", example = "400")
+    var status: Int? = null,
+
+    @JvmField
+    @field:Schema(
+        description = "Human-readable explanation specific to this occurrence.",
+        example = "Validation failed for request."
+    )
+    var detail: String? = null,
+
+    @JvmField
+    @field:Schema(description = "A URI reference that identifies the specific occurrence.", example = "/api/v1/users")
+    var instance: URI? = null,
+
+    @JvmField
+    @field:Schema(description = "List of field/object validation errors (present when binding/validation fails).")
+    var errors: MutableList<FieldValidationErrorDTO?>? = null,
+
+    @JvmField
+    @field:Schema(
+        description = "Trace or correlation id if available (Spring may add this via problem detail handlers).",
+        example = "a8c0c4e5f1c24a7e"
+    )
+    var traceId: String? = null
+) : BaseDTO()

@@ -11,6 +11,7 @@
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
+          panel-key="with-address"
           :users="usersWithAddress"
           title="Users with address"
           @update:address="addressChanged"
@@ -21,6 +22,7 @@
         <address-user-list
           :addresses="addresses"
           :expanded="expanded"
+          panel-key="without-address"
           :users="usersWithoutAddress"
           allow-create
           class="mt-3"
@@ -39,13 +41,16 @@
 import {onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AddressUserList from "@/components/common/lists/AddressUserList.vue"
-import {type Address, type AdvancedUser, findAllAddresses, findUsers} from "@/services/api"
+import {type AddressResponse, findAllAddresses, findUsers, type UserDetailResponse} from "@/services/api"
 
-const users = ref<AdvancedUser[]>([])
-const addresses = ref<Address[]>([])
+type ManagedUser = UserDetailResponse & { addressId?: number }
+type ManagedAddress = AddressResponse & { userId?: number }
 
-const usersWithAddress = ref<AdvancedUser[]>([])
-const usersWithoutAddress = ref<AdvancedUser[]>([])
+const users = ref<ManagedUser[]>([])
+const addresses = ref<ManagedAddress[]>([])
+
+const usersWithAddress = ref<ManagedUser[]>([])
+const usersWithoutAddress = ref<ManagedUser[]>([])
 
 const expanded = ref<number>(0)
 
@@ -71,7 +76,8 @@ const getAddresses = async () => {
   }
 }
 
-const hasAddress = (u: AdvancedUser) => addresses.value.some((a) => a.id === u.addressId)
+const hasAddress = (u: ManagedUser) =>
+  addresses.value.some((a) => a.id === u.addressId || a.userId === u.id)
 
 const updateLists = () => {
   const all = users.value
@@ -85,7 +91,7 @@ const toggleExpanded = (userId: number) => {
   expanded.value = userId === expanded.value ? 0 : userId
 }
 
-const addressChanged = (updated: Address) => {
+const addressChanged = (updated: ManagedAddress) => {
   const index = addresses.value.findIndex((a) => a.id === updated.id)
   if (index === -1) {
     addresses.value.push(updated)

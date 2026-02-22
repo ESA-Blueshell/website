@@ -1,9 +1,13 @@
 <template>
-  <v-card class="overflow-hidden">
+  <v-card
+    :data-testid="`recovery-user-list-${resolvedPanelKey}`"
+    class="overflow-hidden"
+  >
     <div
       :aria-controls="panelId"
       :aria-expanded="String(isOpen)"
       class="px-5 py-3 d-flex align-center justify-space-between"
+      :data-testid="`recovery-user-list-toggle-${resolvedPanelKey}`"
       role="button"
       tabindex="0"
       @click="isOpen = !isOpen"
@@ -36,6 +40,7 @@
         <v-text-field
           v-model="localSearch"
           clearable
+          :data-testid="`recovery-user-list-search-${resolvedPanelKey}`"
           density="comfortable"
           hide-details
           label="Search for a user"
@@ -56,6 +61,7 @@
 
           <div
             v-if="filtered.length === 0"
+            :data-testid="`recovery-user-list-empty-${resolvedPanelKey}`"
             class="text-medium-emphasis text-center py-6"
           >
             No users found.
@@ -69,24 +75,27 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import RecoveryUserRow from "../rows/RecoveryUserRow.vue"
-import type {AdvancedUser} from "@/services/api"
+import type {UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{
   title: string
-  users: AdvancedUser[]
+  panelKey?: string
+  users: UserDetailResponse[]
   /** 'activation' => resend activation (inactive) | 'password' => password reset (active) */
   actionType: "activation" | "password"
   startOpen?: boolean
 }>(), {
+  panelKey: "",
   startOpen: false,
 })
 
-const {title, users, actionType, startOpen} = toRefs(props)
+const {title, panelKey, users, actionType, startOpen} = toRefs(props)
 
 const localSearch = ref("")
 const isOpen = ref<boolean>(startOpen.value)
 const panelId = `rul-${Math.random().toString(36).slice(2)}`
+const resolvedPanelKey = computed(() => panelKey.value || title.value.toLowerCase().replace(/\s+/g, "-"))
 
 const filtered = computed(() => filterUsers(users.value, localSearch.value))
 const countLabel = computed(() =>

@@ -1,8 +1,10 @@
 <template>
   <div>
-    <v-list-item>
+    <v-list-item :data-testid="`address-user-row-${user.id}`">
       <div
         class="d-flex justify-space-between align-center"
+        :data-testid="`address-user-toggle-${user.id}`"
+        role="button"
         style="width: 100%;"
         @click="toggleExpanded"
       >
@@ -30,6 +32,7 @@
             :disabled="user?.roles?.includes('MEMBER')"
             class="btn-tight"
             color="red"
+            :data-testid="`address-user-delete-btn-${user.id}`"
             variant="text"
             @click.stop="openDelete"
           >
@@ -38,6 +41,7 @@
 
           <v-btn
             class="btn-tight"
+            :data-testid="`address-user-edit-btn-${user.id}`"
             variant="text"
             @click.stop="toggleExpanded"
           >
@@ -49,6 +53,8 @@
       <v-expand-transition>
         <div
           v-if="expanded === user.id"
+          class="mb-3"
+          :data-testid="`address-user-form-${user.id}`"
           @click.stop
         >
           <!-- Writable v-model proxy pushes updates upward via emit -->
@@ -56,6 +62,7 @@
             v-model="addressModel"
             :user-id="user.id"
             class="mt-6"
+            :data-testid="`address-user-edit-form-${user.id}`"
             show-submit
             submit-text="Save Address"
             @submitted="onSubmitted"
@@ -77,11 +84,14 @@
 import {computed, ref} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type Address, type AdvancedUser, deleteUserAddress} from "@/services/api"
+import {type AddressResponse, deleteAddressById, type UserDetailResponse} from "@/services/api"
+
+type ManagedUser = UserDetailResponse & { addressId?: number }
+type ManagedAddress = AddressResponse & { userId?: number }
 
 interface Props {
-  user: AdvancedUser
-  addresses?: Array<Address>
+  user: ManagedUser
+  addresses?: Array<ManagedAddress>
   expanded?: number | null
 }
 
@@ -91,22 +101,22 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: "update:address", address: Address): void
+  (e: "update:address", address: ManagedAddress): void
   (e: "delete:address", addressId: number): void
   (e: "update:expanded", userId: number): void
 }>()
 
 const deleteDialog = ref(false)
 
-const address = computed<Address | undefined>(() =>
-  props.addresses.find((a) => a.id === props.user.addressId),
+const address = computed<ManagedAddress | undefined>(() =>
+  props.addresses.find((a) => a.id === props.user.addressId || a.userId === props.user.id),
 )
 const hasAddress = computed(() => !!address.value)
 
 /** Writable proxy so AddressForm v-model updates bubble up to the list */
-const addressModel = computed<Address | undefined>({
+const addressModel = computed<ManagedAddress | undefined>({
   get: () => address.value,
-  set: (next?: Address) => {
+  set: (next?: ManagedAddress) => {
     if (next) emit("update:address", next)
   },
 })
@@ -129,7 +139,7 @@ const confirmDeleteAddress = async () => {
   if (!props.user.id || !address.value?.id) return
   try {
     deleteDialog.value = false
-    await deleteUserAddress({path: {userId: props.user.id}})
+    await deleteAddressById({path: {id: address.value.id}})
     emit("delete:address", address.value.id)
   } catch (error) {
     console.error("Failed to delete user:", error)

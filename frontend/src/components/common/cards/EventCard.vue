@@ -8,12 +8,12 @@ import {useRoute, useRouter} from "vue-router"
 import {useTheme} from "vuetify"
 import {DateTime} from "luxon"
 import {
-  type AdvancedCommittee,
   approveEvent,
+  type CommitteeDetailResponse,
   deleteEventById,
   downloadEventBanner,
-  type Event,
-  type EventSignUp,
+  type EventResponse,
+  type EventSignUpResponse,
 } from "@/services/api"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
@@ -22,10 +22,14 @@ const router = useRouter()
 const theme = useTheme()
 const route = useRoute()
 
+type Event = EventResponse
+type EventSignUp = EventSignUpResponse
+type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
+
 const props = defineProps({
   event: {type: Object as PropType<Event>, required: true},
   signUps: {type: Array as PropType<EventSignUp[]>, default: () => []},
-  committees: {type: Array as PropType<AdvancedCommittee[]>, default: () => []},
+  committees: {type: Array as PropType<CommitteeOption[]>, default: () => []},
 })
 
 const emit = defineEmits<{
@@ -50,7 +54,7 @@ const isMember = computed<boolean>(() => store.getters.isMember)
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const isBoard = computed<boolean>(() => store.getters.isBoard)
 
-const committee = computed<AdvancedCommittee | undefined>(() =>
+const committee = computed<CommitteeOption | undefined>(() =>
   props.committees.find((c) => event.value.committeeId === c.id),
 )
 
@@ -168,7 +172,7 @@ async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
   try {
     const resp = await downloadEventBanner({
-      path: {bannerId: event.value.banner.id!},
+      path: {eventId: event.value.id},
       throwOnError: true,
       responseType: "blob",
     })
@@ -224,6 +228,7 @@ const signUpIcon = computed(() =>
 <template v-if="event.id">
   <div>
     <v-card
+      :data-testid="`event-card-${event.id}`"
       :style="cardStyle"
       class="card--row"
       rounded="sm"
@@ -249,6 +254,7 @@ const signUpIcon = computed(() =>
                     <template #activator="{ props: approveProps }">
                       <v-btn
                         :color="approvedColor"
+                        :data-testid="`event-approve-btn-${event.id}`"
                         :disabled="!isBoard || isPastEvent"
                         :prepend-icon="approvedIcon"
                         class="approve-btn text-none"
@@ -308,6 +314,7 @@ const signUpIcon = computed(() =>
                   >
                     <template #activator="{ props: p }">
                       <v-btn
+                        :data-testid="`event-signups-btn-${event.id}`"
                         :disabled="!event.signUp"
                         icon="mdi-list-status"
                         v-bind="p"
@@ -323,6 +330,7 @@ const signUpIcon = computed(() =>
                   >
                     <template #activator="{ props: p }">
                       <v-btn
+                        :data-testid="`event-edit-btn-${event.id}`"
                         icon="mdi-pencil"
                         v-bind="p"
                         variant="plain"
@@ -337,6 +345,7 @@ const signUpIcon = computed(() =>
                   >
                     <template #activator="{ props: p }">
                       <v-btn
+                        :data-testid="`event-delete-btn-${event.id}`"
                         icon="mdi-delete"
                         v-bind="p"
                         variant="plain"
@@ -418,6 +427,7 @@ const signUpIcon = computed(() =>
                           ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
                           : (expanded ? 'Cancel signing up' : 'Sign up')
                       "
+                      :data-testid="`event-signup-toggle-btn-${event.id}`"
                       :disabled="actionsDisabled"
                       :icon="signUpIcon"
                       :loading="submitting"

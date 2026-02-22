@@ -11,12 +11,13 @@
           ref="formRef"
           v-slot="{ meta }"
           as="form"
+          data-testid="activate-member-form"
           @submit="onSubmit"
         >
           <v-row>
             <VvField
               v-model="form.username"
-              :component-props="{ label: 'Username', autocomplete: 'username' }"
+              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
               name="username"
               rules="required|alphaNum"
             />
@@ -29,6 +30,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 label: 'Password',
                 autocomplete: 'new-password',
+                'data-testid': 'activate-member-password-field',
                 'onClick:append-inner': () => (showPass.value = !showPass.value)
               }"
               name="password"
@@ -44,32 +46,12 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 label: 'Repeat Password',
                 autocomplete: 'new-password',
+                'data-testid': 'activate-member-repeat-password-field',
                 'onClick:append-inner': () => (showPass.value = !showPass.value)
               }"
               name="passwordAgain"
               rules="required|match:@password"
             />
-          </v-row>
-
-
-          <v-row>
-            <Field
-              v-slot="{ value, errors }"
-              v-model="form.token"
-              name="token"
-              rules="required"
-            >
-              <v-text-field
-                :model-value="value"
-                disabled
-                label="Reset token"
-                name="token"
-              />
-              <br>
-              <span class="v-field--error">
-                {{ errors[0] }}
-              </span>
-            </Field>
           </v-row>
 
           <v-row
@@ -81,6 +63,7 @@
               :disabled="!meta.valid || loading"
               :loading="loading"
               color="primary"
+              data-testid="activate-member-submit-btn"
               type="submit"
             >
               Activate Member
@@ -90,6 +73,7 @@
           <v-alert
             v-if="errorMessage"
             class="mt-4"
+            data-testid="activate-member-error-alert"
             type="error"
             variant="tonal"
           >
@@ -99,6 +83,7 @@
           <v-alert
             v-if="succeeded"
             class="mb-2"
+            data-testid="activate-member-success-alert"
             type="success"
           >
             Account activated! You will be redirected to the login page.
@@ -112,12 +97,13 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Field, Form, type FormContext, useForm} from "vee-validate"
+import {Form, type FormContext, useForm} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {memberActivate, type MemberActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
+import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 
 const route = useRoute()
 const router = useRouter()
@@ -134,15 +120,17 @@ const form = ref<MemberActivationRequest>({
 })
 
 const passwordAgain = ref("")
+const RECOVERY_TOKEN_STORAGE_KEY = "recovery:member-activation:token"
 
 const formRef = ref<FormContext>()
 
 const {handleSubmit, validate} = useForm()
 
 onMounted(() => {
-  form.value.token = (route.query.token as string) || ""
+  form.value.token = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
 
   if (!form.value.token) {
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     router.replace({name: "home"})
   }
 })
@@ -159,6 +147,7 @@ const onSubmit = handleSubmit(async () => {
 
   try {
     await memberActivate({body: form.value, throwOnError: true})
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
     redirectToLogin(2500)
   } catch (e: unknown) {

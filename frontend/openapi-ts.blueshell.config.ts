@@ -1,6 +1,4 @@
-import { defineConfig } from '@hey-api/openapi-ts';
-
-export default defineConfig({
+export default {
   input: '../openapi/blueshell.json',
   output: {
     path: 'src/services/api/blueshell',
@@ -17,6 +15,9 @@ export default defineConfig({
     {
       asClass: false,
       name: '@hey-api/sdk',
+      // Keep grouped request structure stable while migrating domains.
+      // Call sites use `{ path, query, body, ... }` and are migrated domain-by-domain.
+      paramsStructure: 'grouped',
     },
   ],
-});
+}

@@ -5,10 +5,11 @@
     <div
       v-if="!isSuccess"
       class="mx-auto pb-10 mt-10"
+      data-testid="create-account-form-state"
       style="max-width: 600px"
     >
-      <simple-user-form
-        ref="simpleUserForm"
+      <user-form
+        data-testid="create-account-user-form"
         show-password
         show-submit
         submit-text="Create Account"
@@ -19,6 +20,7 @@
     <div
       v-else
       class="mx-auto my-10"
+      data-testid="create-account-success-state"
       style="max-width: 600px"
     >
       <p class="text-center text-subtitle-1 font-weight-light">
@@ -32,7 +34,7 @@
 <script lang="ts" setup>
 import {ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
 
 const isSuccess = ref(false)
 

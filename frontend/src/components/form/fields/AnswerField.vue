@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import {Field} from "vee-validate"
 import {watch} from "vue"
-import {type Answer, type Question, QuestionType} from "@/services/api"
+import {type AnswerRequest, type QuestionResponse, QuestionType} from "@/services/api"
 
 const props = withDefaults(
   defineProps<{
-    question: Question
+    question: QuestionResponse
   }>(),
   {},
 )
 
-const answer = defineModel<Answer>({
-  default: () => ({questionId: undefined, textResponse: "", optionSelections: []}),
+const answer = defineModel<AnswerRequest>({
+  default: () => ({questionId: 0, textResponse: "", optionSelections: []}),
 })
 
 const requireText = (val: string | undefined | null) =>
@@ -25,21 +25,21 @@ const requireOptionSelection = (selections: boolean[] | undefined | null) => {
 watch(
   () => props.question,
   (q) => {
-    if (!answer.value.questionId) {
+    if (!answer.value.questionId || answer.value.questionId <= 0) {
       if (q.type === QuestionType.OPEN) {
         answer.value = {
           questionId: q.id,
           textResponse: "",
-        } as Answer
+        }
       } else if (q.type === QuestionType.RADIO || q.type === QuestionType.CHECKBOX) {
         answer.value = {
           questionId: q.id,
           optionSelections: new Array(q.choiceLabels!.length).fill(false),
-        } as Answer
+        }
       } else {
         answer.value = {
           questionId: q.id,
-        } as Answer
+        }
       }
     }
   },

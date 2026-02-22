@@ -1,6 +1,7 @@
 <template>
   <v-dialog
     v-model="open"
+    data-testid="start-membership-dialog"
     max-width="500"
   >
     <v-card>
@@ -17,7 +18,7 @@
             <v-col cols="12">
               <VvField
                 v-model="membership.startDate"
-                :component-props="{ type: 'date', max: maxDate }"
+                :component-props="{ type: 'date', max: maxDate, 'data-testid': 'start-membership-start-date-field' }"
                 label="Start Date"
                 name="startDate"
                 rules="required"
@@ -30,20 +31,9 @@
               <VvField
                 v-model="membership.memberType"
                 :component="MemberTypeSelect"
+                :component-props="{ 'data-testid': 'start-membership-member-type-field' }"
                 label="Member Type"
                 name="memberType"
-                rules="required"
-              />
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="membership.country"
-                :component="CountrySelect"
-                label="Country"
-                name="country"
                 rules="required"
               />
             </v-col>
@@ -56,6 +46,7 @@
         <v-btn
           :disabled="isSubmitting"
           color="secondary"
+          data-testid="start-membership-cancel-btn"
           @click="open = false"
         >
           Cancel
@@ -63,6 +54,7 @@
         <v-btn
           :loading="isSubmitting"
           color="primary"
+          data-testid="start-membership-confirm-btn"
           @click="confirm"
         >
           Confirm
@@ -78,8 +70,7 @@ import {DateTime} from "luxon"
 import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
-import CountrySelect from "@/components/form/fields/CountrySelect.vue"
-import {boardCreateMembership, type Membership, MemberType} from "@/services/api"
+import {boardCreateMembership, type BoardCreateMembershipRequest, MemberType, type MembershipResponse} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
 
@@ -91,7 +82,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void;
-  (e: "update:membership", value: Membership): void;
+  (e: "update:membership", value: MembershipResponse): void;
 }>()
 
 const formRef = ref<FormContext>()
@@ -102,12 +93,10 @@ const open = computed({
 
 const maxDate = DateTime.now().toISODate()
 
-const membership = ref<Membership>({
+const membership = ref<BoardCreateMembershipRequest>({
   startDate: maxDate,
   memberType: MemberType.REGULAR,
   userId: props.userId,
-  city: "",
-  country: "NL",
   incasso: false,
 })
 
@@ -119,7 +108,11 @@ const confirm = async () => {
 
   isSubmitting.value = true
   try {
-    const response = await boardCreateMembership({body: membership.value, throwOnError: true})
+    const response = await boardCreateMembership({
+      path: {userId: props.userId},
+      body: membership.value,
+      throwOnError: true,
+    })
     if (response.data) {
       emit("update:membership", response.data)
       open.value = false

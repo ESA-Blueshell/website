@@ -1,21 +1,24 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import MemberUserRow from "../rows/MemberUserRow.vue"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
-import type {AdvancedUser, Contribution, Membership} from "@/services/api"
+import UserForm from "@/components/form/UserForm.vue"
+import type {ContributionResponse, MembershipResponse} from "@/services/api"
+import type {EditableUser} from "@/utils/editableUser"
 import {filterUsers} from "@/plugins/userFilter"
 
 defineOptions({name: "MemberUserList"})
 
 const props = withDefaults(defineProps<{
   title: string
-  membershipsByUserId?: Record<number, Membership>,
-  contributionsByUserId?: Record<number, Contribution>,
-  users: AdvancedUser[]
+  panelKey?: string
+  membershipsByUserId?: Record<number, MembershipResponse>,
+  contributionsByUserId?: Record<number, ContributionResponse>,
+  users: EditableUser[]
   allowCreate?: boolean
   enableDelete?: boolean
   startOpen?: boolean
 }>(), {
+  panelKey: "",
   membershipsByUserId: () => ({}),
   contributionsByUserId: () => ({}),
   allowCreate: false,
@@ -25,17 +28,18 @@ const props = withDefaults(defineProps<{
 
 const expanded = defineModel<number>("expanded", {default: 0})
 
-const {title, users, membershipsByUserId, contributionsByUserId, allowCreate, enableDelete, startOpen} = toRefs(props)
+const {title, panelKey, users, membershipsByUserId, contributionsByUserId, allowCreate, enableDelete, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
-  (e: "delete:user", user: AdvancedUser): void
-  (e: "update:user", user: AdvancedUser): void
-  (e: "update:membership", membership: Membership): void
+  (e: "delete:user", user: EditableUser): void
+  (e: "update:user", user: EditableUser): void
+  (e: "update:membership", membership: MembershipResponse): void
 }>()
 
 const localSearch = ref("")
 const isOpen = ref<boolean>(startOpen.value)
 const panelId = `mul-${Math.random().toString(36).slice(2)}`
+const resolvedPanelKey = computed(() => panelKey.value || title.value.toLowerCase().replace(/\s+/g, "-"))
 
 const filteredUsers = computed(() => filterUsers(users.value, localSearch.value))
 
@@ -50,14 +54,14 @@ const toggleCreate = () => {
   expanded.value = expanded.value === -1 ? 0 : -1
 }
 
-const membershipChanged = (membership: Membership) => emit("update:membership", membership)
-const updateUser = (user: AdvancedUser) => {
+const membershipChanged = (membership: MembershipResponse) => emit("update:membership", membership)
+const updateUser = (user: EditableUser) => {
   console.log("user", user)
   emit("update:user", user)
 }
-const deleteUser = (user: AdvancedUser) => emit("delete:user", user)
+const deleteUser = (user: EditableUser) => emit("delete:user", user)
 
-const createDraft = ref<AdvancedUser>()
+const createDraft = ref<EditableUser>()
 const onCreateSubmitted = (ok: boolean) => {
   if (ok && createDraft.value) {
     emit("update:user", createDraft.value)
@@ -68,11 +72,15 @@ const onCreateSubmitted = (ok: boolean) => {
 </script>
 
 <template>
-  <v-card class="overflow-hidden">
+  <v-card
+    :data-testid="`member-user-list-${resolvedPanelKey}`"
+    class="overflow-hidden"
+  >
     <div
       :aria-controls="panelId"
       :aria-expanded="String(isOpen)"
       class="px-5 py-3 d-flex align-center justify-space-between"
+      :data-testid="`member-user-list-toggle-${resolvedPanelKey}`"
       role="button"
       tabindex="0"
       @click="isOpen = !isOpen"
@@ -104,6 +112,7 @@ const onCreateSubmitted = (ok: boolean) => {
         <v-text-field
           v-model="localSearch"
           clearable
+          :data-testid="`member-user-list-search-${resolvedPanelKey}`"
           density="comfortable"
           hide-details
           label="Search for a user"
@@ -112,7 +121,10 @@ const onCreateSubmitted = (ok: boolean) => {
 
         <v-list class="mt-1">
           <div v-if="allowCreate">
-            <v-list-item @click="toggleCreate()">
+            <v-list-item
+              :data-testid="`member-user-list-add-user-btn-${resolvedPanelKey}`"
+              @click="toggleCreate()"
+            >
               <div
                 class="d-flex justify-space-between align-center"
                 style="width: 100%;"
@@ -123,8 +135,9 @@ const onCreateSubmitted = (ok: boolean) => {
             </v-list-item>
             <v-expand-transition>
               <div v-if="expanded === -1">
-                <advanced-user-form
+                <user-form
                   v-model="createDraft"
+                  :options="{ includeMemberProfile: true, updateKind: 'board' }"
                   class="mt-4"
                   show-submit
                   @submitted="onCreateSubmitted"
@@ -155,6 +168,7 @@ const onCreateSubmitted = (ok: boolean) => {
 
           <div
             v-if="filteredUsers.length === 0"
+            :data-testid="`member-user-list-empty-${resolvedPanelKey}`"
             class="text-medium-emphasis text-center py-6"
           >
             No users found.

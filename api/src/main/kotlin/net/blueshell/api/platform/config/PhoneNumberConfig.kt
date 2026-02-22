@@ -1,0 +1,16 @@
+package net.blueshell.api.platform.config
+
+import com.google.i18n.phonenumbers.PhoneNumberUtil
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+
+/**
+ * Configuration class to define PhoneNumberUtil bean.
+ */
+@Configuration
+class PhoneNumberConfig {
+    @Bean
+    fun phoneNumberUtil(): PhoneNumberUtil? {
+        return PhoneNumberUtil.getInstance()
+    }
+}

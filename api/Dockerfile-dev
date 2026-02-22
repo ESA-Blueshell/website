@@ -1,10 +1,14 @@
 # syntax=docker/dockerfile:1.7
-
-FROM eclipse-temurin:24-jdk-alpine
+FROM eclipse-temurin:24-jdk
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Where Playwright stores browsers
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 COPY gradlew gradlew
 COPY gradle gradle
@@ -13,7 +17,15 @@ COPY api api
 COPY openapi openapi
 
 RUN chmod +x gradlew
-RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon :api:assemble -x test
+
+# Build app
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew --no-daemon :api:assemble -x test
+
+# Install Playwright OS deps + Chromium during build
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=cache,target=/ms-playwright \
+    ./gradlew --no-daemon :api:installChromium -x test
 
 EXPOSE ${PORT} 5005
 

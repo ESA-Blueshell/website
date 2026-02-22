@@ -76,19 +76,39 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 springdoc:
   api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:false}
     path: /swagger-ui
     url: /api/v3/api-docs
   default-produces-media-type: application/json
 
 app:
   url: ${APP_URL}
+  security:
+    require-https: true
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
+    issuer: ${JWT_ISSUER:blueshell-api}
+    audience: ${JWT_AUDIENCE:blueshell-web}
+    revoked-jtis: ${JWT_REVOKED_JTIS:}
+  jobs:
+    queue-name: ${JOB_QUEUE_NAME:jobs.queue}
+    exchange-name: ${JOB_EXCHANGE_NAME:jobs.exchange}
+    routing-key: ${JOB_ROUTING_KEY:jobs.routing}
+    max-retries: ${JOB_MAX_RETRIES:3}
+    initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}
+    backoff-multiplier: ${JOB_BACKOFF_MULTIPLIER:2.0}
 
 frontend:
   url: ${FRONTEND_URL}
@@ -98,6 +118,7 @@ storage:
 
 brevo:
   apiKey: ${BREVO_API_KEY}
+  baseUrl: ${BREVO_BASE_URL:https://api.brevo.com/v3}
   folders:
     contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID}
 
@@ -111,10 +132,28 @@ google:
 
 server:
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: never
+    include-binding-errors: never
     include-stacktrace: never
     include-exception: false
+
+security:
+  cors:
+    allowed-origins:
+      - https://esa-blueshell.nl
+  auth-cookie:
+    name: BSH_AUTH
+    path: /
+    same-site: None
+  openapi:
+    public:
+      enabled: false
+  auth-rate-limit:
+    enabled: true
+    trusted-proxy-cidrs: "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
+    max-buckets: 10000
+    bucket-idle-ttl: PT30M
+    cleanup-interval: 128
 
 logging:
   level:

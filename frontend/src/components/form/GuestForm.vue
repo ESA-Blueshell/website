@@ -4,12 +4,14 @@ import {useStore} from "vuex"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/dist/v-phone-input.css"
+import "v-phone-input/styles"
 import {VPhoneInput} from "v-phone-input"
-import type {Guest} from "@/services/api"
+import type {CreateGuestRequest, GuestResponse} from "@/services/api"
 import {useCountry, useVeeForm} from "@/composables/formUtils"
 
-const guest = defineModel<Guest>({
+type GuestFormModel = CreateGuestRequest & Partial<GuestResponse>
+
+const guest = defineModel<GuestFormModel>({
   default: () => ({
     name: "",
     discord: "",

@@ -8,15 +8,17 @@
     >
       <v-stepper
         v-model="currentStep"
+        data-testid="membership-signup-stepper"
         :items="stepItems"
         hide-actions
       >
         <!-- Step 1: Personal information -->
         <template #[`item.1`]>
           <v-card class="pa-4">
-            <advanced-user-form
+            <user-form
               ref="userRef"
               v-model="user"
+              :options="{ includeMemberProfile: true }"
               :show-password="!user?.id"
             />
             <v-row align="center">
@@ -25,6 +27,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
+                  data-testid="membership-step1-next-btn"
                   @click="nextStep"
                 >
                   Next
@@ -74,6 +77,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
+                  data-testid="membership-step2-previous-btn"
                   variant="outlined"
                   @click="previousStep"
                 >
@@ -90,6 +94,7 @@
                 <v-btn
                   :loading="resendBusy"
                   class="mr-2"
+                  data-testid="membership-step2-resend-btn"
                   prepend-icon="mdi-email-arrow-right-outline"
                   variant="outlined"
                   @click="resendActivation"
@@ -99,6 +104,7 @@
 
                 <v-btn
                   color="primary"
+                  data-testid="membership-step2-signin-btn"
                   prepend-icon="mdi-check-circle-outline"
                   @click="handleVerified"
                 >
@@ -120,6 +126,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
+                  data-testid="membership-step3-previous-btn"
                   variant="outlined"
                   @click="previousStep"
                 >
@@ -131,6 +138,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
+                  data-testid="membership-step3-next-btn"
                   @click="nextStep"
                 >
                   Next
@@ -150,6 +158,7 @@
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
+                  data-testid="membership-step4-previous-btn"
                   variant="outlined"
                   @click="previousStep"
                 >
@@ -161,6 +170,7 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
+                  data-testid="membership-step4-complete-btn"
                   @click="nextStep"
                 >
                   Complete Membership
@@ -203,15 +213,14 @@
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
-  type Address,
-  type AdvancedUser,
+  type AddressResponse,
   findAddressById,
   findUserById,
-  type Membership,
+  type MembershipResponse,
   resendUserActivation,
   Role,
 } from "@/services/api"
@@ -219,6 +228,7 @@ import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
 import router from "@/plugins/router.ts"
+import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
 const route = useRoute()
 
@@ -228,11 +238,11 @@ const currentStep = ref<number>(Steps.Personal)
 const submitting = ref(false)
 const resendBusy = ref(false)
 
-const user = ref<AdvancedUser>()
-const address = ref<Address>()
-const membership = ref<Membership>()
+const user = ref<EditableUser>()
+const address = ref<AddressResponse>()
+const membership = ref<MembershipResponse>()
 
-const userRef = ref<InstanceType<typeof AdvancedUserForm>>()
+const userRef = ref<InstanceType<typeof UserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
 const membershipRef = ref<InstanceType<typeof MembershipForm>>()
 
@@ -248,9 +258,72 @@ const stepItems = computed(() => [
 
 const infoEmail = computed(() => user.value?.email ?? "")
 
+function parseStepQuery(rawStep: unknown): number {
+  const rawValue = Array.isArray(rawStep) ? rawStep[0] : rawStep
+  const parsed = Number(rawValue ?? Steps.Personal)
+  return Number.isFinite(parsed) ? parsed : Steps.Personal
+}
+
+function resolveStep(desiredStep: number): number {
+  if (desiredStep >= Steps.Done) return Steps.Done
+
+  let step = Math.max(Steps.Personal, Math.min(desiredStep, Steps.Membership))
+  const hasUser = Boolean(user.value?.id)
+  const hasAddress = Boolean(login.value?.addressId || address.value?.id)
+
+  if (step === Steps.Membership && (!isLoggedIn.value || !hasUser || !hasAddress)) {
+    step = Steps.Address
+  }
+
+  if (step === Steps.Address && (!isLoggedIn.value || !hasUser)) {
+    step = Steps.ConfirmEmail
+  }
+
+  if (step === Steps.ConfirmEmail) {
+    if (isLoggedIn.value && hasUser) {
+      step = Steps.Address
+    } else if (!hasUser) {
+      step = Steps.Personal
+    }
+  }
+
+  return step
+}
+
+function buildQueryForStep(step: number) {
+  const nextQuery = {...route.query}
+  if (step <= Steps.Personal || step >= Steps.Done) {
+    delete nextQuery.step
+  } else {
+    nextQuery.step = String(step)
+  }
+  return nextQuery
+}
+
+async function syncStep(desiredStep = currentStep.value) {
+  const resolvedStep = resolveStep(desiredStep)
+  const stepNeedsUpdate = currentStep.value !== resolvedStep
+
+  if (resolvedStep >= Steps.Done) {
+    if (stepNeedsUpdate) currentStep.value = resolvedStep
+    return
+  }
+
+  const currentHasStep = route.query.step != null
+  const targetHasStep = resolvedStep > Steps.Personal
+  const currentQueryStep = parseStepQuery(route.query.step)
+  const queryNeedsUpdate = targetHasStep !== currentHasStep || (targetHasStep && currentQueryStep !== resolvedStep)
+
+  if (queryNeedsUpdate) {
+    await router.replace({query: buildQueryForStep(resolvedStep)})
+  }
+  if (stepNeedsUpdate) {
+    currentStep.value = resolvedStep
+  }
+}
+
 async function handleVerified() {
-  if (isLoggedIn.value) await fetchData()
-  else await router.push({name: "login", query: {redirect: "/membership/signUp?step=2"}})
+  await router.push({name: "login", query: {redirect: "/membership/signup?step=2"}})
 }
 
 async function fetchUser() {
@@ -258,7 +331,9 @@ async function fetchUser() {
   if (!userId) return
   try {
     const {data} = await findUserById({path: {userId}, throwOnError: true})
-    user.value = data!
+    if (data) {
+      user.value = toEditableUser(data)
+    }
   } catch (e) {
     $handleNetworkError(e)
   }
@@ -280,21 +355,29 @@ const nextStep = async () => {
     submitting.value = true
     switch (currentStep.value) {
       case Steps.Personal: {
-        await userRef.value?.save()
-        currentStep.value = isLoggedIn.value ? Steps.Address : Steps.ConfirmEmail
+        const savedUser = await userRef.value?.save()
+        if (!savedUser) break
+        await syncStep(isLoggedIn.value ? Steps.Address : Steps.ConfirmEmail)
         break
       }
-      case Steps.ConfirmEmail:
-        if (isLoggedIn.value) currentStep.value = Steps.Address
+      case Steps.ConfirmEmail: {
+        if (!isLoggedIn.value) break
+        await fetchUser()
+        await syncStep(Steps.Address)
         break
+      }
       case Steps.Address: {
-        await addressRef.value?.save()
-        currentStep.value = Steps.Membership
+        const savedAddress = await addressRef.value?.save()
+        if (!savedAddress) break
+        await syncStep(Steps.Membership)
         break
       }
       case Steps.Membership: {
         const savedMembership = await membershipRef.value?.save()
-        if (savedMembership) currentStep.value = Steps.Done
+        if (savedMembership) {
+          await router.replace({query: buildQueryForStep(Steps.Done)})
+          currentStep.value = Steps.Done
+        }
         break
       }
     }
@@ -306,11 +389,12 @@ const nextStep = async () => {
 const previousStep = () => {
   if (currentStep.value <= Steps.Personal) return
   const target = currentStep.value - 1
-  currentStep.value = target === Steps.ConfirmEmail && isLoggedIn.value ? Steps.Personal : target
+  const desiredStep = target === Steps.ConfirmEmail && isLoggedIn.value ? Steps.Personal : target
+  void syncStep(desiredStep)
 }
 
 async function fetchAddress() {
-  const addressId = user.value?.addressId || address.value?.id
+  const addressId = login.value?.addressId || address.value?.id
   if (!addressId) return
   try {
     const {data} = await findAddressById({path: {id: addressId}})
@@ -320,68 +404,79 @@ async function fetchAddress() {
   }
 }
 
-// Keep URL in sync, redirect to correct steps based on state
-watch(currentStep, async (val) => {
-  let step = Math.max(0, Math.min(val, Steps.Membership))
-
-  const userValid = Boolean(user.value?.id && await userRef.value?.validate())
-  const addressValid = Boolean(address.value?.id && await addressRef.value?.validate())
-
-  switch (step) {
-    case Steps.Membership:
-      // It is only allowed to become a member if a user is signed in, is valid, and has a valid address
-      // if that is not the case go back by one step
-      if (!isLoggedIn.value || !userValid || !addressValid) {
-        step = Steps.Address
-      }
-      break
-
-    case Steps.Address:
-      // It is only allowed to modify an address if a user is signed in and is valid
-      // if that is not the case go back by one step
-      if (!isLoggedIn.value || !userValid) {
-        step = Steps.ConfirmEmail
-      }
-      break
-
-    case Steps.ConfirmEmail:
-      // One may only be on the confirm email page if they have done the initial account creation. but have not logged in
-
-      if (isLoggedIn.value && userValid) {
-        // If a user is logged in and has a valid user, then go to the address page
-        step = Steps.Address
-      } else if (!userValid) {
-        // If the user is not valid, go to personal to make it valid
-        step = Steps.Personal
-      }
-      // Otherwise, they are not logged in, but user is valid, they may stay on the page
-      break
-  }
-
-  await router.replace({query: {step}})
-  currentStep.value = step
+watch(currentStep, async (step) => {
+  await syncStep(step)
 })
+
+watch(
+  () => route.query.step,
+  async () => {
+    await syncStep(parseStepQuery(route.query.step))
+  }
+)
+
+watch(
+  () => login.value?.userId,
+  async (userId, previousUserId) => {
+    if (!userId) {
+      await syncStep(currentStep.value)
+      return
+    }
+
+    if (userId !== previousUserId || !user.value?.id) {
+      await fetchUser()
+    }
+
+    if (login.value?.addressId && !address.value?.id) {
+      await fetchAddress()
+    }
+
+    if (currentStep.value === Steps.ConfirmEmail) {
+      await syncStep(Steps.Address)
+      return
+    }
+
+    await syncStep(currentStep.value)
+  }
+)
 
 // If a user is already a member, then redirect them to a different page.
 watch(user, async (val) => {
   if (!val?.roles?.includes(Role.MEMBER)) return
 
   store.commit("setStatusSnackbarMessage", "you are already a member")
-  const backTarget = (window.history.state && window.history.state.back) as string | undefined
-  await router.replace(backTarget && backTarget !== route.fullPath ? backTarget : "/")
+  const rawBackTarget = (window.history.state && window.history.state.back) as string | undefined
+  let normalizedBackTarget: string | null = null
+
+  if (rawBackTarget) {
+    try {
+      const parsed = new URL(rawBackTarget, window.location.origin)
+      normalizedBackTarget = `${parsed.pathname}${parsed.search}${parsed.hash}`
+    } catch {
+      normalizedBackTarget = rawBackTarget.startsWith("/") ? rawBackTarget : null
+    }
+  }
+
+  const shouldUseBackTarget = Boolean(
+    normalizedBackTarget &&
+      normalizedBackTarget !== route.fullPath &&
+      !normalizedBackTarget.startsWith("/membership/signup")
+  )
+
+  await router.replace(shouldUseBackTarget ? normalizedBackTarget! : "/")
 })
 
 async function fetchData() {
   if (!login.value?.userId) return
   await fetchUser()
 
-  if (!user.value?.addressId && !address.value?.id) return
+  if (!login.value?.addressId && !address.value?.id) return
   await fetchAddress()
 }
 
 onMounted(async () => {
   await fetchData()
-  currentStep.value = Number(route.query.step ?? 1)
+  await syncStep(parseStepQuery(route.query.step))
 })
 
 </script>

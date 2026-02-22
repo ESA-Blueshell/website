@@ -1,5 +1,8 @@
 <template>
-  <v-card class="overflow-hidden">
+  <v-card
+    class="overflow-hidden"
+    data-testid="contribution-period-list"
+  >
     <div class="px-5 d-flex align-center justify-space-between">
       <div class="d-flex align-center">
         <h2 class="contrib-title">
@@ -40,6 +43,7 @@
                     'ma-2'
                   ]"
                   :elevation="isSelected ? 0 : 4"
+                  :data-testid="`contribution-period-select-btn-${period.id}`"
                   :variant="isSelected ? 'flat' : 'elevated'"
                   @click="toggle"
                 >
@@ -47,6 +51,7 @@
                   <v-icon
                     v-if="hoveredPeriodId === period.id"
                     class="edit-icon"
+                    :data-testid="`contribution-period-edit-btn-${period.id}`"
                     style="padding-left: 10px"
                     @click.stop="openEditPeriodDialog(period)"
                   >
@@ -63,6 +68,7 @@
           cols="auto"
         >
           <v-btn
+            data-testid="contribution-period-add-btn"
             icon
             @click="openAddPeriodDialog"
           >
@@ -93,23 +99,23 @@ import {onMounted, ref} from "vue"
 import {DateTime} from "luxon"
 import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type ContributionPeriod, deleteContributionPeriodById, findContributionPeriods} from "@/services/api"
+import {type ContributionPeriodResponse, deleteContributionPeriodById, findContributionPeriods} from "@/services/api"
 
 defineOptions({name: "ContributionPeriodList"})
 
 const emit = defineEmits<{
-  (e: "update:contribution-period", value: ContributionPeriod | undefined): void;
+  (e: "update:contribution-period", value: ContributionPeriodResponse | undefined): void;
 }>()
 
-const contributionPeriods = ref<ContributionPeriod[]>([])
+const contributionPeriods = ref<ContributionPeriodResponse[]>([])
 const selectedPeriodId = ref<number | undefined>()
 const hoveredPeriodId = ref<number | null>(null)
 const deleteDialog = ref(false)
-const selectedPeriod = ref<ContributionPeriod | null>(null)
+const selectedPeriod = ref<ContributionPeriodResponse | null>(null)
 const isEditing = ref(false)
 const showAddPeriodDialog = ref(false)
 
-const formatPeriod = (period?: ContributionPeriod | null) => {
+const formatPeriod = (period?: ContributionPeriodResponse | null) => {
   if (!period) return ""
   const start = DateTime.fromISO(period.startDate).toFormat("dd/MM/yyyy")
   const end = DateTime.fromISO(period.endDate).toFormat("dd/MM/yyyy")
@@ -135,7 +141,7 @@ const openAddPeriodDialog = () => {
   showAddPeriodDialog.value = true
 }
 
-const openEditPeriodDialog = (period: ContributionPeriod) => {
+const openEditPeriodDialog = (period: ContributionPeriodResponse) => {
   isEditing.value = true
   selectedPeriod.value = period
   showAddPeriodDialog.value = true
@@ -162,7 +168,7 @@ const selectedPeriodIdChanged = (id: number | undefined) => {
 }
 
 /** Refresh periods and keep/restore selection after dialog save */
-const onPeriodChanged = async (p: ContributionPeriod) => {
+const onPeriodChanged = async (p: ContributionPeriodResponse) => {
   await getContributionPeriods()
   selectedPeriodId.value = p?.id
   selectedPeriodIdChanged(selectedPeriodId.value)

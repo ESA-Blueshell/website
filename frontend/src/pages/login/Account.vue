@@ -35,14 +35,10 @@
           class="mt-10"
         >
           <v-form ref="form">
-            <advanced-user-form
-              v-if="isMember"
+            <user-form
               v-model="user"
-              show-submit
-            />
-            <simple-user-form
-              v-else
-              v-model="user"
+              data-testid="account-user-form"
+              :options="{ includeMemberProfile: isMember }"
               show-submit
             />
           </v-form>
@@ -59,11 +55,11 @@ import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import AdvancedUserForm from "@/components/form/AdvancedUserForm.vue"
-import {type AdvancedUser, findUserById, type SimpleUser} from "@/services/api"
-import SimpleUserForm from "@/components/form/SimpleUserForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
+import {findUserById} from "@/services/api"
+import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
-const user = ref<SimpleUser | AdvancedUser>()
+const user = ref<EditableUser>()
 const store = useStore()
 const isMember = computed<boolean>(() => store.getters.isMember)
 
@@ -78,7 +74,9 @@ onMounted(async () => {
       },
     })
 
-    user.value = response.data!
+    if (response.data) {
+      user.value = toEditableUser(response.data)
+    }
   } catch (e) {
     $handleNetworkError(e)
   }

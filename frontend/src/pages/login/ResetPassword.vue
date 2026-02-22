@@ -10,6 +10,7 @@
         <Form
           v-slot="{ meta }"
           as="form"
+          data-testid="reset-password-form"
           @submit="onSubmit"
         >
           <v-row>
@@ -20,6 +21,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 autocomplete: 'new-password',
                 label: 'New Password',
+                'data-testid': 'reset-password-new-password-field',
                 'onClick:append-inner': () => (showPass = !showPass)
               }"
               name="password"
@@ -34,6 +36,7 @@
                 'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
                 autocomplete: 'new-password',
                 label: 'Repeat New Password',
+                'data-testid': 'reset-password-repeat-password-field',
                 'onClick:append-inner': () => (showPass = !showPass)
               }"
               name="passwordAgain"
@@ -50,6 +53,7 @@
               :disabled="!meta.valid || loading"
               :loading="loading"
               color="primary"
+              data-testid="reset-password-submit-btn"
               type="submit"
             >
               Reset Password
@@ -59,6 +63,7 @@
           <v-alert
             v-if="errorMessage"
             class="mt-4"
+            data-testid="reset-password-error-alert"
             type="error"
             variant="tonal"
           >
@@ -68,6 +73,7 @@
           <div
             v-if="succeeded"
             class="mt-6"
+            data-testid="reset-password-success-state"
           >
             <p class="text-subtitle-1">
               Your password has been reset successfully.
@@ -93,6 +99,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {type PasswordResetRequest, setPassword} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 
 const route = useRoute()
 const router = useRouter()
@@ -102,8 +109,8 @@ const succeeded = ref(false)
 const showPass = ref(false)
 const errorMessage = ref<string | null>(null)
 
-const token = ref<string>("")
 const passwordAgain = ref<string>("")
+const RECOVERY_TOKEN_STORAGE_KEY = "recovery:password-reset:token"
 
 const form = ref<PasswordResetRequest>({
   password: "",
@@ -113,13 +120,14 @@ const form = ref<PasswordResetRequest>({
 const {handleSubmit} = useForm()
 
 onMounted(() => {
-  form.value.token = (route.query.token as string) || ""
-  if (!form.value.token) {
+  const resolvedToken = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
+  form.value.token = resolvedToken
+
+  if (!resolvedToken) {
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     router.replace({name: "home"})
     return
   }
-
-  router.replace({name: "resetPassword", query: {token: token.value}})
 })
 
 const onSubmit = handleSubmit(async () => {
@@ -128,6 +136,7 @@ const onSubmit = handleSubmit(async () => {
 
   try {
     await setPassword({body: form.value, throwOnError: true})
+    clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
   } catch (e: unknown) {
     $handleNetworkError(e)

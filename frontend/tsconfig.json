@@ -3,7 +3,10 @@
   "include": [
     "env.d.ts",
     "src",
+    "tests",
     "vite.config.mjs",
+    "vitest.config.ts",
+    "playwright.config.ts",
     "eslint.config.mjs",
     "*.config.ts",
     "*.config.mjs"

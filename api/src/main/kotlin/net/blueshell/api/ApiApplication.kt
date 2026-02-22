@@ -1,0 +1,21 @@
+package net.blueshell.api
+
+import net.blueshell.api.platform.config.StorageConfig
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing
+import org.springframework.retry.annotation.EnableRetry
+import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.scheduling.annotation.EnableScheduling
+
+@SpringBootApplication
+@EnableConfigurationProperties(StorageConfig::class)
+@EnableJpaAuditing
+@EnableAsync
+@EnableRetry
+@EnableScheduling
+class ApiApplication
+
+fun main(args: Array<String>) {
+    org.springframework.boot.runApplication<ApiApplication>(*args)
+}

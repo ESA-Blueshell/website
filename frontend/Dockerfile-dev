@@ -6,12 +6,16 @@ WORKDIR /usr/app
 RUN corepack enable
 ENV CHOKIDAR_USEPOLLING=1
 ENV WATCHPACK_POLLING=true
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Copy only what's needed for dependency install
 COPY package.json yarn.lock .yarnrc.yml ./
 
 # Run corepack and yarn install
 RUN corepack install && yarn install --immutable
+
+# Install Playwright browser + required OS packages at image build time
+RUN mkdir -p /ms-playwright && yarn playwright install --with-deps chromium
 
 # App/config files
 COPY . .

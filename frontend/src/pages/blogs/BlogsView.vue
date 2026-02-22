@@ -3,11 +3,11 @@ import {onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {useRouter} from "vue-router"
 import {DateTime} from "luxon"
-import {type Blog, findBlogs} from "@/services/api"
+import {type BlogResponse, findBlogs} from "@/services/api"
 
 const router = useRouter()
 
-const blogs = ref<Blog[]>([])
+const blogs = ref<BlogResponse[]>([])
 
 onMounted(async () => {
   try {

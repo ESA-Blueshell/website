@@ -3,6 +3,7 @@ target/
 !**/src/test/**/target/
 .gradle/
 build/
+/coverage/
 
 ### IntelliJ IDEA ###
 .idea
@@ -47,6 +48,7 @@ data
 /env/.app.env
 /env/.db.env
 /env/.api.env
+/env/.rabbitmq.env
 /env/.bot.env
 /env/.brevo.env
 /env/.google.env
@@ -61,4 +63,6 @@ private
 .playwright-mcp
 backups
 .kotlin
+*.md
 .idea
+*dump.sql*

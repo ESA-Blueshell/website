@@ -167,7 +167,7 @@
           Log In
         </v-btn>
         <v-menu
-          v-if="isBoard"
+          v-if="isBoard || isAdmin"
           :offset="3"
         >
           <template #activator="{ props }">
@@ -212,6 +212,12 @@
               to="/members/manage"
             >
               Manage members
+            </v-list-item>
+            <v-list-item
+              v-if="isAdmin"
+              to="/management/jobs"
+            >
+              Manage jobs
             </v-list-item>
           </v-list>
         </v-menu>
@@ -281,6 +287,9 @@
           <v-list-item to="/documents">
             Documents
           </v-list-item>
+          <v-list-item to="/blogs">
+            Newsletters
+          </v-list-item>
           <v-divider class="mb-1" />
         </v-list-group>
 
@@ -323,8 +332,8 @@
           <v-list-item to="/esports/rocketleague">
             Rocket League
           </v-list-item>
-          <v-list-item to="/esports/trackmania">
-            Trackmania
+          <v-list-item to="/esports/geoguessr">
+            Geoguessr
           </v-list-item>
           <v-divider class="mb-1" />
         </v-list-group>
@@ -471,7 +480,7 @@ import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import DOMPurify from "dompurify"
-import {type AdvancedUser, findUserById, type Login} from "@/services/api"
+import {findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
 
 // Reactive state
 const drawer = ref<boolean>(false)
@@ -492,9 +501,15 @@ const statusSnackbarMessage = computed({
 
 const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
 const isBoard = computed((): boolean => store.getters.isBoard)
+const isAdmin = computed((): boolean => store.getters.isAdmin)
 const login = computed(() => store.getters.getLogin)
 
 const isDarkMode = computed((): boolean => theme.global.current.value.dark)
+
+const resolveApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL
+  return `${globalThis.location.origin}/api`
+}
 
 // Methods
 const checkPrefersColorScheme = (): void => {
@@ -514,8 +529,16 @@ const toggleDarkMode = (): void => {
   setDarkMode(!theme.global.current.value.dark)
 }
 
-const logOut = (): void => {
-  document.cookie = "login=;expires=Thu, 01 Jan 1970 00:00:01 GMT"
+const logOut = async (): Promise<void> => {
+  try {
+    await fetch(`${resolveApiBaseUrl()}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    })
+  } catch {
+    // Ignore network failures and still clear local auth state.
+  }
+
   store.commit("logout")
   if (route.meta.requiresAuth) {
     $goto("/")
@@ -535,7 +558,7 @@ onMounted(async () => {
     showCookieSnackbar.value = true
   }
 
-  const loginData: Login = login.value
+  const loginData: LoginResponse = login.value
   if (loginData) {
     try {
       const resp = await findUserById({
@@ -545,9 +568,8 @@ onMounted(async () => {
         throwOnError: true,
       })
 
-      const userData: AdvancedUser = resp.data!
+      const userData: UserDetailResponse = resp.data!
       store.commit("setRoles", userData.roles)
-      store.commit("setAddressId", userData.addressId)
     } catch (e: unknown) {
       $handleNetworkError(e)
     }

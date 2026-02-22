@@ -13,6 +13,7 @@
           :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
           :disabled="!selectedPeriodId"
+          panel-key="paid"
           :users="membersPaid"
           class="mt-3"
           title="Contribution paid"
@@ -24,6 +25,7 @@
           :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
           :disabled="!selectedPeriodId"
+          panel-key="unpaid"
           :users="membersUnpaid"
           class="mt-3"
           title="Contribution unpaid"
@@ -42,23 +44,23 @@ import ContributionPeriodList from "@/components/common/lists/ContributionPeriod
 import ContributionUserList from "@/components/common/lists/ContributionUserList.vue"
 
 import {
-  type AdvancedUser,
-  type Contribution,
-  type ContributionPeriod,
+  type ContributionPeriodResponse,
+  type ContributionResponse,
   findContributionsByPeriodId,
   findMemberships,
   findUsers,
-  type Membership,
+  type MembershipResponse,
+  type UserDetailResponse,
 } from "@/services/api"
 
-const users = ref<AdvancedUser[]>([])
-const memberships = ref<Membership[]>([])
-const contributions = ref<Contribution[]>([])
+const users = ref<UserDetailResponse[]>([])
+const memberships = ref<MembershipResponse[]>([])
+const contributions = ref<ContributionResponse[]>([])
 
-const membersPaid = ref<AdvancedUser[]>([])
-const membersUnpaid = ref<AdvancedUser[]>([])
+const membersPaid = ref<UserDetailResponse[]>([])
+const membersUnpaid = ref<UserDetailResponse[]>([])
 
-const contributionPeriod = ref<ContributionPeriod | undefined>()
+const contributionPeriod = ref<ContributionPeriodResponse | undefined>()
 const selectedPeriodId = ref<number>(0)
 
 if ("scrollRestoration" in globalThis.history) {
@@ -80,30 +82,37 @@ const getMemberships = async () => {
   }
 }
 
+const hasActiveMembership = (userId: number) =>
+  memberships.value.some((membership) => membership.userId === userId && !membership.endDate)
+
 const hasContribution = (userId: number) =>
   contributions.value.some(
     (c) => c.userId === userId && c.contributionPeriodId === selectedPeriodId.value,
   )
 
 const updateLists = () => {
-  const all = users.value
+  const all = users.value.filter((u) => hasActiveMembership(u.id))
   membersPaid.value = all.filter((u) => hasContribution(u.id!))
   membersUnpaid.value = all.filter((u) => !hasContribution(u.id!))
 }
 
 watch([contributions, memberships, users, selectedPeriodId], updateLists, {deep: true})
 
-const contributionAddedOrUpdated = (updated: Contribution) => {
-  const idx = contributions.value.findIndex((c) => c.id === updated.id)
+const contributionAddedOrUpdated = (updated: ContributionResponse) => {
+  const idx = contributions.value.findIndex(
+    (c) => c.userId === updated.userId && c.contributionPeriodId === updated.contributionPeriodId,
+  )
   if (idx === -1) contributions.value.push(updated)
   else contributions.value.splice(idx, 1, updated)
 }
 
-const contributionDeleted = (id: number) => {
-  contributions.value = contributions.value.filter((c) => c.id !== id)
+const contributionDeleted = (userId: number) => {
+  contributions.value = contributions.value.filter(
+    (c) => !(c.userId === userId && c.contributionPeriodId === selectedPeriodId.value),
+  )
 }
 
-const contributionPeriodChanged = async (newPeriod: ContributionPeriod) => {
+const contributionPeriodChanged = async (newPeriod: ContributionPeriodResponse) => {
   if (!newPeriod) return
   contributionPeriod.value = newPeriod
   selectedPeriodId.value = newPeriod.id as number

@@ -17,6 +17,24 @@ services:
       retries: 5
       start_period: 30s
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - ./env/.rabbitmq.env
+    networks:
+      - database
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   api:
     image: api:local
     pull_policy: never
@@ -25,7 +43,7 @@ services:
       dockerfile: api/Dockerfile
     restart: unless-stopped
     env_file:
-      - ./env/.api.env.prod
+      - ./env/.api.env
     environment:
       - TZ=Europe/Amsterdam
       - APP_URL=https://localhost/api
@@ -34,6 +52,8 @@ services:
       - "./storage:/home/storage"
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - frontback

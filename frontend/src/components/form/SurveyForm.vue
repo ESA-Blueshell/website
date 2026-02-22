@@ -1,19 +1,22 @@
 <script lang="ts" setup>
-import {type Question, QuestionType, type Survey} from "@/services/api"
+import {QuestionType, type QuestionRequest, type SurveyRequest} from "@/services/api"
 import QuestionField from "@/components/form/fields/QuestionField.vue"
 import {computed, ref} from "vue"
 
-const model = defineModel<Survey>({default: {questions: []}})
-const id = ref<number | undefined>(model.value.id)
-const initialQuestions = ref<Question[]>(JSON.parse(JSON.stringify(model.value.questions ?? [])))
+type QuestionModel = QuestionRequest
+type SurveyModel = SurveyRequest
+
+const model = defineModel<SurveyModel>({default: {questions: []}})
+const id = ref<number | undefined>((model.value as { id?: number }).id)
+const initialQuestions = ref<QuestionModel[]>(JSON.parse(JSON.stringify(model.value.questions ?? [])))
 const initialJson = ref(JSON.stringify(initialQuestions.value))
 const isDirty = computed(() => JSON.stringify(model.value.questions) !== initialJson.value)
 
 function addQuestion(type: QuestionType) {
   model.value.questions ??= []
   const nextIdx = model.value.questions.length
-  const base = {type, label: "", idx: nextIdx} as Question
-  const q: Question =
+  const base: QuestionModel = {type, label: "", idx: nextIdx}
+  const q: QuestionModel =
     type === QuestionType.OPEN || type === QuestionType.DESCRIPTION
       ? base
       : {
@@ -23,11 +26,11 @@ function addQuestion(type: QuestionType) {
   model.value = {...model.value, questions: [...model.value.questions, q]}
 }
 
-function reindex(questions: Question[]) {
+function reindex(questions: QuestionModel[]) {
   return questions.map((q, idx) => ({...q, idx}))
 }
 
-function updateQuestion(i: number, updated: Question) {
+function updateQuestion(i: number, updated: QuestionModel) {
   const next = model.value.questions.slice()
   next[i] = {...updated, idx: i}
   model.value = {...model.value, questions: next}
@@ -65,7 +68,7 @@ function moveQuestionDown(i: number) {
         :can-move-up="i > 0"
         :model-value="q"
         @remove="removeQuestion(i)"
-        @update:model-value="(val: Question) => updateQuestion(i, val)"
+        @update:model-value="(val: QuestionModel) => updateQuestion(i, val)"
         @move-up="moveQuestionUp(i)"
         @move-down="moveQuestionDown(i)"
       />

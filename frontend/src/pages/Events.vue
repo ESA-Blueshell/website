@@ -3,17 +3,18 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {DateTime} from "luxon"
 import EventCalendar from "@/components/base/EventCalendar.vue"
+import type {GuestSessionData} from "@/plugins/store.ts"
 
 import {
-  type AdvancedCommittee,
-  type Event,
-  type EventSignUp,
-  findCommitteesForCurrentUser,
+  findCommittees,
+  findCommitteesByUserId,
+  type CommitteeDetailResponse,
+  type EventResponse,
+  type EventSignUpResponse,
   findEvents,
   findEventSignUps,
   findEventSignUpsByAccessToken,
-  type Guest,
-  type Login,
+  type LoginResponse,
 } from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
@@ -22,17 +23,25 @@ import EventList from "@/components/common/lists/EventList.vue"
 
 const store = useStore()
 
+type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
+type Event = EventResponse
+type EventSignUp = EventSignUpResponse
+type Login = LoginResponse
+
 const events = ref<Event[]>([])
-const committees = ref<AdvancedCommittee[]>([])
+const committees = ref<CommitteeOption[]>([])
 const eventSignUps = ref<EventSignUp[]>([])
 const calendarRef = ref<InstanceType<typeof EventCalendar>>()
+const hashAccessToken = ref<string | null>(null)
 
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const isBoard = computed<boolean>(() => store.getters.isBoard)
 const login = computed<Login | undefined>(() => store.getters.getLogin)
-const guest = computed<Guest | null>(() => store.getters.getGuestData)
-const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? null)
+const guest = computed<GuestSessionData | null>(() => store.getters.getGuestData)
+const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? hashAccessToken.value)
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
+const guestAccessHeader = "X-Guest-Access-Token"
 
 async function loadEvents() {
   try {
@@ -55,10 +64,17 @@ async function loadSignUps() {
       eventSignUps.value = resp.data ?? []
     } else if (guestAccessToken.value) {
       const resp = await findEventSignUpsByAccessToken({
-        path: {accessToken: guestAccessToken.value},
+        headers: {[guestAccessHeader]: guestAccessToken.value},
         throwOnError: true,
       })
       eventSignUps.value = resp.data ?? []
+      const firstGuest = resp.data?.[0]?.guest
+      if (firstGuest != null) {
+        store.commit("saveGuestData", {
+          ...firstGuest,
+          accessToken: guestAccessToken.value,
+        } satisfies GuestSessionData)
+      }
     } else {
       eventSignUps.value = []
     }
@@ -70,8 +86,18 @@ async function loadSignUps() {
 async function loadCommittees() {
   try {
     if (isLoggedIn.value) {
-      const resp = await findCommitteesForCurrentUser({throwOnError: true})
-      committees.value = (resp.data as AdvancedCommittee[]) ?? []
+      const resp = isBoard.value
+        ? await findCommittees({throwOnError: true})
+        : await findCommitteesByUserId({throwOnError: true})
+      committees.value = ((resp.data ?? []) as unknown[])
+        .map((committee) => {
+          const value = committee as Record<string, unknown>
+          const id = typeof value.id === "number" ? value.id : null
+          const name = typeof value.name === "string" ? value.name : null
+          if (id == null || name == null) return null
+          return {id, name}
+        })
+        .filter((committee): committee is CommitteeOption => committee != null)
     } else {
       committees.value = []
     }
@@ -87,6 +113,18 @@ watch([isLoggedIn, login, guestAccessToken], () => {
 }, {immediate: true})
 
 onMounted(() => {
+  const hash = window.location.hash
+  if (hash.startsWith("#")) {
+    const token = new URLSearchParams(hash.slice(1)).get("accessToken")
+    if (token) {
+      hashAccessToken.value = token
+      window.history.replaceState(
+        window.history.state,
+        document.title,
+        `${window.location.pathname}${window.location.search}`
+      )
+    }
+  }
   void loadEvents()
 })
 
@@ -156,7 +194,7 @@ const deleteSignUp = (id: number) => {
         <v-btn
           v-if="committees.length"
           block
-          to="events/create"
+          to="/events/create"
         >
           Create new event
         </v-btn>

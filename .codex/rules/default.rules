@@ -1,0 +1,75 @@
+# --- ALLOW ---
+
+prefix_rule(
+  pattern=["./gradlew"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["docker", "compose", "-f", "docker-compose.dev.yml"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["/bin/zsh", "-lc", "docker logs --tail"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["yarn"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["git", "status"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["git", "diff"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["git", "add"],
+  decision="allow",
+)
+
+prefix_rule(
+  pattern=["git", "commit"],
+  decision="allow",
+)
+
+# --- PROMPT ---
+
+prefix_rule(
+  pattern=["git", "pull"],
+  decision="prompt",
+  justification="Pull changes modifies local workspace state.",
+)
+
+prefix_rule(
+  pattern=["docker", "compose", "down"],
+  decision="prompt",
+  justification="Can stop/remove running dev services.",
+)
+
+# --- FORBID ---
+
+prefix_rule(
+  pattern=["git", "push"],
+  decision="forbidden",
+  justification="Never allow remote pushes from Codex.",
+)
+
+prefix_rule(
+  pattern=["git", "reset", "--hard"],
+  decision="forbidden",
+  justification="Destructive history/worktree rewrite.",
+)
+
+prefix_rule(
+  pattern=["rm", "-rf"],
+  decision="forbidden",
+  justification="Destructive file removal.",
+)

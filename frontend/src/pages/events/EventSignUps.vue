@@ -3,22 +3,28 @@ import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {
-  type Answer,
-  type Event,
-  type EventSignUp,
+  type AnswerResponse,
+  type EventResponse,
+  type EventSignUpResponse,
   findEventById,
   findEventSignUpsByEventId,
-  type PersonalInfo,
-  type Question,
+  type QuestionResponse,
   QuestionType,
-  type Survey,
+  type SurveyResponse,
 } from "@/services/api"
 
-const event = ref<Event>()
+const event = ref<EventResponse>()
+
+type PersonInfo = {
+  fullName: string;
+  discord?: string;
+  email?: string;
+  phoneNumber?: string;
+}
 
 export type Response = {
-  answers: Map<number, Answer>,
-  person: PersonalInfo;
+  answers: Map<number, AnswerResponse>,
+  person: PersonInfo;
 };
 const responses = ref<Response[]>([])
 
@@ -32,30 +38,44 @@ onMounted(async () => {
       findEventSignUpsByEventId({path: {eventId}}),
     ])
 
-    responses.value = (signupsResp.data ?? []).map((es: EventSignUp) => {
-      const answers: Map<number, Answer> = new Map()
-      es.answers?.forEach((answer: Answer) => {
+    responses.value = (signupsResp.data ?? []).map((es: EventSignUpResponse) => {
+      const answers: Map<number, AnswerResponse> = new Map()
+      es.answers?.forEach((answer: AnswerResponse) => {
         answers.set(answer.questionId, answer)
       })
 
+      const person: PersonInfo = es.user
+        ? {
+          fullName: es.user.fullName,
+          discord: es.user.discord,
+          email: es.user.email,
+          phoneNumber: es.user.phoneNumber,
+        }
+        : {
+          fullName: es.guest?.name ?? "",
+          discord: es.guest?.discord,
+          email: es.guest?.email,
+          phoneNumber: es.guest?.phoneNumber,
+        }
+
       return {
         answers,
-        person: (es.guest ?? es.user)! as PersonalInfo,
+        person,
       } as Response
     })
-    event.value = (eventResp.data ?? {}) as Event
+    event.value = eventResp.data
   } catch (err) {
     console.error(err)
   }
 })
 
-const sortedQuestions = computed<Question[]>(() => {
-  const sf: Survey | undefined = event.value?.signUpForm
+const sortedQuestions = computed<QuestionResponse[]>(() => {
+  const sf: SurveyResponse | undefined = event.value?.signUpForm
   if (!sf?.questions?.length) return []
-  return sf.questions.sort((a: Question, b: Question) => a.idx - b.idx)
+  return [...sf.questions].sort((a: QuestionResponse, b: QuestionResponse) => a.idx - b.idx)
 })
 
-function totalForQuestion(question: Question): number[] | undefined {
+function totalForQuestion(question: QuestionResponse): number[] | undefined {
   if (!question) return
   if (question.type === QuestionType.CHECKBOX || question.type === QuestionType.RADIO) {
     const numOptions = question.choiceLabels?.length ?? 0

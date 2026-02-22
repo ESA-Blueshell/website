@@ -1,0 +1,8 @@
+ALTER TABLE board_members
+    ADD COLUMN IF NOT EXISTS start_date DATE NULL;
+
+ALTER TABLE board_members
+    ADD COLUMN IF NOT EXISTS end_date DATE NULL;
+
+ALTER TABLE board_members
+    ADD COLUMN IF NOT EXISTS role VARCHAR(255) NOT NULL DEFAULT 'Member';

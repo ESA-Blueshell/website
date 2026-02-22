@@ -4,6 +4,7 @@ import {defineConfig} from 'vite'
 import {fileURLToPath} from 'node:url'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import svgLoader from 'vite-svg-loader'
+import istanbul from 'vite-plugin-istanbul'
 
 export default defineConfig({
     build: {
@@ -26,6 +27,18 @@ export default defineConfig({
         }
     },
     plugins: [
+        istanbul({
+            include: ['src/**/*'],
+            exclude: [
+                'node_modules',
+                'src/services/api/**',
+                '**/*.gen.ts',
+            ],
+            extension: ['.js', '.ts', '.vue'],
+            requireEnv: true,
+            cypress: false,
+            checkProd: false,
+        }),
         tsconfigPaths(),
         vue(),
         vuetify({
@@ -49,6 +62,7 @@ export default defineConfig({
     server: {
         port: 3000,
         host: true,
+        allowedHosts: ['frontend', 'esa-blueshell.nl'],
         hmr: {
             protocol: 'ws'
         },

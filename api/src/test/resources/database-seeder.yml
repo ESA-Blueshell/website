@@ -1,0 +1,44 @@
+users:
+  defaultPassword: "Password123!"
+  members: 32
+  committeeMembers: 8
+  guestUsers: 32
+  boardMembers: 4
+  admins: 1
+  namedUsers:
+    - username: "admin"
+      role: "ADMIN"
+      includeMemberData: true
+      includeAddress: true
+    - username: "member"
+      role: "MEMBER"
+      includeMemberData: true
+      includeAddress: true
+    - username: "guest"
+
+organization:
+  committees: 4
+  boardName: "Seed Board"
+  boardCandidate: "Seed Candidate"
+
+events:
+  durationHours: 3
+  pastApprovedPublic: 2
+  pastApprovedMembersOnly: 2
+  pastUnapprovedPublic: 2
+  pastUnapprovedMembersOnly: 2
+  futureApprovedPublic: 2
+  futureApprovedMembersOnly: 2
+  futureUnapprovedPublic: 2
+  futureUnapprovedMembersOnly: 2
+  signUpFormRatio: 0.45
+  bannerRatio: 0.35
+  signUpRatio: 0.25
+
+contributions:
+  activeMemberRatio: 0.50
+  pastMemberRatio: 0.30
+  previousYearPaidRatio: 0.40
+  currentYearPaidRatio: 0.35
+
+randomSeed: 42

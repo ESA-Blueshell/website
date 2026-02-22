@@ -4,8 +4,16 @@ import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
-import {type Address, createAddress, updateAddress} from "@/services/api"
+import {
+  type AddressResponse,
+  type CreateAddressRequest,
+  createAddress,
+  type UpdateAddressRequest,
+  updateAddress,
+} from "@/services/api"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+
+type AddressModel = Partial<Omit<CreateAddressRequest, "userId">> & Partial<AddressResponse>
 
 const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
   showSubmit?: boolean
@@ -17,7 +25,7 @@ const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
 }>()
 
-const address = defineModel<Address>({
+const address = defineModel<AddressModel>({
   default: () => ({
     country: "NL",
     city: "",
@@ -32,7 +40,25 @@ const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-const save = async (): Promise<Address | null> => {
+const toCreateAddressRequest = (): CreateAddressRequest => ({
+  city: address.value.city ?? "",
+  country: address.value.country ?? "NL",
+  houseNumber: address.value.houseNumber ?? "",
+  street: address.value.street ?? "",
+  userId,
+  zipCode: address.value.zipCode ?? "",
+})
+
+const toUpdateAddressRequest = (): UpdateAddressRequest => ({
+  city: address.value.city ?? "",
+  country: address.value.country ?? "NL",
+  houseNumber: address.value.houseNumber ?? "",
+  street: address.value.street ?? "",
+  version: address.value.version ?? 0,
+  zipCode: address.value.zipCode ?? "",
+})
+
+const save = async (): Promise<AddressModel | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)
@@ -42,8 +68,8 @@ const save = async (): Promise<Address | null> => {
     const resp = await withSaving(async () => {
       const hasId = Boolean(address.value?.id)
       return hasId
-        ? await updateAddress({path: {id: address.value!.id!}, body: address.value!, throwOnError: true})
-        : await createAddress({path: {userId}, body: address.value!, throwOnError: true})
+        ? await updateAddress({path: {id: address.value.id!}, body: toUpdateAddressRequest(), throwOnError: true})
+        : await createAddress({body: toCreateAddressRequest(), throwOnError: true})
     })
     address.value = resp.data!
     emit("submitted", true)
@@ -129,6 +155,8 @@ defineExpose({validate, save})
           :show-submit-status="showSubmitStatus"
           :submit-state="submitState"
           :text="submitText"
+          data-testid="address-form-submit-btn"
+          :data-submit-mode="isCreating ? 'create' : 'update'"
           @click="save"
         />
       </v-col>

@@ -1,19 +1,19 @@
 <script lang="ts" setup>
 import {ref, watch} from "vue"
-import type {AdvancedUser} from "@/services/api"
+import type {UserDetailResponse} from "@/services/api"
 import {VAutocomplete} from "vuetify/components"
 
-type Rule = (v: AdvancedUser | undefined) => true | string
+type Rule = (v: UserDetailResponse | undefined) => true | string
 
 const props = defineProps<{
   modelValue?: number | undefined
-  users: AdvancedUser[]
+  users: UserDetailResponse[]
   rules?: Rule[]
   label?: string
 }>()
 const emit = defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
-const selectedUser = ref<AdvancedUser | undefined>(props.users.find((u) => u.id == props.modelValue))
+const selectedUser = ref<UserDetailResponse | undefined>(props.users.find((u) => u.id == props.modelValue))
 const inputRef = ref<InstanceType<typeof VAutocomplete> | null>(null)
 
 watch(
@@ -39,7 +39,7 @@ watch(
   },
 )
 
-const itemTitle = (u: AdvancedUser) => (u?.discord ? `${u.fullName} (${u.discord})` : u?.fullName)
+const itemTitle = (u: UserDetailResponse) => (u?.discord ? `${u.fullName} (${u.discord})` : u?.fullName)
 
 function validate() {
   return inputRef.value?.validate?.()
@@ -63,7 +63,7 @@ defineExpose({validate, resetValidation, focus})
     :item-title="itemTitle"
     :items="users"
     :label="label ?? 'User name'"
-    :rules="rules ?? [(v: AdvancedUser | undefined) => !!v || 'Select a user']"
+    :rules="rules ?? [(v: UserDetailResponse | undefined) => !!v || 'Select a user']"
     auto-select-first
     clearable
     hide-details="auto"

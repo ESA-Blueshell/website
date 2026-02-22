@@ -1,8 +1,9 @@
 <template>
   <div>
-    <v-list-item>
+    <v-list-item :data-testid="`recovery-user-row-${user.id}`">
       <div
         class="d-flex justify-space-between align-center"
+        :data-testid="`recovery-user-toggle-${user.id}`"
         style="width: 100%;"
       >
         <div class="flex-grow-1">
@@ -26,6 +27,7 @@
 
           <v-btn
             :disabled="loading"
+            :data-testid="`recovery-user-action-btn-${actionType}-${user.id}`"
             :loading="loading"
             class="btn-tight"
             variant="text"
@@ -41,12 +43,12 @@
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import type {AdvancedUser} from "@/services/api"
+import type {UserDetailResponse} from "@/services/api"
 import {resendUserActivation, resetPassword} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const props = defineProps<{
-  user: AdvancedUser
+  user: UserDetailResponse
   actionType: "activation" | "password"
 }>()
 

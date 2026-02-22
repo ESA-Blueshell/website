@@ -1,12 +1,16 @@
 <script lang="ts" setup>
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {type AdvancedCommittee, type Event, type EventSignUp, findEvents, type PageMetadata} from "@/services/api"
+import {type CommitteeDetailResponse, type EventResponse, type EventSignUpResponse, findEvents, type PageMetadata} from "@/services/api"
 import EventList from "@/components/common/lists/EventList.vue"
 import {useRoute, useRouter} from "vue-router"
 
+type Event = EventResponse
+type EventSignUp = EventSignUpResponse
+type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
+
 const props = defineProps<{
-  committees: AdvancedCommittee[]
+  committees: CommitteeOption[]
   eventSignUps: EventSignUp[]
   pageSize?: number
 }>()

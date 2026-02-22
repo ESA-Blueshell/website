@@ -1,19 +1,25 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type Guest, type Login, Role} from "@/services/api"
+import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
+import {emitAuthChanged} from "@/plugins/authSync"
+
+export type GuestSessionData = GuestResponse & {
+  accessToken: string;
+}
 
 export interface State {
-  login: Login | null;
-  guestData: Guest | null;
+  login: LoginResponse | null;
+  authToken: string | null;
+  guestData: GuestSessionData | null;
   statusSnackbarMessage: string | null;
   loggedInSnackbar: boolean;
   xsrfToken: string | null;
 }
 
 export interface Mutations {
-  setLogin(state: State, payload: Login): void;
+  setLogin(state: State, payload: LoginResponse): void;
 
-  setLoginState(stage: State, payload: Login | null): void;
+  setLoginState(stage: State, payload: LoginResponse | null): void;
 
   logout(state: State): void;
 
@@ -23,15 +29,15 @@ export interface Mutations {
 
   setStatusSnackbarMessage(state: State, message: string): void;
 
-  saveGuestData(state: State, data: Record<string, unknown>): void;
+  saveGuestData(state: State, data: GuestSessionData): void;
 
   setXsrfToken(state: State, token: string | null): void;
 }
 
 export interface Actions {
   login(context: {
-    commit: (type: keyof Mutations, payload?: Login) => void
-  }, payload: Login): Promise<void>;
+    commit: (type: keyof Mutations, payload?: LoginResponse) => void
+  }, payload: LoginResponse): Promise<void>;
 
   logout(context: { commit: (type: keyof Mutations) => void }): Promise<void>;
 
@@ -43,17 +49,23 @@ export interface Actions {
 }
 
 export interface Getters {
-  getLogin(state: State): Login | null;
+  getLogin(state: State): LoginResponse | null;
 
   isLoggedIn(state: State): boolean;
 
   tokenExpired(state: State): boolean;
+
+  isAdmin(state: State): boolean;
 
   isBoard(state: State): boolean;
 
   isActive(state: State): boolean;
 
   isMember(state: State): boolean;
+
+  getGuestData(state: State): GuestSessionData | null;
+
+  getAuthToken(state: State): string | null;
 
   getXsrfToken(state: State): string | null;
 }
@@ -72,31 +84,51 @@ export type TypedStore = Store<State> & {
   };
 };
 
+function sanitizeLoginPayload(payload: LoginResponse | null): LoginResponse | null {
+  if (!payload) return null
+  return {
+    ...payload,
+    token: "",
+  }
+}
+
+function sanitizePersistedLoginState(payload: LoginResponse | null): LoginResponse | null {
+  if (!payload) return null
+  if ((payload.token ?? "").length > 0) return null
+  return sanitizeLoginPayload(payload)
+}
+
 const store = createStore<State>({
   state(): State {
-    return {
-      login: readJsonCookie<Login>("login"),
-      guestData: readJsonCookie("guestData"),
+      return {
+      login: sanitizePersistedLoginState(readJsonCookie<LoginResponse>("login")),
+      authToken: null,
+      guestData: readJsonCookie<GuestSessionData>("guestData"),
       statusSnackbarMessage: null,
       loggedInSnackbar: false,
       xsrfToken: null,
     }
   },
   mutations: {
-    async setLogin(state: State, payload: Login) {
-      state.login = payload
-      writeJsonCookie("login", payload)
-      state.statusSnackbarMessage = `Welcome back ${payload.username}!`
-      localStorage.setItem("auth:ping", String(Date.now()))
+    async setLogin(state: State, payload: LoginResponse) {
+      const sanitized = sanitizeLoginPayload(payload)
+      if (!sanitized) return
+      state.login = sanitized
+      state.authToken = payload.token || null
+      writeJsonCookie("login", sanitized)
+      state.statusSnackbarMessage = `Welcome back ${sanitized.username}!`
+      emitAuthChanged()
     },
-    setLoginState(state: State, payload: Login | null): void {
-      state.login = payload
+    setLoginState(state: State, payload: LoginResponse | null): void {
+      state.login = sanitizePersistedLoginState(payload)
+      state.authToken = null
     },
     async logout(state: State) {
       state.login = null
+      state.authToken = null
       deleteCookie("login")
       state.statusSnackbarMessage = "You are now logged out."
-      localStorage.setItem("auth:ping", String(Date.now()))
+      emitAuthChanged()
     },
     setRoles(state: State, roles: Role[]): void {
       if (state.login) {
@@ -117,7 +149,7 @@ const store = createStore<State>({
         state.statusSnackbarMessage = null
       }
     },
-    saveGuestData(state: State, data: Guest): void {
+    saveGuestData(state: State, data: GuestSessionData): void {
       writeJsonCookie("guestData", data)
       state.guestData = data
     },
@@ -126,7 +158,7 @@ const store = createStore<State>({
     },
   },
   getters: {
-    getLogin(state: State): Login | null {
+    getLogin(state: State): LoginResponse | null {
       return state.login
     },
     isLoggedIn(state: State): boolean {
@@ -134,6 +166,10 @@ const store = createStore<State>({
     },
     tokenExpired(state: State): boolean {
       return !state.login || Date.now() > state.login.expiration
+    },
+    isAdmin(state: State): boolean {
+      const roles = state.login?.roles ?? []
+      return roles.some(r => `${r}` === `${Role.ADMIN}`)
     },
     isBoard(state: State): boolean {
       const roles = state.login?.roles ?? []
@@ -147,8 +183,11 @@ const store = createStore<State>({
       const roles = state.login?.roles ?? []
       return roles.some(r => `${r}` === `${Role.MEMBER}`)
     },
-    getGuestData(state: State): Guest | null {
+    getGuestData(state: State): GuestSessionData | null {
       return state.guestData
+    },
+    getAuthToken(state: State): string | null {
+      return state.authToken
     },
     getXsrfToken(state: State): string | null {
       return state.xsrfToken

@@ -33,6 +33,9 @@ import type Team from "@/types/Team.ts"
 import {$require} from "@/plugins/require.js"
 import {ref} from "vue"
 
+// IMPORTANT: This component is deprecated, it must not be reachable, untill Trackmania is played again in
+// The dutch esports scene
+
 const teams = ref<Team[]>([
   {
     name: "[ESABS]",

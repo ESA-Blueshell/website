@@ -11,7 +11,9 @@
           so please make sure it is correct before saving.
         </p>
         <address-form
+          v-if="login"
           v-model="address"
+          data-testid="account-address-form"
           :user-id="login.userId"
           show-submit
           submit-text="Save address"
@@ -28,14 +30,22 @@ import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {type Address, findAddressById, type Login} from "@/services/api"
+import {type AddressResponse, type CreateAddressRequest, findAddressById} from "@/services/api"
 import AddressForm from "@/components/form/AddressForm.vue"
 
-const address = ref<Address>()
+type AddressModel = Partial<CreateAddressRequest> & Partial<AddressResponse>
+
+const address = ref<AddressModel>({
+  country: "NL",
+  city: "",
+  street: "",
+  houseNumber: "",
+  zipCode: "",
+})
 const store = useStore()
 const route = useRoute()
 
-const login = computed<Login>(() => store.getters.getLogin)
+const login = computed(() => store.getters.getLogin)
 
 onMounted(async () => {
   const login = store.getters.getLogin

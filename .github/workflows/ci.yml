@@ -111,8 +111,8 @@ jobs:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
 
-      APP_URL: https://localhost/api
-      FRONTEND_URL: https://localhost
+      APP_URL: http://127.0.0.1:8080
+      FRONTEND_URL: http://127.0.0.1:3000
 
       JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
 
@@ -261,8 +261,8 @@ jobs:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
 
-      APP_URL: https://localhost/api
-      FRONTEND_URL: https://localhost
+      APP_URL: http://127.0.0.1:8080
+      FRONTEND_URL: http://127.0.0.1:3000
 
       JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
 

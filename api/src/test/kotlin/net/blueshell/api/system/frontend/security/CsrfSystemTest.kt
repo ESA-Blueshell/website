@@ -22,13 +22,13 @@ class CsrfSystemTest : FrontendSystemTestBase() {
     @Autowired
     private lateinit var userFactory: UserFactory
 
-    @Value("\${app.url}")
-    private lateinit var appUrl: String
+    @Value("\${server.port}")
+    private var serverPort: Int = 8080
 
     @Test
     fun `cross-origin state changing request without csrf token is rejected`() {
         val response = HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder(URI.create("${appUrl.trimEnd('/')}/auth"))
+            HttpRequest.newBuilder(URI.create("http://127.0.0.1:$serverPort/auth"))
                 .header("Origin", frontendUrl)
                 .header("Content-Type", "application/json")
                 .POST(

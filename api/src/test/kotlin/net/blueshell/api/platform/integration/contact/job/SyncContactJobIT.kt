@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.contact.job
 
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.queue.JobConsumer
 import net.blueshell.api.platform.integration.queue.JobMessage
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -21,6 +22,9 @@ class SyncContactJobIT : UserTestSupport() {
     @Autowired
     private lateinit var jobs: TrackedJobDispatcher
 
+    @Autowired
+    private lateinit var users: UserService
+
     @Test
     fun `sync contact assigns contact id without scheduling another sync job`() {
         val user = createUserWithRole(Role.MEMBER)
@@ -36,7 +40,7 @@ class SyncContactJobIT : UserTestSupport() {
             .describedAs("Contact-id linkage update should not re-enqueue contact.sync jobs")
             .hasSize(1)
 
-        val refreshedUser = userRepository.findById(user.id!!).orElseThrow()
+        val refreshedUser = users.findById(user.id!!)
         assertThat(refreshedUser.contactId).isNotNull
 
         val updatedExecution = jobExecutions.findById(execution.id!!).orElseThrow()

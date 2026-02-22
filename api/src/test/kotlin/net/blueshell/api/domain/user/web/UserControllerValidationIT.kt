@@ -116,7 +116,7 @@ class UserControllerValidationIT : UserTestSupport() {
                         userRequestFactory.createUserPayload(
                             username = "new_${System.currentTimeMillis()}",
                             email = "new_${System.currentTimeMillis()}@example.com",
-                            discord = existing.discord,
+                            discord = existing.discord!!,
                             phoneNumber = "+3163333${System.currentTimeMillis().toString().takeLast(4)}"
                         )
                     )
@@ -138,7 +138,7 @@ class UserControllerValidationIT : UserTestSupport() {
                             username = "new_${System.currentTimeMillis()}",
                             email = "new_${System.currentTimeMillis()}@example.com",
                             discord = "newdiscord${System.currentTimeMillis()}",
-                            phoneNumber = existing.phoneNumber
+                            phoneNumber = existing.phoneNumber!!
                         )
                     )
             )
@@ -162,8 +162,8 @@ class UserControllerValidationIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.updateUserPayload(
-                            discord = conflicting.discord,
-                            phoneNumber = primary.phoneNumber,
+                            discord = conflicting.discord!!,
+                            phoneNumber = primary.phoneNumber!!,
                             version = primary.version
                         )
                     )
@@ -184,8 +184,8 @@ class UserControllerValidationIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.updateUserPayload(
-                            discord = primary.discord,
-                            phoneNumber = conflicting.phoneNumber,
+                            discord = primary.discord!!,
+                            phoneNumber = conflicting.phoneNumber!!,
                             version = primary.version
                         )
                     )

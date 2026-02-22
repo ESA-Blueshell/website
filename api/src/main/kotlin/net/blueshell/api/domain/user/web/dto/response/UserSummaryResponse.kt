@@ -11,6 +11,6 @@ data class UserSummaryResponse(
     var updatedAt: Instant,
     var fullName: String,
     var email: String,
-    var discord: String,
-    var phoneNumber: String
+    var discord: String?,
+    var phoneNumber: String?
 )

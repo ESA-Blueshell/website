@@ -64,11 +64,11 @@ class User(
     @Column(nullable = false)
     var lastName: String,
 
-    @Column(nullable = false)
-    var phoneNumber: String,
+    @Column
+    var phoneNumber: String? = null,
 
-    @Column(nullable = false)
-    var discord: String,
+    @Column
+    var discord: String? = null,
 
     @Column
     var steamid: String? = null,

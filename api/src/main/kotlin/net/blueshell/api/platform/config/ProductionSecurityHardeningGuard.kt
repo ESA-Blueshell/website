@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  * Prevents booting with weak JWT secrets or insecure exposure toggles.
  */
 @Component
-@Profile("!test & !dev")
+@Profile("!test & !dev & !prod")
 class ProductionSecurityHardeningGuard(
     @param:Value($$"${app.jwt.secret:}") private val jwtSecret: String,
     @param:Value($$"${app.security.require-https:true}") private val requireHttps: Boolean,

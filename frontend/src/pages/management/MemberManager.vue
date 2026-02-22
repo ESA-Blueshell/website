@@ -7,18 +7,17 @@ import ContributionPeriodList from "@/components/common/lists/ContributionPeriod
 import {
   type ContributionPeriodResponse,
   type ContributionResponse,
-  type CreateUserRequest,
   findContributionsByPeriodId,
   findMemberships,
   findUserById,
   findUsers,
   type MembershipResponse,
-  type UserDetailResponse,
 } from "@/services/api"
+import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
 defineOptions({name: "MemberManagerPage"})
 
-const users = ref<Array<CreateUserRequest & Partial<UserDetailResponse>>>([])
+const users = ref<EditableUser[]>([])
 const memberships = ref<MembershipResponse[]>([])
 const contributions = ref<ContributionResponse[]>([])
 
@@ -32,21 +31,21 @@ if ("scrollRestoration" in globalThis.history) {
 
 const getUsers = async () => {
   const response = await findUsers()
-  if (response.status === 200) users.value = response.data?.content ?? []
+  if (response.status === 200) users.value = (response.data?.content ?? []).map((user) => toEditableUser(user))
   else console.log(response.error)
 }
 
-const hasActiveMembership = (u: CreateUserRequest & Partial<UserDetailResponse>) =>
+const hasActiveMembership = (u: EditableUser) =>
   memberships.value.some((m) => m.userId === u.id && !m.endDate)
 
-const members = computed<Array<CreateUserRequest & Partial<UserDetailResponse>>>(() => users.value.filter((u) => hasActiveMembership(u)))
-const nonMembers = computed<Array<CreateUserRequest & Partial<UserDetailResponse>>>(() => users.value.filter((u) => !hasActiveMembership(u)))
+const members = computed<EditableUser[]>(() => users.value.filter((u) => hasActiveMembership(u)))
+const nonMembers = computed<EditableUser[]>(() => users.value.filter((u) => !hasActiveMembership(u)))
 
-const deleteUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => {
+const deleteUser = (user: EditableUser) => {
   users.value = users.value.filter((u) => u.id !== user.id)
 }
 
-const updateUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => {
+const updateUser = (user: EditableUser) => {
   const index = users.value.findIndex((u) => u.id === user.id)
   if (index === -1) {
     users.value = [...users.value, user]
@@ -72,7 +71,7 @@ const membershipChanged = async (updatedMembership: MembershipResponse) => {
 
   // Adding a membership will change the roles of the user, so it must be re-fetched
   const resp = await findUserById({path: {userId: updatedMembership.userId!}})
-  if (resp.data) updateUser(resp.data)
+  if (resp.data) updateUser(toEditableUser(resp.data))
 }
 
 

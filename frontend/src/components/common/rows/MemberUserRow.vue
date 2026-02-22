@@ -5,17 +5,16 @@ import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirm
 import {DateTime} from "luxon"
 import StartMembershipDialog from "@/components/common/modals/StartMembershipDialog.vue"
 import {
-  type CreateUserRequest,
   type ContributionResponse,
   deleteUserById,
   type MembershipResponse,
   updateMembership,
-  type UserDetailResponse,
 } from "@/services/api"
+import type {EditableUser} from "@/utils/editableUser"
 
 defineOptions({name: "MemberUserRow"})
 
-const user = defineModel<CreateUserRequest & Partial<UserDetailResponse>>("user", {required: true})
+const user = defineModel<EditableUser>("user", {required: true})
 const membership = defineModel<MembershipResponse>("membership", {required: false, default: undefined})
 const contribution = defineModel<ContributionResponse>("contribution", {required: false, default: undefined})
 const expanded = defineModel<number>("expanded", {default: 0})
@@ -27,7 +26,7 @@ withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: "delete:user", user: CreateUserRequest & Partial<UserDetailResponse>): void
+  (e: "delete:user", user: EditableUser): void
   (e: "update:membership", membership: MembershipResponse): void
 }>()
 

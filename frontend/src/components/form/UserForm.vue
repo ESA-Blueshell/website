@@ -13,6 +13,7 @@ import {
   updateUser,
   type UserDetailResponse,
 } from "@/services/api"
+import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
@@ -49,7 +50,7 @@ const props = withDefaults(defineProps<{
   }),
 })
 
-const user = defineModel<CreateUserRequest & Partial<UserDetailResponse>>({
+const user = defineModel<EditableUser>({
   default: () => ({
     discord: "",
     email: "",
@@ -162,7 +163,7 @@ watch(
   {immediate: true},
 )
 
-const toCreateUserRequest = (model: CreateUserRequest & Partial<UserDetailResponse>): CreateUserRequest => ({
+const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   username: model.username,
   initials: model.initials,
   firstName: model.firstName,
@@ -176,7 +177,7 @@ const toCreateUserRequest = (model: CreateUserRequest & Partial<UserDetailRespon
   memberProfile: toMemberProfileRequest(model.memberProfile),
 })
 
-const toUpdateUserRequest = (model: CreateUserRequest & Partial<UserDetailResponse>): UpdateUserRequest => {
+const toUpdateUserRequest = (model: EditableUser): UpdateUserRequest => {
   const base = {
     discord: model.discord,
     phoneNumber: model.phoneNumber,
@@ -206,14 +207,13 @@ const toUpdateUserRequest = (model: CreateUserRequest & Partial<UserDetailRespon
 
 const fromUserDetail = (
   data: UserDetailResponse,
-  current: (CreateUserRequest & Partial<UserDetailResponse>) | undefined,
-): CreateUserRequest & Partial<UserDetailResponse> => ({
-  ...current,
-  ...data,
+  current: EditableUser | undefined,
+): EditableUser => ({
+  ...toEditableUser(data, current),
   password: "",
 })
 
-const save = async (): Promise<(CreateUserRequest & Partial<UserDetailResponse>) | null> => {
+const save = async (): Promise<EditableUser | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)

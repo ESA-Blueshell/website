@@ -2,7 +2,8 @@
 import {computed, ref, toRefs} from "vue"
 import MemberUserRow from "../rows/MemberUserRow.vue"
 import UserForm from "@/components/form/UserForm.vue"
-import type {ContributionResponse, CreateUserRequest, MembershipResponse, UserDetailResponse} from "@/services/api"
+import type {ContributionResponse, MembershipResponse} from "@/services/api"
+import type {EditableUser} from "@/utils/editableUser"
 import {filterUsers} from "@/plugins/userFilter"
 
 defineOptions({name: "MemberUserList"})
@@ -12,7 +13,7 @@ const props = withDefaults(defineProps<{
   panelKey?: string
   membershipsByUserId?: Record<number, MembershipResponse>,
   contributionsByUserId?: Record<number, ContributionResponse>,
-  users: Array<CreateUserRequest & Partial<UserDetailResponse>>
+  users: EditableUser[]
   allowCreate?: boolean
   enableDelete?: boolean
   startOpen?: boolean
@@ -30,8 +31,8 @@ const expanded = defineModel<number>("expanded", {default: 0})
 const {title, panelKey, users, membershipsByUserId, contributionsByUserId, allowCreate, enableDelete, startOpen} = toRefs(props)
 
 const emit = defineEmits<{
-  (e: "delete:user", user: CreateUserRequest & Partial<UserDetailResponse>): void
-  (e: "update:user", user: CreateUserRequest & Partial<UserDetailResponse>): void
+  (e: "delete:user", user: EditableUser): void
+  (e: "update:user", user: EditableUser): void
   (e: "update:membership", membership: MembershipResponse): void
 }>()
 
@@ -54,13 +55,13 @@ const toggleCreate = () => {
 }
 
 const membershipChanged = (membership: MembershipResponse) => emit("update:membership", membership)
-const updateUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => {
+const updateUser = (user: EditableUser) => {
   console.log("user", user)
   emit("update:user", user)
 }
-const deleteUser = (user: CreateUserRequest & Partial<UserDetailResponse>) => emit("delete:user", user)
+const deleteUser = (user: EditableUser) => emit("delete:user", user)
 
-const createDraft = ref<CreateUserRequest & Partial<UserDetailResponse>>()
+const createDraft = ref<EditableUser>()
 const onCreateSubmitted = (ok: boolean) => {
   if (ok && createDraft.value) {
     emit("update:user", createDraft.value)

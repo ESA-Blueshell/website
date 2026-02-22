@@ -37,29 +37,29 @@
             </v-col>
           </v-row>
 
-            <VvField
-              v-model="periodForm.halfYearFee"
-              :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-half-year-fee-field' }"
-              :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
-              label="Half Year Fee"
+          <VvField
+            v-model="periodForm.halfYearFee"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-half-year-fee-field' }"
+            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+            label="Half Year Fee"
             name="halfYearFee"
             rules="required|minValue:0"
           />
 
-            <VvField
-              v-model="periodForm.fullYearFee"
-              :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-full-year-fee-field' }"
-              :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
-              label="Full Year Fee"
+          <VvField
+            v-model="periodForm.fullYearFee"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-full-year-fee-field' }"
+            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
+            label="Full Year Fee"
             name="fullYearFee"
             rules="required|minValue:0"
           />
 
-            <VvField
-              v-model="periodForm.alumniFee"
-              :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-alumni-fee-field' }"
-              :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
-              label="Alumni Fee"
+          <VvField
+            v-model="periodForm.alumniFee"
+            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-alumni-fee-field' }"
+            :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
+            label="Alumni Fee"
             name="alumniFee"
             rules="required|minValue:0"
           />

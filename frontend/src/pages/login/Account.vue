@@ -56,9 +56,10 @@ import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
-import {type CreateUserRequest, findUserById, type UserDetailResponse} from "@/services/api"
+import {findUserById} from "@/services/api"
+import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
-const user = ref<CreateUserRequest & Partial<UserDetailResponse>>()
+const user = ref<EditableUser>()
 const store = useStore()
 const isMember = computed<boolean>(() => store.getters.isMember)
 
@@ -73,7 +74,9 @@ onMounted(async () => {
       },
     })
 
-    user.value = response.data!
+    if (response.data) {
+      user.value = toEditableUser(response.data)
+    }
   } catch (e) {
     $handleNetworkError(e)
   }

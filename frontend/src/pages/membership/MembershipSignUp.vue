@@ -218,18 +218,17 @@ import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
   type AddressResponse,
-  type CreateUserRequest,
   findAddressById,
   findUserById,
   type MembershipResponse,
   resendUserActivation,
   Role,
-  type UserDetailResponse,
 } from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
 import router from "@/plugins/router.ts"
+import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
 const route = useRoute()
 
@@ -239,7 +238,7 @@ const currentStep = ref<number>(Steps.Personal)
 const submitting = ref(false)
 const resendBusy = ref(false)
 
-const user = ref<CreateUserRequest & Partial<UserDetailResponse>>()
+const user = ref<EditableUser>()
 const address = ref<AddressResponse>()
 const membership = ref<MembershipResponse>()
 
@@ -332,7 +331,9 @@ async function fetchUser() {
   if (!userId) return
   try {
     const {data} = await findUserById({path: {userId}, throwOnError: true})
-    user.value = data!
+    if (data) {
+      user.value = toEditableUser(data)
+    }
   } catch (e) {
     $handleNetworkError(e)
   }

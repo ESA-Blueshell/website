@@ -95,7 +95,7 @@ springdoc:
 app:
   url: ${APP_URL}
   security:
-    require-https: true
+    require-https: false
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000

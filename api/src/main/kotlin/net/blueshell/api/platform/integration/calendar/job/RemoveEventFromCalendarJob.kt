@@ -51,8 +51,7 @@ class RemoveEventFromCalendarJob(
             return
         }
 
-        event.googleId = null
-        events.update(event)
+        events.updateCalendarLink(event, null)
         log.info("Removed calendar event and cleared googleId. eventId={} googleId={}", event.id, googleId)
     }
 

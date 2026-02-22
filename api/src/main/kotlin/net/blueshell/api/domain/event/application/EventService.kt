@@ -51,6 +51,22 @@ class EventService @Autowired constructor(
         return saved
     }
 
+    /**
+     * Persists calendar linkage changes without publishing EventChanged.
+     *
+     * Calendar jobs update googleId as part of synchronization. Emitting EventChanged here
+     * would re-enqueue calendar jobs and can create scheduling loops.
+     */
+    @Transactional
+    fun updateCalendarLink(entity: Event, googleId: String?): Event {
+        if (entity.googleId == googleId) {
+            return entity
+        }
+
+        entity.googleId = googleId
+        return super.update(entity)
+    }
+
     @Transactional
     override fun delete(entity: Event) {
         val eventId = entity.id!!

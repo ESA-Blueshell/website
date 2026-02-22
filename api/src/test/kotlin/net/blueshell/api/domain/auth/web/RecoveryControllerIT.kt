@@ -37,6 +37,7 @@ class RecoveryControllerIT : UserTestSupport() {
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
+                .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
                     assertThat(it.payload).contains("\"resetType\":\"PASSWORD_RESET\"")
@@ -157,6 +158,7 @@ class RecoveryControllerIT : UserTestSupport() {
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
+                .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
                     assertThat(it.payload).contains("\"resetType\":\"USER_ACTIVATION\"")
@@ -180,6 +182,7 @@ class RecoveryControllerIT : UserTestSupport() {
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
+                .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
                     assertThat(it.payload).contains("\"resetType\":\"MEMBER_ACTIVATION\"")

@@ -41,7 +41,7 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
         val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
         assertThat(jobs)
             .describedAs("Should schedule contribution reminder email job")
-            .isNotEmpty
+            .hasSize(1)
 
         // And: Job has correct payload
         val jobPayload = jobs.first().payload

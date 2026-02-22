@@ -41,7 +41,7 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         val jobs = findJobsByType(EmailJobs.EventSignup.type)
         assertThat(jobs)
             .describedAs("Should schedule event signup email job")
-            .isNotEmpty
+            .hasSize(1)
 
         val jobPayload = jobs.first().payload
         assertThat(jobPayload)

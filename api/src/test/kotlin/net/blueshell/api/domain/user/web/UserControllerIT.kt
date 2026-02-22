@@ -44,6 +44,7 @@ class UserControllerIT : UserTestSupport() {
             val jobs = findJobsByType(ContactJobs.SyncContact.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on user creation")
+                .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${persistedUser.id}")
                 }
@@ -125,6 +126,7 @@ class UserControllerIT : UserTestSupport() {
             val jobs = findJobsByType(ContactJobs.SyncContact.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on user update")
+                .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${guest.id}")
                 }
@@ -274,6 +276,7 @@ class UserControllerIT : UserTestSupport() {
             val jobs = findJobsByType(ContactJobs.SyncContact.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on role toggle")
+                .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${createdUser.id}")
                 }

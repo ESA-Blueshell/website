@@ -37,8 +37,7 @@ class AddEventToCalendarJob(
         )
 
         val ref = calendarAdapter.addEvent(event.id!!, eventData)
-        event.googleId = ref.externalId
-        events.update(event)
+        events.updateCalendarLink(event, ref.externalId)
     }
 
 }

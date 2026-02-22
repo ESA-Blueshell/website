@@ -54,7 +54,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
-                .isNotEmpty
+                .hasSize(1)
 
             val jobPayload = jobs.first().payload
             assertThat(jobPayload)
@@ -93,7 +93,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
-                .isNotEmpty
+                .hasSize(1)
 
             val jobPayload = jobs.first().payload
             assertThat(jobPayload)
@@ -142,7 +142,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
-                .isNotEmpty
+                .hasSize(1)
 
             val jobPayload = jobs.first().payload
             assertThat(jobPayload)
@@ -188,7 +188,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
-                .isNotEmpty
+                .hasSize(1)
 
             val jobPayload = jobs.first().payload
             assertThat(jobPayload)

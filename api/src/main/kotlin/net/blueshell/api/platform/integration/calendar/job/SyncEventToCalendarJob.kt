@@ -42,9 +42,8 @@ class SyncEventToCalendarJob(
             externalId = event.googleId
         )
 
-        // Update event with external calendar ID (null if removed)
-        event.googleId = ref?.externalId
-        events.update(event)
+        // Update event with external calendar ID (null if removed) without triggering calendar re-scheduling.
+        events.updateCalendarLink(event, ref?.externalId)
     }
 
 }

@@ -42,7 +42,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.contributionPeriodId").value(period.id))
 
             val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
-            assertThat(jobs).isNotEmpty
+            assertThat(jobs).hasSize(1)
             assertThat(jobs.first().payload)
                 .contains("\"userId\":${user.id}")
                 .contains("\"contributionPeriodId\":${period.id}")
